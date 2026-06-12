@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { WOMENS_STAFF, DEPT_COLOR, type StaffDept } from '@/app/womens/[slug]/_lib/womens-staff-data'
 
 // ─── Avatar helper ──────────────────────────────────────────────────────────
@@ -214,39 +214,89 @@ function staffRoster(club: ClubProps): StaffNode[] {
 function OrgChartTab({ club }: { club: ClubProps }) {
   const staff = staffRoster(club)
   const root = staff.find(s => s.reportsTo === null)
-  if (!root) return null
   const directReports = (boss: string) => staff.filter(s => s.reportsTo === boss)
 
-  // Compact pill for a person; root + the two directors are emphasised.
-  const RowCard = ({ node, depth }: { node: StaffNode; depth: number }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const [paths, setPaths] = useState<string[]>([])
+  const [box, setBox] = useState({ w: 0, h: 0 })
+
+  useEffect(() => {
+    const compute = () => {
+      const cont = containerRef.current
+      if (!cont) return
+      const cb = cont.getBoundingClientRect()
+      const segs: string[] = []
+      for (const person of staff) {
+        const reports = staff.filter(s => s.reportsTo === person.name)
+        if (!reports.length) continue
+        const pe = cardRefs.current[person.name]
+        if (!pe) continue
+        const pr = pe.getBoundingClientRect()
+        const px = pr.left + pr.width / 2 - cb.left
+        const py = pr.bottom - cb.top
+        const midY = py + 19
+        for (const rep of reports) {
+          const ce = cardRefs.current[rep.name]
+          if (!ce) continue
+          const cr = ce.getBoundingClientRect()
+          const cx = cr.left + cr.width / 2 - cb.left
+          const cy = cr.top - cb.top
+          segs.push(`M ${px} ${py} L ${px} ${midY} L ${cx} ${midY} L ${cx} ${cy}`)
+        }
+      }
+      setBox({ w: cont.scrollWidth, h: cont.scrollHeight })
+      setPaths(segs)
+    }
+    compute()
+    const ro = new ResizeObserver(compute)
+    if (containerRef.current) ro.observe(containerRef.current)
+    window.addEventListener('resize', compute)
+    const t = window.setTimeout(compute, 350) // re-measure after avatars load
+    return () => { ro.disconnect(); window.removeEventListener('resize', compute); window.clearTimeout(t) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [club])
+
+  if (!root) return null
+
+  const Box = ({ node, depth }: { node: StaffNode; depth: number }) => {
     const colour = node.dept === 'Board' ? C.text5 : DEPT_COLOR[node.dept]
     const isRoot = depth === 0
     const emphasised = depth <= 1
+    const w = isRoot ? 184 : emphasised ? 168 : 150
+    const avatarPx = emphasised ? 38 : 30
     const deptLabel = node.dept === 'Board' ? '' : node.dept === 'DoF' ? 'Football' : node.dept
     return (
-      <div className="org-card" style={{ background: emphasised ? C.panelAlt : C.panelDeep, border: `1px solid ${colour}${isRoot ? '' : emphasised ? 'aa' : '55'}` }}>
+      <div
+        ref={el => { cardRefs.current[node.name] = el }}
+        style={{
+          width: w, position: 'relative', zIndex: 1, borderRadius: 12, textAlign: 'center',
+          padding: isRoot ? 12 : emphasised ? 11 : 9,
+          background: emphasised ? C.panelAlt : C.panelDeep,
+          border: `${emphasised ? 2 : 1}px solid ${colour}${isRoot ? '' : emphasised ? 'aa' : '55'}`,
+        }}
+      >
         {isRoot
-          ? <div className="org-ini" style={{ background: 'rgba(75,85,99,0.2)', color: C.text5 }}>{node.name.split(' ').map(w => w[0]).join('').slice(0, 3)}</div>
-          : <img src={avatarUrl(node.avatar)} alt="" className="org-av" style={{ width: 30, height: 30, background: `${colour}20`, border: `1px solid ${colour}55` }} />}
-        <div className="org-meta">
-          <div className="org-nm" style={{ color: C.text }}>{node.name}</div>
-          <div className="org-rl" style={{ color: isRoot ? C.text5 : colour }}>{node.role}{deptLabel ? ` · ${deptLabel}` : ''}</div>
-        </div>
+          ? <div style={{ width: 46, height: 46, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, margin: '0 auto 8px', background: 'rgba(75,85,99,0.2)', color: C.text5 }}>{node.name.split(' ').map(x => x[0]).join('').slice(0, 3)}</div>
+          : <img src={avatarUrl(node.avatar)} alt="" style={{ width: avatarPx, height: avatarPx, borderRadius: 9999, objectFit: 'cover', margin: '0 auto 6px', display: 'block', background: `${colour}20`, border: `1px solid ${colour}55` }} />}
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{node.name}</div>
+        <div style={{ fontSize: 10.5, lineHeight: 1.2, marginTop: 2, color: isRoot ? C.text5 : colour }}>{node.role}{deptLabel ? ` · ${deptLabel}` : ''}</div>
       </div>
     )
   }
 
-  // Recursive indented row. Connectors (elbow + spine) are drawn in CSS on
-  // each child of .org-children — robust at any depth/breadth (unlike a
-  // top-down bus, which sprawls when sibling sub-trees differ in width).
-  const Row = ({ node, depth }: { node: StaffNode; depth: number }) => {
+  // Each node is a centred column: its box above a row of its children's
+  // columns. Connector lines are NOT CSS — they're an SVG overlay drawn from
+  // the measured box positions, so they always join box-bottom to child-top
+  // however lopsided the tree is.
+  const Node = ({ node, depth }: { node: StaffNode; depth: number }) => {
     const reports = directReports(node.name)
     return (
-      <div className="org-row-wrap">
-        <RowCard node={node} depth={depth} />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto' }}>
+        <Box node={node} depth={depth} />
         {reports.length > 0 && (
-          <div className="org-children">
-            {reports.map(rep => <Row key={rep.name} node={rep} depth={depth + 1} />)}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, marginTop: 38 }}>
+            {reports.map(rep => <Node key={rep.name} node={rep} depth={depth + 1} />)}
           </div>
         )}
       </div>
@@ -258,8 +308,13 @@ function OrgChartTab({ club }: { club: ClubProps }) {
   return (
     <div>
       <h2 className="text-xl font-black mb-6" style={{ color: C.text }}>Club Organisation</h2>
-      <div className="org-root" style={{ overflowX: 'auto', paddingBottom: 8 }}>
-        <Row node={root} depth={0} />
+      <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
+        <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', padding: '4px 10px 10px' }}>
+          <svg width={box.w} height={box.h} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', zIndex: 0, overflow: 'visible' }}>
+            {paths.map((d, i) => <path key={i} d={d} fill="none" stroke="#3A4254" strokeWidth={1.5} />)}
+          </svg>
+          <Node node={root} depth={0} />
+        </div>
       </div>
       <div className="flex gap-3 justify-center mt-6 flex-wrap">
         {depts.map(dept => (
@@ -269,21 +324,6 @@ function OrgChartTab({ club }: { club: ClubProps }) {
           </div>
         ))}
       </div>
-      <style>{`
-        .org-root { min-width: 0; }
-        .org-card { display: inline-flex; align-items: center; gap: 10px; border-radius: 10px; padding: 7px 12px; }
-        .org-ini { width: 30px; height: 30px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex: 0 0 auto; }
-        .org-av { border-radius: 9999px; object-fit: cover; flex: 0 0 auto; }
-        .org-meta { line-height: 1.25; white-space: nowrap; }
-        .org-nm { font-size: 12.5px; font-weight: 700; }
-        .org-rl { font-size: 10.5px; }
-        .org-row-wrap > .org-card { margin-top: 6px; }
-        .org-children { margin-left: 15px; }
-        .org-children > .org-row-wrap { position: relative; padding-left: 24px; }
-        .org-children > .org-row-wrap::before { content: ''; position: absolute; left: 0; top: 28px; width: 22px; height: 2px; background: #2A3444; border-radius: 2px; }
-        .org-children > .org-row-wrap::after { content: ''; position: absolute; left: 0; top: 0; width: 2px; height: 28px; background: #2A3444; }
-        .org-children > .org-row-wrap:not(:last-child)::after { height: 100%; }
-      `}</style>
     </div>
   )
 }
@@ -662,6 +702,7 @@ export default function WomensStaffTabs({ club }: Props) {
     </div>
   )
 }
+
 
 
 
