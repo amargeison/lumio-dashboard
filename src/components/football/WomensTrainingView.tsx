@@ -7,7 +7,7 @@
 
 import { useState } from 'react'
 import {
-  Clipboard, BarChart3, Heart, Clock, Activity, Dumbbell, Target,
+  Clipboard, Heart, Clock, Activity, Dumbbell, Target,
   CheckCircle2, Plus, X, Sparkles, Users, MapPin, Timer, Gauge,
 } from 'lucide-react'
 
@@ -330,7 +330,6 @@ export default function WomensTrainingView() {
   const [builder, setBuilder] = useState(false)
   const [form, setForm] = useState({ type: 'Tactical', duration: '90 min', squad: '22 players', intensity: 'High', area: 'Full pitch', phase: 'MD-5 (load)', theme: 'High press & triggers' })
 
-  const openBuilder = () => { setTab('sessions'); setBuilder(true) }
   const submit = () => {
     const plan = generatePlan(form)
     setPlans(p => [plan, ...p]); setExpanded(plan.id); setBuilder(false)
@@ -345,13 +344,6 @@ export default function WomensTrainingView() {
       <div>
         <h2 className="text-xl font-bold" style={{ color: C.text }}>Training</h2>
         <p className="text-sm mt-1" style={{ color: C.textSec }}>Weekly plan · session builder · GPS load · recovery — a full coaching workspace for the week.</p>
-      </div>
-
-      {/* Header action buttons (live) */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={openBuilder} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: C.primary, color: '#fff' }}><Clipboard size={12} />New Session Plan</button>
-        <button onClick={() => setTab('load')} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: C.primary, color: '#fff' }}><BarChart3 size={12} />Load Report</button>
-        <button onClick={() => setTab('recovery')} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold" style={{ backgroundColor: C.primary, color: '#fff' }}><Heart size={12} />Recovery Schedule</button>
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">

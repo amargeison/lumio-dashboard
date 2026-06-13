@@ -193,9 +193,9 @@ export default function WomensTacticsView() {
         <button onClick={() => setAssign({})} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ border: `1px solid ${C.border}`, color: C.text3 }}><RotateCcw size={14} /> Clear</button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_260px] gap-4">
         {/* Pitch */}
-        <div className="rounded-xl p-3" style={{ background: 'linear-gradient(#0c2a16,#0a1f12)', border: `1px solid ${C.border}` }}>
+        <div className="rounded-xl p-3 w-full" style={{ background: 'linear-gradient(#0c2a16,#0a1f12)', border: `1px solid ${C.border}`, maxWidth: 420 }}>
           <div className="relative w-full" style={{ paddingBottom: '128%' }}>
             <div className="absolute inset-0">
               <PitchLines />
