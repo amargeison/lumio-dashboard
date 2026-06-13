@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import type { ReactNode } from 'react'
 import { WOMENS_STAFF, DEPT_COLOR, type StaffDept } from '@/app/womens/[slug]/_lib/womens-staff-data'
 
 // ─── Avatar helper ──────────────────────────────────────────────────────────
@@ -71,6 +72,7 @@ interface ClubProps {
 
 interface Props {
   club: ClubProps
+  directorySlot?: ReactNode
 }
 
 type SubTab = 'today' | 'org' | 'info' | 'club'
@@ -544,7 +546,7 @@ const DOC_META: Record<string, { file: string; ref: string; version: string; eff
   'Coaching & CPD':                     { file: 'coaching-cpd-policy.pdf',               ref: 'OWFC-COA-006',  version: 'v1.2', effective: '01 Aug 2025', owner: 'Head Coach' },
 }
 
-function ClubInfoTab({ club }: { club: ClubProps }) {
+export function ClubInfoTab({ club }: { club: ClubProps }) {
   const [openDoc, setOpenDoc] = useState<string | null>(null)
   const openedDoc = openDoc ? CLUB_DOCS.find(d => d.title === openDoc) : null
   const meta = openDoc ? DOC_META[openDoc] : null
@@ -684,13 +686,12 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
 
 // ─── Main export ────────────────────────────────────────────────────────────
 
-export default function WomensStaffTabs({ club }: Props) {
+export default function WomensStaffTabs({ club, directorySlot }: Props) {
   const [tab, setTab] = useState<SubTab>('today')
   const tabs: Array<{ id: SubTab; label: string }> = [
     { id: 'today', label: 'Today' },
     { id: 'org',   label: 'Org Chart' },
-    { id: 'info',  label: 'Team Info' },
-    { id: 'club',  label: 'Club Info' },
+    { id: 'info',  label: 'Directory' },
   ]
   return (
     <div className="space-y-4">
@@ -711,8 +712,7 @@ export default function WomensStaffTabs({ club }: Props) {
       </div>
       {tab === 'today' && <TodayTab />}
       {tab === 'org'   && <OrgChartTab club={club} />}
-      {tab === 'info'  && <TeamInfoTab />}
-      {tab === 'club'  && <ClubInfoTab club={club} />}
+      {tab === 'info'  && (directorySlot ?? <TeamInfoTab />)}
     </div>
   )
 }

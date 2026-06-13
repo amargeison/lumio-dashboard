@@ -84,7 +84,7 @@ export function HeroToday({
   // draws so the hero retains a defined edge.
   const quote = getDailyQuote(WOMENS_QUOTES)
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / -1', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px`, background: 'transparent' }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px`, background: 'transparent' }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
         <defs>
           <pattern id="wf-hero-ptn" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -167,7 +167,8 @@ export function TodaySchedule({ T, accent, density }: Common) {
   return (
     <Card T={T} density={density} hover style={{ gridColumn: '9 / span 4' }}>
       <SectionHead T={T} title="Today" right={<span className="tnum" style={{ fontFamily: FONT_MONO }}>{WOMENS_ORG.date.split(',')[1]?.trim() ?? WOMENS_ORG.date}</span>} />
-      <div style={{ position: 'relative' }}>
+      <div style={{ maxHeight: 224, overflowY: 'auto', marginRight: -2, paddingRight: 2 }}>
+        <div style={{ position: 'relative' }}>
         <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />
         {WOMENS_TODAY.map((it, i) => (
           <div key={i} style={{ position: 'relative', display: 'flex', gap: 14, padding: '6px 0' }}>
@@ -177,6 +178,35 @@ export function TodaySchedule({ T, accent, density }: Common) {
               <div style={{ fontSize: 12.5, color: T.text, fontWeight: it.highlight ? 600 : 500 }}>{it.what}</div>
               <div style={{ fontSize: 10.5, color: T.text3 }}>{it.where}</div>
             </div>
+          </div>
+        ))}
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+// ─── Outstanding ───────────────────────────────────────────────────────
+
+export function Outstanding({ T, density }: Common) {
+  const items: { label: string; status: string; tone: 'bad' | 'warn' | 'good' }[] = [
+    { label: 'FSR audit — 3 items outstanding (forum minutes, diversity report, safeguarding refresher)', status: 'Due end of month', tone: 'warn' },
+    { label: 'Contract renewals — Porter & Granger expire Jun 2025', status: 'Action', tone: 'bad' },
+    { label: 'Registration window closes 30 Apr — dual-reg agreements pending', status: 'Urgent', tone: 'bad' },
+    { label: 'Karen Carney compliance — 2 criteria outstanding', status: 'In progress', tone: 'warn' },
+    { label: 'Welfare flags — 2 players amber on sleep quality', status: 'Monitor', tone: 'warn' },
+    { label: 'Safeguarding / DBS — 23/23 staff current', status: 'Up to date', tone: 'good' },
+  ]
+  const toneCol = (t: 'bad' | 'warn' | 'good') => t === 'bad' ? T.bad : t === 'warn' ? T.warn : T.good
+  const open = items.filter(i => i.tone !== 'good').length
+  return (
+    <Card T={T} density={density} hover style={{ gridColumn: '9 / span 4' }}>
+      <SectionHead T={T} title="Outstanding items" right={<span>{open} open</span>} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {items.map((it, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, paddingBottom: 8, borderBottom: i < items.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+            <span style={{ fontSize: 12, color: T.text2, lineHeight: 1.35 }}>{it.label}</span>
+            <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: `${toneCol(it.tone)}1e`, color: toneCol(it.tone), whiteSpace: 'nowrap' }}>{it.status}</span>
           </div>
         ))}
       </div>
@@ -215,7 +245,7 @@ export function AIBrief({ T, accent, density, onAsk }: Common & { onAsk?: () => 
   const hour = new Date().getHours()
   const label = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Briefing' : 'AI Evening Briefing'
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 4' }}>
+    <Card T={T} density={density} style={{ gridColumn: '5 / span 4' }}>
       <SectionHead T={T}
         title={<><Icon name="sparkles" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2, display: 'inline-block' }} />{label}</>}
         right={<>
