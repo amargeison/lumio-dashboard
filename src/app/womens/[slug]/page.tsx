@@ -56,6 +56,9 @@ import WomensBoardSuiteView from '@/components/womens/WomensBoardSuiteView'
 import WomensInsightsView from '@/components/womens/WomensInsightsView'
 import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
+import TravelLogisticsView from './_components/TravelLogisticsView'
+import { WOMENS_STAFF, DEPT_COLOR } from './_lib/womens-staff-data'
+import { buildPlayerCard } from './_lib/womens-player-cards'
 // ─── Women's FC v2 dashboard imports ──────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
@@ -171,7 +174,6 @@ const SIDEBAR_ITEMS = [
 
   // OPERATIONS — unchanged.
   { id: 'club-operations',  label: 'Club Operations',     icon: '🏟️', group: 'OPERATIONS' },
-  { id: 'matchday-ops',     label: 'Matchday Operations', icon: '🎟️', group: 'OPERATIONS' },
   { id: 'travel-logistics', label: 'Travel & Logistics',  icon: '✈️', group: 'OPERATIONS' },
   { id: 'kit-manager',      label: 'Kit Manager',         icon: '🧦', group: 'OPERATIONS' },
   { id: 'team',             label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
@@ -732,6 +734,18 @@ const ACLRiskMonitorView = () => {
     {name:'Megan Hughes',    pos:'DM',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
     {name:'Sophie Lawson',   pos:'RB',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
     {name:'Tilly Brooks',    pos:'LW',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
+    {name:'Ellie Hayes',     pos:'GK',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Bea Chen',        pos:'CB',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Tessa Foley',     pos:'LB',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
+    {name:'Lucy Brennan',    pos:'CB',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Maya Reid',       pos:'CB',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
+    {name:'Emily Zhang',     pos:'CM',history:'Previous ACL (left, 2023)',  lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'High'},
+    {name:'Lucy Whitmore',   pos:'CM',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Medium'},
+    {name:'Sasha Davies',    pos:'CM',history:'Meniscus repair (2025)',     lastScreening:'Apr 2026',nextDue:'Jul 2026',overdue:false,risk:'Medium'},
+    {name:'Jess Tilley',     pos:'RW',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
+    {name:'Zara Williams',   pos:'ST',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Dani Morris',     pos:'LW',history:'None',                       lastScreening:'Mar 2026',nextDue:'Jun 2026',overdue:false,risk:'Low'},
+    {name:'Aria Rowe',       pos:'ST',history:'None',                       lastScreening:'Feb 2026',nextDue:'May 2026',overdue:false,risk:'Low'},
   ]
   const overdueCount = aclPlayers.filter(p => p.overdue).length
 
@@ -971,9 +985,9 @@ const MentalHealthView = () => (
   <div>
     <SectionHeader title="Mental Health & Wellbeing" subtitle="Karen Carney Review Standards" icon="🧠" />
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <StatCard label="Squad Size" value="24" color="pink" />
-      <StatCard label="Check-ins (month)" value="18" sub="Of 24 players" color="teal" />
-      <StatCard label="Flags Raised" value="1" sub="Performance anxiety" color="amber" />
+      <StatCard label="Squad Size" value="22" color="pink" />
+      <StatCard label="Check-ins (month)" value="17" sub="Of 22 players" color="teal" />
+      <StatCard label="Flags Raised" value="2" sub="Anxiety · rehab adjustment" color="amber" />
       <StatCard label="Referrals Made" value="0" sub="This season" color="green" />
     </div>
     <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
@@ -989,6 +1003,18 @@ const MentalHealthView = () => (
             {player:'Charlotte Reed',date:'1 Apr',score:6,flag:'Performance anxiety — pre-match',followup:'Yes'},
             {player:'Jade Osei',date:'28 Mar',score:9,flag:'—',followup:'No'},
             {player:'Abbi Walsh',date:'28 Mar',score:7,flag:'—',followup:'No'},
+            {player:'Megan Hughes',date:'27 Mar',score:7,flag:'—',followup:'No'},
+            {player:'Fatima Al-Said',date:'27 Mar',score:8,flag:'—',followup:'No'},
+            {player:'Tilly Brooks',date:'26 Mar',score:7,flag:'—',followup:'No'},
+            {player:'Sophie Turner',date:'26 Mar',score:7,flag:'—',followup:'No'},
+            {player:'Emily Zhang',date:'25 Mar',score:8,flag:'—',followup:'No'},
+            {player:'Lucy Whitmore',date:'25 Mar',score:8,flag:'—',followup:'No'},
+            {player:'Sasha Davies',date:'24 Mar',score:6,flag:'Adjusting to rehab — welfare check',followup:'Yes'},
+            {player:'Zara Williams',date:'24 Mar',score:9,flag:'—',followup:'No'},
+            {player:'Bea Chen',date:'23 Mar',score:8,flag:'—',followup:'No'},
+            {player:'Maya Reid',date:'23 Mar',score:8,flag:'—',followup:'No'},
+            {player:'Tessa Foley',date:'22 Mar',score:7,flag:'—',followup:'No'},
+            {player:'Ellie Hayes',date:'22 Mar',score:8,flag:'—',followup:'No'},
           ].map((r: {player:string;date:string;score:number;flag:string;followup:string}, i: number) => (
             <tr key={i} className="border-b border-gray-800/50">
               <td className="p-3 text-gray-200">{r.player}</td>
@@ -1103,9 +1129,26 @@ const MedicalRecordsView = () => (
           {[
             {player:'Emma Clarke',injuries:0,status:'Fit',notes:'ACL screening overdue — schedule this week'},
             {player:'Sophie Turner',injuries:1,status:'RTP Phase 3',notes:'ACL reconstruction Dec 2024 — progressing well'},
-            {player:'Ava Mitchell',injuries:0,status:'Fit (maternity May)',notes:'Pre-leave medical complete'},
+            {player:'Sophie Lawson',injuries:0,status:'Maternity leave',notes:'Pre-leave medical complete · RTP plan on file'},
             {player:'Charlotte Reed',injuries:0,status:'Fit',notes:'Mental health support active — no physical concerns'},
             {player:'Priya Nair',injuries:1,status:'Fit',notes:'Minor ankle — resolved. ACL screening due.'},
+            {player:'Jade Osei',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Abbi Walsh',injuries:0,status:'Fit',notes:'Load managed — high ACWR this week'},
+            {player:'Megan Hughes',injuries:1,status:'Out — hamstring',notes:'Grade 2 hamstring — return May'},
+            {player:'Fatima Al-Said',injuries:0,status:'Fit',notes:'ITC pending — cleared medically'},
+            {player:'Tilly Brooks',injuries:1,status:'Concussion protocol',notes:'Graduated return-to-play — Day 6'},
+            {player:'Sasha Davies',injuries:1,status:'RTP — knee',notes:'Meniscus rehab — non-load phase'},
+            {player:'Emily Zhang',injuries:0,status:'Fit',notes:'Elevated ACL composite — prehab adherence monitored'},
+            {player:'Lucy Whitmore',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Bea Chen',injuries:0,status:'Fit',notes:'Minor knock cleared'},
+            {player:'Tessa Foley',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Lucy Brennan',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Maya Reid',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Ellie Hayes',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Jess Tilley',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Zara Williams',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Dani Morris',injuries:0,status:'Fit',notes:'No current issues'},
+            {player:'Aria Rowe',injuries:0,status:'Fit',notes:'No current issues'},
           ].map((r: {player:string;injuries:number;status:string;notes:string}, i: number) => (
             <tr key={i} className="border-b border-gray-800/50">
               <td className="p-3 text-gray-200">{r.player}</td>
@@ -1121,7 +1164,7 @@ const MedicalRecordsView = () => (
     <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
       <div className="p-4 border-b border-gray-800 flex items-center justify-between">
         <h3 className="text-sm font-bold text-white">Current Injury List</h3>
-        <span className="text-[10px] text-gray-500">3 active</span>
+        <span className="text-[10px] text-gray-500">4 active</span>
       </div>
       <table className="w-full text-sm">
         <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
@@ -1132,6 +1175,7 @@ const MedicalRecordsView = () => (
             {player:'Sophie Turner',injury:'ACL reconstruction (right knee)',severity:'Severe', sustained:'12 Dec 2024',ret:'Aug 2026'},
             {player:'Megan Hughes', injury:'Grade 2 hamstring strain',         severity:'Moderate',sustained:'24 Mar 2026',ret:'May 2026'},
             {player:'Tilly Brooks', injury:'Mild concussion',                   severity:'Minor',   sustained:'30 Mar 2026',ret:'14 Apr 2026'},
+            {player:'Sasha Davies', injury:'Knee — meniscus rehab',               severity:'Moderate',sustained:'02 Apr 2026',ret:'Jun 2026'},
           ].map((r, i) => {
             const sevColor = r.severity === 'Severe' ? 'bg-red-600/20 text-red-400' : r.severity === 'Moderate' ? 'bg-amber-600/20 text-amber-400' : 'bg-green-600/20 text-green-400'
             return (
@@ -1354,9 +1398,25 @@ const SquadManagementView = ({ club }: { club: WomensClub }) => {
     {name:'Megan Hughes',   pos:'DM',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales', international:false,contract:'Jun 2026',welfare:'Available'},
     {name:'Sophie Lawson',  pos:'RB',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Maternity'},
     {name:'Tilly Brooks',   pos:'LW',employment:'Part-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇮🇪 Ireland',international:true, contract:'Jun 2028',welfare:'Available'},
+    // ── Squad expanded to a full 22 (2025/26). Names reconciled with the
+    //    Cycle/ACL/GPS/dashboard rosters so every department references the
+    //    same player universe (no module lists a name outside this 22).
+    {name:'Ellie Hayes',    pos:'GK',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Bea Chen',       pos:'CB',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2028',welfare:'Available'},
+    {name:'Tessa Foley',    pos:'LB',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Lucy Brennan',   pos:'CB',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇮🇪 Ireland',international:true, contract:'Jun 2026',welfare:'Available'},
+    {name:'Maya Reid',      pos:'CB',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scotland',international:false,contract:'Jun 2028',welfare:'Available'},
+    {name:'Emily Zhang',    pos:'CM',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Lucy Whitmore',  pos:'CM',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2026',welfare:'Available'},
+    {name:'Sasha Davies',   pos:'CM',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales', international:false,contract:'Jun 2028',welfare:'RTP'},
+    {name:'Jess Tilley',    pos:'RW',employment:'Part-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Zara Williams',  pos:'ST',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2026',welfare:'Available'},
+    {name:'Dani Morris',    pos:'LW',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2028',welfare:'Available'},
+    {name:'Aria Rowe',      pos:'ST',employment:'Part-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
   ]
 
   const [filter, setFilter] = useState<'all' | 'fulltime' | 'parttime' | 'dualreg' | 'leave' | 'international'>('all')
+  const [selectedPlayer, setSelectedPlayer] = useState<string | null>(null)
   const filtered = players.filter(p => {
     if (filter === 'all') return true
     if (filter === 'fulltime') return p.employment === 'Full-time'
@@ -1435,7 +1495,7 @@ const SquadManagementView = ({ club }: { club: WomensClub }) => {
             {filtered.map(p => {
               const wb = welfareBadge(p.welfare)
               return (
-                <tr key={p.name} className="border-b border-gray-800/50">
+                <tr key={p.name} onClick={() => setSelectedPlayer(p.name)} className="border-b border-gray-800/50 hover:bg-pink-600/5 cursor-pointer transition-colors">
                   <td className="p-3 text-gray-200 font-medium">{p.name}</td>
                   <td className="p-3 text-gray-400">{p.pos}</td>
                   <td className="p-3">
@@ -1467,6 +1527,88 @@ const SquadManagementView = ({ club }: { club: WomensClub }) => {
 
       <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 text-xs text-amber-400">
         ⚠ Fatima Al-Said — ITC (International Transfer Certificate) pending. Cannot be registered until clearance received from FIFA TMS.
+      </div>
+      <p className="text-[11px] text-gray-600 mt-2">Click a player for their full profile card.</p>
+      {selectedPlayer && (() => {
+        const pl = players.find(p => p.name === selectedPlayer)
+        return pl ? <WomensPlayerCardModal player={pl} onClose={() => setSelectedPlayer(null)} /> : null
+      })()}
+    </div>
+  )
+}
+
+// ─── WOMEN'S PLAYER CARD MODAL (Football-Pro-style) ────────────────
+function WomensPlayerCardModal({ player, onClose }: { player: { name: string; pos: string; ageBand: string; nationality: string; welfare: string; contract: string }; onClose: () => void }) {
+  const c = buildPlayerCard(player)
+  const statColor = (v: number) => v >= 80 ? '#22c55e' : v >= 65 ? '#EC4899' : v >= 50 ? '#eab308' : '#ef4444'
+  const fitBg = c.fitTone === 'fit' ? '#16a34a30' : c.fitTone === 'injured' ? '#dc262630' : '#d9770630'
+  const fitFg = c.fitTone === 'fit' ? '#4ade80' : c.fitTone === 'injured' ? '#f87171' : '#fb923c'
+  const moraleFg = c.morale >= 75 ? '#4ade80' : c.morale >= 50 ? '#EC4899' : '#f87171'
+  const wellbeing: Array<[string, number, string]> = [['Morale', c.morale, moraleFg], ['GPS Load (this week)', c.gpsLoad, '#EC4899'], ['Recovery Score', c.recovery, '#16a34a']]
+  const contract: Array<[string, string]> = [['Market Value', c.marketValue], ['Contract Until', player.contract], ['Wage Band', c.wageBand], ['Agent', c.agent], ['Nationality', player.nationality], ['Appearances', String(c.appearances)], ['Minutes Played', c.minutes], ['Signed From', c.signedFrom]]
+  return (
+    <div onClick={onClose} className="fixed inset-0 z-[10000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.78)' }}>
+      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border p-6" style={{ background: '#0F1117', borderColor: '#BE185D40' }}>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black text-white" style={{ background: '#BE185D' }}>{c.number}</div>
+            <div>
+              <div className="text-2xl font-extrabold text-white">{player.name}</div>
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded text-xs font-bold" style={{ background: '#BE185D30', color: '#F472B6' }}>{player.pos}</span>
+                <span className="text-sm">{player.nationality}</span>
+                <span className="text-xs text-gray-500">Age {c.age}</span>
+                <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase" style={{ background: fitBg, color: fitFg }}>{c.fitLabel}</span>
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-sm px-3.5 py-1.5 rounded-lg border border-gray-700 text-gray-400 hover:text-white">✕ Close</button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="rounded-xl p-5" style={{ background: '#1A1D27' }}>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-4">Performance</div>
+            <div className="flex gap-4 mb-5">
+              <div className="text-center"><div className="text-2xl font-black" style={{ color: '#EC4899' }}>{c.rating.toFixed(1)}</div><div className="text-[11px] text-gray-500">Rating</div></div>
+              <div className="text-center"><div className="text-2xl font-black text-white">{c.goals}</div><div className="text-[11px] text-gray-500">Goals</div></div>
+              <div className="text-center"><div className="text-2xl font-black text-white">{c.assists}</div><div className="text-[11px] text-gray-500">Assists</div></div>
+            </div>
+            <div className="text-[11px] text-gray-500 mb-2">Last 5 matches</div>
+            <div className="flex gap-1.5 mb-5">{c.form.map((r, i) => (<div key={i} className="flex-1 text-center rounded py-1" style={{ background: r >= 7.5 ? '#16a34a30' : r >= 6.5 ? '#BE185D30' : '#dc262630' }}><span className="text-xs font-bold" style={{ color: r >= 7.5 ? '#4ade80' : r >= 6.5 ? '#F472B6' : '#f87171' }}>{r.toFixed(1)}</span></div>))}</div>
+            <div className="text-[11px] text-gray-500 mb-2.5">Attributes</div>
+            {(['PAC', 'SHO', 'PAS', 'DRI', 'DEF', 'PHY'] as const).map((k) => { const v = c.attrs[k]; return (
+              <div key={k} className="flex items-center gap-2 mb-1.5">
+                <div className="w-8 text-[11px] font-bold text-gray-400">{k}</div>
+                <div className="flex-1 h-1.5 rounded" style={{ background: '#374151' }}><div className="h-full rounded" style={{ width: `${v}%`, background: statColor(v) }} /></div>
+                <div className="w-6 text-right text-[11px] font-bold" style={{ color: statColor(v) }}>{v}</div>
+              </div>) })}
+          </div>
+
+          <div className="rounded-xl p-5" style={{ background: '#1A1D27' }}>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-4">Contract &amp; Value</div>
+            {contract.map(([l, v]) => (
+              <div key={l} className="flex justify-between items-center pb-2.5 mb-2.5 border-b border-gray-800 last:border-0 last:mb-0 last:pb-0"><span className="text-[13px] text-gray-500">{l}</span><span className="text-[13px] font-semibold text-white text-right">{v}</span></div>
+            ))}
+          </div>
+
+          <div className="rounded-xl p-5" style={{ background: '#1A1D27' }}>
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-4">Wellbeing &amp; Load</div>
+            {wellbeing.map(([l, v, col]) => (
+              <div key={l} className="mb-5">
+                <div className="flex justify-between mb-1.5"><span className="text-[13px] text-gray-500">{l}</span><span className="text-[13px] font-bold" style={{ color: col }}>{v}{l === 'Morale' ? '/100' : '%'}</span></div>
+                <div className="h-2 rounded" style={{ background: '#374151' }}><div className="h-full rounded" style={{ width: `${v}%`, background: col }} /></div>
+              </div>
+            ))}
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-3">Injury History</div>
+            {c.injuries.map((inj, i) => (<div key={i} className="flex justify-between rounded-lg px-3 py-2 mb-2" style={{ background: '#111318' }}><span className="text-[13px] text-white">{inj.type}</span><span className="text-xs text-gray-500">{inj.date}{inj.games ? ` · ${inj.games}` : ''}</span></div>))}
+          </div>
+        </div>
+
+        <div className="flex gap-2.5 flex-wrap">
+          {['Log Injury', 'Contact Agent', 'Extend Contract', 'Transfer List', 'Player Report', 'Team Talk'].map((act) => (
+            <button key={act} onClick={onClose} className="px-4 py-2.5 rounded-lg text-[13px] font-bold text-white" style={{ background: '#BE185D' }}>{act}</button>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -1835,6 +1977,12 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
     { id: 8,  name: 'Aoife Regan',     age: 15, pos: 'CB',  gpsAvg: 52, devRating: 2, potential: 'Develop',scholarshipYr: 1, appearances: 5,  goals: 0,  assists: 0,  notes: 'Early-stage development. Good attitude. Needs full season of U18 exposure.' },
     { id: 9,  name: 'Zara Mensah',     age: 16, pos: 'AM',  gpsAvg: 63, devRating: 4, potential: 'High',   scholarshipYr: 1, appearances: 11, goals: 3,  assists: 7,  notes: 'Creative. Sets Academy U18 assists record this season. Eye for a pass beyond her years.' },
     { id: 10, name: 'Lucy Holt',       age: 17, pos: 'FW',  gpsAvg: 59, devRating: 3, potential: 'Medium', scholarshipYr: 2, appearances: 10, goals: 5,  assists: 1,  notes: 'Hard-working press forward. Goals-to-shot ratio good. Needs to add pace.' },
+    { id: 18, name: 'Orla Devine',     age: 16, pos: 'RB',  gpsAvg: 57, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 7,  goals: 0,  assists: 2,  notes: 'Energetic full-back. Defensive positioning developing well. Strong attitude in training.' },
+    { id: 19, name: 'Maddie Yates',    age: 17, pos: 'CM',  gpsAvg: 61, devRating: 3, potential: 'Medium', scholarshipYr: 2, appearances: 12, goals: 2,  assists: 3,  notes: 'Tidy in possession. Needs to add tempo to her passing under pressure.' },
+    { id: 20, name: 'Sienna Ford',     age: 15, pos: 'FW',  gpsAvg: 54, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 6,  goals: 3,  assists: 1,  notes: 'Sharp movement in the box. Youngest forward in the U18s — one to watch.' },
+    { id: 21, name: 'Robyn Mackay',    age: 16, pos: 'CB',  gpsAvg: 58, devRating: 3, potential: 'Medium', scholarshipYr: 1, appearances: 9,  goals: 0,  assists: 0,  notes: 'Composed centre-half. Good in the air. Building match minutes this season.' },
+    { id: 22, name: 'Tia Bennett',     age: 17, pos: 'LW',  gpsAvg: 64, devRating: 4, potential: 'High',   scholarshipYr: 2, appearances: 11, goals: 5,  assists: 4,  notes: 'Direct winger with end product. Lumio Scout flagged for U21 step-up next season.' },
+    { id: 23, name: 'Hollie Frost',    age: 15, pos: 'GK',  gpsAvg: 50, devRating: 2, potential: 'Develop',scholarshipYr: 1, appearances: 4,  goals: 0,  assists: 0,  notes: 'Promising shot-stopper. Footwork and distribution the current focus.' },
   ]
 
   const u21Players = [
@@ -1845,6 +1993,11 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
     { id: 15, name: 'Abby Thornton',   age: 19, pos: 'CB',  gpsAvg: 72, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 1',            appearances: 15, goals: 1,  assists: 2,  firstTeamSessions: 2,  notes: 'Solid defensively. Aerial strength above average for age. Needs more first-team exposure.' },
     { id: 16, name: 'Meg Farr',        age: 21, pos: 'RW',  gpsAvg: 76, devRating: 4, potential: 'High',   contract: 'Pro contract — Year 1',        appearances: 19, goals: 6,  assists: 10, firstTeamSessions: 8,  notes: 'Winger with excellent delivery. Pushing for first-team squad place next season.' },
     { id: 17, name: 'Tara Flynn',      age: 20, pos: 'DM',  gpsAvg: 69, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 2',            appearances: 14, goals: 0,  assists: 3,  firstTeamSessions: 3,  notes: 'Reads the game well. Lacks top-end pace. Potential loan candidate Summer 2026.' },
+    { id: 24, name: 'Erin Doyle',      age: 19, pos: 'CB',  gpsAvg: 73, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 2',            appearances: 16, goals: 0,  assists: 1,  firstTeamSessions: 3,  notes: 'Dependable defender. Strong communicator. Building toward first-team training invites.' },
+    { id: 25, name: 'Faye Sutton',     age: 20, pos: 'AM',  gpsAvg: 75, devRating: 4, potential: 'High',   contract: 'Pro contract — Year 1',        appearances: 18, goals: 5,  assists: 7,  firstTeamSessions: 7,  notes: 'Creative number 10. Set-piece delivery a real asset. Pushing for a first-team bench spot.' },
+    { id: 26, name: 'Connie Pryce',    age: 21, pos: 'GK',  gpsAvg: 68, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 2',            appearances: 12, goals: 0,  assists: 0,  firstTeamSessions: 2,  notes: 'Reliable understudy. Loan to a WSL 2 side recommended for regular minutes.' },
+    { id: 27, name: 'Megan Royce',     age: 19, pos: 'ST',  gpsAvg: 77, devRating: 4, potential: 'High',   contract: 'Scholar → Pro offer pending', appearances: 17, goals: 11, assists: 3,  firstTeamSessions: 9,  notes: 'Prolific in U21 WSL. Trains with the first team midweek. Ready for dual reg consideration.' },
+    { id: 28, name: 'Lily Garrett',    age: 20, pos: 'LB',  gpsAvg: 72, devRating: 3, potential: 'Medium', contract: 'Scholar — Year 1',            appearances: 14, goals: 1,  assists: 5,  firstTeamSessions: 4,  notes: 'Attacking full-back. Good engine. Defensive 1v1s the next development priority.' },
   ]
 
   const potentialColor = (p: string) =>
@@ -1872,7 +2025,7 @@ const AcademyView = ({ club: _club }: { club: WomensClub }) => {
       <SectionHeader title="Academy & Player Pathway" subtitle="FA Girls' Centre of Excellence · U18 · U21 · First Team Bridge" icon="🎓" />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Academy Players" value="34"   sub="U18: 10 · U21: 7 · Scholars: 27" color="pink"  />
+        <StatCard label="Academy Players" value="40"   sub="U18: 16 · U21: 12 · Scholars: 28" color="pink"  />
         <StatCard label="Elite Potential" value="2"    sub="Niamh O'Brien · Sasha Kone"       color="purple" />
         <StatCard label="First Team Ready" value="3"   sub="Dual reg candidates this window"  color="green"  />
         <StatCard label="CoE Compliance"  value="87%"  sub="3 criteria outstanding"           color="amber"  />
@@ -2687,59 +2840,12 @@ const AnalyticsView = ({ club: _club }: { club: WomensClub }) => {
 
 // ─── TRANSFERS VIEW ──────────────────────────────────────────────────────────
 const TransfersView = ({ club }: { club: WomensClub }) => {
-  const [activeTab, setActiveTab] = useState<'tracker' | 'researcher'>('tracker');
-  const [step, setStep] = useState<1|2|3|4>(1);
-  const [position, setPosition] = useState('');
-  const [maxSalary, setMaxSalary] = useState('');
-  const [style, setStyle] = useState('');
-  const [league, setLeague] = useState('WSL');
-  const [results, setResults] = useState<string|null>(null);
-  const [loading, setLoading] = useState(false);
   const FSR_HEADROOM = club.fsrHeadroom ?? 380000;
   const fmt2 = (n: number) => new Intl.NumberFormat('en-GB',{style:'currency',currency:'GBP',maximumFractionDigits:0}).format(n);
 
-  const runSearch = async () => {
-    setLoading(true); setResults(null);
-    try {
-      const response = await fetch('/api/ai/womens', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-          messages: [{ role: 'user', content: `You are a women's football transfer analyst for ${club.name}, a ${club.league} club.
-Search criteria: Position: ${position}. Max salary: £${maxSalary}/yr. Style: ${style}. Target leagues: ${league}. FSR headroom: ${fmt2(FSR_HEADROOM)}.
-Generate 5 player profiles. For each: **[Name]** — [Club], [Nationality]. Age, position, est salary, FSR impact, style match (2 sentences), key stats, availability, Lumio Scout rating (6.8–8.4), recommended action.
-After profiles add **## FSR IMPACT SUMMARY** table and **## RECOMMENDED SIGNING** paragraph.
-Use plausible fictional names — no real WSL players. WSL salary range £28k–£120k. Format with markdown.` }]
-        })
-      });
-      const data = await response.json();
-      setResults(data.content?.map((b:{type:string;text?:string})=>b.type==='text'?b.text:'').join('')||'No results.');
-      setStep(4);
-    } catch { setResults('Error connecting to AI.'); }
-    setLoading(false);
-  };
-
-  const renderMd = (text: string) => text.split('\n').map((line,i) => {
-    if (line.startsWith('## ')||line.startsWith('**## ')) return <h3 key={i} className="text-sm font-bold text-white mt-6 mb-2 border-b border-gray-800 pb-1">{line.replace(/\*\*?##\s?/g,'')}</h3>;
-    if (line.startsWith('**')&&line.endsWith('**')) return <p key={i} className="text-sm font-bold text-pink-400 mt-4 mb-1">{line.replace(/\*\*/g,'')}</p>;
-    if (line.startsWith('- ')) return <div key={i} className="flex items-start gap-2 text-xs text-gray-300 mb-1 ml-2"><span className="text-pink-500 mt-0.5 flex-shrink-0">•</span><span>{line.replace('- ','')}</span></div>;
-    if (line.trim()==='') return <div key={i} className="h-1"/>;
-    return <p key={i} className="text-xs text-gray-300 mb-1 leading-relaxed">{line}</p>;
-  });
-
   return (
     <div>
-      <SectionHeader title="Transfers" subtitle="WSL market · FSR-gated · AI Transfer Researcher" icon="🔁" />
-      <div className="flex gap-1 mb-6 border-b border-gray-800">
-        {[{id:'tracker',label:'Transfer Tracker',icon:'📋'},{id:'researcher',label:'AI Transfer Researcher',icon:'🤖'}].map(t=>(
-          <button key={t.id} onClick={()=>setActiveTab(t.id as 'tracker'|'researcher')}
-            className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px ${activeTab===t.id?'border-pink-500 text-pink-400':'border-transparent text-gray-500 hover:text-gray-300'}`}>
-            <span>{t.icon}</span>{t.label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab==='tracker'&&(
+      <SectionHeader title="Transfers" subtitle="WSL market · FSR-gated transfer tracker" icon="🔁" />
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard label="FSR Headroom" value={fmt2(FSR_HEADROOM)} sub="Available for new signings" color="green" />
@@ -2788,55 +2894,6 @@ Use plausible fictional names — no real WSL players. WSL salary range £28k–
             </div>
           </div>
         </div>
-      )}
-
-      {activeTab==='researcher'&&(
-        <div className="space-y-6">
-          <div className="bg-pink-600/10 border border-pink-600/30 rounded-xl p-4 flex items-center justify-between">
-            <div><p className="text-sm font-bold text-pink-400">FSR Headroom: {fmt2(FSR_HEADROOM)}</p><p className="text-xs text-gray-400 mt-0.5">All AI recommendations filtered to your FSR salary cap.</p></div>
-            <span className="text-2xl">🤖</span>
-          </div>
-          <div className="flex items-center gap-2 mb-2">
-            {[1,2,3,4].map(s=><div key={s} className="flex items-center gap-2"><div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${step>=s?'bg-pink-600 text-white':'bg-gray-800 text-gray-600'}`}>{s}</div>{s<4&&<div className={`h-px w-8 ${step>s?'bg-pink-600':'bg-gray-800'}`}/>}</div>)}
-            <span className="text-xs text-gray-500 ml-2">{step===1?'Position':step===2?'Budget & League':step===3?'Playing Style':'Results'}</span>
-          </div>
-          {step===1&&(
-            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-6">
-              <h3 className="text-sm font-bold text-white mb-1">Step 1 — Position</h3><p className="text-xs text-gray-500 mb-4">Select the primary position.</p>
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-4">{['GK','CB','LB','RB','CM','DM','AM','LW','RW','FW','SS','Any'].map(p=><button key={p} onClick={()=>setPosition(p)} className={`py-2 rounded-lg text-xs font-semibold ${position===p?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{p}</button>)}</div>
-              <button onClick={()=>{if(position)setStep(2)}} disabled={!position} className="px-5 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white">Next →</button>
-            </div>
-          )}
-          {step===2&&(
-            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-6">
-              <h3 className="text-sm font-bold text-white mb-1">Step 2 — Budget &amp; League</h3><p className="text-xs text-gray-500 mb-4">FSR headroom: {fmt2(FSR_HEADROOM)}</p>
-              <div className="space-y-4">
-                <div><label className="text-xs text-gray-400 mb-1 block">Max annual salary (£)</label><input type="number" value={maxSalary} onChange={e=>setMaxSalary(e.target.value)} placeholder="e.g. 65000" className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-pink-500"/>{maxSalary&&Number(maxSalary)>FSR_HEADROOM&&<p className="text-xs text-red-400 mt-1">⚠ Exceeds FSR headroom</p>}</div>
-                <div><label className="text-xs text-gray-400 mb-2 block">Target league(s)</label><div className="flex flex-wrap gap-2">{['WSL','WSL 2','NWSL','D1 Arkema','Frauen-Bundesliga','Free agents only','Any'].map(lg=><button key={lg} onClick={()=>setLeague(lg)} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${league===lg?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{lg}</button>)}</div></div>
-              </div>
-              <div className="flex gap-2 mt-5"><button onClick={()=>setStep(1)} className="px-4 py-2 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">← Back</button><button onClick={()=>{if(maxSalary&&league)setStep(3)}} disabled={!maxSalary||!league} className="px-5 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white">Next →</button></div>
-            </div>
-          )}
-          {step===3&&(
-            <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-6">
-              <h3 className="text-sm font-bold text-white mb-1">Step 3 — Playing Style</h3><p className="text-xs text-gray-500 mb-4">Claude will match this against available players.</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">{['High press — engine','Ball-playing — technical','Physical — aerial','Pace — in behind','Creative — final third','Defensive — positional','Box-to-box — hybrid','Set piece specialist','Leadership — experienced'].map(s2=><button key={s2} onClick={()=>setStyle(s2)} className={`py-2 px-3 rounded-lg text-xs text-left font-medium ${style===s2?'bg-pink-600 text-white':'bg-gray-800 text-gray-400 hover:text-white'}`}>{s2}</button>)}</div>
-              <div className="mb-4"><label className="text-xs text-gray-400 mb-1 block">Or describe in your own words</label><input type="text" value={style} onChange={e=>setStyle(e.target.value)} placeholder="e.g. Left-footed CB who can carry ball" className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white w-full focus:outline-none focus:border-pink-500"/></div>
-              <div className="flex gap-2"><button onClick={()=>setStep(2)} className="px-4 py-2 rounded-lg text-xs bg-gray-800 text-gray-400 hover:text-white">← Back</button><button onClick={runSearch} disabled={!style||loading} className="px-6 py-2 rounded-lg text-xs font-bold bg-pink-600 hover:bg-pink-500 disabled:bg-gray-800 disabled:text-gray-600 text-white flex items-center gap-2">{loading?<><span className="animate-spin inline-block">⟳</span> Searching...</>:'🤖 Find Players →'}</button></div>
-            </div>
-          )}
-          {step===4&&results&&(
-            <div className="space-y-4">
-              <div className="flex items-center justify-between"><div className="flex items-center gap-2"><span className="text-sm font-bold text-white">AI Results</span><span className="text-[10px] px-2 py-0.5 rounded bg-pink-600/20 text-pink-400 border border-pink-600/30">{position} · {fmt2(Number(maxSalary))}/yr max · {league}</span></div><button onClick={()=>{setStep(1);setPosition('');setMaxSalary('');setStyle('');setLeague('WSL');setResults(null)}} className="text-xs text-gray-500 hover:text-gray-300">↺ New search</button></div>
-              <div className="bg-[#0D1117] border border-pink-600/30 rounded-xl p-6">
-                <div className="flex items-center gap-2 mb-4"><span className="text-pink-400 font-bold text-xs">🤖 Lumio AI Transfer Researcher</span><span className="text-[10px] text-gray-600">· FSR-filtered · {club.league}</span></div>
-                <div>{renderMd(results)}</div>
-                <div className="mt-5 pt-4 border-t border-gray-800 flex items-center justify-between"><span className="text-[10px] text-gray-600">Powered by Claude · WSL database · FSR headroom: {fmt2(FSR_HEADROOM)}</span><button className="text-xs text-pink-400 hover:text-pink-300">Export shortlist →</button></div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
@@ -3393,6 +3450,7 @@ function WomensGPSHeatmapsView({ club }: { club: WomensClub }) {
       trainingSessions={WOMENS_HEATMAP_TRAINING}
       matchDayLabel="MATCH"
       comparisonMode="four"
+      tabbed
       includeWelfareSection
       welfareLabel="Welfare & Load Monitoring (Karen Carney Review)"
     />
@@ -3418,6 +3476,18 @@ const GPS_PLAYERS: GPSPlayer[] = [
   { name: 'Megan Hughes',    pos: 'DM', distance: 10.9, hsr: 720, sprints: 18, topSpeed: 27.6, load: 770,  acwr: 1.01, status: 'On',         zones: { walk: 4.6, jog: 3.5, run: 1.9, sprint: 0.9 }, accels: 31, decels: 34 },
   { name: 'Sophie Lawson',   pos: 'RB', distance: 0,    hsr: 0,   sprints: 0,  topSpeed: 0,    load: 0,    acwr: 0,    status: 'On Leave',   zones: { walk: 0,   jog: 0,   run: 0,   sprint: 0   }, accels: 0,  decels: 0  },
   { name: 'Tilly Brooks',    pos: 'LW', distance: 9.8,  hsr: 760, sprints: 24, topSpeed: 30.1, load: 1010, acwr: 1.38, status: 'High',       zones: { walk: 3.9, jog: 3.0, run: 1.9, sprint: 1.0 }, accels: 41, decels: 45 },
+  { name: 'Ellie Hayes',     pos: 'GK', distance: 5.1,  hsr: 110, sprints: 3,  topSpeed: 17.6, load: 380,  acwr: 0.91, status: 'On',         zones: { walk: 3.3, jog: 1.3, run: 0.4, sprint: 0.1 }, accels: 5,  decels: 4  },
+  { name: 'Bea Chen',        pos: 'CB', distance: 8.9,  hsr: 560, sprints: 12, topSpeed: 27.4, load: 690,  acwr: 1.02, status: 'On',         zones: { walk: 4.4, jog: 2.7, run: 1.3, sprint: 0.5 }, accels: 26, decels: 29 },
+  { name: 'Tessa Foley',     pos: 'LB', distance: 9.6,  hsr: 700, sprints: 19, topSpeed: 29.0, load: 760,  acwr: 1.06, status: 'On',         zones: { walk: 4.2, jog: 3.0, run: 1.7, sprint: 0.7 }, accels: 33, decels: 36 },
+  { name: 'Lucy Brennan',    pos: 'CB', distance: 9.1,  hsr: 600, sprints: 13, topSpeed: 27.9, load: 710,  acwr: 1.03, status: 'On',         zones: { walk: 4.5, jog: 2.8, run: 1.3, sprint: 0.5 }, accels: 27, decels: 30 },
+  { name: 'Maya Reid',       pos: 'CB', distance: 9.0,  hsr: 580, sprints: 12, topSpeed: 27.5, load: 700,  acwr: 1.00, status: 'On',         zones: { walk: 4.5, jog: 2.7, run: 1.3, sprint: 0.5 }, accels: 25, decels: 28 },
+  { name: 'Emily Zhang',     pos: 'CM', distance: 11.0, hsr: 840, sprints: 21, topSpeed: 28.9, load: 1120, acwr: 1.45, status: 'High',       zones: { walk: 4.7, jog: 3.5, run: 2.0, sprint: 0.8 }, accels: 37, decels: 40 },
+  { name: 'Lucy Whitmore',   pos: 'CM', distance: 10.7, hsr: 800, sprints: 19, topSpeed: 28.6, load: 820,  acwr: 1.05, status: 'On',         zones: { walk: 4.6, jog: 3.4, run: 1.9, sprint: 0.8 }, accels: 35, decels: 38 },
+  { name: 'Sasha Davies',    pos: 'CM', distance: 4.2,  hsr: 180, sprints: 4,  topSpeed: 21.5, load: 300,  acwr: 0.55, status: 'Restricted', zones: { walk: 2.8, jog: 1.1, run: 0.3, sprint: 0.0 }, accels: 9,  decels: 10 },
+  { name: 'Jess Tilley',     pos: 'RW', distance: 10.4, hsr: 820, sprints: 25, topSpeed: 30.3, load: 900,  acwr: 1.18, status: 'On',         zones: { walk: 4.0, jog: 3.1, run: 2.2, sprint: 1.1 }, accels: 42, decels: 46 },
+  { name: 'Zara Williams',   pos: 'ST', distance: 10.0, hsr: 770, sprints: 27, topSpeed: 31.0, load: 800,  acwr: 1.10, status: 'On',         zones: { walk: 4.1, jog: 3.0, run: 1.8, sprint: 1.1 }, accels: 43, decels: 47 },
+  { name: 'Dani Morris',     pos: 'LW', distance: 9.9,  hsr: 760, sprints: 24, topSpeed: 30.2, load: 980,  acwr: 1.33, status: 'High',       zones: { walk: 3.9, jog: 3.0, run: 1.9, sprint: 1.0 }, accels: 40, decels: 44 },
+  { name: 'Aria Rowe',       pos: 'ST', distance: 9.7,  hsr: 740, sprints: 23, topSpeed: 30.0, load: 780,  acwr: 1.09, status: 'On',         zones: { walk: 4.1, jog: 2.9, run: 1.7, sprint: 1.0 }, accels: 39, decels: 42 },
 ]
 
 const GPSLoadView = ({ club }: { club: WomensClub }) => {
@@ -3461,7 +3531,7 @@ const GPSLoadView = ({ club }: { club: WomensClub }) => {
         <StatCard label="Sprint Count"       value={sprintCount}        sub="Squad total · session"   color="amber"  />
         <StatCard label="High Load Count"    value={highLoad}           sub="ACWR > 1.3"              color="amber"  />
         <StatCard label="Restricted Players" value={restricted}         sub="RTP + on leave"          color="red"    />
-        <StatCard label="Devices Active"     value="9 / 10"             sub="JOHAN vests · 1 charging" color="green"  />
+        <StatCard label="Devices Active"     value="21 / 22"            sub="JOHAN vests · 1 charging" color="green"  />
       </div>
 
       {/* TABS */}
@@ -3513,7 +3583,7 @@ const GPSSessionOverview = ({ players, phase }: { players: GPSPlayer[]; phase: {
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
         <div className="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
           <h3 className="text-sm font-bold text-white">Squad — Session Output</h3>
-          <span className="text-[10px] text-gray-500">10 players · 9 outfield active · 1 on leave</span>
+          <span className="text-[10px] text-gray-500">22 players · 20 outfield active · 2 unavailable</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -4484,23 +4554,239 @@ const WomensClubVisionView = ({ club }: { club: WomensClub }) => {
 }
 
 // ─── STAFF DIRECTORY VIEW ─────────────────────────────────────────────────────
-const StaffDirectoryView = () => (
-  <div>
-    <SectionHeader title="Staff Directory" subtitle="Club personnel and contacts" icon="📋" />
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
-        <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-          <th className="text-left p-3">Name</th><th className="text-left p-3">Role</th><th className="text-left p-3">Dept</th><th className="text-left p-3">Email</th><th className="text-left p-3">Start</th>
-        </tr></thead>
-        <tbody>
-          {[{n:'Sarah Frost',r:'Head Coach',d:'Football',e:'s.frost@oakridge.com',s:'Aug 2022'},{n:'Kate Brennan',r:'Club Director',d:'Executive',e:'k.brennan@oakridge.com',s:'Jan 2020'},{n:'Dr Anna Reid',r:'Psychologist',d:'Welfare',e:'a.reid@oakridge.com',s:'Sep 2023'},{n:'Mel Hooper',r:'Head Physio',d:'Medical',e:'m.hooper@oakridge.com',s:'Mar 2021'},{n:'Jordan Clarke',r:'Commercial Dir',d:'Commercial',e:'j.clarke@oakridge.com',s:'Jun 2023'},{n:'Nina Walsh',r:'Welfare Coord',d:'Welfare',e:'n.walsh@oakridge.com',s:'Jan 2024'},{n:'Tom Reed',r:'Analyst',d:'Football',e:'t.reed@oakridge.com',s:'Aug 2024'}].map((s: {n:string;r:string;d:string;e:string;s:string}, i: number) => (
-            <tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{s.n}</td><td className="p-3 text-gray-400 text-xs">{s.r}</td><td className="p-3"><span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-400">{s.d}</span></td><td className="p-3 text-gray-500 text-xs">{s.e}</td><td className="p-3 text-gray-500 text-xs">{s.s}</td></tr>
-          ))}
-        </tbody>
-      </table>
+const StaffDirectoryView = () => {
+  const [selected, setSelected] = useState<string | null>(null)
+  const staff = WOMENS_STAFF
+  const sel = staff.find(s => s.name === selected) ?? null
+  return (
+    <div>
+      <SectionHeader title="Staff Directory" subtitle={`Club personnel and contacts · ${staff.length} staff`} icon="📋" />
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
+            <th className="text-left p-3">Name</th><th className="text-left p-3">Role</th><th className="text-left p-3">Dept</th><th className="text-left p-3">Email</th><th className="text-left p-3">Phone</th><th className="text-left p-3">Start</th>
+          </tr></thead>
+          <tbody>
+            {staff.map(s => {
+              const color = DEPT_COLOR[s.dept]
+              return (
+                <tr key={s.name} onClick={() => setSelected(s.name)} className="border-b border-gray-800/50 hover:bg-pink-600/5 cursor-pointer transition-colors">
+                  <td className="p-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ backgroundColor: `${color}22`, color }}>{s.initials}</span>
+                      <span className="text-gray-200 font-medium">{s.name}</span>
+                    </div>
+                  </td>
+                  <td className="p-3 text-gray-400 text-xs">{s.role}</td>
+                  <td className="p-3"><span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: `${color}1f`, color }}>{s.dept === 'DoF' ? 'Football' : s.dept}</span></td>
+                  <td className="p-3 text-gray-500 text-xs">{s.email}</td>
+                  <td className="p-3 text-gray-500 text-xs">{s.phone}</td>
+                  <td className="p-3 text-gray-500 text-xs">{s.start}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[11px] text-gray-600 mt-2">Click a staff member for full contact details.</p>
+      {sel && <StaffCardModal s={sel} onClose={() => setSelected(null)} />}
     </div>
-  </div>
-)
+  )
+}
+
+function StaffCardModal({ s, onClose }: { s: typeof WOMENS_STAFF[number]; onClose: () => void }) {
+  const color = DEPT_COLOR[s.dept]
+  const firstName = s.name.replace('Dr ', '').split(' ')[0]
+  const rows: Array<[string, string]> = [
+    ['Email', s.email],
+    ['Phone', s.phone],
+    ['Department', s.dept === 'DoF' ? 'Football (DoF)' : s.dept],
+    ['Reports to', s.reportsTo === 'Board' ? 'Club Board' : s.reportsTo],
+    ['Based', s.location],
+    ['At club since', s.start],
+    ['Speciality', s.speciality],
+  ]
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div className="w-full max-w-md rounded-2xl border bg-[#0D1117] overflow-hidden" style={{ borderColor: `${color}55` }} onClick={(e) => e.stopPropagation()}>
+        <div className="p-5 flex items-start gap-4" style={{ background: `linear-gradient(135deg, ${color}22, transparent)` }}>
+          <span className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shrink-0" style={{ backgroundColor: `${color}26`, color, border: `1px solid ${color}55` }}>{s.initials}</span>
+          <div className="min-w-0 flex-1">
+            <div className="text-lg font-bold text-white">{s.name}</div>
+            <div className="text-sm" style={{ color }}>{s.role}</div>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: `${color}1f`, color }}>{s.dept === 'DoF' ? 'Football' : s.dept}</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: s.status === 'In today' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)', color: s.status === 'In today' ? '#4ADE80' : '#FBBF24' }}>{s.status}</span>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-500 hover:text-white text-lg leading-none">✕</button>
+        </div>
+        <div className="px-5 py-4 space-y-2">
+          {rows.map(([k, v]) => (
+            <div key={k} className="flex items-start justify-between gap-3 text-xs">
+              <span className="text-gray-500 shrink-0">{k}</span>
+              <span className="text-gray-200 text-right">{v}</span>
+            </div>
+          ))}
+          <p className="pt-2 text-xs leading-relaxed text-gray-400 border-t border-gray-800 mt-2">{s.bio}</p>
+        </div>
+        <div className="px-5 py-3 flex items-center justify-end gap-2 border-t border-gray-800">
+          <a href={`mailto:${s.email}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white" style={{ backgroundColor: color }}>Email {firstName}</a>
+          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-xs text-gray-400 hover:text-white">Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── FACILITIES — STADIUM & FACILITIES ────────────────────────────────────────
+const StadiumFacilitiesView = ({ club }: { club: WomensClub }) => {
+  const stands = [
+    { name: 'North Stand (Main)', cap: 2400, covered: 'Yes', acc: '12 WAV', notes: 'Hospitality boxes, press, gantry' },
+    { name: 'East Terrace',       cap: 1600, covered: 'Part', acc: '6 WAV',  notes: 'Home supporters, family zone' },
+    { name: 'South Stand',        cap: 1500, covered: 'Yes', acc: '6 WAV',  notes: 'Away allocation + neutral' },
+    { name: 'West Terrace',       cap: 1000, covered: 'No',  acc: '—',      notes: 'Standing, safe-standing rail' },
+  ]
+  const facilities = [
+    { f: 'Home changing room', s: 'Refurbished 2025' }, { f: 'Away changing room', s: 'Compliant' },
+    { f: 'Match officials room', s: 'Compliant' }, { f: 'Medical / treatment room', s: 'Compliant · defib on site' },
+    { f: 'Media & press room', s: '40 seats · broadcast feed' }, { f: 'Hospitality suite', s: '8 boxes · 120 covers' },
+    { f: 'Club shop', s: 'Matchday + online' }, { f: 'Family fan zone', s: 'Open 2h pre-KO' },
+  ]
+  return (
+    <div>
+      <SectionHeader title="Stadium & Facilities" subtitle={`${club.stadium} · capacity ${club.capacity.toLocaleString()}`} icon="🏟️" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Capacity" value={club.capacity.toLocaleString()} sub="All seated + safe-standing" color="pink" />
+        <StatCard label="Stands" value="4" sub="2 covered · 2 terrace" color="blue" />
+        <StatCard label="Hospitality" value="8" sub="Boxes · 120 covers" color="amber" />
+        <StatCard label="Accessibility" value="24" sub="WAV spaces · Changing Places" color="teal" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Stadium Overview</h3>
+          {[['Pitch dimensions','105m × 68m (FA standard)'],['Floodlights','LED · 800 lux (broadcast)'],['Undersoil heating','No — frost covers held'],['Big screen','Yes · 24m²'],['PA / scoreboard','Tested matchday-1'],['Ground grading','FA Women’s Tier 2']].map(([l,v])=>(
+            <div key={l} className="flex justify-between py-1.5 border-b border-gray-800/50 last:border-0"><span className="text-xs text-gray-500">{l}</span><span className="text-xs text-gray-200 font-medium">{v}</span></div>
+          ))}
+        </div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Safety & Compliance</h3>
+          {[['Safety certificate','Valid to Aug 2027','green'],['Stewarding','SGSA-compliant · 20 stewards','green'],['Last ground inspection','12 Mar 2026 — passed','green'],['Crowd doctor + ambulance','Confirmed each matchday','green'],['Evacuation plan','Reviewed Feb 2026','amber']].map(([l,v,c])=>(
+            <div key={l} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 last:border-0"><span className="text-xs text-gray-400">{l}</span><span className={`text-xs font-medium ${c==='green'?'text-green-400':'text-amber-400'}`}>{v}</span></div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Stands</h3></div>
+        <table className="w-full text-sm"><thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Stand</th><th className="text-left p-3">Capacity</th><th className="text-left p-3">Covered</th><th className="text-left p-3">Accessibility</th><th className="text-left p-3">Notes</th></tr></thead><tbody>
+          {stands.map((r,i)=>(<tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.name}</td><td className="p-3 text-gray-300 text-xs">{r.cap.toLocaleString()}</td><td className="p-3 text-xs"><span className={`px-2 py-0.5 rounded ${r.covered==='Yes'?'bg-green-600/20 text-green-400':r.covered==='Part'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-400'}`}>{r.covered}</span></td><td className="p-3 text-gray-400 text-xs">{r.acc}</td><td className="p-3 text-gray-500 text-xs">{r.notes}</td></tr>))}
+        </tbody></table>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Matchday Facilities</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {facilities.map(x=>(<div key={x.f} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-xs text-white font-medium">{x.f}</div><div className="text-[10px] text-green-400 mt-0.5">{x.s}</div></div>))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── FACILITIES — PITCH & GROUNDS ─────────────────────────────────────────────
+const PitchGroundsView = () => {
+  const maint = [
+    { t: 'Mowing (28mm)', freq: '3× / week', last: 'Today 06:30', next: 'Wed', s: 'green' },
+    { t: 'Line marking', freq: 'Matchday-1', last: 'Fri', next: 'Next home', s: 'green' },
+    { t: 'Aeration (verti-drain)', freq: 'Monthly', last: '02 Apr', next: '02 May', s: 'green' },
+    { t: 'Fertilisation', freq: '6-weekly', last: '20 Mar', next: '01 May', s: 'amber' },
+    { t: 'Divoting / repairs', freq: 'Post-match', last: 'Sun', next: 'Post next match', s: 'green' },
+    { t: 'Deep scarification', freq: 'Off-season', last: 'Jul 2025', next: 'Jun 2026', s: 'amber' },
+  ]
+  return (
+    <div>
+      <SectionHeader title="Pitch & Grounds" subtitle="Oakridge Stadium pitch · GMA performance quality standard" icon="🌱" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="GMA Rating" value="8.6 / 10" sub="Performance Quality Standard" color="green" />
+        <StatCard label="Mowing Height" value="28 mm" sub="Match length" color="teal" />
+        <StatCard label="Matches Since Reno" value="14" sub="Hybrid relay Jul 2025" color="blue" />
+        <StatCard label="Next Renovation" value="Jun 2026" sub="End of season" color="amber" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Pitch Specification</h3>
+          {[['Surface','FibreLink reinforced hybrid (95% natural)'],['Drainage','Sand-band · primary + lateral'],['Irrigation','Pop-up automated · 18 heads'],['Soil','USGA rootzone'],['Last GMA assessment','08 Apr 2026 — 8.6/10'],['Condition','Excellent · even cover']].map(([l,v])=>(
+            <div key={l} className="flex justify-between py-1.5 border-b border-gray-800/50 last:border-0"><span className="text-xs text-gray-500">{l}</span><span className="text-xs text-gray-200 font-medium text-right">{v}</span></div>
+          ))}
+        </div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <h3 className="text-sm font-bold text-white mb-3">Usage & Conditions</h3>
+          {[['Matches this month','3 (2 home · 1 cup)','green'],['Training on stadium pitch','Captain’s run only','green'],['Weather risk (7 day)','Low — light rain Thu','green'],['Frost cover','On standby','amber'],['Pitch inspection','Matchday-1, 16:00','green']].map(([l,v,c])=>(
+            <div key={l} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 last:border-0"><span className="text-xs text-gray-400">{l}</span><span className={`text-xs font-medium ${c==='green'?'text-green-400':'text-amber-400'}`}>{v}</span></div>
+          ))}
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Maintenance Schedule</h3></div>
+        <table className="w-full text-sm"><thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Task</th><th className="text-left p-3">Frequency</th><th className="text-left p-3">Last Done</th><th className="text-left p-3">Next Due</th><th className="text-left p-3">Status</th></tr></thead><tbody>
+          {maint.map((r,i)=>(<tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-200 font-medium">{r.t}</td><td className="p-3 text-gray-400 text-xs">{r.freq}</td><td className="p-3 text-gray-400 text-xs">{r.last}</td><td className="p-3 text-gray-300 text-xs">{r.next}</td><td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded ${r.s==='green'?'bg-green-600/20 text-green-400':'bg-amber-600/20 text-amber-400'}`}>{r.s==='green'?'On track':'Due soon'}</span></td></tr>))}
+        </tbody></table>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Grounds Team & Equipment</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[['Head Groundsperson','Dave Pryce · IOG Level 3'],['Assistant','1 FT + 2 matchday'],['Mowers','2× cylinder · 1× rotary'],['Verti-drain / sprayer','On site']].map(([a,b])=>(<div key={a} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-xs text-white font-medium">{a}</div><div className="text-[10px] text-gray-500 mt-0.5">{b}</div></div>))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── FACILITIES — TRAINING GROUND ─────────────────────────────────────────────
+const TrainingGroundView = () => {
+  const bookings = [
+    { time: '08:00', team: 'First team — recovery', pitch: 'Grass 1', s: 'In progress' },
+    { time: '09:30', team: 'First team — main session', pitch: 'Grass 1 (GPS)', s: 'Scheduled' },
+    { time: '11:00', team: 'Goalkeepers', pitch: '3G area', s: 'Scheduled' },
+    { time: '13:00', team: 'U21 development', pitch: 'Grass 2', s: 'Scheduled' },
+    { time: '16:00', team: 'U18 academy', pitch: 'Grass 3 (GPS)', s: 'Scheduled' },
+    { time: '18:00', team: 'Community / CoE', pitch: '3G area', s: 'Booked' },
+  ]
+  const fac = [
+    { f: 'Full-size grass pitches', s: '4 · 2 GPS-enabled' }, { f: '3G / 4G surface', s: 'Floodlit · year-round' },
+    { f: 'Indoor dome', s: '60×40m · all-weather' }, { f: 'Gym & S&C suite', s: '24 stations · platforms' },
+    { f: 'Hydrotherapy & recovery', s: 'Pool · ice baths · compression' }, { f: 'Medical centre', s: 'Treatment · imaging referral' },
+    { f: 'Analysis suite', s: 'Edit bays · meeting room' }, { f: 'Education / classroom', s: 'Scholar programme' },
+  ]
+  return (
+    <div>
+      <SectionHeader title="Training Ground" subtitle="Oakridge Training Centre · first team + academy" icon="📍" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <StatCard label="Grass Pitches" value="4" sub="2 GPS-enabled" color="green" />
+        <StatCard label="All-Weather" value="2" sub="3G area + indoor dome" color="blue" />
+        <StatCard label="Gym Stations" value="24" sub="S&C + lifting platforms" color="pink" />
+        <StatCard label="Recovery Suite" value="Yes" sub="Pool · ice · compression" color="teal" />
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
+        <h3 className="text-sm font-bold text-white mb-3">Facilities</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {fac.map(x=>(<div key={x.f} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-xs text-white font-medium">{x.f}</div><div className="text-[10px] text-pink-400 mt-0.5">{x.s}</div></div>))}
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <div className="p-4 border-b border-gray-800 flex items-center justify-between"><h3 className="text-sm font-bold text-white">Today’s Pitch & Facility Bookings</h3><span className="text-[10px] text-gray-500">4 pitches · 1 dome</span></div>
+        <table className="w-full text-sm"><thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Time</th><th className="text-left p-3">Group</th><th className="text-left p-3">Pitch / Area</th><th className="text-left p-3">Status</th></tr></thead><tbody>
+          {bookings.map((r,i)=>(<tr key={i} className="border-b border-gray-800/50"><td className="p-3 text-gray-300 text-xs font-mono">{r.time}</td><td className="p-3 text-gray-200 font-medium">{r.team}</td><td className="p-3 text-gray-400 text-xs">{r.pitch}</td><td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded ${r.s==='In progress'?'bg-green-600/20 text-green-400':r.s==='Booked'?'bg-amber-600/20 text-amber-400':'bg-gray-800 text-gray-400'}`}>{r.s}</span></td></tr>))}
+        </tbody></table>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+        <h3 className="text-sm font-bold text-white mb-3">Site Information</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[['Address','Oakridge Training Centre, Lane End'],['Opened','2021 · expanded 2024'],['GPS coverage','JOHAN — 2 pitches'],['Access','First team + academy + CoE']].map(([a,b])=>(<div key={a} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-[10px] text-gray-500">{a}</div><div className="text-xs text-white font-medium mt-0.5">{b}</div></div>))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ─── SETTINGS VIEW ────────────────────────────────────────────────────────────
 const PlaceholderView = ({ title, icon }: { title: string; icon: string }) => (
@@ -5573,12 +5859,16 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
       case 'licensing':   return <ClubLicensingView />
       case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
-      case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="travel"   title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />
+      case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" hideTravelTab defaultTab="matchday" title="Club Operations" subtitle="Matchday ops · compliance · insurance · player satisfaction" />
       case 'kit-manager':  return <WomensKitManagerView />
-      case 'matchday-ops':
       case 'travel-logistics':
-      case 'pitch-grounds':
-      case 'training-ground':
+        // Demo workspace (womens-demo) runs the canned/simulated path; a
+        // real signed-in portal (isDemoShell === false) would run live.
+        return <TravelLogisticsView mode={session.isDemoShell !== false ? 'demo' : 'live'} />
+      case 'facilities':      return <StadiumFacilitiesView club={club} />
+      case 'pitch-grounds':   return <PitchGroundsView />
+      case 'training-ground': return <TrainingGroundView />
+      case 'matchday-ops':
         return (
           <div className="rounded-xl border border-gray-800 bg-[#0D1117] p-8 text-center">
             <p className="text-sm text-gray-400">Coming soon — this module is part of the Operations &amp; Facilities buildout.</p>
@@ -6135,3 +6425,17 @@ function WomensMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

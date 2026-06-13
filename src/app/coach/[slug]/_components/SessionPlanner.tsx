@@ -15,6 +15,9 @@ import {
 } from '../_lib/coach-data'
 import { getSettings } from '../_lib/settings-store'
 import { getPlans, removePlan, toggleDone, subscribe, type PlannedSession } from '../_lib/session-plan'
+import { getReviews, getReview, subscribe as subscribeReviews } from '../_lib/session-review'
+import { upsertLesson, removeLesson, lessonFromSession, sessionLessonId } from '../_lib/lessons-store'
+import { SessionReviewPanel } from './SessionReviewPanel'
 import { getAddedSessions, getStatusOverrides, getHiddenSessions, setStatus, clearStatus, deleteSession, subscribe as subscribeSessions } from '../_lib/sessions-store'
 import { useAllPlayers } from '../_lib/use-roster'
 import { NewSessionModal } from './NewSession'
@@ -98,7 +101,10 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   const [overrides, setOverrides] = useState<Record<string, TodaySession['status']>>({})
   const [hidden, setHidden] = useState<string[]>([])
   const [newOpen, setNewOpen] = useState(false)
+  const [showReview, setShowReview] = useState(false)
+  const [reviewedIds, setReviewedIds] = useState<string[]>([])
   useEffect(() => { const r = () => setPlans(getPlans()); r(); return subscribe(r) }, [])
+  useEffect(() => { const r = () => setReviewedIds(getReviews().map(x => x.sessionId)); r(); return subscribeReviews(r) }, [])
   useEffect(() => {
     const r = () => { setAdded(getAddedSessions()); setOverrides(getStatusOverrides()); setHidden(getHiddenSessions()) }
     r(); return subscribeSessions(r)
@@ -111,8 +117,18 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   const [selId, setSelId] = useState(defaultId)
   const sel = allSessions.find(s => s.id === selId) ?? allSessions[0]
   const isDone = sel.status === 'done'
+  const reviewed = reviewedIds.includes(sel.id)
+  useEffect(() => { setShowReview(false) }, [selId])
 
-  const markDone = () => { isDone ? clearStatus(sel.id) : setStatus(sel.id, 'done') }
+  const markDone = () => {
+    if (isDone) {
+      clearStatus(sel.id)
+      removeLesson(sessionLessonId(sel.id))   // un-marking removes the entry it created
+    } else {
+      setStatus(sel.id, 'done')
+      upsertLesson(lessonFromSession(sel, getReview(sel.id)?.review))  // auto-populate from the AI review if present
+    }
+  }
   const onDelete = () => {
     const next = allSessions.find(s => s.id !== sel.id)
     deleteSession(sel.id)
@@ -190,6 +206,10 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 7, flexWrap: 'wrap' }}>
             <button onClick={markDone} style={{ appearance: 'none', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: FONT, border: `1px solid ${isDone ? T.good : T.border}`, background: isDone ? T.good : 'transparent', color: isDone ? '#fff' : T.text2 }}>
               <Icon name="check" size={13} stroke={2} style={{ color: isDone ? '#fff' : T.good }} /> {isDone ? 'Session completed' : 'Mark session done'}
+            </button>
+            <button onClick={() => setShowReview(v => !v)} style={{ appearance: 'none', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: FONT, border: `1px solid ${showReview ? accent.border : T.border}`, background: showReview ? accent.dim : 'transparent', color: showReview ? accent.hex : T.text2 }}>
+              <Icon name="sparkles" size={13} stroke={1.8} style={{ color: accent.hex }} /> {showReview ? 'Hide review' : 'Review session'}
+              {reviewed && <span style={{ fontSize: 8.5, fontWeight: 700, color: T.good, background: 'rgba(111,168,138,0.18)', padding: '2px 5px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Reviewed</span>}
             </button>
             <Action icon="megaphone" label="Message" to="messages" />
             {player && <Action icon="arrow-up-right" label="Player" to="development" />}
@@ -280,6 +300,8 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
             </div>
           </div>
         </div>
+
+        {showReview && <SessionReviewPanel T={T} accent={accent} density={density} session={sel} />}
       </Card>
 
       {/* saved from lesson briefs — for the selected player only */}

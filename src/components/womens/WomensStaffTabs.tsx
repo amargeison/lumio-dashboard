@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { WOMENS_STAFF, DEPT_COLOR, type StaffDept } from '@/app/womens/[slug]/_lib/womens-staff-data'
 
 // ─── Avatar helper ──────────────────────────────────────────────────────────
 // CC0-licensed avatars via DiceBear "notionists" style by Bohdan Trotsenko
@@ -53,19 +54,9 @@ const C = {
   good:       '#22C55E',
 }
 
-// Department colour palette — drawn from WOMENS_ROLE_CONFIG accents.
-const DEPT_COLOR = {
-  Coaching:    '#BE185D', // pink-deep (matches portal accent)
-  DoF:         '#0EA5E9', // sky
-  Performance: '#22C55E', // green
-  Medical:     '#DC2626', // red
-  Welfare:     '#EF4444', // red-light
-  Operations:  '#F97316', // orange
-  Commercial:  '#F59E0B', // amber
-  Community:   '#22C55E', // green
-} as const
-
-type Dept = keyof typeof DEPT_COLOR
+// Dept colours + dept type come from the canonical staff roster
+// (womens-staff-data.ts) so the Staff Directory and these tabs match.
+type Dept = StaffDept
 
 interface ClubProps {
   name: string
@@ -95,16 +86,11 @@ type StaffToday = {
   rel: string
 }
 
-const STAFF_TODAY: StaffToday[] = [
-  { name: 'Sarah Frost',     role: 'Head Coach',           dept: 'Coaching',    status: 'In today', location: 'Training ground, 9am-6pm', rel: 'Reports to Director' },
-  { name: 'Helen Voss',      role: 'Director of Football', dept: 'DoF',         status: 'In today', location: 'Office + scouting day Thu', rel: 'Direct report' },
-  { name: 'Dr Anna Reid',    role: 'Club Doctor',          dept: 'Medical',     status: 'In today', location: 'Medical centre, 8am-5pm', rel: 'Medical dept' },
-  { name: 'Mel Hooper',      role: 'Head Physio',          dept: 'Medical',     status: 'In today', location: 'Medical centre, 8am-6pm', rel: 'Medical dept' },
-  { name: 'Nina Walsh',      role: 'Welfare Lead',         dept: 'Welfare',     status: 'In today', location: 'Office, 9am-5pm', rel: 'Reports to Director' },
-  { name: 'James Kerr',      role: 'Performance Analyst',  dept: 'Performance', status: 'In today', location: 'Analysis suite, 9am-6pm', rel: 'Performance dept' },
-  { name: 'Marcus Chen',     role: 'S&C Coach',            dept: 'Performance', status: 'In today', location: 'Gym, 7am-4pm', rel: 'Performance dept' },
-  { name: 'Jordan Clarke',   role: 'Commercial Director',  dept: 'Commercial',  status: 'Away',     location: 'Away — sponsor meetings London', rel: 'Reports to Director' },
-]
+// Derived from the canonical roster so Today always matches the Directory.
+const STAFF_TODAY: StaffToday[] = WOMENS_STAFF.map(s => ({
+  name: s.name, role: s.role, dept: s.dept, status: s.status, location: s.location,
+  rel: s.reportsTo === 'Board' ? 'Reports to Board' : `Reports to ${s.reportsTo.split(' ').slice(-1)[0]}`,
+}))
 
 const STAFF_FILTERS = ['All', 'In Today', 'Away', 'Coaching', 'Medical', 'Welfare', 'Performance', 'Commercial'] as const
 type StaffFilter = typeof STAFF_FILTERS[number]
@@ -214,107 +200,138 @@ type StaffNode = {
 //   first-team coaching staff (not modelled at this level of detail).
 function staffRoster(club: ClubProps): StaffNode[] {
   const board = `${club.name} Board`
+  // Derived from the canonical roster; reportsTo 'Board' maps to the board node.
+  const nodes: StaffNode[] = WOMENS_STAFF.map(s => ({
+    name: s.name, role: s.role, dept: s.dept, avatar: s.name,
+    reportsTo: s.reportsTo === 'Board' ? board : s.reportsTo,
+  }))
   return [
-    { name: board,           role: 'Owner / Board',        dept: 'Board',       avatar: board,           reportsTo: null },
-    { name: club.director,   role: 'Club Director',        dept: 'Operations',  avatar: club.director,   reportsTo: board },
-    { name: club.manager,    role: 'Head Coach',           dept: 'Coaching',    avatar: club.manager,    reportsTo: board },
-    { name: 'Helen Voss',    role: 'Director of Football', dept: 'DoF',         avatar: 'Helen Voss',    reportsTo: board },
-    { name: 'Mark Walker',   role: 'Head of Operations',   dept: 'Operations',  avatar: 'Mark Walker',   reportsTo: club.director },
-    { name: 'Jordan Clarke', role: 'Commercial Director',  dept: 'Commercial',  avatar: 'Jordan Clarke', reportsTo: club.director },
-    { name: 'Sasha Lin',     role: 'Head of Community',    dept: 'Community',   avatar: 'Sasha Lin',     reportsTo: club.director },
-    { name: 'Marcus Chen',   role: 'Head of Performance',  dept: 'Performance', avatar: 'Marcus Chen',   reportsTo: 'Helen Voss' },
-    { name: 'Dr Anna Reid',  role: 'Club Doctor',          dept: 'Medical',     avatar: 'Dr Anna Reid',  reportsTo: 'Helen Voss' },
-    { name: 'Nina Walsh',    role: 'Welfare Lead',         dept: 'Welfare',     avatar: 'Nina Walsh',    reportsTo: 'Helen Voss' },
+    { name: board, role: 'Owner / Board', dept: 'Board', avatar: board, reportsTo: null },
+    ...nodes,
   ]
 }
 
 function OrgChartTab({ club }: { club: ClubProps }) {
   const staff = staffRoster(club)
   const root = staff.find(s => s.reportsTo === null)
-  if (!root) return null
   const directReports = (boss: string) => staff.filter(s => s.reportsTo === boss)
-  const level1 = directReports(root.name)
 
-  const PersonCard = ({ node, size }: { node: StaffNode; size: 'mid' | 'leaf' }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const [paths, setPaths] = useState<string[]>([])
+  const [box, setBox] = useState({ w: 0, h: 0 })
+
+  // Measure box positions and draw connectors from real coordinates.
+  const compute = useCallback(() => {
+    const cont = containerRef.current
+    if (!cont) return
+    const cb = cont.getBoundingClientRect()
+    // A CSS `zoom`/transform ancestor (sport portals use zoom: 0.9) makes
+    // getBoundingClientRect return already-scaled pixels; the SVG (inside the
+    // same scaled context) scales them AGAIN. Normalise client coords back to
+    // the container's own layout units so the lines track the boxes exactly.
+    const scale = cont.offsetWidth ? cb.width / cont.offsetWidth : 1
+    const lx = (clientX: number) => Math.round((clientX - cb.left) / scale)
+    const ly = (clientY: number) => Math.round((clientY - cb.top) / scale)
+    const segs: string[] = []
+    for (const person of staff) {
+      const reports = staff.filter(s => s.reportsTo === person.name)
+      if (!reports.length) continue
+      const pe = cardRefs.current[person.name]
+      if (!pe) continue
+      const pr = pe.getBoundingClientRect()
+      const px = lx(pr.left + pr.width / 2)
+      const py = ly(pr.bottom)
+      const midY = py + 20
+      for (const rep of reports) {
+        const ce = cardRefs.current[rep.name]
+        if (!ce) continue
+        const cr = ce.getBoundingClientRect()
+        const cx = lx(cr.left + cr.width / 2)
+        const cy = ly(cr.top)
+        segs.push(`M ${px} ${py} L ${px} ${midY} L ${cx} ${midY} L ${cx} ${cy}`)
+      }
+    }
+    setBox({ w: cont.scrollWidth, h: cont.scrollHeight })
+    setPaths(segs)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [club])
+
+  useEffect(() => {
+    compute()
+    const r1 = requestAnimationFrame(() => requestAnimationFrame(compute)) // after layout settles
+    const t = window.setTimeout(compute, 450)
+    // re-measure once fonts finish loading (text reflow shifts box positions)
+    const fonts = (document as Document & { fonts?: { ready?: Promise<unknown> } }).fonts
+    fonts?.ready?.then(() => compute()).catch(() => {})
+    const ro = new ResizeObserver(compute)
+    if (containerRef.current) ro.observe(containerRef.current)
+    window.addEventListener('resize', compute)
+    return () => {
+      cancelAnimationFrame(r1); window.clearTimeout(t)
+      ro.disconnect(); window.removeEventListener('resize', compute)
+    }
+  }, [compute])
+
+  if (!root) return null
+
+  const Box = ({ node, depth }: { node: StaffNode; depth: number }) => {
     const colour = node.dept === 'Board' ? C.text5 : DEPT_COLOR[node.dept]
-    const isMid = size === 'mid'
-    const avatarPx = isMid ? 40 : 32
+    const isRoot = depth === 0
+    const emphasised = depth <= 1
+    const w = isRoot ? 184 : emphasised ? 168 : 150
+    const avatarPx = emphasised ? 38 : 30
+    const deptLabel = node.dept === 'Board' ? '' : node.dept === 'DoF' ? 'Football' : node.dept
     return (
       <div
-        className="rounded-xl text-center"
+        ref={el => { cardRefs.current[node.name] = el }}
         style={{
-          backgroundColor: isMid ? C.panelAlt : C.panelDeep,
-          border: `1px solid ${colour}${isMid ? '' : '40'}`,
-          padding: isMid ? 12 : 10,
-          width: isMid ? 168 : 132,
+          width: w, position: 'relative', zIndex: 1, borderRadius: 12, textAlign: 'center',
+          padding: isRoot ? 12 : emphasised ? 11 : 9,
+          background: emphasised ? C.panelAlt : C.panelDeep,
+          border: `${emphasised ? 2 : 1}px solid ${colour}${isRoot ? '' : emphasised ? 'aa' : '55'}`,
         }}
       >
-        <img
-          src={avatarUrl(node.avatar)}
-          alt=""
-          className="rounded-full mx-auto mb-1 object-cover"
-          style={{ width: avatarPx, height: avatarPx, backgroundColor: `${colour}20`, border: `1px solid ${colour}40` }}
-        />
-        <p className={isMid ? 'text-xs font-bold truncate' : 'text-xs font-medium truncate'} style={{ color: isMid ? C.text : C.text2 }}>{node.name}</p>
-        <p className="text-[10px] truncate" style={{ color: colour }}>{node.role}</p>
+        {isRoot
+          ? <div style={{ width: 46, height: 46, borderRadius: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, margin: '0 auto 8px', background: 'rgba(75,85,99,0.2)', color: C.text5 }}>{node.name.split(' ').map(x => x[0]).join('').slice(0, 3)}</div>
+          : <img src={avatarUrl(node.avatar)} alt="" onLoad={compute} style={{ width: avatarPx, height: avatarPx, borderRadius: 9999, objectFit: 'cover', margin: '0 auto 6px', display: 'block', background: `${colour}20`, border: `1px solid ${colour}55` }} />}
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: C.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{node.name}</div>
+        <div style={{ fontSize: 10.5, lineHeight: 1.2, marginTop: 2, color: isRoot ? C.text5 : colour }}>{node.role}{deptLabel ? ` · ${deptLabel}` : ''}</div>
       </div>
     )
   }
 
+  // Each node is a centred column: its box above a row of its children's
+  // columns. Connector lines are an SVG overlay drawn from measured positions.
+  const Node = ({ node, depth }: { node: StaffNode; depth: number }) => {
+    const reports = directReports(node.name)
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto' }}>
+        <Box node={node} depth={depth} />
+        {reports.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, marginTop: 40 }}>
+            {reports.map(rep => <Node key={rep.name} node={rep} depth={depth + 1} />)}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const depts = Array.from(new Set(staff.filter(s => s.dept !== 'Board').map(s => s.dept)))
+
   return (
     <div>
       <h2 className="text-xl font-black mb-6" style={{ color: C.text }}>Club Organisation</h2>
-
-      {/* Root — Owner / Board */}
-      <div className="flex justify-center mb-2">
-        <div className="rounded-xl p-4 text-center w-56" style={{ backgroundColor: C.panelAlt, border: `2px solid ${C.text5}` }}>
-          <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm mx-auto mb-2" style={{ backgroundColor: 'rgba(75,85,99,0.2)', color: C.text5 }}>
-            {root.name.split(' ').map(w => w[0]).join('').slice(0, 3)}
-          </div>
-          <p className="text-sm font-bold" style={{ color: C.text }}>{root.name}</p>
-          <p className="text-[10px]" style={{ color: C.text5 }}>{root.role}</p>
+      <div style={{ overflowX: 'auto', paddingBottom: 8 }}>
+        <div ref={containerRef} style={{ position: 'relative', display: 'inline-block', padding: '4px 10px 10px' }}>
+          <svg width={box.w} height={box.h} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', zIndex: 0, overflow: 'visible' }}>
+            {paths.map((d, i) => <path key={i} d={d} fill="none" stroke="#3A4254" strokeWidth={1.5} shapeRendering="crispEdges" />)}
+          </svg>
+          <Node node={root} depth={0} />
         </div>
       </div>
-
-      {/* Connector from root down */}
-      <div className="flex justify-center mb-1"><div className="w-px h-6" style={{ backgroundColor: '#374151' }} /></div>
-
-      {/* Level 1 columns — each top-of-tree person gets their own column
-          containing their card + their direct reports below. Reports are
-          derived from the staff[].reportsTo edges, so changing a
-          reportsTo here re-routes the lines automatically. */}
-      <div className="flex justify-center gap-6 items-start flex-wrap">
-        {level1.map(person => {
-          const myReports = directReports(person.name)
-          return (
-            <div key={person.name} className="flex flex-col items-center gap-3">
-              {/* Vertical connector from the root's horizontal bus down to this person */}
-              <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
-              <PersonCard node={person} size="mid" />
-              {myReports.length > 0 && (
-                <>
-                  <div className="w-px h-4" style={{ backgroundColor: '#374151' }} />
-                  {myReports.length > 1 && (
-                    <div className="h-px" style={{ backgroundColor: '#374151', width: `${Math.min(100, myReports.length * 60)}%` }} />
-                  )}
-                  <div className="flex gap-3 justify-center flex-wrap">
-                    {myReports.map(rep => (
-                      <div key={rep.name} className="flex flex-col items-center gap-1">
-                        <div className="w-px h-3" style={{ backgroundColor: '#374151' }} />
-                        <PersonCard node={rep} size="leaf" />
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Legend — dept colours present in the rendered roster */}
-      <div className="flex gap-3 justify-center mt-8 flex-wrap">
-        {Array.from(new Set(staff.filter(s => s.dept !== 'Board').map(s => s.dept))).map(dept => (
+      <div className="flex gap-3 justify-center mt-6 flex-wrap">
+        {depts.map(dept => (
           <div key={dept} className="flex items-center gap-1.5 text-xs" style={{ color: C.text4 }}>
             <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: DEPT_COLOR[dept as Dept] }} />
             {dept === 'DoF' ? 'Football' : dept}
@@ -341,44 +358,11 @@ type StaffCard = {
   available: boolean
 }
 
-const TEAM_INFO_CARDS: StaffCard[] = [
-  {
-    initials: 'SF', avatar: 'Sarah Frost', name: 'Sarah Frost', role: 'Head Coach', dept: 'Coaching', rating: 92,
-    ref: 'WOM-001',
-    stats: { TAC: 92, MOT: 95, STR: 88, EXP: 91, COM: 90, PRE: 89 },
-    speciality: 'Tactical structure · matchday motivation', location: 'Oakridge Training Centre', available: true,
-  },
-  {
-    initials: 'HV', avatar: 'Helen Voss', name: 'Helen Voss', role: 'Director of Football', dept: 'DoF', rating: 89,
-    ref: 'WOM-002',
-    stats: { STR: 91, NEG: 88, NET: 90, VIS: 89, DEC: 86, COM: 87 },
-    speciality: 'Recruitment strategy · WSL 2 squad model', location: 'Oakridge HQ', available: true,
-  },
-  {
-    initials: 'MC', avatar: 'Marcus Chen', name: 'Marcus Chen', role: 'S&C Coach', dept: 'Performance', rating: 90,
-    ref: 'WOM-003',
-    stats: { STR: 89, COND: 92, REC: 88, GPS: 91, PRE: 87, SPT: 90 },
-    speciality: 'Cycle-aware load · ACL prehab integration', location: 'Oakridge Training Centre', available: true,
-  },
-  {
-    initials: 'AR', avatar: 'Dr Anna Reid', name: 'Dr Anna Reid', role: 'Club Doctor', dept: 'Medical', rating: 94,
-    ref: 'WOM-004',
-    stats: { DIA: 94, TRT: 93, REC: 90, WMN: 95, CON: 92, SPT: 88 },
-    speciality: 'Women’s clinical care · postpartum RTP', location: 'Oakridge Medical Centre', available: true,
-  },
-  {
-    initials: 'JK', avatar: 'James Kerr', name: 'James Kerr', role: 'Performance Analyst', dept: 'Performance', rating: 88,
-    ref: 'WOM-005',
-    stats: { LOA: 90, GPS: 92, ACL: 87, CYC: 86, CON: 88, COM: 85 },
-    speciality: 'GPS load + cycle-aware modelling', location: 'Oakridge Analysis Suite', available: true,
-  },
-  {
-    initials: 'NW', avatar: 'Nina Walsh', name: 'Nina Walsh', role: 'Welfare Lead', dept: 'Welfare', rating: 91,
-    ref: 'WOM-006',
-    stats: { SAF: 93, PSY: 88, CYC: 92, RTP: 90, COM: 91, CON: 89 },
-    speciality: 'Carney-standards safeguarding · player-led support', location: 'Oakridge HQ', available: true,
-  },
-]
+const TEAM_INFO_CARDS: StaffCard[] = WOMENS_STAFF.map(s => ({
+  initials: s.initials, avatar: s.name, name: s.name, role: s.role, dept: s.dept,
+  rating: s.rating, ref: s.ref, stats: s.stats, speciality: s.speciality,
+  location: s.location, available: s.available,
+}))
 
 function TeamInfoTab() {
   return (
@@ -547,9 +531,23 @@ const CLUB_DOCS: ClubDoc[] = [
   },
 ]
 
+// Downloadable PDF artefacts (generated demo documents) keyed by doc title.
+// Files live in /public/docs/womens and are served at /docs/womens/<file>.
+const DOC_META: Record<string, { file: string; ref: string; version: string; effective: string; owner: string }> = {
+  'Staff Code of Conduct':              { file: 'staff-code-of-conduct.pdf',            ref: 'OWFC-HR-001',   version: 'v3.1', effective: '01 Mar 2026', owner: 'Club Director' },
+  'Karen Carney Compliance':            { file: 'karen-carney-compliance.pdf',          ref: 'OWFC-COMP-004', version: 'v2.0', effective: '01 Sep 2025', owner: 'Welfare Lead' },
+  'FSR Submission Pack':                { file: 'fsr-submission-pack.pdf',               ref: 'OWFC-FIN-012',  version: 'v1.4', effective: '01 Apr 2026', owner: 'Club Director' },
+  'Cycle-Tracking Privacy Policy':      { file: 'cycle-tracking-privacy-policy.pdf',     ref: 'OWFC-WEL-007',  version: 'v2.2', effective: '15 Jan 2026', owner: 'Welfare Lead' },
+  'Pregnancy & Return-to-Play Pathway': { file: 'pregnancy-return-to-play-pathway.pdf',  ref: 'OWFC-MED-009',  version: 'v1.3', effective: '01 Feb 2026', owner: 'Club Doctor' },
+  'Club Licensing Evidence Vault':      { file: 'club-licensing-evidence-index.pdf',     ref: 'OWFC-OPS-015',  version: 'v1.1', effective: '01 Mar 2026', owner: 'Head of Operations' },
+  'Data & GDPR':                        { file: 'data-protection-gdpr.pdf',              ref: 'OWFC-LEG-003',  version: 'v2.1', effective: '01 Jan 2026', owner: 'Welfare Lead' },
+  'Coaching & CPD':                     { file: 'coaching-cpd-policy.pdf',               ref: 'OWFC-COA-006',  version: 'v1.2', effective: '01 Aug 2025', owner: 'Head Coach' },
+}
+
 function ClubInfoTab({ club }: { club: ClubProps }) {
   const [openDoc, setOpenDoc] = useState<string | null>(null)
   const openedDoc = openDoc ? CLUB_DOCS.find(d => d.title === openDoc) : null
+  const meta = openDoc ? DOC_META[openDoc] : null
 
   const details: Array<[string, string]> = [
     ['Club',           club.name],
@@ -582,7 +580,7 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
       {/* Documents */}
       <div>
         <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Club Documents</p>
-        <p className="text-[10px] mb-3" style={{ color: C.text5 }}>Document categories shown are illustrative demo placeholders — no real regulatory artefacts attached.</p>
+        <p className="text-[10px] mb-3" style={{ color: C.text5 }}>Downloadable sample policies &amp; club artefacts — demo content for Oakridge Women FC.</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {CLUB_DOCS.map(p => (
             <button
@@ -622,10 +620,16 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
               <button onClick={() => setOpenDoc(null)} className="w-8 h-8 rounded-lg flex items-center justify-center text-base" style={{ color: C.text4 }} aria-label="Close">✕</button>
             </div>
 
-            <div className="px-6 py-3 shrink-0" style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: C.pinkDim }}>
-              <p className="text-[11px] font-semibold" style={{ color: '#F472B6' }}>
-                ⚠ Illustrative demo placeholder. Not a real regulatory artefact, downloadable document, or signed policy. Shows what this document category would contain.
-              </p>
+            <div className="px-6 py-2.5 shrink-0 flex flex-wrap items-center gap-x-4 gap-y-1" style={{ borderBottom: `1px solid ${C.border}`, backgroundColor: C.pinkDim }}>
+              {meta && (
+                <>
+                  <span className="text-[10px]" style={{ color: '#F9A8D4' }}><b style={{ color: '#F472B6' }}>Ref</b> {meta.ref}</span>
+                  <span className="text-[10px]" style={{ color: '#F9A8D4' }}><b style={{ color: '#F472B6' }}>Version</b> {meta.version}</span>
+                  <span className="text-[10px]" style={{ color: '#F9A8D4' }}><b style={{ color: '#F472B6' }}>Effective</b> {meta.effective}</span>
+                  <span className="text-[10px]" style={{ color: '#F9A8D4' }}><b style={{ color: '#F472B6' }}>Owner</b> {meta.owner}</span>
+                  <a href={`/docs/womens/${meta.file}`} target="_blank" rel="noreferrer" className="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-lg" style={{ backgroundColor: C.pinkDeep, color: '#fff' }}>⬇ Download PDF</a>
+                </>
+              )}
             </div>
 
             <div className="px-6 py-5 overflow-y-auto flex-1 space-y-3">
@@ -635,8 +639,11 @@ function ClubInfoTab({ club }: { club: ClubProps }) {
             </div>
 
             <div className="px-6 py-3 shrink-0 flex items-center justify-between" style={{ borderTop: `1px solid ${C.border}` }}>
-              <span className="text-[10px]" style={{ color: C.text5 }}>Demo content · Oakridge Women FC · placeholder text</span>
-              <button onClick={() => setOpenDoc(null)} className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ backgroundColor: C.pinkDim, color: '#F472B6', border: `1px solid ${C.pinkDeep}` }}>Close</button>
+              <span className="text-[10px]" style={{ color: C.text5 }}>Sample document · Oakridge Women FC · demo content</span>
+              <div className="flex items-center gap-2">
+                {meta && <a href={`/docs/womens/${meta.file}`} target="_blank" rel="noreferrer" className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ backgroundColor: C.pinkDeep, color: '#fff' }}>⬇ Download PDF</a>}
+                <button onClick={() => setOpenDoc(null)} className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{ backgroundColor: C.pinkDim, color: '#F472B6', border: `1px solid ${C.pinkDeep}` }}>Close</button>
+              </div>
             </div>
           </div>
         </>
@@ -709,3 +716,12 @@ export default function WomensStaffTabs({ club }: Props) {
     </div>
   )
 }
+
+
+
+
+
+
+
+
+
