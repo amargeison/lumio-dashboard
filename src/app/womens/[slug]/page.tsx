@@ -37,6 +37,7 @@ import WomensVideoAnalysisView from '@/components/football/WomensVideoAnalysisVi
 import WomensSetPiecesView from '@/components/football/WomensSetPiecesView'
 import WomensTrainingView from '@/components/football/WomensTrainingView'
 import WomensTacticsView from '@/components/womens/WomensTacticsView'
+import WomensClubVisionTab from '@/components/womens/WomensClubVisionTab'
 import WomensFixturesView from '@/components/football/WomensFixturesView'
 import WomensCupManagerView from '@/components/football/WomensCupManagerView'
 import WomensMedicalHubView from '@/components/football/WomensMedicalHubView'
@@ -4461,39 +4462,12 @@ const StandaloneTrackerView = ({ club }: { club: WomensClub }) => (
 // first; Finance / Welfare / Squad+Facilities / Governance follow.
 
 // ─── FINANCIAL PLANNING VIEW ──────────────────────────────────────────────────
-const WomensClubVisionView = ({ club }: { club: WomensClub }) => {
-  const [planTab, setPlanTab] = useState<'1yr'|'3yr'|'5yr'|'10yr'>('1yr')
-  const fmtC = (n: number): string => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n)
-  const permitted = club.relevantRevenue * 0.8
-  const headroom = club.fsrHeadroom ?? 0
-  return (
-    <div>
-      <SectionHeader title="Club Planner — FSR-Constrained" subtitle="Multi-horizon planning with FSR compliance modelling" icon="💷" />
-      <div className="flex gap-1 bg-[#0D1117] border border-gray-800 rounded-lg p-1 w-fit mb-6">
-        {(['1yr','3yr','5yr','10yr'] as const).map((t: typeof planTab) => (
-          <button key={t} onClick={() => setPlanTab(t)} className={`px-4 py-1.5 rounded-md text-xs font-medium transition-colors ${planTab === t ? 'bg-pink-600/20 text-pink-400 border border-pink-600/30' : 'text-gray-500 hover:text-gray-300'}`}>{t === '1yr' ? '1 Year' : t === '3yr' ? '3 Year' : t === '5yr' ? '5 Year' : '10 Year'}</button>
-        ))}
-      </div>
-      {planTab === '1yr' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard label="Revenue" value={fmtC(club.relevantRevenue)} color="pink" />
-            <StatCard label="Permitted (80%)" value={fmtC(permitted)} color="teal" />
-            <StatCard label="Current Spend" value={fmtC(permitted - headroom)} color="blue" />
-            <StatCard label="Headroom" value={fmtC(headroom)} color="green" />
-          </div>
-          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-2">Matchday Target</h3><div className="text-xs text-gray-400">2,847 avg × 22 games × £18 ticket = <span className="text-pink-400 font-bold">£1.13M</span></div></div>
-          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-2">Transfer Budget</h3><div className="text-xs text-gray-400">{fmtC(headroom)} FSR headroom for signings</div></div>
-          <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-2">Cash Funding</h3><div className="text-xs text-gray-400">Owner contribution max: <span className="text-pink-400 font-bold">£500k</span>/season</div></div>
-        </div>
-      )}
-      {planTab === '3yr' && (<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 space-y-2">{['+12% attendance growth/yr','2 new commercial deals/yr','Broadcast renegotiation 2027','Revenue target Y3: £3.2M → spend £2.56M','WSL 14-club expansion: extra broadcast'].map((s: string, i: number) => (<div key={i} className="text-xs text-gray-400 py-1 border-b border-gray-800/50">→ {s}</div>))}</div>)}
-      {planTab === '5yr' && (<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 space-y-2">{['Stadium: 6,500 → 9,000 by Y4','Eliminate bundled deals by Y3','Full portfolio: kit + title + 6 partners','Self-sustaining model'].map((s: string, i: number) => (<div key={i} className="text-xs text-gray-400 py-1 border-b border-gray-800/50">→ {s}</div>))}</div>)}
-      {planTab === '10yr' && (<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 space-y-2">{['Full commercial independence','UWCL revenue modelling','Academy ROI over decade','Decade P&L with FSR at each milestone'].map((s: string, i: number) => (<div key={i} className="text-xs text-gray-400 py-1 border-b border-gray-800/50">→ {s}</div>))}</div>)}
-    </div>
-  )
-}
-
+const WomensClubVisionView = ({ club: _club }: { club: WomensClub }) => (
+  <div>
+    <SectionHeader title="Club Planner — FSR-Constrained" subtitle="Multi-horizon strategy with FSR compliance modelling" icon="💷" />
+    <WomensClubVisionTab />
+  </div>
+)
 // ─── STAFF DIRECTORY VIEW ─────────────────────────────────────────────────────
 const StaffDirectoryView = () => {
   const [selected, setSelected] = useState<string | null>(null)
