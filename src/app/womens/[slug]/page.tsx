@@ -36,6 +36,7 @@ import PlayerWelfareHub from '@/components/football/PlayerWelfareHub'
 import WomensVideoAnalysisView from '@/components/football/WomensVideoAnalysisView'
 import WomensSetPiecesView from '@/components/football/WomensSetPiecesView'
 import WomensTrainingView from '@/components/football/WomensTrainingView'
+import WomensTacticsView from '@/components/womens/WomensTacticsView'
 import WomensFixturesView from '@/components/football/WomensFixturesView'
 import WomensCupManagerView from '@/components/football/WomensCupManagerView'
 import WomensMedicalHubView from '@/components/football/WomensMedicalHubView'
@@ -1720,67 +1721,7 @@ const DualRegistrationView = () => {
 // Tactical half of the former combined TacticsSetPiecesView. Set-piece content
 // moved to WomensSetPiecesView (its own sidebar item). Added Last Match summary
 // and Opposition Notes cards for standalone substance.
-const WomensTacticsView = () => (
-  <div>
-    <SectionHeader title="Tactics" subtitle="Formation, team talk, opposition notes" icon="🎯" />
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <StatCard label="Formation" value="4-3-3" sub="Primary system" color="pink" />
-      <StatCard label="Possession %" value="58%" sub="Season average" color="teal" />
-      <StatCard label="PPDA" value="8.4" sub="2nd in division" color="green" />
-      <StatCard label="xG Diff / match" value="+0.6" sub="Best in division" color="blue" />
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-4">Formation — 4-3-3</h3>
-      <div className="flex flex-col items-center gap-3 py-4">
-        <div className="flex gap-8">
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">LW</div><div className="text-[10px] text-gray-500 mt-1">Morris</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">ST</div><div className="text-[10px] text-gray-500 mt-1">Williams</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-pink-600/30 border border-pink-500/50 flex items-center justify-center text-[10px] text-white font-bold">RW</div><div className="text-[10px] text-gray-500 mt-1">Tilley</div></div>
-        </div>
-        <div className="flex gap-6">
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">CM</div><div className="text-[10px] text-gray-500 mt-1">Barker</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">CDM</div><div className="text-[10px] text-gray-500 mt-1">Granger</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/50 flex items-center justify-center text-[10px] text-white font-bold">CAM</div><div className="text-[10px] text-gray-500 mt-1">Carter</div></div>
-        </div>
-        <div className="flex gap-4">
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">LB</div><div className="text-[10px] text-gray-500 mt-1">Foley</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">CB</div><div className="text-[10px] text-gray-500 mt-1">Brennan</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">CB</div><div className="text-[10px] text-gray-500 mt-1">Reid</div></div>
-          <div className="text-center"><div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/50 flex items-center justify-center text-[10px] text-white font-bold">RB</div><div className="text-[10px] text-gray-500 mt-1">Okonkwo</div></div>
-        </div>
-        <div className="text-center"><div className="w-8 h-8 rounded-full bg-green-600/30 border border-green-500/50 flex items-center justify-center text-[10px] text-white font-bold">GK</div><div className="text-[10px] text-gray-500 mt-1">Hayes</div></div>
-      </div>
-    </div>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-        <h3 className="text-sm font-bold text-white mb-3">Last Match — Oakridge Women 1-1 Hartwell Women</h3>
-        <div className="text-xs text-gray-400 space-y-1.5">
-          <p>• <span className="text-pink-400 font-semibold">Possession 58%</span> · Hartwell pressed high in 25-minute spells but couldn&apos;t sustain it.</p>
-          <p>• <span className="text-pink-400 font-semibold">Shots 14 (5 on target)</span> · Williams missed two presentable chances pre-equaliser.</p>
-          <p>• <span className="text-pink-400 font-semibold">PPDA 7.9</span> · Counter-pressing won 11 high-zone turnovers; one led to the goal.</p>
-          <p>• Morris equaliser at 58&apos; from Tilley cutback — third route-one chance from that pattern this month.</p>
-        </div>
-      </div>
-      <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-        <h3 className="text-sm font-bold text-white mb-3">Opposition Notes — Next: Hartwell Women (away)</h3>
-        <div className="text-xs text-gray-400 space-y-1.5">
-          <p>• High line vulnerable to in-behind balls — isolate Tilley on Hartwell&apos;s LB (struggles in 1v1).</p>
-          <p>• Set-piece threat: A. Reece, 14 goals — back-post runs from corners. (Detailed routines: see Set Pieces sidebar item.)</p>
-          <p>• Doyle on the left dribbles direct — double up with Foley + Granger when shifting across.</p>
-          <p>• Keeper distribution short under pressure — high press triggers should produce turnovers.</p>
-        </div>
-      </div>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-      <h3 className="text-sm font-bold text-white mb-3">Team Talk — Coach Notes</h3>
-      <div className="bg-[#0a0c14] border border-gray-800 rounded-lg p-4">
-        <p className="text-sm text-gray-300 italic">&ldquo;We press high from the front three. Carter dictates tempo. Full-backs push up — we want width. Trust the system, trust each other. Set pieces are our edge — drills in the Set Pieces module this week.&rdquo;</p>
-        <p className="text-xs text-gray-500 mt-2">— Sarah Frost, Head Coach</p>
-      </div>
-    </div>
-  </div>
-)
-
+// WomensTacticsView now lives in src/components/womens/WomensTacticsView.tsx
 // ─── MEDIA & PR VIEW ────────────────────────────────────────────────────────
 const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
   const [activeTab, setActiveTab] = useState<'requests'|'calendar'|'coverage'|'guidelines'>('requests');
