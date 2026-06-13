@@ -324,7 +324,7 @@ function PlanBlocks({ blocks, gps }: { blocks: Phase[]; gps: Gps }) {
 type Tab = string
 
 export default function WomensTrainingView() {
-  const [tab, setTab] = useState<Tab>('tue')
+  const [tab, setTab] = useState<Tab>('week')
   const [plans, setPlans] = useState<SessionPlan[]>(SEED_PLANS)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [builder, setBuilder] = useState(false)
@@ -355,6 +355,8 @@ export default function WomensTrainingView() {
 
       {/* Tab bar: days + feature tabs */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 2, borderBottom: `1px solid ${C.border}`, overflowX: 'auto' }}>
+        <button onClick={() => setTab('week')} style={{ appearance: 'none', border: 0, background: 'transparent', padding: '9px 13px', fontSize: 12.5, fontWeight: tab === 'week' ? 700 : 500, color: tab === 'week' ? '#fff' : C.textSec, borderBottom: `2px solid ${tab === 'week' ? C.primary : 'transparent'}`, marginBottom: -1, cursor: 'pointer', whiteSpace: 'nowrap' }}>Week</button>
+        <span style={{ width: 1, height: 22, background: C.borderHi, margin: '0 6px', flexShrink: 0 }} />
         {dayTabs.map(t => {
           const active = tab === t.id
           const d = DAYS.find(x => x.key === t.id)!
@@ -373,6 +375,57 @@ export default function WomensTrainingView() {
           )
         })}
       </div>
+
+      {/* WEEK OVERVIEW */}
+      {tab === 'week' && (
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-base font-bold" style={{ color: C.text }}>This week at a glance</h3>
+            <p className="text-xs" style={{ color: C.textSec }}>MD = Sunday vs Hartwell Women (A) · click any day for the full session plan</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
+            {DAYS.map(d => (
+              <button key={d.key} onClick={() => setTab(d.key)} className="text-left rounded-xl p-3" style={{ backgroundColor: C.cardAlt, border: `1px solid ${d.key === 'sun' ? C.primary : C.border}`, borderTop: `3px solid ${intColor(d.intensity)}` }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold" style={{ color: C.text }}>{d.day.slice(0, 3)}</span>
+                  <Chip color={intColor(d.intensity)}>{d.mdTag}</Chip>
+                </div>
+                <div className="text-[11px] font-semibold mt-1" style={{ color: C.primary }}>{d.theme}</div>
+                <div className="mt-2">
+                  <div className="text-[9px] uppercase font-bold" style={{ color: C.muted }}>AM</div>
+                  <div className="text-[11px]" style={{ color: C.text2 }}>{d.am.title}</div>
+                  <div className="text-[9px] uppercase font-bold mt-1" style={{ color: C.muted }}>PM</div>
+                  <div className="text-[11px]" style={{ color: C.text2 }}>{d.pm.title}</div>
+                </div>
+                <div className="mt-2 pt-2 flex items-center justify-between text-[10px]" style={{ borderTop: `1px solid ${C.border}`, color: C.muted }}>
+                  <span>{d.intensity}</span><span>{d.gps.distance}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.cardAlt, border: `1px solid ${C.border}` }}>
+            <div className="px-5 py-3" style={{ borderBottom: `1px solid ${C.border}` }}><p className="text-sm font-semibold" style={{ color: C.text }}>Weekly plan</p></div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>{['Day', 'Phase', 'AM session', 'PM session', 'Intensity', 'Theme', 'GPS dist'].map(h => <th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: C.muted }}>{h}</th>)}</tr></thead>
+                <tbody>
+                  {DAYS.map((d, i) => (
+                    <tr key={d.key} onClick={() => setTab(d.key)} className="hover:bg-white/[0.02]" style={{ borderBottom: i < DAYS.length - 1 ? `1px solid ${C.border}` : undefined, cursor: 'pointer', backgroundColor: d.key === 'sun' ? `${C.primary}0F` : undefined }}>
+                      <td className="px-4 py-2.5 font-bold" style={{ color: d.key === 'sun' ? C.primary : C.text }}>{d.day}</td>
+                      <td className="px-4 py-2.5" style={{ color: C.muted }}>{d.mdTag}</td>
+                      <td className="px-4 py-2.5" style={{ color: C.textSec }}>{d.am.title}</td>
+                      <td className="px-4 py-2.5" style={{ color: C.textSec }}>{d.pm.title}</td>
+                      <td className="px-4 py-2.5"><Chip color={intColor(d.intensity)}>{d.intensity}</Chip></td>
+                      <td className="px-4 py-2.5" style={{ color: C.muted }}>{d.theme}</td>
+                      <td className="px-4 py-2.5 font-mono" style={{ color: C.textSec }}>{d.gps.distance}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DAY DETAIL */}
       {day && (

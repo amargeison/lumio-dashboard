@@ -51,6 +51,23 @@ const RECENT: Played[] = [
 
 const SEASON_FORM: Result[] = ['W','D','W','W','L','W','D','W','W','L','D','W','W','L','W','W','D','W']
 
+type TableRow = { pos: number; club: string; p: number; w: number; d: number; l: number; gf: number; ga: number; pts: number; form: Result[]; me?: boolean }
+// WSL 2 (demo) — Oakridge Women 2nd. Top 2 promotion, bottom 2 relegation.
+const LEAGUE_TABLE: TableRow[] = [
+  { pos: 1,  club: 'Kingsmere City Women',     p: 20, w: 15, d: 3, l: 2,  gf: 44, ga: 18, pts: 48, form: ['W','W','W','D','W'] },
+  { pos: 2,  club: 'Oakridge Women',           p: 20, w: 14, d: 5, l: 1,  gf: 41, ga: 16, pts: 47, form: ['W','D','W','W','D'], me: true },
+  { pos: 3,  club: 'Hartwell Women',           p: 20, w: 13, d: 4, l: 3,  gf: 38, ga: 20, pts: 43, form: ['W','L','W','W','D'] },
+  { pos: 4,  club: 'Thornvale Ladies',         p: 20, w: 11, d: 5, l: 4,  gf: 34, ga: 24, pts: 38, form: ['D','W','W','L','W'] },
+  { pos: 5,  club: 'Ridgefield Athletic Women',p: 20, w: 10, d: 5, l: 5,  gf: 31, ga: 26, pts: 35, form: ['W','D','L','W','W'] },
+  { pos: 6,  club: 'Ashbourne Women FC',       p: 20, w: 9,  d: 5, l: 6,  gf: 28, ga: 27, pts: 32, form: ['L','W','D','W','L'] },
+  { pos: 7,  club: 'Plymouth Marine Women',    p: 20, w: 8,  d: 5, l: 7,  gf: 26, ga: 28, pts: 29, form: ['D','L','W','D','W'] },
+  { pos: 8,  club: 'Northgate Women',          p: 20, w: 7,  d: 5, l: 8,  gf: 25, ga: 30, pts: 26, form: ['L','W','L','D','W'] },
+  { pos: 9,  club: 'Fernbrook Women',          p: 20, w: 6,  d: 5, l: 9,  gf: 22, ga: 31, pts: 23, form: ['D','L','D','L','W'] },
+  { pos: 10, club: 'Glenmoor Wanderers W',     p: 20, w: 5,  d: 4, l: 11, gf: 20, ga: 36, pts: 19, form: ['L','L','W','L','D'] },
+  { pos: 11, club: 'Castleton Women',          p: 20, w: 4,  d: 4, l: 12, gf: 18, ga: 40, pts: 16, form: ['L','D','L','L','W'] },
+  { pos: 12, club: 'Brookvale Town Women',     p: 20, w: 2,  d: 3, l: 15, gf: 14, ga: 45, pts: 9,  form: ['L','L','D','L','L'] },
+]
+
 export default function WomensFixturesView() {
   const [filterComp, setFilterComp] = useState<'all' | 'league' | 'cup'>('all')
   const filteredUpcoming = filterComp === 'all' ? UPCOMING : UPCOMING.filter(u => u.competitionTone === filterComp)
@@ -90,6 +107,62 @@ export default function WomensFixturesView() {
               )
             })}
           </div>
+        </div>
+      </div>
+
+      {/* League Table */}
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.cardAlt, border: `1px solid ${C.border}` }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${C.border}` }}>
+          <div className="flex items-center gap-2">
+            <Trophy size={14} style={{ color: C.gold }} />
+            <p className="text-sm font-semibold" style={{ color: C.text }}>WSL 2 — League Table</p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold" style={{ color: C.good }}>
+            <span style={{ width: 6, height: 6, borderRadius: 9, background: C.good, display: 'inline-block' }} /> LIVE · updated 10:42
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {['#', 'Club', 'P', 'W', 'D', 'L', 'GF', 'GA', 'GD', 'Pts', 'Form'].map((h, i) => (
+                  <th key={h} className={`px-3 py-3 font-semibold ${i === 1 ? 'text-left' : 'text-center'}`} style={{ color: C.muted }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {LEAGUE_TABLE.map((r, i) => {
+                const zone = r.pos <= 2 ? C.good : r.pos >= 11 ? C.bad : 'transparent'
+                const gd = r.gf - r.ga
+                return (
+                  <tr key={r.club} style={{ borderBottom: i < LEAGUE_TABLE.length - 1 ? `1px solid ${C.border}` : undefined, backgroundColor: r.me ? `${C.primary}14` : undefined }}>
+                    <td className="px-3 py-2.5 text-center font-bold" style={{ color: C.text, borderLeft: `3px solid ${zone}` }}>{r.pos}</td>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: r.me ? C.primary : C.text }}>{r.club}</td>
+                    <td className="px-3 py-2.5 text-center" style={{ color: C.textSec }}>{r.p}</td>
+                    <td className="px-3 py-2.5 text-center" style={{ color: C.textSec }}>{r.w}</td>
+                    <td className="px-3 py-2.5 text-center" style={{ color: C.textSec }}>{r.d}</td>
+                    <td className="px-3 py-2.5 text-center" style={{ color: C.textSec }}>{r.l}</td>
+                    <td className="px-3 py-2.5 text-center" style={{ color: C.muted }}>{r.gf}</td>
+                    <td className="px-3 py-2.5 text-center" style={{ color: C.muted }}>{r.ga}</td>
+                    <td className="px-3 py-2.5 text-center font-mono" style={{ color: gd > 0 ? C.good : gd < 0 ? C.bad : C.muted }}>{gd > 0 ? '+' : ''}{gd}</td>
+                    <td className="px-3 py-2.5 text-center font-bold" style={{ color: C.text }}>{r.pts}</td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center justify-center gap-0.5">
+                        {r.form.map((f, j) => {
+                          const fc = f === 'W' ? C.good : f === 'D' ? C.warn : C.bad
+                          return <span key={j} className="flex h-4 w-4 items-center justify-center rounded text-[8px] font-bold" style={{ backgroundColor: `${fc}22`, color: fc }}>{f}</span>
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="px-5 py-2.5 flex items-center gap-4 text-[10px]" style={{ borderTop: `1px solid ${C.border}`, color: C.muted }}>
+          <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, background: C.good, borderRadius: 2, display: 'inline-block' }} /> Promotion</span>
+          <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, background: C.bad, borderRadius: 2, display: 'inline-block' }} /> Relegation</span>
         </div>
       </div>
 

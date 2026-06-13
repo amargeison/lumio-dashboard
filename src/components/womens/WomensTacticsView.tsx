@@ -193,7 +193,7 @@ export default function WomensTacticsView() {
         <button onClick={() => setAssign({})} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ border: `1px solid ${C.border}`, color: C.text3 }}><RotateCcw size={14} /> Clear</button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,420px)_260px] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,400px)_220px_1fr] gap-4">
         {/* Pitch */}
         <div className="rounded-xl p-3 w-full" style={{ background: 'linear-gradient(#0c2a16,#0a1f12)', border: `1px solid ${C.border}`, maxWidth: 420 }}>
           <div className="relative w-full" style={{ paddingBottom: '128%' }}>
@@ -252,10 +252,9 @@ export default function WomensTacticsView() {
             )
           })}
         </div>
-      </div>
 
-      {/* AI suggestions + opposition */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* AI suggestions + opposition — alongside the pitch */}
+        <div className="space-y-4 min-w-0">
         <div className="rounded-xl p-4" style={{ background: C.panel, border: `1px solid ${C.accent}55` }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2"><Sparkles size={15} style={{ color: C.accent }} /><span className="text-sm font-bold" style={{ color: C.text }}>AI Tactical Suggestions</span></div>
@@ -281,6 +280,7 @@ export default function WomensTacticsView() {
               <div key={i} className="flex items-start gap-2 text-xs" style={{ color: C.text2 }}><span style={{ color: C.accent }}>•</span><span>{n}</span></div>
             ))}
           </div>
+        </div>
         </div>
       </div>
 
