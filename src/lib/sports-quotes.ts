@@ -16,6 +16,31 @@ export function getDailyQuote(quotes: { text: string; author: string }[]) {
   return pool[index]
 }
 
+// ─── ROTATE-ON-RELOAD ─────────────────────────────────────────────────────
+// Advances one quote per page load (stored in localStorage) and cycles
+// sequentially through the whole pool, so a quote does NOT repeat until the
+// entire list has been shown. With a 365+ pool that is no repeat for 365+
+// reloads. SSR-safe fallback (no window) is time-seeded; callers should swap
+// to this in a client effect after mount to avoid a hydration mismatch.
+export function getRotatingQuote(quotes: { text: string; author: string }[]) {
+  const pool = quotes.filter(q => q.author && q.author !== 'Unknown' && q.author !== 'Anonymous')
+  const list = pool.length > 0 ? pool : quotes
+  let index: number
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const key = 'lumio.quoteIdx'
+      const prev = parseInt(window.localStorage.getItem(key) || '-1', 10)
+      index = ((Number.isFinite(prev) ? prev : -1) + 1) % list.length
+      window.localStorage.setItem(key, String(index))
+    } else {
+      index = Math.floor(Date.now() / 1000) % list.length
+    }
+  } catch {
+    index = Math.floor(Math.random() * list.length)
+  }
+  return list[index]
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── TENNIS QUOTES (200) ──────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -742,20 +767,92 @@ export const RUGBY_QUOTES = [
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // ─── WOMEN'S FOOTBALL QUOTES (15) ─────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-export const WOMENS_QUOTES = [
+export const WOMENS_FOOTBALL_QUOTES = [
+  { text: "Somewhere behind the athlete you've become and the hours of practice and the coaches who have pushed you is a little girl who fell in love with the game and never looked back. Play for her.", author: "Mia Hamm" },
+  { text: "Take your victories, whatever they may be, cherish them, use them, but don't settle for them.", author: "Mia Hamm" },
+  { text: "I am a member of a team, and I rely on the team, I defer to it and sacrifice for it, because the team — not the individual — is the ultimate champion.", author: "Mia Hamm" },
+  { text: "Celebrate what you've accomplished, but raise the bar a little higher each time you succeed.", author: "Mia Hamm" },
+  { text: "The vision of a champion is bent over, drenched in sweat, at the point of exhaustion, when nobody else is looking.", author: "Mia Hamm" },
+  { text: "Failure is not something to be ashamed of, it's something to be powered by.", author: "Abby Wambach" },
   { text: "I am the strongest woman in the world.", author: "Marta" },
-  { text: "Football is football, and women's football is just football too.", author: "Anonymous" },
-  { text: "If you don't believe in yourself, no one else will.", author: "Mia Hamm" },
-  { text: "I want every little girl who's told she's bossy to be told she has leadership skills.", author: "Sheryl Sandberg" },
-  { text: "Pressure is a privilege.", author: "Billie Jean King" },
-  { text: "I never let anyone tell me I couldn't do something.", author: "Megan Rapinoe" },
-  { text: "Champions are made from something they have deep inside them — a desire, a dream, a vision.", author: "Muhammad Ali" },
-  { text: "She believed she could, so she did.", author: "R.S. Grey" },
-  { text: "We need women at all levels, including the top, to change the dynamic.", author: "Sheryl Sandberg" },
-  { text: "Football is the most beautiful game in the world.", author: "Pelé" },
-  { text: "The future is female, and the future is now.", author: "Anonymous" },
-  { text: "There is no limit to what we, as women, can accomplish.", author: "Michelle Obama" },
-  { text: "Strong women lift each other up.", author: "Anonymous" },
-  { text: "Hard work beats talent when talent doesn't work hard.", author: "Tim Notke" },
-  { text: "Don't let anyone tell you that you can't.", author: "Carli Lloyd" },
+  { text: "Dream big, because dreams do happen.", author: "Alex Morgan" },
+  { text: "Football is not a matter of life and death. It's much more important than that.", author: "Bill Shankly" },
+  { text: "If you are first you are first. If you are second, you are nothing.", author: "Bill Shankly" },
+  { text: "Pressure is working down the pit. Pressure is having no work at all. The European Cup is not pressure — that is the reward.", author: "Bill Shankly" },
+  { text: "A football team is like a piano. You need eight men to carry it and three who can play the damn thing.", author: "Bill Shankly" },
+  { text: "The trouble with referees is that they know the rules, but they do not know the game.", author: "Bill Shankly" },
+  { text: "I wouldn't say I was the best manager in the business. But I was in the top one.", author: "Brian Clough" },
+  { text: "If God had wanted us to play football in the clouds, he'd have put grass up there.", author: "Brian Clough" },
+  { text: "Players lose you games, not tactics.", author: "Brian Clough" },
+  { text: "Attack wins you games, defence wins you titles.", author: "Sir Alex Ferguson" },
+  { text: "Hard work will always overcome natural talent when natural talent does not work hard enough.", author: "Sir Alex Ferguson" },
+  { text: "Football, bloody hell.", author: "Sir Alex Ferguson" },
+  { text: "Please don't call me arrogant, but I'm a European champion and I think I'm a special one.", author: "Jose Mourinho" },
+  { text: "If I wanted to have an easy job, I would have stayed at Porto.", author: "Jose Mourinho" },
+  { text: "We are the team that turns doubters into believers.", author: "Jurgen Klopp" },
+  { text: "The target of anything in life should be to do it so well that it becomes an art.", author: "Arsene Wenger" },
+  { text: "Football is a simple game made complicated by people who should know better.", author: "Sir Matt Busby" },
+  { text: "Football is nothing without fans.", author: "Jock Stein" },
+  { text: "What is a club? It's the noise, the passion, the feeling of belonging, the pride in your city.", author: "Sir Bobby Robson" },
+  { text: "A man with new ideas is mad — until he succeeds.", author: "Marcelo Bielsa" },
+  { text: "Match by match. Partido a partido.", author: "Diego Simeone" },
+  { text: "Playing football is very simple, but playing simple football is the hardest thing there is.", author: "Johan Cruyff" },
+  { text: "Quality without results is pointless. Results without quality is boring.", author: "Johan Cruyff" },
+  { text: "Every disadvantage has its advantage.", author: "Johan Cruyff" },
+  { text: "If you have the ball you must make the pitch as big as possible, and if you don't have it you must make it as small as possible.", author: "Johan Cruyff" },
+  { text: "Football is a game you play with your brain.", author: "Johan Cruyff" },
+  { text: "Choose the best player for every position, and you'll end up not with a strong eleven, but with eleven strong individuals.", author: "Johan Cruyff" },
+  { text: "Speed is often confused with insight. When I start running earlier than the others, I appear faster.", author: "Johan Cruyff" },
+  { text: "Before I make a mistake, I don't make that mistake.", author: "Johan Cruyff" },
+  { text: "I've never seen a bag of money score a goal.", author: "Johan Cruyff" },
+  { text: "Success is no accident. It is hard work, perseverance, learning, sacrifice and, most of all, love of what you are doing.", author: "Pele" },
+  { text: "The more difficult the victory, the greater the happiness in winning.", author: "Pele" },
+  { text: "Everything is practice.", author: "Pele" },
+  { text: "Enthusiasm is everything. It must be taut and vibrating like a guitar string.", author: "Pele" },
+  { text: "When people succeed, it is because of hard work. Luck has nothing to do with success.", author: "Diego Maradona" },
+  { text: "You have to fight to reach your dream. You have to sacrifice and work hard for it.", author: "Lionel Messi" },
+  { text: "The day you think there is no improvement to be made is a sad one for any player.", author: "Lionel Messi" },
+  { text: "I prefer to win titles with the team ahead of any individual award.", author: "Lionel Messi" },
+  { text: "Talent without working hard is nothing.", author: "Cristiano Ronaldo" },
+  { text: "Your love makes me strong, your hate makes me unstoppable.", author: "Cristiano Ronaldo" },
+  { text: "Magic is sometimes very close to nothing at all.", author: "Zinedine Zidane" },
+  { text: "I spent a lot of money on booze, birds and fast cars. The rest I just squandered.", author: "George Best" },
+  { text: "When the seagulls follow the trawler, it is because they think sardines will be thrown into the sea.", author: "Eric Cantona" },
+  { text: "You can change your wife, your politics, your religion, but never, never can you change your favourite football team.", author: "Eric Cantona" },
+  { text: "Think quickly, look for spaces. That's what I do: look for spaces, all day.", author: "Xavi" },
+  { text: "Football is a simple game: 22 players chase a ball for 90 minutes and, in the end, the Germans win.", author: "Gary Lineker" },
+  { text: "I've missed more than 9,000 shots in my career. I've lost almost 300 games. I've failed over and over and over again in my life — and that is why I succeed.", author: "Michael Jordan" },
+  { text: "I can accept failure, everyone fails at something. But I can't accept not trying.", author: "Michael Jordan" },
+  { text: "Some people want it to happen, some wish it would happen, others make it happen.", author: "Michael Jordan" },
+  { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+  { text: "It's not whether you get knocked down, it's whether you get up.", author: "Vince Lombardi" },
+  { text: "Winning is not everything, but wanting to win is.", author: "Vince Lombardi" },
+  { text: "Don't let what you cannot do interfere with what you can do.", author: "John Wooden" },
+  { text: "Failure is not fatal, but failure to change might be.", author: "John Wooden" },
+  { text: "Everything negative — pressure, challenges — is all an opportunity for me to rise.", author: "Kobe Bryant" },
+  { text: "The most important thing is to try to inspire people so that they can be great at whatever they want to do.", author: "Kobe Bryant" },
+  { text: "Worrying gets you nowhere. If you turn up worrying about how you're going to perform, you've already lost.", author: "Usain Bolt" },
+  { text: "It's hard to beat a person who never gives up.", author: "Babe Ruth" },
+  { text: "The battles that count aren't the ones for gold medals. The struggle within yourself is where it's at.", author: "Jesse Owens" },
+  { text: "There is only one ball, so you need to have it.", author: "Johan Cruyff" },
+  { text: "Technique is passing the ball with one touch, at the right speed, to the right foot of your team-mate.", author: "Johan Cruyff" },
+  { text: "A penalty is a cowardly way to score.", author: "Pele" },
+  { text: "They called it an overnight success — it took me seventeen years of starting early and staying late.", author: "Lionel Messi" },
+  { text: "Individual accolades are great, but you don't play the game for them.", author: "Alex Morgan" },
+  { text: "True champions aren't always the ones that win, but those with the most guts.", author: "Mia Hamm" },
+  { text: "A champion is defined not by their wins, but by how they recover when they fall.", author: "Serena Williams" },
+  { text: "Great things come from hard work and perseverance. No excuses.", author: "Kobe Bryant" },
+  { text: "I play to win, whether in practice or a real game.", author: "Michael Jordan" },
+  { text: "Perfection is not attainable, but if we chase perfection we can catch excellence.", author: "Vince Lombardi" },
+  { text: "Be quick, but don't hurry.", author: "John Wooden" },
+  { text: "I learned all about life with a ball at my feet.", author: "Ronaldinho" },
+]
+
+// Women's portal pool = football-led (women + men) + globally iconic
+// cross-sport quotes, topped up with the already-vetted tennis and boxing
+// pools so it exceeds 365 entries (no repeat until the whole pool cycles).
+export const WOMENS_QUOTES = [
+  ...WOMENS_FOOTBALL_QUOTES,
+  ...TENNIS_QUOTES,
+  ...BOXING_QUOTES,
 ]

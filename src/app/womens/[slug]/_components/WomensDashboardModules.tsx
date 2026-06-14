@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { WOMENS_QUOTES, getDailyQuote } from '@/lib/sports-quotes'
+import { WOMENS_QUOTES, getDailyQuote, getRotatingQuote } from '@/lib/sports-quotes'
 import {
   WOMENS_ORG, WOMENS_FIXTURES, WOMENS_TODAY, WOMENS_AI_BRIEF, WOMENS_INBOX,
   WOMENS_RECENTS, WOMENS_PERF_INTEL, WOMENS_SEASON_FORM,
@@ -45,8 +45,8 @@ const pad2 = (n: number) => String(n).padStart(2, '0')
 // ─── HeroToday ─────────────────────────────────────────────────────────
 
 export function HeroToday({
-  T, accent, density, greeting, onTodaysBriefing, onMatchdayOps, onAsk,
-}: Common & { greeting: string; onTodaysBriefing?: () => void; onMatchdayOps?: () => void; onAsk?: () => void }) {
+  T, accent, density, greeting, onSendMessage, onAsk,
+}: Common & { greeting: string; onSendMessage?: () => void; onAsk?: () => void }) {
   const f = WOMENS_FIXTURES[0]
   const [counter, setCounter]     = useState({ h: 5, m: 47, s: 12 })
 
@@ -82,9 +82,12 @@ export function HeroToday({
   // 180×180 crest without clipping (the Card itself is ~180–210px tall
   // — too short to centre a 180px crest with margin). Card border still
   // draws so the hero retains a defined edge.
-  const quote = getDailyQuote(WOMENS_QUOTES)
+  // SSR-stable seed (deterministic) then rotate on mount so the quote
+  // refreshes on every reload without a hydration mismatch.
+  const [quote, setQuote] = useState(() => getDailyQuote(WOMENS_QUOTES))
+  useEffect(() => { setQuote(getRotatingQuote(WOMENS_QUOTES)) }, [])
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / -1', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px`, background: 'transparent' }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px`, background: 'transparent' }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
         <defs>
           <pattern id="wf-hero-ptn" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -140,15 +143,9 @@ export function HeroToday({
         </div>
       </div>
       <div style={{ position: 'relative', display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-        <button onClick={onTodaysBriefing}
+        <button onClick={onSendMessage}
           style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: '#fff', fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-          <Icon name="sun" size={14} stroke={2} /> Today&apos;s briefing
-        </button>
-        <button onClick={onMatchdayOps}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = accent.hex }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = T.border;    e.currentTarget.style.color = T.text }}
-          style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}>
-          <Icon name="check" size={14} stroke={1.6} /> Matchday ops
+          <Icon name="megaphone" size={14} stroke={2} /> Send message
         </button>
         <button onClick={onAsk}
           onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = accent.hex }}
@@ -167,7 +164,8 @@ export function TodaySchedule({ T, accent, density }: Common) {
   return (
     <Card T={T} density={density} hover style={{ gridColumn: '9 / span 4' }}>
       <SectionHead T={T} title="Today" right={<span className="tnum" style={{ fontFamily: FONT_MONO }}>{WOMENS_ORG.date.split(',')[1]?.trim() ?? WOMENS_ORG.date}</span>} />
-      <div style={{ position: 'relative' }}>
+      <div style={{ maxHeight: 224, overflowY: 'auto', marginRight: -2, paddingRight: 2 }}>
+        <div style={{ position: 'relative' }}>
         <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />
         {WOMENS_TODAY.map((it, i) => (
           <div key={i} style={{ position: 'relative', display: 'flex', gap: 14, padding: '6px 0' }}>
@@ -177,6 +175,35 @@ export function TodaySchedule({ T, accent, density }: Common) {
               <div style={{ fontSize: 12.5, color: T.text, fontWeight: it.highlight ? 600 : 500 }}>{it.what}</div>
               <div style={{ fontSize: 10.5, color: T.text3 }}>{it.where}</div>
             </div>
+          </div>
+        ))}
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+// ─── Outstanding ───────────────────────────────────────────────────────
+
+export function Outstanding({ T, density }: Common) {
+  const items: { label: string; status: string; tone: 'bad' | 'warn' | 'good' }[] = [
+    { label: 'FSR audit — 3 items outstanding (forum minutes, diversity report, safeguarding refresher)', status: 'Due end of month', tone: 'warn' },
+    { label: 'Contract renewals — Porter & Granger expire Jun 2025', status: 'Action', tone: 'bad' },
+    { label: 'Registration window closes 30 Apr — dual-reg agreements pending', status: 'Urgent', tone: 'bad' },
+    { label: 'Karen Carney compliance — 2 criteria outstanding', status: 'In progress', tone: 'warn' },
+    { label: 'Welfare flags — 2 players amber on sleep quality', status: 'Monitor', tone: 'warn' },
+    { label: 'Safeguarding / DBS — 23/23 staff current', status: 'Up to date', tone: 'good' },
+  ]
+  const toneCol = (t: 'bad' | 'warn' | 'good') => t === 'bad' ? T.bad : t === 'warn' ? T.warn : T.good
+  const open = items.filter(i => i.tone !== 'good').length
+  return (
+    <Card T={T} density={density} hover style={{ gridColumn: '9 / span 4' }}>
+      <SectionHead T={T} title="Outstanding items" right={<span>{open} open</span>} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {items.map((it, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, paddingBottom: 8, borderBottom: i < items.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+            <span style={{ fontSize: 12, color: T.text2, lineHeight: 1.35 }}>{it.label}</span>
+            <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: `${toneCol(it.tone)}1e`, color: toneCol(it.tone), whiteSpace: 'nowrap' }}>{it.status}</span>
           </div>
         ))}
       </div>
@@ -215,7 +242,7 @@ export function AIBrief({ T, accent, density, onAsk }: Common & { onAsk?: () => 
   const hour = new Date().getHours()
   const label = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Briefing' : 'AI Evening Briefing'
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 4' }}>
+    <Card T={T} density={density} style={{ gridColumn: '5 / span 4' }}>
       <SectionHead T={T}
         title={<><Icon name="sparkles" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2, display: 'inline-block' }} />{label}</>}
         right={<>
