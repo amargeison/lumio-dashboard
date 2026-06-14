@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72">
+  <g fill="#B8893B">
+    <path d="M11 47 L15 23 L23 35 L30 19 L37 35 L45 23 L49 47 Z"/>
+    <rect x="11" y="49" width="38" height="5"/>
+    <circle cx="15" cy="21" r="2.4"/><circle cx="30" cy="17" r="2.6"/><circle cx="45" cy="21" r="2.4"/>
+  </g>
+  <text x="72" y="39" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="25" letter-spacing="1" fill="#1A1016">CROWN</text>
+  <text x="73" y="55" font-family="Arial, Helvetica, sans-serif" font-weight="600" font-size="9" letter-spacing="3.5" fill="#6B5560">BROADCASTING</text>
+</svg>

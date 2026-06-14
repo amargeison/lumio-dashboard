@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72">
+  <g>
+    <path fill="#4A6B3A" d="M30 12 C19 23 17 40 30 54 C43 40 41 23 30 12 Z"/>
+    <line x1="30" y1="18" x2="30" y2="50" stroke="#F7F2E8" stroke-width="1.6"/>
+    <path d="M30 28 L24 24 M30 34 L24 30 M30 28 L36 24 M30 34 L36 30" stroke="#F7F2E8" stroke-width="1.4" fill="none"/>
+  </g>
+  <text x="72" y="38" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="23" letter-spacing="0.5" fill="#1A1016">OAKRIDGE</text>
+  <text x="73" y="54" font-family="Arial, Helvetica, sans-serif" font-weight="600" font-size="9.5" letter-spacing="6" fill="#6B5560">MOTORS</text>
+</svg>

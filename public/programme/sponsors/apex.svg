@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72">
+  <g fill="#C0392B">
+    <path d="M30 13 L48 35 L39 35 L30 24 L21 35 L12 35 Z"/>
+    <path d="M30 30 L48 52 L39 52 L30 41 L21 52 L12 52 Z" opacity="0.55"/>
+  </g>
+  <text x="72" y="39" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="26" letter-spacing="1.5" fill="#1A1016">APEX</text>
+  <text x="73" y="55" font-family="Arial, Helvetica, sans-serif" font-weight="600" font-size="9.5" letter-spacing="4.5" fill="#6B5560">PERFORMANCE</text>
+</svg>

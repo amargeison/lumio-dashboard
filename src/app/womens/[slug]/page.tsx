@@ -6,7 +6,7 @@ import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
 import {
   ArrowRight, Check, Shield, Users, Heart, TrendingUp, Scale, BarChart2,
-  Target, Zap, Calendar, FileText, DollarSign, Award,
+  Target, Zap, Calendar, FileText, DollarSign, Award, Goal,
   Home, Sunrise, BarChart3, Activity, Flower2, Baby, Brain,
   RefreshCw, CircleDot, ArrowLeftRight, TrendingDown, Telescope,
   GraduationCap, Bot, Handshake, Construction, Landmark,
@@ -27,6 +27,7 @@ const NAV_ICON_MAP: Record<string, LucideIcon> = {
   team: ClipboardList, 'gps-load': Radio, 'gps-heatmaps': Flame,
   medical: Cross, 'tours-camps': Calendar, settings: Settings,
   'game-standards': Shield,
+  'matchday-ops': Goal,
   'player-welfare': Heart, 'club-operations': Landmark,
   licensing: Landmark,
 }
@@ -54,6 +55,7 @@ import SportsSettings from '@/components/sports/SportsSettings'
 import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions'
 import WomensStaffTabs, { ClubInfoTab } from '@/components/womens/WomensStaffTabs'
 import WomensClubOpsOverview from '@/components/womens/WomensClubOpsOverview'
+import WomensMatchdayOps from '@/components/womens/WomensMatchdayOps'
 import WomensPlayerWelfareHub from '@/components/womens/WomensPlayerWelfareHub'
 import { WomensEmptyModule, WomensEmptyDashboard } from '@/components/womens/WomensEmptyState'
 import WomensSendMessageModal from '@/components/womens/WomensSendMessageModal'
@@ -175,7 +177,8 @@ const SIDEBAR_ITEMS = [
   { id: 'fanhub',           label: 'Fan Hub',             icon: '💜', group: 'COMMERCIAL' },
   { id: 'community',        label: 'Community',           icon: '🌍', group: 'COMMERCIAL' },
 
-  // OPERATIONS — unchanged.
+  // OPERATIONS — Matchday Operations is the flagship (everything revolves around match day).
+  { id: 'matchday-ops',     label: 'Matchday Operations', icon: '🎯', group: 'OPERATIONS' },
   { id: 'club-operations',  label: 'Club Operations',     icon: '🏟️', group: 'OPERATIONS' },
   { id: 'travel-logistics', label: 'Travel & Logistics',  icon: '✈️', group: 'OPERATIONS' },
   { id: 'kit-manager',      label: 'Kit Manager',         icon: '🧦', group: 'OPERATIONS' },
@@ -4809,7 +4812,7 @@ const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: 
   performance: { label: 'Head of Performance',    icon: '📊', accent: '#22C55E', sidebar: ['dashboard','insights','gps-load','gps-heatmaps','medical','acl','cycle','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'S&C, GPS and women\'s-specific load view.' },
   medical:     { label: 'Club Doctor',            icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','insights','medical','acl','cycle','maternity','mental','welfare','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Welfare, injury and return-to-play view.' },
   welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','acl','cycle','maternity','mental','game-standards','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
-  operations:  { label: 'Head of Operations',     icon: '🛠️', accent: '#F97316', sidebar: ['dashboard','insights','club-operations','tours-camps','team','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Matchday, facilities and travel logistics view.' },
+  operations:  { label: 'Head of Operations',     icon: '🛠️', accent: '#F97316', sidebar: ['dashboard','insights','matchday-ops','club-operations','tours-camps','team','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Matchday, facilities and travel logistics view.' },
   commercial:  { label: 'Commercial Director',    icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','insights','sponsorship','standalone','board','financial','revenue','salary','fsr','game-standards','media','social','fanhub','settings'], hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
   community:   { label: 'Head of Community',      icon: '🌍', accent: '#22C55E', sidebar: ['dashboard','insights','fanhub','media','social','sponsorship','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Foundation, schools and fan engagement view.' },
 }
@@ -5757,7 +5760,8 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
       case 'tours-camps': return <WomensToursAndCampsView preSeasonContent={<PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />} />
       case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
       case 'licensing':   return <ClubLicensingView />
-      case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" hiddenTabs={['integration', 'wellbeing', 'travel']} defaultTab="overview" title="Club Operations" subtitle="Operations overview · club info · matchday ops · compliance & insurance" clubInfoSlot={<ClubInfoTab club={club} />} overviewSlot={<WomensClubOpsOverview accent="#BE185D" />} />
+      case 'matchday-ops': return <WomensMatchdayOps accent="#BE185D" />
+      case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" hiddenTabs={['integration', 'wellbeing', 'travel', 'matchday']} defaultTab="overview" title="Club Operations" subtitle="Operations overview · club info · compliance & insurance" clubInfoSlot={<ClubInfoTab club={club} />} overviewSlot={<WomensClubOpsOverview accent="#BE185D" />} />
       case 'kit-manager':  return <WomensKitManagerView />
       case 'travel-logistics':
         // Demo workspace (womens-demo) runs the canned/simulated path; a
@@ -5841,7 +5845,7 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
                 >
                   <NavIcon size={14} strokeWidth={1.75} className="flex-shrink-0" />
                   {expanded && <span className="truncate">{item.label}</span>}
-                  {expanded && (item.id === 'tours-camps' || item.id === 'welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
+                  {expanded && (item.id === 'tours-camps' || item.id === 'welfare' || item.id === 'club-operations' || item.id === 'matchday-ops') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
                 </button>
                 )
               })}
