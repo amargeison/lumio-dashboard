@@ -53,10 +53,11 @@ import WomensAvatarDropdown, { WomensNotifications } from '@/components/womens/W
 import SportsSettings from '@/components/sports/SportsSettings'
 import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions'
 import WomensStaffTabs, { ClubInfoTab } from '@/components/womens/WomensStaffTabs'
+import WomensClubOpsOverview from '@/components/womens/WomensClubOpsOverview'
+import WomensPlayerWelfareHub from '@/components/womens/WomensPlayerWelfareHub'
 import WomensSendMessageModal from '@/components/womens/WomensSendMessageModal'
 import WomensBoardSuiteView from '@/components/womens/WomensBoardSuiteView'
 import WomensInsightsView from '@/components/womens/WomensInsightsView'
-import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 import { GPSHeatmapsView, type HMPlayer } from '@/components/sports/GPSHeatmapsBlocks'
 import TravelLogisticsView from './_components/TravelLogisticsView'
 import { WOMENS_STAFF, DEPT_COLOR } from './_lib/womens-staff-data'
@@ -144,12 +145,11 @@ const SIDEBAR_ITEMS = [
   // WELFARE — existing 6 + Medical Hub + Concussion Tracker (new).
   // NB: Medical Records ('medical' id) stays in OPERATIONS — Medical Hub here is the
   // injury/ACWR/return-to-play clinical view, Medical Records there is the admin records side.
-  { id: 'welfare',          label: 'Player Welfare',      icon: '❤️', group: 'WELFARE' },
+  { id: 'welfare',          label: 'Player Welfare Hub',  icon: '❤️', group: 'WELFARE' },
   { id: 'acl',              label: 'ACL Risk Monitor',    icon: '🦵', group: 'WELFARE' },
   { id: 'cycle',             label: 'Cycle Tracking',      icon: '🌸', group: 'WELFARE' },
   { id: 'maternity',        label: 'Pregnancy & Return-to-Play', icon: '👶', group: 'WELFARE' },
   { id: 'mental',           label: 'Mental Health',       icon: '🧠', group: 'WELFARE' },
-  { id: 'player-welfare',   label: 'Player Welfare Hub',  icon: '🌍', group: 'WELFARE' },
   { id: 'medical-hub',      label: 'Medical Hub',         icon: '🏥', group: 'WELFARE' },
   { id: 'concussion',       label: 'Concussion Tracker',  icon: '🧠', group: 'WELFARE' },
 
@@ -412,41 +412,6 @@ const FSRDashboardView = ({ club }: { club: WomensClub }) => (
 )
 
 // ─── WELFARE VIEW ─────────────────────────────────────────────────────────────
-const WelfareView = () => (
-  <div>
-    <SectionHeader title="Player Welfare Hub" subtitle="Karen Carney Review — mandatory welfare standards" icon="❤️" />
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <StatCard label="Active Flags" value="3" sub="2 monitoring, 1 leave" color="amber" />
-      <StatCard label="ACL History" value="4 players" sub="Screening programme active" color="red" />
-      <StatCard label="Maternity" value="1 active" sub="Ava Mitchell — May 2026" color="blue" />
-      <StatCard label="PFA Referrals" value="0" sub="This season" color="green" />
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-4">Active Welfare Cases</h3>
-      <div className="space-y-3">
-        {[
-          { player: 'Emily Zhang', category: 'ACL Risk', detail: 'Previous bilateral ACL (2023, 2024). 6-month screening protocol active. Next screening: 18 Apr.', severity: 'High', actions: 'Lumio Health monitoring, reduced sprint load, quarterly MRI' },
-          { player: 'Charlotte Reed', category: 'Mental Health', detail: 'Weekly sessions with Dr. Alison Carey (performance psychologist). Progress positive.', severity: 'Medium', actions: 'Weekly check-in, welfare lead notified, PFA support offered' },
-          { player: 'Ava Mitchell', category: 'Maternity', detail: 'Maternity leave commencing May 2026. Return plan: January 2027. Contract protected.', severity: 'Info', actions: 'Leave plan filed, salary protected, return-to-play programme scheduled' },
-          { player: 'Sophie Turner', category: 'ACL Risk', detail: 'ACL reconstruction Dec 2024. Currently in final return-to-play phase.', severity: 'Medium', actions: 'Graduated return protocol, no competitive match until medical clearance' },
-        ].map(c => (
-          <div key={c.player} className={`rounded-lg p-4 border ${c.severity === 'High' ? 'border-red-600/30 bg-red-600/5' : c.severity === 'Medium' ? 'border-amber-600/30 bg-amber-600/5' : 'border-blue-600/30 bg-blue-600/5'}`}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-white">{c.player}</span>
-                <span className={`text-xs px-2 py-0.5 rounded ${c.severity === 'High' ? 'bg-red-600/20 text-red-400' : c.severity === 'Medium' ? 'bg-amber-600/20 text-amber-400' : 'bg-blue-600/20 text-blue-400'}`}>{c.category}</span>
-              </div>
-              <span className={`text-xs font-semibold ${c.severity === 'High' ? 'text-red-400' : c.severity === 'Medium' ? 'text-amber-400' : 'text-blue-400'}`}>{c.severity}</span>
-            </div>
-            <p className="text-xs text-gray-400 mb-2">{c.detail}</p>
-            <p className="text-xs text-gray-500">Actions: {c.actions}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-)
-
 // ─── MORNING BRIEFING VIEW ────────────────────────────────────────────────────
 const MorningBriefingView = ({ club }: { club: WomensClub }) => {
   const fmt = (n: number): string => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n)
@@ -4841,8 +4806,8 @@ const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: 
   dof:         { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['dashboard','insights','squad','dualreg','transfers','academy','tours-camps','game-standards','settings'], hiddenTabs: ['dontmiss'], message: 'Squad strategy and recruitment view.' },
   coach:       { label: 'Head Coach',             icon: '🎽', accent: '#22C55E', sidebar: ['dashboard','insights','squad','medical','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
   performance: { label: 'Head of Performance',    icon: '📊', accent: '#22C55E', sidebar: ['dashboard','insights','gps-load','gps-heatmaps','medical','acl','cycle','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'S&C, GPS and women\'s-specific load view.' },
-  medical:     { label: 'Club Doctor',            icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','insights','medical','acl','cycle','maternity','mental','welfare','player-welfare','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Welfare, injury and return-to-play view.' },
-  welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','acl','cycle','maternity','mental','player-welfare','game-standards','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
+  medical:     { label: 'Club Doctor',            icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','insights','medical','acl','cycle','maternity','mental','welfare','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Welfare, injury and return-to-play view.' },
+  welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','acl','cycle','maternity','mental','game-standards','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
   operations:  { label: 'Head of Operations',     icon: '🛠️', accent: '#F97316', sidebar: ['dashboard','insights','club-operations','tours-camps','team','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Matchday, facilities and travel logistics view.' },
   commercial:  { label: 'Commercial Director',    icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','insights','sponsorship','standalone','board','financial','revenue','salary','fsr','game-standards','media','social','fanhub','settings'], hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
   community:   { label: 'Head of Community',      icon: '🌍', accent: '#22C55E', sidebar: ['dashboard','insights','fanhub','media','social','sponsorship','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Foundation, schools and fan engagement view.' },
@@ -5492,8 +5457,6 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   const [activeRole, setActiveRole] = useState(session.role)
 
   // Role config
-  const [roleOverride, setRoleOverride] = useState<string | null>(null)
-  const currentRole = (roleOverride || session.role || 'ceo') as keyof typeof WOMENS_ROLE_CONFIG
   const isSponsor = false
 
   // ── v2 dashboard state (hero + overlays) ───────────────────────────
@@ -5506,7 +5469,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   const [v2AskOpen, setV2AskOpen]         = useState(false)
   const [v2BriefOpen, setV2BriefOpen]     = useState(false)
   const [sendMessageOpen, setSendMessageOpen] = useState(false)
-  const [v2DashToast, showV2DashToast]    = useV2Toast()
+  const [v2DashToast]    = useV2Toast()
   useV2Key('cmdk', () => setV2CmdOpen(o => !o))
 
   // Morning banner quotes
@@ -5588,9 +5551,23 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   const groups = ['OVERVIEW', 'FOOTBALL', 'WELFARE', 'COMPLIANCE', 'COMMERCIAL', 'OPERATIONS', 'FACILITIES', 'SETTINGS']
 
   const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps', 'finance', 'commercial', 'community', 'cup-manager', 'concussion', 'medical-hub', 'fixtures', 'set-pieces', 'licensing'])
-  const filteredItems = club.tier === 'grassroots'
+  // Customise Portal (Settings) hides nav items live via the shared
+  // SportsSettings toggles — it writes localStorage + fires this event.
+  // Settings itself is never hideable (so the user can always get back).
+  const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([])
+  useEffect(() => {
+    try { const saved = JSON.parse(localStorage.getItem('lumio_womens_hidden_items') || '[]'); if (Array.isArray(saved)) setHiddenNavItems(saved) } catch { /* SSR / parse */ }
+    const handler = (e: Event) => {
+      const d = (e as CustomEvent).detail
+      if (d && d.storagePrefix === 'lumio_womens_') setHiddenNavItems(Array.isArray(d.hiddenItems) ? d.hiddenItems : [])
+    }
+    window.addEventListener('lumio-visibility-changed', handler)
+    return () => window.removeEventListener('lumio-visibility-changed', handler)
+  }, [])
+  const baseItems = club.tier === 'grassroots'
     ? SIDEBAR_ITEMS.filter((i: { id: string }) => !hiddenForGrassroots.has(i.id))
     : SIDEBAR_ITEMS
+  const filteredItems = baseItems.filter((i: { id: string }) => i.id === 'settings' || !hiddenNavItems.includes(i.id))
 
   // ── Settings — shared SportsSettings + Women's-specific augmentations ──
   // SportsSettings is the shared chrome used by Tennis / Cricket / Darts /
@@ -5721,7 +5698,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
     switch (activeSection) {
       case 'dashboard':   return null // handled inline
       case 'fsr':         return <FSRDashboardView club={club} />
-      case 'welfare':     return <WelfareView />
+      case 'welfare':     return <WomensPlayerWelfareHub onNavigate={setActiveSection} />
       case 'briefing':    return <MorningBriefingView club={club} />
       case 'insights':    return <WomensInsightsView club={club} defaultRole={activeRole} />
       case 'salary':      return <SalaryComplianceView />
@@ -5764,8 +5741,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
       case 'tours-camps': return <WomensToursAndCampsView preSeasonContent={<PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />} />
       case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
       case 'licensing':   return <ClubLicensingView />
-      case 'player-welfare':  return <PlayerWelfareHub accent="#BE185D" variant="womens" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · maternity · cycle · women's-specific safeguarding" />
-      case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" hideTravelTab defaultTab="matchday" title="Club Operations" subtitle="Club info · matchday ops · compliance · insurance · player satisfaction" clubInfoSlot={<ClubInfoTab club={club} />} />
+      case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" hiddenTabs={['integration', 'wellbeing', 'travel']} defaultTab="overview" title="Club Operations" subtitle="Operations overview · club info · matchday ops · compliance & insurance" clubInfoSlot={<ClubInfoTab club={club} />} overviewSlot={<WomensClubOpsOverview accent="#BE185D" />} />
       case 'kit-manager':  return <WomensKitManagerView />
       case 'travel-logistics':
         // Demo workspace (womens-demo) runs the canned/simulated path; a
@@ -5849,7 +5825,7 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
                 >
                   <NavIcon size={14} strokeWidth={1.75} className="flex-shrink-0" />
                   {expanded && <span className="truncate">{item.label}</span>}
-                  {expanded && (item.id === 'tours-camps' || item.id === 'player-welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
+                  {expanded && (item.id === 'tours-camps' || item.id === 'welfare' || item.id === 'club-operations') && <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#BE185D' }}>NEW</span>}
                 </button>
                 )
               })}
@@ -5927,45 +5903,17 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
               <img
                 src="/badges/oakridge_fc_crest.svg"
                 alt=""
-                style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-8deg)', width: 180, height: 180, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none' }}
+                style={{ position: 'absolute', left: '33%', top: '50%', transform: 'translate(-50%, -50%) perspective(1100px) rotateX(52deg) rotate(-4deg)', width: 800, height: 800, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none' }}
               />
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'start', position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'stretch', position: 'relative', zIndex: 1 }}>
                 <WfHeroToday
                   T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
-                  onTodaysBriefing={() => { setActiveSection('briefing'); showV2DashToast("Today's briefing") }}
-                  onMatchdayOps={() => setActiveSection('matchday-ops')}
+                  onSendMessage={() => setSendMessageOpen(true)}
                   onAsk={() => setV2AskOpen(true)}
                 />
                 <WfTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
               </div>
             </div>
-
-            {/* Quick Actions — role-aware (shared bar) + Women's Send
-                Message button, Today tab only. Send Message is a Women's-
-                only extra that sits alongside the shared bar — the shared
-                bar is NOT modified (it's used by Football and Cricket too).
-                Restricted to Today: Quick Wins and Daily Tasks tabs are
-                lists of their own action items, so the Quick Actions row
-                duplicated context. */}
-            {(
-              <div style={{ padding: '12px 24px 0', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <RoleAwareQuickActionsBar
-                  sport="womens"
-                  role={currentRole as string}
-                  onNavigate={(deptId) => setActiveSection(deptId)}
-                  accentHex={v2Accent.hex}
-                />
-                <button
-                  onClick={() => setSendMessageOpen(true)}
-                  className="text-xs font-semibold transition-colors"
-                  style={{ padding: '8px 14px', borderRadius: 10, backgroundColor: 'rgba(190,24,93,0.12)', color: '#F472B6', border: '1px solid rgba(190,24,93,0.4)' }}
-                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(190,24,93,0.22)' }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(190,24,93,0.12)' }}
-                >
-                  📨 Send Message
-                </button>
-              </div>
-            )}
 
             {/* Tab content */}
             <div className="p-6 flex-1 w-full">

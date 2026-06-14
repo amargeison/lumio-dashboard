@@ -10,7 +10,7 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────
 
 export type WelfareTabId =
-  | 'overview' | 'integration' | 'travel' | 'matchday' | 'compliance' | 'wellbeing'
+  | 'overview' | 'integration' | 'travel' | 'matchday' | 'compliance' | 'wellbeing' | 'clubinfo'
 
 type Stage = 'NEW ARRIVAL' | 'SETTLING IN' | 'ESTABLISHED' | 'MONITORING'
 type Rag = 'green' | 'amber' | 'red'
@@ -729,6 +729,13 @@ export interface PlayerWelfareHubProps {
    *  Travel & Logistics is now its own top-level module; men's football
    *  still surfaces it here (default false, so men's is unaffected). */
   hideTravelTab?: boolean
+  /** Women's Club Operations injects a Club Info tab (documents + club
+   *  details) after Foreign Player Integration. Other portals omit it. */
+  clubInfoSlot?: React.ReactNode
+  /** Hide specific tabs (e.g. Player Welfare Hub vs Club Operations split). */
+  hiddenTabs?: WelfareTabId[]
+  /** Replace the Overview tab content (Club Operations uses an ops overview). */
+  overviewSlot?: React.ReactNode
 }
 
 export default function PlayerWelfareHub({
@@ -739,12 +746,19 @@ export default function PlayerWelfareHub({
   subtitle = 'Foreign player integration · travel · matchday · compliance · wellbeing',
   variant = 'mens',
   hideTravelTab = false,
+  clubInfoSlot,
+  hiddenTabs,
+  overviewSlot,
 }: PlayerWelfareHubProps) {
   // When travel is hidden, never let it be the active tab (the host may
   // still pass defaultTab="travel" historically).
-  const visibleTabs = hideTravelTab ? TABS.filter(t => t.id !== 'travel') : TABS
+  const baseTabs = hideTravelTab ? TABS.filter(t => t.id !== 'travel') : TABS
+  const withClubInfo = clubInfoSlot
+    ? baseTabs.flatMap(t => t.id === 'integration' ? [t, { id: 'clubinfo' as WelfareTabId, label: 'Club Info', icon: Scroll }] : [t])
+    : baseTabs
+  const visibleTabs = hiddenTabs ? withClubInfo.filter(t => !hiddenTabs.includes(t.id)) : withClubInfo
   const initialTab: WelfareTabId =
-    hideTravelTab && defaultTab === 'travel' ? 'matchday' : defaultTab
+    visibleTabs.find(t => t.id === defaultTab) ? defaultTab : visibleTabs[0].id
   const [tab, setTab] = useState<WelfareTabId>(initialTab)
 
   return (
@@ -785,12 +799,13 @@ export default function PlayerWelfareHub({
       </div>
 
       <div className="pt-2">
-        {tab === 'overview'    && <OverviewTab accent={accent} />}
+        {tab === 'overview'    && (overviewSlot ?? <OverviewTab accent={accent} />)}
         {tab === 'integration' && <IntegrationTab accent={accent} onAsk={onAskLumio} variant={variant} />}
         {tab === 'travel'      && <TravelTab accent={accent} onAsk={onAskLumio} />}
         {tab === 'matchday'    && <MatchdayTab accent={accent} onAsk={onAskLumio} />}
         {tab === 'compliance'  && <ComplianceTab accent={accent} onAsk={onAskLumio} />}
         {tab === 'wellbeing'   && <WellbeingTab accent={accent} onAsk={onAskLumio} />}
+        {tab === 'clubinfo'    && clubInfoSlot}
       </div>
     </div>
   )
