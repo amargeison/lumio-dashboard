@@ -38,12 +38,14 @@ import {
   AIBrief as NlAIBriefMod,
   Inbox as NlInboxMod,
   Squad as NlSquadModule,
+  Outstanding as NlOutstanding,
   Fixtures as NlFixturesMod,
   Perf as NlPerfMod,
   Recents as NlRecentsMod,
   Season as NlSeasonMod,
 } from './_components/NLDashboardModules'
 import { NL_INBOX, NL_ACCENT } from './_lib/nl-dashboard-data'
+import NonLeagueSendMessageModal from '@/components/football/NonLeagueSendMessageModal'
 import type { NlFixture } from './_lib/nl-dashboard-data'
 
 // ─── Colors (Amber theme for Non-League) ────────────────────────────────────
@@ -70,7 +72,7 @@ export type NLDeptId =
   | 'nl-fundraising' | 'nl-merchandise' | 'nl-insurance' | 'nl-media'
   | 'nl-morningroundup' | 'nl-performance-brief' | 'nl-ground-hire'
 
-type NLSection = null | 'Football' | 'GPS & Load' | 'Operations' | 'Facilities' | 'Club'
+type NLSection = null | 'OVERVIEW' | 'FOOTBALL' | 'WELFARE' | 'COMPLIANCE' | 'COMMERCIAL' | 'OPERATIONS' | 'FACILITIES'
 
 // Lumio = club management platform. Some pitch-side tactical features
 // (AI Halftime Brief, Training drills) remain Hudl/Sportscode territory
@@ -80,44 +82,46 @@ type NLSection = null | 'Football' | 'GPS & Load' | 'Operations' | 'Facilities' 
 // source for BOTH the live non-league route (src/app/nonleague/[slug])
 // and the demo-workspace non-league route. Edits here affect both.
 export const NL_SIDEBAR_ITEMS: { id: NLDeptId; label: string; icon: React.ElementType; section: NLSection }[] = [
-  { id: 'nl-getting-started', label: 'Getting Started',         icon: Rocket,         section: null },
-  { id: 'nl-overview',        label: 'Overview',                icon: Home,           section: null },
-  { id: 'nl-morningroundup',  label: 'Morning Roundup',         icon: Bell,           section: null },
-  { id: 'nl-club-profile',    label: 'Club Profile',            icon: MapPin,         section: null },
-  { id: 'nl-club-vision',     label: 'Club Vision',             icon: Rocket,         section: null },
-  { id: 'nl-preseason',       label: 'Pre-Season',              icon: Calendar,       section: null },
-  { id: 'nl-squad',           label: 'Squad',                   icon: Shirt,          section: 'Football' },
-  { id: 'nl-fixtures',        label: 'Fixtures & Cups',         icon: Calendar,       section: 'Football' },
-  { id: 'nl-cupmanager',      label: 'Cup Manager',             icon: Trophy,         section: 'Football' },
-  /* REMOVED: Training — pitch-side tactical, Hudl territory. Uncomment to restore.
-  { id: 'nl-training',        label: 'Training',                icon: Target,         section: 'Football' },
-  */
-  { id: 'nl-performance-brief', label: 'AI Performance Brief',  icon: Sparkles,       section: 'Football' },
-  // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
-  { id: 'nl-tactics',         label: 'Tactics',                 icon: Clipboard,      section: 'Football' },
-  // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
-  { id: 'nl-set-pieces',      label: 'Set Pieces',              icon: Target,         section: 'Football' },
-  // TODO Phase 4c: add moduleId: 'video_analysis' when this portal is wired to MODULES
-  { id: 'nl-video-analysis',  label: 'Video & Analysis',        icon: Video,          section: 'Football' },
-  { id: 'nl-gps',             label: 'GPS & Performance',       icon: Activity,       section: 'GPS & Load' },
-  { id: 'nl-gps-heatmaps',    label: 'Heatmaps',                icon: Flame,          section: 'GPS & Load' },
-  { id: 'nl-medical',         label: 'Medical',                 icon: Heart,          section: 'Football' },
-  { id: 'nl-transfers',       label: 'Transfers & Recruitment', icon: UserPlus,       section: 'Football' },
-  { id: 'nl-registration',    label: 'Player Registration',     icon: Shield,         section: 'Operations' },
-  { id: 'nl-discipline',      label: 'Discipline Log',          icon: AlertTriangle,  section: 'Operations' },
-  { id: 'nl-matchfees',       label: 'Match Fee Tracker',       icon: DollarSign,     section: 'Operations' },
-  { id: 'nl-kit',             label: 'Kit & Equipment',         icon: Shirt,          section: 'Operations' },
-  { id: 'nl-finance',         label: 'Finance',                 icon: DollarSign,     section: 'Operations' },
-  { id: 'nl-safeguarding',    label: 'Safeguarding',            icon: Shield,         section: 'Operations' },
-  { id: 'nl-matchday',        label: 'Matchday',                icon: Trophy,         section: 'Operations' },
-  { id: 'nl-ground',          label: 'Ground & Facilities',     icon: MapPin,         section: 'Facilities' },
-  { id: 'nl-ground-hire',     label: 'Ground Hire',             icon: MapPin,         section: 'Facilities' },
-  { id: 'nl-sponsorship',     label: 'Sponsorship',             icon: Handshake,      section: 'Club' },
-  { id: 'nl-fundraising',     label: 'Fundraising',             icon: Heart,          section: 'Club' },
-  { id: 'nl-insurance',       label: 'Insurance',               icon: Shield,         section: 'Club' },
-  { id: 'nl-comms',           label: 'Comms',                   icon: MessageSquare,  section: 'Club' },
-  { id: 'nl-media',           label: 'Media & Content',         icon: Radio,          section: 'Club' },
-  { id: 'nl-committee',       label: 'Committee',               icon: Users,          section: 'Club' },
+  // ── OVERVIEW ──
+  { id: 'nl-getting-started', label: 'Getting Started',         icon: Rocket,         section: 'OVERVIEW' },
+  { id: 'nl-overview',        label: 'Overview',                icon: Home,           section: 'OVERVIEW' },
+  { id: 'nl-morningroundup',  label: 'Morning Roundup',         icon: Bell,           section: 'OVERVIEW' },
+  { id: 'nl-club-profile',    label: 'Club Profile',            icon: MapPin,         section: 'OVERVIEW' },
+  // ── FOOTBALL ──
+  { id: 'nl-squad',           label: 'Squad',                   icon: Shirt,          section: 'FOOTBALL' },
+  { id: 'nl-fixtures',        label: 'Fixtures & Cups',         icon: Calendar,       section: 'FOOTBALL' },
+  { id: 'nl-cupmanager',      label: 'Cup Manager',             icon: Trophy,         section: 'FOOTBALL' },
+  { id: 'nl-training',        label: 'Training',                icon: Target,         section: 'FOOTBALL' },
+  { id: 'nl-tactics',         label: 'Tactics',                 icon: Clipboard,      section: 'FOOTBALL' },
+  { id: 'nl-set-pieces',      label: 'Set Pieces',              icon: Target,         section: 'FOOTBALL' },
+  { id: 'nl-video-analysis',  label: 'Video & Analysis',        icon: Video,          section: 'FOOTBALL' },
+  { id: 'nl-gps',             label: 'GPS & Performance',       icon: Activity,       section: 'FOOTBALL' },
+  { id: 'nl-gps-heatmaps',    label: 'Heatmaps',                icon: Flame,          section: 'FOOTBALL' },
+  { id: 'nl-performance-brief', label: 'AI Performance Brief',  icon: Sparkles,       section: 'FOOTBALL' },
+  { id: 'nl-transfers',       label: 'Transfers & Recruitment', icon: UserPlus,       section: 'FOOTBALL' },
+  { id: 'nl-preseason',       label: 'Pre-Season',              icon: Calendar,       section: 'FOOTBALL' },
+  // ── WELFARE ──
+  { id: 'nl-medical',         label: 'Medical',                 icon: Heart,          section: 'WELFARE' },
+  { id: 'nl-safeguarding',    label: 'Safeguarding',            icon: Shield,         section: 'WELFARE' },
+  // ── COMPLIANCE ──
+  { id: 'nl-registration',    label: 'Player Registration',     icon: Shield,         section: 'COMPLIANCE' },
+  { id: 'nl-finance',         label: 'Finance',                 icon: DollarSign,     section: 'COMPLIANCE' },
+  { id: 'nl-insurance',       label: 'Insurance',               icon: Shield,         section: 'COMPLIANCE' },
+  // ── COMMERCIAL ──
+  { id: 'nl-sponsorship',     label: 'Sponsorship',             icon: Handshake,      section: 'COMMERCIAL' },
+  { id: 'nl-fundraising',     label: 'Fundraising',             icon: Heart,          section: 'COMMERCIAL' },
+  { id: 'nl-media',           label: 'Media & Content',         icon: Radio,          section: 'COMMERCIAL' },
+  { id: 'nl-comms',           label: 'Comms',                   icon: MessageSquare,  section: 'COMMERCIAL' },
+  { id: 'nl-club-vision',     label: 'Club Vision',             icon: Rocket,         section: 'COMMERCIAL' },
+  // ── OPERATIONS ──
+  { id: 'nl-matchday',        label: 'Matchday',                icon: Trophy,         section: 'OPERATIONS' },
+  { id: 'nl-matchfees',       label: 'Match Fee Tracker',       icon: DollarSign,     section: 'OPERATIONS' },
+  { id: 'nl-kit',             label: 'Kit & Equipment',         icon: Shirt,          section: 'OPERATIONS' },
+  { id: 'nl-discipline',      label: 'Discipline Log',          icon: AlertTriangle,  section: 'OPERATIONS' },
+  { id: 'nl-committee',       label: 'Committee',               icon: Users,          section: 'OPERATIONS' },
+  // ── FACILITIES ──
+  { id: 'nl-ground',          label: 'Ground & Facilities',     icon: MapPin,         section: 'FACILITIES' },
+  { id: 'nl-ground-hire',     label: 'Ground Hire',             icon: MapPin,         section: 'FACILITIES' },
 ]
 
 // ─── Squad Data ─────────────────────────────────────────────────────────────
@@ -695,7 +699,7 @@ function NLGettingStartedView() {
   )
 }
 
-function NLOverviewView({ onToast, userName: _userName }: { onToast: (m: string) => void; userName?: string }) {
+function NLOverviewView({ onToast: _onToast, userName: _userName }: { onToast: (m: string) => void; userName?: string }) {
   const T       = THEMES.dark
   const accent  = NL_ACCENT
   const density = DENSITY.regular
@@ -704,23 +708,12 @@ function NLOverviewView({ onToast, userName: _userName }: { onToast: (m: string)
   const [openFixture, setOpenFixture] = useState<NlFixture | null>(null)
   const [cmdOpen,     setCmdOpen]     = useState(false)
   const [askOpen,     setAskOpen]     = useState(false)
+  const [sendMessageOpen, setSendMessageOpen] = useState(false)
   const [briefOpen,   setBriefOpen]   = useState(false)
-  const [dashToast,   showDashToast]  = useV2Toast()
+  const [dashToast] = useV2Toast()
   useV2Key('cmdk', () => setCmdOpen(o => !o))
 
-  const QUICK_ACTIONS = [
-    { id: 'teamsheet',  label: 'Confirm team sheet',   icon: '📋', ai: false, onClick: () => showDashToast('Team sheet sent to league') },
-    { id: 'matchprep',  label: 'Match brief',          icon: '🎯', ai: true,  onClick: () => setBriefOpen(true) },
-    { id: 'asklumio',   label: 'Ask Lumio',            icon: '✨', ai: true,  onClick: () => setAskOpen(true) },
-    { id: 'pitchcheck', label: 'Pitch inspection',     icon: '🌧️', ai: false, onClick: () => onToast('Pitch inspection logged') },
-    { id: 'log-injury', label: 'Log Injury',           icon: '⚕️',  ai: false, onClick: () => onToast('Injury logger ready') },
-    { id: 'matchfees',  label: 'Match Fees',           icon: '🧾', ai: false, onClick: () => onToast('Match fees · 16 outstanding') },
-    { id: 'sponsor',    label: 'Sponsor Post',         icon: '📱', ai: true,  onClick: () => onToast('Sponsor post drafted') },
-    { id: 'press',      label: 'Press Quote',          icon: '📣', ai: true,  onClick: () => onToast('Press quote drafted') },
-    { id: 'budget',     label: 'Budget Review',        icon: '💷', ai: false, onClick: () => onToast('Budget review opened') },
-    { id: 'minibus',    label: 'Minibus rota',         icon: '🚐', ai: false, onClick: () => onToast('Minibus rota — 2 drivers signed up') },
-    { id: 'volunteers', label: 'Volunteer Rota',       icon: '👥', ai: false, onClick: () => onToast('Volunteer rota · 6/8 confirmed') },
-  ]
+
 
   return (
     <>
@@ -735,38 +728,18 @@ function NLOverviewView({ onToast, userName: _userName }: { onToast: (m: string)
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
           <NlHeroToday
             T={T} accent={accent} density={density} greeting={greeting}
-            onTodaysBriefing={() => showDashToast("Today's briefing — see Morning Roundup")}
-            onMatchdayOps={() => showDashToast('Matchday ops — open Matchday from sidebar')}
+            onSendMessage={() => setSendMessageOpen(true)}
             onAsk={() => setAskOpen(true)}
           />
           <NlTodaySchedule T={T} accent={accent} density={density} />
         </div>
 
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {QUICK_ACTIONS.map((a, i) => (
-            <button key={i} onClick={a.onClick}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
-              style={{
-                appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 14px', borderRadius: 8,
-                background: 'transparent', border: '1px solid #2d3139',
-                color: '#9CA3AF', fontSize: 12, fontFamily: V2_FONT, cursor: 'pointer',
-                transition: 'border-color .12s, color .12s',
-              }}>
-              <span style={{ fontSize: 13 }}>{a.icon}</span>
-              <span>{a.label}</span>
-              {a.ai && <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#1F2937', color: '#6B7280', fontWeight: 700, letterSpacing: '0.04em' }}>AI</span>}
-            </button>
-          ))}
-        </div>
-
         <NlStatTiles T={T} accent={accent} density={density} />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
-          <NlAIBriefMod T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
           <NlInboxMod   T={T} accent={accent} density={density} />
-          <NlSquadModule T={T} accent={accent} density={density} />
+          <NlAIBriefMod T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
+          <NlOutstanding T={T} accent={accent} density={density} />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
@@ -779,6 +752,12 @@ function NLOverviewView({ onToast, userName: _userName }: { onToast: (m: string)
           <NlSeasonMod  T={T} accent={accent} density={density} />
         </div>
 
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <NlSquadModule T={T} accent={accent} density={density} />
+          </div>
+        </div>
+
         <div style={{ padding: '6px 0 8px', display: 'flex', gap: 14, fontSize: 10.5, color: T.text3, justifyContent: 'center' }}>
           <span>⌘K command palette</span><span>·</span><span>esc close overlays</span>
         </div>
@@ -789,6 +768,7 @@ function NLOverviewView({ onToast, userName: _userName }: { onToast: (m: string)
       <V2FixtureDrawer  T={T} accent={accent} fixture={openFixture as unknown as never} onClose={() => setOpenFixture(null)} />
       <V2Toast          T={T} accent={accent} msg={dashToast} />
       <NLMatchBriefPanel T={T} accent={accent} open={briefOpen} onClose={() => setBriefOpen(false)} />
+      {sendMessageOpen && <NonLeagueSendMessageModal onClose={() => setSendMessageOpen(false)} />}
     </>
   )
 }
