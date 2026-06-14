@@ -42,12 +42,19 @@ const DEMO_NOTE = 'Available in your live Lumio account — disabled in demo mod
 
 interface AvatarProps {
   initials: string
+  /** Demo-signup photo (data URL). When absent we show a DiceBear notionists
+   *  avatar (same style as staff cards) seeded by the user's name. */
+  photoUrl?: string | null
+  seedName?: string
   /** Settings is a sidebar section in this portal, not a separate route — parent passes a callback that nav-switches to it. */
   onSettings?: () => void
   logoutRedirect?: string
 }
 
-export default function WomensAvatarDropdown({ initials, onSettings, logoutRedirect = '/' }: AvatarProps) {
+// Same fake-avatar style the staff cards use (CC0 notionists).
+const fakeAvatar = (seed: string) => `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(seed)}&backgroundColor=transparent`
+
+export default function WomensAvatarDropdown({ initials, photoUrl, seedName, onSettings, logoutRedirect = '/' }: AvatarProps) {
   const [open, setOpen] = useState(false)
   const [demoPanel, setDemoPanel] = useState<string | null>(null)
   const [name, setName] = useState('')
@@ -89,6 +96,9 @@ export default function WomensAvatarDropdown({ initials, onSettings, logoutRedir
     router.push(logoutRedirect)
   }
 
+  const avatarInner = photoUrl
+    ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+    : <img src={fakeAvatar(seedName || name || initials || 'Director')} alt="" className="w-full h-full object-cover" />
   const menuItemStyle = { color: C.muted }
   const menuItemHover = (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.backgroundColor = 'rgba(31,41,55,0.5)'; e.currentTarget.style.color = C.text }
   const menuItemLeave = (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = C.muted }
@@ -101,7 +111,7 @@ export default function WomensAvatarDropdown({ initials, onSettings, logoutRedir
         style={{ width: 36, height: 36, backgroundColor: C.accentDeep, color: C.text, padding: 0, border: 'none', cursor: 'pointer' }}
         aria-label="Account menu"
       >
-        {initials}
+        {avatarInner}
       </button>
 
       {open && (
@@ -135,7 +145,7 @@ export default function WomensAvatarDropdown({ initials, onSettings, logoutRedir
                   className="flex items-center justify-center rounded-full text-xs font-bold shrink-0 overflow-hidden"
                   style={{ width: 48, height: 48, backgroundColor: C.accentDeep, color: C.text }}
                 >
-                  {initials}
+                  {avatarInner}
                 </div>
                 <div className="min-w-0">
                   {name  && <p className="text-sm font-semibold truncate" style={{ color: C.text }}>{name}</p>}

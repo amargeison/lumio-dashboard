@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, use } from 'react'
 import Link from 'next/link'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
@@ -55,6 +55,7 @@ import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions
 import WomensStaffTabs, { ClubInfoTab } from '@/components/womens/WomensStaffTabs'
 import WomensClubOpsOverview from '@/components/womens/WomensClubOpsOverview'
 import WomensPlayerWelfareHub from '@/components/womens/WomensPlayerWelfareHub'
+import { WomensEmptyModule, WomensEmptyDashboard } from '@/components/womens/WomensEmptyState'
 import WomensSendMessageModal from '@/components/womens/WomensSendMessageModal'
 import WomensBoardSuiteView from '@/components/womens/WomensBoardSuiteView'
 import WomensInsightsView from '@/components/womens/WomensInsightsView'
@@ -4934,21 +4935,32 @@ const WOMENS_ROLES = [
 ]
 
 // ─── MAIN PAGE ────────────────────────────────────────────────────────────────
-export default function WomensFootballPortal({ params }: { params: { slug: string } }) {
-  const club = DEMO_CLUBS[params.slug] ?? DEMO_CLUBS['oakridge-women']
+const DEMO_SLUGS = new Set([...Object.keys(DEMO_CLUBS), 'womens-demo', 'demo', 'lumio-dev', 'oakridge'])
+function makeEmptyWomensClub(slug: string): WomensClub {
+  const name = slug.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Your Club'
+  return { name, slug, league: 'WSL2', tier: 'championship', accent: '#EC4899', stadium: '', capacity: 0, manager: '', director: '', fsrHeadroom: null, salarySpend: null, relevantRevenue: 0, kitSponsor: null, founded: new Date().getFullYear() }
+}
+
+export default function WomensFootballPortal({ params }: { params: Promise<{ slug: string }> }) {
+  // Next.js 15+/16: params is a Promise — unwrap before reading slug.
+  const { slug } = use(params)
+  // Unknown slug = a brand-new club: render the EMPTY portal (placeholders +
+  // connect-data prompts). Known demo slugs keep the full sample data.
+  const isEmpty = !DEMO_SLUGS.has(slug)
+  const club = DEMO_CLUBS[slug] ?? (isEmpty ? makeEmptyWomensClub(slug) : DEMO_CLUBS['oakridge-women'])
 
   return (
     <SportsDemoGate
       sport="womens"
       defaultClubName={club.name}
-      defaultSlug={params.slug}
+      defaultSlug={slug}
       accentColor="#EC4899"
       accentColorLight="#F472B6"
       sportEmoji="⚽"
       sportLabel="Lumio Women's FC"
       roles={WOMENS_ROLES}
     >
-      {(session) => <WomensFootballPortalInner club={club} session={session} />}
+      {(session) => <WomensFootballPortalInner club={club} session={session} emptyMode={isEmpty} />}
     </SportsDemoGate>
   )
 }
@@ -5442,7 +5454,7 @@ function PreSeasonCampView({ storageKey, accent, aiRoute }: { storageKey: string
   )
 }
 
-function WomensFootballPortalInner({ club, session }: { club: WomensClub; session: SportsDemoSession }) {
+function WomensFootballPortalInner({ club, session, emptyMode = false }: { club: WomensClub; session: SportsDemoSession; emptyMode?: boolean }) {
   const [activeSection, setActiveSection] = useState('dashboard')
   // Sidebar collapse / hover-expand — matches Pro behaviour. Pinned state
   // persists across sessions in localStorage; hovered state is ephemeral
@@ -5695,6 +5707,10 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
   )
 
   const renderView = () => {
+    if (emptyMode && activeSection !== 'settings') {
+      const label = SIDEBAR_ITEMS.find((i: { id: string }) => i.id === activeSection)?.label ?? 'This section'
+      return <WomensEmptyModule title={label} sectionId={activeSection} onConnect={() => setActiveSection('settings')} />
+    }
     switch (activeSection) {
       case 'dashboard':   return null // handled inline
       case 'fsr':         return <FSRDashboardView club={club} />
@@ -5877,6 +5893,8 @@ function WomensFootballPortalInner({ club, session }: { club: WomensClub; sessio
           <div className="p-6 flex-1">
             {renderView()}
           </div>
+        ) : emptyMode ? (
+          <div className="flex-1"><WomensEmptyDashboard clubName={club.name} onNavigate={setActiveSection} /></div>
         ) : (
           <div className="flex-1 flex flex-col">
 
