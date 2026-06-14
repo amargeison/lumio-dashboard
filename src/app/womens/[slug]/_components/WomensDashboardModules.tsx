@@ -87,7 +87,7 @@ export function HeroToday({
   const [quote, setQuote] = useState(() => getDailyQuote(WOMENS_QUOTES))
   useEffect(() => { setQuote(getRotatingQuote(WOMENS_QUOTES)) }, [])
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px`, background: 'transparent' }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
         <defs>
           <pattern id="wf-hero-ptn" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -96,6 +96,7 @@ export function HeroToday({
         </defs>
         <rect width="100%" height="100%" fill="url(#wf-hero-ptn)" />
       </svg>
+      <img src="/badges/oakridge_fc_crest.svg" alt="" aria-hidden="true" style={{ position: 'absolute', left: '50%', top: '50%', width: 700, height: 700, transform: 'translate(-50%, -50%) perspective(1100px) rotateX(52deg) rotate(-4deg)', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', pointerEvents: 'none', zIndex: 0, objectFit: 'contain' }} />
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
       {/* QUOTE STYLING — warm gold #D4A056 reads as inspirational/premium
           without conflicting with women's pink brand accent. Italic, single

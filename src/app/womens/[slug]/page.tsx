@@ -5907,37 +5907,20 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
                 hero. Without this, sibling card row counts can drag the hero
                 card to match a taller sibling, leaving empty space below the
                 buttons. */}
-            <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, margin: '16px 16px 0 16px', borderRadius: 12, position: 'relative', overflow: 'hidden' }}>
-              {/* Ghost crest watermark — Pro-pattern port. Lives in the
-                  wrapper (not the inner HeroToday Card) because the
-                  wrapper is ~28px taller than the Card and is the only
-                  container that fits Pro's 180px crest centred without
-                  clipping. The HeroToday Card's background is overridden
-                  to transparent in WomensDashboardModules so this ghost
-                  shows through. saturate(0.2) brightness(3) washes the
-                  dark SVG to near-white. rotate(-8deg) is a stated-intent
-                  addition — Pro's literal transform is just translateY
-                  (-50%), no rotate. */}
-              <img
-                src="/badges/oakridge_fc_crest.svg"
-                alt=""
-                style={{ position: 'absolute', left: '33%', top: '50%', transform: 'translate(-50%, -50%) perspective(1100px) rotateX(52deg) rotate(-4deg)', width: 800, height: 800, objectFit: 'contain', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', userSelect: 'none', pointerEvents: 'none' }}
-              />
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'stretch', position: 'relative', zIndex: 1 }}>
-                <WfHeroToday
-                  T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
-                  onSendMessage={() => setSendMessageOpen(true)}
-                  onAsk={() => setV2AskOpen(true)}
-                />
-                <WfTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
-              </div>
-            </div>
-
             {/* Tab content */}
             <div className="p-6 flex-1 w-full">
               {/* Today tab — v2 modular grid */}
               {(
                 <div style={{ background: v2T.bg, color: v2T.text, fontFamily: V2_FONT, padding: v2Density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: v2Density.gap }}>
+                  {/* Hero — banner + Today as one joined band, INSIDE the panel (mirrors Football Pro). */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: v2Density.gap, alignItems: 'stretch' }}>
+                    <WfHeroToday
+                      T={v2T} accent={v2Accent} density={v2Density} greeting={v2Greeting}
+                      onSendMessage={() => setSendMessageOpen(true)}
+                      onAsk={() => setV2AskOpen(true)}
+                    />
+                    <WfTodaySchedule T={v2T} accent={v2Accent} density={v2Density} />
+                  </div>
                   <WfStatTiles T={v2T} accent={v2Accent} density={v2Density} />
 
                   {/* Three-column row — AI Morning Summary | Inbox | Today.
