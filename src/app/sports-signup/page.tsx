@@ -24,7 +24,8 @@ const SPORTS: { id: SportId; label: string; logo: string; color: string }[] = [
   { id: 'darts', label: 'Darts', logo: '/darts_logo.png', color: '#dc2626' },
 ]
 
-const LIVE_SPORTS = new Set<SportId>(['tennis', 'golf', 'darts', 'boxing', 'cricket', 'rugby', 'football', 'nonleague', 'grassroots', 'womens', 'junior'])
+// Only Women's FC is live for sign-up right now; the rest show as coming soon.
+const LIVE_SPORTS = new Set<SportId>(['womens'])
 
 export default function SportsSignupPage() {
   const router = useRouter()
@@ -34,7 +35,8 @@ export default function SportsSignupPage() {
   const [step, setStep] = useState<'form' | 'otp'>('form')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [sport, setSport] = useState<SportId | ''>(preselectedSport as SportId | '')
+  const [club, setClub] = useState('')
+  const [sport, setSport] = useState<SportId | ''>((preselectedSport as SportId) || 'womens')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
@@ -42,6 +44,7 @@ export default function SportsSignupPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const accent = sport ? SPORTS.find(s => s.id === sport)?.color || '#8B5CF6' : '#8B5CF6'
+  const clubSlug = club.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'my-club'
 
   useEffect(() => {
     if (resendCountdown <= 0) return
@@ -52,12 +55,13 @@ export default function SportsSignupPage() {
   const handleSubmit = async () => {
     if (!name.trim()) { setError('Enter your full name.'); return }
     if (!email.includes('@')) { setError('Enter a valid email.'); return }
+    if (!club.trim()) { setError('Enter your club name.'); return }
     if (!sport) { setError('Select your sport.'); return }
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/sports-auth/create-profile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), displayName: name.trim(), sport }),
+        body: JSON.stringify({ email: email.trim(), displayName: name.trim(), sport, clubName: club.trim() }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Signup failed')
@@ -84,7 +88,7 @@ export default function SportsSignupPage() {
       const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
       const { error: verifyError } = await supabase.auth.verifyOtp({ email: email.trim(), token: code, type: 'email' })
       if (verifyError) throw verifyError
-      router.push(`/${sport}/app`)
+      router.push(sport === 'womens' ? `/womens/${clubSlug}` : `/${sport}/app`)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Invalid or expired code.')
     }
@@ -132,6 +136,12 @@ export default function SportsSignupPage() {
                   style={{ width: '100%', padding: '11px 14px', borderRadius: 10, background: '#111318', border: '1px solid #374151', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
               </div>
               <div>
+                <label style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Club name</label>
+                <input value={club} onChange={e => setClub(e.target.value)} placeholder="e.g. Riverside Rovers Women"
+                  style={{ width: '100%', padding: '11px 14px', borderRadius: 10, background: '#111318', border: '1px solid #374151', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
+                {club.trim() && <p style={{ color: '#4B5563', fontSize: 11, marginTop: 5 }}>Your portal: lumiosports.com/womens/{clubSlug}</p>}
+              </div>
+              <div>
                 <label style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Your sport</label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
                   {SPORTS.map(s => {
@@ -150,7 +160,7 @@ export default function SportsSignupPage() {
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={s.logo} alt={s.label} style={{ width: 48, height: 48, objectFit: 'contain', display: 'block' }} />
                         <div style={{ color: selected ? s.color : '#fff', fontSize: 12, fontWeight: 600 }}>{s.label}</div>
-                        {!isLive && <div style={{ color: '#4B5563', fontSize: 10 }}>SOON</div>}
+                        {!isLive && <div style={{ color: '#facc15', fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Coming soon</div>}
                       </button>
                     )
                   })}

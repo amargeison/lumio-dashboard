@@ -55,6 +55,8 @@ interface SportsDemoGateProps {
   sportEmoji?: string
   sportLabel: string
   roles: Array<{ id: string; label: string; icon: string; description?: string }>
+  /** Lock club identity (no club-setup step; role moves into the photo step). */
+  lockClub?: boolean
   children: (session: SportsDemoSession) => React.ReactNode
 }
 
@@ -134,7 +136,7 @@ const ClubStep = memo(function ClubStep({
 
 const ProfileStep = memo(function ProfileStep({
   userNameRef, nicknameRef, photoDataUrl, setPhotoDataUrl, photoInputRef, handlePhotoUpload,
-  accentColor, sport, sportLabel, sportEmoji, roles, selectedRole, defaultUserName,
+  accentColor, sport, sportLabel, sportEmoji, roles, selectedRole, setSelectedRole, showRoleSelector, stepLabel, defaultUserName,
   onContinue, onSkip,
 }: {
   userNameRef: React.RefObject<HTMLInputElement | null>
@@ -149,6 +151,9 @@ const ProfileStep = memo(function ProfileStep({
   sportEmoji: string
   roles: Array<{ id: string; label: string; icon: string; description?: string }>
   selectedRole: string
+  setSelectedRole?: (id: string) => void
+  showRoleSelector?: boolean
+  stepLabel?: string
   defaultUserName: string
   onContinue: () => void
   onSkip: () => void
@@ -160,7 +165,7 @@ const ProfileStep = memo(function ProfileStep({
   return (
     <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8 space-y-6">
       <div>
-        <div className="text-[11px] uppercase tracking-widest mb-2" style={{ color: accentColor }}>Step 2 of 4</div>
+        <div className="text-[11px] uppercase tracking-widest mb-2" style={{ color: accentColor }}>{stepLabel ?? 'Step 2 of 4'}</div>
         <h2 className="text-lg font-bold text-white mb-1">Add your photo — see how you look in Lumio</h2>
         <p className="text-sm text-gray-500">Your photo appears on your player card and across the portal.</p>
       </div>
@@ -225,6 +230,22 @@ const ProfileStep = memo(function ProfileStep({
         </div>
       </div>
 
+      {showRoleSelector && setSelectedRole && (
+        <div className="space-y-3">
+          <label className="text-xs text-gray-500 uppercase tracking-wider">Your role</label>
+          <div className="grid grid-cols-2 gap-2">
+            {roles.map(r => (
+              <button key={r.id} onClick={() => setSelectedRole(r.id)}
+                className={`flex items-start gap-2 p-3 rounded-xl border text-left transition-all ${selectedRole === r.id ? 'text-white' : 'border-gray-800 bg-gray-900/50 text-gray-400 hover:border-gray-700'}`}
+                style={selectedRole === r.id ? { background: `${accentColor}15`, borderColor: `${accentColor}60` } : {}}>
+                <span className="text-base flex-shrink-0">{r.icon}</span>
+                <div><div className="text-xs font-semibold">{r.label}</div><div className="text-[10px] text-gray-600 mt-0.5">{r.description}</div></div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <input ref={userNameRef} type="text" value={liveName} onChange={e => setLiveName(e.target.value)} placeholder="Your name"
           className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-gray-500" />
@@ -247,7 +268,7 @@ const ProfileStep = memo(function ProfileStep({
 })
 
 const EarlyAccessStep = memo(function EarlyAccessStep({
-  accentColor, email, clubName, sport, onApply, onContinue,
+  accentColor, email, clubName, sport, onApply, onContinue, stepLabel,
 }: {
   accentColor: string
   email: string
@@ -255,6 +276,7 @@ const EarlyAccessStep = memo(function EarlyAccessStep({
   sport: string
   onApply: () => void
   onContinue: () => void
+  stepLabel?: string
 }) {
   const [applied, setApplied] = useState(false)
 
@@ -273,7 +295,7 @@ const EarlyAccessStep = memo(function EarlyAccessStep({
   return (
     <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8 space-y-6">
       <div>
-        <div className="text-[11px] uppercase tracking-widest text-gray-500 mb-2">Step 3 of 4</div>
+        <div className="text-[11px] uppercase tracking-widest text-gray-500 mb-2">{stepLabel ?? 'Step 3 of 4'}</div>
         <h2 className="text-xl font-bold text-white mb-2">Want 3 months free with your own data?</h2>
         <p className="text-sm text-gray-400 leading-relaxed">
           We&apos;re looking for a small number of clubs to help us shape Lumio. Sign up for our early access programme and get 3 months completely free — no commitment, no contract, no pushy sales. All we ask at the end is an honest case study and the chance to keep working with you.
@@ -306,7 +328,7 @@ const EarlyAccessStep = memo(function EarlyAccessStep({
 
 const InviteStep = memo(function InviteStep({
   accentColor, sport, defaultSlug, inviteEmails, setInviteEmails,
-  onSendAndContinue, onSkip,
+  onSendAndContinue, onSkip, stepLabel,
 }: {
   accentColor: string
   sport: string
@@ -315,6 +337,7 @@ const InviteStep = memo(function InviteStep({
   setInviteEmails: (emails: string[]) => void
   onSendAndContinue: () => void
   onSkip: () => void
+  stepLabel?: string
 }) {
   const [copied, setCopied] = useState(false)
   const demoUrl = `lumiosports.com/${sport}/${defaultSlug || 'demo'}`
@@ -328,7 +351,7 @@ const InviteStep = memo(function InviteStep({
   return (
     <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8 space-y-6">
       <div>
-        <div className="text-[11px] uppercase tracking-widest text-gray-500 mb-2">Step 4 of 4</div>
+        <div className="text-[11px] uppercase tracking-widest text-gray-500 mb-2">{stepLabel ?? 'Step 4 of 4'}</div>
         <h2 className="text-lg font-bold text-white mb-1">Invite colleagues to explore</h2>
         <p className="text-sm text-gray-400">Want to show a colleague? Send them a link to the demo — they can explore it alongside you.</p>
       </div>
@@ -377,7 +400,7 @@ const PortalLogo = memo(function PortalLogo({ sport }: { sport: string }) {
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────
 export default function SportsDemoGate({
   sport, defaultClubName, defaultSlug, accentColor, accentColorLight,
-  sportEmoji, sportLabel, roles, children,
+  sportEmoji, sportLabel, roles, children, lockClub = false,
 }: SportsDemoGateProps) {
   void accentColorLight // available for future use
   const router = useRouter()
@@ -527,7 +550,7 @@ export default function SportsDemoGate({
 
     const isDevHost = window.location.hostname.includes('dev.')
       || window.location.hostname === 'localhost'
-    if (isDevHost) setStep('club')
+    if (isDevHost) setStep(lockClub ? 'profile' : 'club')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -710,7 +733,7 @@ export default function SportsDemoGate({
           // Pull the saved profile to decide returning-user vs first-time.
           // We only short-circuit to 'done' (skip wizard) if the server
           // has a populated user_name. First-time visitors fall through
-          // to setStep('club') and let the wizard own persona capture.
+          // to setStep(lockClub ? 'profile' : 'club') and let the wizard own persona capture.
           let profile: {
             user_name?: string; club_name?: string; role?: string
             avatar_url?: string | null; logo_url?: string | null; nickname?: string | null
@@ -777,7 +800,7 @@ export default function SportsDemoGate({
           // and photo. finaliseSession() persists the session blob and
           // the onboarded flag once Invite completes, and consumes
           // pendingInstallTokenRef to apply the URL handoff.
-          setStep('club')
+          setStep(lockClub ? 'profile' : 'club')
           setLoading(false)
           return
         }
@@ -861,7 +884,7 @@ export default function SportsDemoGate({
           }
         }
       } catch {}
-      setStep('club')
+      setStep(lockClub ? 'profile' : 'club')
     } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Invalid or expired code.') }
     setLoading(false)
   }
@@ -1056,6 +1079,9 @@ export default function SportsDemoGate({
         sportEmoji={sportEmoji || '⚽'}
         roles={roles}
         selectedRole={selectedRole}
+        setSelectedRole={setSelectedRole}
+        showRoleSelector={lockClub}
+        stepLabel={lockClub ? 'Step 1 of 3' : 'Step 2 of 4'}
         defaultUserName={userName}
         onContinue={() => {
           setUserName(userNameRef.current?.value?.trim() || '')
@@ -1081,6 +1107,7 @@ export default function SportsDemoGate({
         email={email}
         clubName={clubName}
         sport={sport}
+        stepLabel={lockClub ? 'Step 2 of 3' : 'Step 3 of 4'}
         onApply={() => setStep('invite')}
         onContinue={() => setStep('invite')}
       />
@@ -1094,6 +1121,7 @@ export default function SportsDemoGate({
         accentColor={accentColor}
         sport={sport}
         defaultSlug={defaultSlug}
+        stepLabel={lockClub ? 'Step 3 of 3' : 'Step 4 of 4'}
         inviteEmails={inviteEmails}
         setInviteEmails={setInviteEmails}
         onSendAndContinue={() => {

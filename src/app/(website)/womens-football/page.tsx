@@ -26,6 +26,8 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '💗', title: 'Player Welfare Hub', desc: 'Karen Carney Review mandatory standards built in. ACL monitoring, maternity tracking, mental health case management. Every player protected.' },
   { icon: '💰', title: 'FSR Compliance', desc: 'Real-time Financial Sustainability Regulation tracking. Salary cap monitoring, bundled sponsorship attribution, headroom calculator. Stay safe automatically.' },
   { icon: '🏦', title: 'Board Suite', desc: 'FSR status, commercial growth, welfare flags, attendance — one executive view. Board pack generated with a click.' },
+  { icon: '💷', title: 'Club Finance', desc: 'The owner’s financial command centre. Eight tabs — overview, revenue, costs, wages, contracts, budgets & transfers, cash flow and FSR health — with charts on every view. P&L, donuts, trends, wage-to-revenue and a risk register in one place.' },
+  { icon: '🗺️', title: 'Club Vision', desc: 'Multi-horizon strategy across 1, 3, 5 and 10 years. Season objectives, transfer plan, KPI roadmap, revenue forecast, stadium and academy plans, a full decade financial projection and legacy milestones — your WSL 2 → WSL roadmap, owner-grade.' },
   { icon: '📊', title: 'Revenue Attribution', desc: 'Women-only Relevant Revenue tracked separately. Bundled deal attribution, YoY growth, permitted spend calculator. Know your number.' },
   { icon: '🪙', title: 'Salary Compliance', desc: 'Every player\u2019s salary tracked against FSR cap. New signing modeller shows headroom impact before you sign.' },
   { icon: '🏗️', title: 'Standalone Identity Tracker', desc: 'Building your commercial independence? Track demerger readiness, standalone revenue %, indicative valuation and dependency score.' },
@@ -38,14 +40,19 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🏛️', title: 'Club Licensing', desc: 'Flagship compliance workspace. 5 tabs (Overview / Criteria / Risk Register / Action Plan / Audit), 6 categories (facilities, staffing, academy, contact hours, welfare, medical), ~30 criteria. Demo status: PROVISIONAL — 4 of 6 categories green. Club-side preparation tool — Lumio does not issue licences; visible disclaimer on every tab.' },
   { icon: '🧦', title: 'Kit Manager — period-proofing', desc: 'Treats short-colour decisions as a welfare decision, not a marketing one. Home / away / third kit colour cards with period-proofed-vs-white-shorts badges (referencing the Stoke City / West Brom Women 2023 precedent), plus a Period Product Provision tracker showing stock status across changing rooms, matchday kit bags and the training-ground med room.' },
   { icon: '🎬', title: 'Video & Analysis', desc: '7 sub-tabs: Library, Detail, Training, Performance, Set-Pieces, Live, Opposition. Match-clip library, training-session capture, live-match feed, opposition scouting profile. Operates on the data your analyst captures — no third-party video stack required.' },
+  { icon: '🎯', title: 'Tactics', desc: 'Drag-and-drop formation board across six systems (4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 4-5-1, 3-4-3). Build your XI from a GPS-load-aware squad list, auto-fill the best XI, and read AI tactical suggestions and opposition notes that adapt to your shape.' },
+  { icon: '🏃', title: 'Training', desc: 'A full coaching week. Day-by-day session tabs with sections, drills, equipment, GPS targets and coaching points, plus an AI Session Builder that turns type / duration / intensity / focus into a complete plan — with load report and recovery schedule alongside.' },
   { icon: '📊', title: 'Insights for every role', desc: 'CEO / Chairman, Director of Football, Head Coach, Head of Performance, Club Doctor, Welfare Lead, Head of Operations, Commercial Director, Head of Community — each role gets a tailored AI-generated insights report. Sponsor view available separately.' },
-  { icon: '🔁', title: 'Transfers + AI Researcher', desc: 'Track contracts, manage shortlists, and run AI-powered research on the players your scouts have added. Outputs a structured comparison and readiness assessment over the data your team enters — no external player database supplied, no vendor lock-in.' },
+  { icon: '🔁', title: 'Transfers & Contracts', desc: 'Track contracts and renewals, manage shortlists, and model FSR impact before you sign. Contract tracker with expiry colour-coding, renewal priorities and agent breakdown — over the data your team enters, no vendor lock-in.' },
   { icon: '📉', title: 'Analytics & Performance Data', desc: 'Match analytics and player insights computed over the data your club records — GPS feeds, match events, fitness inputs, video tags. AI-summarised. Designed to plug into whichever data feeds you already use; no named third-party stack required.' },
-  { icon: '🔭', title: 'Scouting', desc: 'Build and manage a club-owned scouting watchlist. Structured player profiles with position / age / contract / salary filters, plus AI-generated scouting reports over the data your scouts capture. Lumio does not ship a player database — you control what is in your watchlist.' },
   { icon: '🎓', title: 'Academy / Player Pathway', desc: 'U18 and U21 squads, CoE compliance, GPS profiling, development ratings, dual registration management, and first-team bridge tracking.' },
   { icon: '📣', title: 'Media & PR', desc: 'Press release generator, media obligations tracker, journalist database, and matchday media accreditation management.' },
   { icon: '📱', title: 'Social Media Manager', desc: 'Content calendar, post scheduling, engagement analytics, and AI caption generator across Twitter/X, Instagram, TikTok and Facebook.' },
   { icon: '💜', title: 'Fan Hub', desc: 'Season ticket tracker, membership management, NPS surveys, fan engagement analytics and matchday experience scoring.' },
+  { icon: '✈️', title: 'Travel & Logistics', desc: 'An AI Travel Researcher finds and scores coaches, hotels and pre-match meals for every away day — even for a club new to a division with no suppliers saved. Draft the booking enquiry and hand off; Lumio never books for you. Same-day-vs-overnight cost comparison built in.' },
+  { icon: '🌍', title: 'Tours & Camps', desc: 'Plan pre-season and mid-season camps and tours — windows, logistics, budgets, commercial activation and squad planning that’s cycle / maternity / dual-reg aware. Add a camp or tour and the linked budgets and rollups update live.' },
+  { icon: '🏟️', title: 'Club Operations', desc: 'An operations command centre. Matchday readiness, facilities & stadium status, suppliers & contracts, compliance & licensing, staffing & rota, an ops calendar and live action items — everything the ops manager needs, end to end.' },
+  { icon: '🏟️', title: 'Stadium & Facilities', desc: 'Stadium, pitch & grounds and training-ground views — capacity and safety certification, pitch condition and maintenance, floodlights and facility status, with the matchday readiness that feeds Club Operations.' },
 ]
 
 const INTEGRATIONS: Array<{ icon: string; name: string; desc: string; status?: 'partner' }> = [
@@ -63,7 +70,7 @@ const INTEGRATIONS: Array<{ icon: string; name: string; desc: string; status?: '
 ]
 
 const TIERS: { name: string; price: string; desc: string; badge?: string }[] = [
-  { name: 'WSL', price: '£499/mo', desc: 'The complete Club OS. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI Performance Brief (Half-Time / Full-Time / Training), Lumio Data analytics, scouting, academy, transfers, board suite.' },
+  { name: 'WSL', price: '£499/mo', desc: 'The complete Club OS. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI Performance Brief (Half-Time / Full-Time / Training), Lumio Data analytics, academy, transfers, travel logistics, board suite.' },
   { name: 'WSL 2', price: '£299/mo', desc: 'FSR-lite compliance, Karen Carney standards, basic GPS, welfare tracking, squad management, dual registration, morning briefings.', badge: "For WSL 2 women's clubs meeting professionalisation standards" },
   { name: "Women's National League", price: '£149/mo', desc: 'Everything a growing club needs. Welfare standards, compliance tracking, squad management — affordable and built for football people.' },
 ]
@@ -154,7 +161,7 @@ function ClubDashboardMockup() {
           {[
             { name: 'Emily Zhang', tag: 'ACL', color: '#F59E0B' },
             { name: 'Charlotte Reed', tag: 'Mental Health', color: PURPLE },
-            { name: 'Ava Mitchell', tag: 'Maternity', color: '#3B82F6' },
+            { name: 'Sophie Lawson', tag: 'Maternity', color: '#3B82F6' },
           ].map(p => (
             <div key={p.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: TEXT, marginTop: 6 }}>
               <span>{p.name}</span>
@@ -238,7 +245,7 @@ function WelfareMockup() {
   const cases = [
     { name: 'Emily Zhang', tag: 'ACL Risk', level: 'High', levelColor: '#EF4444', note: 'Previous bilateral ACL (2023, 2024). Next screening: 18 Apr.' },
     { name: 'Charlotte Reed', tag: 'Mental Health', level: 'Medium', levelColor: '#F59E0B', note: 'Weekly sessions with Dr. Alison Carey. Progress positive.' },
-    { name: 'Ava Mitchell', tag: 'Maternity', level: 'Info', levelColor: '#3B82F6', note: 'Maternity leave May 2026. Return plan: January 2027.' },
+    { name: 'Sophie Lawson', tag: 'Maternity', level: 'Info', levelColor: '#3B82F6', note: 'Maternity leave May 2026. Return plan: January 2027.' },
     { name: 'Sophie Turner', tag: 'ACL Risk', level: 'Medium', levelColor: '#F59E0B', note: 'ACL reconstruction Dec 2024. Final return-to-play phase.' },
   ]
   return (
@@ -247,7 +254,7 @@ function WelfareMockup() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 12 }}>
         <KPI value="3" label="Active Flags" sub="2 monitoring · 1 leave" color="#F59E0B" />
         <KPI value="4 players" label="ACL History" sub="Screening active" color="#EF4444" />
-        <KPI value="1 active" label="Maternity" sub="Ava Mitchell May 26" color="#3B82F6" />
+        <KPI value="1 active" label="Maternity" sub="Sophie Lawson May 26" color="#3B82F6" />
         <KPI value="0" label="PFA Referrals" sub="This season" color="#10B981" />
       </div>
       <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Active Welfare Cases</div>
@@ -469,7 +476,7 @@ export default function WomensLandingPage() {
             The most complete women&apos;s football Club OS ever built.
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 780, margin: '0 auto 40px' }}>
-            Purpose-built sections across every area of a women&apos;s professional club. FSR compliance, Karen Carney welfare standards, cycle tracking + GPS integration, ACL intelligence, AI Performance Brief (Half-Time / Full-Time / Training), Lumio Data analytics, scouting, academy pathway — built for WSL and WSL 2 clubs.
+            Purpose-built sections across every area of a women&apos;s professional club. FSR compliance, Karen Carney welfare standards, cycle tracking + GPS integration, ACL intelligence, AI Performance Brief (Half-Time / Full-Time / Training), Lumio Data analytics, travel logistics, academy pathway — built for WSL and WSL 2 clubs.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
             <Link href="/sports-signup?sport=womens" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PINK, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PINK}55` }}>
