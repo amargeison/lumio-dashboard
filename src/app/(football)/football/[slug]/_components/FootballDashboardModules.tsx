@@ -79,8 +79,8 @@ const FOOTBALL_QUOTES = [
 // ─── HeroToday ─────────────────────────────────────────────────────────
 
 export function HeroToday({
-  T, accent, density, greeting, onTodaysBriefing, onMatchdayOps, onAsk,
-}: Common & { greeting: string; onTodaysBriefing?: () => void; onMatchdayOps?: () => void; onAsk?: () => void }) {
+  T, accent, density, greeting, onSendMessage, onAsk,
+}: Common & { greeting: string; onSendMessage?: () => void; onAsk?: () => void }) {
   const f = FOOTBALL_FIXTURES[0]
   const [counter, setCounter]     = useState({ h: 7, m: 12, s: 31 })
 
@@ -138,9 +138,9 @@ export function HeroToday({
         aria-hidden="true"
         style={{
           position: 'absolute', left: '50%', top: '50%',
-          height: '140%', width: 'auto',
-          transform: 'translate(-50%, -50%) rotate(15deg)',
-          opacity: 0.05, pointerEvents: 'none', zIndex: 0,
+          width: 700, height: 700,
+          transform: 'translate(-50%, -50%) perspective(1100px) rotateX(52deg) rotate(-4deg)',
+          opacity: 0.07, filter: 'saturate(0.2) brightness(3)', pointerEvents: 'none', zIndex: 0,
           objectFit: 'contain',
         }}
       />
@@ -189,19 +189,13 @@ export function HeroToday({
       </div>
       <div style={{ position: 'relative', display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
         <button
-          onClick={onTodaysBriefing}
+          onClick={onSendMessage}
           style={{
             appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9,
             background: accent.hex, color: T.btnText,
             fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
           }}>
-          <Icon name="sun" size={14} stroke={2} /> Today&apos;s briefing
-        </button>
-        <button onClick={onMatchdayOps}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = accent.hex }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = T.border;    e.currentTarget.style.color = T.text }}
-          style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}>
-          <Icon name="check" size={14} stroke={1.6} /> Matchday ops
+          <Icon name="megaphone" size={14} stroke={2} /> Send message
         </button>
         <button
           onClick={onAsk}
@@ -221,7 +215,8 @@ export function TodaySchedule({ T, accent, density }: Common) {
   return (
     <Card T={T} density={density} hover style={{ gridColumn: '9 / span 4' }}>
       <SectionHead T={T} title="Today" right={<span className="tnum" style={{ fontFamily: FONT_MONO }}>{FOOTBALL_ORG.date.split(',')[1]?.trim() ?? FOOTBALL_ORG.date}</span>} />
-      <div style={{ position: 'relative' }}>
+      <div style={{ maxHeight: 224, overflowY: 'auto', marginRight: -2, paddingRight: 2 }}>
+        <div style={{ position: 'relative' }}>
         <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />
         {FOOTBALL_TODAY.map((it, i) => (
           <div key={i} style={{ position: 'relative', display: 'flex', gap: 14, padding: '6px 0' }}>
@@ -231,6 +226,34 @@ export function TodaySchedule({ T, accent, density }: Common) {
               <div style={{ fontSize: 12.5, color: T.text, fontWeight: it.highlight ? 600 : 500 }}>{it.what}</div>
               <div style={{ fontSize: 10.5, color: T.text3 }}>{it.where}</div>
             </div>
+          </div>
+        ))}
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+// ─── Outstanding ───────────────────────────────────────────────────────
+export function Outstanding({ T, density }: Common) {
+  const items: { label: string; status: string; tone: 'bad' | 'warn' | 'good' }[] = [
+    { label: 'PSR submission — 2 items outstanding (squad cost ratio, allowable losses)', status: 'Due 31 May', tone: 'warn' },
+    { label: 'Contract renewals — 3 first-team players expire Jun 2026', status: 'Action', tone: 'bad' },
+    { label: 'Winter window — 2 targets in final negotiation', status: 'In progress', tone: 'warn' },
+    { label: 'Work-permit / GBE — 1 application pending Home Office', status: 'Monitor', tone: 'warn' },
+    { label: 'Medical clearances — 2 return-to-play sign-offs due', status: 'Pending', tone: 'warn' },
+    { label: 'EPPP academy audit — Cat 1 progression review', status: 'On track', tone: 'good' },
+  ]
+  const toneCol = (t: 'bad' | 'warn' | 'good') => t === 'bad' ? T.bad : t === 'warn' ? T.warn : T.good
+  const open = items.filter(i => i.tone !== 'good').length
+  return (
+    <Card T={T} density={density} hover style={{ gridColumn: '9 / span 4' }}>
+      <SectionHead T={T} title="Outstanding items" right={<span>{open} open</span>} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {items.map((it, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, paddingBottom: 8, borderBottom: i < items.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+            <span style={{ fontSize: 12, color: T.text2, lineHeight: 1.35 }}>{it.label}</span>
+            <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: `${toneCol(it.tone)}1e`, color: toneCol(it.tone), whiteSpace: 'nowrap' }}>{it.status}</span>
           </div>
         ))}
       </div>
@@ -269,7 +292,7 @@ export function AIBrief({ T, accent, density, onAsk }: Common & { onAsk?: () => 
   const hour = new Date().getHours()
   const label = hour < 12 ? 'AI Morning Summary' : hour < 17 ? 'AI Afternoon Briefing' : 'AI Evening Briefing'
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / span 4' }}>
+    <Card T={T} density={density} style={{ gridColumn: '5 / span 4' }}>
       <SectionHead
         T={T}
         title={<><Icon name="sparkles" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2, display: 'inline-block' }} />{label}</>}
