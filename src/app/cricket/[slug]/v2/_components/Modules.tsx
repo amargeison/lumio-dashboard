@@ -56,8 +56,8 @@ const pad2 = (n: number) => String(n).padStart(2, '0')
 // ─── HeroToday ─────────────────────────────────────────────────────────
 
 export function HeroToday({
-  T, accent, density, greeting, onTodaysBriefing, onMatchdayOps, onAsk,
-}: Common & { greeting: string; onTodaysBriefing?: () => void; onMatchdayOps?: () => void; onAsk?: () => void }) {
+  T, accent, density, greeting, onSendMessage, onAsk,
+}: Common & { greeting: string; onSendMessage?: () => void; onAsk?: () => void }) {
   const f = FIXTURES[0]
   const [counter, setCounter]     = useState({ h: 4, m: 18, s: 42 })
 
@@ -96,7 +96,7 @@ export function HeroToday({
   // weather are scaled appropriately as supporting context.
   const quote = getDailyQuote(CRICKET_QUOTES)
   return (
-    <Card T={T} density={density} style={{ gridColumn: '1 / -1', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
+    <Card T={T} density={density} style={{ gridColumn: '1 / span 8', overflow: 'hidden', padding: `${density.pad}px ${density.pad + 4}px` }}>
       <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: T.isDark ? 0.10 : 0.05, pointerEvents: 'none' }}>
         <defs>
           <pattern id="ptn-hero" x="0" y="0" width="44" height="44" patternUnits="userSpaceOnUse">
@@ -111,10 +111,10 @@ export function HeroToday({
         aria-hidden="true"
         style={{
           position: 'absolute', left: '50%', top: '50%',
-          height: '140%', width: 'auto',
-          transform: 'translate(-50%, -50%) rotate(15deg)',
-          opacity: 0.05, pointerEvents: 'none', zIndex: 0,
-          objectFit: 'contain',
+          width: 700, height: 700,
+          transform: 'translate(-50%, -50%) perspective(1100px) rotateX(52deg) rotate(-4deg)',
+          opacity: 0.07, filter: 'saturate(0.2) brightness(3)',
+          pointerEvents: 'none', zIndex: 0, objectFit: 'contain',
         }}
       />
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
@@ -162,22 +162,14 @@ export function HeroToday({
       </div>
       <div style={{ position: 'relative', display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
         <button
-          onClick={onTodaysBriefing}
+          onClick={onSendMessage}
           style={{
             appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9,
             background: accent.hex, color: T.btnText,
             fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
             transition: 'background .15s, transform .1s',
           }}>
-          <Icon name="sun" size={14} stroke={2} /> Today&apos;s briefing
-        </button>
-        <button
-          onClick={onMatchdayOps}
-          style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', transition: 'border-color .12s, color .12s' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = accent.hex }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = T.border;    e.currentTarget.style.color = T.text }}
-        >
-          <Icon name="check" size={14} stroke={1.6} /> Matchday ops
+          <Icon name="megaphone" size={14} stroke={2} /> Send message
         </button>
         <button
           onClick={onAsk}
@@ -197,7 +189,8 @@ export function TodaySchedule({ T, accent, density }: Common) {
   return (
     <Card T={T} density={density} hover style={{ gridColumn: '9 / span 4' }}>
       <SectionHead T={T} title="Today" right={<span className="tnum" style={{ fontFamily: FONT_MONO }}>Sat 26 Apr</span>} />
-      <div style={{ position: 'relative' }}>
+      <div style={{ maxHeight: 224, overflowY: 'auto', marginRight: -2, paddingRight: 2 }}>
+        <div style={{ position: 'relative' }}>
         <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />
         {TODAY.map((it, i) => (
           <div key={i} style={{ position: 'relative', display: 'flex', gap: 14, padding: '6px 0' }}>
@@ -209,6 +202,7 @@ export function TodaySchedule({ T, accent, density }: Common) {
             </div>
           </div>
         ))}
+        </div>
       </div>
     </Card>
   )
@@ -535,7 +529,7 @@ function InboxRow({
   )
 }
 
-export function Inbox({ T, accent, density }: Common) {
+export function Inbox({ T, accent, density, gridColumn }: Common & { gridColumn?: string }) {
   const [filter, setFilter] = useState<'all' | 'urgent'>('all')
   const [state, setState] = useState<InboxState>({
     expanded: null,
@@ -572,7 +566,7 @@ export function Inbox({ T, accent, density }: Common) {
   })
 
   return (
-    <Card T={T} density={density} style={{ gridColumn: '5 / span 4' }}>
+    <Card T={T} density={density} style={{ gridColumn: gridColumn ?? '5 / span 4' }}>
       <SectionHead T={T} title="Inbox" right={
         <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 7 }}>
           {tabs.map(([id, lbl, n]) => (
@@ -793,6 +787,34 @@ export function Season({ T, accent, density }: Common) {
         <span><span style={{ color: T.text3 }}>●</span> D {s.drawn}</span>
         <span><span style={{ color: T.bad }}>●</span> L {s.lost}</span>
         <span style={{ color: T.text3 }}>P {s.played}</span>
+      </div>
+    </Card>
+  )
+}
+
+// ─── Outstanding items ─────────────────────────────────────────────────
+
+export function Outstanding({ T, density, gridColumn }: Common & { gridColumn?: string }) {
+  const items: { label: string; status: string; tone: 'bad' | 'warn' | 'good' }[] = [
+    { label: 'Team sheet to league office — due Friday 12:30', status: 'Action', tone: 'bad' },
+    { label: 'DBS expiry — 2 coaches lapse within 30 days', status: 'Renew', tone: 'warn' },
+    { label: 'Overseas slot registration — 1 pending ECB', status: 'Submit', tone: 'warn' },
+    { label: 'Sponsor deliverables — kit photo post overdue', status: 'Chase', tone: 'warn' },
+    { label: 'Workload review — 2 bowlers amber this week', status: 'Review', tone: 'warn' },
+    { label: 'Safeguarding audit — log up to date', status: 'On track', tone: 'good' },
+  ]
+  const toneCol = (t: 'bad' | 'warn' | 'good') => t === 'bad' ? T.bad : t === 'warn' ? T.warn : T.good
+  const open = items.filter(i => i.tone !== 'good').length
+  return (
+    <Card T={T} density={density} hover style={{ gridColumn: gridColumn ?? '9 / span 4' }}>
+      <SectionHead T={T} title="Outstanding items" right={<span>{open} open</span>} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {items.map((it, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, paddingBottom: 8, borderBottom: i < items.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+            <span style={{ fontSize: 12, color: T.text2, lineHeight: 1.35 }}>{it.label}</span>
+            <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: `${toneCol(it.tone)}1e`, color: toneCol(it.tone), whiteSpace: 'nowrap' }}>{it.status}</span>
+          </div>
+        ))}
       </div>
     </Card>
   )

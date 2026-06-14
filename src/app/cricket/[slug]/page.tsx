@@ -15,13 +15,14 @@ import { GPSHeatmapsView } from './v2/_components/GPSHeatmapsView'
 import { THEMES, ACCENTS, DENSITY, FONT, getGreeting } from './v2/_lib/theme'
 import {
   HeroToday, TodaySchedule, StatTiles, AIBrief, Inbox,
-  Squad as DashboardSquad, Fixtures, Perf, Recents, Season,
+  Squad as DashboardSquad, Fixtures, Perf, Recents, Season, Outstanding,
 } from './v2/_components/Modules'
 import {
   CommandPalette, AskLumio, FixtureDrawer,
   Toast as DashboardToast, useToast as useDashboardToast, useKey,
 } from './v2/_components/Overlays'
 import { Icon as V2Icon } from './v2/_components/Icon'
+import CricketSendMessageModal from '@/components/cricket/CricketSendMessageModal'
 import type { Fixture as V2Fixture } from './v2/_lib/data'
 
 
@@ -3646,9 +3647,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
   const pitch = getPitchReport(matchDay);
 
   // Dashboard state
-  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
-    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('lumio_cricket_onboarding') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
-  })
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
   const [tourStep, setTourStep] = useState(0)
   const [aiSummary, setAiSummary] = useState<string | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -3856,6 +3855,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
     const [openFixture, setOpenFixture] = useState<V2Fixture | null>(null)
     const [cmdOpen, setCmdOpen] = useState(false)
     const [askOpen, setAskOpen] = useState(false)
+    const [sendMessageOpen, setSendMessageOpen] = useState(false)
     const [dashToast, showDashToast] = useDashboardToast()
 
     useKey('cmdk', () => setCmdOpen(o => !o))
@@ -3870,79 +3870,19 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           @keyframes cricketV2SlideUp    { from { opacity: 0; transform: translate(-50%, 8px) } to { opacity: 1; transform: translate(-50%, 0) } }
         `}</style>
 
-      {/* Hero banner — match-day context, persistent across tabs */}
-      {/* BANNER FULL WIDTH — Today schedule moved into the three-column
-          row alongside AI Morning Summary and Inbox; Squad Availability
-          moved to bottom of page as full-width strip. Layout reflow per
-          user spec — do not re-add Today as banner sibling without
-          product approval. align-items: start retained defensively in
-          case future siblings get added to this row. */}
-      <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, marginBottom: density.gap }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
-          <HeroToday
-            T={T} accent={accent} density={density} greeting={greeting}
-            onTodaysBriefing={() => { setPage('briefing'); showDashToast("Today's briefing") }}
-            onMatchdayOps={() => setPage('matchday-ops')}
-            onAsk={() => setAskOpen(true)}
-          />
-        </div>
-      </div>
-
-      {/* Tab bar — Lucide icons + accent underline (matches rugby v2). */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 4,
-        borderBottom: `1px solid ${T.border}`, overflowX: 'auto', marginBottom: density.gap,
-      }}>
-        {([
-          { id: 'gettingstarted' as const, label: 'Getting Started', icon: 'sparkles' },
-          { id: 'today'          as const, label: 'Today',           icon: 'home' },
-          { id: 'quickwins'      as const, label: 'Quick Wins',      icon: 'lightning' },
-          { id: 'dailytasks'     as const, label: 'Daily Tasks',     icon: 'check' },
-          { id: 'insights'       as const, label: 'Insights',        icon: 'bars' },
-          { id: 'dontmiss'       as const, label: "Don't Miss",      icon: 'flag' },
-          { id: 'team'           as const, label: 'Team',            icon: 'people' },
-        ]).map(t => {
-          const active = dashTab === t.id
-          return (
-            <button key={t.id} onClick={() => setDashTab(t.id)}
-              onMouseEnter={e => { if (!active) e.currentTarget.style.color = T.text2 }}
-              onMouseLeave={e => { if (!active) e.currentTarget.style.color = T.text3 }}
-              style={{
-                appearance: 'none', border: 0, background: 'transparent',
-                padding: '10px 14px',
-                fontFamily: FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
-                color: active ? '#fff' : T.text3,
-                borderBottom: `2px solid ${active ? accent.hex : 'transparent'}`,
-                marginBottom: -1,
-                cursor: 'pointer', whiteSpace: 'nowrap',
-                display: 'inline-flex', alignItems: 'center', gap: 7,
-                transition: 'color .12s, border-color .12s',
-              }}>
-              <V2Icon name={t.icon} size={12} stroke={1.6} />
-              {t.label}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Quick Actions — role-aware: 6 buttons reshape per active role. */}
-      {/* QUICK ACTIONS row centered horizontally for breathing space
-          between the left-aligned Tabs row above and the KPI cards
-          below. Visual hierarchy: navigation flush-left, actions
-          centered. */}
-      <div style={{ marginBottom: density.gap, display: 'flex', justifyContent: 'center' }}>
-        <RoleAwareQuickActionsBar
-          sport="cricket"
-          role={currentRole as string}
-          onNavigate={(dept) => setPage(dept)}
-          onAction={(modalId) => showDashToast(`${modalId} — coming soon`)}
-          accentHex={accent.hex}
-        />
-      </div>
-
-      {/* TODAY — v2 modular grid (hero rendered above tabs) */}
+      {/* Dashboard — v2 modular grid matching the women's flagship.
+          Sub-tab strip + quick-actions removed; hero joined with Today
+          inside the content panel. */}
       {dashTab === 'today' && (
         <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'stretch' }}>
+            <HeroToday
+              T={T} accent={accent} density={density} greeting={greeting}
+              onSendMessage={() => setSendMessageOpen(true)}
+              onAsk={() => setAskOpen(true)}
+            />
+            <TodaySchedule T={T} accent={accent} density={density} />
+          </div>
           <StatTiles T={T} accent={accent} density={density} />
 
           {/* Three-column row — AI Morning Summary | Inbox | Today.
@@ -3954,9 +3894,9 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
               the three cards read as one unified row visual rather than
               three disconnected cards. */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
-            <AIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
-            <Inbox   T={T} accent={accent} density={density} />
-            <TodaySchedule T={T} accent={accent} density={density} />
+            <Inbox   T={T} accent={accent} density={density} gridColumn="1 / span 4" />
+            <AIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} gridColumn="5 / span 4" />
+            <Outstanding T={T} accent={accent} density={density} gridColumn="9 / span 4" />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
@@ -4726,6 +4666,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         <AskLumio       T={T} accent={accent} open={askOpen} onClose={() => setAskOpen(false)} />
         <FixtureDrawer  T={T} accent={accent} fixture={openFixture} onClose={() => setOpenFixture(null)} />
         <DashboardToast T={T} accent={accent} msg={dashToast} />
+        {sendMessageOpen && <CricketSendMessageModal onClose={() => setSendMessageOpen(false)} />}
       </>
     )
   }
