@@ -680,6 +680,22 @@ export function ClubInfoTab({ club }: { club: ClubProps }) {
           <p key={i} className="text-xs py-1" style={{ color: C.text2 }}>{icon} {label} — {when}</p>
         ))}
       </div>
+      {/* Useful Links */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}` }}>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Useful Links</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {['FA Club Portal', 'The WSL Hub', 'Lumio Scout', 'Lumio GPS', 'Club Payroll', 'FSR Submission Portal', 'TransferRoom', 'Club Website'].map((l, i) => (
+            <a key={i} className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: C.panel, border: `1px solid ${C.border}`, color: C.text2 }}>🔗 {l}</a>
+          ))}
+        </div>
+      </div>
+      {/* Birthdays & Anniversaries */}
+      <div className="rounded-xl p-5" style={{ backgroundColor: C.panelAlt, border: `1px solid ${C.border}` }}>
+        <p className="text-sm font-bold mb-3" style={{ color: C.text }}>Birthdays &amp; Anniversaries This Month</p>
+        {([['🎂', 'Emma Clarke — Birthday 3 Apr'], ['🎉', 'Sarah Frost — 3-year anniversary at the club 8 Apr'], ['🎂', 'Jade Osei — Birthday 22 Apr'], ['🎉', 'Nina Walsh — 5-year anniversary 28 Apr']] as [string, string][]).map(([icon, label], i) => (
+          <p key={i} className="text-xs py-1" style={{ color: C.text2 }}>{icon} {label}</p>
+        ))}
+      </div>
     </div>
   )
 }

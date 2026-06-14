@@ -595,11 +595,11 @@ export default function ConcussionTrackerView({ club }: { club?: { name?: string
         <p className="text-sm mt-1" style={{ color: C.muted }}>FA Concussion Guidelines · CISG Amsterdam 2022 consensus · 6-stage GRTP protocol</p>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-1 flex-wrap" style={{ borderBottom: `1px solid ${C.border}` }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className="px-4 py-2 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
-            style={{ backgroundColor: tab === t.id ? C.gold : C.cardAlt, color: tab === t.id ? '#000' : C.muted, border: tab === t.id ? 'none' : `1px solid ${C.border}` }}>
+            style={{ background: 'transparent', borderRadius: 0, color: tab === t.id ? C.gold : C.muted, borderBottom: tab === t.id ? `2px solid ${C.gold}` : '2px solid transparent' }}>
             <t.icon size={13} />
             {t.label}
           </button>

@@ -57,10 +57,16 @@ import {
   Outstanding as FbOutstanding,
 } from './_components/FootballDashboardModules'
 import FootballSendMessageModal from '@/components/football/FootballSendMessageModal'
+import FacilityStatusEditable from '@/components/womens/WomensFacilityStatus'
+import FootballMatchdayOps from '@/components/football/FootballMatchdayOps'
+import FootballTravelLogisticsView from '@/components/football/FootballTravelLogisticsView'
+import FootballKitManager from '@/components/football/FootballKitManager'
+import FootballClubOpsOverview from '@/components/football/FootballClubOpsOverview'
+import FootballMedicalRecords from '@/components/football/FootballMedicalRecords'
 import { FOOTBALL_INBOX, FOOTBALL_ACCENT } from './_lib/football-dashboard-data'
 import type { FbFixture } from './_lib/football-dashboard-data'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
-import FootballStaffView from '@/components/football/StaffView'
+import FootballStaffView, { FootballClubInfoTab } from '@/components/football/StaffView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
 import VoiceSettings from '@/components/dashboard/VoiceSettings'
@@ -85,7 +91,7 @@ type DeptId =
   | 'tours-camps'
   | 'player-welfare' | 'club-operations'
   | 'commercial' | 'community'
-  | 'matchday-ops' | 'travel-logistics' | 'kit-manager' | 'pitch-grounds' | 'training-ground'
+  | 'matchday-ops' | 'travel-logistics' | 'kit-manager' | 'pitch-grounds' | 'training-ground' | 'medical-records'
 
 type OverviewTab = 'getting-started' | 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
@@ -161,11 +167,12 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'social',           label: 'Social Media',         icon: MessageSquare,  section: 'COMMERCIAL' },
   { id: 'community',        label: 'Community',            icon: Heart,          section: 'COMMERCIAL' },
   // ── OPERATIONS ──
-  { id: 'club-operations',  label: 'Club Operations',      icon: Building,       section: 'OPERATIONS' },
   { id: 'matchday-ops',     label: 'Matchday Operations',  icon: Calendar,       section: 'OPERATIONS' },
+  { id: 'club-operations',  label: 'Club Operations',      icon: Building,       section: 'OPERATIONS' },
   { id: 'travel-logistics', label: 'Travel & Logistics',   icon: Plane,          section: 'OPERATIONS' },
   { id: 'kit-manager',      label: 'Kit Manager',          icon: Shirt,          section: 'OPERATIONS' },
-  { id: 'staff',            label: 'Staff',                icon: Users,          section: 'OPERATIONS' },
+  { id: 'staff',            label: 'Staff Directory',      icon: Users,          section: 'OPERATIONS' },
+  { id: 'medical-records',  label: 'Medical Records',      icon: Heart,          section: 'OPERATIONS' },
   { id: 'tours-camps',      label: 'Tours & Camps',        icon: Plane,          section: 'OPERATIONS' },
   // ── FACILITIES ──
   { id: 'facilities',       label: 'Stadium & Facilities', icon: MapPin,         section: 'FACILITIES' },
@@ -627,7 +634,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
                     title={expanded ? undefined : item.label}>
                     <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
                     {expanded && <span className="truncate">{item.label}</span>}
-                    {expanded && (item.id === 'player-welfare' || item.id === 'community' || item.id === 'commercial' || item.id === 'tours-camps' || item.id === 'discover') && (
+                    {expanded && (item.id === 'player-welfare' || item.id === 'community' || item.id === 'commercial' || item.id === 'tours-camps' || item.id === 'discover' || item.id === 'matchday-ops') && (
                       <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: PRIMARY }}>NEW</span>
                     )}
                   </button>
@@ -1586,11 +1593,11 @@ function TabContent({ tab }: { tab: OverviewTab }) {
 
   if (tab === 'staff') return (
     <div className="space-y-5">
-      {/* Sub-tab pills */}
-      <div className="flex gap-2">
+      {/* Sub-tab tabs */}
+      <div className="flex gap-1" style={{ borderBottom: '1px solid #1F2937' }}>
         {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'orgchart' as const, label: '🏢 Org Chart' }, { id: 'teaminfo' as const, label: '🃏 Team Info' }, { id: 'clubinfo' as const, label: '🏟️ Club Info' }].map(t => (
-          <button key={t.id} onClick={() => setActiveStaffTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
-            style={{ backgroundColor: activeStaffTab === t.id ? '#003DA5' : '#111318', color: activeStaffTab === t.id ? '#F9FAFB' : '#6B7280', border: activeStaffTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
+          <button key={t.id} onClick={() => setActiveStaffTab(t.id)} className="px-4 py-2 text-xs font-semibold"
+            style={{ background: 'transparent', borderRadius: 0, color: activeStaffTab === t.id ? '#60A5FA' : '#6B7280', borderBottom: activeStaffTab === t.id ? '2px solid #003DA5' : '2px solid transparent' }}>{t.label}</button>
         ))}
       </div>
 
@@ -6156,93 +6163,178 @@ function _OriginalStaffView() {
   )
 }
 
+const MENS_FACILITY_STATUS = [
+  { id: 'f1', facility: 'Main Stadium Pitch', condition: 'Excellent', inspected: '26 Mar', next: 'Thu 3 Apr', notes: 'Re-seeded Tuesday' },
+  { id: 'f2', facility: 'Training Pitch 1', condition: 'Good', inspected: '25 Mar', next: 'Mon 31 Mar', notes: 'Normal use' },
+  { id: 'f3', facility: 'Training Pitch 2', condition: 'Poor', inspected: '26 Mar', next: 'Immediate', notes: 'Waterlogged — closed' },
+  { id: 'f4', facility: 'Training Pitch 3', condition: 'Good', inspected: '25 Mar', next: 'Fri 4 Apr', notes: 'Sessions redirected here' },
+  { id: 'f5', facility: 'Training Pitch 4 (Astro)', condition: 'Excellent', inspected: '20 Mar', next: 'Apr', notes: 'All-weather, no issues' },
+  { id: 'f6', facility: 'Gym & Weights Room', condition: 'Good', inspected: '24 Mar', next: 'Weekly', notes: 'New equipment arriving Mon' },
+  { id: 'f7', facility: 'Hydrotherapy Pool', condition: 'Good', inspected: '23 Mar', next: 'Bi-weekly', notes: 'Used for rehab daily' },
+  { id: 'f8', facility: 'Floodlights', condition: 'Operational', inspected: '25 Mar', next: 'Monthly', notes: 'Inspection passed' },
+]
+const MENS_PROJECTS = [
+  { id: 'p1', name: 'Pitch 2 drainage repair', when: '28-30 Mar · Est £4,200', cost: '', priority: 'Urgent' },
+  { id: 'p2', name: 'CCTV system upgrade', when: 'Next week · Est £8,500', cost: '', priority: 'Planned' },
+  { id: 'p3', name: 'Gym equipment installation', when: 'Mon 31 Mar · Est £12,000', cost: '', priority: 'Planned' },
+  { id: 'p4', name: 'Away dugout seating replacement', when: 'Apr · Est £3,800', cost: '', priority: 'Low' },
+]
+
+// ─── FACILITIES — STADIUM & FACILITIES (mirrors Women's flagship) ─────────────
 function FacilitiesView() {
+  const stands = [
+    { name: 'North Stand (Main)', cap: 3400, covered: 'Yes', acc: '18 WAV', notes: 'Hospitality, press, gantry' },
+    { name: 'East Stand', cap: 2200, covered: 'Yes', acc: '10 WAV', notes: 'Home + family stand' },
+    { name: 'South Stand', cap: 1800, covered: 'Part', acc: '8 WAV', notes: 'Away allocation + neutral' },
+    { name: 'West Terrace', cap: 1815, covered: 'No', acc: '4 WAV', notes: 'Standing, safe-standing rail' },
+  ]
+  const matchdayFac: [string, string][] = [
+    ['Home changing room', 'Refurbished 2024'], ['Away changing room', 'Compliant'],
+    ['Match officials room', 'Compliant'], ['Medical / treatment room', 'Compliant · defib on site'],
+    ['Media & broadcast room', 'EFL feed · 60 seats'], ['1881 hospitality lounge', '12 boxes · 240 covers'],
+    ['Club shop & ticket office', 'Matchday + online'], ['Family fan zone', 'Open 2h pre-KO'],
+  ]
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Facilities</h2>
-        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Stadium, training ground, pitch maintenance, and infrastructure management.</p>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Stadium &amp; Facilities</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Lumio Park · capacity 9,215 · EFL League One</p>
       </div>
-
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'Pitch Report', icon: FileText },
-          { label: 'Maintenance Log', icon: Clipboard },
-          { label: 'Booking Schedule', icon: Calendar },
-          ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
-
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Pitch Condition" value="Excellent" icon={CheckCircle2} color="#22C55E" />
-        <StatCard label="Capacity" value="12,000" icon={Users} color="#3B82F6" />
-        <StatCard label="Training Pitches" value="4" icon={MapPin} color="#003DA5" />
-        <StatCard label="Next Maintenance" value="Thu" icon={Calendar} color="#F59E0B" />
+        <StatCard label="Capacity" value="9,215" icon={Users} color="#003DA5" />
+        <StatCard label="Stands" value="4" icon={MapPin} color="#3B82F6" />
+        <StatCard label="Hospitality" value="12" icon={CheckCircle2} color="#F59E0B" />
+        <StatCard label="Accessibility" value="40" icon={CheckCircle2} color="#22C55E" />
       </div>
-
-      {/* Facility Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Stadium Overview</h3>
+          {([['Pitch dimensions', '105m × 68m (EFL standard)'], ['Floodlights', 'LED · 1,200 lux (broadcast)'], ['Undersoil heating', 'Yes — gas-fired'], ['Big screen', 'Yes · 40m²'], ['PA / scoreboard', 'Tested matchday-1'], ['Ground grading', 'EFL League One']] as [string, string][]).map(([l, v]) => (
+            <div key={l} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid rgba(31,41,55,0.5)' }}><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium text-right" style={{ color: '#D1D5DB' }}>{v}</span></div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Safety &amp; Compliance</h3>
+          {([['Safety certificate', 'Valid to Jul 2027', '#22C55E'], ['Stewarding', 'SGSA-compliant · 95 stewards', '#22C55E'], ['Last ground inspection', '14 Mar 2026 — passed', '#22C55E'], ['Crowd doctor + ambulance', 'Confirmed each matchday', '#22C55E'], ['Evacuation plan', 'Reviewed Jan 2026', '#F59E0B']] as [string, string, string][]).map(([l, v, c]) => (
+            <div key={l} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid rgba(31,41,55,0.5)' }}><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: c }}>{v}</span></div>
+          ))}
+        </div>
+      </div>
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Facility Status</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr style={{ borderBottom: '1px solid #1F2937' }}>
-                {['Facility', 'Condition', 'Last Inspected', 'Next Maintenance', 'Notes'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { facility: 'Main Stadium Pitch', condition: 'Excellent', inspected: '26 Mar', next: 'Thu 3 Apr', notes: 'Re-seeded Tuesday', color: '#22C55E' },
-                { facility: 'Training Pitch 1', condition: 'Good', inspected: '25 Mar', next: 'Mon 31 Mar', notes: 'Normal use', color: '#22C55E' },
-                { facility: 'Training Pitch 2', condition: 'Poor', inspected: '26 Mar', next: 'Immediate', notes: 'Waterlogged — closed', color: '#EF4444' },
-                { facility: 'Training Pitch 3', condition: 'Good', inspected: '25 Mar', next: 'Fri 4 Apr', notes: 'Sessions redirected here', color: '#22C55E' },
-                { facility: 'Training Pitch 4 (Astro)', condition: 'Excellent', inspected: '20 Mar', next: 'Apr', notes: 'All-weather, no issues', color: '#22C55E' },
-                { facility: 'Gym & Weights Room', condition: 'Good', inspected: '24 Mar', next: 'Weekly', notes: 'New equipment arriving Mon', color: '#22C55E' },
-                { facility: 'Hydrotherapy Pool', condition: 'Good', inspected: '23 Mar', next: 'Bi-weekly', notes: 'Used for rehab daily', color: '#22C55E' },
-                { facility: 'Floodlights', condition: 'Operational', inspected: '25 Mar', next: 'Monthly', notes: 'Inspection passed', color: '#22C55E' },
-              ].map((f, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
-                  <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{f.facility}</td>
-                  <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${f.color}1a`, color: f.color }}>{f.condition}</span></td>
-                  <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{f.inspected}</td>
-                  <td className="px-4 py-3" style={{ color: f.next === 'Immediate' ? '#EF4444' : '#9CA3AF' }}>{f.next}</td>
-                  <td className="px-4 py-3" style={{ color: '#6B7280' }}>{f.notes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Stands</p></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Stand', 'Capacity', 'Covered', 'Accessibility', 'Notes'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>
+          {stands.map((r, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{r.name}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.cap.toLocaleString()}</td><td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: r.covered === 'Yes' ? '#22C55E1a' : r.covered === 'Part' ? '#F59E0B1a' : '#6B72801a', color: r.covered === 'Yes' ? '#22C55E' : r.covered === 'Part' ? '#F59E0B' : '#9CA3AF' }}>{r.covered}</span></td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.acc}</td><td className="px-4 py-3" style={{ color: '#6B7280' }}>{r.notes}</td></tr>))}
+        </tbody></table></div>
+      </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Matchday Facilities</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {matchdayFac.map(([f, st]) => (<div key={f} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{f}</div><div className="text-[10px] mt-0.5" style={{ color: '#22C55E' }}>{st}</div></div>))}
         </div>
       </div>
+      <FacilityStatusEditable accent="#003DA5" seedFacilities={MENS_FACILITY_STATUS} seedProjects={MENS_PROJECTS} />
+    </div>
+  )
+}
 
-      {/* Upcoming Maintenance */}
+// ─── FACILITIES — PITCH & GROUNDS (mirrors Women's flagship) ──────────────────
+function MensPitchGroundsView() {
+  const maint = [
+    { t: 'Mowing (25mm)', freq: '4× / week', last: 'Today 06:30', next: 'Wed', s: 'green' },
+    { t: 'Line marking', freq: 'Matchday-1', last: 'Fri', next: 'Next home', s: 'green' },
+    { t: 'Aeration (verti-drain)', freq: 'Monthly', last: '02 Apr', next: '02 May', s: 'green' },
+    { t: 'Fertilisation', freq: '4-weekly', last: '20 Mar', next: '17 Apr', s: 'amber' },
+    { t: 'Divoting / repairs', freq: 'Post-match', last: 'Sat', next: 'Post next match', s: 'green' },
+    { t: 'SISGrass stitching top-up', freq: 'Annual', last: 'Jul 2025', next: 'Jun 2026', s: 'amber' },
+  ]
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Pitch &amp; Grounds</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Lumio Park pitch · GMA performance quality standard</p>
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="GMA Rating" value="8.8 / 10" icon={CheckCircle2} color="#22C55E" />
+        <StatCard label="Mowing Height" value="25 mm" icon={MapPin} color="#14B8A6" />
+        <StatCard label="Matches Since Reno" value="18" icon={Calendar} color="#3B82F6" />
+        <StatCard label="Next Renovation" value="Jun 2026" icon={Calendar} color="#F59E0B" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Pitch Specification</h3>
+          {([['Surface', 'SISGrass reinforced hybrid (95% natural)'], ['Drainage', 'Sand-band · primary + lateral'], ['Irrigation', 'Pop-up automated · 24 heads'], ['Soil', 'USGA rootzone'], ['Last GMA assessment', '08 Apr 2026 — 8.8/10'], ['Condition', 'Excellent · even cover']] as [string, string][]).map(([l, v]) => (
+            <div key={l} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid rgba(31,41,55,0.5)' }}><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium text-right" style={{ color: '#D1D5DB' }}>{v}</span></div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Usage &amp; Conditions</h3>
+          {([['Matches this month', '3 (2 home · 1 cup)', '#22C55E'], ['Training on stadium pitch', 'Captain\'s run only', '#22C55E'], ['Weather risk (7 day)', 'Low — light rain Thu', '#22C55E'], ['Frost cover', 'On standby', '#F59E0B'], ['Pitch inspection', 'Matchday-1, 16:00', '#22C55E']] as [string, string, string][]).map(([l, v, c]) => (
+            <div key={l} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid rgba(31,41,55,0.5)' }}><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: c }}>{v}</span></div>
+          ))}
+        </div>
+      </div>
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Upcoming Maintenance & Projects</p>
-        </div>
-        {[
-          { project: 'Pitch 2 drainage repair', date: '28-30 Mar', cost: '£4,200', priority: 'Urgent', color: '#EF4444' },
-          { project: 'CCTV system upgrade', date: 'Next week', cost: '£8,500', priority: 'Planned', color: '#3B82F6' },
-          { project: 'Gym equipment installation', date: 'Mon 31 Mar', cost: '£12,000', priority: 'Planned', color: '#3B82F6' },
-          { project: 'Away dugout seating replacement', date: 'Apr', cost: '£3,800', priority: 'Low', color: '#6B7280' },
-        ].map((p, i) => (
-          <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-            <div>
-              <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{p.project}</p>
-              <p className="text-xs" style={{ color: '#6B7280' }}>{p.date} · Est. {p.cost}</p>
-            </div>
-            <span className="text-xs px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${p.color}1a`, color: p.color }}>{p.priority}</span>
-          </div>
-        ))}
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Maintenance Schedule</p></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Task', 'Frequency', 'Last Done', 'Next Due', 'Status'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>
+          {maint.map((r, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{r.t}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.freq}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.last}</td><td className="px-4 py-3" style={{ color: '#D1D5DB' }}>{r.next}</td><td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: r.s === 'green' ? '#22C55E1a' : '#F59E0B1a', color: r.s === 'green' ? '#22C55E' : '#F59E0B' }}>{r.s === 'green' ? 'On track' : 'Due soon'}</span></td></tr>))}
+        </tbody></table></div>
       </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Grounds Team &amp; Equipment</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {([['Head Groundsperson', 'Mark Reynolds · IOG Level 3'], ['Team', '2 FT + 3 matchday'], ['Mowers', '3× cylinder · 1× rotary'], ['Verti-drain / sprayer', 'On site']] as [string, string][]).map(([a, b]) => (<div key={a} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{a}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{b}</div></div>))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
+// ─── FACILITIES — TRAINING GROUND (mirrors Women's flagship) ──────────────────
+function MensTrainingGroundView() {
+  const bookings = [
+    { time: '08:00', team: 'First team — recovery', pitch: 'Grass 1', s: 'In progress' },
+    { time: '09:30', team: 'First team — main session', pitch: 'Grass 1 (GPS)', s: 'Scheduled' },
+    { time: '11:00', team: 'Goalkeepers', pitch: '3G area', s: 'Scheduled' },
+    { time: '13:00', team: 'U21 development', pitch: 'Grass 2', s: 'Scheduled' },
+    { time: '16:00', team: 'U18 academy', pitch: 'Grass 3 (GPS)', s: 'Scheduled' },
+    { time: '18:00', team: 'Academy / EPPP', pitch: '3G area', s: 'Booked' },
+  ]
+  const fac: [string, string][] = [
+    ['Full-size grass pitches', '4 · 2 GPS-enabled'], ['3G / 4G surface', 'Floodlit · year-round'],
+    ['Indoor dome', '60×40m · all-weather'], ['Gym & S&C suite', '24 stations · platforms'],
+    ['Hydrotherapy & recovery', 'Pool · ice baths · compression'], ['Medical centre', 'Treatment · imaging referral'],
+    ['Analysis suite', 'Edit bays · meeting room'], ['Education / classroom', 'Scholar programme'],
+  ]
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Training Ground</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Lumio Sports Training Ground · first team + Category 2 academy</p>
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Grass Pitches" value="4" icon={MapPin} color="#22C55E" />
+        <StatCard label="All-Weather" value="2" icon={MapPin} color="#3B82F6" />
+        <StatCard label="Gym Stations" value="24" icon={Users} color="#003DA5" />
+        <StatCard label="Recovery Suite" value="Yes" icon={CheckCircle2} color="#14B8A6" />
+      </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Facilities</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {fac.map(([f, st]) => (<div key={f} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{f}</div><div className="text-[10px] mt-0.5" style={{ color: '#3B82F6' }}>{st}</div></div>))}
+        </div>
+      </div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Today's Pitch &amp; Facility Bookings</p><span className="text-[10px]" style={{ color: '#6B7280' }}>4 pitches · 1 dome</span></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Time', 'Group', 'Pitch / Area', 'Status'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>
+          {bookings.map((r, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-4 py-3 font-mono" style={{ color: '#9CA3AF' }}>{r.time}</td><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{r.team}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.pitch}</td><td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: r.s === 'In progress' ? '#22C55E1a' : r.s === 'Booked' ? '#F59E0B1a' : '#6B72801a', color: r.s === 'In progress' ? '#22C55E' : r.s === 'Booked' ? '#F59E0B' : '#9CA3AF' }}>{r.s}</span></td></tr>))}
+        </tbody></table></div>
+      </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Site Information</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {([['Address', 'Lumio Sports Training Ground, Lane End'], ['Opened', '2019 · expanded 2024'], ['GPS coverage', 'JOHAN — 2 pitches'], ['Access', 'First team + Cat 2 academy']] as [string, string][]).map(([a, b]) => (<div key={a} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-[10px]" style={{ color: '#6B7280' }}>{a}</div><div className="text-xs font-medium mt-0.5" style={{ color: '#F9FAFB' }}>{b}</div></div>))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -7519,13 +7611,13 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {activeDept === 'lumio-data-pro' && <FootballLeagueDataView />}
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
             {activeDept === 'player-welfare' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · wellbeing · cultural support" />}
-            {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="travel" title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />}
-            {(activeDept === 'matchday-ops' || activeDept === 'travel-logistics' || activeDept === 'kit-manager' || activeDept === 'pitch-grounds' || activeDept === 'training-ground') && (
-              <div className="rounded-xl border border-gray-800 bg-[#0D1117] p-8 text-center">
-                <h2 className="text-lg font-bold text-white mb-2">{deptLabel}</h2>
-                <p className="text-sm text-gray-400">Coming soon — this module is part of the Operations &amp; Facilities buildout.</p>
-              </div>
-            )}
+            {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" hiddenTabs={['integration', 'wellbeing', 'travel', 'matchday']} title="Club Operations" subtitle="Operations overview · club info · compliance & insurance" overviewSlot={<FootballClubOpsOverview accent="#003DA5" />} clubInfoSlot={<FootballClubInfoTab />} />}
+            {isFootballDemo && activeDept === 'pitch-grounds' && <MensPitchGroundsView />}
+            {isFootballDemo && activeDept === 'training-ground' && <MensTrainingGroundView />}
+            {isFootballDemo && activeDept === 'matchday-ops' && <FootballMatchdayOps />}
+            {isFootballDemo && activeDept === 'travel-logistics' && <FootballTravelLogisticsView />}
+            {isFootballDemo && activeDept === 'kit-manager' && <FootballKitManager />}
+            {isFootballDemo && activeDept === 'medical-records' && <FootballMedicalRecords />}
             {isFootballDemo && activeDept === 'commercial' && <CommercialView />}
             {isFootballDemo && activeDept === 'community' && <CommunityView />}
           </main>

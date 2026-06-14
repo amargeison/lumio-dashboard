@@ -44,7 +44,7 @@ const MODE_CARDS: { id: ResearchMode; icon: string; label: string; sub: string }
 
 export default function TravelResearcher({
   mode,
-  accent = '#BE185D',
+  accent = '#003DA5',
   awayFixtures,
   research,
   initialMode = 'full',
@@ -64,7 +64,7 @@ export default function TravelResearcher({
 
   // Configure inputs
   const [fixtureId, setFixtureId] = useState<string | null>(null)
-  const [from] = useState('Oakridge Stadium')
+  const [from] = useState('Oakridge Park')
   const [to, setTo] = useState('')
   const [date, setDate] = useState('')
   const [overnight, setOvernight] = useState(false)
@@ -163,11 +163,11 @@ export default function TravelResearcher({
 
   function genEmail() {
     const lines: string[] = []
-    lines.push(`Subject: Away-day booking enquiry — Oakridge Women FC${to ? ' — ' + to : ''}`)
+    lines.push(`Subject: Away-day booking enquiry — Oakridge FC${to ? ' — ' + to : ''}`)
     lines.push('')
     lines.push('Hi,')
     lines.push('')
-    lines.push(`Please could you confirm availability and a quote for the following Oakridge Women FC away trip:`)
+    lines.push(`Please could you confirm availability and a quote for the following Oakridge FC away trip:`)
     lines.push('')
     lines.push(`  • Fixture:    ${fixtureName()}`)
     lines.push(`  • Date:       ${date || 'TBC'}`)
@@ -195,7 +195,7 @@ export default function TravelResearcher({
     lines.push(`Estimated total: ${gbp(total)} (placeholder rates — please quote actuals).`)
     lines.push('')
     lines.push('Many thanks,')
-    lines.push('Oakridge Women FC — Club Operations')
+    lines.push('Oakridge FC — Club Operations')
     setEmail(lines.filter((l) => l !== '').join('\n').replace(/\n(COACH|HOTEL|MEALS) /g, '\n\n$1 '))
     setStep(4)
   }
@@ -220,7 +220,7 @@ export default function TravelResearcher({
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <button onClick={onClose} className="text-xs text-gray-500 hover:text-pink-400 inline-flex items-center gap-1.5">
+      <button onClick={onClose} className="text-xs text-gray-500 hover:text-blue-400 inline-flex items-center gap-1.5">
         <span>←</span><span>Back to travel overview</span>
       </button>
 
@@ -428,7 +428,7 @@ export default function TravelResearcher({
               <span className="text-[10px] rounded bg-gray-800 px-1.5 py-0.5 text-gray-400">{mode === 'demo' ? 'canned demo draft' : 'AI draft'}</span>
             </div>
             <textarea value={email} onChange={(e) => setEmail(e.target.value)} rows={16}
-              className="w-full bg-[#0D1117] border border-gray-700 rounded-xl px-4 py-3 text-xs text-gray-200 font-mono resize-none outline-none focus:border-pink-600/60" />
+              className="w-full bg-[#0D1117] border border-gray-700 rounded-xl px-4 py-3 text-xs text-gray-200 font-mono resize-none outline-none focus:border-blue-600/60" />
             <p className="mt-2 text-[11px] text-gray-600">Lumio never books directly — this sends the enquiry you approve. The supplier confirms; you stay in control.</p>
           </div>
           {sent ? (
@@ -516,7 +516,7 @@ function Section({ title, icon, children }: { title: string; icon: React.ReactNo
 }
 
 function ScoreBadge({ s }: { s: number }) {
-  const c = s >= 90 ? '#22C55E' : s >= 80 ? '#BE185D' : s >= 70 ? '#F59E0B' : '#6B7280'
+  const c = s >= 90 ? '#22C55E' : s >= 80 ? '#003DA5' : s >= 70 ? '#F59E0B' : '#6B7280'
   return <span className="text-[10px] px-2 py-1 rounded-full font-bold" style={{ background: `${c}22`, color: c }}>{s} Lumio</span>
 }
 

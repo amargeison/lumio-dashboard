@@ -119,8 +119,8 @@ function KPI({ icon: Icon, label, value, sub }: { icon: React.ElementType; label
 
 function TabBtn({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap"
-      style={{ backgroundColor: active ? C.accent : '#111318', color: active ? '#000' : C.muted, border: active ? 'none' : `1px solid ${C.border}` }}>
+    <button onClick={onClick} className="px-4 py-2 text-xs font-semibold transition-all whitespace-nowrap"
+      style={{ background: 'transparent', borderRadius: 0, color: active ? C.accent : C.muted, borderBottom: active ? `2px solid ${C.accent}` : '2px solid transparent' }}>
       {label}
     </button>
   )
@@ -885,7 +885,7 @@ export default function ProVideoAnalysisView() {
       </div>
 
       {/* Sub-tab nav */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+      <div className="flex items-center gap-1 overflow-x-auto pb-1" style={{ borderBottom: `1px solid ${C.border}` }}>
         <TabBtn active={tab === 'library'}     label="Match Library"        onClick={() => setTab('library')} />
         <TabBtn active={tab === 'detail'}      label="Match Detail"         onClick={() => setTab('detail')} />
         <TabBtn active={tab === 'training'}    label="Training"             onClick={() => setTab('training')} />

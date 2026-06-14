@@ -56,6 +56,7 @@ import WomensSettingsAdditions from '@/components/womens/WomensSettingsAdditions
 import WomensStaffTabs, { ClubInfoTab } from '@/components/womens/WomensStaffTabs'
 import WomensClubOpsOverview from '@/components/womens/WomensClubOpsOverview'
 import WomensMatchdayOps from '@/components/womens/WomensMatchdayOps'
+import WomensFacilityStatus from '@/components/womens/WomensFacilityStatus'
 import WomensPlayerWelfareHub from '@/components/womens/WomensPlayerWelfareHub'
 import { WomensEmptyModule, WomensEmptyDashboard } from '@/components/womens/WomensEmptyState'
 import WomensSendMessageModal from '@/components/womens/WomensSendMessageModal'
@@ -4572,6 +4573,7 @@ const StadiumFacilitiesView = ({ club }: { club: WomensClub }) => {
           {facilities.map(x=>(<div key={x.f} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="text-xs text-white font-medium">{x.f}</div><div className="text-[10px] text-green-400 mt-0.5">{x.s}</div></div>))}
         </div>
       </div>
+      <div className="mt-6"><WomensFacilityStatus accent="#EC4899" /></div>
     </div>
   )
 }
@@ -4720,6 +4722,56 @@ const WomensKitManagerView = () => {
   const statusDot = (s: Stock['status']) =>
     s === 'Stocked' ? 'bg-green-500' : s === 'Low' ? 'bg-amber-500' : 'bg-red-500'
 
+  type Allocation = { num: number; player: string; note: string }
+  const allocations: Allocation[] = [
+    { num: 1, player: 'Charlotte Reed', note: 'GK · home + GK kit ready' },
+    { num: 2, player: 'Sophie Lawson', note: 'RB' },
+    { num: 3, player: 'Sophie Turner', note: 'LB' },
+    { num: 4, player: 'Lucy Brennan', note: 'CB' },
+    { num: 5, player: 'Emma Clarke', note: 'CB' },
+    { num: 6, player: 'Maya Reid', note: 'CB' },
+    { num: 7, player: 'Abbi Walsh', note: 'RW' },
+    { num: 8, player: 'Megan Hughes (C)', note: 'CDM · captain’s armband' },
+    { num: 9, player: 'Jade Osei', note: 'ST' },
+    { num: 10, player: 'Priya Nair', note: 'CM' },
+    { num: 11, player: 'Tilly Brooks', note: 'LW' },
+    { num: 12, player: 'Lucy Whitmore', note: 'CM' },
+    { num: 13, player: 'Ellie Hayes', note: 'GK (sub)' },
+    { num: 14, player: 'Zara Williams', note: 'ST' },
+    { num: 15, player: 'Bea Chen', note: 'CB' },
+    { num: 16, player: 'Emily Zhang', note: 'CM' },
+    { num: 17, player: 'Dani Morris', note: 'LW' },
+    { num: 18, player: 'Tessa Foley', note: 'LB' },
+    { num: 19, player: 'Jess Tilley', note: 'RW' },
+    { num: 20, player: 'Fatima Al-Said', note: 'CAM' },
+    { num: 22, player: 'Aria Rowe', note: 'ST' },
+    { num: 23, player: 'Sasha Davies', note: 'CM' },
+  ]
+
+  type Prep = { id: string; label: string; done: boolean }
+  const kitPrepItems: Prep[] = [
+    { id: 'k1', label: 'Home shirts pressed & hung (18 + spares)', done: true },
+    { id: 'k2', label: 'Numbers & names checked vs team sheet', done: true },
+    { id: 'k3', label: 'Captain’s armband + GK kits (×2 colours)', done: true },
+    { id: 'k4', label: 'Period-product kit bags stocked', done: false },
+    { id: 'k5', label: 'Match balls — 6 checked & inflated', done: false },
+    { id: 'k6', label: 'Training / warm-up kit bagged', done: true },
+    { id: 'k7', label: 'Boots, shin pads, gloves — per player', done: false },
+    { id: 'k8', label: 'Substitute bibs, towels, water bottles', done: true },
+  ]
+  const [kitPrep, setKitPrep] = useState<Record<string, boolean>>(() => Object.fromEntries(kitPrepItems.map(i => [i.id, i.done])))
+  const prepDone = kitPrepItems.filter(i => kitPrep[i.id]).length
+
+  type Boot = { item: string; qty: string; status: Stock['status'] }
+  const bootStock: Boot[] = [
+    { item: 'Match shirts (home)', qty: '22 + 6 spare', status: 'Stocked' },
+    { item: 'Match shorts / socks', qty: 'Full sets ×3 kits', status: 'Stocked' },
+    { item: 'Boots / studs', qty: 'Per player + spares', status: 'Stocked' },
+    { item: 'GK gloves', qty: '6 pairs', status: 'Low' },
+    { item: 'Training kit', qty: 'Daily rotation ×2', status: 'Stocked' },
+    { item: 'Match balls', qty: '12 (FA WSL spec)', status: 'Restock due' },
+  ]
+
   return (
     <div>
       <SectionHeader title="Kit Manager" subtitle="Short-colour policy · period product provision · matchday kit bags" icon="🧦" />
@@ -4790,6 +4842,59 @@ const WomensKitManagerView = () => {
                     {r.status}
                   </span>
                 </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Squad number allocation</h3></div>
+          <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+            <table className="w-full text-xs">
+              <thead><tr className="text-gray-500 border-b border-gray-800 bg-gray-900/30"><th className="text-left px-4 py-2.5 font-semibold">No.</th><th className="text-left px-4 py-2.5 font-semibold">Player</th><th className="text-left px-4 py-2.5 font-semibold">Notes</th></tr></thead>
+              <tbody>
+                {allocations.map(a => (
+                  <tr key={a.num} className="border-b border-gray-800/50">
+                    <td className="px-4 py-2 font-bold text-pink-400">{a.num}</td>
+                    <td className="px-4 py-2 text-gray-200 font-medium">{a.player}</td>
+                    <td className="px-4 py-2 text-gray-500">{a.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3"><h3 className="text-sm font-bold text-white">Matchday kit prep</h3><span className={`text-[11px] font-semibold ${prepDone === kitPrepItems.length ? 'text-green-400' : 'text-gray-400'}`}>{prepDone}/{kitPrepItems.length}</span></div>
+          <div className="flex flex-col gap-0.5">
+            {kitPrepItems.map(it => {
+              const d = kitPrep[it.id]
+              return (
+                <button key={it.id} onClick={() => setKitPrep(p => ({ ...p, [it.id]: !p[it.id] }))} className="flex items-center gap-2.5 text-left rounded-lg px-2 py-1.5 hover:bg-white/[0.03]">
+                  <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] shrink-0 ${d ? 'bg-green-500 text-white' : 'border border-gray-600 text-transparent'}`}>✓</span>
+                  <span className={`text-[12.5px] ${d ? 'text-gray-500 line-through' : 'text-gray-200'}`}>{it.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-bold text-white">Boot room &amp; equipment stock</h3>
+        <span className="text-[10px] text-gray-500">Laundry turnaround · 24h on-site</span>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <table className="w-full text-sm">
+          <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30"><th className="text-left p-3">Item</th><th className="text-left p-3">Quantity</th><th className="text-left p-3">Status</th></tr></thead>
+          <tbody>
+            {bootStock.map(r => (
+              <tr key={r.item} className="border-b border-gray-800/50">
+                <td className="p-3 text-gray-200 font-medium">{r.item}</td>
+                <td className="p-3 text-gray-400 text-xs">{r.qty}</td>
+                <td className="p-3"><span className={`inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded ${statusCls(r.status)}`}><span className={`w-1.5 h-1.5 rounded-full ${statusDot(r.status)}`} />{r.status}</span></td>
               </tr>
             ))}
           </tbody>

@@ -443,7 +443,7 @@ export function PlayerProfileModal({ player, onClose, teamName }: { player: any;
         {playerId && !ppLoading && (
           <div className="p-6 pt-2 space-y-4">
             <div className="flex gap-2 flex-wrap">{(['season', 'history', 'career', 'profile'] as const).map(tab => (
-              <button key={tab} onClick={() => setPpTab(tab)} className="px-4 py-2 rounded-lg text-xs font-semibold capitalize" style={{ backgroundColor: ppTab === tab ? 'rgba(0,61,165,0.15)' : '#111318', color: ppTab === tab ? C.yellow : C.muted, border: `1px solid ${ppTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>
+              <button key={tab} onClick={() => setPpTab(tab)} className="px-4 py-2 rounded-lg text-xs font-semibold capitalize" style={{ background: 'transparent', borderRadius: 0, color: ppTab === tab ? C.yellow : C.muted, borderBottom: ppTab === tab ? `2px solid ${C.yellow}` : '2px solid transparent' }}>
                 {tab === 'season' ? 'This Season' : tab === 'history' ? 'Club History' : tab === 'career' ? 'Career Stats' : 'Profile'}
               </button>
             ))}</div>
@@ -736,7 +736,7 @@ export function TeamsView() {
             })()}
           </div>
           <div className="flex gap-2 flex-wrap">{(['squad', 'fixtures', 'results', 'lumio-data-pro', 'injuries', 'staff'] as const).map(tab => (
-            <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'staff') loadStaff() }} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'lumio-data-pro' ? '\u{1F4CA} Lumio Data Pro' : tab === 'injuries' ? '\u{1F915} Injuries' : tab === 'staff' ? '\u{1F465} Staff & Board' : 'Squad'}</button>
+            <button key={tab} onClick={() => { setActiveTab(tab); if (tab === 'staff') loadStaff() }} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ background: 'transparent', borderRadius: 0, color: activeTab === tab ? C.yellow : C.muted, borderBottom: activeTab === tab ? `2px solid ${C.yellow}` : '2px solid transparent' }}>{tab === 'fixtures' ? 'Upcoming' : tab === 'results' ? 'Results' : tab === 'lumio-data-pro' ? '\u{1F4CA} Lumio Data Pro' : tab === 'injuries' ? '\u{1F915} Injuries' : tab === 'staff' ? '\u{1F465} Staff & Board' : 'Squad'}</button>
           ))}</div>
           {squadLoading && <Spinner text="Loading..." />}
           {activeTab === 'squad' && !squadLoading && (
@@ -1239,7 +1239,7 @@ export function LeaguesView({
       {loading && <div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-2 rounded-full animate-spin mr-3" style={{ borderColor: C.border, borderTopColor: C.blue }} /><span className="text-sm" style={{ color: C.muted }}>Loading {selectedLeague?.name}...</span></div>}
       {selectedLeague && !loading && (<>
         <div className="flex gap-2 flex-wrap">{(['table', 'scorers', 'assists', 'advanced'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'table' ? 'League Table' : tab === 'scorers' ? 'Top Scorers' : tab === 'assists' ? 'Top Assists' : '\u{1F4CA} Advanced Stats'}</button>
+          <button key={tab} onClick={() => setActiveTab(tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ background: 'transparent', borderRadius: 0, color: activeTab === tab ? C.yellow : C.muted, borderBottom: activeTab === tab ? `2px solid ${C.yellow}` : '2px solid transparent' }}>{tab === 'table' ? 'League Table' : tab === 'scorers' ? 'Top Scorers' : tab === 'assists' ? 'Top Assists' : '\u{1F4CA} Advanced Stats'}</button>
         ))}</div>
         {activeTab === 'table' && standings.length > 0 && (
           <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
@@ -1503,7 +1503,7 @@ export function FixturesView() {
       {selectedLeague && (
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex gap-2">{(['upcoming', 'results'] as const).map(tab => (
-            <button key={tab} onClick={() => loadFixtures(selectedLeague, tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ backgroundColor: activeTab === tab ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === tab ? C.yellow : C.muted, border: `1px solid ${activeTab === tab ? 'rgba(0,61,165,0.3)' : C.border}` }}>{tab === 'upcoming' ? 'Upcoming' : 'Results'}</button>
+            <button key={tab} onClick={() => loadFixtures(selectedLeague, tab)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize" style={{ background: 'transparent', borderRadius: 0, color: activeTab === tab ? C.yellow : C.muted, borderBottom: activeTab === tab ? `2px solid ${C.yellow}` : '2px solid transparent' }}>{tab === 'upcoming' ? 'Upcoming' : 'Results'}</button>
           ))}</div>
           <input value={filterClub} onChange={e => setFilterClub(e.target.value)} placeholder="Filter by club..." className="flex-1 min-w-40 rounded-lg px-3 py-2 text-sm outline-none" style={{ backgroundColor: '#1F2937', border: `1px solid ${C.border}`, color: C.text }} />
         </div>
@@ -1684,7 +1684,7 @@ export function FootballLeagueDataView() {
           {/* Tabs */}
           <div className="flex gap-2 flex-wrap">
             {([['xg', 'xG Timeline'], ['shots', 'Shot Map'], ['passing', 'Passing'], ['pressure', 'Pressure']] as const).map(([key, label]) => (
-              <button key={key} onClick={() => setActiveTab(key as any)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: activeTab === key ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === key ? C.yellow : C.muted, border: `1px solid ${activeTab === key ? 'rgba(0,61,165,0.3)' : C.border}` }}>{label}</button>
+              <button key={key} onClick={() => setActiveTab(key as any)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ background: 'transparent', borderRadius: 0, color: activeTab === key ? C.yellow : C.muted, borderBottom: activeTab === key ? `2px solid ${C.yellow}` : '2px solid transparent' }}>{label}</button>
             ))}
           </div>
 

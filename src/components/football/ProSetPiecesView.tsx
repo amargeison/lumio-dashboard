@@ -5612,14 +5612,15 @@ export default function ProSetPiecesView() {
               onClick={() => setActiveTab(t)}
               style={{
                 padding: '8px 18px',
-                borderRadius: 8,
+                borderRadius: 0,
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
-                border: activeTab === t ? 'none' : `1px solid ${C.border}`,
-                background: activeTab === t ? C.primary : 'transparent',
-                color: activeTab === t ? '#fff' : C.textSec,
+                border: 'none',
+                borderBottom: activeTab === t ? `2px solid ${C.primary}` : '2px solid transparent',
+                background: 'transparent',
+                color: activeTab === t ? C.primary : C.textSec,
                 transition: 'background 0.15s, color 0.15s',
               }}
             >

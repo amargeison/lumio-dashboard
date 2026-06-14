@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Plane, Activity, Calendar, DollarSign, Briefcase, Users } from 'lucide-react'
 import PreSeasonCampMode from '@/components/sports/PreSeasonCampMode'
+import WomensTripBuilder, { type Trip, fmtGBP, tripCost } from '@/components/womens/WomensTripBuilder'
+import WomensTripDetail from '@/components/womens/WomensTripDetail'
 
 const C = {
   card: '#0D1017', cardAlt: '#111318', border: '#1F2937',
@@ -185,6 +187,17 @@ function PreSeasonTab() {
           ))}
         </div>
         <p className="text-[10px] mt-3" style={{ color: C.dim }}>See Tours sub-tab for any tour-style fixtures embedded in pre-season.</p>
+      </Card>
+      <Card>
+        <SectionTitle>Previous Pre-Seasons</SectionTitle>
+        <div className="space-y-2">
+          {([['Pre-season 2025 · Algarve', '14-day base + 4 friendlies — squad hit aerobic targets, zero soft-tissue injuries in the block. W3 D1 in friendlies.'], ['Pre-season 2024 · Austria', 'Altitude block + invitational tournament — strong base; two academy graduates earned first-team squad places.'], ['Pre-season 2023 · Home + Netherlands', 'Reduced-budget year — home base with a short Netherlands trip; a promotion-winning season followed.']] as [string, string][]).map(([t, d], i) => (
+            <div key={i} className="rounded-lg p-3" style={{ backgroundColor: C.cardAlt, border: `1px solid ${C.border}` }}>
+              <div className="text-xs font-bold" style={{ color: C.text }}>{t}</div>
+              <div className="text-[11px] mt-0.5" style={{ color: C.muted }}>{d}</div>
+            </div>
+          ))}
+        </div>
       </Card>
     </div>
     </PreSeasonCampMode>
@@ -822,8 +835,207 @@ function SquadPlanningTab() {
 
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 
+// ─── Clickable trip builder (mirrors the women's flagship) ───────────────────
+
+const MENS_CAMPS: Trip[] = [
+  {
+    id: 'camp-oct', kind: 'camp', name: 'October international break camp',
+    dates: '12–18 Oct 2026', location: 'Oakridge Training Complex', status: 'Planned',
+    squad: '22 (3 on international duty)', focus: 'Maintenance load · academy minutes · set-piece work',
+    summary: 'A maintenance and development block during the October international window. Non-internationals hold fitness and sharpen patterns while three players are released; selected academy players integrate for first-team minutes.',
+    objectives: ['Maintain match fitness for non-internationals', 'Integrate 3 academy players into first-team sessions', 'Return-to-play progressions for the rehab group', 'Set-piece and pressing pattern refinement'],
+    itinerary: [
+      { day: 'Day 1 · Mon', am: 'Testing & screening', pm: 'Light activation + meeting', eve: 'Team dinner' },
+      { day: 'Day 2 · Tue', am: 'Strength & conditioning', pm: 'Possession + pressing units', eve: 'Recovery' },
+      { day: 'Day 3 · Wed', am: 'Set-piece block', pm: 'Small-sided games', eve: 'Analysis review' },
+      { day: 'Day 4 · Thu', am: 'Recovery + rehab', pm: 'Tactical shape (academy integrated)', eve: 'Downtime' },
+      { day: 'Day 5 · Fri', am: 'High-intensity day', pm: 'In-house friendly', eve: 'Team social' },
+    ],
+    logistics: { travel: 'No travel — home base', accommodation: 'Players resident · staff on site', transport: 'Club minibus for off-site recovery', insurance: 'Standard squad cover' },
+    budget: [{ line: 'Pitch & facility hire', amount: 6800 }, { line: 'Catering & nutrition', amount: 5200 }, { line: 'Sports science / screening', amount: 4800 }, { line: 'Recovery (pool / physio)', amount: 3600 }, { line: 'Academy integration', amount: 2400 }, { line: 'Contingency', amount: 2000 }],
+    commercial: ['Sponsor content day (Meridian Group) — recovery science feature', 'Academy “pathway” social series'],
+    medical: ['Load individualised across the squad', '2 players on late-stage return-to-play', 'Screening for previous-injury group'],
+    staff: ['Head Coach', 'Head of Sports Science', 'Club Doctor', 'Physio ×2', 'Analyst'],
+  },
+  {
+    id: 'camp-feb', kind: 'camp', name: 'February warm-weather camp',
+    dates: '9–15 Feb 2027', location: 'Estepona, Spain', status: 'Negotiating',
+    squad: 'Full squad (24)', focus: 'Mid-season reset · warm-weather conditioning · 1 friendly',
+    summary: 'A mid-season warm-weather training camp to reset physically during a winter break in fixtures, with a single friendly against continental opposition.',
+    objectives: ['Physical reset and reconditioning block', 'Warm-weather aerobic top-up', 'One friendly for squad-rotation minutes', 'Tactical refresh ahead of the run-in'],
+    itinerary: [
+      { day: 'Day 1', am: 'Travel — flight to Málaga', pm: 'Settle + light walk', eve: 'Team dinner' },
+      { day: 'Day 3', am: 'Double session', pm: 'Recovery + pool', eve: 'Analysis' },
+      { day: 'Day 5', am: 'Friendly prep', pm: 'Friendly vs CD Estepona', eve: 'Recovery' },
+    ],
+    logistics: { travel: 'Scheduled flights (Northbridge Sport Travel)', accommodation: 'Estepona resort — 26 rooms, 6 nights', transport: 'Local coach on arrival', insurance: 'Tour insurance + repatriation' },
+    budget: [{ line: 'Flights', amount: 24800 }, { line: 'Hotels', amount: 28600 }, { line: 'Ground transport', amount: 6400 }, { line: 'Catering / per diem', amount: 9800 }, { line: 'Friendly / facility hire', amount: 5200 }, { line: 'Insurance', amount: 4600 }],
+    commercial: ['Vanta Sports — winter training-kit content', 'Crown Broadcasting — 1 content day'],
+    medical: ['Warm-weather hydration plan', 'Reconditioning block for high-minutes players', 'Travel-recovery protocols'],
+    staff: ['Head Coach', 'Assistant Manager', 'Head of Sports Science', 'Club Doctor', 'Physio ×2', 'Analyst', 'Kit Manager'],
+  },
+]
+
+const MENS_TOURS: Trip[] = [
+  {
+    id: 'tour-por', kind: 'tour', name: 'Portugal pre-season tour',
+    dates: '6–19 Jul 2026', location: 'Algarve, Portugal', status: 'Active',
+    squad: '26 (incl. 4 academy)', focus: 'Pre-season base · heat adaptation · 2 friendlies · sponsor activation',
+    summary: 'A two-week pre-season tour combining a warm-weather training base with two friendlies against continental opposition, doubling as a commercial activation window with the principal sponsor.',
+    objectives: ['Build the aerobic base in warm-weather conditions', 'Two friendlies — minutes for the full squad', 'Integrate new signings into patterns of play', 'Heat & hydration protocols', 'Sponsor activation + content capture'],
+    itinerary: [
+      { day: 'Day 1', am: 'Travel — charter to Faro', pm: 'Arrival, light walk', eve: 'Team dinner' },
+      { day: 'Day 2', am: 'Aerobic base', pm: 'Recovery + pool', eve: 'Sponsor welcome' },
+      { day: 'Day 5', am: 'Friendly #1 prep', pm: 'Friendly vs Ashbourne Athletic', eve: 'Recovery' },
+      { day: 'Day 10', am: 'Content day', pm: 'Set-piece block', eve: 'Downtime' },
+      { day: 'Day 13', am: 'Friendly #2', pm: 'Travel home', eve: '—' },
+    ],
+    logistics: { travel: 'Charter coach + scheduled flights (Northbridge Sport Travel)', accommodation: 'Algarve Stadium resort — 30 rooms, 13 nights', transport: 'Local coach contracted on arrival', insurance: 'Tour insurance + repatriation cover' },
+    budget: [{ line: 'Flights', amount: 42400 }, { line: 'Hotels', amount: 48200 }, { line: 'Ground transport', amount: 11800 }, { line: 'Kit & equipment freight', amount: 8400 }, { line: 'Catering / per diem', amount: 16600 }, { line: 'Insurance + repatriation', amount: 9200 }, { line: 'Friendlies / facility hire', amount: 7400 }],
+    commercial: ['Vanta Sports — kit launch tied to friendly #1', 'Crown Broadcasting — 2 content days', 'Meridian Group — hospitality activation'],
+    medical: ['Heat-adaptation & hydration plan', 'Travel-recovery / sleep protocols', 'Load ramp across the tour'],
+    staff: ['Head Coach', 'Assistant Manager', 'Head of Sports Science', 'Club Doctor', 'Physio ×2', 'Analyst', 'Kit Manager', 'Media Officer'],
+  },
+  {
+    id: 'tour-usa', kind: 'tour', name: 'USA summer tour',
+    dates: '18–30 Jul 2026', location: 'Orlando & Charlotte, USA', status: 'Negotiating',
+    squad: '26', focus: 'Commercial growth · 2 friendlies · brand exposure',
+    summary: 'A commercial-led summer tour across two US cities with two friendlies against MLS opposition, targeting brand growth in a key market.',
+    objectives: ['Two friendlies vs MLS opposition', 'Commercial and broadcast exposure in the US market', 'Squad minutes and tactical work', 'Fan engagement events in both cities'],
+    itinerary: [
+      { day: 'Day 1', am: 'Travel — flight to Orlando', pm: 'Arrival + recovery', eve: '—' },
+      { day: 'Day 4', am: 'Friendly #1 prep', pm: 'Friendly vs Crown Park Galaxy', eve: 'Recovery' },
+      { day: 'Day 8', am: 'Travel to Charlotte', pm: 'Light session', eve: 'Sponsor event' },
+      { day: 'Day 11', am: 'Friendly #2', pm: 'Travel home', eve: '—' },
+    ],
+    logistics: { travel: 'Long-haul charter (Northbridge Sport Travel)', accommodation: 'City-centre hotels — Orlando 4 nights, Charlotte 5 nights', transport: 'Coach + internal flight', insurance: 'Long-haul tour insurance + repatriation' },
+    budget: [{ line: 'Flights (long-haul + internal)', amount: 138000 }, { line: 'Hotels', amount: 96000 }, { line: 'Ground transport', amount: 24000 }, { line: 'Freight', amount: 18000 }, { line: 'Catering / per diem', amount: 32000 }, { line: 'Insurance', amount: 16000 }, { line: 'Events / activation', amount: 22000 }],
+    commercial: ['Meridian Group — US market activation', 'Crown Broadcasting — live US broadcast', 'Apex Performance — fan-zone tour'],
+    medical: ['Long-haul travel-recovery & jet-lag plan', 'Hydration in heat / humidity', 'Load management across two friendlies'],
+    staff: ['Head Coach', 'Assistant Manager', 'Head of Sports Science', 'Club Doctor', 'Physio ×2', 'Analyst', 'Kit Manager', 'Media Officer', 'Commercial Lead'],
+  },
+]
+
+const PAST_CAMPS: Trip[] = [
+  {
+    id: 'past-camp-1', kind: 'camp', name: 'February camp 2025 · Spain', dates: 'Feb 2025', location: 'Marbella, Spain',
+    status: 'Completed', squad: '24', focus: 'Mid-season reset', summary: 'Warm-weather mid-season reset with one friendly.',
+    objectives: ['Physical reset', 'Tactical refresh'], itinerary: [],
+    logistics: { travel: 'Scheduled flights', accommodation: 'Marbella resort', transport: 'Local coach', insurance: 'Tour insurance' },
+    budget: [{ line: 'Flights', amount: 23000 }, { line: 'Hotels', amount: 26000 }, { line: 'Other', amount: 18000 }],
+    commercial: ['Winter kit content'], medical: ['Reconditioning block'], staff: ['Head Coach', 'Sports Science', 'Physio ×2'],
+    past: true, outcome: 'Squad returned at +6% high-speed running average; unbeaten in the following 5 league games.',
+  },
+]
+
+const PAST_TOURS: Trip[] = [
+  {
+    id: 'past-tour-1', kind: 'tour', name: 'Pre-season 2024 · Austria', dates: 'Jul 2024', location: 'Tyrol, Austria',
+    status: 'Completed', squad: '25', focus: 'Altitude base + 3 friendlies', summary: 'Alpine pre-season base with three friendlies.',
+    objectives: ['Aerobic base at altitude', 'Three friendlies'], itinerary: [],
+    logistics: { travel: 'Charter coach', accommodation: 'Alpine training hotel', transport: 'Local coach', insurance: 'Tour insurance' },
+    budget: [{ line: 'Travel', amount: 34000 }, { line: 'Hotels', amount: 38000 }, { line: 'Other', amount: 20000 }],
+    commercial: ['Sponsor content week'], medical: ['Altitude adaptation'], staff: ['Head Coach', 'Sports Science', 'Club Doctor', 'Physio ×2'],
+    past: true, outcome: 'Completed the full pre-season load plan injury-free; opened the season with a win.',
+  },
+  {
+    id: 'past-tour-2', kind: 'tour', name: 'Asia tour 2023', dates: 'Jul 2023', location: 'Singapore & Kuala Lumpur',
+    status: 'Completed', squad: '26', focus: 'Commercial tour + 2 friendlies', summary: 'Commercial-led Asia tour with two friendlies.',
+    objectives: ['Brand growth in Asia', 'Two friendlies'], itinerary: [],
+    logistics: { travel: 'Long-haul charter', accommodation: 'City hotels', transport: 'Coach + flight', insurance: 'Long-haul insurance' },
+    budget: [{ line: 'Flights', amount: 120000 }, { line: 'Hotels', amount: 88000 }, { line: 'Other', amount: 60000 }],
+    commercial: ['Asia market activation', 'Live broadcast'], medical: ['Long-haul recovery'], staff: ['Head Coach', 'Sports Science', 'Club Doctor', 'Physio ×2', 'Media'],
+    past: true, outcome: '2.1m social impressions; new regional partnership signed post-tour.',
+  },
+]
+
+const PAST_PRESEASONS: Trip[] = [
+  {
+    id: 'past-ps-1', kind: 'tour', name: 'Portugal pre-season 2025', dates: 'Jul 2025', location: 'Faro, Portugal',
+    status: 'Completed', squad: '26', focus: 'Pre-season base · 3 friendlies', summary: 'Warm-weather pre-season base in the Algarve with three friendlies.',
+    objectives: ['Build the aerobic base', 'Three friendlies', 'Integrate new signings'], itinerary: [],
+    logistics: { travel: 'Charter coach + scheduled flights', accommodation: 'Algarve resort — 13 nights', transport: 'Local coach', insurance: 'Tour insurance + repatriation' },
+    budget: [{ line: 'Flights', amount: 39000 }, { line: 'Hotels', amount: 44000 }, { line: 'Other', amount: 28000 }],
+    commercial: ['Kit launch content'], medical: ['Heat adaptation & hydration'], staff: ['Head Coach', 'Head of Sports Science', 'Club Doctor', 'Physio ×2', 'Analyst'],
+    past: true, outcome: 'Won all three friendlies; squad hit aerobic targets with zero soft-tissue injuries in the block.',
+  },
+  {
+    id: 'past-ps-2', kind: 'tour', name: 'Austria pre-season 2024', dates: 'Jul 2024', location: 'Tyrol, Austria',
+    status: 'Completed', squad: '25', focus: 'Altitude base + 3 friendlies', summary: 'Alpine pre-season base with three friendlies.',
+    objectives: ['Aerobic base at altitude', 'Three friendlies'], itinerary: [],
+    logistics: { travel: 'Charter coach', accommodation: 'Alpine training hotel', transport: 'Local coach', insurance: 'Tour insurance' },
+    budget: [{ line: 'Travel', amount: 34000 }, { line: 'Hotels', amount: 38000 }, { line: 'Other', amount: 20000 }],
+    commercial: ['Sponsor content week'], medical: ['Altitude adaptation'], staff: ['Head Coach', 'Head of Sports Science', 'Club Doctor', 'Physio ×2'],
+    past: true, outcome: 'Completed the full pre-season load plan injury-free; opened the season with a win.',
+  },
+]
+
+const MENS_DRAFTS: { camp: Partial<Trip>; tour: Partial<Trip> } = {
+  camp: MENS_CAMPS[0],
+  tour: MENS_TOURS[0],
+}
+
+function TripCard({ trip, onOpen }: { trip: Trip; onOpen: () => void }) {
+  const total = tripCost(trip)
+  const sc = trip.status === 'Active' ? C.green : trip.status === 'Planned' ? C.amber : trip.status === 'Negotiating' ? C.blue : C.muted
+  return (
+    <button onClick={onOpen} className="text-left rounded-xl p-4 transition-colors hover:bg-white/[0.02]" style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        <span className="text-sm font-bold" style={{ color: C.text }}>{trip.name}</span>
+        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: `${sc}22`, color: sc }}>{trip.status.toUpperCase()}</span>
+      </div>
+      <div className="text-[11px] mb-2" style={{ color: C.muted }}>{trip.dates} · {trip.location}</div>
+      <div className="text-[11px]" style={{ color: C.dim }}>{trip.focus}</div>
+      <div className="flex items-center justify-between mt-3 pt-2" style={{ borderTop: `1px solid ${C.border}` }}>
+        <span className="text-[11px]" style={{ color: C.muted }}>{trip.squad}</span>
+        <span className="text-[12px] font-bold" style={{ color: C.primary }}>{fmtGBP(total)}</span>
+      </div>
+    </button>
+  )
+}
+
+function HistorySection({ title, trips, onOpen }: { title: string; trips: Trip[]; onOpen: (t: Trip) => void }) {
+  if (!trips.length) return null
+  return (
+    <Card>
+      <SectionTitle>{title}</SectionTitle>
+      <div className="space-y-2">
+        {trips.map(t => (
+          <button key={t.id} onClick={() => onOpen(t)} className="w-full flex items-center gap-3 text-left rounded-lg px-3 py-2.5 transition-colors hover:bg-white/[0.03]" style={{ background: C.cardAlt, border: `1px solid ${C.border}` }}>
+            <span className="text-[11px] font-bold shrink-0" style={{ color: C.primary }}>{t.dates}</span>
+            <span className="text-xs font-semibold flex-1" style={{ color: C.text }}>{t.name}</span>
+            <span className="text-[11px] truncate" style={{ color: C.muted, maxWidth: 180 }}>{t.location}</span>
+            <span className="text-[11px]" style={{ color: C.dim }}>›</span>
+          </button>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+function BuilderStrip({ kind, trips, past, onOpen, onBuild }: { kind: 'camp' | 'tour'; trips: Trip[]; past: Trip[]; onOpen: (t: Trip) => void; onBuild: () => void }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <SectionTitle>{kind === 'camp' ? 'Camps' : 'Tours'}</SectionTitle>
+        <button onClick={onBuild} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white" style={{ backgroundColor: C.primary }}>
+          + {kind === 'camp' ? 'Build a camp' : 'Plan a tour'}
+        </button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {trips.map(t => <TripCard key={t.id} trip={t} onOpen={() => onOpen(t)} />)}
+      </div>
+      <HistorySection title={kind === 'camp' ? 'Previous camps' : 'Previous tours'} trips={past} onOpen={onOpen} />
+    </div>
+  )
+}
+
 export default function ToursAndCampsView() {
   const [tab, setTab] = useState<Tab>('pre-season')
+  const [camps, setCamps] = useState<Trip[]>(MENS_CAMPS)
+  const [tours, setTours] = useState<Trip[]>(MENS_TOURS)
+  const [builder, setBuilder] = useState<null | 'camp' | 'tour'>(null)
+  const [detail, setDetail] = useState<Trip | null>(null)
 
   return (
     <div className="space-y-5">
@@ -834,11 +1046,11 @@ export default function ToursAndCampsView() {
         <p className="text-sm mt-1" style={{ color: C.muted }}>Year-round trip planning — pre-season blocks, mid-season camps, full international tours.</p>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-1 flex-wrap" style={{ borderBottom: `1px solid ${C.border}` }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
             className="px-4 py-2 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
-            style={{ backgroundColor: tab === t.id ? C.gold : C.cardAlt, color: tab === t.id ? '#000' : C.muted, border: tab === t.id ? 'none' : `1px solid ${C.border}` }}>
+            style={{ background: 'transparent', borderRadius: 0, color: tab === t.id ? C.gold : C.muted, borderBottom: tab === t.id ? `2px solid ${C.gold}` : '2px solid transparent' }}>
             <t.icon size={13} />
             {t.label}
           </button>
@@ -846,11 +1058,18 @@ export default function ToursAndCampsView() {
       </div>
 
       {tab === 'pre-season'     && <PreSeasonTab />}
+      {tab === 'pre-season'     && <HistorySection title="Previous pre-seasons" trips={PAST_PRESEASONS} onOpen={setDetail} />}
+      {tab === 'mid-season'     && <BuilderStrip kind="camp" trips={camps} past={PAST_CAMPS} onOpen={setDetail} onBuild={() => setBuilder('camp')} />}
       {tab === 'mid-season'     && <MidSeasonTab />}
+      {tab === 'tours'          && <BuilderStrip kind="tour" trips={tours} past={PAST_TOURS} onOpen={setDetail} onBuild={() => setBuilder('tour')} />}
       {tab === 'tours'          && <ToursTab />}
       {tab === 'logistics'      && <LogisticsTab />}
       {tab === 'commercial'     && <CommercialTab />}
       {tab === 'squad-planning' && <SquadPlanningTab />}
+
+      {builder === 'camp' && <WomensTripBuilder kind="camp" accent={C.primary} drafts={MENS_DRAFTS} medicalHint="Load · injury · availability aware" campLocationDefault="Oakridge Training Complex" onClose={() => setBuilder(null)} onCreate={(c) => { setCamps(prev => [...prev, c]); setBuilder(null); setTab('mid-season'); setDetail(c) }} />}
+      {builder === 'tour' && <WomensTripBuilder kind="tour" accent={C.primary} drafts={MENS_DRAFTS} medicalHint="Load · injury · availability aware" campLocationDefault="Oakridge Training Complex" onClose={() => setBuilder(null)} onCreate={(t) => { setTours(prev => [...prev, t]); setBuilder(null); setTab('tours'); setDetail(t) }} />}
+      {detail && <WomensTripDetail trip={detail} accent={C.primary} onClose={() => setDetail(null)} />}
     </div>
   )
 }

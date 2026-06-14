@@ -1,6 +1,6 @@
 'use client'
 
-// src/app/womens/[slug]/_components/TravelLogisticsView.tsx
+// src/components/football/FootballTravelLogisticsView.tsx (ported from the Women's portal)
 //
 // Travel & Logistics — Women's portal module shell (single-user ops /
 // secretary persona). Populates the previously-empty Travel & Logistics
@@ -30,16 +30,21 @@ import {
 import { getTripDataSource, type TripDataSource } from '@/lib/sports/travel/trip-data-source'
 import type { TripSupplier, DataMode, ResearchMode, AwayStatusRow, BookingState } from '@/lib/sports/travel/trip-types'
 import {
-  OAKRIDGE_CLUB_ID, OAKRIDGE_TRIPS, OAKRIDGE_SUPPLIERS, getCannedDraft,
-  OAKRIDGE_AWAY_STATUS, OAKRIDGE_RESEARCH, OAKRIDGE_SEASON_STATS,
-} from '../_lib/womens-trip-fixtures'
-import TravelResearcher from './TravelResearcher'
-import TripCostCompare from './TripCostCompare'
+  OAKRIDGE_MEN_CLUB_ID as OAKRIDGE_CLUB_ID,
+  OAKRIDGE_MEN_TRIPS as OAKRIDGE_TRIPS,
+  OAKRIDGE_MEN_SUPPLIERS as OAKRIDGE_SUPPLIERS,
+  getCannedDraft,
+  OAKRIDGE_MEN_AWAY_STATUS as OAKRIDGE_AWAY_STATUS,
+  OAKRIDGE_MEN_RESEARCH as OAKRIDGE_RESEARCH,
+  OAKRIDGE_MEN_SEASON_STATS as OAKRIDGE_SEASON_STATS,
+} from '@/app/(football)/football/[slug]/_lib/mens-trip-fixtures'
+import TravelResearcher from './FootballTravelResearcher'
+import TripCostCompare from './FootballTripCostCompare'
 
-const ACCENT = '#BE185D'
+const ACCENT = '#003DA5'
 type Tab = 'overview' | 'compare' | 'suppliers'
 
-export default function TravelLogisticsView({
+export default function FootballTravelLogisticsView({
   mode = 'demo',
   clubId = OAKRIDGE_CLUB_ID,
 }: {
@@ -94,7 +99,7 @@ export default function TravelLogisticsView({
       </div>
 
       {mode === 'demo' && (
-        <div className="flex items-start gap-2 rounded-lg border border-pink-600/20 bg-pink-600/5 px-3 py-2 text-xs text-pink-200/80">
+        <div className="flex items-start gap-2 rounded-lg border border-blue-600/20 bg-blue-600/5 px-3 py-2 text-xs text-blue-200/80">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
           <span>Demo workspace — research results, drive-times and drafts are canned, and &ldquo;send&rdquo; is simulated. No live search, AI, Maps or email calls are made.</span>
         </div>
