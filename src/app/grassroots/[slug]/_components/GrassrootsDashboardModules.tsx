@@ -54,8 +54,8 @@ const pad2 = (n: number) => String(n).padStart(2, '0')
 
 // ─── HeroToday ─────────────────────────────────────────────────────────
 function HeroToday({
-  T, accent, density, greeting, onWhosPlaying, onAsk,
-}: Common & { greeting: string; onWhosPlaying?: () => void; onAsk?: () => void }) {
+  T, accent, density, greeting, onSendMessage, onAsk,
+}: Common & { greeting: string; onSendMessage?: () => void; onAsk?: () => void }) {
   const f = GRASSROOTS_FIXTURES[0]
   const [counter, setCounter] = useState({ h: 26, m: 14, s: 8 })
 
@@ -80,7 +80,11 @@ function HeroToday({
         </defs>
         <rect width="100%" height="100%" fill="url(#gr-hero-ptn)" />
       </svg>
+      <img src="/badges/oakridge_fc_crest.svg" alt="" aria-hidden="true" style={{ position: 'absolute', left: '50%', top: '50%', width: 700, height: 700, transform: 'translate(-50%, -50%) perspective(1100px) rotateX(52deg) rotate(-4deg)', opacity: 0.07, filter: 'saturate(0.2) brightness(3)', pointerEvents: 'none', zIndex: 0, objectFit: 'contain' }} />
       <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', maxWidth: '65%', zIndex: 1, pointerEvents: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: FONT, fontSize: 14, fontStyle: 'italic', color: '#D4A056', textAlign: 'center' }}>
+        {GRASSROOTS_ORG.quote} <span style={{ opacity: 0.7, fontStyle: 'normal' }}>{GRASSROOTS_ORG.quoteAuthor}</span>
+      </div>
       <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18 }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -97,9 +101,6 @@ function HeroToday({
             <div><span style={{ color: T.text3 }}>Squad</span> <span style={{ color: T.good, marginLeft: 6, fontWeight: 600 }}>13 of 16 in</span></div>
             <div><span style={{ color: T.text3 }}>Comp</span> <span style={{ color: T.text, marginLeft: 6, fontFamily: FONT_MONO }}>{f.comp}</span></div>
           </div>
-          <div style={{ marginTop: 10, fontSize: 11, color: T.text3, fontStyle: 'italic', maxWidth: 460 }}>
-            {GRASSROOTS_ORG.quote} <span style={{ color: T.text2 }}>{GRASSROOTS_ORG.quoteAuthor}</span>
-          </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 12 }}>
           <div className="tnum" style={{ color: T.text, fontSize: 13 }}>{GRASSROOTS_ORG.date}</div>
@@ -114,13 +115,13 @@ function HeroToday({
         </div>
       </div>
       <div style={{ position: 'relative', display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-        <button onClick={onWhosPlaying}
+        <button onClick={onSendMessage}
           style={{
             appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9,
             background: accent.hex, color: '#fff',
             fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
           }}>
-          <Icon name="people" size={14} stroke={2} /> Who&apos;s playing?
+          <Icon name="megaphone" size={14} stroke={2} /> Send message
         </button>
         <button onClick={onAsk}
           onMouseEnter={e => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = accent.hex }}
@@ -148,6 +149,33 @@ function TodaySchedule({ T, accent, density }: Common) {
               <div style={{ fontSize: 12.5, color: T.text, fontWeight: it.highlight ? 600 : 500 }}>{it.what}</div>
               <div style={{ fontSize: 10.5, color: T.text3 }}>{it.where}</div>
             </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+// ─── Outstanding ───────────────────────────────────────────────────────
+function Outstanding({ T, density, gridColumn }: Common & { gridColumn?: string }) {
+  const items: { label: string; status: string; tone: 'bad' | 'warn' | 'good' }[] = [
+    { label: 'Dave Nolan + Bob Turner DBS — OVERDUE (safeguarding)', status: 'Renew', tone: 'bad' },
+    { label: 'Availability — 3 not responded (deadline Thu 20:00)', status: 'Chase', tone: 'bad' },
+    { label: 'Subs — 4 players outstanding (£110)', status: 'Chase', tone: 'warn' },
+    { label: 'FA FULL-TIME result submission overdue', status: 'Submit', tone: 'warn' },
+    { label: 'Referee not booked — 20 Apr home match', status: 'Book', tone: 'warn' },
+    { label: 'New match ball — old one is bald', status: 'To do', tone: 'good' },
+  ]
+  const toneCol = (t: 'bad' | 'warn' | 'good') => t === 'bad' ? T.bad : t === 'warn' ? T.warn : T.good
+  const open = items.filter(i => i.tone !== 'good').length
+  return (
+    <Card T={T} density={density} hover style={{ gridColumn: gridColumn ?? '9 / span 4' }}>
+      <SectionHead T={T} title="Outstanding items" right={<span>{open} open</span>} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {items.map((it, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, paddingBottom: 8, borderBottom: i < items.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+            <span style={{ fontSize: 12, color: T.text2, lineHeight: 1.35 }}>{it.label}</span>
+            <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: `${toneCol(it.tone)}1e`, color: toneCol(it.tone), whiteSpace: 'nowrap' }}>{it.status}</span>
           </div>
         ))}
       </div>
@@ -491,10 +519,10 @@ function Recents({ T, density, gridColumn }: Common & { gridColumn?: string }) {
 
 // ─── Top-level dashboard view ──────────────────────────────────────────
 export function GrassrootsDashboardView({
-  onAskLumio, onWhosPlaying,
+  onAskLumio, onSendMessage,
 }: {
   onAskLumio?: () => void
-  onWhosPlaying?: () => void
+  onSendMessage?: () => void
 }) {
   const T = GR_THEME
   const accent = GR_ACCENT
@@ -511,7 +539,7 @@ export function GrassrootsDashboardView({
       <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, marginBottom: density.gap }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
           <HeroToday T={T} accent={accent} density={density} greeting={greeting}
-            onAsk={onAskLumio} onWhosPlaying={onWhosPlaying} />
+            onAsk={onAskLumio} onSendMessage={onSendMessage} />
           <TodaySchedule T={T} accent={accent} density={density} />
         </div>
       </div>
@@ -520,14 +548,18 @@ export function GrassrootsDashboardView({
         <StatTiles T={T} accent={accent} density={density} />
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
-          <AIBrief T={T} accent={accent} density={density} onAsk={onAskLumio} />
-          <Inbox T={T} accent={accent} density={density} />
-          <Squad T={T} accent={accent} density={density} />
+          <Inbox T={T} accent={accent} density={density} gridColumn="1 / span 4" />
+          <AIBrief T={T} accent={accent} density={density} onAsk={onAskLumio} gridColumn="5 / span 4" />
+          <Outstanding T={T} accent={accent} density={density} gridColumn="9 / span 4" />
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
           <Fixtures T={T} accent={accent} density={density} />
           <Perf T={T} accent={accent} density={density} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+          <Squad T={T} accent={accent} density={density} gridColumn="1 / -1" />
         </div>
 
         <Recents T={T} accent={accent} density={density} />

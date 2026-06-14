@@ -33,7 +33,6 @@ import ToursAndCampsView from '@/components/football/ToursAndCampsView'
 import DiscoverView from '@/components/football/DiscoverView'
 import ConcussionTrackerView from '@/components/football/ConcussionTrackerView'
 import PSRScenarioModellerView from '@/components/football/PSRScenarioModellerView'
-import RoleAwareQuickActionsBar from '@/components/portals/RoleAwareQuickActionsBar'
 // ─── Football v2 dashboard imports ────────────────────────────────────────
 import { THEMES, DENSITY, FONT as V2_FONT, getGreeting as v2GetGreeting } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
@@ -44,7 +43,6 @@ import {
   useToast as useV2Toast,
   useKey as useV2Key,
 } from '@/app/cricket/[slug]/v2/_components/Overlays'
-import { Icon as V2Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   HeroToday as FbHeroToday,
   TodaySchedule as FbTodaySchedule,
@@ -56,7 +54,9 @@ import {
   Perf as FbPerf,
   Recents as FbRecents,
   Season as FbSeason,
+  Outstanding as FbOutstanding,
 } from './_components/FootballDashboardModules'
+import FootballSendMessageModal from '@/components/football/FootballSendMessageModal'
 import { FOOTBALL_INBOX, FOOTBALL_ACCENT } from './_lib/football-dashboard-data'
 import type { FbFixture } from './_lib/football-dashboard-data'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
@@ -89,7 +89,7 @@ type DeptId =
 
 type OverviewTab = 'getting-started' | 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'OVERVIEW' | 'BOARD' | 'COMMUNITY' | 'PERFORMANCE' | 'FIRST TEAM' | 'MEDICAL' | 'GPS & LOAD' | 'OPERATIONS' | 'FACILITIES' | 'RECRUITMENT' | 'COMMERCIAL' | 'COMPLIANCE' | 'DISCOVER' | 'INTEGRATIONS'
+type SidebarSection = null | 'OVERVIEW' | 'FOOTBALL' | 'WELFARE' | 'COMPLIANCE' | 'COMMERCIAL' | 'OPERATIONS' | 'FACILITIES'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -133,63 +133,45 @@ const BG_GRADIENTS = [
 // src/data/football/role-quick-actions.ts may need updating to point
 // at video-analysis where they previously targeted scrapped IDs.
 const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; section: SidebarSection }[] = [
-  { id: 'overview',       label: 'Dashboard',            icon: Home,           section: 'OVERVIEW' },
-  { id: 'insights',       label: 'Insights',             icon: Sparkles,       section: 'OVERVIEW' },
-  { id: 'board',          label: 'Board Suite',          icon: Crown,          section: 'BOARD' },
-  { id: 'community',      label: 'Community',            icon: Heart,          section: 'COMMUNITY' },
-  /* REMOVED: Match Centre — pitch-side tactical, Hudl territory. Uncomment to restore.
-  { id: 'matchday',       label: 'Match Centre',         icon: Trophy,         section: 'PERFORMANCE' },
-  */
-  // TODO Phase 4c: add moduleId: 'video_analysis' when this portal is wired to MODULES
-  { id: 'video-analysis', label: 'Video & Analysis',     icon: Video,          section: 'PERFORMANCE' },
-  /* REMOVED: Performance Stats — pitch-side tactical, Hudl territory. Uncomment to restore.
-  { id: 'analytics',      label: 'Performance Stats',    icon: BarChart3,      section: 'PERFORMANCE' },
-  */
-  // TODO Phase 4c: add moduleId: 'football_operations' when this portal is wired to MODULES
-  { id: 'set-pieces',     label: 'Set Piece Analysis',   icon: Target,         section: 'PERFORMANCE' },
-  /* REMOVED: Opposition Scout — pitch-side tactical, Hudl territory. Uncomment to restore.
-  { id: 'scouting',       label: 'Opposition Scout',     icon: Eye,            section: 'PERFORMANCE' },
-  */
-  { id: 'squad',          label: 'Squad Manager',        icon: Shirt,          section: 'FIRST TEAM' },
-  /* REMOVED: Team Selection — Hudl territory. Uncomment to restore.
-  { id: 'squad-planner',  label: 'Team Selection',       icon: Clipboard,      section: 'FIRST TEAM' },
-  */
-  // NOTE: Pro Tactics nav intentionally deferred — TacticsView at L~2970 is a
-  // PlaceholderView stub, not a real feature. Uncomment when real implementation
-  // ships. When uncommented, add moduleId: 'football_operations' (Phase 4c).
-  /*
-  { id: 'tactics',        label: 'Formation Builder',    icon: Clipboard,      section: 'FIRST TEAM' },
-  */
-  { id: 'training',       label: 'Training Schedule',    icon: Activity,       section: 'FIRST TEAM' },
-  { id: 'staff',          label: 'Staff',                icon: Users,          section: 'FIRST TEAM' },
-  { id: 'medical',        label: 'Medical Hub',          icon: Heart,          section: 'MEDICAL' },
-  { id: 'concussion-tracker', label: 'Concussion Tracker', icon: Brain,         section: 'MEDICAL' },
-  { id: 'dynamics',       label: 'Mental Performance',   icon: Heart,          section: 'MEDICAL' },
-  { id: 'player-welfare', label: 'Player Welfare Hub',   icon: Heart,          section: 'MEDICAL' },
-  { id: 'performance',    label: 'GPS Tracking',         icon: Activity,       section: 'GPS & LOAD' },
-  { id: 'gps-heatmaps',   label: 'Heatmaps',             icon: Flame,          section: 'GPS & LOAD' },
-  { id: 'performance-brief', label: 'AI Performance Brief', icon: Bot,        section: 'GPS & LOAD' },
-  { id: 'gps-hardware',   label: 'GPS Hardware',         icon: Activity,       section: 'GPS & LOAD' },
-  { id: 'club-operations', label: 'Club Operations',     icon: Building,       section: 'OPERATIONS' },
-  { id: 'matchday-ops',   label: 'Matchday Operations',  icon: Calendar,       section: 'OPERATIONS' },
-  { id: 'travel-logistics', label: 'Travel & Logistics', icon: Plane,          section: 'OPERATIONS' },
-  { id: 'kit-manager',    label: 'Kit Manager',          icon: Shirt,          section: 'OPERATIONS' },
-  { id: 'facilities',     label: 'Stadium & Facilities', icon: MapPin,         section: 'FACILITIES' },
-  { id: 'pitch-grounds',  label: 'Pitch & Grounds',      icon: MapPin,         section: 'FACILITIES' },
-  { id: 'training-ground', label: 'Training Ground',     icon: MapPin,         section: 'FACILITIES' },
-  { id: 'transfers',      label: 'Recruitment Hub',      icon: ArrowUpDown,    section: 'RECRUITMENT' },
-  { id: 'academy',        label: 'Academy',              icon: GraduationCap,  section: 'RECRUITMENT' },
-  { id: 'tours-camps',    label: 'Tours & Camps',        icon: Plane,          section: 'RECRUITMENT' },
-  { id: 'commercial',     label: 'Commercial',           icon: Briefcase,      section: 'COMMERCIAL' },
-  { id: 'media',          label: 'Media & PR',           icon: Newspaper,      section: 'COMMERCIAL' },
-  { id: 'social',         label: 'Social Media',         icon: MessageSquare,  section: 'COMMERCIAL' },
-  { id: 'finance',        label: 'Finance',              icon: DollarSign,     section: 'COMPLIANCE' },
-  { id: 'psr-scr-modeller', label: 'PSR / SCR Modeller', icon: Calculator,     section: 'COMPLIANCE' },
-  { id: 'discover',       label: 'Discover',             icon: Search,         section: 'DISCOVER' },
-  { id: 'scouting-db',    label: 'Scouting Database',    icon: Search,         section: 'INTEGRATIONS' },
-  { id: 'opta',           label: 'Lumio Data',           icon: BarChart3,      section: 'INTEGRATIONS' },
-  { id: 'lumio-data-pro', label: 'Lumio Data Pro',       icon: Activity,       section: 'INTEGRATIONS' },
-  { id: 'settings',       label: 'Settings',             icon: Settings,       section: null },
+  { id: 'overview',         label: 'Dashboard',            icon: Home,           section: 'OVERVIEW' },
+  { id: 'insights',         label: 'Insights',             icon: Sparkles,       section: 'OVERVIEW' },
+  { id: 'board',            label: 'Board Suite',          icon: Crown,          section: 'OVERVIEW' },
+  // ── FOOTBALL ──
+  { id: 'squad',            label: 'Squad Manager',        icon: Shirt,          section: 'FOOTBALL' },
+  { id: 'training',         label: 'Training Schedule',    icon: Activity,       section: 'FOOTBALL' },
+  { id: 'set-pieces',       label: 'Set Piece Analysis',   icon: Target,         section: 'FOOTBALL' },
+  { id: 'video-analysis',   label: 'Video & Analysis',     icon: Video,          section: 'FOOTBALL' },
+  { id: 'performance',      label: 'GPS Tracking',         icon: Activity,       section: 'FOOTBALL' },
+  { id: 'gps-heatmaps',     label: 'Heatmaps',             icon: Flame,          section: 'FOOTBALL' },
+  { id: 'performance-brief',label: 'AI Performance Brief', icon: Bot,            section: 'FOOTBALL' },
+  { id: 'gps-hardware',     label: 'GPS Hardware',         icon: Activity,       section: 'FOOTBALL' },
+  { id: 'transfers',        label: 'Recruitment Hub',      icon: ArrowUpDown,    section: 'FOOTBALL' },
+  { id: 'academy',          label: 'Academy',              icon: GraduationCap,  section: 'FOOTBALL' },
+  // ── WELFARE ──
+  { id: 'player-welfare',   label: 'Player Welfare Hub',   icon: Heart,          section: 'WELFARE' },
+  { id: 'medical',          label: 'Medical Hub',          icon: Heart,          section: 'WELFARE' },
+  { id: 'concussion-tracker', label: 'Concussion Tracker', icon: Brain,          section: 'WELFARE' },
+  { id: 'dynamics',         label: 'Mental Performance',   icon: Heart,          section: 'WELFARE' },
+  // ── COMPLIANCE ──
+  { id: 'finance',          label: 'Finance',              icon: DollarSign,     section: 'COMPLIANCE' },
+  { id: 'psr-scr-modeller', label: 'PSR / SCR Modeller',   icon: Calculator,     section: 'COMPLIANCE' },
+  // ── COMMERCIAL ──
+  { id: 'commercial',       label: 'Commercial',           icon: Briefcase,      section: 'COMMERCIAL' },
+  { id: 'media',            label: 'Media & PR',           icon: Newspaper,      section: 'COMMERCIAL' },
+  { id: 'social',           label: 'Social Media',         icon: MessageSquare,  section: 'COMMERCIAL' },
+  { id: 'community',        label: 'Community',            icon: Heart,          section: 'COMMERCIAL' },
+  // ── OPERATIONS ──
+  { id: 'club-operations',  label: 'Club Operations',      icon: Building,       section: 'OPERATIONS' },
+  { id: 'matchday-ops',     label: 'Matchday Operations',  icon: Calendar,       section: 'OPERATIONS' },
+  { id: 'travel-logistics', label: 'Travel & Logistics',   icon: Plane,          section: 'OPERATIONS' },
+  { id: 'kit-manager',      label: 'Kit Manager',          icon: Shirt,          section: 'OPERATIONS' },
+  { id: 'staff',            label: 'Staff',                icon: Users,          section: 'OPERATIONS' },
+  { id: 'tours-camps',      label: 'Tours & Camps',        icon: Plane,          section: 'OPERATIONS' },
+  // ── FACILITIES ──
+  { id: 'facilities',       label: 'Stadium & Facilities', icon: MapPin,         section: 'FACILITIES' },
+  { id: 'pitch-grounds',    label: 'Pitch & Grounds',      icon: MapPin,         section: 'FACILITIES' },
+  { id: 'training-ground',  label: 'Training Ground',      icon: MapPin,         section: 'FACILITIES' },
+  { id: 'settings',         label: 'Settings',             icon: Settings,       section: null },
 ]
 
 const FOOTBALL_ROLE_OPTIONS = [
@@ -571,19 +553,12 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
   const isAllowed = (id: DeptId) => allowedIds === 'all' || (allowedIds as string[]).includes(id)
   const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
     { label: 'OVERVIEW', items: SIDEBAR_ITEMS.filter(i => i.section === 'OVERVIEW' && isAllowed(i.id)) },
-    { label: 'BOARD', items: SIDEBAR_ITEMS.filter(i => i.section === 'BOARD' && isAllowed(i.id)) },
-    { label: 'COMMUNITY', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMUNITY' && isAllowed(i.id)) },
-    { label: 'PERFORMANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'PERFORMANCE' && isAllowed(i.id)) },
-    { label: 'FIRST TEAM', items: SIDEBAR_ITEMS.filter(i => i.section === 'FIRST TEAM' && isAllowed(i.id)) },
-    { label: 'MEDICAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'MEDICAL' && isAllowed(i.id)) },
-    { label: 'GPS & LOAD', items: SIDEBAR_ITEMS.filter(i => i.section === 'GPS & LOAD' && isAllowed(i.id)) },
+    { label: 'FOOTBALL', items: SIDEBAR_ITEMS.filter(i => i.section === 'FOOTBALL' && isAllowed(i.id)) },
+    { label: 'WELFARE', items: SIDEBAR_ITEMS.filter(i => i.section === 'WELFARE' && isAllowed(i.id)) },
+    { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE' && isAllowed(i.id)) },
+    { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL' && isAllowed(i.id)) },
     { label: 'OPERATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'OPERATIONS' && isAllowed(i.id)) },
     { label: 'FACILITIES', items: SIDEBAR_ITEMS.filter(i => i.section === 'FACILITIES' && isAllowed(i.id)) },
-    { label: 'RECRUITMENT', items: SIDEBAR_ITEMS.filter(i => i.section === 'RECRUITMENT' && isAllowed(i.id)) },
-    { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL' && isAllowed(i.id)) },
-    { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE' && isAllowed(i.id)) },
-    { label: 'DISCOVER', items: SIDEBAR_ITEMS.filter(i => i.section === 'DISCOVER' && isAllowed(i.id)) },
-    { label: 'INTEGRATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'INTEGRATIONS' && isAllowed(i.id)) },
     { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null && isAllowed(i.id)) },
   ]
 
@@ -1884,7 +1859,7 @@ function InteractiveFootballInbox({ T, accent, density }: { T: typeof THEMES.dar
   const update = (ch: string, patch: Partial<RowState>) => setState(s => ({ ...s, [ch]: { ...s[ch], ...patch } }))
   const items = FOOTBALL_INBOX.filter(c => !state[c.ch]?.dismissed)
   return (
-    <div style={{ gridColumn: '5 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
+    <div style={{ gridColumn: '1 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
       <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Inbox</div>
         <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'monospace' }}>{items.length} · click to expand</div>
@@ -2028,9 +2003,7 @@ function FootballMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEME
 }
 
 function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo', onModal, isDemo = false, clubLogo }: { clubName: string; firstName?: string; onAction: (msg: string) => void; onNavigate?: (dept: string) => void; role?: string; onModal?: (modalId: string) => void; isDemo?: boolean; clubLogo?: string | null }) {
-  const [tab, setTab] = useState<OverviewTab>(() => {
-    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('football_getting_started_seen') : null; return seen ? 'today' : 'getting-started' } catch { return 'today' }
-  })
+  const [tab] = useState<OverviewTab>('today')
   const T       = THEMES.dark
   const accent  = FOOTBALL_ACCENT
   const density = DENSITY.regular
@@ -2039,20 +2012,12 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
   const [openFixture, setOpenFixture] = useState<FbFixture | null>(null)
   const [cmdOpen,     setCmdOpen]     = useState(false)
   const [askOpen,     setAskOpen]     = useState(false)
+  const [sendMessageOpen, setSendMessageOpen] = useState(false)
   const [briefOpen,   setBriefOpen]   = useState(false)
   const [dashToast,   showDashToast]  = useV2Toast()
 
   useV2Key('cmdk', () => setCmdOpen(o => !o))
 
-  const tabIcon = (id: OverviewTab): string => ({
-    'getting-started': 'sparkles',
-    today: 'home',
-    'quick-wins': 'lightning',
-    'match-week': 'flag',
-    insights: 'bars',
-    'dont-miss': 'flame',
-    staff: 'people',
-  } as const)[id]
 
   return (
     <>
@@ -2073,58 +2038,14 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
             user spec — do not re-add Today as banner sibling without
             product approval. The wrapper div with explicit gridColumn
             overrides the FbHeroToday Card's internal '1 / span 8'. */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
-          <div style={{ gridColumn: '1 / -1' }}>
-            <FbHeroToday
-              T={T} accent={accent} density={density} greeting={greeting}
-              onTodaysBriefing={() => showDashToast("Today's briefing — see AI Brief on dashboard")}
-              onMatchdayOps={() => onNavigate?.('matchday-ops')}
-              onAsk={() => setAskOpen(true)}
-            />
-          </div>
-        </div>
-
-        {/* Tab bar — Lucide icons + accent underline (matches rugby v2). */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: `1px solid ${T.border}`, overflowX: 'auto' }}>
-          {OVERVIEW_TABS.map(t => {
-            const active = tab === t.id
-            return (
-              <button key={t.id} onClick={() => setTab(t.id)}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.color = T.text2 }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.color = T.text3 }}
-                style={{
-                  appearance: 'none', border: 0, background: 'transparent',
-                  padding: '10px 14px',
-                  fontFamily: V2_FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
-                  color: active ? '#fff' : T.text3,
-                  borderBottom: `2px solid ${active ? accent.hex : 'transparent'}`,
-                  marginBottom: -1,
-                  cursor: 'pointer', whiteSpace: 'nowrap',
-                  display: 'inline-flex', alignItems: 'center', gap: 7,
-                  transition: 'color .12s, border-color .12s',
-                }}>
-                <V2Icon name={tabIcon(t.id)} size={12} stroke={1.6} />
-                {t.label}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Quick Actions — role-aware: 6 buttons reshape per active role. */}
-        {/* QUICK ACTIONS row centered horizontally for breathing space
-            between the left-aligned Tabs row above and the KPI cards
-            below. Visual hierarchy: navigation flush-left, actions
-            centered. */}
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <RoleAwareQuickActionsBar
-            sport="football"
-            role={role}
-            onNavigate={(dept) => { if (onNavigate) onNavigate(dept); else onAction(dept) }}
-            onAction={(modalId) => { if (onModal) onModal(modalId); else onAction(modalId) }}
-            accentHex={accent.hex}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'stretch' }}>
+          <FbHeroToday
+            T={T} accent={accent} density={density} greeting={greeting}
+            onSendMessage={() => setSendMessageOpen(true)}
+            onAsk={() => setAskOpen(true)}
           />
+          <FbTodaySchedule T={T} accent={accent} density={density} />
         </div>
-
 
         {/* TAB CONTENT — Today renders v2 grid; others fall through to v1 TabContent */}
         {tab === 'today' ? (
@@ -2146,9 +2067,9 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
                 cricket uses) so the three cards read as one unified
                 row visual. */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
-              <FbAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
               <InteractiveFootballInbox T={T} accent={accent} density={density} />
-              <FbTodaySchedule T={T} accent={accent} density={density} />
+              <FbAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
+              <FbOutstanding T={T} accent={accent} density={density} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
@@ -2183,6 +2104,7 @@ function OverviewView({ clubName, firstName, onAction, onNavigate, role = 'ceo',
       <V2FixtureDrawer  T={T} accent={accent} fixture={openFixture as unknown as never} onClose={() => setOpenFixture(null)} />
       <V2Toast          T={T} accent={accent} msg={dashToast} />
       <FootballMatchBriefPanel T={T} accent={accent} open={briefOpen} onClose={() => setBriefOpen(false)} />
+      {sendMessageOpen && <FootballSendMessageModal onClose={() => setSendMessageOpen(false)} />}
     </>
   )
 }
