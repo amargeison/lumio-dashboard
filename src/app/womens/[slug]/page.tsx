@@ -4962,6 +4962,7 @@ export default function WomensFootballPortal({ params }: { params: Promise<{ slu
       sportEmoji="⚽"
       sportLabel="Lumio Women's FC"
       roles={WOMENS_ROLES}
+      lockClub
     >
       {(session) => <WomensFootballPortalInner club={club} session={session} emptyMode={isEmpty} />}
     </SportsDemoGate>
@@ -5582,7 +5583,10 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
   const baseItems = club.tier === 'grassroots'
     ? SIDEBAR_ITEMS.filter((i: { id: string }) => !hiddenForGrassroots.has(i.id))
     : SIDEBAR_ITEMS
-  const filteredItems = baseItems.filter((i: { id: string }) => i.id === 'settings' || !hiddenNavItems.includes(i.id))
+  const roleSidebar = (WOMENS_ROLE_CONFIG[activeRole] ?? WOMENS_ROLE_CONFIG.ceo).sidebar
+  const filteredItems = baseItems.filter((i: { id: string }) =>
+    (i.id === 'settings' || !hiddenNavItems.includes(i.id)) &&
+    (roleSidebar === 'all' || i.id === 'settings' || roleSidebar.includes(i.id)))
 
   // ── Settings — shared SportsSettings + Women's-specific augmentations ──
   // SportsSettings is the shared chrome used by Tennis / Cricket / Darts /
@@ -5880,6 +5884,9 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
           <WomensNotifications />
           <WomensAvatarDropdown
             initials={(session.clubName || 'OW').split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+            photoUrl={session.photoDataUrl}
+            seedName={session.userName}
+            userName={session.userName}
             onSettings={() => setActiveSection('settings')}
           />
         </div>
