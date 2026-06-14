@@ -19,6 +19,7 @@ import {
 } from './_components/Overlays'
 import { MatchBriefPanel } from './_components/MatchBriefPanel'
 import { Icon } from './_components/Icon'
+import CricketSendMessageModal from '@/components/cricket/CricketSendMessageModal'
 
 // ──────────────────────────────────────────────────────────────────────
 // Cricket portal redesign — Director dashboard.
@@ -68,6 +69,7 @@ function CricketV2Inner() {
   const [dashTab, setDashTab]         = useState<DashTab>('today')
   const [cmdOpen, setCmdOpen]         = useState(false)
   const [askOpen, setAskOpen]         = useState(false)
+  const [sendMessageOpen, setSendMessageOpen] = useState(false)
   const [briefOpen, setBriefOpen]     = useState(false)
   const [openFixture, setOpenFixture] = useState<Fixture | null>(null)
   const [toast, showToast]            = useToast()
@@ -121,9 +123,8 @@ function CricketV2Inner() {
               {dashTab === 'today' ? (
                 <DashboardGrid
                   T={T} accent={accent} density={density} greeting={greeting}
-                  onTodaysBriefing={() => { showToast("Today's briefing — see AI Morning Summary") }}
+                  onSendMessage={() => setSendMessageOpen(true)}
                   onAsk={() => setAskOpen(true)}
-                  onMatchdayOps={() => showToast('Matchday ops — coming soon')}
                   onPickFixture={setOpenFixture}
                 />
               ) : (
@@ -147,6 +148,7 @@ function CricketV2Inner() {
         <FixtureDrawer  T={T} accent={accent} fixture={openFixture} onClose={() => setOpenFixture(null)} />
         <MatchBriefPanel T={T} accent={accent} open={briefOpen} onClose={() => setBriefOpen(false)} />
         <Toast          T={T} accent={accent} msg={toast} />
+        {sendMessageOpen && <CricketSendMessageModal onClose={() => setSendMessageOpen(false)} />}
       </div>
     </>
   )
@@ -262,11 +264,11 @@ function QABtn({
 // ─── Dashboard grid (Today tab) ─────────────────────────────────────────
 
 function DashboardGrid({
-  T, accent, density, greeting, onTodaysBriefing, onAsk, onMatchdayOps, onPickFixture,
+  T, accent, density, greeting, onSendMessage, onAsk, onPickFixture,
 }: {
   T: typeof THEMES['dark']; accent: typeof ACCENTS['oxford']; density: typeof DENSITY['regular']
   greeting: string
-  onTodaysBriefing: () => void; onAsk: () => void; onMatchdayOps: () => void
+  onSendMessage: () => void; onAsk: () => void
   onPickFixture: (f: Fixture) => void
 }) {
   return (
@@ -275,9 +277,8 @@ function DashboardGrid({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
         <HeroToday
           T={T} accent={accent} density={density} greeting={greeting}
-          onTodaysBriefing={onTodaysBriefing}
+          onSendMessage={onSendMessage}
           onAsk={onAsk}
-          onMatchdayOps={onMatchdayOps}
         />
         <TodaySchedule T={T} accent={accent} density={density} />
       </div>
