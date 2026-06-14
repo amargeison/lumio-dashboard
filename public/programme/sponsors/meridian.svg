@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72">
+  <g fill="none" stroke="#1F6F8B" stroke-width="2.6">
+    <circle cx="30" cy="34" r="19"/>
+    <line x1="30" y1="15" x2="30" y2="53"/>
+    <ellipse cx="30" cy="34" rx="8.5" ry="19"/>
+    <line x1="11.5" y1="34" x2="48.5" y2="34"/>
+  </g>
+  <text x="72" y="39" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="25" letter-spacing="0.5" fill="#1A1016">MERIDIAN</text>
+  <text x="73" y="55" font-family="Arial, Helvetica, sans-serif" font-weight="600" font-size="9.5" letter-spacing="6" fill="#6B5560">GROUP</text>
+</svg>

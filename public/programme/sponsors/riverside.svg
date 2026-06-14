@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72">
+  <g stroke="#2A9D8F" stroke-width="3" fill="none" stroke-linecap="round">
+    <path d="M12 26 Q21 18 30 26 T48 26"/>
+    <path d="M12 34 Q21 26 30 34 T48 34"/>
+    <path d="M12 42 Q21 34 30 42 T48 42"/>
+  </g>
+  <text x="72" y="38" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="23" letter-spacing="0.5" fill="#1A1016">RIVERSIDE</text>
+  <text x="73" y="54" font-family="Arial, Helvetica, sans-serif" font-weight="600" font-size="9.5" letter-spacing="6" fill="#6B5560">LEISURE</text>
+</svg>

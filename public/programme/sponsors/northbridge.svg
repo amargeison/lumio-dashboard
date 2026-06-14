@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 72">
+  <g stroke="#2C3E70" stroke-width="2.6" fill="none" stroke-linecap="round">
+    <path d="M10 47 Q30 17 50 47"/>
+    <line x1="9" y1="47" x2="51" y2="47"/>
+    <line x1="19" y1="47" x2="19" y2="34"/>
+    <line x1="30" y1="47" x2="30" y2="26"/>
+    <line x1="41" y1="47" x2="41" y2="34"/>
+  </g>
+  <text x="72" y="38" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="22" letter-spacing="0.5" fill="#1A1016">NORTHBRIDGE</text>
+  <text x="73" y="54" font-family="Arial, Helvetica, sans-serif" font-weight="600" font-size="9.5" letter-spacing="7" fill="#6B5560">SPORT</text>
+</svg>

@@ -7412,13 +7412,6 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
     <div className="flex flex-col" style={{ backgroundColor: '#07080F', color: '#F9FAFB', minHeight: '100vh', zoom: 0.9 }}>
       <Toast message={toast} />
 
-      {/* Demo banner */}
-      {isFootballDemo && (
-        <div className="flex items-center justify-between px-6 shrink-0" style={{ height: 40, minHeight: 40, background: '#003DA5', color: '#F1C40F', paddingRight: 140 }}>
-          <div className="flex items-center gap-2 text-xs font-medium"><span>Demo workspace — exploring with sample data</span><span style={{ opacity: 0.7 }}>· Connect your real club data to see live insights</span></div>
-          <button onClick={() => { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }} className="text-xs font-semibold px-3 py-1 rounded-lg" style={{ display: 'none' }}>Clear Demo Data</button>
-        </div>
-      )}
 
       {/* Top-right avatar */}
       <div className="fixed hidden md:flex items-center gap-2" style={{ top: 12, right: 20, zIndex: 60 }}>
@@ -7469,6 +7462,14 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
         />
 
         <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
+          {/* Demo workspace banner — inside the content column so the sidebar
+              stays full-height (mirrors the Women's flagship). */}
+          {isFootballDemo && (
+            <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#003DA5', color: '#ffffff', paddingRight: 110 }}>
+              <span>This is a demo · sample data</span>
+              <a href="/sports-signup" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
+            </div>
+          )}
           {/* SIDEBAR/PADDING ALIGNMENT — values aligned to cricket reference
               (cricket/[slug]/page.tsx). Same fonts and densities; horizontal
               width parity needs identical sidebar width + main padding to

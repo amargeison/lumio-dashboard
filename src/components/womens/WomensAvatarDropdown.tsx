@@ -46,6 +46,8 @@ interface AvatarProps {
    *  avatar (same style as staff cards) seeded by the user's name. */
   photoUrl?: string | null
   seedName?: string
+  /** Demo-signup name — overrides any stored name; shows in the menu header. */
+  userName?: string
   /** Settings is a sidebar section in this portal, not a separate route — parent passes a callback that nav-switches to it. */
   onSettings?: () => void
   logoutRedirect?: string
@@ -54,7 +56,7 @@ interface AvatarProps {
 // Same fake-avatar style the staff cards use (CC0 notionists).
 const fakeAvatar = (seed: string) => `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(seed)}&backgroundColor=transparent`
 
-export default function WomensAvatarDropdown({ initials, photoUrl, seedName, onSettings, logoutRedirect = '/' }: AvatarProps) {
+export default function WomensAvatarDropdown({ initials, photoUrl, seedName, userName, onSettings, logoutRedirect = '/' }: AvatarProps) {
   const [open, setOpen] = useState(false)
   const [demoPanel, setDemoPanel] = useState<string | null>(null)
   const [name, setName] = useState('')
@@ -96,9 +98,10 @@ export default function WomensAvatarDropdown({ initials, photoUrl, seedName, onS
     router.push(logoutRedirect)
   }
 
+  const effectiveName = (userName && userName.trim()) || name
   const avatarInner = photoUrl
     ? <img src={photoUrl} alt="" className="w-full h-full object-cover" />
-    : <img src={fakeAvatar(seedName || name || initials || 'Director')} alt="" className="w-full h-full object-cover" />
+    : <img src={fakeAvatar(seedName || effectiveName || initials || 'Director')} alt="" className="w-full h-full object-cover" />
   const menuItemStyle = { color: C.muted }
   const menuItemHover = (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.backgroundColor = 'rgba(31,41,55,0.5)'; e.currentTarget.style.color = C.text }
   const menuItemLeave = (e: React.MouseEvent<HTMLElement>) => { e.currentTarget.style.backgroundColor = ''; e.currentTarget.style.color = C.muted }
@@ -148,9 +151,9 @@ export default function WomensAvatarDropdown({ initials, photoUrl, seedName, onS
                   {avatarInner}
                 </div>
                 <div className="min-w-0">
-                  {name  && <p className="text-sm font-semibold truncate" style={{ color: C.text }}>{name}</p>}
+                  {effectiveName && <p className="text-sm font-semibold truncate" style={{ color: C.text }}>{effectiveName}</p>}
                   {email && <p className="text-xs truncate" style={{ color: C.muted2 }}>{email}</p>}
-                  {!name && !email && <p className="text-xs" style={{ color: C.muted2 }}>Demo session</p>}
+                  {!effectiveName && !email && <p className="text-xs" style={{ color: C.muted2 }}>Demo session</p>}
                 </div>
               </div>
 

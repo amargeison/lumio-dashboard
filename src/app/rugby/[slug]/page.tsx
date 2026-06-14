@@ -26,7 +26,9 @@ import {
   Perf as RugbyPerf,
   Recents as RugbyRecents,
   Season as RugbySeason,
+  Outstanding as RugbyOutstanding,
 } from './_components/RugbyDashboardModules'
+import RugbySendMessageModal from '@/components/rugby/RugbySendMessageModal'
 import { RugbySidebar } from './_components/RugbyShell'
 import { Icon as V2Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { RUGBY_NAV_GROUPS, RUGBY_ACCENT, RUGBY_INBOX, RUGBY_ORG } from './_lib/rugby-dashboard-data'
@@ -280,7 +282,7 @@ function RugbyMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.d
   )
 }
 
-function InteractiveRugbyInbox({ T, accent, density }: { T: typeof THEMES.dark; accent: typeof RUGBY_ACCENT; density: typeof DENSITY.regular }) {
+function InteractiveRugbyInbox({ T, accent, density, gridColumn }: { T: typeof THEMES.dark; accent: typeof RUGBY_ACCENT; density: typeof DENSITY.regular; gridColumn?: string }) {
   type RowState = { expanded: boolean; mode: 'idle' | 'replying' | 'forwarding'; reply: string; forwardTo: string; sentLabel: string | null; dismissed: boolean }
   const init = (): Record<string, RowState> => Object.fromEntries(RUGBY_INBOX.map(c => [c.ch, { expanded: false, mode: 'idle' as const, reply: '', forwardTo: 'Head Coach', sentLabel: null, dismissed: false }]))
   const [state, setState] = useState<Record<string, RowState>>(init)
@@ -288,7 +290,7 @@ function InteractiveRugbyInbox({ T, accent, density }: { T: typeof THEMES.dark; 
 
   const items = RUGBY_INBOX.filter(c => !state[c.ch]?.dismissed)
   return (
-    <div style={{ gridColumn: '5 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
+    <div style={{ gridColumn: gridColumn ?? '5 / span 4', position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
       <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Inbox</div>
         <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: 'monospace' }}>{items.length} · click to expand</div>
@@ -425,6 +427,7 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
   const [openFixture, setOpenFixture] = useState<RugbyFixture | null>(null)
   const [cmdOpen,     setCmdOpen]     = useState(false)
   const [askOpen,     setAskOpen]     = useState(false)
+  const [sendMessageOpen, setSendMessageOpen] = useState(false)
   const [briefOpen,   setBriefOpen]   = useState(false)
   const [dashToast,   showDashToast]  = useV2Toast()
 
@@ -493,92 +496,19 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
           user spec — do not re-add Today as banner sibling without
           product approval. align-items: start retained defensively in
           case future siblings get added to this row. */}
-      <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, marginBottom: density.gap }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'start' }}>
-          <RugbyHeroToday
-            T={T} accent={accent} density={density} greeting={greeting}
-            onTodaysBriefing={() => onNavigate?.('dorbriefing')}
-            onMatchdayOps={() => onNavigate?.('matchday-ops')}
-            onAsk={() => setAskOpen(true)}
-          />
-        </div>
-      </div>
-
       <div style={{ background: T.bg, color: T.text, fontFamily: FONT, padding: density.gap, borderRadius: 12, display: 'flex', flexDirection: 'column', gap: density.gap }}>
 
-        {/* Tab bar — restored from rugby v1, styled to match v2 aesthetic
-            (clean text labels + monochrome Lucide icons + accent underline). */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 4,
-          borderBottom: `1px solid ${T.border}`, overflowX: 'auto',
-        }}>
-          {([
-            { id: 'gettingstarted', label: 'Getting Started', icon: 'sparkles', badge: remainingCount > 0 ? remainingCount : undefined },
-            { id: 'today',          label: 'Today',           icon: 'home' },
-            { id: 'quickwins',      label: 'Quick Wins',      icon: 'lightning' },
-            { id: 'dailytasks',     label: 'Daily Tasks',     icon: 'check' },
-            { id: 'insights',       label: 'Insights',        icon: 'bars' },
-            { id: 'dontmiss',       label: "Don't Miss",      icon: 'flag' },
-            { id: 'team',           label: 'Team',            icon: 'people' },
-          ] as { id: RugbyDashTab; label: string; icon: string; badge?: number }[]).map(t => {
-            const active = dashTab === t.id
-            return (
-              <button key={t.id} onClick={() => setDashTab(t.id)}
-                style={{
-                  appearance: 'none', border: 0, background: 'transparent',
-                  padding: '10px 14px',
-                  fontFamily: FONT, fontSize: 12.5, fontWeight: active ? 600 : 500,
-                  color: active ? '#fff' : T.text3,
-                  borderBottom: `2px solid ${active ? accent.hex : 'transparent'}`,
-                  marginBottom: -1,
-                  cursor: 'pointer', whiteSpace: 'nowrap',
-                  display: 'inline-flex', alignItems: 'center', gap: 7,
-                  transition: 'color .12s, border-color .12s',
-                }}
-                onMouseEnter={e => { if (!active) e.currentTarget.style.color = T.text2 }}
-                onMouseLeave={e => { if (!active) e.currentTarget.style.color = T.text3 }}>
-                <V2Icon name={t.icon} size={12} stroke={1.6} />
-                {t.label}
-                {t.badge !== undefined && (
-                  <span style={{
-                    fontSize: 9.5, fontWeight: 600,
-                    padding: '1px 6px', borderRadius: 9,
-                    background: T.hover, color: T.text3,
-                    border: `1px solid ${T.border}`,
-                    fontFamily: 'var(--font-geist-mono, monospace)',
-                  }}>{t.badge}</span>
-                )}
-              </button>
-            )
-          })}
+        {/* Hero — banner + Today joined, inside the content panel (mirrors the womens flagship).
+            Sub-tab strip + quick-actions removed to match the flagship dashboard. */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, alignItems: 'stretch' }}>
+          <RugbyHeroToday
+            T={T} accent={accent} density={density} greeting={greeting}
+            onSendMessage={() => setSendMessageOpen(true)}
+            onAsk={() => setAskOpen(true)}
+          />
+          <RugbyTodaySchedule T={T} accent={accent} density={density} />
         </div>
 
-        {/* Quick Actions — desaturated row */}
-        {/* QUICK ACTIONS row centered horizontally for breathing space
-            between left-aligned Tabs row above and KPI cards below. */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {QUICK_ACTIONS.map((qa, i) => (
-            <button key={i} onClick={qa.onClick}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = accent.hex; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#2d3139'; e.currentTarget.style.color = '#9CA3AF' }}
-              style={{
-                appearance: 'none', display: 'flex', alignItems: 'center', gap: 8,
-                padding: '8px 14px', borderRadius: 8,
-                background: 'transparent', border: '1px solid #2d3139',
-                color: '#9CA3AF', fontSize: 12, fontFamily: FONT, cursor: 'pointer',
-                transition: 'border-color .12s, color .12s',
-              }}>
-              <span style={{ fontSize: 13 }}>{qa.icon}</span>
-              <span>{qa.label}</span>
-              {qa.ai && (
-                <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 3, background: '#1F2937', color: '#6B7280', fontWeight: 700, letterSpacing: '0.04em' }}>AI</span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* TODAY tab — full v2 dashboard grid (hero is rendered above for
-            all tabs; this block holds the rest of the today layout). */}
         {dashTab === 'today' && (
           <>
             {/* Row 2 — Stat tiles */}
@@ -592,9 +522,9 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
                 CARD ROW GAP — gap: 8 (tighter than density.gap=14)
                 so the three cards read as one unified row visual. */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'stretch' }}>
-              <RugbyAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} />
-              <InteractiveRugbyInbox T={T} accent={accent} density={density} />
-              <RugbyTodaySchedule T={T} accent={accent} density={density} />
+              <InteractiveRugbyInbox T={T} accent={accent} density={density} gridColumn="1 / span 4" />
+              <RugbyAIBrief T={T} accent={accent} density={density} onAsk={() => setAskOpen(true)} gridColumn="5 / span 4" />
+              <RugbyOutstanding T={T} accent={accent} density={density} gridColumn="9 / span 4" />
             </div>
 
             {/* Row 4 — Fixtures + Performance signals */}
@@ -737,6 +667,7 @@ function ClubDashboardView({ onOpenModal, onNavigate }: { onOpenModal: (id: stri
       <V2FixtureDrawer  T={T} accent={accent} fixture={openFixture as unknown as never} onClose={() => setOpenFixture(null)} />
       <V2Toast          T={T} accent={accent} msg={dashToast} />
       <RugbyMatchBriefPanel T={T} accent={accent} open={briefOpen} onClose={() => setBriefOpen(false)} />
+      {sendMessageOpen && <RugbySendMessageModal onClose={() => setSendMessageOpen(false)} />}
     </>
   )
 }
