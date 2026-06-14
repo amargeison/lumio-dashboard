@@ -189,14 +189,9 @@ function NonLeaguePortalInner({ session }: { session: SportsDemoSession }) {
         .amateur-quickactions-hide-scroll::-webkit-scrollbar { display: none; }
       `}</style>
 
-      {/* Demo workspace banner */}
-      <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
-        <span>This is a demo · sample data</span>
-        <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
-      </div>
 
       {/* Top-right avatar + notifications */}
-      <div style={{ position: 'fixed', top: 40, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ position: 'fixed', top: 12, right: 20, zIndex: 60, display: 'flex', alignItems: 'center', gap: 8 }}>
         <button title="Notifications" style={{ width: 36, height: 36, borderRadius: '50%', backgroundColor: '#111318', border: `1px solid ${BORDER}`, color: TEXT_SEC, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
           <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>2</span>
@@ -217,13 +212,21 @@ function NonLeaguePortalInner({ session }: { session: SportsDemoSession }) {
         <Sidebar activeDept={activeDept} onSelect={(d) => setActiveDept(d)} open={sidebarOpen} onClose={() => setSidebarOpen(false)} session={session} onPinChange={setSidebarPinned} />
 
         <div className="flex-1 flex flex-col min-w-0" style={{ minHeight: '100vh' }}>
+          {/* Demo workspace banner — inside the content column so the sidebar
+              stays full-height (mirrors the Women's flagship). */}
+          <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff', paddingRight: 110 }}>
+            <span>This is a demo · sample data</span>
+            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
+          </div>
           <main className="flex-1 p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h1 className="text-lg font-bold">{deptLabel}</h1>
-                <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>{clubName} &middot; Northern Premier League West</p>
+            {activeDept !== 'nl-overview' && (
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-lg font-bold">{deptLabel}</h1>
+                  <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>{clubName} &middot; Northern Premier League West</p>
+                </div>
               </div>
-            </div>
+            )}
 
             <NonLeagueContent activeDept={activeDept as NLDeptId} onToast={fireToast} userName={session.userName} />
           </main>

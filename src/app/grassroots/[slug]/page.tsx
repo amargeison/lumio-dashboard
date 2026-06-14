@@ -2652,12 +2652,14 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
 
           <div className="flex-1 overflow-y-auto">
             <main className="flex-1 p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h1 className="text-lg font-bold">{deptLabel}</h1>
-                  <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>{clubName} · Westshire Sunday League Div 2</p>
+              {activeDept !== 'overview' && (
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h1 className="text-lg font-bold">{deptLabel}</h1>
+                    <p className="text-xs mt-0.5" style={{ color: TEXT_SEC }}>{clubName} · Westshire Sunday League Div 2</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {activeDept === 'overview' && (
                 <GrassrootsDashboardView
