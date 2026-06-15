@@ -58,6 +58,14 @@ const DEMO_PLAYERS: DemoPlayer[] = [
   { name: 'Myles Okafor',  role: 'LW',  group: 'Forwards',    distance: 10.5, hsr: 718, sprints: 19, maxSpeed: 31.4, load: 887, acwr: 1.06, acceleration: 29, deceleration: 27, readiness: 80, sleep: 7.4, soreness: 7, fatigue: 7, mood: 8 },
   { name: 'James Tilley',  role: 'RW',  group: 'Forwards',    distance: 10.7, hsr: 684, sprints: 18, maxSpeed: 31.0, load: 871, acwr: 1.21, acceleration: 28, deceleration: 26, readiness: 76, sleep: 6.5, soreness: 6, fatigue: 6, mood: 7 },
   { name: 'Chris Nwosu',   role: 'ST',  group: 'Forwards',    distance: 9.8,  hsr: 588, sprints: 15, maxSpeed: 29.8, load: 868, acwr: 1.58, acceleration: 26, deceleration: 24, readiness: 54, sleep: 5.5, soreness: 4, fatigue: 4, mood: 5 },
+  { name: 'Brodi Chen',    role: 'CB',  group: 'Defenders',   distance: 9.3,  hsr: 320, sprints: 7,  maxSpeed: 28.0, load: 700, acwr: 0.90, acceleration: 17, deceleration: 20, readiness: 85, sleep: 7.9, soreness: 8, fatigue: 8, mood: 8 },
+  { name: 'Isaac Kemp',    role: 'CB',  group: 'Defenders',   distance: 9.0,  hsr: 280, sprints: 5,  maxSpeed: 27.2, load: 690, acwr: 1.34, acceleration: 15, deceleration: 18, readiness: 70, sleep: 6.4, soreness: 6, fatigue: 6, mood: 7 },
+  { name: 'Joe Lewis',     role: 'CB',  group: 'Defenders',   distance: 9.5,  hsr: 360, sprints: 9,  maxSpeed: 28.6, load: 735, acwr: 0.97, acceleration: 19, deceleration: 21, readiness: 88, sleep: 8.0, soreness: 8, fatigue: 9, mood: 8 },
+  { name: 'Delano Ashton', role: 'CM',  group: 'Midfielders', distance: 11.0, hsr: 540, sprints: 15, maxSpeed: 29.6, load: 910, acwr: 1.10, acceleration: 25, deceleration: 26, readiness: 81, sleep: 7.3, soreness: 7, fatigue: 7, mood: 8 },
+  { name: 'Zack Bright',   role: 'CM',  group: 'Midfielders', distance: 10.8, hsr: 470, sprints: 13, maxSpeed: 29.0, load: 884, acwr: 0.99, acceleration: 23, deceleration: 25, readiness: 83, sleep: 7.6, soreness: 8, fatigue: 8, mood: 8 },
+  { name: 'Antwoine Rowe', role: 'CF',  group: 'Forwards',    distance: 10.0, hsr: 700, sprints: 19, maxSpeed: 31.6, load: 905, acwr: 1.15, acceleration: 30, deceleration: 27, readiness: 79, sleep: 7.0, soreness: 7, fatigue: 7, mood: 8 },
+  { name: 'Jordan Hayes',  role: 'GK',  group: 'Goalkeeper',  distance: 5.4,  hsr: 90,  sprints: 3,  maxSpeed: 24.5, load: 410, acwr: 0.96, acceleration: 8,  deceleration: 10, readiness: 90, sleep: 8.3, soreness: 9, fatigue: 9, mood: 9 },
+  { name: 'Joe McDonnell', role: 'GK',  group: 'Goalkeeper',  distance: 5.1,  hsr: 80,  sprints: 2,  maxSpeed: 23.8, load: 395, acwr: 0.92, acceleration: 7,  deceleration: 9,  readiness: 89, sleep: 8.1, soreness: 9, fatigue: 9, mood: 8 },
 ]
 
 // Hash for stable pseudo-random demo data
