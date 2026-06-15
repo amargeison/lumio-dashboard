@@ -21,7 +21,9 @@ import {
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
   Search, Filter, ArrowUpDown, ExternalLink, Crown,
   Maximize2, Printer, Share2, Flame,
-  Building, Plane, Brain, Calculator, Bot,
+  Building, Plane, Brain, Calculator, Bot, Handshake, Map,
+  Leaf, HardHat, Wrench, ClipboardList, ShoppingBag, Ticket, Megaphone,
+  Scale, ShieldCheck, BadgeCheck,
 } from 'lucide-react'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
@@ -67,6 +69,46 @@ import { FOOTBALL_INBOX, FOOTBALL_ACCENT } from './_lib/football-dashboard-data'
 import type { FbFixture } from './_lib/football-dashboard-data'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
 import FootballStaffView, { FootballClubInfoTab } from '@/components/football/StaffView'
+import FootballClubVisionView from '@/components/football/FootballClubVisionView'
+import FootballSponsorshipPipeline from '@/components/football/FootballSponsorshipPipeline'
+import FootballFanHub from '@/components/football/FootballFanHub'
+import FootballFinancialPlanningView from '@/components/football/FootballFinancialPlanningView'
+import FootballSocialMediaView from '@/components/football/FootballSocialMediaView'
+import FootballEnergyView from '@/components/football/FootballEnergyView'
+import FootballCapitalProjectsView from '@/components/football/FootballCapitalProjectsView'
+import FootballAssetRegisterView from '@/components/football/FootballAssetRegisterView'
+import FootballProcurementView from '@/components/football/FootballProcurementView'
+import FootballRetailView from '@/components/football/FootballRetailView'
+import FootballTicketingView from '@/components/football/FootballTicketingView'
+import FootballSponsorActivationView from '@/components/football/FootballSponsorActivationView'
+import FootballMediaPRView from '@/components/football/FootballMediaPRView'
+import FootballSalaryComplianceView from '@/components/football/FootballSalaryComplianceView'
+import ComplianceCommandCentre from '@/components/compliance/ComplianceCommandCentre'
+import ComplianceCalendar from '@/components/compliance/ComplianceCalendar'
+import RegistrationTransferView from '@/components/compliance/RegistrationTransferView'
+import DataProtectionView from '@/components/compliance/DataProtectionView'
+import SafeguardingOpsView from '@/components/compliance/SafeguardingOpsView'
+import AntiDopingView from '@/components/compliance/AntiDopingView'
+import RiskInsuranceView from '@/components/compliance/RiskInsuranceView'
+import PolicyLibraryView from '@/components/compliance/PolicyLibraryView'
+import PlayerTradingLedger from '@/components/finance/PlayerTradingLedger'
+import TreasuryView from '@/components/finance/TreasuryView'
+import PayrollBonusView from '@/components/finance/PayrollBonusView'
+import BudgetActualsView from '@/components/finance/BudgetActualsView'
+import RevenueReceivablesView from '@/components/finance/RevenueReceivablesView'
+import CentralDistributionsView from '@/components/finance/CentralDistributionsView'
+import ManagementAccountsView from '@/components/finance/ManagementAccountsView'
+import CapexAppraisalView from '@/components/finance/CapexAppraisalView'
+import FootballPlayerIntegrationView from '@/components/football/FootballPlayerIntegrationView'
+import FootballInjuryRiskMonitor from '@/components/football/FootballInjuryRiskMonitor'
+import FootballLoadRecoveryView from '@/components/football/FootballLoadRecoveryView'
+import FootballReturnToPlayView from '@/components/football/FootballReturnToPlayView'
+import FootballMentalHealthView from '@/components/football/FootballMentalHealthView'
+import FootballWelfareHubView from '@/components/football/FootballWelfareHubView'
+import FootballRevenueAttributionView from '@/components/football/FootballRevenueAttributionView'
+import FootballGameStandardsView from '@/components/football/FootballGameStandardsView'
+import FootballClubLicensingView from '@/components/football/FootballClubLicensingView'
+import FootballFinanceView from '@/components/football/FootballFinanceView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
 import VoiceSettings from '@/components/dashboard/VoiceSettings'
@@ -85,17 +127,23 @@ type DeptId =
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr-scr-modeller' | 'concussion-tracker' | 'squad-planner'
+  | 'salary' | 'revenue-attribution' | 'game-standards' | 'club-licensing'
   | 'staff' | 'facilities' | 'settings'
   | 'video-analysis' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'performance-brief' | 'opta'
   | 'discover' | 'lumio-data-pro'
   | 'tours-camps'
   | 'player-welfare' | 'club-operations'
   | 'commercial' | 'community'
+  | 'sponsorship' | 'club-vision' | 'financial' | 'fanhub'
+  | 'energy' | 'capital-projects' | 'assets' | 'procurement' | 'retail' | 'ticketing' | 'sponsor-roi'
   | 'matchday-ops' | 'travel-logistics' | 'kit-manager' | 'pitch-grounds' | 'training-ground' | 'medical-records'
+  | 'compliance-centre' | 'compliance-calendar' | 'registration' | 'data-protection' | 'safeguarding-ops' | 'anti-doping' | 'risk-insurance' | 'policy-library'
+  | 'player-trading' | 'treasury' | 'payroll-ledger' | 'budget-actuals' | 'revenue-receivables' | 'central-distributions' | 'mgmt-accounts' | 'capex-appraisal'
+  | 'player-integration' | 'injury-risk' | 'load-recovery' | 'return-to-play' | 'mental-health'
 
 type OverviewTab = 'getting-started' | 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'OVERVIEW' | 'FOOTBALL' | 'WELFARE' | 'COMPLIANCE' | 'COMMERCIAL' | 'OPERATIONS' | 'FACILITIES'
+type SidebarSection = null | 'OVERVIEW' | 'FOOTBALL' | 'WELFARE' | 'COMPLIANCE' | 'FINANCE' | 'COMMERCIAL' | 'OPERATIONS' | 'FACILITIES'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -155,16 +203,47 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'academy',          label: 'Academy',              icon: GraduationCap,  section: 'FOOTBALL' },
   // ── WELFARE ──
   { id: 'player-welfare',   label: 'Player Welfare Hub',   icon: Heart,          section: 'WELFARE' },
+  { id: 'player-integration', label: 'Player Integration', icon: Users,          section: 'WELFARE' },
+  { id: 'injury-risk',      label: 'Injury Risk Monitor',  icon: Activity,       section: 'WELFARE' },
+  { id: 'load-recovery',    label: 'Load & Recovery',      icon: Heart,          section: 'WELFARE' },
+  { id: 'return-to-play',   label: 'Injury & Return-to-Play', icon: Activity,    section: 'WELFARE' },
+  { id: 'mental-health',    label: 'Mental Health',        icon: Brain,          section: 'WELFARE' },
   { id: 'medical',          label: 'Medical Hub',          icon: Heart,          section: 'WELFARE' },
   { id: 'concussion-tracker', label: 'Concussion Tracker', icon: Brain,          section: 'WELFARE' },
-  { id: 'dynamics',         label: 'Mental Performance',   icon: Heart,          section: 'WELFARE' },
   // ── COMPLIANCE ──
-  { id: 'finance',          label: 'Finance',              icon: DollarSign,     section: 'COMPLIANCE' },
-  { id: 'psr-scr-modeller', label: 'PSR / SCR Modeller',   icon: Calculator,     section: 'COMPLIANCE' },
+  { id: 'finance',          label: 'Finance',              icon: DollarSign,     section: 'FINANCE' },
+  { id: 'compliance-centre', label: 'Compliance Centre',    icon: ShieldCheck,    section: 'COMPLIANCE' },
+  { id: 'compliance-calendar', label: 'Compliance Calendar', icon: Calculator,    section: 'COMPLIANCE' },
+  { id: 'psr-scr-modeller', label: 'PSR SCR Dashboard',     icon: Calculator,     section: 'COMPLIANCE' },
+  { id: 'salary',           label: 'Salary Compliance',    icon: Scale,          section: 'COMPLIANCE' },
+  { id: 'revenue-attribution', label: 'Revenue Attribution', icon: TrendingUp,   section: 'COMPLIANCE' },
+  { id: 'game-standards',   label: 'Game Standards',       icon: ShieldCheck,    section: 'COMPLIANCE' },
+  { id: 'club-licensing',   label: 'Club Licensing',       icon: BadgeCheck,     section: 'COMPLIANCE' },
+  { id: 'registration',     label: 'Registration & Transfers', icon: FileText,   section: 'COMPLIANCE' },
+  { id: 'data-protection',  label: 'Data Protection',      icon: Scale,          section: 'COMPLIANCE' },
+  { id: 'safeguarding-ops', label: 'Safeguarding Ops',     icon: ShieldCheck,    section: 'COMPLIANCE' },
+  { id: 'anti-doping',      label: 'Anti-Doping',          icon: Heart,          section: 'COMPLIANCE' },
+  { id: 'risk-insurance',   label: 'Risk & Insurance',     icon: BadgeCheck,     section: 'COMPLIANCE' },
+  { id: 'policy-library',   label: 'Policy Library',       icon: ClipboardList,  section: 'COMPLIANCE' },
   // ── COMMERCIAL ──
   { id: 'commercial',       label: 'Commercial',           icon: Briefcase,      section: 'COMMERCIAL' },
+  { id: 'sponsorship',      label: 'Sponsorship Pipeline', icon: Handshake,      section: 'COMMERCIAL' },
+  { id: 'club-vision',      label: 'Club Vision',          icon: Map,            section: 'COMMERCIAL' },
+  { id: 'financial',        label: 'Financial Planning',   icon: Calculator,     section: 'FINANCE' },
+  { id: 'player-trading',   label: 'Player Trading & Amortisation', icon: TrendingUp, section: 'FINANCE' },
+  { id: 'treasury',         label: 'Treasury, Debt & Covenants', icon: DollarSign, section: 'FINANCE' },
+  { id: 'payroll-ledger',   label: 'Payroll & Bonus Ledger', icon: Users,        section: 'FINANCE' },
+  { id: 'budget-actuals',   label: 'Budget vs Actuals',    icon: ClipboardList,  section: 'FINANCE' },
+  { id: 'revenue-receivables', label: 'Revenue & Receivables', icon: FileText,   section: 'FINANCE' },
+  { id: 'central-distributions', label: 'Central Distributions', icon: BadgeCheck, section: 'FINANCE' },
+  { id: 'mgmt-accounts',    label: 'Management Accounts',  icon: BarChart3,      section: 'FINANCE' },
+  { id: 'capex-appraisal',  label: 'CapEx & Appraisal',    icon: Building,       section: 'FINANCE' },
+  { id: 'retail',           label: 'Retail & Merchandise', icon: ShoppingBag,    section: 'COMMERCIAL' },
+  { id: 'ticketing',        label: 'Ticketing & Yield',    icon: Ticket,         section: 'COMMERCIAL' },
+  { id: 'sponsor-roi',      label: 'Sponsor Activation',   icon: Megaphone,      section: 'COMMERCIAL' },
   { id: 'media',            label: 'Media & PR',           icon: Newspaper,      section: 'COMMERCIAL' },
   { id: 'social',           label: 'Social Media',         icon: MessageSquare,  section: 'COMMERCIAL' },
+  { id: 'fanhub',           label: 'Fan Hub',              icon: Users,          section: 'COMMERCIAL' },
   { id: 'community',        label: 'Community',            icon: Heart,          section: 'COMMERCIAL' },
   // ── OPERATIONS ──
   { id: 'matchday-ops',     label: 'Matchday Operations',  icon: Calendar,       section: 'OPERATIONS' },
@@ -174,10 +253,14 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'staff',            label: 'Staff Directory',      icon: Users,          section: 'OPERATIONS' },
   { id: 'medical-records',  label: 'Medical Records',      icon: Heart,          section: 'OPERATIONS' },
   { id: 'tours-camps',      label: 'Tours & Camps',        icon: Plane,          section: 'OPERATIONS' },
+  { id: 'procurement',      label: 'Procurement & Contracts', icon: ClipboardList, section: 'OPERATIONS' },
   // ── FACILITIES ──
   { id: 'facilities',       label: 'Stadium & Facilities', icon: MapPin,         section: 'FACILITIES' },
   { id: 'pitch-grounds',    label: 'Pitch & Grounds',      icon: MapPin,         section: 'FACILITIES' },
   { id: 'training-ground',  label: 'Training Ground',      icon: MapPin,         section: 'FACILITIES' },
+  { id: 'energy',           label: 'Energy & Sustainability', icon: Leaf,        section: 'FACILITIES' },
+  { id: 'capital-projects', label: 'Capital Projects',     icon: HardHat,        section: 'FACILITIES' },
+  { id: 'assets',           label: 'Asset Register',       icon: Wrench,         section: 'FACILITIES' },
   { id: 'settings',         label: 'Settings',             icon: Settings,       section: null },
 ]
 
@@ -563,6 +646,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
     { label: 'FOOTBALL', items: SIDEBAR_ITEMS.filter(i => i.section === 'FOOTBALL' && isAllowed(i.id)) },
     { label: 'WELFARE', items: SIDEBAR_ITEMS.filter(i => i.section === 'WELFARE' && isAllowed(i.id)) },
     { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE' && isAllowed(i.id)) },
+    { label: 'FINANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'FINANCE' && isAllowed(i.id)) },
     { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL' && isAllowed(i.id)) },
     { label: 'OPERATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'OPERATIONS' && isAllowed(i.id)) },
     { label: 'FACILITIES', items: SIDEBAR_ITEMS.filter(i => i.section === 'FACILITIES' && isAllowed(i.id)) },
@@ -6349,130 +6433,6 @@ const VOICES = [
 
 // ─── Social Media View ──────────────────────────────────────────────────────
 
-const SOCIAL_MENTIONS = [
-  { user: '@LumioSportsFan92', content: 'Great performance from Lumio Sports FC last night! Morris was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
-  { user: '@SportsBlogger', content: 'Hearing Lumio Sports FC are close to signing a new winger — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
-  { user: '@LocalFan', content: 'Season ticket renewed. Can\'t wait for Saturday. Come on Lumio Sports! 🔴', time: '32 min ago', likes: 45, sentiment: 'positive' as const },
-  { user: '@League1News', content: 'Lumio Sports FC move up to 14th after beating Eastcliff Town. Solid showing.', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
-  { user: '@TacticsBoard', content: 'Porter\'s pass map vs Eastcliff Town was elite. 92% accuracy, 4 key passes.', time: '2 hrs ago', likes: 312, sentiment: 'positive' as const },
-  { user: '@DisappointedFan', content: 'Still think we need a proper left-back. Davies isn\'t good enough for this level.', time: '3 hrs ago', likes: 89, sentiment: 'negative' as const },
-  { user: '@YouthFootball', content: 'Academy Player (17) training with Lumio Sports first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
-  { user: '@TransferWatch', content: 'Lumio Sports FC have reportedly tracked a League One winger. Clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
-]
-
-const SOCIAL_PLATFORMS = [
-  { name: 'X / Twitter', emoji: '🐦', followers: '124k', growth: '+840', engagement: '5.1%', bestTime: '12:30pm' },
-  { name: 'Instagram', emoji: '📸', followers: '89k', growth: '+620', engagement: '4.8%', bestTime: '6:00pm' },
-  { name: 'Facebook', emoji: '📘', followers: '42k', growth: '+180', engagement: '2.1%', bestTime: '9:00am' },
-  { name: 'YouTube', emoji: '▶️', followers: '18k', growth: '+340', engagement: '6.2%', bestTime: '2:00pm' },
-  { name: 'LinkedIn', emoji: '💼', followers: '8k', growth: '+90', engagement: '3.4%', bestTime: '8:00am' },
-  { name: 'TikTok', emoji: '🎵', followers: '3k', growth: '+420', engagement: '8.7%', bestTime: '7:00pm' },
-]
-
-const SOCIAL_CALENDAR = [
-  { day: 'Mon', time: '9am', content: 'Match preview graphic', platforms: 'IG + X' },
-  { day: 'Tue', time: '2pm', content: 'Training ground photos', platforms: 'IG' },
-  { day: 'Wed', time: '12pm', content: 'Player spotlight — Morris', platforms: 'All' },
-  { day: 'Thu', time: '10am', content: 'Match day -2 countdown', platforms: 'X + Stories' },
-  { day: 'Fri', time: '9am', content: 'Squad announcement', platforms: 'All' },
-  { day: 'Sat', time: '12pm', content: 'Match day live', platforms: 'All' },
-  { day: 'Sun', time: '11am', content: 'Highlights + report', platforms: 'All' },
-]
-
-function SocialMediaView() {
-  const [platform, setPlatform] = useState(0)
-  const [sentimentFilter, setSentimentFilter] = useState<string>('all')
-  const [socToast, setSocToast] = useState<string | null>(null)
-  function socAction(l: string) { setSocToast(`${l} — opening...`); setTimeout(() => setSocToast(null), 2500) }
-
-  const filtered = sentimentFilter === 'all' ? SOCIAL_MENTIONS : SOCIAL_MENTIONS.filter(m => m.sentiment === sentimentFilter)
-  const p = SOCIAL_PLATFORMS[platform]
-
-  return (
-    <div className="space-y-5">
-      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about Lumio Sports FC</p></div>
-
-      <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }].map(a => (
-          <button key={a.l} onClick={() => socAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Total Followers" value="284k" icon={Users} color="#003DA5" />
-        <StatCard label="Engagement Rate" value="4.2%" icon={Activity} color="#22C55E" />
-        <StatCard label="Mentions Today" value="847" icon={MessageSquare} color="#8B5CF6" />
-        <StatCard label="Sentiment Score" value="72/100" icon={Heart} color="#F1C40F" />
-      </div>
-
-      {/* Platform Tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {SOCIAL_PLATFORMS.map((sp, i) => (
-          <button key={sp.name} onClick={() => setPlatform(i)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: platform === i ? '#003DA5' : '#111318', color: platform === i ? '#F9FAFB' : '#9CA3AF', border: platform === i ? 'none' : '1px solid #1F2937' }}>
-            {sp.emoji} {sp.name}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Platform Stats */}
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>{p.emoji} {p.name}</p>
-          {[{ l: 'Followers', v: p.followers }, { l: 'Weekly Growth', v: p.growth }, { l: 'Engagement', v: p.engagement }, { l: 'Best Post Time', v: p.bestTime }].map(s => (
-            <div key={s.l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{s.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{s.v}</span></div>
-          ))}
-        </div>
-
-        {/* Mentions Feed */}
-        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Mentions</p>
-            <div className="flex gap-1">{['all', 'positive', 'neutral', 'negative'].map(f => (
-              <button key={f} onClick={() => setSentimentFilter(f)} className="px-2 py-1 rounded text-[10px] font-semibold capitalize" style={{ backgroundColor: sentimentFilter === f ? '#003DA5' : '#1F2937', color: '#F9FAFB' }}>{f}</button>
-            ))}</div>
-          </div>
-          <div className="max-h-80 overflow-y-auto">
-            {filtered.map((m, i) => (
-              <div key={i} className="px-5 py-3 flex gap-3" style={{ borderBottom: i < filtered.length - 1 ? '1px solid #1F2937' : undefined }}>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{m.user[1].toUpperCase()}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs"><span className="font-bold" style={{ color: '#F9FAFB' }}>{m.user}</span> <span style={{ color: '#6B7280' }}>· {m.time}</span></p>
-                  <p className="text-xs mt-1" style={{ color: '#D1D5DB' }}>{m.content}</p>
-                  <div className="flex items-center gap-3 mt-1"><span className="text-[10px]" style={{ color: '#6B7280' }}>❤️ {m.likes}</span><span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: m.sentiment === 'positive' ? 'rgba(34,197,94,0.12)' : m.sentiment === 'negative' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: m.sentiment === 'positive' ? '#22C55E' : m.sentiment === 'negative' ? '#EF4444' : '#F59E0B' }}>{m.sentiment}</span></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Sentiment + Calendar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Sentiment Analysis</p>
-          {[{ l: 'Positive', v: 68, c: '#22C55E' }, { l: 'Neutral', v: 22, c: '#F59E0B' }, { l: 'Negative', v: 10, c: '#EF4444' }].map(s => (
-            <div key={s.l} className="mb-2"><div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{s.l}</span><span style={{ color: s.c }}>{s.v}%</span></div><div className="h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${s.v}%`, backgroundColor: s.c }} /></div></div>
-          ))}
-        </div>
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Content Calendar</p></div>
-          {SOCIAL_CALENDAR.map((c, i) => (
-            <div key={i} className="flex items-center gap-3 px-5 py-2.5" style={{ borderBottom: i < SOCIAL_CALENDAR.length - 1 ? '1px solid #1F2937' : undefined }}>
-              <span className="text-xs font-bold w-8" style={{ color: '#003DA5' }}>{c.day}</span>
-              <span className="text-xs w-10" style={{ color: '#6B7280' }}>{c.time}</span>
-              <span className="text-xs flex-1" style={{ color: '#D1D5DB' }}>{c.content}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{c.platforms}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{socToast}</div>}
-    </div>
-  )
-}
-
 function DynamicsView() {
   const [socToast, setSocToast] = useState<string | null>(null)
   function action(l: string) { setSocToast(`${l} — opening...`); setTimeout(() => setSocToast(null), 2500) }
@@ -7327,14 +7287,14 @@ const FOOTBALL_ROLES = [
 // array here, not role-templates.ts.
 const FOOTBALL_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; message: string | null }> = {
   ceo:               { label: 'CEO',                    icon: '🏛️', accent: '#003DA5', sidebar: 'all', message: null },
-  chairman:          { label: 'Chairman',               icon: '👑', accent: '#7C3AED', sidebar: ['overview','insights','board','finance','psr-scr-modeller','commercial','community','discover','concussion-tracker','settings'], message: 'Strategic top-line view.' },
+  chairman:          { label: 'Chairman',               icon: '👑', accent: '#7C3AED', sidebar: ['overview','insights','board','club-vision','financial','capital-projects','energy','finance','psr-scr-modeller','salary','revenue-attribution','game-standards','club-licensing','commercial','sponsorship','sponsor-roi','retail','ticketing','community','fanhub','discover','concussion-tracker','settings'], message: 'Strategic top-line view.' },
   manager:           { label: 'Manager / Head Coach',   icon: '🎽', accent: '#10B981', sidebar: ['overview','insights','squad','squad-planner','tactics','matchday','training','tours-camps','set-pieces','video-analysis','scouting','analytics','medical','concussion-tracker','discover','settings'], message: 'Operational first-team view.' },
   director_football: { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['overview','insights','squad','transfers','scouting','scouting-db','video-analysis','academy','board','psr-scr-modeller','discover','settings'], message: 'Squad strategy and recruitment view.' },
   head_performance:  { label: 'Head of Performance',    icon: '🏃', accent: '#22C55E', sidebar: ['overview','insights','performance','gps-heatmaps','gps-hardware','training','analytics','video-analysis','medical','concussion-tracker','tours-camps','settings'], message: 'S&C, GPS and sport science view.' },
   head_medical:      { label: 'Head of Medical',        icon: '🏥', accent: '#DC2626', sidebar: ['overview','insights','medical','concussion-tracker','dynamics','squad','tours-camps','player-welfare','settings'], message: 'Welfare, injury and return-to-play view.' },
   analyst:           { label: 'Analyst / Head of Data', icon: '📊', accent: '#F59E0B', sidebar: ['overview','insights','matchday','video-analysis','analytics','scouting','set-pieces','gps-heatmaps','opta','lumio-data-pro','discover','settings'], message: 'Video, opposition and performance data view.' },
-  commercial:        { label: 'Commercial Director',    icon: '💼', accent: '#EC4899', sidebar: ['overview','insights','commercial','board','finance','psr-scr-modeller','media','social','community','settings'], message: 'Sponsorship, hospitality and brand view.' },
-  head_operations:   { label: 'Head of Operations',     icon: '🧰', accent: '#0EA5E9', sidebar: ['overview','insights','club-operations','facilities','tours-camps','matchday','commercial','psr-scr-modeller','discover','settings'], message: 'Matchday, facilities and travel logistics view.' },
+  commercial:        { label: 'Commercial Director',    icon: '💼', accent: '#EC4899', sidebar: ['overview','insights','commercial','sponsorship','retail','ticketing','sponsor-roi','club-vision','financial','board','finance','psr-scr-modeller','media','social','fanhub','community','settings'], message: 'Sponsorship, hospitality and brand view.' },
+  head_operations:   { label: 'Head of Operations',     icon: '🧰', accent: '#0EA5E9', sidebar: ['overview','insights','club-operations','facilities','energy','capital-projects','assets','procurement','ticketing','tours-camps','matchday','commercial','psr-scr-modeller','discover','settings'], message: 'Matchday, facilities and travel logistics view.' },
   head_community:    { label: 'Head of Community',      icon: '❤️', accent: '#F97316', sidebar: ['overview','insights','community','commercial','media','social','settings'], message: 'Foundation, schools and fan engagement view.' },
 }
 
@@ -7584,42 +7544,74 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'scouting' && <ScoutingView />}
             {isFootballDemo && activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
             {isFootballDemo && activeDept === 'analytics' && <AnalyticsView />}
-            {isFootballDemo && activeDept === 'media' && <MediaContentModule sport="football-pro" accentColor="#003DA5" existingContentLabel="Football Pro — Media & PR (existing)" existingContent={<MediaView />} isDemoShell={session?.isDemoShell !== false} />}
-            {isFootballDemo && activeDept === 'social' && <SocialMediaView />}
+            {isFootballDemo && activeDept === 'media' && <MediaContentModule sport="football-pro" accentColor="#003DA5" existingContentLabel="Football Pro — Media & PR (existing)" existingContent={<FootballMediaPRView />} isDemoShell={session?.isDemoShell !== false} />}
+            {isFootballDemo && activeDept === 'social' && <FootballSocialMediaView />}
             {isFootballDemo && activeDept === 'matchday' && <MatchdayView onNavigate={(d) => setActiveDept(d)} />}
             {isFootballDemo && activeDept === 'training' && <TrainingView />}
             {isFootballDemo && activeDept === 'performance' && <GPSPerformanceView />}
             {isFootballDemo && activeDept === 'gps-heatmaps' && <GPSHeatmapsView />}
             {isFootballDemo && activeDept === 'performance-brief' && <ProAIPerformanceBriefView />}
-            {isFootballDemo && activeDept === 'finance' && <FinanceView />}
+            {isFootballDemo && activeDept === 'finance' && <FootballFinanceView />}
             {isFootballDemo && activeDept === 'staff' && <StaffView />}
             {isFootballDemo && activeDept === 'facilities' && <FacilitiesView />}
             {isFootballDemo && activeDept === 'dynamics' && <DynamicsView />}
             {isFootballDemo && activeDept === 'concussion-tracker' && <ConcussionTrackerView />}
+            {isFootballDemo && activeDept === 'compliance-centre' && <ComplianceCommandCentre variant="mens" onNavigate={(id) => setActiveDept(id as DeptId)} />}
+            {isFootballDemo && activeDept === 'compliance-calendar' && <ComplianceCalendar variant="mens" />}
             {isFootballDemo && activeDept === 'psr-scr-modeller' && <PSRScenarioModellerView />}
+            {isFootballDemo && activeDept === 'salary' && <FootballSalaryComplianceView />}
+            {isFootballDemo && activeDept === 'revenue-attribution' && <FootballRevenueAttributionView />}
+            {isFootballDemo && activeDept === 'game-standards' && <FootballGameStandardsView />}
+            {isFootballDemo && activeDept === 'club-licensing' && <FootballClubLicensingView />}
+            {isFootballDemo && activeDept === 'registration' && <RegistrationTransferView variant="mens" />}
+            {isFootballDemo && activeDept === 'data-protection' && <DataProtectionView variant="mens" />}
+            {isFootballDemo && activeDept === 'safeguarding-ops' && <SafeguardingOpsView variant="mens" />}
+            {isFootballDemo && activeDept === 'anti-doping' && <AntiDopingView variant="mens" />}
+            {isFootballDemo && activeDept === 'risk-insurance' && <RiskInsuranceView variant="mens" />}
+            {isFootballDemo && activeDept === 'policy-library' && <PolicyLibraryView variant="mens" />}
+            {isFootballDemo && activeDept === 'player-trading' && <PlayerTradingLedger variant="mens" />}
+            {isFootballDemo && activeDept === 'treasury' && <TreasuryView variant="mens" />}
+            {isFootballDemo && activeDept === 'payroll-ledger' && <PayrollBonusView variant="mens" />}
+            {isFootballDemo && activeDept === 'budget-actuals' && <BudgetActualsView variant="mens" />}
+            {isFootballDemo && activeDept === 'revenue-receivables' && <RevenueReceivablesView variant="mens" />}
+            {isFootballDemo && activeDept === 'central-distributions' && <CentralDistributionsView variant="mens" />}
+            {isFootballDemo && activeDept === 'mgmt-accounts' && <ManagementAccountsView variant="mens" />}
+            {isFootballDemo && activeDept === 'capex-appraisal' && <CapexAppraisalView variant="mens" />}
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
             {isFootballDemo && activeDept === 'tours-camps' && <ToursAndCampsView />}
-            {activeDept === 'video-analysis' && <ProVideoAnalysisView />}
-            {/* TODO: FootballScoutIntegrationView is now orphaned in this file (the
-                old 'lumio-vision' render branch routed here was deleted as part of
-                the V&A rename). Re-route it under a different DeptId or remove the
-                import in a follow-up cleanup commit. */}
-            {activeDept === 'scouting-db' && <ScoutingDBView />}
-            {activeDept === 'gps-hardware' && <GPSHardwareView />}
-            {activeDept === 'opta' && <FootballEventDataView />}
-            {activeDept === 'discover' && <DiscoverView />}
-            {activeDept === 'lumio-data-pro' && <FootballLeagueDataView />}
-            {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
-            {activeDept === 'player-welfare' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · wellbeing · cultural support" />}
-            {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" hiddenTabs={['integration', 'wellbeing', 'travel', 'matchday']} title="Club Operations" subtitle="Operations overview · club info · compliance & insurance" overviewSlot={<FootballClubOpsOverview accent="#003DA5" />} clubInfoSlot={<FootballClubInfoTab />} />}
+            {isFootballDemo && activeDept === 'procurement' && <FootballProcurementView />}
+            {isFootballDemo && activeDept === 'player-integration' && <FootballPlayerIntegrationView />}
+            {isFootballDemo && activeDept === 'injury-risk' && <FootballInjuryRiskMonitor />}
+            {isFootballDemo && activeDept === 'load-recovery' && <FootballLoadRecoveryView />}
+            {isFootballDemo && activeDept === 'return-to-play' && <FootballReturnToPlayView />}
+            {isFootballDemo && activeDept === 'mental-health' && <FootballMentalHealthView />}
             {isFootballDemo && activeDept === 'pitch-grounds' && <MensPitchGroundsView />}
             {isFootballDemo && activeDept === 'training-ground' && <MensTrainingGroundView />}
+            {isFootballDemo && activeDept === 'energy' && <FootballEnergyView />}
+            {isFootballDemo && activeDept === 'capital-projects' && <FootballCapitalProjectsView />}
+            {isFootballDemo && activeDept === 'assets' && <FootballAssetRegisterView />}
+            {isFootballDemo && activeDept === 'retail' && <FootballRetailView />}
+            {isFootballDemo && activeDept === 'ticketing' && <FootballTicketingView />}
+            {isFootballDemo && activeDept === 'sponsor-roi' && <FootballSponsorActivationView />}
             {isFootballDemo && activeDept === 'matchday-ops' && <FootballMatchdayOps />}
             {isFootballDemo && activeDept === 'travel-logistics' && <FootballTravelLogisticsView />}
             {isFootballDemo && activeDept === 'kit-manager' && <FootballKitManager />}
             {isFootballDemo && activeDept === 'medical-records' && <FootballMedicalRecords />}
             {isFootballDemo && activeDept === 'commercial' && <CommercialView />}
             {isFootballDemo && activeDept === 'community' && <CommunityView />}
+            {isFootballDemo && activeDept === 'sponsorship' && <FootballSponsorshipPipeline />}
+            {isFootballDemo && activeDept === 'club-vision' && <FootballClubVisionView />}
+            {isFootballDemo && activeDept === 'financial' && <FootballFinancialPlanningView />}
+            {isFootballDemo && activeDept === 'fanhub' && <FootballFanHub />}
+            {activeDept === 'video-analysis' && <ProVideoAnalysisView />}
+            {activeDept === 'scouting-db' && <ScoutingDBView />}
+            {activeDept === 'gps-hardware' && <GPSHardwareView />}
+            {activeDept === 'opta' && <FootballEventDataView />}
+            {activeDept === 'discover' && <DiscoverView />}
+            {activeDept === 'lumio-data-pro' && <FootballLeagueDataView />}
+            {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
+            {activeDept === 'player-welfare' && <FootballWelfareHubView onNavigate={(id) => setActiveDept(id as DeptId)} />}
+            {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" hiddenTabs={['integration', 'wellbeing', 'travel', 'matchday']} title="Club Operations" subtitle="Operations overview · club info · compliance & insurance" overviewSlot={<FootballClubOpsOverview accent="#003DA5" />} clubInfoSlot={<FootballClubInfoTab />} />}
           </main>
         </div>
       </div>

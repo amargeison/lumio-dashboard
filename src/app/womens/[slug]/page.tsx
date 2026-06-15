@@ -39,6 +39,36 @@ import WomensSetPiecesView from '@/components/football/WomensSetPiecesView'
 import WomensTrainingView from '@/components/football/WomensTrainingView'
 import WomensTacticsView from '@/components/womens/WomensTacticsView'
 import WomensClubVisionTab from '@/components/womens/WomensClubVisionTab'
+import WomensFinancialPlanningView from '@/components/womens/WomensFinancialPlanningView'
+import WomensSocialMediaView from '@/components/womens/WomensSocialMediaView'
+import WomensEnergyView from '@/components/womens/WomensEnergyView'
+import WomensCapitalProjectsView from '@/components/womens/WomensCapitalProjectsView'
+import WomensAssetRegisterView from '@/components/womens/WomensAssetRegisterView'
+import WomensProcurementView from '@/components/womens/WomensProcurementView'
+import WomensRetailView from '@/components/womens/WomensRetailView'
+import WomensTicketingView from '@/components/womens/WomensTicketingView'
+import WomensSponsorActivationView from '@/components/womens/WomensSponsorActivationView'
+import PlayerIntegrationView from '@/components/womens/PlayerIntegrationView'
+import WomensFSRModellerView from '@/components/womens/WomensFSRModellerView'
+import ComplianceCommandCentre from '@/components/compliance/ComplianceCommandCentre'
+import ComplianceCalendar from '@/components/compliance/ComplianceCalendar'
+import RegistrationTransferView from '@/components/compliance/RegistrationTransferView'
+import DataProtectionView from '@/components/compliance/DataProtectionView'
+import SafeguardingOpsView from '@/components/compliance/SafeguardingOpsView'
+import AntiDopingView from '@/components/compliance/AntiDopingView'
+import RiskInsuranceView from '@/components/compliance/RiskInsuranceView'
+import PolicyLibraryView from '@/components/compliance/PolicyLibraryView'
+import PlayerTradingLedger from '@/components/finance/PlayerTradingLedger'
+import TreasuryView from '@/components/finance/TreasuryView'
+import PayrollBonusView from '@/components/finance/PayrollBonusView'
+import BudgetActualsView from '@/components/finance/BudgetActualsView'
+import RevenueReceivablesView from '@/components/finance/RevenueReceivablesView'
+import CentralDistributionsView from '@/components/finance/CentralDistributionsView'
+import ManagementAccountsView from '@/components/finance/ManagementAccountsView'
+import CapexAppraisalView from '@/components/finance/CapexAppraisalView'
+import FootballMentalHealthView from '@/components/football/FootballMentalHealthView'
+import FootballLoadRecoveryView from '@/components/football/FootballLoadRecoveryView'
+import FootballReturnToPlayView from '@/components/football/FootballReturnToPlayView'
 import WomensFixturesView from '@/components/football/WomensFixturesView'
 import WomensCupManagerView from '@/components/football/WomensCupManagerView'
 import WomensMedicalHubView from '@/components/football/WomensMedicalHubView'
@@ -150,21 +180,32 @@ const SIDEBAR_ITEMS = [
   // NB: Medical Records ('medical' id) stays in OPERATIONS — Medical Hub here is the
   // injury/ACWR/return-to-play clinical view, Medical Records there is the admin records side.
   { id: 'welfare',          label: 'Player Welfare Hub',  icon: '❤️', group: 'WELFARE' },
+  { id: 'integration',      label: 'Player Integration',  icon: '🌍', group: 'WELFARE' },
   { id: 'acl',              label: 'ACL Risk Monitor',    icon: '🦵', group: 'WELFARE' },
   { id: 'cycle',             label: 'Cycle Tracking',      icon: '🌸', group: 'WELFARE' },
   { id: 'maternity',        label: 'Pregnancy & Return-to-Play', icon: '👶', group: 'WELFARE' },
+  { id: 'load-recovery',    label: 'Load & Recovery',     icon: '🔋', group: 'WELFARE' },
+  { id: 'return-to-play',   label: 'Injury & Return-to-Play', icon: '🩹', group: 'WELFARE' },
   { id: 'mental',           label: 'Mental Health',       icon: '🧠', group: 'WELFARE' },
   { id: 'medical-hub',      label: 'Medical Hub',         icon: '🏥', group: 'WELFARE' },
   { id: 'concussion',       label: 'Concussion Tracker',  icon: '🧠', group: 'WELFARE' },
 
   // COMPLIANCE — Finance NEW at top (ported from Pro current-season view).
   // Distinct from 'financial' (Financial Planning) which remains in COMMERCIAL — the multi-horizon FSR-constrained Club Planner.
-  { id: 'finance',          label: 'Finance',             icon: '💷', group: 'COMPLIANCE' },
+  { id: 'finance',          label: 'Finance',             icon: '💷', group: 'FINANCE' },
+  { id: 'compliance-centre', label: 'Compliance Centre',  icon: '🧭', group: 'COMPLIANCE' },
+  { id: 'compliance-calendar', label: 'Compliance Calendar', icon: '📅', group: 'COMPLIANCE' },
   { id: 'fsr',              label: 'FSR Dashboard',       icon: '📊', group: 'COMPLIANCE' },
   { id: 'salary',           label: 'Salary Compliance',   icon: '💰', group: 'COMPLIANCE' },
   { id: 'revenue',          label: 'Revenue Attribution', icon: '📈', group: 'COMPLIANCE' },
   { id: 'game-standards',   label: 'Game Standards',      icon: '🛡️', group: 'COMPLIANCE' },
   { id: 'licensing',        label: 'Club Licensing',      icon: '🏛️', group: 'COMPLIANCE' },
+  { id: 'registration',     label: 'Registration & Transfers', icon: '📝', group: 'COMPLIANCE' },
+  { id: 'data-protection',  label: 'Data Protection',     icon: '🔒', group: 'COMPLIANCE' },
+  { id: 'safeguarding-ops', label: 'Safeguarding Ops',    icon: '🛡️', group: 'COMPLIANCE' },
+  { id: 'anti-doping',      label: 'Anti-Doping',         icon: '🧪', group: 'COMPLIANCE' },
+  { id: 'risk-insurance',   label: 'Risk & Insurance',    icon: '⚠️', group: 'COMPLIANCE' },
+  { id: 'policy-library',   label: 'Policy Library',      icon: '📚', group: 'COMPLIANCE' },
 
   // COMMERCIAL — Commercial + Community NEW. Board Suite moved out to OVERVIEW.
   // Financial Planning ('financial') stays here — it's the multi-horizon planner, not current-season.
@@ -172,7 +213,18 @@ const SIDEBAR_ITEMS = [
   { id: 'sponsorship',      label: 'Sponsorship Pipeline',icon: '🤝', group: 'COMMERCIAL' },
   { id: 'standalone',       label: 'Standalone Tracker',  icon: '🏗️', group: 'COMMERCIAL' },
   { id: 'club-vision',      label: 'Club Vision',         icon: '🗺️', group: 'COMMERCIAL' },
-  { id: 'financial',        label: 'Financial Planning',  icon: '💷', group: 'COMMERCIAL' },
+  { id: 'financial',        label: 'Financial Planning',  icon: '💷', group: 'FINANCE' },
+  { id: 'player-trading',   label: 'Player Trading & Amortisation', icon: '🔄', group: 'FINANCE' },
+  { id: 'treasury',         label: 'Treasury, Debt & Covenants', icon: '🏦', group: 'FINANCE' },
+  { id: 'payroll-ledger',   label: 'Payroll & Bonus Ledger', icon: '👛', group: 'FINANCE' },
+  { id: 'budget-actuals',   label: 'Budget vs Actuals',   icon: '📋', group: 'FINANCE' },
+  { id: 'revenue-receivables', label: 'Revenue & Receivables', icon: '🧾', group: 'FINANCE' },
+  { id: 'central-distributions', label: 'Central Distributions', icon: '🪙', group: 'FINANCE' },
+  { id: 'mgmt-accounts',    label: 'Management Accounts',  icon: '📊', group: 'FINANCE' },
+  { id: 'capex-appraisal',  label: 'CapEx & Appraisal',   icon: '🏗️', group: 'FINANCE' },
+  { id: 'retail',           label: 'Retail & Merchandise',icon: '🛍️', group: 'COMMERCIAL' },
+  { id: 'ticketing',        label: 'Ticketing & Yield',   icon: '🎟️', group: 'COMMERCIAL' },
+  { id: 'sponsor-roi',      label: 'Sponsor Activation',  icon: '📣', group: 'COMMERCIAL' },
   { id: 'media',            label: 'Media & Content',     icon: '📱', group: 'COMMERCIAL' },
   { id: 'social',           label: 'Social Media',        icon: '📱', group: 'COMMERCIAL' },
   { id: 'fanhub',           label: 'Fan Hub',             icon: '💜', group: 'COMMERCIAL' },
@@ -186,11 +238,15 @@ const SIDEBAR_ITEMS = [
   { id: 'team',             label: 'Staff Directory',     icon: '📋', group: 'OPERATIONS' },
   { id: 'medical',          label: 'Medical Records',     icon: '🏥', group: 'OPERATIONS' },
   { id: 'tours-camps',      label: 'Tours & Camps',        icon: '✈️', group: 'OPERATIONS' },
+  { id: 'procurement',      label: 'Procurement & Contracts', icon: '📑', group: 'OPERATIONS' },
 
   // FACILITIES — unchanged.
   { id: 'facilities',       label: 'Stadium & Facilities', icon: '🏟️', group: 'FACILITIES' },
   { id: 'pitch-grounds',    label: 'Pitch & Grounds',     icon: '🌱', group: 'FACILITIES' },
   { id: 'training-ground',  label: 'Training Ground',     icon: '📍', group: 'FACILITIES' },
+  { id: 'energy',           label: 'Energy & Sustainability', icon: '🌿', group: 'FACILITIES' },
+  { id: 'capital-projects', label: 'Capital Projects',    icon: '🏗️', group: 'FACILITIES' },
+  { id: 'assets',           label: 'Asset Register',      icon: '🔧', group: 'FACILITIES' },
 
   // SETTINGS — its own group, very bottom.
   { id: 'settings',         label: 'Settings',            icon: '⚙️', group: 'SETTINGS' },
@@ -953,129 +1009,7 @@ const ACLRiskMonitorView = () => {
 
 // ─── MATERNITY TRACKER VIEW ───────────────────────────────────────────────────
 // ─── MENTAL HEALTH VIEW ───────────────────────────────────────────────────────
-const MentalHealthView = () => (
-  <div>
-    <SectionHeader title="Mental Health & Wellbeing" subtitle="Karen Carney Review Standards" icon="🧠" />
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <StatCard label="Squad Size" value="22" color="pink" />
-      <StatCard label="Check-ins (month)" value="17" sub="Of 22 players" color="teal" />
-      <StatCard label="Flags Raised" value="2" sub="Anxiety · rehab adjustment" color="amber" />
-      <StatCard label="Referrals Made" value="0" sub="This season" color="green" />
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
-      <div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Monthly Check-In Log</h3></div>
-      <table className="w-full text-sm">
-        <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
-          <th className="text-left p-3">Player</th><th className="text-left p-3">Date</th><th className="text-left p-3">Score</th><th className="text-left p-3">Flags</th><th className="text-left p-3">Follow-up</th>
-        </tr></thead>
-        <tbody>
-          {[
-            {player:'Emma Clarke',date:'2 Apr',score:8,flag:'—',followup:'No'},
-            {player:'Priya Nair',date:'2 Apr',score:7,flag:'—',followup:'No'},
-            {player:'Charlotte Reed',date:'1 Apr',score:6,flag:'Performance anxiety — pre-match',followup:'Yes'},
-            {player:'Jade Osei',date:'28 Mar',score:9,flag:'—',followup:'No'},
-            {player:'Abbi Walsh',date:'28 Mar',score:7,flag:'—',followup:'No'},
-            {player:'Megan Hughes',date:'27 Mar',score:7,flag:'—',followup:'No'},
-            {player:'Fatima Al-Said',date:'27 Mar',score:8,flag:'—',followup:'No'},
-            {player:'Tilly Brooks',date:'26 Mar',score:7,flag:'—',followup:'No'},
-            {player:'Sophie Turner',date:'26 Mar',score:7,flag:'—',followup:'No'},
-            {player:'Emily Zhang',date:'25 Mar',score:8,flag:'—',followup:'No'},
-            {player:'Lucy Whitmore',date:'25 Mar',score:8,flag:'—',followup:'No'},
-            {player:'Sasha Davies',date:'24 Mar',score:6,flag:'Adjusting to rehab — welfare check',followup:'Yes'},
-            {player:'Zara Williams',date:'24 Mar',score:9,flag:'—',followup:'No'},
-            {player:'Bea Chen',date:'23 Mar',score:8,flag:'—',followup:'No'},
-            {player:'Maya Reid',date:'23 Mar',score:8,flag:'—',followup:'No'},
-            {player:'Tessa Foley',date:'22 Mar',score:7,flag:'—',followup:'No'},
-            {player:'Ellie Hayes',date:'22 Mar',score:8,flag:'—',followup:'No'},
-          ].map((r: {player:string;date:string;score:number;flag:string;followup:string}, i: number) => (
-            <tr key={i} className="border-b border-gray-800/50">
-              <td className="p-3 text-gray-200">{r.player}</td>
-              <td className="p-3 text-gray-400 text-xs">{r.date}</td>
-              <td className="p-3"><span className={`text-sm font-bold ${r.score >= 7 ? 'text-green-400' : r.score >= 5 ? 'text-amber-400' : 'text-red-400'}`}>{r.score}/10</span></td>
-              <td className={`p-3 text-xs ${r.flag !== '—' ? 'text-amber-400' : 'text-gray-500'}`}>{r.flag}</td>
-              <td className="p-3"><span className={`text-xs ${r.followup === 'Yes' ? 'text-amber-400 font-medium' : 'text-gray-500'}`}>{r.followup}</span></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <h3 className="text-sm font-bold text-white mb-3">Support Services</h3>
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          {name:'Dr Anna Reid',role:'Performance Psychologist',type:'In-house'},
-          {name:'PFA Wellbeing Service',role:'Player support',type:'External'},
-          {name:'Mind Charity',role:'Referral pathway',type:'External'},
-          {name:'EFL Heads Up',role:'Mental health programme',type:'External'},
-        ].map((s: {name:string;role:string;type:string}, i: number) => (
-          <div key={i} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3">
-            <div className="text-xs text-white font-medium">{s.name}</div>
-            <div className="text-[10px] text-gray-500">{s.role} · {s.type}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-    {/* Seasonal workload vs wellbeing chart */}
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-white">Seasonal Workload vs Wellbeing</h3>
-        <div className="flex items-center gap-3 text-[10px]">
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block" style={{ backgroundColor: '#EC4899' }} /><span className="text-gray-400">Workload</span></span>
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-0.5 inline-block" style={{ backgroundColor: '#0D9488' }} /><span className="text-gray-400">Wellbeing</span></span>
-        </div>
-      </div>
-      {(() => {
-        const months = ['Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May']
-        const workload = [40, 55, 65, 70, 60, 50, 65, 78, 85, 75]
-        const wellbeing = [8.4, 8.1, 7.8, 7.5, 7.9, 8.2, 7.6, 7.0, 6.6, 6.9]
-        const W = 600, H = 180, padL = 32, padR = 12, padT = 16, padB = 28
-        const innerW = W - padL - padR
-        const innerH = H - padT - padB
-        const stepX = innerW / (months.length - 1)
-        // Workload axis 0..100, Wellbeing axis 0..10
-        const wlPath = workload.map((v, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (v / 100) * innerH}`).join(' ')
-        const wbPath = wellbeing.map((v, i) => `${i === 0 ? 'M' : 'L'} ${padL + i * stepX} ${padT + innerH - (v / 10) * innerH}`).join(' ')
-        return (
-          <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="Seasonal workload vs wellbeing line chart">
-            {/* Y gridlines (4 lines) */}
-            {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
-              <line key={i} x1={padL} x2={W - padR} y1={padT + innerH - t * innerH} y2={padT + innerH - t * innerH} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-            ))}
-            {/* Y axis labels — workload (left, pink) */}
-            {[0, 25, 50, 75, 100].map((v, i) => (
-              <text key={i} x={padL - 6} y={padT + innerH - (v / 100) * innerH + 3} fontSize="9" fill="#9CA3AF" textAnchor="end">{v}</text>
-            ))}
-            {/* X axis labels */}
-            {months.map((m, i) => (
-              <text key={m} x={padL + i * stepX} y={H - 8} fontSize="9" fill="#6B7280" textAnchor="middle">{m}</text>
-            ))}
-            {/* Workload line + dots */}
-            <path d={wlPath} fill="none" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {workload.map((v, i) => (
-              <circle key={`w${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / 100) * innerH} r="2.5" fill="#EC4899" />
-            ))}
-            {/* Wellbeing line + dots */}
-            <path d={wbPath} fill="none" stroke="#0D9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {wellbeing.map((v, i) => (
-              <circle key={`b${i}`} cx={padL + i * stepX} cy={padT + innerH - (v / 10) * innerH} r="2.5" fill="#0D9488" />
-            ))}
-          </svg>
-        )
-      })()}
-      <p className="text-[11px] text-gray-500 mt-2">Inverse correlation noted in Mar–Apr — workload spike of 78–85 hrs/wk coincides with average wellbeing dropping from 7.6 to 6.6. Welfare lead reviewed at last staff meeting.</p>
-    </div>
-
-    <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 mb-4 text-xs text-amber-400">🔒 Mental health records are strictly confidential — role-based access only.</div>
-    <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5">
-      <h3 className="text-sm font-bold text-white mb-3">WSL Minimum Standards (Karen Carney Review)</h3>
-      <div className="space-y-2">
-        {['Licensed performance psychologist available to squad','Monthly wellbeing check-ins for all players','Confidential reporting pathway documented','PFA referral process in place','Mental health first aider on staff','Pre-match anxiety support protocol'].map((item: string, i: number) => (
-          <div key={i} className="flex items-center gap-2 text-xs"><span className="text-green-400">✓</span><span className="text-gray-300">{item}</span></div>
-        ))}
-      </div>
-    </div>
-  </div>
-)
+const MentalHealthView = () => <FootballMentalHealthView variant="womens" />
 
 // ─── MEDICAL RECORDS VIEW ─────────────────────────────────────────────────────
 const MedicalRecordsView = () => (
@@ -1172,77 +1106,85 @@ const MedicalRecordsView = () => (
 // ─── SALARY COMPLIANCE VIEW ──────────────────────────────────────────────────
 const SalaryComplianceView = () => {
   const [newSalary, setNewSalary] = useState(0)
-  const players: Array<{name:string;pos:string;salary:number;flag:boolean}> = [
-    {name:'Emma Clarke',pos:'CB',salary:62000,flag:false},
-    {name:'Priya Nair',pos:'CM',salary:58000,flag:false},
-    {name:'Jade Osei',pos:'ST',salary:71000,flag:false},
-    {name:'Abbi Walsh',pos:'RW',salary:54000,flag:false},
-    {name:'Charlotte Reed',pos:'GK',salary:48000,flag:false},
-    {name:'Sophie Turner',pos:'LB',salary:45000,flag:false},
-    {name:'Fatima Al-Said',pos:'AM',salary:67000,flag:false},
-    {name:'Megan Hughes',pos:'DM',salary:52000,flag:false},
-    {name:'Sophie Lawson',pos:'RB',salary:46000,flag:false},
-    {name:'Tilly Brooks',pos:'LW',salary:35000,flag:true},
+  const players: Array<{name:string;pos:string;salary:number}> = [
+    {name:'Jade Osei',pos:'ST',salary:71000},{name:'Fatima Al-Said',pos:'AM',salary:67000},
+    {name:'Emma Clarke',pos:'CB',salary:62000},{name:'Priya Nair',pos:'CM',salary:58000},
+    {name:'Lucy Brennan',pos:'CB',salary:56000},{name:'Zara Williams',pos:'ST',salary:55000},
+    {name:'Abbi Walsh',pos:'RW',salary:54000},{name:'Jess Tilley',pos:'RW',salary:53000},
+    {name:'Megan Hughes',pos:'DM',salary:52000},{name:'Maya Reid',pos:'CB',salary:50000},
+    {name:'Emily Zhang',pos:'CM',salary:49000},{name:'Charlotte Reed',pos:'GK',salary:48000},
+    {name:'Bea Chen',pos:'CB',salary:47000},{name:'Sophie Lawson',pos:'RB',salary:46000},
+    {name:'Lucy Whitmore',pos:'CM',salary:46000},{name:'Sophie Turner',pos:'LB',salary:45000},
+    {name:'Tessa Foley',pos:'LB',salary:44000},{name:'Sasha Davies',pos:'CM',salary:42000},
+    {name:'Dani Morris',pos:'LW',salary:40000},{name:'Aria Rowe',pos:'ST',salary:39000},
+    {name:'Ellie Hayes',pos:'GK',salary:38000},{name:'Tilly Brooks',pos:'LW',salary:35000},
   ]
-  const totalSalary = players.reduce((sum: number, p: typeof players[0]) => sum + p.salary, 0)
+  const staff: Array<{name:string;role:string;salary:number}> = [
+    {name:'Sarah Frost',role:'Head Coach',salary:110000},{name:'Helen Voss',role:'Director of Football',salary:75000},
+    {name:'Lauren Page',role:'Assistant Head Coach',salary:55000},{name:'Marcus Chen',role:'Head of Performance',salary:48000},
+    {name:'Dr Anna Reid',role:'Club Doctor',salary:45000},{name:'Nina Walsh',role:'Welfare Lead',salary:42000},
+  ]
+  const playerTotal = players.reduce((sum, p) => sum + p.salary, 0)
+  const staffTotal = staff.reduce((sum, p) => sum + p.salary, 0)
+  const totalSalary = playerTotal + staffTotal
   const cap = 2560000
   const headroom = cap - totalSalary - newSalary
+  const flags = players.filter(p => p.salary < 40000).length
   const fmt = (n: number): string => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n)
 
   return (
     <div>
       <SectionHeader title="Salary Compliance" subtitle="FSR salary cap monitoring — 80% of Relevant Revenue" icon="💰" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Total Salary Spend" value={fmt(totalSalary)} sub="10 registered players" color="pink" />
+        <StatCard label="Total Salary Spend" value={fmt(totalSalary)} sub={`${players.length} players + ${staff.length} key staff`} color="pink" />
         <StatCard label="FSR Cap (80%)" value={fmt(cap)} sub="Of £3.2M relevant revenue" color="blue" />
         <StatCard label="Headroom" value={fmt(headroom)} sub={newSalary > 0 ? 'After modelled signing' : 'Before new signings'} color={headroom > 100000 ? 'green' : headroom > 0 ? 'amber' : 'red'} />
-        <StatCard label="Flags" value="1" sub="Tilly Brooks below £40k min" color="red" />
+        <StatCard label="Flags" value={String(flags)} sub="Below £40k WSL minimum" color={flags > 0 ? 'red' : 'green'} />
       </div>
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <div className="px-5 py-3 border-b border-gray-800"><h3 className="text-sm font-bold text-white">First-team salaries</h3></div>
+        <div style={{ maxHeight: 340, overflowY: 'auto' }}>
         <table className="w-full text-sm">
           <thead><tr className="text-gray-500 text-xs border-b border-gray-800 bg-gray-900/30">
             <th className="text-left p-3">Player</th><th className="text-left p-3">Position</th><th className="text-right p-3">Annual Salary</th><th className="text-left p-3">Status</th>
           </tr></thead>
           <tbody>
-            {players.map((p: typeof players[0], i: number) => (
-              <tr key={i} className={`border-b border-gray-800/50 ${p.flag ? 'bg-red-600/5' : ''}`}>
+            {players.map((p, i) => { const flag = p.salary < 40000; return (
+              <tr key={i} className={`border-b border-gray-800/50 ${flag ? 'bg-red-600/5' : ''}`}>
                 <td className="p-3 text-gray-200 font-medium">{p.name}</td>
                 <td className="p-3 text-gray-400">{p.pos}</td>
                 <td className="p-3 text-right text-gray-200">{fmt(p.salary)}</td>
-                <td className="p-3">
-                  {p.flag
+                <td className="p-3">{flag
                     ? <span className="text-xs px-2 py-0.5 rounded bg-red-600/20 text-red-400">Below £40k minimum</span>
-                    : <span className="text-xs px-2 py-0.5 rounded bg-green-600/20 text-green-400">Compliant</span>}
-                </td>
+                    : <span className="text-xs px-2 py-0.5 rounded bg-green-600/20 text-green-400">Compliant</span>}</td>
               </tr>
-            ))}
+            ) })}
           </tbody>
         </table>
+        </div>
+      </div>
+      <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden mb-6">
+        <div className="px-5 py-3 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Key football staff</h3></div>
+        <table className="w-full text-sm"><tbody>{staff.map((p, i) => (
+          <tr key={i} className="border-b border-gray-800/50 last:border-0"><td className="p-3 text-gray-200 font-medium">{p.name}</td><td className="p-3 text-gray-400 text-xs">{p.role}</td><td className="p-3 text-right text-gray-200">{fmt(p.salary)}</td></tr>
+        ))}</tbody></table>
       </div>
       <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5 mb-6">
         <h3 className="text-sm font-bold text-white mb-3">New Signing Salary Modeller</h3>
         <p className="text-xs text-gray-400 mb-3">Enter a proposed salary to see the impact on FSR headroom.</p>
         <div className="flex items-center gap-4 mb-3">
-          <input
-            type="number"
-            value={newSalary || ''}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSalary(Number(e.target.value))}
-            placeholder="e.g. 55000"
-            className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-pink-500"
-          />
+          <input type="number" value={newSalary || ''} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewSalary(Number(e.target.value))} placeholder="e.g. 55000" className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white w-48 focus:outline-none focus:border-pink-500" />
           <span className="text-xs text-gray-400">Annual salary (£)</span>
         </div>
         {newSalary > 0 && (
           <div className={`rounded-lg p-3 border ${headroom > 0 ? 'border-green-600/30 bg-green-600/5' : 'border-red-600/30 bg-red-600/5'}`}>
             <div className="text-sm font-semibold text-white mb-1">Updated headroom: {fmt(headroom)}</div>
-            <div className={`text-xs ${headroom > 0 ? 'text-green-400' : 'text-red-400'}`}>
-              {headroom > 0 ? 'Signing is within FSR cap.' : 'WARNING: This signing would breach the FSR salary cap.'}
-            </div>
+            <div className={`text-xs ${headroom > 0 ? 'text-green-400' : 'text-red-400'}`}>{headroom > 0 ? 'Signing is within FSR cap.' : 'WARNING: This signing would breach the FSR salary cap.'}</div>
           </div>
         )}
       </div>
       <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl p-3 text-xs text-amber-400">
-        ⚠ Tilly Brooks (£35,000) is below the recommended £40,000 WSL minimum salary. Review required.
+        ⚠ {flags} player{flags === 1 ? '' : 's'} below the recommended £40,000 WSL minimum salary. Review required.
       </div>
     </div>
   )
@@ -1762,61 +1704,6 @@ const MediaPRView = ({ club: _club }: { club: WomensClub }) => {
 };
 
 // ─── SOCIAL MEDIA VIEW ──────────────────────────────────────────────────────
-const SocialMediaView = ({ club: _club }: { club: WomensClub }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard'|'calendar'|'posts'|'performance'>('dashboard');
-  const platforms = [
-    {name:'Instagram',icon:'📸',followers:18400,growth:22,engRate:6.8,bestReach:48000,bestPost:'WSL 2 goal vs Glenmoor Wanderers W'},
-    {name:'TikTok',icon:'🎵',followers:14200,growth:41,engRate:9.2,bestReach:112000,bestPost:'Behind scenes reel'},
-    {name:'X',icon:'𝕏',followers:7600,growth:8,engRate:3.1,bestReach:22000,bestPost:'Matchday thread'},
-    {name:'YouTube',icon:'▶️',followers:2600,growth:14,engRate:4.7,bestReach:8400,bestPost:'Player profile ep4'},
-  ];
-  const scheduledPosts = [
-    {date:'Thu 10 Apr',time:'18:00',platform:'Instagram',type:'Match preview',caption:'Saturday. Oakridge. Castleton. 🏟️ #WSL2',status:'Scheduled',reach:'~12k'},
-    {date:'Thu 10 Apr',time:'18:30',platform:'X',type:'Match preview',caption:'Three points on the line. 💪',status:'Scheduled',reach:'~3k'},
-    {date:'Fri 11 Apr',time:'12:00',platform:'TikTok',type:'Player spotlight',caption:'Meet our GK Emma Clarke 🧤',status:'Draft',reach:'~18k'},
-    {date:'Sat 12 Apr',time:'11:30',platform:'Instagram',type:'Matchday hype',caption:'Game day. 🌸 Come on Oakridge!',status:'Scheduled',reach:'~20k'},
-    {date:'Sat 12 Apr',time:'14:31',platform:'X',type:'Live thread',caption:'KO: Live match updates 🔴',status:'Scheduled',reach:'~6k'},
-    {date:'Sat 12 Apr',time:'17:00',platform:'TikTok',type:'Post-match reel',caption:'Highlights + player reactions 🎬',status:'Needs approval',reach:'~35k'},
-    {date:'Mon 14 Apr',time:'10:00',platform:'YouTube',type:'Behind the season',caption:'Episode 7 — The April push 🎙️',status:'In edit',reach:'~4k'},
-    {date:'Wed 16 Apr',time:'14:00',platform:'Instagram',type:'Welfare story',caption:'How we\'re leading on player welfare 💜',status:'Draft',reach:'~22k'},
-  ];
-  const platformColor = (p:string) => p==='Instagram'?'bg-pink-600/20 text-pink-400':p==='TikTok'?'bg-gray-700 text-gray-300':p==='X'?'bg-blue-600/20 text-blue-400':'bg-red-600/20 text-red-400';
-  const statusColor = (s:string) => s==='Scheduled'?'text-green-400':s==='Needs approval'?'text-red-400':s==='Draft'?'text-gray-500':'text-amber-400';
-  const monthlyData = {labels:['Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr'],followers:[31200,33100,35400,36200,36800,38100,39400,41200,42800],engagement:[4.2,4.8,5.1,4.9,5.8,6.2,6.8,7.1,7.4]};
-
-  return (
-    <div>
-      <SectionHeader title="Social Media" subtitle="Instagram · TikTok · X · YouTube · Content calendar" icon="📱"/>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Total Followers" value="42.8k" sub="+18% this season" color="pink"/>
-        <StatCard label="Best platform" value="TikTok" sub="9.2% engagement" color="purple"/>
-        <StatCard label="Posts this month" value="14" sub="4 pending approval" color="amber"/>
-        <StatCard label="Best reach" value="112k" sub="TikTok BTS" color="blue"/>
-      </div>
-      <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto">
-        {[{id:'dashboard',label:'Dashboard',icon:'📊'},{id:'calendar',label:'Content Cal',icon:'📅'},{id:'posts',label:'Scheduled',icon:'📤'},{id:'performance',label:'Performance',icon:'📈'}].map(t=>(
-          <button key={t.id} onClick={()=>setActiveTab(t.id as typeof activeTab)} className={`px-4 py-2.5 text-xs font-semibold flex items-center gap-1.5 border-b-2 transition-all -mb-px whitespace-nowrap ${activeTab===t.id?'border-pink-500 text-pink-400':'border-transparent text-gray-500 hover:text-gray-300'}`}><span>{t.icon}</span>{t.label}</button>
-        ))}
-      </div>
-      {activeTab==='dashboard'&&<div className="space-y-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{platforms.map(p=><div key={p.name} className="bg-[#0D1117] border border-gray-800 rounded-xl p-4"><div className="flex items-center justify-between mb-3"><span className="text-lg">{p.icon}</span><span className="text-[10px] text-green-400 font-bold">+{p.growth}%</span></div><div className="text-xl font-bold text-white mb-0.5">{(p.followers/1000).toFixed(1)}k</div><div className="text-[10px] text-gray-500 mb-2">{p.name}</div><div className="w-full bg-gray-800 rounded-full h-1 mb-2"><div className="h-1 rounded-full" style={{width:`${Math.min((p.followers/20000)*100,100)}%`,backgroundColor:'#EC4899'}}/></div><div className="text-[10px] text-gray-500">{p.engRate}% eng</div></div>)}</div>
-        {(()=>{const W=600,H=160,pL=48,pR=16,pT=16,pB=32,iW=W-pL-pR,iH=H-pT-pB,mn=30000,mx=44000,sX=iW/(monthlyData.labels.length-1);const path=monthlyData.followers.map((f,i)=>`${i===0?'M':'L'} ${pL+i*sX} ${pT+iH-((f-mn)/(mx-mn))*iH}`).join(' ');const area=`${path} L ${pL+(monthlyData.labels.length-1)*sX} ${pT+iH} L ${pL} ${pT+iH} Z`;return<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-1">Total Follower Growth</h3><p className="text-xs text-gray-500 mb-4">31.2k Aug → 42.8k Apr (+37%)</p><svg viewBox={`0 0 ${W} ${H}`} width="100%"><path d={area} fill="#EC4899" opacity="0.07"/><path d={path} fill="none" stroke="#EC4899" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{monthlyData.followers.map((f,i)=><circle key={i} cx={pL+i*sX} cy={pT+iH-((f-mn)/(mx-mn))*iH} r="3" fill="#EC4899"/>)}{monthlyData.labels.map((l,i)=><text key={l} x={pL+i*sX} y={H-4} fontSize="9" fill="#6B7280" textAnchor="middle">{l}</text>)}</svg></div>;})()}
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Best Performing Posts</h3><div className="space-y-3">{[{platform:'TikTok',reach:'112k',eng:'9.4%',desc:'Behind the scenes — matchday prep',date:'18 Feb'},{platform:'Instagram',reach:'48k',eng:'8.1%',desc:'Goal vs Glenmoor Wanderers W — Priya Nair brace',date:'5 Apr'},{platform:'X',reach:'22k',eng:'4.2%',desc:'Live thread — Ridgefield Athletic Women (4–0)',date:'22 Mar'},{platform:'TikTok',reach:'21k',eng:'11.2%',desc:'Karen Carney welfare pledge',date:'8 Mar'},{platform:'YouTube',reach:'8.4k',eng:'5.1%',desc:'Player profile — Emma Clarke ep3',date:'1 Mar'}].map((post,i)=><div key={i} className="flex items-center justify-between py-2 border-b border-gray-800/50 last:border-0"><div className="flex items-center gap-3"><span className={`text-[10px] px-2 py-0.5 rounded ${platformColor(post.platform)}`}>{post.platform}</span><span className="text-xs text-gray-300">{post.desc}</span></div><div className="flex items-center gap-4 flex-shrink-0"><span className="text-xs text-pink-400 font-bold">{post.reach}</span><span className="text-[10px] text-green-400">{post.eng}</span><span className="text-[10px] text-gray-600">{post.date}</span></div></div>)}</div></div>
-      </div>}
-      {activeTab==='calendar'&&<div className="space-y-4">
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Weekly Pillars</h3><div className="grid grid-cols-2 md:grid-cols-4 gap-3">{[{day:'Mon',theme:'Training insights',icon:'⚽',pl:'TikTok · Stories'},{day:'Wed',theme:'Player spotlight',icon:'⭐',pl:'TikTok · IG'},{day:'Fri',theme:'Match preview',icon:'🎯',pl:'All platforms'},{day:'Sat',theme:'Match day',icon:'🔴',pl:'Live — all'}].map(c=><div key={c.day} className="bg-[#0a0c14] border border-gray-800 rounded-lg p-3"><div className="flex items-center gap-2 mb-1"><span className="text-xs font-bold text-pink-400">{c.day}</span><span>{c.icon}</span></div><div className="text-xs font-semibold text-white mb-1">{c.theme}</div><div className="text-[10px] text-gray-500">{c.pl}</div></div>)}</div></div>
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-4">Upcoming — April</h3><div className="space-y-2">{scheduledPosts.map((p,i)=><div key={i} className="flex items-center gap-3 py-2 border-b border-gray-800/50 last:border-0"><div className="w-20 flex-shrink-0"><div className="text-[10px] text-gray-400">{p.date}</div><div className="text-[10px] text-gray-600">{p.time}</div></div><span className={`text-[10px] px-2 py-0.5 rounded flex-shrink-0 ${platformColor(p.platform)}`}>{p.platform}</span><span className="text-[10px] text-gray-500 flex-shrink-0">{p.type}</span><span className="text-xs text-gray-300 flex-1 truncate">{p.caption}</span><span className={`text-[10px] flex-shrink-0 font-medium ${statusColor(p.status)}`}>{p.status}</span></div>)}</div></div>
-      </div>}
-      {activeTab==='posts'&&<div className="space-y-3"><div className="flex items-center justify-between mb-2"><p className="text-xs text-gray-500">{scheduledPosts.length} posts</p><button className="px-3 py-1.5 rounded-lg text-xs font-bold bg-pink-600/20 text-pink-400 border border-pink-600/30">+ Schedule</button></div>{scheduledPosts.map((p,i)=><div key={i} className={`bg-[#0D1117] border rounded-xl p-4 ${p.status==='Needs approval'?'border-red-600/40':p.status==='Scheduled'?'border-green-600/20':'border-gray-800'}`}><div className="flex items-center justify-between mb-2"><div className="flex items-center gap-2"><span className={`text-[10px] px-2 py-0.5 rounded ${platformColor(p.platform)}`}>{p.platform}</span><span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded">{p.type}</span><span className="text-[10px] text-gray-600">{p.date} · {p.time}</span></div><div className="flex items-center gap-2"><span className="text-[10px] text-gray-500">{p.reach}</span><span className={`text-[10px] font-bold ${statusColor(p.status)}`}>{p.status}</span></div></div><p className="text-xs text-gray-300 mb-2">{p.caption}</p>{p.status==='Needs approval'&&<div className="flex gap-2 pt-2 border-t border-gray-800"><button className="px-3 py-1 rounded text-[10px] bg-gray-800 text-gray-400">Edit</button><button className="px-3 py-1 rounded text-[10px] font-bold bg-green-600/20 text-green-400 border border-green-600/30">Approve ✓</button></div>}</div>)}</div>}
-      {activeTab==='performance'&&<div className="space-y-6">
-        <div className="bg-[#0D1117] border border-gray-800 rounded-xl overflow-hidden"><div className="p-4 border-b border-gray-800"><h3 className="text-sm font-bold text-white">Platform Breakdown</h3></div><table className="w-full text-sm"><thead><tr className="text-gray-500 text-[10px] border-b border-gray-800 bg-gray-900/30 uppercase tracking-wider"><th className="text-left p-3">Platform</th><th className="text-center p-3">Followers</th><th className="text-center p-3">Growth</th><th className="text-center p-3">Eng %</th><th className="text-center p-3">Best reach</th><th className="text-left p-3">Best post</th></tr></thead><tbody>{platforms.map((p,i)=><tr key={i} className="border-b border-gray-800/50"><td className="p-3"><div className="flex items-center gap-2"><span>{p.icon}</span><span className="text-xs text-gray-200 font-medium">{p.name}</span></div></td><td className="p-3 text-center text-xs text-white font-bold">{(p.followers/1000).toFixed(1)}k</td><td className="p-3 text-center text-xs text-green-400 font-bold">+{p.growth}%</td><td className="p-3 text-center text-xs text-pink-400 font-bold">{p.engRate}%</td><td className="p-3 text-center text-xs text-purple-400 font-bold">{(p.bestReach/1000).toFixed(0)}k</td><td className="p-3 text-xs text-gray-400">{p.bestPost}</td></tr>)}</tbody></table></div>
-        {(()=>{const W=600,H=160,pL=36,pR=16,pT=16,pB=32,iW=W-pL-pR,iH=H-pT-pB,mn=3.5,mx=8.5,sX=iW/(monthlyData.labels.length-1);const path=monthlyData.engagement.map((e,i)=>`${i===0?'M':'L'} ${pL+i*sX} ${pT+iH-((e-mn)/(mx-mn))*iH}`).join(' ');return<div className="bg-[#0D1117] border border-gray-800 rounded-xl p-5"><h3 className="text-sm font-bold text-white mb-1">Engagement Rate — Season Trend</h3><p className="text-xs text-gray-500 mb-4">Welfare content driving highest engagement.</p><svg viewBox={`0 0 ${W} ${H}`} width="100%"><path d={path} fill="none" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>{monthlyData.engagement.map((e,i)=><circle key={i} cx={pL+i*sX} cy={pT+iH-((e-mn)/(mx-mn))*iH} r="3" fill="#8B5CF6"/>)}{monthlyData.labels.map((l,i)=><text key={l} x={pL+i*sX} y={H-4} fontSize="9" fill="#6B7280" textAnchor="middle">{l}</text>)}</svg></div>;})()}
-      </div>}
-    </div>
-  );
-};
-
-// ─── FAN HUB VIEW ───────────────────────────────────────────────────────────
 const FanHubView = ({ club: _club }: { club: WomensClub }) => {
   const [activeTab, setActiveTab] = useState<'overview'|'forum'|'events'|'memberships'>('overview');
   const forumTopics = [
@@ -4913,12 +4800,12 @@ const WomensKitManagerView = () => {
 const WOMENS_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; hiddenTabs: string[]; message: string | null }> = {
   ceo:         { label: 'CEO / Chairman',         icon: '🏛️', accent: '#BE185D', sidebar: 'all', hiddenTabs: [], message: null },
   dof:         { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['dashboard','insights','squad','dualreg','transfers','academy','tours-camps','game-standards','settings'], hiddenTabs: ['dontmiss'], message: 'Squad strategy and recruitment view.' },
-  coach:       { label: 'Head Coach',             icon: '🎽', accent: '#22C55E', sidebar: ['dashboard','insights','squad','medical','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
+  coach:       { label: 'Head Coach',             icon: '🎽', accent: '#22C55E', sidebar: ['dashboard','insights','squad','medical','integration','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Performance and squad view.' },
   performance: { label: 'Head of Performance',    icon: '📊', accent: '#22C55E', sidebar: ['dashboard','insights','gps-load','gps-heatmaps','medical','acl','cycle','tours-camps','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'S&C, GPS and women\'s-specific load view.' },
-  medical:     { label: 'Club Doctor',            icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','insights','medical','acl','cycle','maternity','mental','welfare','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Welfare, injury and return-to-play view.' },
-  welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','acl','cycle','maternity','mental','game-standards','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
-  operations:  { label: 'Head of Operations',     icon: '🛠️', accent: '#F97316', sidebar: ['dashboard','insights','matchday-ops','club-operations','tours-camps','team','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Matchday, facilities and travel logistics view.' },
-  commercial:  { label: 'Commercial Director',    icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','insights','sponsorship','standalone','board','financial','revenue','salary','fsr','game-standards','media','social','fanhub','settings'], hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
+  medical:     { label: 'Club Doctor',            icon: '🏥', accent: '#DC2626', sidebar: ['dashboard','insights','medical','acl','cycle','maternity','mental','welfare','integration','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Welfare, injury and return-to-play view.' },
+  welfare:     { label: 'Welfare Lead',           icon: '❤️', accent: '#EF4444', sidebar: ['dashboard','insights','welfare','integration','acl','cycle','maternity','mental','game-standards','settings'], hiddenTabs: ['quickwins'], message: 'Welfare and safeguarding view.' },
+  operations:  { label: 'Head of Operations',     icon: '🛠️', accent: '#F97316', sidebar: ['dashboard','insights','matchday-ops','club-operations','tours-camps','procurement','facilities','energy','capital-projects','assets','team','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Matchday, facilities and travel logistics view.' },
+  commercial:  { label: 'Commercial Director',    icon: '💼', accent: '#F59E0B', sidebar: ['dashboard','insights','sponsorship','standalone','retail','ticketing','sponsor-roi','board','financial','revenue','salary','fsr','game-standards','media','social','fanhub','settings'], hiddenTabs: ['dailytasks','team'], message: 'Commercial and sponsorship view.' },
   community:   { label: 'Head of Community',      icon: '🌍', accent: '#22C55E', sidebar: ['dashboard','insights','fanhub','media','social','sponsorship','game-standards','settings'], hiddenTabs: ['quickwins','dontmiss'], message: 'Foundation, schools and fan engagement view.' },
 }
 
@@ -5669,9 +5556,9 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
   }, [])
 
 
-  const groups = ['OVERVIEW', 'FOOTBALL', 'WELFARE', 'COMPLIANCE', 'COMMERCIAL', 'OPERATIONS', 'FACILITIES', 'SETTINGS']
+  const groups = ['OVERVIEW', 'FOOTBALL', 'WELFARE', 'COMPLIANCE', 'FINANCE', 'COMMERCIAL', 'OPERATIONS', 'FACILITIES', 'SETTINGS']
 
-  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps', 'finance', 'commercial', 'community', 'cup-manager', 'concussion', 'medical-hub', 'fixtures', 'set-pieces', 'licensing'])
+  const hiddenForGrassroots = new Set(['fsr', 'salary', 'revenue', 'standalone', 'board', 'financial', 'dualreg', 'sponsorship', 'gps-load', 'gps-heatmaps', 'finance', 'commercial', 'community', 'cup-manager', 'concussion', 'medical-hub', 'fixtures', 'set-pieces', 'licensing', 'compliance-centre', 'compliance-calendar', 'registration', 'data-protection', 'safeguarding-ops', 'anti-doping', 'risk-insurance', 'policy-library', 'player-trading', 'treasury', 'payroll-ledger', 'budget-actuals', 'revenue-receivables', 'central-distributions', 'mgmt-accounts', 'capex-appraisal', 'load-recovery', 'return-to-play'])
   // Customise Portal (Settings) hides nav items live via the shared
   // SportsSettings toggles — it writes localStorage + fires this event.
   // Settings itself is never hideable (so the user can always get back).
@@ -5825,15 +5712,20 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
     }
     switch (activeSection) {
       case 'dashboard':   return null // handled inline
-      case 'fsr':         return <FSRDashboardView club={club} />
+      case 'compliance-centre':   return <ComplianceCommandCentre variant="womens" club={club} onNavigate={(id) => setActiveSection(id)} />
+      case 'compliance-calendar': return <ComplianceCalendar variant="womens" club={club} />
+      case 'fsr':         return <WomensFSRModellerView club={club} />
       case 'welfare':     return <WomensPlayerWelfareHub onNavigate={setActiveSection} />
       case 'briefing':    return <MorningBriefingView club={club} />
       case 'insights':    return <WomensInsightsView club={club} defaultRole={activeRole} />
       case 'salary':      return <SalaryComplianceView />
       case 'revenue':     return <RevenueAttributionView />
+      case 'integration': return <PlayerIntegrationView />
       case 'acl':         return <ACLRiskMonitorView />
       case 'cycle':       return <CycleTrackingView />
       case 'maternity':   return <WomensPregnancyRtpView />
+      case 'load-recovery':   return <FootballLoadRecoveryView variant="womens" club={club} />
+      case 'return-to-play':  return <FootballReturnToPlayView variant="womens" club={club} />
       case 'mental':      return <MentalHealthView />
       case 'squad':       return <SquadManagementView club={club} />
       case 'dualreg':     return <DualRegistrationView />
@@ -5845,6 +5737,14 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
       case 'medical-hub': return <WomensMedicalHubView />
       case 'concussion':  return <WomensConcussionTrackerView />
       case 'finance':     return <WomensFinanceView />
+      case 'player-trading':       return <PlayerTradingLedger variant="womens" club={club} />
+      case 'treasury':             return <TreasuryView variant="womens" club={club} />
+      case 'payroll-ledger':       return <PayrollBonusView variant="womens" club={club} />
+      case 'budget-actuals':       return <BudgetActualsView variant="womens" club={club} />
+      case 'revenue-receivables':  return <RevenueReceivablesView variant="womens" club={club} />
+      case 'central-distributions': return <CentralDistributionsView variant="womens" club={club} />
+      case 'mgmt-accounts':        return <ManagementAccountsView variant="womens" club={club} />
+      case 'capex-appraisal':      return <CapexAppraisalView variant="womens" club={club} />
       case 'commercial':  return <WomensCommercialView />
       case 'community':   return <WomensCommunityView />
       case 'video-analysis': return <WomensVideoAnalysisView />
@@ -5858,17 +5758,27 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
       case 'standalone':  return <StandaloneTrackerView club={club} />
       case 'board':       return <WomensBoardSuiteView club={club} onNavigate={setActiveSection} />
       case 'club-vision': return <WomensClubVisionView club={club} />
-      case 'financial':   return <WomensClubVisionView club={club} />
+      case 'financial':   return <WomensFinancialPlanningView />
+      case 'retail':      return <WomensRetailView />
+      case 'ticketing':   return <WomensTicketingView />
+      case 'sponsor-roi': return <WomensSponsorActivationView />
       case 'media':       return <MediaContentModule sport="womens" accentColor="#BE185D" existingContentLabel="Women's FC — Media & PR (existing)" existingContent={<MediaPRView club={club} />} isDemoShell={session.isDemoShell !== false} />
-      case 'social':      return <SocialMediaView club={club} />
+      case 'social':      return <WomensSocialMediaView />
       case 'fanhub':      return <FanHubView club={club} />
       case 'team':        return <WomensStaffTabs club={club} directorySlot={<StaffDirectoryView />} />
       case 'gps-load':    return <GPSLoadView club={club} />
       case 'gps-heatmaps': return <WomensGPSHeatmapsView club={club} />
       case 'medical':     return <MedicalRecordsView />
       case 'tours-camps': return <WomensToursAndCampsView preSeasonContent={<PreSeasonCampView storageKey="lumio_womens_preseason" accent="#BE185D" aiRoute="/api/ai/womens" />} />
+      case 'procurement': return <WomensProcurementView />
       case 'game-standards': return <GameStandardsView club={club} onNavigate={(id) => setActiveSection(id)} />
       case 'licensing':   return <ClubLicensingView />
+      case 'registration':     return <RegistrationTransferView variant="womens" club={club} />
+      case 'data-protection':  return <DataProtectionView variant="womens" club={club} />
+      case 'safeguarding-ops': return <SafeguardingOpsView variant="womens" club={club} />
+      case 'anti-doping':      return <AntiDopingView variant="womens" club={club} />
+      case 'risk-insurance':   return <RiskInsuranceView variant="womens" club={club} />
+      case 'policy-library':   return <PolicyLibraryView variant="womens" club={club} />
       case 'matchday-ops': return <WomensMatchdayOps accent="#BE185D" />
       case 'club-operations': return <PlayerWelfareHub accent="#BE185D" variant="womens" hiddenTabs={['integration', 'wellbeing', 'travel', 'matchday']} defaultTab="overview" title="Club Operations" subtitle="Operations overview · club info · compliance & insurance" clubInfoSlot={<ClubInfoTab club={club} />} overviewSlot={<WomensClubOpsOverview accent="#BE185D" />} />
       case 'kit-manager':  return <WomensKitManagerView />
@@ -5879,6 +5789,9 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
       case 'facilities':      return <StadiumFacilitiesView club={club} />
       case 'pitch-grounds':   return <PitchGroundsView />
       case 'training-ground': return <TrainingGroundView />
+      case 'energy':      return <WomensEnergyView />
+      case 'capital-projects': return <WomensCapitalProjectsView />
+      case 'assets':      return <WomensAssetRegisterView />
       case 'matchday-ops':
         return (
           <div className="rounded-xl border border-gray-800 bg-[#0D1117] p-8 text-center">

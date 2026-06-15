@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import {
-  Calculator, Activity, Layers, TrendingUp, ShieldCheck, FileText,
+  Calculator, Activity, Layers, TrendingUp, ShieldCheck, FileText, LayoutDashboard,
   Plus, X, AlertTriangle, CheckCircle2,
 } from 'lucide-react'
 
@@ -14,9 +14,10 @@ const C = {
   green: '#22C55E', amber: '#F59E0B', red: '#EF4444', blue: '#3B82F6', purple: '#8B5CF6', teal: '#0D9488',
 } as const
 
-type Tab = 'current' | 'scenario' | 'amortisation' | 'projections' | 'carve-outs' | 'audit'
+type Tab = 'dashboard' | 'current' | 'scenario' | 'amortisation' | 'projections' | 'carve-outs' | 'audit'
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
+  { id: 'dashboard',     label: 'Dashboard',            icon: LayoutDashboard },
   { id: 'current',       label: 'Current Position',     icon: Activity },
   { id: 'scenario',      label: 'Scenario Modeller',    icon: Calculator },
   { id: 'amortisation',  label: 'Amortisation',         icon: Layers },
@@ -63,6 +64,55 @@ const SCR_SQUAD_COST = 84.9
 const SCR_PCT = (SCR_SQUAD_COST / SCR_REVENUE) * 100
 const SCR_THRESHOLD = 85
 const SCR_UEFA_THRESHOLD = 70
+
+function DashboardTab() {
+  const status = [
+    { l: 'PSR Status', v: 'SAFE', s: '-£68.0m vs £105m limit', c: C.green },
+    { l: 'Relevant Revenue', v: '£104.8m', s: 'UEFA basis (if qualified)', c: C.text },
+    { l: 'Squad Cost Ratio', v: '81%', s: 'vs 85% threshold', c: C.amber },
+    { l: '3-yr Headroom', v: '£37.0m', s: 'remaining', c: C.primary },
+  ]
+  const revenue: [string, string, number, string][] = [
+    ['Broadcast & central distribution', '£62m', 59, C.primary],
+    ['Commercial & sponsorship', '£24m', 23, C.blue],
+    ['Matchday', '£14.8m', 14, C.green],
+    ['Player trading & other', '£4m', 4, C.amber],
+  ]
+  const bundled: [string, string, string, boolean][] = [
+    ['Meridian Watches (Principal - group deal)', '£600k', '£420k (70%)', true],
+    ['Apex Performance (Kit - standalone)', '£185k', '£185k (100%)', false],
+    ['Northshore Brewing (Stadium)', '£95k', '£95k (100%)', false],
+  ]
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {status.map(x => (
+          <Card key={x.l}><div className="text-[10px] uppercase tracking-wider" style={{ color: C.dim }}>{x.l}</div><div className="text-2xl font-black mt-1" style={{ color: x.c }}>{x.v}</div><div className="text-[10px] mt-1" style={{ color: C.muted }}>{x.s}</div></Card>
+        ))}
+      </div>
+      <Card>
+        <h3 className="text-sm font-bold mb-4" style={{ color: C.text }}>Revenue Attribution - PSR recognised</h3>
+        <div className="space-y-3">{revenue.map(([name, val, pct, col]) => (
+          <div key={name}><div className="flex items-center justify-between mb-1"><span className="text-xs" style={{ color: C.muted }}>{name}</span><span className="text-sm font-semibold" style={{ color: C.text }}>{val}</span></div><div className="w-full rounded-full h-1.5" style={{ background: C.border }}><div className="h-1.5 rounded-full" style={{ width: pct + '%', background: col }} /></div></div>
+        ))}</div>
+        <div className="mt-4 pt-3 flex items-center justify-between" style={{ borderTop: `1px solid ${C.border}` }}><span className="text-sm font-bold" style={{ color: C.text }}>Total relevant revenue</span><span className="text-sm font-bold" style={{ color: C.primary }}>£104.8m</span></div>
+      </Card>
+      <Card>
+        <h3 className="text-sm font-bold mb-1" style={{ color: C.text }}>Bundled Sponsorship Attribution</h3>
+        <p className="text-xs mb-3" style={{ color: C.muted }}>Sponsors shared with the women&apos;s club show the men&apos;s attributed share. PSR recognises only the men&apos;s portion.</p>
+        <div className="space-y-2">{bundled.map(([sp, total, mens, flag]) => (
+          <div key={sp} className="flex items-center justify-between py-2" style={{ borderBottom: `1px solid ${C.border}`, background: flag ? 'rgba(245,158,11,0.05)' : undefined }}>
+            <div className="flex items-center gap-2"><span className="text-xs" style={{ color: C.text2 }}>{sp}</span>{flag && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(245,158,11,0.2)', color: C.amber }}>Review</span>}</div>
+            <div className="flex items-center gap-4"><span className="text-xs" style={{ color: C.dim }}>Total: {total}</span><span className="text-xs font-semibold" style={{ color: C.primary }}>Men&apos;s: {mens}</span></div>
+          </div>
+        ))}</div>
+      </Card>
+      <div className="rounded-xl p-4" style={{ background: 'rgba(0,61,165,0.08)', border: `1px solid ${C.primary}55` }}>
+        <span className="text-xs font-bold" style={{ color: C.primary }}>PSR Rule:</span> <span className="text-xs" style={{ color: C.text2 }}>Cumulative pre-tax losses over a rolling 3-year period must not exceed £105m (with permitted carve-outs). The incoming UEFA Squad Cost Rule caps squad cost at 70% of revenue (85% transitional). Both are modelled in the tabs above.</span>
+      </div>
+    </div>
+  )
+}
 
 function CurrentPositionTab() {
   const psrCumulative = PSR_YEARS.reduce((s, y) => s + y.psr, 0)
@@ -704,13 +754,13 @@ function AuditTab() {
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 
 export default function PSRScenarioModellerView({ club }: { club?: { name?: string } | null }) {
-  const [tab, setTab] = useState<Tab>('current')
+  const [tab, setTab] = useState<Tab>('dashboard')
 
   return (
     <div className="space-y-5">
       <div>
         <h2 className="text-xl font-bold flex items-center gap-2" style={{ color: C.text }}>
-          <Calculator size={20} style={{ color: C.primary }} /> PSR / SCR Modeller — {club?.name || 'Oakridge FC'}
+          <Calculator size={20} style={{ color: C.primary }} /> PSR SCR Dashboard — {club?.name || 'Oakridge FC'}
         </h2>
         <p className="text-sm mt-1" style={{ color: C.muted }}>
           Models current PSR (3yr rolling £105m) and incoming SCR (85% squad cost ratio · 70% UEFA · 30% multi-year allowance) in parallel · transition window 2025/26 → 2026/27
@@ -728,6 +778,7 @@ export default function PSRScenarioModellerView({ club }: { club?: { name?: stri
         ))}
       </div>
 
+      {tab === 'dashboard'    && <DashboardTab />}
       {tab === 'current'      && <CurrentPositionTab />}
       {tab === 'scenario'     && <ScenarioModellerTab />}
       {tab === 'amortisation' && <AmortisationTab />}
