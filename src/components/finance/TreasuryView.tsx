@@ -95,7 +95,7 @@ export default function TreasuryView({ variant, club }: { variant: Variant; club
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat label="Total cash" value={p.money(totalCash)} col={C.good} />
-        <Stat label="Debt drawn" value={p.money(totalDrawn)} col={C.accentLt} />
+        <Stat label="Debt drawn" value={p.money(totalDrawn)} col={p.accentLt} />
         <Stat label="Net debt" value={p.money(totalDrawn - totalCash)} />
         <Stat label="Covenant breaches" value={String(breaches)} col={breaches ? C.red : C.good} />
       </div>

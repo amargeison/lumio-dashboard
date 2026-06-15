@@ -88,7 +88,7 @@ export default function PlayerTradingLedger({ variant, club }: { variant: Varian
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat label="Net book value (squad)" value={p.money(totalNbv)} />
-        <Stat label="Annual amortisation" value={p.money(totalAnnual)} col={C.accentLt} />
+        <Stat label="Annual amortisation" value={p.money(totalAnnual)} col={p.accentLt} />
         <Stat label="Profit on disposals (YTD)" value={p.money(totalProfit)} col={C.good} />
         <Stat label="Contingent liabilities" value={p.money(totalContingent)} col={C.amber} />
       </div>

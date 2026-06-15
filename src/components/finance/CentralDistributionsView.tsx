@@ -86,7 +86,7 @@ export default function CentralDistributionsView({ variant, club }: { variant: V
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Stat label="Central distributions" value={p.money(totalDist)} col={C.accentLt} />
+        <Stat label="Central distributions" value={p.money(totalDist)} col={p.accentLt} />
         <Stat label="Prize money (potential)" value={p.money(potentialPrize)} col={C.amber} />
         <Stat label="Grants secured/applied" value={p.money(totalGrants)} col={C.good} />
         <Stat label="Combined" value={p.money(totalDist + totalGrants)} />

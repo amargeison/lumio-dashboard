@@ -98,7 +98,7 @@ export default function PayrollBonusView({ variant, club }: { variant: Variant; 
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Stat label="Annual gross payroll" value={p.money(totalGross)} col={C.accentLt} />
+        <Stat label="Annual gross payroll" value={p.money(totalGross)} col={p.accentLt} />
         <Stat label="Headcount (paid)" value={String(totalHead)} />
         <Stat label="Bonus accrued" value={p.money(bonusAccrued)} col={C.amber} />
         <Stat label="Image rights (annual)" value={p.money(imageTotal)} />

@@ -10,7 +10,7 @@ type Variant = 'mens' | 'womens'
 type Tab = 'depts' | 'variance' | 'reforecast'
 
 interface Dept { dept: string; budget: number; actual: number }
-interface Fore { period: string; budget: number; forecast: number }
+interface Fore { period: string; budget: number; actual: number }
 interface Profile { accent: string; accentLt: string; clubName: string; money: (n: number) => string
   depts: Dept[]; forecast: Fore[]; ytdLabel: string }
 
@@ -84,7 +84,7 @@ export default function BudgetActualsView({ variant, club }: { variant: Variant;
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat label="Budget (YTD)" value={p.money(totBudget)} />
-        <Stat label="Actual (YTD)" value={p.money(totActual)} col={C.accentLt} />
+        <Stat label="Actual (YTD)" value={p.money(totActual)} col={p.accentLt} />
         <Stat label="Variance" value={(totVar >= 0 ? '+' : '') + p.money(totVar)} col={totVar > 0 ? C.red : C.good} />
         <Stat label="Departments over budget" value={`${overspends} / ${p.depts.length}`} col={overspends > 3 ? C.amber : C.text} />
       </div>

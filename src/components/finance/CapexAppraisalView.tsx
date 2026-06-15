@@ -84,7 +84,7 @@ export default function CapexAppraisalView({ variant, club }: { variant: Variant
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat label="Capital budget" value={p.money(totalBudget)} />
-        <Stat label="Committed / spent" value={p.money(totalSpent)} col={C.accentLt} />
+        <Stat label="Committed / spent" value={p.money(totalSpent)} col={p.accentLt} />
         <Stat label="Remaining" value={p.money(totalBudget - totalSpent)} col={C.amber} />
         <Stat label="Fixed-asset NBV" value={p.money(nbv)} col={C.good} />
       </div>

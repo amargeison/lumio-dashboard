@@ -87,7 +87,7 @@ export default function RevenueReceivablesView({ variant, club }: { variant: Var
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat label="Annual revenue" value={p.money(totalAnnual)} />
-        <Stat label="Recognised (YTD)" value={p.money(totalRecognised)} col={C.accentLt} />
+        <Stat label="Recognised (YTD)" value={p.money(totalRecognised)} col={p.accentLt} />
         <Stat label="Deferred income" value={p.money(totalDeferred)} col={C.amber} />
         <Stat label="Debtors 90+ overdue" value={p.money(overdue)} col={overdue ? C.red : C.good} />
       </div>

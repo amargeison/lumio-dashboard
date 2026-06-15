@@ -15,7 +15,7 @@ const G = {
 export type SponsorRoiProfile = {
   kpis: { label: string; value: string; sub: string; color: string }[]
   fulfilment: { sponsor: string; obligations: number; delivered: number; pct: number; mediaValue: string }[]
-  calendar: { date: string; sponsor: string; activity: string; channel: string; status: string }[]
+  calendar: { date: string; sponsor: string; activity: string; channel: string; status?: string }[]
   channels: { channel: string; value: string; pct: number }[]
   roi: { sponsor: string; fee: string; mediaValue: string; ratio: number }[]
 }
