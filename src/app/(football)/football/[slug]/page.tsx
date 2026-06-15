@@ -111,6 +111,8 @@ import FootballDualRegistrationView from '@/components/football/FootballDualRegi
 import WomensTacticsView from '@/components/womens/WomensTacticsView'
 import { FOOTBALL_SQUAD } from './_lib/football-dashboard-data'
 import FootballSquadManagementView from '@/components/football/FootballSquadManagementView'
+import FootballTransfersView from '@/components/football/FootballTransfersView'
+import FootballAcademyView from '@/components/football/FootballAcademyView'
 import FootballRevenueAttributionView from '@/components/football/FootballRevenueAttributionView'
 import FootballGameStandardsView from '@/components/football/FootballGameStandardsView'
 import FootballClubLicensingView from '@/components/football/FootballClubLicensingView'
@@ -7551,11 +7553,11 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'cup-manager' && <FootballCupManagerView />}
             {isFootballDemo && activeDept === 'dualreg' && <FootballDualRegistrationView />}
             {activeDept === 'set-pieces' && <ProSetPiecesView />}
-            {isFootballDemo && activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'transfers' && <FootballTransfersView />}
             {isFootballDemo && activeDept === 'board' && <BoardSuiteView />}
             {isFootballDemo && activeDept === 'medical' && <MedicalView />}
             {isFootballDemo && activeDept === 'scouting' && <ScoutingView />}
-            {isFootballDemo && activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'academy' && <FootballAcademyView />}
             {isFootballDemo && activeDept === 'analytics' && <AnalyticsView />}
             {isFootballDemo && activeDept === 'media' && <MediaContentModule sport="football-pro" accentColor="#003DA5" existingContentLabel="Football Pro — Media & PR (existing)" existingContent={<FootballMediaPRView />} isDemoShell={session?.isDemoShell !== false} />}
             {isFootballDemo && activeDept === 'social' && <FootballSocialMediaView />}
