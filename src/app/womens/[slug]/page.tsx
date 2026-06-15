@@ -173,7 +173,7 @@ const SIDEBAR_ITEMS = [
   { id: 'fixtures',         label: 'Fixtures & Results',  icon: '📅', group: 'FOOTBALL' },
   { id: 'cup-manager',      label: 'Cup Manager',         icon: '🏆', group: 'FOOTBALL' },
   { id: 'transfers',        label: 'Transfers',           icon: '🔁', group: 'FOOTBALL' },
-  { id: 'dualreg',          label: 'Dual Registration',   icon: '🔄', group: 'FOOTBALL' },
+  { id: 'dualreg',          label: 'Loan Manager',        icon: '🔄', group: 'FOOTBALL' },
   { id: 'academy',          label: 'Academy',             icon: '🎓', group: 'FOOTBALL' },
 
   // WELFARE — existing 6 + Medical Hub + Concussion Tracker (new).
@@ -1358,7 +1358,7 @@ const SquadManagementView = ({ club }: { club: WomensClub }) => {
     { id: 'all',           label: 'All' },
     { id: 'fulltime',      label: 'Full-time' },
     { id: 'parttime',      label: 'Part-time' },
-    { id: 'dualreg',       label: 'Dual Reg' },
+    { id: 'dualreg',       label: 'Loans' },
     { id: 'leave',         label: 'On Leave' },
     { id: 'international', label: 'International' },
   ]
@@ -1399,7 +1399,7 @@ const SquadManagementView = ({ club }: { club: WomensClub }) => {
             <th className="text-left p-3">Player</th>
             <th className="text-left p-3">Position</th>
             <th className="text-left p-3">Employment</th>
-            <th className="text-left p-3">Dual Reg</th>
+            <th className="text-left p-3">Loans</th>
             <th className="text-left p-3">Age Band</th>
             <th className="text-left p-3">Nationality</th>
             <th className="text-left p-3">Contract End</th>
@@ -1537,7 +1537,7 @@ const DualRegistrationView = () => {
 
   return (
     <div>
-      <SectionHeader title="Dual Registration Tracker" subtitle="FA Women's dual registration agreements" icon="🔄" />
+      <SectionHeader title="Loan Manager" subtitle="FA Women's dual registration agreements" icon="🔄" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard label="Active Dual-Regs" value="2" sub="Players currently loaned" color="pink" />
         <StatCard label="Expiring Soon" value="1" sub="Emma Clarke — 4 days" color="red" />

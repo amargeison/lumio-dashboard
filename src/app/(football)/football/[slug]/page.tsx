@@ -105,6 +105,12 @@ import FootballLoadRecoveryView from '@/components/football/FootballLoadRecovery
 import FootballReturnToPlayView from '@/components/football/FootballReturnToPlayView'
 import FootballMentalHealthView from '@/components/football/FootballMentalHealthView'
 import FootballWelfareHubView from '@/components/football/FootballWelfareHubView'
+import FootballFixturesView from '@/components/football/FootballFixturesView'
+import FootballCupManagerView from '@/components/football/FootballCupManagerView'
+import FootballDualRegistrationView from '@/components/football/FootballDualRegistrationView'
+import WomensTacticsView from '@/components/womens/WomensTacticsView'
+import { FOOTBALL_SQUAD } from './_lib/football-dashboard-data'
+import FootballSquadManagementView from '@/components/football/FootballSquadManagementView'
 import FootballRevenueAttributionView from '@/components/football/FootballRevenueAttributionView'
 import FootballGameStandardsView from '@/components/football/FootballGameStandardsView'
 import FootballClubLicensingView from '@/components/football/FootballClubLicensingView'
@@ -140,6 +146,7 @@ type DeptId =
   | 'compliance-centre' | 'compliance-calendar' | 'registration' | 'data-protection' | 'safeguarding-ops' | 'anti-doping' | 'risk-insurance' | 'policy-library'
   | 'player-trading' | 'treasury' | 'payroll-ledger' | 'budget-actuals' | 'revenue-receivables' | 'central-distributions' | 'mgmt-accounts' | 'capex-appraisal'
   | 'player-integration' | 'injury-risk' | 'load-recovery' | 'return-to-play' | 'mental-health'
+  | 'fixtures' | 'cup-manager' | 'dualreg'
 
 type OverviewTab = 'getting-started' | 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
@@ -191,15 +198,18 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'insights',         label: 'Insights',             icon: Sparkles,       section: 'OVERVIEW' },
   { id: 'board',            label: 'Board Suite',          icon: Crown,          section: 'OVERVIEW' },
   // ── FOOTBALL ──
-  { id: 'squad',            label: 'Squad Manager',        icon: Shirt,          section: 'FOOTBALL' },
-  { id: 'training',         label: 'Training Schedule',    icon: Activity,       section: 'FOOTBALL' },
-  { id: 'set-pieces',       label: 'Set Piece Analysis',   icon: Target,         section: 'FOOTBALL' },
+  { id: 'squad',            label: 'Squad Management',     icon: Shirt,          section: 'FOOTBALL' },
+  { id: 'tactics',          label: 'Tactics',              icon: Target,         section: 'FOOTBALL' },
+  { id: 'training',         label: 'Training',             icon: Activity,       section: 'FOOTBALL' },
+  { id: 'set-pieces',       label: 'Set Pieces',           icon: Target,         section: 'FOOTBALL' },
   { id: 'video-analysis',   label: 'Video & Analysis',     icon: Video,          section: 'FOOTBALL' },
-  { id: 'performance',      label: 'GPS Tracking',         icon: Activity,       section: 'FOOTBALL' },
+  { id: 'performance',      label: 'GPS & Performance',    icon: Activity,       section: 'FOOTBALL' },
   { id: 'gps-heatmaps',     label: 'Heatmaps',             icon: Flame,          section: 'FOOTBALL' },
   { id: 'performance-brief',label: 'AI Performance Brief', icon: Bot,            section: 'FOOTBALL' },
-  { id: 'gps-hardware',     label: 'GPS Hardware',         icon: Activity,       section: 'FOOTBALL' },
-  { id: 'transfers',        label: 'Recruitment Hub',      icon: ArrowUpDown,    section: 'FOOTBALL' },
+  { id: 'fixtures',         label: 'Fixtures & Results',   icon: Calendar,       section: 'FOOTBALL' },
+  { id: 'cup-manager',      label: 'Cup Manager',          icon: Trophy,         section: 'FOOTBALL' },
+  { id: 'transfers',        label: 'Transfers',            icon: ArrowUpDown,    section: 'FOOTBALL' },
+  { id: 'dualreg',          label: 'Loan Manager',         icon: ArrowUpDown,    section: 'FOOTBALL' },
   { id: 'academy',          label: 'Academy',              icon: GraduationCap,  section: 'FOOTBALL' },
   // ── WELFARE ──
   { id: 'player-welfare',   label: 'Player Welfare Hub',   icon: Heart,          section: 'WELFARE' },
@@ -7535,8 +7545,11 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} role={currentRole as string} onModal={(modalId) => fireToast(`${modalId} — coming soon`)} isDemo={isFootballDemo} clubLogo={clubLogo} />}
             {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && activeDept !== 'set-pieces' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
-            {isFootballDemo && activeDept === 'squad' && <SquadView />}
-            {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'squad' && <FootballSquadManagementView />}
+            {activeDept === 'tactics' && <WomensTacticsView squad={FOOTBALL_SQUAD} accent="#003DA5" accent2="#60A5FA" team="Oakridge FC" nextOpp="Thornvale United (home)" lastMatchTitle="Last Match — Oakridge FC 1-2 Northgate City" lastMatchLines={[["Possession 47%", "Northgate sat in a mid-block and countered the wide channels."], ["Shots 11 (4 on target)", "Two clear chances spurned before the second goal."], ["PPDA 9.1", "Press passive in spells; only 6 high-zone turnovers."], ["Pattern", "Morris goal at 61' from a Porter cutback."]]} teamTalk="Back to basics — compact mid-block, quick transitions through Morris and Porter. Win the first ball, win the second." coach="James Hartley, Manager" />}
+            {isFootballDemo && activeDept === 'fixtures' && <FootballFixturesView />}
+            {isFootballDemo && activeDept === 'cup-manager' && <FootballCupManagerView />}
+            {isFootballDemo && activeDept === 'dualreg' && <FootballDualRegistrationView />}
             {activeDept === 'set-pieces' && <ProSetPiecesView />}
             {isFootballDemo && activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
             {isFootballDemo && activeDept === 'board' && <BoardSuiteView />}
