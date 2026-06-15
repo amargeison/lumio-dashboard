@@ -21,7 +21,9 @@ import {
   Briefcase, GraduationCap, Newspaper, Phone, MessageSquare,
   Search, Filter, ArrowUpDown, ExternalLink, Crown,
   Maximize2, Printer, Share2, Flame,
-  Building, Plane, Brain, Calculator, Bot,
+  Building, Plane, Brain, Calculator, Bot, Handshake, Map,
+  Leaf, HardHat, Wrench, ClipboardList, ShoppingBag, Ticket, Megaphone,
+  Scale, ShieldCheck, BadgeCheck,
 } from 'lucide-react'
 import { useDraggableList } from '@/hooks/useDraggableList'
 import { useElevenLabsTTS as useSpeech } from '@/hooks/useElevenLabsTTS'
@@ -57,10 +59,56 @@ import {
   Outstanding as FbOutstanding,
 } from './_components/FootballDashboardModules'
 import FootballSendMessageModal from '@/components/football/FootballSendMessageModal'
+import FacilityStatusEditable from '@/components/womens/WomensFacilityStatus'
+import FootballMatchdayOps from '@/components/football/FootballMatchdayOps'
+import FootballTravelLogisticsView from '@/components/football/FootballTravelLogisticsView'
+import FootballKitManager from '@/components/football/FootballKitManager'
+import FootballClubOpsOverview from '@/components/football/FootballClubOpsOverview'
+import FootballMedicalRecords from '@/components/football/FootballMedicalRecords'
 import { FOOTBALL_INBOX, FOOTBALL_ACCENT } from './_lib/football-dashboard-data'
 import type { FbFixture } from './_lib/football-dashboard-data'
 import { EmployeeProfileCard, getGridCols, type StaffRecord } from '@/components/team/EmployeeProfileCard'
-import FootballStaffView from '@/components/football/StaffView'
+import FootballStaffView, { FootballClubInfoTab } from '@/components/football/StaffView'
+import FootballClubVisionView from '@/components/football/FootballClubVisionView'
+import FootballSponsorshipPipeline from '@/components/football/FootballSponsorshipPipeline'
+import FootballFanHub from '@/components/football/FootballFanHub'
+import FootballFinancialPlanningView from '@/components/football/FootballFinancialPlanningView'
+import FootballSocialMediaView from '@/components/football/FootballSocialMediaView'
+import FootballEnergyView from '@/components/football/FootballEnergyView'
+import FootballCapitalProjectsView from '@/components/football/FootballCapitalProjectsView'
+import FootballAssetRegisterView from '@/components/football/FootballAssetRegisterView'
+import FootballProcurementView from '@/components/football/FootballProcurementView'
+import FootballRetailView from '@/components/football/FootballRetailView'
+import FootballTicketingView from '@/components/football/FootballTicketingView'
+import FootballSponsorActivationView from '@/components/football/FootballSponsorActivationView'
+import FootballMediaPRView from '@/components/football/FootballMediaPRView'
+import FootballSalaryComplianceView from '@/components/football/FootballSalaryComplianceView'
+import ComplianceCommandCentre from '@/components/compliance/ComplianceCommandCentre'
+import ComplianceCalendar from '@/components/compliance/ComplianceCalendar'
+import RegistrationTransferView from '@/components/compliance/RegistrationTransferView'
+import DataProtectionView from '@/components/compliance/DataProtectionView'
+import SafeguardingOpsView from '@/components/compliance/SafeguardingOpsView'
+import AntiDopingView from '@/components/compliance/AntiDopingView'
+import RiskInsuranceView from '@/components/compliance/RiskInsuranceView'
+import PolicyLibraryView from '@/components/compliance/PolicyLibraryView'
+import PlayerTradingLedger from '@/components/finance/PlayerTradingLedger'
+import TreasuryView from '@/components/finance/TreasuryView'
+import PayrollBonusView from '@/components/finance/PayrollBonusView'
+import BudgetActualsView from '@/components/finance/BudgetActualsView'
+import RevenueReceivablesView from '@/components/finance/RevenueReceivablesView'
+import CentralDistributionsView from '@/components/finance/CentralDistributionsView'
+import ManagementAccountsView from '@/components/finance/ManagementAccountsView'
+import CapexAppraisalView from '@/components/finance/CapexAppraisalView'
+import FootballPlayerIntegrationView from '@/components/football/FootballPlayerIntegrationView'
+import FootballInjuryRiskMonitor from '@/components/football/FootballInjuryRiskMonitor'
+import FootballLoadRecoveryView from '@/components/football/FootballLoadRecoveryView'
+import FootballReturnToPlayView from '@/components/football/FootballReturnToPlayView'
+import FootballMentalHealthView from '@/components/football/FootballMentalHealthView'
+import FootballWelfareHubView from '@/components/football/FootballWelfareHubView'
+import FootballRevenueAttributionView from '@/components/football/FootballRevenueAttributionView'
+import FootballGameStandardsView from '@/components/football/FootballGameStandardsView'
+import FootballClubLicensingView from '@/components/football/FootballClubLicensingView'
+import FootballFinanceView from '@/components/football/FootballFinanceView'
 import GPSPerformanceView from '@/components/football/GPSPerformanceView'
 import BoardSuiteView from '@/components/football/BoardSuiteView'
 import VoiceSettings from '@/components/dashboard/VoiceSettings'
@@ -79,17 +127,23 @@ type DeptId =
   | 'medical' | 'scouting' | 'academy' | 'analytics'
   | 'media' | 'social' | 'matchday' | 'training' | 'performance' | 'finance'
   | 'dynamics' | 'psr-scr-modeller' | 'concussion-tracker' | 'squad-planner'
+  | 'salary' | 'revenue-attribution' | 'game-standards' | 'club-licensing'
   | 'staff' | 'facilities' | 'settings'
   | 'video-analysis' | 'scouting-db' | 'gps-hardware' | 'gps-heatmaps' | 'performance-brief' | 'opta'
   | 'discover' | 'lumio-data-pro'
   | 'tours-camps'
   | 'player-welfare' | 'club-operations'
   | 'commercial' | 'community'
-  | 'matchday-ops' | 'travel-logistics' | 'kit-manager' | 'pitch-grounds' | 'training-ground'
+  | 'sponsorship' | 'club-vision' | 'financial' | 'fanhub'
+  | 'energy' | 'capital-projects' | 'assets' | 'procurement' | 'retail' | 'ticketing' | 'sponsor-roi'
+  | 'matchday-ops' | 'travel-logistics' | 'kit-manager' | 'pitch-grounds' | 'training-ground' | 'medical-records'
+  | 'compliance-centre' | 'compliance-calendar' | 'registration' | 'data-protection' | 'safeguarding-ops' | 'anti-doping' | 'risk-insurance' | 'policy-library'
+  | 'player-trading' | 'treasury' | 'payroll-ledger' | 'budget-actuals' | 'revenue-receivables' | 'central-distributions' | 'mgmt-accounts' | 'capex-appraisal'
+  | 'player-integration' | 'injury-risk' | 'load-recovery' | 'return-to-play' | 'mental-health'
 
 type OverviewTab = 'getting-started' | 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
-type SidebarSection = null | 'OVERVIEW' | 'FOOTBALL' | 'WELFARE' | 'COMPLIANCE' | 'COMMERCIAL' | 'OPERATIONS' | 'FACILITIES'
+type SidebarSection = null | 'OVERVIEW' | 'FOOTBALL' | 'WELFARE' | 'COMPLIANCE' | 'FINANCE' | 'COMMERCIAL' | 'OPERATIONS' | 'FACILITIES'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -149,28 +203,64 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'academy',          label: 'Academy',              icon: GraduationCap,  section: 'FOOTBALL' },
   // ── WELFARE ──
   { id: 'player-welfare',   label: 'Player Welfare Hub',   icon: Heart,          section: 'WELFARE' },
+  { id: 'player-integration', label: 'Player Integration', icon: Users,          section: 'WELFARE' },
+  { id: 'injury-risk',      label: 'Injury Risk Monitor',  icon: Activity,       section: 'WELFARE' },
+  { id: 'load-recovery',    label: 'Load & Recovery',      icon: Heart,          section: 'WELFARE' },
+  { id: 'return-to-play',   label: 'Injury & Return-to-Play', icon: Activity,    section: 'WELFARE' },
+  { id: 'mental-health',    label: 'Mental Health',        icon: Brain,          section: 'WELFARE' },
   { id: 'medical',          label: 'Medical Hub',          icon: Heart,          section: 'WELFARE' },
   { id: 'concussion-tracker', label: 'Concussion Tracker', icon: Brain,          section: 'WELFARE' },
-  { id: 'dynamics',         label: 'Mental Performance',   icon: Heart,          section: 'WELFARE' },
   // ── COMPLIANCE ──
-  { id: 'finance',          label: 'Finance',              icon: DollarSign,     section: 'COMPLIANCE' },
-  { id: 'psr-scr-modeller', label: 'PSR / SCR Modeller',   icon: Calculator,     section: 'COMPLIANCE' },
+  { id: 'finance',          label: 'Finance',              icon: DollarSign,     section: 'FINANCE' },
+  { id: 'compliance-centre', label: 'Compliance Centre',    icon: ShieldCheck,    section: 'COMPLIANCE' },
+  { id: 'compliance-calendar', label: 'Compliance Calendar', icon: Calculator,    section: 'COMPLIANCE' },
+  { id: 'psr-scr-modeller', label: 'PSR SCR Dashboard',     icon: Calculator,     section: 'COMPLIANCE' },
+  { id: 'salary',           label: 'Salary Compliance',    icon: Scale,          section: 'COMPLIANCE' },
+  { id: 'revenue-attribution', label: 'Revenue Attribution', icon: TrendingUp,   section: 'COMPLIANCE' },
+  { id: 'game-standards',   label: 'Game Standards',       icon: ShieldCheck,    section: 'COMPLIANCE' },
+  { id: 'club-licensing',   label: 'Club Licensing',       icon: BadgeCheck,     section: 'COMPLIANCE' },
+  { id: 'registration',     label: 'Registration & Transfers', icon: FileText,   section: 'COMPLIANCE' },
+  { id: 'data-protection',  label: 'Data Protection',      icon: Scale,          section: 'COMPLIANCE' },
+  { id: 'safeguarding-ops', label: 'Safeguarding Ops',     icon: ShieldCheck,    section: 'COMPLIANCE' },
+  { id: 'anti-doping',      label: 'Anti-Doping',          icon: Heart,          section: 'COMPLIANCE' },
+  { id: 'risk-insurance',   label: 'Risk & Insurance',     icon: BadgeCheck,     section: 'COMPLIANCE' },
+  { id: 'policy-library',   label: 'Policy Library',       icon: ClipboardList,  section: 'COMPLIANCE' },
   // ── COMMERCIAL ──
   { id: 'commercial',       label: 'Commercial',           icon: Briefcase,      section: 'COMMERCIAL' },
+  { id: 'sponsorship',      label: 'Sponsorship Pipeline', icon: Handshake,      section: 'COMMERCIAL' },
+  { id: 'club-vision',      label: 'Club Vision',          icon: Map,            section: 'COMMERCIAL' },
+  { id: 'financial',        label: 'Financial Planning',   icon: Calculator,     section: 'FINANCE' },
+  { id: 'player-trading',   label: 'Player Trading & Amortisation', icon: TrendingUp, section: 'FINANCE' },
+  { id: 'treasury',         label: 'Treasury, Debt & Covenants', icon: DollarSign, section: 'FINANCE' },
+  { id: 'payroll-ledger',   label: 'Payroll & Bonus Ledger', icon: Users,        section: 'FINANCE' },
+  { id: 'budget-actuals',   label: 'Budget vs Actuals',    icon: ClipboardList,  section: 'FINANCE' },
+  { id: 'revenue-receivables', label: 'Revenue & Receivables', icon: FileText,   section: 'FINANCE' },
+  { id: 'central-distributions', label: 'Central Distributions', icon: BadgeCheck, section: 'FINANCE' },
+  { id: 'mgmt-accounts',    label: 'Management Accounts',  icon: BarChart3,      section: 'FINANCE' },
+  { id: 'capex-appraisal',  label: 'CapEx & Appraisal',    icon: Building,       section: 'FINANCE' },
+  { id: 'retail',           label: 'Retail & Merchandise', icon: ShoppingBag,    section: 'COMMERCIAL' },
+  { id: 'ticketing',        label: 'Ticketing & Yield',    icon: Ticket,         section: 'COMMERCIAL' },
+  { id: 'sponsor-roi',      label: 'Sponsor Activation',   icon: Megaphone,      section: 'COMMERCIAL' },
   { id: 'media',            label: 'Media & PR',           icon: Newspaper,      section: 'COMMERCIAL' },
   { id: 'social',           label: 'Social Media',         icon: MessageSquare,  section: 'COMMERCIAL' },
+  { id: 'fanhub',           label: 'Fan Hub',              icon: Users,          section: 'COMMERCIAL' },
   { id: 'community',        label: 'Community',            icon: Heart,          section: 'COMMERCIAL' },
   // ── OPERATIONS ──
-  { id: 'club-operations',  label: 'Club Operations',      icon: Building,       section: 'OPERATIONS' },
   { id: 'matchday-ops',     label: 'Matchday Operations',  icon: Calendar,       section: 'OPERATIONS' },
+  { id: 'club-operations',  label: 'Club Operations',      icon: Building,       section: 'OPERATIONS' },
   { id: 'travel-logistics', label: 'Travel & Logistics',   icon: Plane,          section: 'OPERATIONS' },
   { id: 'kit-manager',      label: 'Kit Manager',          icon: Shirt,          section: 'OPERATIONS' },
-  { id: 'staff',            label: 'Staff',                icon: Users,          section: 'OPERATIONS' },
+  { id: 'staff',            label: 'Staff Directory',      icon: Users,          section: 'OPERATIONS' },
+  { id: 'medical-records',  label: 'Medical Records',      icon: Heart,          section: 'OPERATIONS' },
   { id: 'tours-camps',      label: 'Tours & Camps',        icon: Plane,          section: 'OPERATIONS' },
+  { id: 'procurement',      label: 'Procurement & Contracts', icon: ClipboardList, section: 'OPERATIONS' },
   // ── FACILITIES ──
   { id: 'facilities',       label: 'Stadium & Facilities', icon: MapPin,         section: 'FACILITIES' },
   { id: 'pitch-grounds',    label: 'Pitch & Grounds',      icon: MapPin,         section: 'FACILITIES' },
   { id: 'training-ground',  label: 'Training Ground',      icon: MapPin,         section: 'FACILITIES' },
+  { id: 'energy',           label: 'Energy & Sustainability', icon: Leaf,        section: 'FACILITIES' },
+  { id: 'capital-projects', label: 'Capital Projects',     icon: HardHat,        section: 'FACILITIES' },
+  { id: 'assets',           label: 'Asset Register',       icon: Wrench,         section: 'FACILITIES' },
   { id: 'settings',         label: 'Settings',             icon: Settings,       section: null },
 ]
 
@@ -556,6 +646,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
     { label: 'FOOTBALL', items: SIDEBAR_ITEMS.filter(i => i.section === 'FOOTBALL' && isAllowed(i.id)) },
     { label: 'WELFARE', items: SIDEBAR_ITEMS.filter(i => i.section === 'WELFARE' && isAllowed(i.id)) },
     { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE' && isAllowed(i.id)) },
+    { label: 'FINANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'FINANCE' && isAllowed(i.id)) },
     { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL' && isAllowed(i.id)) },
     { label: 'OPERATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'OPERATIONS' && isAllowed(i.id)) },
     { label: 'FACILITIES', items: SIDEBAR_ITEMS.filter(i => i.section === 'FACILITIES' && isAllowed(i.id)) },
@@ -627,7 +718,7 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
                     title={expanded ? undefined : item.label}>
                     <item.icon size={15} strokeWidth={active ? 2.5 : 2} />
                     {expanded && <span className="truncate">{item.label}</span>}
-                    {expanded && (item.id === 'player-welfare' || item.id === 'community' || item.id === 'commercial' || item.id === 'tours-camps' || item.id === 'discover') && (
+                    {expanded && (item.id === 'player-welfare' || item.id === 'community' || item.id === 'commercial' || item.id === 'tours-camps' || item.id === 'discover' || item.id === 'matchday-ops') && (
                       <span className="ml-auto text-[8px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: PRIMARY }}>NEW</span>
                     )}
                   </button>
@@ -1586,11 +1677,11 @@ function TabContent({ tab }: { tab: OverviewTab }) {
 
   if (tab === 'staff') return (
     <div className="space-y-5">
-      {/* Sub-tab pills */}
-      <div className="flex gap-2">
+      {/* Sub-tab tabs */}
+      <div className="flex gap-1" style={{ borderBottom: '1px solid #1F2937' }}>
         {[{ id: 'today' as const, label: '👥 Staff Today' }, { id: 'orgchart' as const, label: '🏢 Org Chart' }, { id: 'teaminfo' as const, label: '🃏 Team Info' }, { id: 'clubinfo' as const, label: '🏟️ Club Info' }].map(t => (
-          <button key={t.id} onClick={() => setActiveStaffTab(t.id)} className="px-4 py-2 rounded-xl text-xs font-semibold"
-            style={{ backgroundColor: activeStaffTab === t.id ? '#003DA5' : '#111318', color: activeStaffTab === t.id ? '#F9FAFB' : '#6B7280', border: activeStaffTab === t.id ? 'none' : '1px solid #1F2937' }}>{t.label}</button>
+          <button key={t.id} onClick={() => setActiveStaffTab(t.id)} className="px-4 py-2 text-xs font-semibold"
+            style={{ background: 'transparent', borderRadius: 0, color: activeStaffTab === t.id ? '#60A5FA' : '#6B7280', borderBottom: activeStaffTab === t.id ? '2px solid #003DA5' : '2px solid transparent' }}>{t.label}</button>
         ))}
       </div>
 
@@ -6156,93 +6247,178 @@ function _OriginalStaffView() {
   )
 }
 
+const MENS_FACILITY_STATUS = [
+  { id: 'f1', facility: 'Main Stadium Pitch', condition: 'Excellent', inspected: '26 Mar', next: 'Thu 3 Apr', notes: 'Re-seeded Tuesday' },
+  { id: 'f2', facility: 'Training Pitch 1', condition: 'Good', inspected: '25 Mar', next: 'Mon 31 Mar', notes: 'Normal use' },
+  { id: 'f3', facility: 'Training Pitch 2', condition: 'Poor', inspected: '26 Mar', next: 'Immediate', notes: 'Waterlogged — closed' },
+  { id: 'f4', facility: 'Training Pitch 3', condition: 'Good', inspected: '25 Mar', next: 'Fri 4 Apr', notes: 'Sessions redirected here' },
+  { id: 'f5', facility: 'Training Pitch 4 (Astro)', condition: 'Excellent', inspected: '20 Mar', next: 'Apr', notes: 'All-weather, no issues' },
+  { id: 'f6', facility: 'Gym & Weights Room', condition: 'Good', inspected: '24 Mar', next: 'Weekly', notes: 'New equipment arriving Mon' },
+  { id: 'f7', facility: 'Hydrotherapy Pool', condition: 'Good', inspected: '23 Mar', next: 'Bi-weekly', notes: 'Used for rehab daily' },
+  { id: 'f8', facility: 'Floodlights', condition: 'Operational', inspected: '25 Mar', next: 'Monthly', notes: 'Inspection passed' },
+]
+const MENS_PROJECTS = [
+  { id: 'p1', name: 'Pitch 2 drainage repair', when: '28-30 Mar · Est £4,200', cost: '', priority: 'Urgent' },
+  { id: 'p2', name: 'CCTV system upgrade', when: 'Next week · Est £8,500', cost: '', priority: 'Planned' },
+  { id: 'p3', name: 'Gym equipment installation', when: 'Mon 31 Mar · Est £12,000', cost: '', priority: 'Planned' },
+  { id: 'p4', name: 'Away dugout seating replacement', when: 'Apr · Est £3,800', cost: '', priority: 'Low' },
+]
+
+// ─── FACILITIES — STADIUM & FACILITIES (mirrors Women's flagship) ─────────────
 function FacilitiesView() {
+  const stands = [
+    { name: 'North Stand (Main)', cap: 3400, covered: 'Yes', acc: '18 WAV', notes: 'Hospitality, press, gantry' },
+    { name: 'East Stand', cap: 2200, covered: 'Yes', acc: '10 WAV', notes: 'Home + family stand' },
+    { name: 'South Stand', cap: 1800, covered: 'Part', acc: '8 WAV', notes: 'Away allocation + neutral' },
+    { name: 'West Terrace', cap: 1815, covered: 'No', acc: '4 WAV', notes: 'Standing, safe-standing rail' },
+  ]
+  const matchdayFac: [string, string][] = [
+    ['Home changing room', 'Refurbished 2024'], ['Away changing room', 'Compliant'],
+    ['Match officials room', 'Compliant'], ['Medical / treatment room', 'Compliant · defib on site'],
+    ['Media & broadcast room', 'EFL feed · 60 seats'], ['1881 hospitality lounge', '12 boxes · 240 covers'],
+    ['Club shop & ticket office', 'Matchday + online'], ['Family fan zone', 'Open 2h pre-KO'],
+  ]
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Facilities</h2>
-        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Stadium, training ground, pitch maintenance, and infrastructure management.</p>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Stadium &amp; Facilities</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Lumio Park · capacity 9,215 · EFL League One</p>
       </div>
-
-      <div className="flex items-center gap-2 flex-wrap">
-        {[
-          { label: 'Pitch Report', icon: FileText },
-          { label: 'Maintenance Log', icon: Clipboard },
-          { label: 'Booking Schedule', icon: Calendar },
-          ].map((a, i) => (
-          <button key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap"
-            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}>
-            <a.icon size={12} />{a.label}
-          </button>
-        ))}
-      </div>
-
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Pitch Condition" value="Excellent" icon={CheckCircle2} color="#22C55E" />
-        <StatCard label="Capacity" value="12,000" icon={Users} color="#3B82F6" />
-        <StatCard label="Training Pitches" value="4" icon={MapPin} color="#003DA5" />
-        <StatCard label="Next Maintenance" value="Thu" icon={Calendar} color="#F59E0B" />
+        <StatCard label="Capacity" value="9,215" icon={Users} color="#003DA5" />
+        <StatCard label="Stands" value="4" icon={MapPin} color="#3B82F6" />
+        <StatCard label="Hospitality" value="12" icon={CheckCircle2} color="#F59E0B" />
+        <StatCard label="Accessibility" value="40" icon={CheckCircle2} color="#22C55E" />
       </div>
-
-      {/* Facility Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Stadium Overview</h3>
+          {([['Pitch dimensions', '105m × 68m (EFL standard)'], ['Floodlights', 'LED · 1,200 lux (broadcast)'], ['Undersoil heating', 'Yes — gas-fired'], ['Big screen', 'Yes · 40m²'], ['PA / scoreboard', 'Tested matchday-1'], ['Ground grading', 'EFL League One']] as [string, string][]).map(([l, v]) => (
+            <div key={l} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid rgba(31,41,55,0.5)' }}><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium text-right" style={{ color: '#D1D5DB' }}>{v}</span></div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Safety &amp; Compliance</h3>
+          {([['Safety certificate', 'Valid to Jul 2027', '#22C55E'], ['Stewarding', 'SGSA-compliant · 95 stewards', '#22C55E'], ['Last ground inspection', '14 Mar 2026 — passed', '#22C55E'], ['Crowd doctor + ambulance', 'Confirmed each matchday', '#22C55E'], ['Evacuation plan', 'Reviewed Jan 2026', '#F59E0B']] as [string, string, string][]).map(([l, v, c]) => (
+            <div key={l} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid rgba(31,41,55,0.5)' }}><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: c }}>{v}</span></div>
+          ))}
+        </div>
+      </div>
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Facility Status</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead>
-              <tr style={{ borderBottom: '1px solid #1F2937' }}>
-                {['Facility', 'Condition', 'Last Inspected', 'Next Maintenance', 'Notes'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { facility: 'Main Stadium Pitch', condition: 'Excellent', inspected: '26 Mar', next: 'Thu 3 Apr', notes: 'Re-seeded Tuesday', color: '#22C55E' },
-                { facility: 'Training Pitch 1', condition: 'Good', inspected: '25 Mar', next: 'Mon 31 Mar', notes: 'Normal use', color: '#22C55E' },
-                { facility: 'Training Pitch 2', condition: 'Poor', inspected: '26 Mar', next: 'Immediate', notes: 'Waterlogged — closed', color: '#EF4444' },
-                { facility: 'Training Pitch 3', condition: 'Good', inspected: '25 Mar', next: 'Fri 4 Apr', notes: 'Sessions redirected here', color: '#22C55E' },
-                { facility: 'Training Pitch 4 (Astro)', condition: 'Excellent', inspected: '20 Mar', next: 'Apr', notes: 'All-weather, no issues', color: '#22C55E' },
-                { facility: 'Gym & Weights Room', condition: 'Good', inspected: '24 Mar', next: 'Weekly', notes: 'New equipment arriving Mon', color: '#22C55E' },
-                { facility: 'Hydrotherapy Pool', condition: 'Good', inspected: '23 Mar', next: 'Bi-weekly', notes: 'Used for rehab daily', color: '#22C55E' },
-                { facility: 'Floodlights', condition: 'Operational', inspected: '25 Mar', next: 'Monthly', notes: 'Inspection passed', color: '#22C55E' },
-              ].map((f, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #1F2937' }} className="hover:bg-white/[0.02]">
-                  <td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{f.facility}</td>
-                  <td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${f.color}1a`, color: f.color }}>{f.condition}</span></td>
-                  <td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{f.inspected}</td>
-                  <td className="px-4 py-3" style={{ color: f.next === 'Immediate' ? '#EF4444' : '#9CA3AF' }}>{f.next}</td>
-                  <td className="px-4 py-3" style={{ color: '#6B7280' }}>{f.notes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Stands</p></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Stand', 'Capacity', 'Covered', 'Accessibility', 'Notes'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>
+          {stands.map((r, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{r.name}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.cap.toLocaleString()}</td><td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: r.covered === 'Yes' ? '#22C55E1a' : r.covered === 'Part' ? '#F59E0B1a' : '#6B72801a', color: r.covered === 'Yes' ? '#22C55E' : r.covered === 'Part' ? '#F59E0B' : '#9CA3AF' }}>{r.covered}</span></td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.acc}</td><td className="px-4 py-3" style={{ color: '#6B7280' }}>{r.notes}</td></tr>))}
+        </tbody></table></div>
+      </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Matchday Facilities</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {matchdayFac.map(([f, st]) => (<div key={f} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{f}</div><div className="text-[10px] mt-0.5" style={{ color: '#22C55E' }}>{st}</div></div>))}
         </div>
       </div>
+      <FacilityStatusEditable accent="#003DA5" seedFacilities={MENS_FACILITY_STATUS} seedProjects={MENS_PROJECTS} />
+    </div>
+  )
+}
 
-      {/* Upcoming Maintenance */}
+// ─── FACILITIES — PITCH & GROUNDS (mirrors Women's flagship) ──────────────────
+function MensPitchGroundsView() {
+  const maint = [
+    { t: 'Mowing (25mm)', freq: '4× / week', last: 'Today 06:30', next: 'Wed', s: 'green' },
+    { t: 'Line marking', freq: 'Matchday-1', last: 'Fri', next: 'Next home', s: 'green' },
+    { t: 'Aeration (verti-drain)', freq: 'Monthly', last: '02 Apr', next: '02 May', s: 'green' },
+    { t: 'Fertilisation', freq: '4-weekly', last: '20 Mar', next: '17 Apr', s: 'amber' },
+    { t: 'Divoting / repairs', freq: 'Post-match', last: 'Sat', next: 'Post next match', s: 'green' },
+    { t: 'SISGrass stitching top-up', freq: 'Annual', last: 'Jul 2025', next: 'Jun 2026', s: 'amber' },
+  ]
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Pitch &amp; Grounds</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Lumio Park pitch · GMA performance quality standard</p>
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="GMA Rating" value="8.8 / 10" icon={CheckCircle2} color="#22C55E" />
+        <StatCard label="Mowing Height" value="25 mm" icon={MapPin} color="#14B8A6" />
+        <StatCard label="Matches Since Reno" value="18" icon={Calendar} color="#3B82F6" />
+        <StatCard label="Next Renovation" value="Jun 2026" icon={Calendar} color="#F59E0B" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Pitch Specification</h3>
+          {([['Surface', 'SISGrass reinforced hybrid (95% natural)'], ['Drainage', 'Sand-band · primary + lateral'], ['Irrigation', 'Pop-up automated · 24 heads'], ['Soil', 'USGA rootzone'], ['Last GMA assessment', '08 Apr 2026 — 8.8/10'], ['Condition', 'Excellent · even cover']] as [string, string][]).map(([l, v]) => (
+            <div key={l} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid rgba(31,41,55,0.5)' }}><span className="text-xs" style={{ color: '#6B7280' }}>{l}</span><span className="text-xs font-medium text-right" style={{ color: '#D1D5DB' }}>{v}</span></div>
+          ))}
+        </div>
+        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Usage &amp; Conditions</h3>
+          {([['Matches this month', '3 (2 home · 1 cup)', '#22C55E'], ['Training on stadium pitch', 'Captain\'s run only', '#22C55E'], ['Weather risk (7 day)', 'Low — light rain Thu', '#22C55E'], ['Frost cover', 'On standby', '#F59E0B'], ['Pitch inspection', 'Matchday-1, 16:00', '#22C55E']] as [string, string, string][]).map(([l, v, c]) => (
+            <div key={l} className="flex items-center justify-between py-1.5" style={{ borderBottom: '1px solid rgba(31,41,55,0.5)' }}><span className="text-xs" style={{ color: '#9CA3AF' }}>{l}</span><span className="text-xs font-medium" style={{ color: c }}>{v}</span></div>
+          ))}
+        </div>
+      </div>
       <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Upcoming Maintenance & Projects</p>
-        </div>
-        {[
-          { project: 'Pitch 2 drainage repair', date: '28-30 Mar', cost: '£4,200', priority: 'Urgent', color: '#EF4444' },
-          { project: 'CCTV system upgrade', date: 'Next week', cost: '£8,500', priority: 'Planned', color: '#3B82F6' },
-          { project: 'Gym equipment installation', date: 'Mon 31 Mar', cost: '£12,000', priority: 'Planned', color: '#3B82F6' },
-          { project: 'Away dugout seating replacement', date: 'Apr', cost: '£3,800', priority: 'Low', color: '#6B7280' },
-        ].map((p, i) => (
-          <div key={i} className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-            <div>
-              <p className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{p.project}</p>
-              <p className="text-xs" style={{ color: '#6B7280' }}>{p.date} · Est. {p.cost}</p>
-            </div>
-            <span className="text-xs px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: `${p.color}1a`, color: p.color }}>{p.priority}</span>
-          </div>
-        ))}
+        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Maintenance Schedule</p></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Task', 'Frequency', 'Last Done', 'Next Due', 'Status'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>
+          {maint.map((r, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{r.t}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.freq}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.last}</td><td className="px-4 py-3" style={{ color: '#D1D5DB' }}>{r.next}</td><td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: r.s === 'green' ? '#22C55E1a' : '#F59E0B1a', color: r.s === 'green' ? '#22C55E' : '#F59E0B' }}>{r.s === 'green' ? 'On track' : 'Due soon'}</span></td></tr>))}
+        </tbody></table></div>
       </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Grounds Team &amp; Equipment</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {([['Head Groundsperson', 'Mark Reynolds · IOG Level 3'], ['Team', '2 FT + 3 matchday'], ['Mowers', '3× cylinder · 1× rotary'], ['Verti-drain / sprayer', 'On site']] as [string, string][]).map(([a, b]) => (<div key={a} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{a}</div><div className="text-[10px] mt-0.5" style={{ color: '#6B7280' }}>{b}</div></div>))}
+        </div>
+      </div>
+    </div>
+  )
+}
 
+// ─── FACILITIES — TRAINING GROUND (mirrors Women's flagship) ──────────────────
+function MensTrainingGroundView() {
+  const bookings = [
+    { time: '08:00', team: 'First team — recovery', pitch: 'Grass 1', s: 'In progress' },
+    { time: '09:30', team: 'First team — main session', pitch: 'Grass 1 (GPS)', s: 'Scheduled' },
+    { time: '11:00', team: 'Goalkeepers', pitch: '3G area', s: 'Scheduled' },
+    { time: '13:00', team: 'U21 development', pitch: 'Grass 2', s: 'Scheduled' },
+    { time: '16:00', team: 'U18 academy', pitch: 'Grass 3 (GPS)', s: 'Scheduled' },
+    { time: '18:00', team: 'Academy / EPPP', pitch: '3G area', s: 'Booked' },
+  ]
+  const fac: [string, string][] = [
+    ['Full-size grass pitches', '4 · 2 GPS-enabled'], ['3G / 4G surface', 'Floodlit · year-round'],
+    ['Indoor dome', '60×40m · all-weather'], ['Gym & S&C suite', '24 stations · platforms'],
+    ['Hydrotherapy & recovery', 'Pool · ice baths · compression'], ['Medical centre', 'Treatment · imaging referral'],
+    ['Analysis suite', 'Edit bays · meeting room'], ['Education / classroom', 'Scholar programme'],
+  ]
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Training Ground</h2>
+        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Lumio Sports Training Ground · first team + Category 2 academy</p>
+      </div>
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <StatCard label="Grass Pitches" value="4" icon={MapPin} color="#22C55E" />
+        <StatCard label="All-Weather" value="2" icon={MapPin} color="#3B82F6" />
+        <StatCard label="Gym Stations" value="24" icon={Users} color="#003DA5" />
+        <StatCard label="Recovery Suite" value="Yes" icon={CheckCircle2} color="#14B8A6" />
+      </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Facilities</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {fac.map(([f, st]) => (<div key={f} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-xs font-medium" style={{ color: '#F9FAFB' }}>{f}</div><div className="text-[10px] mt-0.5" style={{ color: '#3B82F6' }}>{st}</div></div>))}
+        </div>
+      </div>
+      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Today's Pitch &amp; Facility Bookings</p><span className="text-[10px]" style={{ color: '#6B7280' }}>4 pitches · 1 dome</span></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs"><thead><tr style={{ borderBottom: '1px solid #1F2937' }}>{['Time', 'Group', 'Pitch / Area', 'Status'].map(h => (<th key={h} className="text-left px-4 py-3 font-semibold" style={{ color: '#6B7280' }}>{h}</th>))}</tr></thead><tbody>
+          {bookings.map((r, i) => (<tr key={i} style={{ borderBottom: '1px solid #1F2937' }}><td className="px-4 py-3 font-mono" style={{ color: '#9CA3AF' }}>{r.time}</td><td className="px-4 py-3 font-medium" style={{ color: '#F9FAFB' }}>{r.team}</td><td className="px-4 py-3" style={{ color: '#9CA3AF' }}>{r.pitch}</td><td className="px-4 py-3"><span className="px-2 py-0.5 rounded-lg font-semibold" style={{ backgroundColor: r.s === 'In progress' ? '#22C55E1a' : r.s === 'Booked' ? '#F59E0B1a' : '#6B72801a', color: r.s === 'In progress' ? '#22C55E' : r.s === 'Booked' ? '#F59E0B' : '#9CA3AF' }}>{r.s}</span></td></tr>))}
+        </tbody></table></div>
+      </div>
+      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Site Information</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {([['Address', 'Lumio Sports Training Ground, Lane End'], ['Opened', '2019 · expanded 2024'], ['GPS coverage', 'JOHAN — 2 pitches'], ['Access', 'First team + Cat 2 academy']] as [string, string][]).map(([a, b]) => (<div key={a} className="rounded-lg p-3" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><div className="text-[10px]" style={{ color: '#6B7280' }}>{a}</div><div className="text-xs font-medium mt-0.5" style={{ color: '#F9FAFB' }}>{b}</div></div>))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -6256,130 +6432,6 @@ const VOICES = [
 ]
 
 // ─── Social Media View ──────────────────────────────────────────────────────
-
-const SOCIAL_MENTIONS = [
-  { user: '@LumioSportsFan92', content: 'Great performance from Lumio Sports FC last night! Morris was incredible ⚽🔥', time: '2 min ago', likes: 847, sentiment: 'positive' as const },
-  { user: '@SportsBlogger', content: 'Hearing Lumio Sports FC are close to signing a new winger — big move if true 👀', time: '15 min ago', likes: 234, sentiment: 'neutral' as const },
-  { user: '@LocalFan', content: 'Season ticket renewed. Can\'t wait for Saturday. Come on Lumio Sports! 🔴', time: '32 min ago', likes: 45, sentiment: 'positive' as const },
-  { user: '@League1News', content: 'Lumio Sports FC move up to 14th after beating Eastcliff Town. Solid showing.', time: '1 hr ago', likes: 1240, sentiment: 'positive' as const },
-  { user: '@TacticsBoard', content: 'Porter\'s pass map vs Eastcliff Town was elite. 92% accuracy, 4 key passes.', time: '2 hrs ago', likes: 312, sentiment: 'positive' as const },
-  { user: '@DisappointedFan', content: 'Still think we need a proper left-back. Davies isn\'t good enough for this level.', time: '3 hrs ago', likes: 89, sentiment: 'negative' as const },
-  { user: '@YouthFootball', content: 'Academy Player (17) training with Lumio Sports first team today. One to watch 🌟', time: '4 hrs ago', likes: 567, sentiment: 'positive' as const },
-  { user: '@TransferWatch', content: 'Lumio Sports FC have reportedly tracked a League One winger. Clubs circling.', time: '5 hrs ago', likes: 1890, sentiment: 'neutral' as const },
-]
-
-const SOCIAL_PLATFORMS = [
-  { name: 'X / Twitter', emoji: '🐦', followers: '124k', growth: '+840', engagement: '5.1%', bestTime: '12:30pm' },
-  { name: 'Instagram', emoji: '📸', followers: '89k', growth: '+620', engagement: '4.8%', bestTime: '6:00pm' },
-  { name: 'Facebook', emoji: '📘', followers: '42k', growth: '+180', engagement: '2.1%', bestTime: '9:00am' },
-  { name: 'YouTube', emoji: '▶️', followers: '18k', growth: '+340', engagement: '6.2%', bestTime: '2:00pm' },
-  { name: 'LinkedIn', emoji: '💼', followers: '8k', growth: '+90', engagement: '3.4%', bestTime: '8:00am' },
-  { name: 'TikTok', emoji: '🎵', followers: '3k', growth: '+420', engagement: '8.7%', bestTime: '7:00pm' },
-]
-
-const SOCIAL_CALENDAR = [
-  { day: 'Mon', time: '9am', content: 'Match preview graphic', platforms: 'IG + X' },
-  { day: 'Tue', time: '2pm', content: 'Training ground photos', platforms: 'IG' },
-  { day: 'Wed', time: '12pm', content: 'Player spotlight — Morris', platforms: 'All' },
-  { day: 'Thu', time: '10am', content: 'Match day -2 countdown', platforms: 'X + Stories' },
-  { day: 'Fri', time: '9am', content: 'Squad announcement', platforms: 'All' },
-  { day: 'Sat', time: '12pm', content: 'Match day live', platforms: 'All' },
-  { day: 'Sun', time: '11am', content: 'Highlights + report', platforms: 'All' },
-]
-
-function SocialMediaView() {
-  const [platform, setPlatform] = useState(0)
-  const [sentimentFilter, setSentimentFilter] = useState<string>('all')
-  const [socToast, setSocToast] = useState<string | null>(null)
-  function socAction(l: string) { setSocToast(`${l} — opening...`); setTimeout(() => setSocToast(null), 2500) }
-
-  const filtered = sentimentFilter === 'all' ? SOCIAL_MENTIONS : SOCIAL_MENTIONS.filter(m => m.sentiment === sentimentFilter)
-  const p = SOCIAL_PLATFORMS[platform]
-
-  return (
-    <div className="space-y-5">
-      <div><h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Social Media Hub</h2><p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Everything the world is saying about Lumio Sports FC</p></div>
-
-      <div className="flex items-center gap-2 flex-wrap">
-        {[{ l: 'Create Post', i: Plus }, { l: 'Schedule Content', i: Calendar }, { l: 'Analytics Report', i: BarChart3 }, { l: 'Set Up Alerts', i: Bell }, { l: 'Reply to Mentions', i: MessageSquare }].map(a => (
-          <button key={a.l} onClick={() => socAction(a.l)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#002D7A', color: '#F1C40F' }}><a.i size={12} />{a.l}</button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Total Followers" value="284k" icon={Users} color="#003DA5" />
-        <StatCard label="Engagement Rate" value="4.2%" icon={Activity} color="#22C55E" />
-        <StatCard label="Mentions Today" value="847" icon={MessageSquare} color="#8B5CF6" />
-        <StatCard label="Sentiment Score" value="72/100" icon={Heart} color="#F1C40F" />
-      </div>
-
-      {/* Platform Tabs */}
-      <div className="flex gap-2 flex-wrap">
-        {SOCIAL_PLATFORMS.map((sp, i) => (
-          <button key={sp.name} onClick={() => setPlatform(i)} className="px-4 py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: platform === i ? '#003DA5' : '#111318', color: platform === i ? '#F9FAFB' : '#9CA3AF', border: platform === i ? 'none' : '1px solid #1F2937' }}>
-            {sp.emoji} {sp.name}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Platform Stats */}
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>{p.emoji} {p.name}</p>
-          {[{ l: 'Followers', v: p.followers }, { l: 'Weekly Growth', v: p.growth }, { l: 'Engagement', v: p.engagement }, { l: 'Best Post Time', v: p.bestTime }].map(s => (
-            <div key={s.l} className="flex justify-between py-1.5"><span className="text-xs" style={{ color: '#9CA3AF' }}>{s.l}</span><span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{s.v}</span></div>
-          ))}
-        </div>
-
-        {/* Mentions Feed */}
-        <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid #1F2937' }}>
-            <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Mentions</p>
-            <div className="flex gap-1">{['all', 'positive', 'neutral', 'negative'].map(f => (
-              <button key={f} onClick={() => setSentimentFilter(f)} className="px-2 py-1 rounded text-[10px] font-semibold capitalize" style={{ backgroundColor: sentimentFilter === f ? '#003DA5' : '#1F2937', color: '#F9FAFB' }}>{f}</button>
-            ))}</div>
-          </div>
-          <div className="max-h-80 overflow-y-auto">
-            {filtered.map((m, i) => (
-              <div key={i} className="px-5 py-3 flex gap-3" style={{ borderBottom: i < filtered.length - 1 ? '1px solid #1F2937' : undefined }}>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>{m.user[1].toUpperCase()}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs"><span className="font-bold" style={{ color: '#F9FAFB' }}>{m.user}</span> <span style={{ color: '#6B7280' }}>· {m.time}</span></p>
-                  <p className="text-xs mt-1" style={{ color: '#D1D5DB' }}>{m.content}</p>
-                  <div className="flex items-center gap-3 mt-1"><span className="text-[10px]" style={{ color: '#6B7280' }}>❤️ {m.likes}</span><span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: m.sentiment === 'positive' ? 'rgba(34,197,94,0.12)' : m.sentiment === 'negative' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', color: m.sentiment === 'positive' ? '#22C55E' : m.sentiment === 'negative' ? '#EF4444' : '#F59E0B' }}>{m.sentiment}</span></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Sentiment + Calendar */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <p className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Sentiment Analysis</p>
-          {[{ l: 'Positive', v: 68, c: '#22C55E' }, { l: 'Neutral', v: 22, c: '#F59E0B' }, { l: 'Negative', v: 10, c: '#EF4444' }].map(s => (
-            <div key={s.l} className="mb-2"><div className="flex justify-between text-xs mb-1"><span style={{ color: '#9CA3AF' }}>{s.l}</span><span style={{ color: s.c }}>{s.v}%</span></div><div className="h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}><div className="h-full rounded-full" style={{ width: `${s.v}%`, backgroundColor: s.c }} /></div></div>
-          ))}
-        </div>
-        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-          <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}><p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Content Calendar</p></div>
-          {SOCIAL_CALENDAR.map((c, i) => (
-            <div key={i} className="flex items-center gap-3 px-5 py-2.5" style={{ borderBottom: i < SOCIAL_CALENDAR.length - 1 ? '1px solid #1F2937' : undefined }}>
-              <span className="text-xs font-bold w-8" style={{ color: '#003DA5' }}>{c.day}</span>
-              <span className="text-xs w-10" style={{ color: '#6B7280' }}>{c.time}</span>
-              <span className="text-xs flex-1" style={{ color: '#D1D5DB' }}>{c.content}</span>
-              <span className="text-[10px] px-2 py-0.5 rounded" style={{ backgroundColor: '#1F2937', color: '#6B7280' }}>{c.platforms}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {socToast && <div className="fixed bottom-6 right-6 z-[100] rounded-xl px-4 py-3 text-sm font-medium shadow-xl" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>{socToast}</div>}
-    </div>
-  )
-}
 
 function DynamicsView() {
   const [socToast, setSocToast] = useState<string | null>(null)
@@ -7235,14 +7287,14 @@ const FOOTBALL_ROLES = [
 // array here, not role-templates.ts.
 const FOOTBALL_ROLE_CONFIG: Record<string, { label: string; icon: string; accent: string; sidebar: 'all' | string[]; message: string | null }> = {
   ceo:               { label: 'CEO',                    icon: '🏛️', accent: '#003DA5', sidebar: 'all', message: null },
-  chairman:          { label: 'Chairman',               icon: '👑', accent: '#7C3AED', sidebar: ['overview','insights','board','finance','psr-scr-modeller','commercial','community','discover','concussion-tracker','settings'], message: 'Strategic top-line view.' },
+  chairman:          { label: 'Chairman',               icon: '👑', accent: '#7C3AED', sidebar: ['overview','insights','board','club-vision','financial','capital-projects','energy','finance','psr-scr-modeller','salary','revenue-attribution','game-standards','club-licensing','commercial','sponsorship','sponsor-roi','retail','ticketing','community','fanhub','discover','concussion-tracker','settings'], message: 'Strategic top-line view.' },
   manager:           { label: 'Manager / Head Coach',   icon: '🎽', accent: '#10B981', sidebar: ['overview','insights','squad','squad-planner','tactics','matchday','training','tours-camps','set-pieces','video-analysis','scouting','analytics','medical','concussion-tracker','discover','settings'], message: 'Operational first-team view.' },
   director_football: { label: 'Director of Football',   icon: '📋', accent: '#0EA5E9', sidebar: ['overview','insights','squad','transfers','scouting','scouting-db','video-analysis','academy','board','psr-scr-modeller','discover','settings'], message: 'Squad strategy and recruitment view.' },
   head_performance:  { label: 'Head of Performance',    icon: '🏃', accent: '#22C55E', sidebar: ['overview','insights','performance','gps-heatmaps','gps-hardware','training','analytics','video-analysis','medical','concussion-tracker','tours-camps','settings'], message: 'S&C, GPS and sport science view.' },
   head_medical:      { label: 'Head of Medical',        icon: '🏥', accent: '#DC2626', sidebar: ['overview','insights','medical','concussion-tracker','dynamics','squad','tours-camps','player-welfare','settings'], message: 'Welfare, injury and return-to-play view.' },
   analyst:           { label: 'Analyst / Head of Data', icon: '📊', accent: '#F59E0B', sidebar: ['overview','insights','matchday','video-analysis','analytics','scouting','set-pieces','gps-heatmaps','opta','lumio-data-pro','discover','settings'], message: 'Video, opposition and performance data view.' },
-  commercial:        { label: 'Commercial Director',    icon: '💼', accent: '#EC4899', sidebar: ['overview','insights','commercial','board','finance','psr-scr-modeller','media','social','community','settings'], message: 'Sponsorship, hospitality and brand view.' },
-  head_operations:   { label: 'Head of Operations',     icon: '🧰', accent: '#0EA5E9', sidebar: ['overview','insights','club-operations','facilities','tours-camps','matchday','commercial','psr-scr-modeller','discover','settings'], message: 'Matchday, facilities and travel logistics view.' },
+  commercial:        { label: 'Commercial Director',    icon: '💼', accent: '#EC4899', sidebar: ['overview','insights','commercial','sponsorship','retail','ticketing','sponsor-roi','club-vision','financial','board','finance','psr-scr-modeller','media','social','fanhub','community','settings'], message: 'Sponsorship, hospitality and brand view.' },
+  head_operations:   { label: 'Head of Operations',     icon: '🧰', accent: '#0EA5E9', sidebar: ['overview','insights','club-operations','facilities','energy','capital-projects','assets','procurement','ticketing','tours-camps','matchday','commercial','psr-scr-modeller','discover','settings'], message: 'Matchday, facilities and travel logistics view.' },
   head_community:    { label: 'Head of Community',      icon: '❤️', accent: '#F97316', sidebar: ['overview','insights','community','commercial','media','social','settings'], message: 'Foundation, schools and fan engagement view.' },
 }
 
@@ -7492,42 +7544,74 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {isFootballDemo && activeDept === 'scouting' && <ScoutingView />}
             {isFootballDemo && activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
             {isFootballDemo && activeDept === 'analytics' && <AnalyticsView />}
-            {isFootballDemo && activeDept === 'media' && <MediaContentModule sport="football-pro" accentColor="#003DA5" existingContentLabel="Football Pro — Media & PR (existing)" existingContent={<MediaView />} isDemoShell={session?.isDemoShell !== false} />}
-            {isFootballDemo && activeDept === 'social' && <SocialMediaView />}
+            {isFootballDemo && activeDept === 'media' && <MediaContentModule sport="football-pro" accentColor="#003DA5" existingContentLabel="Football Pro — Media & PR (existing)" existingContent={<FootballMediaPRView />} isDemoShell={session?.isDemoShell !== false} />}
+            {isFootballDemo && activeDept === 'social' && <FootballSocialMediaView />}
             {isFootballDemo && activeDept === 'matchday' && <MatchdayView onNavigate={(d) => setActiveDept(d)} />}
             {isFootballDemo && activeDept === 'training' && <TrainingView />}
             {isFootballDemo && activeDept === 'performance' && <GPSPerformanceView />}
             {isFootballDemo && activeDept === 'gps-heatmaps' && <GPSHeatmapsView />}
             {isFootballDemo && activeDept === 'performance-brief' && <ProAIPerformanceBriefView />}
-            {isFootballDemo && activeDept === 'finance' && <FinanceView />}
+            {isFootballDemo && activeDept === 'finance' && <FootballFinanceView />}
             {isFootballDemo && activeDept === 'staff' && <StaffView />}
             {isFootballDemo && activeDept === 'facilities' && <FacilitiesView />}
             {isFootballDemo && activeDept === 'dynamics' && <DynamicsView />}
             {isFootballDemo && activeDept === 'concussion-tracker' && <ConcussionTrackerView />}
+            {isFootballDemo && activeDept === 'compliance-centre' && <ComplianceCommandCentre variant="mens" onNavigate={(id) => setActiveDept(id as DeptId)} />}
+            {isFootballDemo && activeDept === 'compliance-calendar' && <ComplianceCalendar variant="mens" />}
             {isFootballDemo && activeDept === 'psr-scr-modeller' && <PSRScenarioModellerView />}
+            {isFootballDemo && activeDept === 'salary' && <FootballSalaryComplianceView />}
+            {isFootballDemo && activeDept === 'revenue-attribution' && <FootballRevenueAttributionView />}
+            {isFootballDemo && activeDept === 'game-standards' && <FootballGameStandardsView />}
+            {isFootballDemo && activeDept === 'club-licensing' && <FootballClubLicensingView />}
+            {isFootballDemo && activeDept === 'registration' && <RegistrationTransferView variant="mens" />}
+            {isFootballDemo && activeDept === 'data-protection' && <DataProtectionView variant="mens" />}
+            {isFootballDemo && activeDept === 'safeguarding-ops' && <SafeguardingOpsView variant="mens" />}
+            {isFootballDemo && activeDept === 'anti-doping' && <AntiDopingView variant="mens" />}
+            {isFootballDemo && activeDept === 'risk-insurance' && <RiskInsuranceView variant="mens" />}
+            {isFootballDemo && activeDept === 'policy-library' && <PolicyLibraryView variant="mens" />}
+            {isFootballDemo && activeDept === 'player-trading' && <PlayerTradingLedger variant="mens" />}
+            {isFootballDemo && activeDept === 'treasury' && <TreasuryView variant="mens" />}
+            {isFootballDemo && activeDept === 'payroll-ledger' && <PayrollBonusView variant="mens" />}
+            {isFootballDemo && activeDept === 'budget-actuals' && <BudgetActualsView variant="mens" />}
+            {isFootballDemo && activeDept === 'revenue-receivables' && <RevenueReceivablesView variant="mens" />}
+            {isFootballDemo && activeDept === 'central-distributions' && <CentralDistributionsView variant="mens" />}
+            {isFootballDemo && activeDept === 'mgmt-accounts' && <ManagementAccountsView variant="mens" />}
+            {isFootballDemo && activeDept === 'capex-appraisal' && <CapexAppraisalView variant="mens" />}
             {isFootballDemo && activeDept === 'squad-planner' && <SquadPlannerView />}
             {isFootballDemo && activeDept === 'tours-camps' && <ToursAndCampsView />}
+            {isFootballDemo && activeDept === 'procurement' && <FootballProcurementView />}
+            {isFootballDemo && activeDept === 'player-integration' && <FootballPlayerIntegrationView />}
+            {isFootballDemo && activeDept === 'injury-risk' && <FootballInjuryRiskMonitor />}
+            {isFootballDemo && activeDept === 'load-recovery' && <FootballLoadRecoveryView />}
+            {isFootballDemo && activeDept === 'return-to-play' && <FootballReturnToPlayView />}
+            {isFootballDemo && activeDept === 'mental-health' && <FootballMentalHealthView />}
+            {isFootballDemo && activeDept === 'pitch-grounds' && <MensPitchGroundsView />}
+            {isFootballDemo && activeDept === 'training-ground' && <MensTrainingGroundView />}
+            {isFootballDemo && activeDept === 'energy' && <FootballEnergyView />}
+            {isFootballDemo && activeDept === 'capital-projects' && <FootballCapitalProjectsView />}
+            {isFootballDemo && activeDept === 'assets' && <FootballAssetRegisterView />}
+            {isFootballDemo && activeDept === 'retail' && <FootballRetailView />}
+            {isFootballDemo && activeDept === 'ticketing' && <FootballTicketingView />}
+            {isFootballDemo && activeDept === 'sponsor-roi' && <FootballSponsorActivationView />}
+            {isFootballDemo && activeDept === 'matchday-ops' && <FootballMatchdayOps />}
+            {isFootballDemo && activeDept === 'travel-logistics' && <FootballTravelLogisticsView />}
+            {isFootballDemo && activeDept === 'kit-manager' && <FootballKitManager />}
+            {isFootballDemo && activeDept === 'medical-records' && <FootballMedicalRecords />}
+            {isFootballDemo && activeDept === 'commercial' && <CommercialView />}
+            {isFootballDemo && activeDept === 'community' && <CommunityView />}
+            {isFootballDemo && activeDept === 'sponsorship' && <FootballSponsorshipPipeline />}
+            {isFootballDemo && activeDept === 'club-vision' && <FootballClubVisionView />}
+            {isFootballDemo && activeDept === 'financial' && <FootballFinancialPlanningView />}
+            {isFootballDemo && activeDept === 'fanhub' && <FootballFanHub />}
             {activeDept === 'video-analysis' && <ProVideoAnalysisView />}
-            {/* TODO: FootballScoutIntegrationView is now orphaned in this file (the
-                old 'lumio-vision' render branch routed here was deleted as part of
-                the V&A rename). Re-route it under a different DeptId or remove the
-                import in a follow-up cleanup commit. */}
             {activeDept === 'scouting-db' && <ScoutingDBView />}
             {activeDept === 'gps-hardware' && <GPSHardwareView />}
             {activeDept === 'opta' && <FootballEventDataView />}
             {activeDept === 'discover' && <DiscoverView />}
             {activeDept === 'lumio-data-pro' && <FootballLeagueDataView />}
             {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
-            {activeDept === 'player-welfare' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" title="Player Welfare Hub" subtitle="Foreign player integration · wellbeing · cultural support" />}
-            {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="travel" title="Club Operations" subtitle="Travel logistics · matchday ops · compliance · insurance" />}
-            {(activeDept === 'matchday-ops' || activeDept === 'travel-logistics' || activeDept === 'kit-manager' || activeDept === 'pitch-grounds' || activeDept === 'training-ground') && (
-              <div className="rounded-xl border border-gray-800 bg-[#0D1117] p-8 text-center">
-                <h2 className="text-lg font-bold text-white mb-2">{deptLabel}</h2>
-                <p className="text-sm text-gray-400">Coming soon — this module is part of the Operations &amp; Facilities buildout.</p>
-              </div>
-            )}
-            {isFootballDemo && activeDept === 'commercial' && <CommercialView />}
-            {isFootballDemo && activeDept === 'community' && <CommunityView />}
+            {activeDept === 'player-welfare' && <FootballWelfareHubView onNavigate={(id) => setActiveDept(id as DeptId)} />}
+            {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" hiddenTabs={['integration', 'wellbeing', 'travel', 'matchday']} title="Club Operations" subtitle="Operations overview · club info · compliance & insurance" overviewSlot={<FootballClubOpsOverview accent="#003DA5" />} clubInfoSlot={<FootballClubInfoTab />} />}
           </main>
         </div>
       </div>

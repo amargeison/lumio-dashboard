@@ -21,7 +21,7 @@
 // live search / Anthropic / Resend. mode==='live' is scaffolded (TODO) so a
 // signed client fires real calls with no UI rework.
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Bus, BedDouble, Utensils, Sparkles, Check, CheckCircle2,
   Mail, MapPin, Star, Plus, Search,
@@ -48,6 +48,7 @@ export default function TravelResearcher({
   awayFixtures,
   research,
   initialMode = 'full',
+  autoFixture,
   onClose,
 }: {
   mode: DataMode
@@ -55,6 +56,7 @@ export default function TravelResearcher({
   awayFixtures: AwayStatusRow[]
   research: ResearchResults
   initialMode?: ResearchMode
+  autoFixture?: AwayStatusRow
   onClose: () => void
 }) {
   const [step, setStep] = useState<Step>(1)
@@ -90,6 +92,25 @@ export default function TravelResearcher({
   // Book
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState<string | null>(null)
+  const [autoStarted, setAutoStarted] = useState(false)
+
+  // "Just do it" launch: when given a fixture, prefill it and run the full
+  // research automatically (no configure step) — the next away day, sorted.
+  useEffect(() => {
+    if (!autoFixture) return
+    setRMode('full')
+    setFixtureId(autoFixture.id)
+    setTo(autoFixture.venue)
+    setDate(autoFixture.date)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useEffect(() => {
+    if (autoFixture && !autoStarted && to && date && step === 1) {
+      setAutoStarted(true)
+      runSearch()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [to, date, autoFixture, autoStarted, step])
 
   const includeCoach = rMode === 'full' || rMode === 'coach'
   const includeHotel = rMode === 'full' || rMode === 'hotel'

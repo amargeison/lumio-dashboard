@@ -207,6 +207,34 @@ export default function WomensToursAndCampsView({ preSeasonContent, defaultTab =
               {camps.map(c => <TripCard key={c.id} trip={c} onOpen={() => setDetail(c)} />)}
             </div>
             <HistorySection title="Previous camps" trips={PAST_CAMPS} onOpen={setDetail} />
+            <div className="rounded-xl p-5" style={{ backgroundColor: C.panel, border: `1px solid ${C.border}` }}>
+              <h3 className="text-sm font-bold mb-3" style={{ color: C.text }}>Lionesses / International Window Alignment</h3>
+              <div className="space-y-2">
+                {([['03–11 Sep 2026', 'September int’l break — camp runs for non-internationals'], ['08–18 Oct 2026', 'October double-header — 4 Lionesses call-ups expected'], ['17 Feb – 03 Mar 2027', 'Spring camp lands inside the window'], ['06–14 Apr 2027', 'Euro qualifier window — 3 call-ups projected']] as [string, string][]).map(([d, note], i) => (
+                  <div key={i} className="flex items-start gap-3 py-1.5" style={{ borderBottom: `1px solid ${C.border}` }}><span className="text-xs font-mono w-36 flex-shrink-0" style={{ color: C.accent }}>{d}</span><span className="text-xs" style={{ color: C.text3 }}>{note}</span></div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: C.panel, border: `1px solid ${C.border}` }}>
+              <h3 className="text-sm font-bold mb-3" style={{ color: C.text }}>Travelling Squad Availability per Camp</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[{ camp: 'Lionesses Sep break · Sep–Oct', avail: 20, unavail: 6, reason: '4 with Lionesses, 1 ACL rehab, 1 cycle-managed rest' }, { camp: 'Spring camp · Feb–Mar', avail: 22, unavail: 4, reason: '2 with Lionesses, 1 maternity-return (modified), 1 personal leave' }].map((x, i) => (
+                  <div key={i} className="rounded-lg p-3" style={{ backgroundColor: C.panel2, border: `1px solid ${C.border}` }}>
+                    <div className="text-xs font-bold" style={{ color: C.text }}>{x.camp}</div>
+                    <div className="flex items-center gap-3 mt-1.5"><div><span className="text-lg font-black" style={{ color: C.good }}>{x.avail}</span><span className="text-[10px] ml-1" style={{ color: C.text4 }}>travelling</span></div><div><span className="text-lg font-black" style={{ color: C.warn }}>{x.unavail}</span><span className="text-[10px] ml-1" style={{ color: C.text4 }}>staying behind</span></div></div>
+                    <div className="text-[11px] mt-1" style={{ color: C.text3 }}>{x.reason}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl p-5" style={{ backgroundColor: C.panel, border: `1px solid ${C.border}` }}>
+              <h3 className="text-sm font-bold mb-3" style={{ color: C.text }}>Friendlies During Camps</h3>
+              <div className="space-y-2">
+                {([['28 Sep 2026', 'Closed-doors vs Castleton Women XI', 'Hartfield'], ['24 Feb 2027', 'Behind-closed-doors vs Penmarric Women', 'Hartfield'], ['01 Mar 2027', 'Academy integration friendly · U21 + first team', 'Oakridge Training Centre']] as [string, string, string][]).map(([d, match, loc], i) => (
+                  <div key={i} className="flex items-center gap-3 py-1.5" style={{ borderBottom: `1px solid ${C.border}` }}><span className="text-xs font-mono w-24 flex-shrink-0" style={{ color: C.accent }}>{d}</span><span className="text-xs flex-1" style={{ color: C.text }}>{match}</span><span className="text-[11px]" style={{ color: C.text3 }}>{loc}</span></div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -220,6 +248,30 @@ export default function WomensToursAndCampsView({ preSeasonContent, defaultTab =
               {tours.map(t => <TripCard key={t.id} trip={t} onOpen={() => setDetail(t)} />)}
             </div>
             <HistorySection title="Previous tours" trips={PAST_TOURS} onOpen={setDetail} />
+            <div className="rounded-xl p-5" style={{ backgroundColor: C.panel, border: `1px solid ${C.border}` }}>
+              <h3 className="text-sm font-bold mb-3" style={{ color: C.text }}>Itinerary — Pre-season Spain camp 2026</h3>
+              <div className="space-y-2">
+                {([['Mon 03 Aug', 'Marbella', 'Travel day · settle · sponsor welcome (Vanta)'], ['Tue 04 Aug', 'Marbella', 'AM aerobic base · PM recovery + pool · welfare check-ins'], ['Wed 05 Aug', 'Marbella', 'Double session · tactical units · analysis'], ['Fri 07 Aug', 'Marbella', 'Friendly #1 vs SC Faro Women · 19:00 local'], ['Sun 09 Aug', 'Marbella', 'Content day (kit launch) · set-piece block · family day'], ['Tue 11 Aug', 'Marbella', 'Friendly #2 vs Atlético Femenino · travel home']] as [string, string, string][]).map(([d, city, events], i) => (
+                  <div key={i} className="flex items-start gap-3 py-1.5" style={{ borderBottom: `1px solid ${C.border}` }}><span className="text-xs font-mono w-24 flex-shrink-0" style={{ color: C.accent }}>{d}</span><span className="text-xs font-semibold w-24 flex-shrink-0" style={{ color: C.text }}>{city}</span><span className="text-xs" style={{ color: C.text3 }}>{events}</span></div>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.panel, border: `1px solid ${C.border}` }}>
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${C.border}` }}><h3 className="text-sm font-bold" style={{ color: C.text }}>Friendly Opponent Pipeline</h3></div>
+              <table className="w-full text-xs"><thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>{['Opponent', 'Status', 'Match fee'].map(h => <th key={h} className="text-left px-4 py-2.5 font-semibold uppercase tracking-wider text-[10px]" style={{ color: C.text4 }}>{h}</th>)}</tr></thead><tbody>
+                {([['SC Faro Women (Liga BPI)', 'Confirmed', '€18,000 + 50/50 gate'], ['Atlético Femenino (Liga F)', 'Confirmed', '€26,000'], ['Castleton Women (WSL)', 'Confirmed', '£12,000'], ['TBC · USA invitational', 'In discussion', 'TBC — 2027 tour'], ['TBC · Eintracht Women', 'In discussion', 'TBC']] as [string, string, string][]).map((o, i) => (
+                  <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}><td className="px-4 py-2.5 font-semibold" style={{ color: C.text }}>{o[0]}</td><td className="px-4 py-2.5"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${o[1] === 'Confirmed' ? C.good : C.warn}26`, color: o[1] === 'Confirmed' ? C.good : C.warn }}>{o[1]}</span></td><td className="px-4 py-2.5 font-mono" style={{ color: C.good }}>{o[2]}</td></tr>
+                ))}
+              </tbody></table>
+            </div>
+            <div className="rounded-xl overflow-hidden" style={{ backgroundColor: C.panel, border: `1px solid ${C.border}` }}>
+              <div className="px-5 py-4" style={{ borderBottom: `1px solid ${C.border}` }}><h3 className="text-sm font-bold" style={{ color: C.text }}>Visa &amp; Immigration Tracker — USA tour 2027</h3></div>
+              <table className="w-full text-xs"><thead><tr style={{ borderBottom: `1px solid ${C.border}` }}>{['Player', 'Destination', 'Status', 'Expiry'].map(h => <th key={h} className="text-left px-4 py-2.5 font-semibold uppercase tracking-wider text-[10px]" style={{ color: C.text4 }}>{h}</th>)}</tr></thead><tbody>
+                {([['Emma Clarke', 'USA', 'ESTA active', '14 Mar 2028'], ['Jade Osei', 'USA', 'B-1 visa active', '02 Sep 2027'], ['Priya Nair', 'USA', 'B-1 application filed', '—'], ['Lucy Whitmore', 'USA', 'ESTA only — needs B-1', '—'], ['Amara Diallo', 'USA', 'Awaiting embassy slot', '—'], ['Freya Johansson', 'USA', 'B-1 visa active', '21 Jan 2029']] as [string, string, string, string][]).map((v, i) => { const ok = v[2].includes('active'); return (
+                  <tr key={i} style={{ borderBottom: `1px solid ${C.border}` }}><td className="px-4 py-2.5 font-semibold" style={{ color: C.text }}>{v[0]}</td><td className="px-4 py-2.5" style={{ color: C.text3 }}>{v[1]}</td><td className="px-4 py-2.5"><span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${ok ? C.good : C.warn}26`, color: ok ? C.good : C.warn }}>{v[2]}</span></td><td className="px-4 py-2.5 font-mono" style={{ color: C.text4 }}>{v[3]}</td></tr>
+                ) })}
+              </tbody></table>
+            </div>
           </div>
         )}
 

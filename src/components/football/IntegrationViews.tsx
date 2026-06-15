@@ -47,9 +47,9 @@ export function FootballScoutIntegrationView() {
           <div className="text-sm" style={{ color: C.muted }}>Connect your Lumio Scout account to embed player video clips, pull performance data, and link your scouting shortlist directly into the Lumio transfer pipeline.</div>
         )}
       </div>
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-1 flex-wrap" style={{ borderBottom: `1px solid ${C.border}` }}>
         {([['overview','What unlocks'],['players','Player data'],['video','Video workflow'],['roadmap','Roadmap']] as const).map(([key, label]) => (
-          <button key={key} onClick={() => setActiveTab(key)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ backgroundColor: activeTab === key ? 'rgba(0,61,165,0.15)' : C.card, color: activeTab === key ? C.yellow : C.muted, border: `1px solid ${activeTab === key ? 'rgba(0,61,165,0.3)' : C.border}` }}>{label}</button>
+          <button key={key} onClick={() => setActiveTab(key)} className="px-4 py-2 rounded-lg text-sm font-medium" style={{ background: 'transparent', borderRadius: 0, color: activeTab === key ? C.yellow : C.muted, borderBottom: activeTab === key ? `2px solid ${C.yellow}` : '2px solid transparent' }}>{label}</button>
         ))}
       </div>
       {activeTab === 'overview' && (

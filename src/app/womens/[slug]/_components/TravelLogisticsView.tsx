@@ -53,6 +53,11 @@ export default function TravelLogisticsView({
 
   const [tab, setTab] = useState<Tab>('overview')
   const [researcher, setResearcher] = useState<ResearchMode | null>(null)
+  const [autoFix, setAutoFix] = useState<AwayStatusRow | null>(null)
+
+  // The "next away day" to action = first not-yet-complete away fixture.
+  const nextFixture = OAKRIDGE_AWAY_STATUS.find((f) => f.overall !== 'complete') ?? OAKRIDGE_AWAY_STATUS[0]
+  const launchAuto = () => { setAutoFix(nextFixture); setResearcher('full') }
 
   // The AI agent takes over the full panel when launched.
   if (researcher) {
@@ -63,7 +68,8 @@ export default function TravelLogisticsView({
         awayFixtures={OAKRIDGE_AWAY_STATUS}
         research={OAKRIDGE_RESEARCH}
         initialMode={researcher}
-        onClose={() => setResearcher(null)}
+        autoFixture={autoFix ?? undefined}
+        onClose={() => { setResearcher(null); setAutoFix(null) }}
       />
     )
   }
@@ -108,7 +114,7 @@ export default function TravelLogisticsView({
         })}
       </div>
 
-      {tab === 'overview' && <Overview onLaunch={setResearcher} />}
+      {tab === 'overview' && <Overview onAuto={launchAuto} onLaunch={setResearcher} nextFixture={nextFixture} />}
       {tab === 'compare' && <TripCostCompare ds={ds} mode={mode} />}
       {tab === 'suppliers' && <SuppliersTab ds={ds} onDiscover={() => setResearcher('full')} />}
     </div>
@@ -116,19 +122,32 @@ export default function TravelLogisticsView({
 }
 
 // ─── Overview tab ─────────────────────────────────────────────────────────
-function Overview({ onLaunch }: { onLaunch: (m: ResearchMode) => void }) {
+function Overview({ onAuto, onLaunch, nextFixture }: { onAuto: () => void; onLaunch: (m: ResearchMode) => void; nextFixture: AwayStatusRow }) {
   return (
     <div className="space-y-6">
-      {/* Quick actions — Plan whole day (featured) + single bookings */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        <button onClick={() => onLaunch('full')} className="md:col-span-1 text-left rounded-xl p-4 border" style={{ borderColor: `${ACCENT}55`, background: `linear-gradient(135deg, ${ACCENT}1f, ${ACCENT}0a)` }}>
-          <div className="flex items-center gap-2"><Sparkles className="w-5 h-5" style={{ color: ACCENT }} /><span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ color: ACCENT, background: `${ACCENT}22` }}>AI AGENT</span></div>
-          <div className="text-sm font-bold text-white mt-2">Plan the whole away day</div>
-          <div className="text-[11px] text-gray-400 mt-0.5">Coach + hotel + meals, researched &amp; drafted in one go.</div>
-        </button>
-        <BookCard icon={<Bus className="w-5 h-5" style={{ color: ACCENT }} />} label="Book Team Coach" sub="Operator, capacity, kit hold, return" onClick={() => onLaunch('coach')} />
-        <BookCard icon={<BedDouble className="w-5 h-5" style={{ color: ACCENT }} />} label="Book Hotel" sub="Rooms near the ground, dietary, parking" onClick={() => onLaunch('hotel')} />
-        <BookCard icon={<Utensils className="w-5 h-5" style={{ color: ACCENT }} />} label="Order Pre-Match Meals" sub="Venue catering or return food stop" onClick={() => onLaunch('meals')} />
+      {/* AI Travel Researcher — auto-runs the whole next away day, no choosing */}
+      <div className="rounded-xl border p-4 flex items-center justify-between gap-4 flex-wrap" style={{ borderColor: `${ACCENT}55`, background: `linear-gradient(135deg, ${ACCENT}1f, ${ACCENT}0a)` }}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${ACCENT}22` }}><Sparkles className="w-5 h-5" style={{ color: ACCENT }} /></div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-white">AI Travel Researcher</span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ color: ACCENT, background: `${ACCENT}22` }}>AI AGENT</span>
+            </div>
+            <div className="text-[12px] text-gray-400 mt-0.5">Automatically researches the coach, hotel and pre-match meals for your next away day — <span className="text-gray-200 font-medium">{nextFixture.opponent} ({nextFixture.date})</span> — and drafts the booking in ~90 seconds.</div>
+          </div>
+        </div>
+        <button onClick={onAuto} className="rounded-lg px-4 py-2 text-xs font-bold text-white shrink-0" style={{ backgroundColor: ACCENT }}>Launch</button>
+      </div>
+
+      {/* Or book a single item — opens the step-by-step configure wizard */}
+      <div>
+        <p className="text-[11px] text-gray-500 mb-2">Or book just one thing — opens the step-by-step wizard:</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <BookCard icon={<Bus className="w-5 h-5" style={{ color: ACCENT }} />} label="Book Team Coach" sub="Operator, capacity, kit hold, return" onClick={() => onLaunch('coach')} />
+          <BookCard icon={<BedDouble className="w-5 h-5" style={{ color: ACCENT }} />} label="Book Hotel" sub="Rooms near the ground, dietary, parking" onClick={() => onLaunch('hotel')} />
+          <BookCard icon={<Utensils className="w-5 h-5" style={{ color: ACCENT }} />} label="Order Pre-Match Meals" sub="Venue catering or return food stop" onClick={() => onLaunch('meals')} />
+        </div>
       </div>
 
       {/* Status board */}
@@ -180,7 +199,7 @@ function Overview({ onLaunch }: { onLaunch: (m: ResearchMode) => void }) {
 
 function BookCard({ icon, label, sub, onClick }: { icon: React.ReactNode; label: string; sub: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="text-left rounded-xl p-4 border border-gray-800 bg-[#0D1117] hover:border-gray-700 transition-colors">
+    <button onClick={onClick} className="text-left rounded-xl p-4 border border-gray-800 bg-[#0D1117] hover:border-gray-700 transition-colors w-full">
       {icon}
       <div className="text-sm font-bold text-white mt-2">{label}</div>
       <div className="text-[11px] text-gray-500 mt-0.5">{sub}</div>

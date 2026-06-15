@@ -595,15 +595,18 @@ export default function WomensConcussionTrackerView({ club }: { club?: { name?: 
         <p className="text-sm mt-1" style={{ color: C.muted }}>FA Concussion Guidelines · CISG Amsterdam 2022 consensus · 6-stage GRTP protocol</p>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className="px-4 py-2 rounded-xl text-xs font-semibold transition-all inline-flex items-center gap-1.5"
-            style={{ backgroundColor: tab === t.id ? C.gold : C.cardAlt, color: tab === t.id ? '#000' : C.muted, border: tab === t.id ? 'none' : `1px solid ${C.border}` }}>
-            <t.icon size={13} />
-            {t.label}
-          </button>
-        ))}
+      <div className="flex gap-1 border-b overflow-x-auto" style={{ borderColor: C.border }}>
+        {TABS.map(t => {
+          const active = tab === t.id
+          return (
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className="px-4 py-2 text-xs font-semibold -mb-px whitespace-nowrap inline-flex items-center gap-1.5"
+              style={{ borderBottom: `2px solid ${active ? C.primary : 'transparent'}`, color: active ? C.primary : C.muted }}>
+              <t.icon size={13} />
+              {t.label}
+            </button>
+          )
+        })}
       </div>
 
       {tab === 'active'     && <ActiveCasesTab onAction={fire} />}

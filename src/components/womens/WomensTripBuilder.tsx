@@ -172,14 +172,14 @@ function EditList({ items, onChange, placeholder }: { items: string[]; onChange:
   )
 }
 
-export default function WomensTripBuilder({ kind, accent = '#BE185D', onClose, onCreate }: { kind: 'camp' | 'tour'; accent?: string; onClose: () => void; onCreate: (t: Trip) => void }) {
+export default function WomensTripBuilder({ kind, accent = '#BE185D', onClose, onCreate, drafts, medicalHint = 'Cycle / maternity / dual-reg aware', campLocationDefault = 'Hartfield (training base)' }: { kind: 'camp' | 'tour'; accent?: string; onClose: () => void; onCreate: (t: Trip) => void; drafts?: { camp: Partial<Trip>; tour: Partial<Trip> }; medicalHint?: string; campLocationDefault?: string }) {
   const [sec, setSec] = useState(0)
-  const [t, setT] = useState<Trip>(() => blankTrip(kind))
+  const [t, setT] = useState<Trip>(() => ({ ...blankTrip(kind), location: kind === 'camp' ? campLocationDefault : '' }))
   const set = (patch: Partial<Trip>) => setT(prev => ({ ...prev, ...patch }))
   const total = tripCost(t)
   const valid = t.name.trim().length > 0
 
-  const aiDraft = () => setT(prev => ({ ...prev, ...draftFor(kind), id: 'new', kind } as Trip))
+  const aiDraft = () => setT(prev => ({ ...prev, ...(drafts ? drafts[kind] : draftFor(kind)), id: 'new', kind } as Trip))
 
   const activeId = SECTIONS[sec].id
   const go = (d: number) => setSec(s => Math.max(0, Math.min(SECTIONS.length - 1, s + d)))
@@ -282,7 +282,7 @@ export default function WomensTripBuilder({ kind, accent = '#BE185D', onClose, o
               </Section>
             )}
             {activeId === 'medical' && (
-              <Section title="Medical & welfare" accent={accent} hint="Cycle / maternity / dual-reg aware">
+              <Section title="Medical & welfare" accent={accent} hint={medicalHint}>
                 <EditList items={t.medical} onChange={v => set({ medical: v })} placeholder="Add a medical / welfare consideration…" />
               </Section>
             )}

@@ -28,8 +28,8 @@ function KPI({ icon: Icon, label, value, trend, trendUp }: { icon: React.Element
 
 function TabBtn({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="px-4 py-2 rounded-xl text-xs font-semibold transition-all"
-      style={{ backgroundColor: active ? C.gold : '#111318', color: active ? '#000' : C.muted, border: active ? 'none' : `1px solid ${C.border}` }}>
+    <button onClick={onClick} className="px-4 py-2 text-xs font-semibold transition-all"
+      style={{ background: 'transparent', borderRadius: 0, color: active ? C.gold : C.muted, borderBottom: active ? `2px solid ${C.gold}` : '2px solid transparent' }}>
       {label}
     </button>
   )
@@ -772,7 +772,7 @@ export default function BoardSuiteView() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-1 flex-wrap" style={{ borderBottom: `1px solid ${C.border}` }}>
         {([
           { id: 'overview' as Tab, label: 'Overview' },
           { id: 'strategy' as Tab, label: 'Strategy' },
