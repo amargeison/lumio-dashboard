@@ -91,14 +91,26 @@ const OPPOSITION_NOTES = [
 
 type Squad = typeof WOMENS_SQUAD[number]
 
-export default function WomensTacticsView() {
+type TacticsProps = {
+  squad?: Squad[]; accent?: string; accent2?: string; team?: string; nextOpp?: string;
+  lastMatchTitle?: string; lastMatchLines?: [string, string][]; teamTalk?: string; coach?: string;
+}
+const DEFAULT_LAST_LINES: [string, string][] = [
+  ['Possession 58%', 'Hartwell pressed high in 25-minute spells but couldn\u2019t sustain it.'],
+  ['Shots 14 (5 on target)', 'Williams missed two presentable chances pre-equaliser.'],
+  ['PPDA 7.9', 'Counter-pressing won 11 high-zone turnovers; one led to the goal.'],
+  ['Pattern', 'Morris equaliser at 58\u2032 from Tilley cutback \u2014 third route-one chance from that pattern this month.'],
+]
+const DEFAULT_TEAM_TALK = '\u201cWe press high from the front three. Carter dictates tempo. Full-backs push up \u2014 we want width. Trust the system, trust each other. Set pieces are our edge \u2014 drills in the Set Pieces module this week.\u201d'
+
+export default function WomensTacticsView({ squad = WOMENS_SQUAD, accent = C.accent, accent2 = C.pink, team = 'Oakridge Women', nextOpp = 'Hartwell Women (away)', lastMatchTitle = 'Last Match \u2014 Oakridge Women 1-1 Hartwell Women', lastMatchLines = DEFAULT_LAST_LINES, teamTalk = DEFAULT_TEAM_TALK, coach = 'Sarah Frost, Head Coach' }: TacticsProps = {}) {
   const [formation, setFormation] = useState('4-3-3')
   const slots = FORMATIONS[formation]
   const [assign, setAssign] = useState<Record<string, string>>({})
   const [picked, setPicked] = useState<string | null>(null)
   const [aiIdx, setAiIdx] = useState(0)
 
-  const byName = useMemo(() => Object.fromEntries(WOMENS_SQUAD.map(p => [p.name, p] as const)), [])
+  const byName = useMemo(() => Object.fromEntries(squad.map(p => [p.name, p] as const)), [])
   const assignedNames = useMemo(() => new Set(Object.values(assign)), [assign])
 
   function placeBestXI(target = formation) {
@@ -108,9 +120,9 @@ export default function WomensTacticsView() {
     const pickFor = (role: string) => {
       const g = groupOf(role)
       // exact position first, then same group, then anyone.
-      let cand = WOMENS_SQUAD.find(p => !used.has(p.name) && p.pos === role)
-      if (!cand) cand = WOMENS_SQUAD.find(p => !used.has(p.name) && p.group === g)
-      if (!cand) cand = WOMENS_SQUAD.find(p => !used.has(p.name))
+      let cand = squad.find(p => !used.has(p.name) && p.pos === role)
+      if (!cand) cand = squad.find(p => !used.has(p.name) && p.group === g)
+      if (!cand) cand = squad.find(p => !used.has(p.name))
       return cand
     }
     for (const s of sl) {
@@ -155,7 +167,7 @@ export default function WomensTacticsView() {
   }
 
   const stats = [
-    { v: formation, l: 'Formation', s: 'Primary system', tone: C.accent },
+    { v: formation, l: 'Formation', s: 'Primary system', tone: accent },
     { v: '58%', l: 'Possession %', s: 'Season average', tone: C.good },
     { v: '8.4', l: 'PPDA', s: '2nd in division', tone: '#8B5CF6' },
     { v: '+0.6', l: 'xG Diff / match', s: 'Best in division', tone: '#3B82F6' },
@@ -164,7 +176,7 @@ export default function WomensTacticsView() {
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3">
-        <Zap size={20} style={{ color: C.accent }} className="mt-0.5" />
+        <Zap size={20} style={{ color: accent }} className="mt-0.5" />
         <div>
           <h1 className="text-xl font-black" style={{ color: C.text }}>Tactics</h1>
           <p className="text-sm mt-0.5" style={{ color: C.text4 }}>Formation board · drag-and-drop XI · GPS-aware · AI suggestions · opposition notes</p>
@@ -186,10 +198,10 @@ export default function WomensTacticsView() {
         <span className="text-xs font-semibold mr-1" style={{ color: C.text4 }}>Formation</span>
         {Object.keys(FORMATIONS).map(f => (
           <button key={f} onClick={() => changeFormation(f)} className="px-2.5 py-1.5 rounded-lg text-xs font-bold"
-            style={{ background: formation === f ? C.accent : 'transparent', color: formation === f ? '#fff' : C.text3, border: `1px solid ${formation === f ? C.accent : C.border}` }}>{f}</button>
+            style={{ background: formation === f ? accent : 'transparent', color: formation === f ? '#fff' : C.text3, border: `1px solid ${formation === f ? accent : C.border}` }}>{f}</button>
         ))}
         <div className="flex-1" />
-        <button onClick={() => placeBestXI()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: C.accent }}><Wand2 size={14} /> Auto-fill best XI</button>
+        <button onClick={() => placeBestXI()} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white" style={{ background: accent }}><Wand2 size={14} /> Auto-fill best XI</button>
         <button onClick={() => setAssign({})} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ border: `1px solid ${C.border}`, color: C.text3 }}><RotateCcw size={14} /> Clear</button>
       </div>
 
@@ -207,7 +219,7 @@ export default function WomensTacticsView() {
                   <div key={s.id} className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center" style={{ left: `${s.x}%`, top: `${s.y}%`, width: 64 }}
                     onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const n = e.dataTransfer.getData('text/plain'); if (n) dropOnSlot(s.id, n) }} onClick={() => clickSlot(s.id)}>
                     <div className="rounded-full flex items-center justify-center font-black cursor-pointer" title={p ? `${p.name} · load ${gpsLoad(p.name)}` : s.role}
-                      style={{ width: 40, height: 40, background: p ? col : 'rgba(0,0,0,0.35)', color: '#fff', border: `2px solid ${p ? '#fff' : col}`, fontSize: p ? 12 : 11, boxShadow: picked && !p ? `0 0 0 3px ${C.pink}` : 'none' }}>
+                      style={{ width: 40, height: 40, background: p ? col : 'rgba(0,0,0,0.35)', color: '#fff', border: `2px solid ${p ? '#fff' : col}`, fontSize: p ? 12 : 11, boxShadow: picked && !p ? `0 0 0 3px ${accent2}` : 'none' }}>
                       {p ? p.num : s.role}
                     </div>
                     <div className="mt-1 text-[10px] font-semibold text-center leading-tight" style={{ color: '#E5E7EB' }}>{p ? p.name.split(' ').slice(-1)[0] : s.role}</div>
@@ -230,14 +242,14 @@ export default function WomensTacticsView() {
             <span className="text-xs font-bold" style={{ color: C.text }}>Squad</span>
             <span className="text-[10px]" style={{ color: C.text4 }}>{assignedNames.size}/11 placed</span>
           </div>
-          {WOMENS_SQUAD.map((p: Squad) => {
+          {squad.map((p: Squad) => {
             const used = assignedNames.has(p.name)
             const col = GROUP_COLOR[p.group]
             const l = gpsLoad(p.name)
             return (
               <div key={p.name} draggable={!used} onDragStart={e => e.dataTransfer.setData('text/plain', p.name)} onClick={() => !used && setPicked(picked === p.name ? null : p.name)}
                 className="flex items-center gap-2 rounded-lg px-2 py-1.5 select-none" style={{
-                  background: picked === p.name ? `${C.accent}22` : C.panel2, border: `1px solid ${picked === p.name ? C.accent : C.border}`,
+                  background: picked === p.name ? `${accent}22` : C.panel2, border: `1px solid ${picked === p.name ? accent : C.border}`,
                   opacity: used ? 0.4 : 1, cursor: used ? 'default' : 'grab' }}>
                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0" style={{ background: `${col}26`, color: col }}>{p.num}</span>
                 <div className="min-w-0 flex-1">
@@ -255,18 +267,18 @@ export default function WomensTacticsView() {
 
         {/* AI suggestions + opposition — alongside the pitch */}
         <div className="space-y-4 min-w-0">
-        <div className="rounded-xl p-4" style={{ background: C.panel, border: `1px solid ${C.accent}55` }}>
+        <div className="rounded-xl p-4" style={{ background: C.panel, border: `1px solid ${accent}55` }}>
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2"><Sparkles size={15} style={{ color: C.accent }} /><span className="text-sm font-bold" style={{ color: C.text }}>AI Tactical Suggestions</span></div>
-            <button onClick={() => setAiIdx(i => i + 1)} className="text-[11px] font-semibold px-2 py-1 rounded-lg" style={{ background: `${C.accent}22`, color: C.pink }}>↻ Refresh</button>
+            <div className="flex items-center gap-2"><Sparkles size={15} style={{ color: accent }} /><span className="text-sm font-bold" style={{ color: C.text }}>AI Tactical Suggestions</span></div>
+            <button onClick={() => setAiIdx(i => i + 1)} className="text-[11px] font-semibold px-2 py-1 rounded-lg" style={{ background: `${accent}22`, color: accent2 }}>↻ Refresh</button>
           </div>
           <div className="space-y-2">
             {AI_BY_FORMATION[formation].map((s, i) => (
               <div key={i} className="flex items-start gap-2 text-xs rounded-lg p-2" style={{ background: C.panel2, color: C.text2 }}>
-                <span style={{ color: C.accent }}>▸</span><span>{s}</span>
+                <span style={{ color: accent }}>▸</span><span>{s}</span>
               </div>
             ))}
-            <div className="flex items-start gap-2 text-xs rounded-lg p-2" style={{ background: `${C.accent}14`, color: C.pink }}>
+            <div className="flex items-start gap-2 text-xs rounded-lg p-2" style={{ background: `${accent}14`, color: accent2 }}>
               <Sparkles size={13} className="mt-0.5 shrink-0" /><span>{OPPOSITION_NOTES[aiIdx % OPPOSITION_NOTES.length]}</span>
             </div>
           </div>
@@ -274,10 +286,10 @@ export default function WomensTacticsView() {
         </div>
 
         <div className="rounded-xl p-4" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
-          <h3 className="text-sm font-bold mb-2" style={{ color: C.text }}>Opposition Notes — Next: Hartwell Women (away)</h3>
+          <h3 className="text-sm font-bold mb-2" style={{ color: C.text }}>Opposition Notes — Next: {nextOpp}</h3>
           <div className="space-y-1.5">
             {OPPOSITION_NOTES.map((n, i) => (
-              <div key={i} className="flex items-start gap-2 text-xs" style={{ color: C.text2 }}><span style={{ color: C.accent }}>•</span><span>{n}</span></div>
+              <div key={i} className="flex items-start gap-2 text-xs" style={{ color: C.text2 }}><span style={{ color: accent }}>•</span><span>{n}</span></div>
             ))}
           </div>
         </div>
@@ -287,15 +299,15 @@ export default function WomensTacticsView() {
       {/* Last match + team talk */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl p-4" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
-          <h3 className="text-sm font-bold mb-2" style={{ color: C.text }}>Last Match — Oakridge Women 1-1 Hartwell Women</h3>
-          {[['Possession 58%', 'Hartwell pressed high in 25-minute spells but couldn\'t sustain it.'], ['Shots 14 (5 on target)', 'Williams missed two presentable chances pre-equaliser.'], ['PPDA 7.9', 'Counter-pressing won 11 high-zone turnovers; one led to the goal.'], ['Pattern', 'Morris equaliser at 58\' from Tilley cutback — third route-one chance from that pattern this month.']].map(([k, v]) => (
-            <div key={k} className="text-xs mb-1.5" style={{ color: C.text2 }}><span style={{ color: C.accent, fontWeight: 700 }}>{k}</span> · {v}</div>
+          <h3 className="text-sm font-bold mb-2" style={{ color: C.text }}>{lastMatchTitle}</h3>
+          {lastMatchLines.map(([k, v]) => (
+            <div key={k} className="text-xs mb-1.5" style={{ color: C.text2 }}><span style={{ color: accent, fontWeight: 700 }}>{k}</span> · {v}</div>
           ))}
         </div>
         <div className="rounded-xl p-4" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
           <h3 className="text-sm font-bold mb-2" style={{ color: C.text }}>Team Talk — Coach Notes</h3>
-          <p className="text-sm italic leading-relaxed" style={{ color: C.text2 }}>&ldquo;We press high from the front three. Carter dictates tempo. Full-backs push up — we want width. Trust the system, trust each other. Set pieces are our edge — drills in the Set Pieces module this week.&rdquo;</p>
-          <p className="text-xs mt-2" style={{ color: C.text4 }}>— Sarah Frost, Head Coach</p>
+          <p className="text-sm italic leading-relaxed" style={{ color: C.text2 }}>{teamTalk}</p>
+          <p className="text-xs mt-2" style={{ color: C.text4 }}>— {coach}</p>
         </div>
       </div>
     </div>

@@ -105,6 +105,15 @@ import FootballLoadRecoveryView from '@/components/football/FootballLoadRecovery
 import FootballReturnToPlayView from '@/components/football/FootballReturnToPlayView'
 import FootballMentalHealthView from '@/components/football/FootballMentalHealthView'
 import FootballWelfareHubView from '@/components/football/FootballWelfareHubView'
+import FootballFixturesView from '@/components/football/FootballFixturesView'
+import FootballCupManagerView from '@/components/football/FootballCupManagerView'
+import FootballDualRegistrationView from '@/components/football/FootballDualRegistrationView'
+import WomensTacticsView from '@/components/womens/WomensTacticsView'
+import { FOOTBALL_SQUAD } from './_lib/football-dashboard-data'
+import FootballSquadManagementView from '@/components/football/FootballSquadManagementView'
+import FootballTransfersView from '@/components/football/FootballTransfersView'
+import FootballAcademyView from '@/components/football/FootballAcademyView'
+import FootballTrainingView from '@/components/football/FootballTrainingView'
 import FootballRevenueAttributionView from '@/components/football/FootballRevenueAttributionView'
 import FootballGameStandardsView from '@/components/football/FootballGameStandardsView'
 import FootballClubLicensingView from '@/components/football/FootballClubLicensingView'
@@ -140,6 +149,7 @@ type DeptId =
   | 'compliance-centre' | 'compliance-calendar' | 'registration' | 'data-protection' | 'safeguarding-ops' | 'anti-doping' | 'risk-insurance' | 'policy-library'
   | 'player-trading' | 'treasury' | 'payroll-ledger' | 'budget-actuals' | 'revenue-receivables' | 'central-distributions' | 'mgmt-accounts' | 'capex-appraisal'
   | 'player-integration' | 'injury-risk' | 'load-recovery' | 'return-to-play' | 'mental-health'
+  | 'fixtures' | 'cup-manager' | 'dualreg'
 
 type OverviewTab = 'getting-started' | 'today' | 'quick-wins' | 'match-week' | 'insights' | 'dont-miss' | 'staff'
 
@@ -191,15 +201,18 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'insights',         label: 'Insights',             icon: Sparkles,       section: 'OVERVIEW' },
   { id: 'board',            label: 'Board Suite',          icon: Crown,          section: 'OVERVIEW' },
   // ── FOOTBALL ──
-  { id: 'squad',            label: 'Squad Manager',        icon: Shirt,          section: 'FOOTBALL' },
-  { id: 'training',         label: 'Training Schedule',    icon: Activity,       section: 'FOOTBALL' },
-  { id: 'set-pieces',       label: 'Set Piece Analysis',   icon: Target,         section: 'FOOTBALL' },
+  { id: 'squad',            label: 'Squad Management',     icon: Shirt,          section: 'FOOTBALL' },
+  { id: 'tactics',          label: 'Tactics',              icon: Target,         section: 'FOOTBALL' },
+  { id: 'training',         label: 'Training',             icon: Activity,       section: 'FOOTBALL' },
+  { id: 'set-pieces',       label: 'Set Pieces',           icon: Target,         section: 'FOOTBALL' },
   { id: 'video-analysis',   label: 'Video & Analysis',     icon: Video,          section: 'FOOTBALL' },
-  { id: 'performance',      label: 'GPS Tracking',         icon: Activity,       section: 'FOOTBALL' },
+  { id: 'performance',      label: 'GPS & Performance',    icon: Activity,       section: 'FOOTBALL' },
   { id: 'gps-heatmaps',     label: 'Heatmaps',             icon: Flame,          section: 'FOOTBALL' },
   { id: 'performance-brief',label: 'AI Performance Brief', icon: Bot,            section: 'FOOTBALL' },
-  { id: 'gps-hardware',     label: 'GPS Hardware',         icon: Activity,       section: 'FOOTBALL' },
-  { id: 'transfers',        label: 'Recruitment Hub',      icon: ArrowUpDown,    section: 'FOOTBALL' },
+  { id: 'fixtures',         label: 'Fixtures & Results',   icon: Calendar,       section: 'FOOTBALL' },
+  { id: 'cup-manager',      label: 'Cup Manager',          icon: Trophy,         section: 'FOOTBALL' },
+  { id: 'transfers',        label: 'Transfers',            icon: ArrowUpDown,    section: 'FOOTBALL' },
+  { id: 'dualreg',          label: 'Loan Manager',         icon: ArrowUpDown,    section: 'FOOTBALL' },
   { id: 'academy',          label: 'Academy',              icon: GraduationCap,  section: 'FOOTBALL' },
   // ── WELFARE ──
   { id: 'player-welfare',   label: 'Player Welfare Hub',   icon: Heart,          section: 'WELFARE' },
@@ -4403,6 +4416,37 @@ function ProAIPerformanceBriefView() {
   const currentBrief: ProHalfTimeBrief | ProFullTimeBrief | ProTrainingBrief | undefined =
     mode === 'halftime' ? briefs.halftime : mode === 'fulltime' ? briefs.fulltime : briefs.training
 
+  const tileColor: Record<string, string> = { blue: '#60A5FA', red: '#EF4444', amber: '#F59E0B', green: '#22C55E', purple: '#8B5CF6' }
+  const Tile = ({ label, value, sub, color }: { label: string; value: string; sub?: string; color: string }) => {
+    const c = tileColor[color] ?? '#60A5FA'
+    return (
+      <div className="rounded-xl p-3" style={{ background: `linear-gradient(135deg, ${c}1f, #0D1117)`, border: `1px solid ${c}40` }}>
+        <div className="text-[10px] uppercase tracking-wider" style={{ color: '#9CA3AF' }}>{label}</div>
+        <div className="text-xl font-black mt-0.5" style={{ color: '#F9FAFB' }}>{value}</div>
+        {sub && <div className="text-[10px] mt-0.5" style={{ color: c }}>{sub}</div>}
+      </div>
+    )
+  }
+  const contextTiles = mode === 'halftime' ? [
+    { label: 'Opponent', value: 'Thornvale United', color: 'blue' },
+    { label: 'Score', value: '1 – 1', sub: 'Level', color: 'amber' },
+    { label: 'xG', value: '1.12 – 0.94', sub: 'Us vs Them', color: 'green' },
+    { label: 'Squad Avg Load', value: '94 AU', sub: 'First half', color: 'purple' },
+    { label: 'Red Zone', value: '2', sub: 'Players flagged', color: 'red' },
+  ] : mode === 'fulltime' ? [
+    { label: 'Opponent', value: 'Thornvale United', color: 'blue' },
+    { label: 'Final Score', value: '2 – 1', sub: 'Win', color: 'green' },
+    { label: 'Squad Avg Load', value: '91.2 AU', sub: 'Across 14 players', color: 'amber' },
+    { label: 'Red Zone', value: '3', sub: 'Players flagged', color: 'red' },
+    { label: 'Top HSR', value: '8.4 km', sub: 'D. Morris', color: 'purple' },
+  ] : [
+    { label: 'Session', value: 'Tactical', sub: 'Tuesday PM', color: 'blue' },
+    { label: 'Date', value: '14 May 2026', color: 'amber' },
+    { label: 'Load vs Target', value: '87%', sub: '78 / 90 AU', color: 'amber' },
+    { label: 'Manage Tomorrow', value: '3', sub: 'Players flagged', color: 'red' },
+    { label: 'ACWR Watch', value: '2', sub: 'D. Morris · C. Nwosu', color: 'purple' },
+  ]
+
   return (
     <div className="space-y-5">
       <div>
@@ -4428,6 +4472,10 @@ function ProAIPerformanceBriefView() {
             <div className="text-[10px] opacity-70 mt-0.5">{t.sub}</div>
           </button>
         ))}
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {contextTiles.map(t => <Tile key={t.label} {...t} />)}
       </div>
 
       <button
@@ -5601,6 +5649,7 @@ function GPSHeatmapsView() {
   const [matchIdx, setMatchIdx] = useState(0)
   const [selectedPlayer, setSelectedPlayer] = useState(GPS_HEATMAP_PLAYERS[0].name)
   const [trainingIdx, setTrainingIdx] = useState(0)
+  const [hmTab, setHmTab] = useState(0)
   const [compareSessionA, setCompareSessionA] = useState(0)
   const [compareSessionB, setCompareSessionB] = useState(1)
   const [comparePlayers, setComparePlayers] = useState<string[]>([
@@ -5682,6 +5731,16 @@ function GPSHeatmapsView() {
       </div>
 
       {/* ─── 1. MATCH HEATMAPS ─────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-1 border-b" style={{ borderColor: '#1F2937' }}>
+        {['Match','Training','Speed & Intensity','Squad Comparison','Season Overview'].map((t, i) => (
+          <button key={t} onClick={() => setHmTab(i)}
+            className="px-4 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all whitespace-nowrap"
+            style={hmTab === i ? { borderColor: brandPrimary, color: brandPrimary } : { borderColor: 'transparent', color: '#6B7280' }}>
+            {t}
+          </button>
+        ))}
+      </div>
+      {hmTab === 0 && (
       <Section title="1 · Match Heatmaps" subtitle="Match-day positional intelligence — who covered which space, where they touched the ball, and what they did under load.">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="md:col-span-2">
@@ -5726,8 +5785,10 @@ function GPSHeatmapsView() {
           </Card>
         </div>
       </Section>
+      )}
 
       {/* ─── 2. TRAINING HEATMAPS ──────────────────────────────────── */}
+      {hmTab === 1 && (
       <Section title="2 · Training Heatmaps" subtitle="Session-level distribution and weekly load microcycle." accentColor={brandSecondary}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
@@ -5775,8 +5836,10 @@ function GPSHeatmapsView() {
           <WeeklyLoadCalendar brandPrimary={brandPrimary} brandSecondary={brandSecondary} />
         </Card>
       </Section>
+      )}
 
       {/* ─── 3. SPEED & INTENSITY ZONES ────────────────────────────── */}
+      {hmTab === 2 && (
       <Section title="3 · Speed & Intensity Zones" subtitle="How distance, speed and accel/decel events distribute across the squad.">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card title="Distance by Speed Zone" subtitle={`${selectedPlayer} — match average across last 5`}>
@@ -5790,8 +5853,10 @@ function GPSHeatmapsView() {
           <AccelDecelMap width={PW} height={PH * 0.7} />
         </Card>
       </Section>
+      )}
 
       {/* ─── 4. SQUAD COMPARISON ───────────────────────────────────── */}
+      {hmTab === 3 && (
       <Section title="4 · Squad Comparison" subtitle="Up to 4 players side-by-side — grouped by role.">
         <Card>
           <div className="mb-3">
@@ -5844,8 +5909,10 @@ function GPSHeatmapsView() {
           </div>
         </Card>
       </Section>
+      )}
 
       {/* ─── 5. SEASON OVERVIEW ────────────────────────────────────── */}
+      {hmTab === 4 && (
       <Section title="5 · Season Overview" subtitle="Trend grids and home/away differentials across the campaign.">
         <Card title="Rolling 10-Match Load Grid" subtitle="Rows = players · columns = last 10 matches · cell colour = relative load (AU)">
           <div className="overflow-x-auto">
@@ -5937,6 +6004,7 @@ function GPSHeatmapsView() {
           </div>
         </Card>
       </Section>
+      )}
 
       <div className="text-[10px] text-gray-700 text-center pt-2">
         GPS data sourced from Lumio GPS · 10Hz sampling · Demo data shown — connect Johan Sports or import via CSV for live feed
@@ -7304,9 +7372,13 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
     <SportsDemoGate
       sport="football"
       accentColor="#10B981"
+      accentColorLight="#34D399"
+      sportEmoji="⚽"
       sportLabel="Football"
-      defaultClubName="Lumio FC"
+      defaultClubName="Oakridge FC"
+      defaultSlug={slug}
       roles={FOOTBALL_ROLES}
+      lockClub
     >
       {(session) => <FootballDashboardInner slug={slug} session={session} />}
     </SportsDemoGate>
@@ -7535,19 +7607,22 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {activeDept === 'overview' && <OverviewView clubName={clubName} firstName={userName ? userName.split(' ')[0] : undefined} onAction={handleActionClick} onNavigate={(dept) => setActiveDept(dept as DeptId)} role={currentRole as string} onModal={(modalId) => fireToast(`${modalId} — coming soon`)} isDemo={isFootballDemo} clubLogo={clubLogo} />}
             {activeDept === 'insights' && (isFootballDemo ? <InsightsView /> : <FootballEmptyState dept="Insights" />)}
             {activeDept !== 'overview' && activeDept !== 'settings' && activeDept !== 'insights' && activeDept !== 'set-pieces' && !isFootballDemo && <FootballEmptyState dept={deptLabel} />}
-            {isFootballDemo && activeDept === 'squad' && <SquadView />}
-            {activeDept === 'tactics' && <TacticsView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'squad' && <FootballSquadManagementView />}
+            {activeDept === 'tactics' && <WomensTacticsView squad={FOOTBALL_SQUAD} accent="#003DA5" accent2="#60A5FA" team="Oakridge FC" nextOpp="Thornvale United (home)" lastMatchTitle="Last Match — Oakridge FC 1-2 Northgate City" lastMatchLines={[["Possession 47%", "Northgate sat in a mid-block and countered the wide channels."], ["Shots 11 (4 on target)", "Two clear chances spurned before the second goal."], ["PPDA 9.1", "Press passive in spells; only 6 high-zone turnovers."], ["Pattern", "Morris goal at 61' from a Porter cutback."]]} teamTalk="Back to basics — compact mid-block, quick transitions through Morris and Porter. Win the first ball, win the second." coach="James Hartley, Manager" />}
+            {isFootballDemo && activeDept === 'fixtures' && <FootballFixturesView />}
+            {isFootballDemo && activeDept === 'cup-manager' && <FootballCupManagerView />}
+            {isFootballDemo && activeDept === 'dualreg' && <FootballDualRegistrationView />}
             {activeDept === 'set-pieces' && <ProSetPiecesView />}
-            {isFootballDemo && activeDept === 'transfers' && <TransfersView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'transfers' && <FootballTransfersView />}
             {isFootballDemo && activeDept === 'board' && <BoardSuiteView />}
             {isFootballDemo && activeDept === 'medical' && <MedicalView />}
             {isFootballDemo && activeDept === 'scouting' && <ScoutingView />}
-            {isFootballDemo && activeDept === 'academy' && <AcademyView onActionClick={handleActionClick} />}
+            {isFootballDemo && activeDept === 'academy' && <FootballAcademyView />}
             {isFootballDemo && activeDept === 'analytics' && <AnalyticsView />}
             {isFootballDemo && activeDept === 'media' && <MediaContentModule sport="football-pro" accentColor="#003DA5" existingContentLabel="Football Pro — Media & PR (existing)" existingContent={<FootballMediaPRView />} isDemoShell={session?.isDemoShell !== false} />}
             {isFootballDemo && activeDept === 'social' && <FootballSocialMediaView />}
             {isFootballDemo && activeDept === 'matchday' && <MatchdayView onNavigate={(d) => setActiveDept(d)} />}
-            {isFootballDemo && activeDept === 'training' && <TrainingView />}
+            {isFootballDemo && activeDept === 'training' && <FootballTrainingView />}
             {isFootballDemo && activeDept === 'performance' && <GPSPerformanceView />}
             {isFootballDemo && activeDept === 'gps-heatmaps' && <GPSHeatmapsView />}
             {isFootballDemo && activeDept === 'performance-brief' && <ProAIPerformanceBriefView />}

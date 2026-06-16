@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import { Crown, TrendingUp, TrendingDown, Users, DollarSign, Trophy, Calendar, Shield, MapPin, CheckCircle2, AlertCircle, FileText, Building2 } from 'lucide-react'
-import ClubPlannerTab from './ClubPlannerTab'
 import GovernanceView from './GovernanceView'
 
 const C = { bg: '#07080F', card: '#0D1017', border: '#1F2937', text: '#F9FAFB', muted: '#6B7280', purple: '#6C3FC5', teal: '#0D9488', red: '#C0392B', gold: '#F1C40F' } as const
 
-type Tab = 'overview' | 'strategy' | 'profile' | 'finance' | 'squad' | 'governance' | 'facilities'
+type Tab = 'overview' | 'profile' | 'finance' | 'squad' | 'governance' | 'facilities'
 
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <div className={`rounded-xl p-5 ${className}`} style={{ backgroundColor: C.card, border: `1px solid ${C.border}` }}>{children}</div>
@@ -775,7 +774,6 @@ export default function BoardSuiteView() {
       <div className="flex gap-1 flex-wrap" style={{ borderBottom: `1px solid ${C.border}` }}>
         {([
           { id: 'overview' as Tab, label: 'Overview' },
-          { id: 'strategy' as Tab, label: 'Strategy' },
           { id: 'profile' as Tab, label: 'Profile' },
           { id: 'finance' as Tab, label: 'Finance' },
           { id: 'squad' as Tab, label: 'Squad & Performance' },
@@ -786,7 +784,6 @@ export default function BoardSuiteView() {
 
       {/* Content */}
       {tab === 'overview' && <OverviewTab />}
-      {tab === 'strategy' && <ClubPlannerTab />}
       {tab === 'profile' && <ProfileTab />}
       {tab === 'finance' && <FinanceTab />}
       {tab === 'squad' && <SquadTab />}

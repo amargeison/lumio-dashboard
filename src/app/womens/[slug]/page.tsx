@@ -1323,10 +1323,10 @@ const SquadManagementView = ({ club }: { club: WomensClub }) => {
     {name:'Emily Zhang',    pos:'CM',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
     {name:'Lucy Whitmore',  pos:'CM',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2026',welfare:'Available'},
     {name:'Sasha Davies',   pos:'CM',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🏴󠁧󠁢󠁷󠁬󠁳󠁿 Wales', international:false,contract:'Jun 2028',welfare:'RTP'},
-    {name:'Jess Tilley',    pos:'RW',employment:'Part-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Jess Tilley',    pos:'RW',employment:'Part-time',dualReg:'On loan',dualRegNote:'Calderbrook Women',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
     {name:'Zara Williams',  pos:'ST',employment:'Full-time',dualReg:'None',                                 ageBand:'Senior (24+)',nationality:'🇬🇧 England',international:false,contract:'Jun 2026',welfare:'Available'},
     {name:'Dani Morris',    pos:'LW',employment:'Full-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2028',welfare:'Available'},
-    {name:'Aria Rowe',      pos:'ST',employment:'Part-time',dualReg:'None',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
+    {name:'Aria Rowe',      pos:'ST',employment:'Part-time',dualReg:'Hosting',dualRegNote:'Thornton Athletic W',                                 ageBand:'U24',         nationality:'🇬🇧 England',international:false,contract:'Jun 2027',welfare:'Available'},
   ]
 
   const [filter, setFilter] = useState<'all' | 'fulltime' | 'parttime' | 'dualreg' | 'leave' | 'international'>('all')
@@ -1537,7 +1537,7 @@ const DualRegistrationView = () => {
 
   return (
     <div>
-      <SectionHeader title="Dual Registration Tracker" subtitle="FA Women's dual registration agreements" icon="🔄" />
+      <SectionHeader title="Dual Registration" subtitle="FA Women's dual registration agreements" icon="🔄" />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard label="Active Dual-Regs" value="2" sub="Players currently loaned" color="pink" />
         <StatCard label="Expiring Soon" value="1" sub="Emma Clarke — 4 days" color="red" />
