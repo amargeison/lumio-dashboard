@@ -1001,13 +1001,14 @@ export const COACH_SIDEBAR: CoachNavItem[] = [
   { id: 'camps',       label: 'Training Camps',     icon: 'plane',        group: 'SCHEDULE', badge: 'NEW' },
   { id: 'roster',      label: 'Player Roster',      icon: 'people',       group: 'PLAYERS' },
   { id: 'messages',    label: 'Messages',           icon: 'megaphone',    group: 'PLAYERS' },
+  { id: 'gpsvideo',    label: 'GPS & Video',        icon: 'crosshair',    group: 'PERFORMANCE', badge: 'NEW' },
   { id: 'equipment',   label: 'Equipment & Kit',    icon: 'wrench',       group: 'RESOURCES', badge: 'NEW' },
   { id: 'resources',   label: 'Resource Centre',    icon: 'grid',         group: 'RESOURCES', badge: 'NEW' },
   { id: 'payments',    label: 'Payments & Packs',   icon: 'pound',        group: 'BUSINESS' },
   { id: 'settings',    label: 'Settings',           icon: 'settings',     group: 'SETTINGS' },
 ]
 
-export const COACH_GROUPS = ['COACHING', 'SCHEDULE', 'PLAYERS', 'RESOURCES', 'BUSINESS', 'SETTINGS']
+export const COACH_GROUPS = ['COACHING', 'SCHEDULE', 'PLAYERS', 'PERFORMANCE', 'RESOURCES', 'BUSINESS', 'SETTINGS']
 
 export const COACH_ACCENT = { hex: '#a855f7', dim: 'rgba(168,85,247,0.16)', border: 'rgba(168,85,247,0.45)' }
 
