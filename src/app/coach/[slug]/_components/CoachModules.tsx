@@ -10,9 +10,10 @@ import {
   PLAYERS, LESSONS, RESOURCES,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
+  WEEK_START,
   type Player, type Lesson, type Resource, type Camp, type Booking,
 } from '../_lib/coach-data'
-import { WeekCalendarGrid, bookingTypeColour } from './WeekCalendar'
+import { WeekCalendarGrid, bookingTypeColour, MonthAgenda, agendaDayLabel } from './WeekCalendar'
 import { bookingCalItems } from '../_lib/schedule'
 import { getAddedBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
 import { AddBookingModal } from './AddBookingModal'
@@ -676,21 +677,41 @@ function ballColour(b: string) { return b === 'Red' ? '#C75A5A' : b === 'Orange'
 // ════════════════════════════════════════════════════════════════════════════
 export function CalendarView({ T, accent, density }: Common) {
   const [addOpen, setAddOpen] = useState(false)
+  const [view, setView] = useState<'week' | 'month'>('week')
   // Added bookings from the store — loaded after mount (SSR-safe) and kept live.
+  // BOTH views read this same source, so a new booking shows in week and month.
   const [addedBookings, setAddedBookings] = useState<Booking[]>([])
   useEffect(() => { const r = () => setAddedBookings(getAddedBookings()); r(); return subscribeBookings(r) }, [])
+  const items = bookingCalItems(undefined, addedBookings)
+  // Month view = 30 days from the start of the current week, grouped into the
+  // shared MonthAgenda (the same component the Session Planner's month tab uses).
+  const rangeEnd = (() => { const d = new Date(WEEK_START + 'T00:00:00'); d.setDate(d.getDate() + 30); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
+  const monthItems = items.filter(it => it.date >= WEEK_START && it.date < rangeEnd)
+  const monthGroups = Array.from(new Set(monthItems.map(it => it.date))).sort()
+    .map(date => ({ date, label: agendaDayLabel(date), items: monthItems.filter(it => it.date === date).sort((a, b) => a.start.localeCompare(b.start)) }))
+  const views: { id: 'week' | 'month'; label: string }[] = [{ id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }]
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Booking Calendar" sub="Your week across all courts — private lessons, group squads, cardio and match play."
         action={<button onClick={() => setAddOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> Add booking</button>} />
-      <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto' }}>
-        <WeekCalendarGrid T={T} accent={accent} density={density} items={bookingCalItems(undefined, addedBookings)} />
-      </Card>
+      {/* Week / Month switcher — same pill-tab styling as the Session Planner. */}
+      <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginBottom: 16, width: 'fit-content' }}>
+        {views.map(v => (
+          <button key={v.id} onClick={() => setView(v.id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: view === v.id ? T.panel : 'transparent', color: view === v.id ? T.text : T.text2, fontWeight: view === v.id ? 600 : 400, boxShadow: view === v.id ? `0 0 0 1px ${T.border}` : 'none' }}>{v.label}</button>
+        ))}
+      </div>
+      {view === 'week' ? (
+        <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto' }}>
+          <WeekCalendarGrid T={T} accent={accent} density={density} items={items} />
+        </Card>
+      ) : (
+        <MonthAgenda T={T} accent={accent} groups={monthGroups} empty="No bookings in the next 30 days — add one to get started." />
+      )}
       <div style={{ display: 'flex', gap: 14, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
         {['Private', 'Group', 'Cardio', 'Match play', 'Block'].map(t => (
           <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: bookingTypeColour(T, accent, t) }} />{t}</span>
         ))}
-        <span style={{ marginLeft: 'auto' }}>Faint fill = pending confirmation</span>
+        <span style={{ marginLeft: 'auto' }}>{view === 'week' ? 'Faint fill = pending confirmation' : `Next 30 days · ${monthItems.length} bookings`}</span>
       </div>
       {addOpen && <AddBookingModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>

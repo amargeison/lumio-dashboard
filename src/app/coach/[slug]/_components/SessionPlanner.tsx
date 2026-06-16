@@ -24,7 +24,7 @@ import { getAddedSessions, getStatusOverrides, getHiddenSessions, setStatus, cle
 import { useAllPlayers } from '../_lib/use-roster'
 import { NewSessionModal } from './NewSession'
 import { getCalendarItems, getNeedsPlan, dayIndexForDate, mapBookingType, type CalItem } from '../_lib/schedule'
-import { WeekCalendarGrid, bookingTypeColour } from './WeekCalendar'
+import { WeekCalendarGrid, bookingTypeColour, MonthAgenda, agendaDayLabel } from './WeekCalendar'
 import { getAddedBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -195,9 +195,12 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
     if (it.sessionId) selectSession(it.sessionId)
     else if (it.bookingId) { const b = allBookings.find(x => x.id === it.bookingId); if (b && mapBookingType(b.type)) openWizard(b) }
   }
-  // Month agenda — calendar items grouped by date (the June demo week).
+  // Month agenda — calendar items grouped by date, rendered by the shared
+  // MonthAgenda (same component the Booking Calendar's Month tab uses).
   const monthGroups = Array.from(new Set(calItems.map(it => it.date))).sort()
-    .map(date => ({ date, items: calItems.filter(it => it.date === date).sort((a, b) => a.start.localeCompare(b.start)) }))
+    .map(date => ({ date, label: agendaDayLabel(date), items: calItems.filter(it => it.date === date).sort((a, b) => a.start.localeCompare(b.start)) }))
+  const buildBadge = (it: CalItem): ReactNode => (!it.sessionId && it.bookingId && mapBookingType(it.type as Booking['type']))
+    ? <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Build</span> : null
 
   return (
     <div>
@@ -440,24 +443,7 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
 
       {/* ══ THIS MONTH (agenda) ══ */}
       {tab === 'month' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
-          {monthGroups.map(g => (
-            <Card key={g.date} T={T} density={density}>
-              <SectionHead T={T} title={dayLabel(g.date)} right={`${g.items.length}`} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {g.items.map(it => (
-                  <button key={it.key} onClick={() => onCalItemClick(it)} style={{ appearance: 'none', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8 }}>
-                    <span className="tnum" style={{ fontSize: 11.5, color: T.text2, fontFamily: FONT_MONO, width: 92, flexShrink: 0 }}>{it.start}–{it.end}</span>
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: bookingTypeColour(T, accent, it.type), flexShrink: 0 }} />
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.player}</span>
-                    <span style={{ fontSize: 11, color: T.text3 }}>{it.type} · {it.court}</span>
-                    {!it.sessionId && it.bookingId && mapBookingType(it.type as Booking['type']) && <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Build</span>}
-                  </button>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
+        <MonthAgenda T={T} accent={accent} groups={monthGroups} onItemClick={onCalItemClick} itemBadge={buildBadge} empty="No sessions or bookings this month." />
       )}
 
       {newOpen && <NewSessionModal T={T} accent={accent} density={density} players={rosterPlayers} seedBooking={seedBooking ?? undefined} onClose={() => { setNewOpen(false); setSeedBooking(null) }} onCreated={id => { selectSession(id); setSeedBooking(null) }} />}
