@@ -19,6 +19,7 @@ import { getPlans, removePlan, toggleDone, subscribe, type PlannedSession } from
 import { getReviews, getReview, subscribe as subscribeReviews } from '../_lib/session-review'
 import { upsertLesson, removeLesson, lessonFromSession, sessionLessonId } from '../_lib/lessons-store'
 import { SessionReviewPanel } from './SessionReviewPanel'
+import { AudioFieldRecorder } from './AudioFieldRecorder'
 import { getAddedSessions, getStatusOverrides, getHiddenSessions, setStatus, clearStatus, deleteSession, subscribe as subscribeSessions } from '../_lib/sessions-store'
 import { useAllPlayers } from '../_lib/use-roster'
 import { NewSessionModal } from './NewSession'
@@ -105,6 +106,7 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   const [hidden, setHidden] = useState<string[]>([])
   const [newOpen, setNewOpen] = useState(false)
   const [showReview, setShowReview] = useState(false)
+  const [showRecord, setShowRecord] = useState(false)
   const [reviewedIds, setReviewedIds] = useState<string[]>([])
   const [tab, setTab] = useState<'overview' | 'today' | 'week' | 'month'>('overview')
   const [seedBooking, setSeedBooking] = useState<Booking | null>(null)
@@ -123,7 +125,7 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   const sel = allSessions.find(s => s.id === selId) ?? allSessions[0]
   const isDone = sel.status === 'done'
   const reviewed = reviewedIds.includes(sel.id)
-  useEffect(() => { setShowReview(false) }, [selId])
+  useEffect(() => { setShowReview(false); setShowRecord(false) }, [selId])
 
   const markDone = () => {
     if (isDone) {
@@ -314,6 +316,9 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
               <Icon name="sparkles" size={13} stroke={1.8} style={{ color: accent.hex }} /> {showReview ? 'Hide review' : 'Review session'}
               {reviewed && <span style={{ fontSize: 8.5, fontWeight: 700, color: T.good, background: 'rgba(111,168,138,0.18)', padding: '2px 5px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Reviewed</span>}
             </button>
+            <button onClick={() => setShowRecord(v => !v)} style={{ appearance: 'none', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: FONT, border: `1px solid ${showRecord ? accent.border : T.border}`, background: showRecord ? accent.dim : 'transparent', color: showRecord ? accent.hex : T.text2 }}>
+              <Icon name="mic" size={13} stroke={1.8} style={{ color: accent.hex }} /> {showRecord ? 'Hide recorder' : 'Record audio'}
+            </button>
             <Action icon="megaphone" label="Message" to="messages" />
             {player && <Action icon="arrow-up-right" label="Player" to="development" />}
             <button onClick={onDelete} title="Delete session" style={{ appearance: 'none', borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: FONT, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3 }}>
@@ -405,6 +410,7 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
         </div>
 
         {showReview && <SessionReviewPanel T={T} accent={accent} density={density} session={sel} />}
+        {showRecord && <div style={{ marginTop: 14 }}><AudioFieldRecorder T={T} accent={accent} density={density} sessionLabel={`${sel.player} ${sel.time}`} /></div>}
       </Card>
 
       {/* saved from lesson briefs — for the selected player only */}
