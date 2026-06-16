@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { EQUIPMENT_INVENTORY, SESSION_KITS, COACH_ORG, type KitStatus } from '../_lib/coach-data'
 import { RestockSourcingModal } from './RestockSourcing'
+import { getAddedEquipment, subscribe as subscribeEquipment, type AddedKitItem } from '../_lib/equipment-store'
+import { AddEquipmentModal } from './AddEquipmentModal'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -20,18 +22,23 @@ export function EquipmentView({ T, accent, density }: Common) {
   const [handled, setHandled] = useState<Set<string>>(new Set())
   const [filter, setFilter] = useState<'all' | 'attention'>('all')
   const [sourceOpen, setSourceOpen] = useState(false)
+  const [addedItems, setAddedItems] = useState<AddedKitItem[]>([])
+  const [addOpen, setAddOpen] = useState(false)
+  useEffect(() => { const r = () => setAddedItems(getAddedEquipment()); r(); return subscribeEquipment(r) }, [])
 
   const tone = (s: KitStatus) => s === 'good' ? T.good : s === 'low' ? T.warn : s === 'order' ? '#3A8EE0' : T.bad
   const label = (s: KitStatus) => s === 'good' ? 'In stock' : s === 'low' ? 'Running low' : s === 'order' ? 'To order' : 'Repair'
 
-  const allItems = EQUIPMENT_INVENTORY.flatMap(c => c.items.map(it => ({ ...it, category: c.category })))
+  // Static inventory + any items added via "Add item", merged back under their category.
+  const mergedInventory = EQUIPMENT_INVENTORY.map(c => ({ ...c, items: [...c.items, ...addedItems.filter(a => a.category === c.category)] }))
+  const allItems = mergedInventory.flatMap(c => c.items.map(it => ({ ...it, category: c.category })))
   const attention = allItems.filter(i => i.status !== 'good')
   const outstanding = attention.filter(i => !handled.has(i.name))
   const toggle = (name: string) => setHandled(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n })
 
   const cats = filter === 'attention'
-    ? EQUIPMENT_INVENTORY.map(c => ({ ...c, items: c.items.filter(i => i.status !== 'good') })).filter(c => c.items.length)
-    : EQUIPMENT_INVENTORY
+    ? mergedInventory.map(c => ({ ...c, items: c.items.filter(i => i.status !== 'good') })).filter(c => c.items.length)
+    : mergedInventory
 
   return (
     <div>
@@ -40,7 +47,10 @@ export function EquipmentView({ T, accent, density }: Common) {
           <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Equipment &amp; Kit</h1>
           <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Everything you need on court — track stock, flag what&apos;s running low, and grab the right kit for every session.</p>
         </div>
-        <button onClick={() => openKitList()} style={{ marginLeft: 'auto', appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+        <button onClick={() => setAddOpen(true)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <Icon name="plus" size={14} stroke={2} /> Add item
+        </button>
+        <button onClick={() => openKitList()} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, padding: '8px 14px', borderRadius: 9, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
           <Icon name="note" size={14} stroke={2} /> Print kit list
         </button>
       </div>
@@ -144,6 +154,7 @@ export function EquipmentView({ T, accent, density }: Common) {
       </div>
 
       {sourceOpen && <RestockSourcingModal T={T} accent={accent} items={attention.map(i => ({ name: i.name, qty: i.qty, category: i.category }))} onClose={() => setSourceOpen(false)} />}
+      {addOpen && <AddEquipmentModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>
   )
 }

@@ -27,6 +27,8 @@ import { OfferedPackages, PackageProgressModal } from './Packages'
 import { usedFromProgress, subscribe as subscribePackages } from '../_lib/packages-store'
 import type { Package } from '../_lib/coach-data'
 import { VideoModal } from './VideoModal'
+import { getAddedResources, subscribe as subscribeResources } from '../_lib/resources-store'
+import { AddResourceModal } from './AddResourceModal'
 import { AddPlayerModal } from './AddPlayerModal'
 import { printWelcomePack } from './WelcomePack'
 import { getAddedPlayers, subscribe as subscribeRoster } from '../_lib/roster-store'
@@ -733,13 +735,18 @@ export function ResourcesView({ T, accent, density }: Common) {
   const cats = ['All', 'Drill Library', 'Drill', 'Technique', 'Training plan', 'Fitness', 'Mental', 'Books'] as const
   const [cat, setCat] = useState<typeof cats[number]>('All')
   const [video, setVideo] = useState<Resource | null>(null)
+  const [addedResources, setAddedResources] = useState<Resource[]>([])
+  const [addOpen, setAddOpen] = useState(false)
+  useEffect(() => { const r = () => setAddedResources(getAddedResources()); r(); return subscribeResources(r) }, [])
+  const allResources = [...RESOURCES, ...addedResources]
   const fullList = cat === 'All' || cat === 'Books' || cat === 'Drill Library'
   const hideGrid = cat === 'Books' || cat === 'Drill Library'
-  const list = fullList ? RESOURCES : RESOURCES.filter(r => r.category === cat)
+  const list = fullList ? allResources : allResources.filter(r => r.category === cat)
   const fmtIcon = (f: Resource['format']) => f === 'Video' ? 'play' : f === 'Plan' ? 'calendar' : f === 'Worksheet' ? 'note' : 'note'
   return (
     <div>
-      <PageHead T={T} accent={accent} density={density} title="Resource Centre" sub="Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the racket system." />
+      <PageHead T={T} accent={accent} density={density} title="Resource Centre" sub="Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the racket system."
+        action={<button onClick={() => setAddOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> Add resource</button>} />
       <div style={{ display: 'flex', gap: 6, marginBottom: density.gap, flexWrap: 'wrap' }}>
         {cats.map(c => <button key={c} onClick={() => setCat(c)} style={{ appearance: 'none', border: `1px solid ${cat === c ? accent.border : T.border}`, padding: '6px 12px', borderRadius: 8, fontSize: 11.5, cursor: 'pointer', background: cat === c ? accent.dim : 'transparent', color: cat === c ? accent.hex : T.text2, fontWeight: cat === c ? 600 : 400 }}>{c === 'Books' ? '📚 Books' : c === 'Drill Library' ? '🎾 Drill Library' : c}</button>)}
       </div>
@@ -776,6 +783,7 @@ export function ResourcesView({ T, accent, density }: Common) {
       </div>
       )}
       {video && <VideoModal T={T} accent={accent} resource={video} onClose={() => setVideo(null)} />}
+      {addOpen && <AddResourceModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>
   )
 }

@@ -18,6 +18,8 @@ import {
 import { getCalendarItems } from '../_lib/schedule'
 import { WeekCalendarGrid } from './WeekCalendar'
 import { getAddedSessions, subscribe as subscribeSessions } from '../_lib/sessions-store'
+import { getAddedCoaches, subscribe as subscribeCoaches } from '../_lib/coaches-store'
+import { AddCoachModal } from './AddCoachModal'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -58,12 +60,19 @@ function MiniStat({ T, label, value, c }: { T: ThemeTokens; label: string; value
 export function StaffView({ T, accent, density, onNavigate }: Common & { onNavigate?: (s: string) => void }) {
   const [added, setAdded] = useState<TodaySession[]>([])
   useEffect(() => { const r = () => setAdded(getAddedSessions()); r(); return subscribeSessions(r) }, [])
+  const [addedCoaches, setAddedCoaches] = useState<Coach[]>([])
+  const [addOpen, setAddOpen] = useState(false)
+  useEffect(() => { const r = () => setAddedCoaches(getAddedCoaches()); r(); return subscribeCoaches(r) }, [])
 
   const [selId, setSelId] = useState<string | null>(null)
   const [role, setRole] = useState<'All' | CoachRole>('All')
 
-  const stats: Record<string, CoachStats> = Object.fromEntries(COACHES.map(c => [c.id, coachStats(c.id)]))
-  const sel = selId ? COACHES.find(c => c.id === selId) : null
+  // Static team + any coaches added via "Add coach". Stats are booking-derived, so
+  // an added coach (no bookings/players yet) gets sane zeros — coachStats already
+  // guards the coachById miss, so no crash.
+  const coaches = [...COACHES, ...addedCoaches]
+  const stats: Record<string, CoachStats> = Object.fromEntries(coaches.map(c => [c.id, coachStats(c.id)]))
+  const sel = selId ? coaches.find(c => c.id === selId) : null
 
   // ─── COACH DETAIL ──────────────────────────────────────────────────────────
   if (sel) {
@@ -133,14 +142,14 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
   }
 
   // ─── DIRECTORY ─────────────────────────────────────────────────────────────
-  const list = role === 'All' ? COACHES : COACHES.filter(c => c.role === role)
+  const list = role === 'All' ? coaches : coaches.filter(c => c.role === role)
   const roles: ('All' | CoachRole)[] = ['All', 'Head', 'Senior', 'Coach', 'Assistant', 'Apprentice']
 
-  const sumHours = COACHES.reduce((a, c) => a + stats[c.id].hoursBooked, 0)
-  const sumCap = COACHES.reduce((a, c) => a + c.hoursPerWeek, 0)
+  const sumHours = coaches.reduce((a, c) => a + stats[c.id].hoursBooked, 0)
+  const sumCap = coaches.reduce((a, c) => a + c.hoursPerWeek, 0)
   const summary = [
-    { l: 'Coaches', v: COACHES.length, c: T.text },
-    { l: 'On leave', v: COACHES.filter(c => c.status === 'leave').length, c: T.warn },
+    { l: 'Coaches', v: coaches.length, c: T.text },
+    { l: 'On leave', v: coaches.filter(c => c.status === 'leave').length, c: T.warn },
     { l: 'Players', v: ALL_PLAYERS.length, c: accent.hex },
     { l: 'Sessions this week', v: ALL_BOOKINGS.filter(b => b.status !== 'cancelled').length, c: T.text },
     { l: 'Club utilisation', v: `${sumCap ? Math.round((sumHours / sumCap) * 100) : 0}%`, c: T.good },
@@ -148,9 +157,14 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
 
   return (
     <div>
-      <div style={{ marginBottom: 14 }}>
-        <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Coaches</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Your coaching team at a glance — calendars, accreditations and workload across the club.</p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Coaches</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Your coaching team at a glance — calendars, accreditations and workload across the club.</p>
+        </div>
+        <button onClick={() => setAddOpen(true)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <Icon name="plus" size={14} stroke={2} /> Add coach
+        </button>
       </div>
 
       {/* summary strip */}
@@ -202,6 +216,8 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
           )
         })}
       </div>
+
+      {addOpen && <AddCoachModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>
   )
 }
