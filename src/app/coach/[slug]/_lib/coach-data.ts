@@ -1017,7 +1017,7 @@ export const COACH_SIDEBAR: CoachNavItem[] = [
   { id: 'settings',    label: 'Settings',           icon: 'settings',     group: 'SETTINGS' },
 ]
 
-export const COACH_GROUPS = ['COACHING', 'TEAM', 'SCHEDULE', 'PLAYERS', 'PERFORMANCE', 'RESOURCES', 'BUSINESS', 'SETTINGS']
+export const COACH_GROUPS = ['COACHING', 'SCHEDULE', 'PLAYERS', 'PERFORMANCE', 'RESOURCES', 'TEAM', 'BUSINESS', 'SETTINGS']
 
 export const COACH_ACCENT = { hex: '#a855f7', dim: 'rgba(168,85,247,0.16)', border: 'rgba(168,85,247,0.45)' }
 

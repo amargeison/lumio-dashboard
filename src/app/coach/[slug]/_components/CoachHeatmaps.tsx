@@ -431,6 +431,7 @@ export function HeatmapsView({ T, accent, density }: Common) {
   const [trainingIdx, setTrainingIdx] = useState(0)
   const [compareA, setCompareA] = useState(0)
   const [compareB, setCompareB] = useState(1)
+  const [tab, setTab] = useState(1)   // active heatmap section (1–6); player/session pickers stay above it
 
   const player = PLAYERS.find(p => p.id === playerId)
   const session = sessions.find(s => s.id === matchId) ?? sessions[0]
@@ -466,7 +467,10 @@ export function HeatmapsView({ T, accent, density }: Common) {
       {children}
     </div>
   )
+  // Each section is its own tab — render only the active one. (The pickers and
+  // set/court controls live above the tab bar, so they apply to whichever tab is open.)
   const Section = ({ n, title, sub, children }: { n: number; title: string; sub?: string; children: ReactNode }) => (
+    tab !== n ? null : (
     <section style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
         <div>
@@ -481,6 +485,7 @@ export function HeatmapsView({ T, accent, density }: Common) {
       </div>
       {children}
     </section>
+    )
   )
   const StatTile = ({ label, value, sub }: { label: string; value: string; sub?: string }) => (
     <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px' }}>
@@ -604,6 +609,16 @@ export function HeatmapsView({ T, accent, density }: Common) {
           </div>
         </div>
       </HCard>
+
+      {/* section tabs — each heatmap section is its own screen */}
+      <div style={{ display: 'flex', gap: 4, padding: 3, background: T.hover, borderRadius: 9, width: 'fit-content', flexWrap: 'wrap' }}>
+        {([[1, '1 · Court Movement'], [2, '2 · Serve Placement'], [3, '3 · Returns & Rally'], [4, '4 · Movement & Fitness'], [5, '5 · Comparison'], [6, '6 · Training']] as [number, string][]).map(([id, label]) => (
+          <button key={id} onClick={() => setTab(id)}
+            style={{ appearance: 'none', border: tab === id ? `1px solid ${accent.border}` : '1px solid transparent', padding: '6px 14px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === id ? accent.dim : 'transparent', color: tab === id ? accent.hex : T.text2, fontWeight: tab === id ? 600 : 400 }}>
+            {label}
+          </button>
+        ))}
+      </div>
 
       {/* 1 · COURT MOVEMENT */}
       <Section n={1} title="Court Movement Heatmap" sub="Where the player held position, by phase. Toggle serve, return, rally, and net approach.">
