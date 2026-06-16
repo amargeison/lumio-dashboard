@@ -281,7 +281,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
       {/* main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
         {showDemoBanner && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 24px', fontSize: 12, fontWeight: 500, background: '#0D9488', color: '#fff', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 24px', fontSize: 12, fontWeight: 500, background: accent.hex, color: '#fff', flexShrink: 0 }}>
             <span>This is a demo · sample data</span>
             <span style={{ opacity: 0.85 }}>Lumio Coach — Tennis</span>
           </div>
