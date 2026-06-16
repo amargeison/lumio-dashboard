@@ -44,7 +44,7 @@ import { getCamps, subscribe as subscribeCamps } from '../_lib/camps-store'
 import { NewCampModal } from './NewCamp'
 import {
   getMessages, subscribe as subscribeMessages, markRead, addReply, addForward,
-  toggleReaction, softDelete, requestOpen, consumePendingOpen, type CoachInboxMessage,
+  toggleReaction, softDelete, consumePendingOpen, type CoachInboxMessage,
 } from '../_lib/messages-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -136,10 +136,20 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const settings = useCoachSettings()
   const [msgOpen, setMsgOpen] = useState(false)
-  // Inbox preview reads the shared messages store so it stays in sync with the
-  // Messages page (Phase B will add the interactions; here it's read-only).
+  // Inbox preview reads the shared messages store; actions route through the
+  // same store so reply/dismiss here sync to the Messages page and survive
+  // reload. Rows expand INLINE (football InteractiveFootballInbox pattern) so
+  // the coach acts without leaving the dashboard — only "All →" opens the page.
   const [messages, setMessages] = useState<CoachInboxMessage[]>([])
   useEffect(() => { const r = () => setMessages(getMessages()); r(); return subscribeMessages(r) }, [])
+  const [inboxOpen, setInboxOpen] = useState<string | null>(null)
+  const [inboxMode, setInboxMode] = useState<'idle' | 'replying' | 'forwarding'>('idle')
+  const [inboxReply, setInboxReply] = useState('')
+  const [inboxForwardTo, setInboxForwardTo] = useState(FORWARD_TARGETS[0])
+  const openInboxMsg = (id: string) => {
+    if (inboxOpen === id) { setInboxOpen(null); return }   // toggle closed
+    setInboxOpen(id); setInboxMode('idle'); setInboxReply(''); markRead(id)
+  }
   return (
     <div>
       {msgOpen && <CoachSendMessage T={T} accent={accent} onClose={() => setMsgOpen(false)} />}
@@ -232,21 +242,74 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
           <SectionHead T={T} title={<><Icon name="bell" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2 }} />Inbox</>}
             right={<button onClick={() => onNavigate('messages')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, cursor: 'pointer', fontSize: 11, fontFamily: FONT, padding: 0 }}>All →</button>} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {messages.slice(0, 5).map((m, i) => (
-              <div key={m.id} onClick={() => { requestOpen(m.id); onNavigate('messages') }}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', margin: '0 -4px', borderRadius: 6, borderTop: i ? `1px solid ${T.border}` : 'none', cursor: 'pointer' }}
-                onMouseEnter={e => { e.currentTarget.style.background = T.hover }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: m.unread > 0 ? (m.urgent ? T.bad : accent.hex) : T.text4 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 12, color: T.text, fontWeight: m.unread > 0 ? 600 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.outbound ? `To ${m.from}` : m.from}</span>
-                    <Pill T={T}>{m.outbound ? 'Sent' : m.role.split(' · ')[0]}</Pill>
+            {messages.slice(0, 5).map((m, i) => {
+              const isOpen = inboxOpen === m.id
+              return (
+                <div key={m.id} style={{ borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+                  {/* Row — click expands inline (does NOT navigate). */}
+                  <div onClick={() => openInboxMsg(m.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', margin: '0 -4px', borderRadius: 6, cursor: 'pointer', background: isOpen ? T.panel2 : 'transparent' }}
+                    onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = T.hover }} onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent' }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: m.unread > 0 ? (m.urgent ? T.bad : accent.hex) : T.text4 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 12, color: T.text, fontWeight: m.unread > 0 ? 600 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.outbound ? `To ${m.from}` : m.from}</span>
+                        <Pill T={T}>{m.outbound ? 'Sent' : m.role.split(' · ')[0]}</Pill>
+                        {m.reactions.map(e => <span key={e} style={{ fontSize: 11 }}>{e}</span>)}
+                      </div>
+                      <div style={{ fontSize: 11, color: m.unread > 0 ? T.text2 : T.text3, whiteSpace: isOpen ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{m.last}</div>
+                    </div>
+                    <div className="tnum" style={{ fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO, flexShrink: 0 }}>{m.time}</div>
                   </div>
-                  <div style={{ fontSize: 11, color: m.unread > 0 ? T.text2 : T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{m.last}</div>
+
+                  {/* Expanded thread + actions — compact, scrollable so the card stays tidy. */}
+                  {isOpen && (
+                    <div style={{ padding: '2px 2px 10px' }}>
+                      <div style={{ maxHeight: 132, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, padding: '4px 0 8px' }}>
+                        {m.thread.length === 0 && <div style={{ fontSize: 11.5, color: T.text2, lineHeight: 1.5 }}>{m.body}</div>}
+                        {m.thread.map((te, ti) => (
+                          <div key={ti} style={{ display: 'flex', justifyContent: te.from === 'coach' ? 'flex-end' : 'flex-start' }}>
+                            <div style={{ maxWidth: '85%', padding: '6px 9px', borderRadius: 9, fontSize: 11.5, lineHeight: 1.45, background: te.from === 'coach' ? accent.dim : T.panel, border: `1px solid ${te.from === 'coach' ? accent.border : T.border}`, color: T.text }}>{te.text}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {m.forwards.map((f, fi) => <div key={fi} style={{ fontSize: 10.5, color: T.good, fontFamily: FONT_MONO, marginBottom: 4 }}>↪ Forwarded to {f.to} ✓</div>)}
+                      <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
+                        {MSG_REACTIONS.map(emoji => (
+                          <ReactionButton key={emoji} T={T} accent={accent} emoji={emoji} active={m.reactions.includes(emoji)} count={m.reactions.includes(emoji) ? 1 : 0} onClick={() => toggleReaction(m.id, emoji)} />
+                        ))}
+                      </div>
+                      {inboxMode === 'idle' && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <button onClick={() => { setInboxMode('replying'); setInboxReply('') }} style={msgBtnGhost(T)}>Reply</button>
+                          <button onClick={() => setInboxMode('forwarding')} style={msgBtnGhost(T)}>Forward</button>
+                          <button onClick={() => { softDelete(m.id); setInboxOpen(null) }} style={{ ...msgBtnGhost(T), color: T.bad }}>Dismiss</button>
+                        </div>
+                      )}
+                      {inboxMode === 'replying' && (
+                        <div>
+                          <textarea value={inboxReply} onChange={e => setInboxReply(e.target.value)} placeholder={`Reply to ${m.from}…`} rows={2} autoFocus
+                            style={{ width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.borderHi}`, borderRadius: 8, padding: 8, fontSize: 12, fontFamily: FONT, resize: 'vertical', outline: 'none' }} />
+                          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                            <button onClick={() => { const t = inboxReply.trim(); if (!t) return; addReply(m.id, t); setInboxReply(''); setInboxMode('idle') }} disabled={!inboxReply.trim()} style={msgBtnPrimary(T, accent, !!inboxReply.trim())}>Send</button>
+                            <button onClick={() => { setInboxMode('idle'); setInboxReply('') }} style={msgBtnGhost(T)}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
+                      {inboxMode === 'forwarding' && (
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <select value={inboxForwardTo} onChange={e => setInboxForwardTo(e.target.value)} style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 8px', fontSize: 11.5, fontFamily: FONT }}>
+                            {FORWARD_TARGETS.map(t => <option key={t}>{t}</option>)}
+                          </select>
+                          <button onClick={() => { addForward(m.id, inboxForwardTo); setInboxMode('idle') }} style={msgBtnPrimary(T, accent, true)}>Forward</button>
+                          <button onClick={() => setInboxMode('idle')} style={msgBtnGhost(T)}>Cancel</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="tnum" style={{ fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO, flexShrink: 0 }}>{m.time}</div>
-              </div>
-            ))}
+              )
+            })}
             {messages.length === 0 && <div style={{ fontSize: 12, color: T.text3, fontStyle: 'italic', padding: '14px 0' }}>Inbox cleared.</div>}
           </div>
         </Card>

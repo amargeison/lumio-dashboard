@@ -14,10 +14,12 @@ const nextConfig: NextConfig = {
     ],
   },
   redirects: async () => [
-    // Tennis Coach demo alias → the shared coach demo. A redirect runs before
-    // filesystem routing, so /tennis/coach/demo resolves to the coach demo
-    // (sport="coach") and never the tennis/coach/[slug] player route.
-    { source: '/tennis/coach/demo', destination: '/coach/demo', permanent: false },
+    // Canonical coach demo URL is the tennis-scoped /tennis/coach/demo (served by
+    // the re-export route src/app/tennis/coach/[slug]/page.tsx — a redirect runs
+    // before filesystem routing but `source` is an EXACT match, so the manifest
+    // sub-path /coach/demo/m/... is untouched). The bare /coach/demo still works,
+    // redirecting here, so existing links / old PWA installs don't break.
+    { source: '/coach/demo', destination: '/tennis/coach/demo', permanent: false },
     { source: '/sales-crm', destination: '/sales', permanent: true },
     { source: '/crm/:path*', destination: 'https://app.lumiocms.com/crm/:path*', permanent: false, has: [{ type: 'host', value: 'lumiocms.com' }] },
     { source: '/demo/football/:slug', destination: '/football/pro/:slug', permanent: true },

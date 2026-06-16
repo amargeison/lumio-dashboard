@@ -28,9 +28,12 @@ export async function GET(
     // Stable, coach-specific app identity so the installed PWA is a distinct
     // app (not colliding with the site root or other portals) and always
     // re-resolves to the coach start_url rather than the global root manifest.
-    id:               '/coach',
-    start_url:        `/coach/${slug}`,
-    scope:            '/coach/',
+    // The canonical URL is the tennis-scoped /tennis/coach/<slug>, so the PWA
+    // installs/launches there (an already-installed PWA caches the old start_url
+    // and needs reinstalling to pick this up — expected, not a bug).
+    id:               '/tennis/coach',
+    start_url:        `/tennis/coach/${slug}`,
+    scope:            '/tennis/coach/',
     display:          'standalone',
     orientation:      'portrait',
     background_color: '#07080F',
