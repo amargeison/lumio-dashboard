@@ -7372,9 +7372,13 @@ export default function FootballDashboard({ params }: { params: Promise<{ slug: 
     <SportsDemoGate
       sport="football"
       accentColor="#10B981"
+      accentColorLight="#34D399"
+      sportEmoji="⚽"
       sportLabel="Football"
-      defaultClubName="Lumio FC"
+      defaultClubName="Oakridge FC"
+      defaultSlug={slug}
       roles={FOOTBALL_ROLES}
+      lockClub
     >
       {(session) => <FootballDashboardInner slug={slug} session={session} />}
     </SportsDemoGate>
