@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Menu, X, Twitter, Linkedin, Github, ArrowUpRight } from 'lucide-react'
 import { FootballNavDropdown, FOOTBALL_TIERS } from '@/app/(website)/components/FootballNavDropdown'
+import { NavDropdown } from '@/app/(website)/components/NavDropdown'
 
 const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',    href: '/sports-product' },
@@ -20,6 +21,12 @@ const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Darts',      href: '/darts' },
   { label: 'Pricing',    href: '/pricing-sports' },
   { label: 'About',      href: '/about' },
+]
+
+// Tennis nav dropdown tiers (player/club page + the new coach page).
+const TENNIS_TIERS = [
+  { href: '/tennis',       label: 'Tennis Club / Player', subtitle: 'Players · clubs · academies' },
+  { href: '/tennis-coach', label: 'Tennis Coach',         subtitle: 'Coaches · academies · session tools' },
 ]
 
 const BUSINESS_NAV: { label: string; href: string; badge?: string; external?: boolean }[] = [
@@ -214,6 +221,18 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
                 />
               )
             }
+            if (l.label === 'Tennis') {
+              return (
+                <NavDropdown
+                  key="tennis-dropdown"
+                  label="Tennis"
+                  tiers={TENNIS_TIERS}
+                  accentHover="rgba(124, 58, 237, 0.08)"
+                  scrolled={scrolled}
+                  className={isSports ? 'px-2 py-2 text-sm font-semibold' : 'px-2 py-2 font-medium text-sm'}
+                />
+              )
+            }
             const linkClassName = `flex items-center gap-1 rounded-lg transition-colors whitespace-nowrap ${isSports ? 'px-2 py-2 text-sm font-semibold' : isSchools ? 'px-2 py-2 font-medium' : 'px-2 py-2 font-medium'}`
             const external = (l as { external?: boolean }).external === true
             // Active route: on the business side we treat /coming-soon/business
@@ -308,6 +327,24 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
                   </div>
                   <div className="flex flex-col gap-1 pl-3">
                     {FOOTBALL_TIERS.map(t => (
+                      <Link key={t.href} href={t.href} onClick={() => setMobileOpen(false)}
+                        className="py-2 flex flex-col" style={{ color: '#D1D5DB' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>{t.label}</span>
+                        <span style={{ fontSize: 11, color: '#6B7280' }}>{t.subtitle}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+            if (l.label === 'Tennis') {
+              return (
+                <div key="tennis-mobile">
+                  <div className="flex items-center gap-2 text-sm font-medium py-2" style={{ color: '#9CA3AF' }}>
+                    Tennis
+                  </div>
+                  <div className="flex flex-col gap-1 pl-3">
+                    {TENNIS_TIERS.map(t => (
                       <Link key={t.href} href={t.href} onClick={() => setMobileOpen(false)}
                         className="py-2 flex flex-col" style={{ color: '#D1D5DB' }}>
                         <span style={{ fontSize: 13, fontWeight: 700 }}>{t.label}</span>
