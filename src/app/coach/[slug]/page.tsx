@@ -22,6 +22,7 @@ import {
 } from './_lib/coach-data'
 import { useCoachSettings } from './_lib/use-settings'
 import { ACCENT_PRESETS } from './_lib/settings-store'
+import { getHidden, subscribe as subscribeMenu, ALWAYS_VISIBLE } from './_lib/menu-visibility'
 import {
   DashboardView, LessonsView, DevelopmentView, BeltsView, CalendarView,
   RosterView, MessagesView, ResourcesView, PaymentsView, SettingsView, CampsView,
@@ -136,6 +137,13 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const expanded = pinned || hovered
 
+  // Live menu-visibility: items the coach hid in Settings are filtered out of
+  // the sidebar; if the active view gets hidden, fall back to the dashboard.
+  const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
+  useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
+  useEffect(() => { if (hiddenMenu.includes(active) && !ALWAYS_VISIBLE.includes(active)) setActive('dashboard') }, [hiddenMenu, active])
+  const visibleSidebar = COACH_SIDEBAR.filter(i => !hiddenMenu.includes(i.id))
+
   useEffect(() => {
     try { setPinned(localStorage.getItem('lumio_coach_sidebar_pinned') === 'true') } catch {}
   }, [])
@@ -212,7 +220,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
               </div>
               <nav style={{ flex: 1, padding: '6px 8px' }}>
                 {COACH_GROUPS.map(group => {
-                  const items = COACH_SIDEBAR.filter(i => i.group === group)
+                  const items = visibleSidebar.filter(i => i.group === group)
                   if (!items.length) return null
                   return (
                     <div key={group} style={{ marginBottom: 4 }}>
@@ -277,7 +285,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
 
         <nav style={{ flex: 1, overflowY: 'auto', padding: '4px 6px' }}>
           {COACH_GROUPS.map(group => {
-            const items = COACH_SIDEBAR.filter(i => i.group === group)
+            const items = visibleSidebar.filter(i => i.group === group)
             if (!items.length) return null
             return (
               <div key={group} style={{ marginBottom: 2 }}>

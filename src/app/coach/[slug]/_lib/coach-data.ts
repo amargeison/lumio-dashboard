@@ -1006,7 +1006,7 @@ export const COACH_SIDEBAR: CoachNavItem[] = [
   { id: 'staff',       label: 'Coaches',            icon: 'people',       group: 'TEAM', badge: 'NEW' },
   { id: 'calendar',    label: 'Booking Calendar',   icon: 'calendar',     group: 'SCHEDULE' },
   { id: 'venues',      label: 'Court Planner',      icon: 'pin',          group: 'SCHEDULE', badge: 'NEW' },
-  { id: 'camps',       label: 'Training Camps',     icon: 'plane',        group: 'SCHEDULE', badge: 'NEW' },
+  { id: 'camps',       label: 'Training Camps',     icon: 'sun',          group: 'SCHEDULE', badge: 'NEW' },
   { id: 'roster',      label: 'Player Roster',      icon: 'people',       group: 'PLAYERS' },
   { id: 'messages',    label: 'Messages',           icon: 'megaphone',    group: 'PLAYERS' },
   { id: 'gpsvideo',    label: 'GPS & Video',        icon: 'crosshair',    group: 'PERFORMANCE', badge: 'NEW' },
@@ -1027,7 +1027,7 @@ export const COACH_ACCENT = { hex: '#a855f7', dim: 'rgba(168,85,247,0.16)', bord
 export type Camp = {
   id: string
   name: string
-  country: 'Portugal' | 'Spain'
+  country: 'Portugal' | 'Spain' | 'England'
   location: string
   resort: string
   flag: string
@@ -1056,6 +1056,12 @@ export const CAMPS: Camp[] = [
     start: '3 Aug 2026', end: '16 Aug 2026', days: 14, status: 'upcoming', capacity: 20, booked: 9,
     pricePerHead: 1650, deposit: 350, surfaces: 'Clay', courts: 8,
     summary: 'Junior development camp for red→green ball players. Skills, games and a racket-assessment week, with parents accommodated nearby.',
+  },
+  {
+    id: 'camp-halfterm-oct', name: 'October Half-Term Tennis Camp', country: 'England', location: 'Riverside Tennis Centre', resort: 'Riverside Tennis Centre', flag: '🇬🇧',
+    start: '26 Oct 2026', end: '30 Oct 2026', days: 5, status: 'upcoming', capacity: 24, booked: 11,
+    pricePerHead: 220, deposit: 50, surfaces: 'Indoor & outdoor hard', courts: 6,
+    summary: 'Five-day October half-term day camp at Riverside for ages 6–14. Red, orange and green-ball groups, 9am–3pm daily — skills, games and a Friday mini-tournament. No overnight stay; coached by Pete Griffiths and the academy team.',
   },
   {
     id: 'camp-marbella', name: 'Marbella Pre-Season Camp', country: 'Spain', location: 'Marbella', resort: 'Manolo Santana Racquets Club', flag: '🇪🇸',
@@ -1118,6 +1124,18 @@ export const CAMP_TARGETS: Record<string, { group: string[]; outcomes: string[] 
     outcomes: [
       'Racket assessment day on day 12',
       'Parent showcase session on the final morning',
+    ],
+  },
+  'camp-halfterm-oct': {
+    group: [
+      'Every junior leaves with one clear technical focus for the winter',
+      'Red/orange-ball groups play the Friday mini-tournament',
+      'Daily skills awards and a fun, high-energy environment',
+      'Spot and invite 3–4 players for the performance squad pathway',
+    ],
+    outcomes: [
+      'Short progress note shared with each parent at pick-up Friday',
+      'Follow-up term lessons offered to interested families',
     ],
   },
   'camp-marbella': {

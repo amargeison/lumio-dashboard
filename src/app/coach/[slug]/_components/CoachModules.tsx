@@ -35,6 +35,8 @@ import { useAllPlayers } from '../_lib/use-roster'
 import { SettingsPanel } from './SettingsPanel'
 import { getSettings } from '../_lib/settings-store'
 import { useCoachSettings } from '../_lib/use-settings'
+import { getCamps, subscribe as subscribeCamps } from '../_lib/camps-store'
+import { NewCampModal } from './NewCamp'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -853,9 +855,12 @@ export function PaymentsView({ T, accent, density }: Common) {
 // TRAINING CAMPS  (14-day paid camps — overview / itinerary / attendees / targets / finance)
 // ════════════════════════════════════════════════════════════════════════════
 export function CampsView({ T, accent, density }: Common) {
+  const [camps, setCamps] = useState<Camp[]>(getCamps())
+  useEffect(() => { setCamps(getCamps()); return subscribeCamps(() => setCamps(getCamps())) }, [])
   const [selId, setSelId] = useState(CAMPS[0].id)
   const [tab, setTab] = useState<'overview' | 'itinerary' | 'equipment' | 'attendees' | 'targets' | 'packs' | 'finance'>('overview')
-  const camp = CAMPS.find(c => c.id === selId)!
+  const [newOpen, setNewOpen] = useState(false)
+  const camp = camps.find(c => c.id === selId) ?? camps[0]
   const attendees = CAMP_ATTENDEES.filter(a => a.campId === camp.id)
   const targets = CAMP_TARGETS[camp.id]
   const statusTone = (s: Camp['status']) => s === 'in-progress' ? T.good : s === 'upcoming' ? accent.hex : T.text3
@@ -864,11 +869,11 @@ export function CampsView({ T, accent, density }: Common) {
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Training Camps" sub="Run your 14-day camps in Spain and Portugal: bookings, itinerary, targets and finances in one place."
-        action={<button style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New camp</button>} />
+        action={<button onClick={() => setNewOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New camp</button>} />
 
       {/* Camp selector cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: density.gap, marginBottom: density.gap }}>
-        {CAMPS.map(c => (
+        {camps.map(c => (
             <Card key={c.id} T={T} density={density} hover onClick={() => selectCamp(c.id)} style={{ borderColor: c.id === selId ? accent.border : undefined, background: c.id === selId ? accent.dim : T.panel }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 22 }}>{c.flag}</span>
@@ -921,6 +926,8 @@ export function CampsView({ T, accent, density }: Common) {
       {tab === 'targets' && <CampTargets T={T} accent={accent} density={density} targets={targets} attendees={attendees} />}
       {tab === 'packs' && <CampPlayerPacks T={T} accent={accent} density={density} camp={camp} attendees={attendees} />}
       {tab === 'finance' && <CampFinance T={T} accent={accent} density={density} camp={camp} attendees={attendees} />}
+
+      {newOpen && <NewCampModal T={T} accent={accent} density={density} onClose={() => setNewOpen(false)} onCreated={(id) => { setSelId(id); setTab('overview') }} />}
     </div>
   )
 }
@@ -960,9 +967,10 @@ function CampOverview({ T, accent, density, camp, attendees, targets }: CampSub 
         </div>
         <div style={{ marginTop: 12 }}>
           <SectionHead T={T} title="Top objectives" />
-          {targets.group.slice(0, 3).map((g, i) => (
+          {(targets?.group ?? []).slice(0, 3).map((g, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, color: T.text2, padding: '4px 0' }}><span style={{ color: accent.hex }}>›</span>{g}</div>
           ))}
+          {!targets && <div style={{ fontSize: 11.5, color: T.text3, padding: '4px 0' }}>No objectives set for this camp yet.</div>}
         </div>
       </Card>
     </div>
@@ -1061,15 +1069,16 @@ function CampTargets({ T, accent, density, targets, attendees }: Common & { targ
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }} className="cm-12">
       <Card T={T} density={density} style={{ gridColumn: 'span 6' }}>
         <SectionHead T={T} title="Camp targets" right={<Icon name="flag" size={13} stroke={1.7} style={{ color: accent.hex }} />} />
-        {targets.group.map((g, i) => (
+        {(targets?.group ?? []).map((g, i) => (
           <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
             <div style={{ width: 20, height: 20, borderRadius: 6, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
             <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.45 }}>{g}</div>
           </div>
         ))}
+        {!targets && <div style={{ fontSize: 11.5, color: T.text3, padding: '9px 0' }}>No targets set for this camp yet — add them in coach-data.ts.</div>}
         <div style={{ marginTop: 14 }}>
           <SectionHead T={T} title="Camp outcomes" />
-          {targets.outcomes.map((o, i) => (
+          {(targets?.outcomes ?? []).map((o, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, color: T.text2, padding: '4px 0' }}><Icon name="check" size={13} stroke={2} style={{ color: T.good, flexShrink: 0, marginTop: 1 }} />{o}</div>
           ))}
         </div>
