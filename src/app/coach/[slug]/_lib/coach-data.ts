@@ -1010,6 +1010,7 @@ export const COACH_SIDEBAR: CoachNavItem[] = [
   { id: 'roster',      label: 'Player Roster',      icon: 'people',       group: 'PLAYERS' },
   { id: 'messages',    label: 'Messages',           icon: 'megaphone',    group: 'PLAYERS' },
   { id: 'gpsvideo',    label: 'GPS & Video',        icon: 'crosshair',    group: 'PERFORMANCE', badge: 'NEW' },
+  { id: 'heatmaps',    label: 'Heatmaps',           icon: 'flame',        group: 'PERFORMANCE', badge: 'NEW' },
   { id: 'equipment',   label: 'Equipment & Kit',    icon: 'wrench',       group: 'RESOURCES', badge: 'NEW' },
   { id: 'resources',   label: 'Resource Centre',    icon: 'grid',         group: 'RESOURCES', badge: 'NEW' },
   { id: 'payments',    label: 'Payments & Packs',   icon: 'pound',        group: 'BUSINESS' },
