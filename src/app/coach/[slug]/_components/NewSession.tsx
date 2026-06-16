@@ -121,7 +121,7 @@ export function NewSessionModal({ T, accent, players, seedBooking, onClose, onCr
         id: `new-${Date.now()}`, name: customName.trim(), initials, age, group,
         beltIndex: beltIndexOf(beltId), seed: Date.now() % 100,
         goal: focus.trim(), attendance: 100, nextSession: `${time.trim()} today`,
-        parent: undefined, status: 'green', trend: 'flat',
+        parent: undefined, status: 'green', trend: 'flat', coachId: 'pete',
       }
       addPlayer(np)
       linkedId = np.id
@@ -133,7 +133,7 @@ export function NewSessionModal({ T, accent, players, seedBooking, onClose, onCr
       player: playerName, playerId: linkedId,
       type, court: court.trim() || 'Court 1', mins: Number(mins) || 60,
       focus: focus.trim(), status: 'upcoming',
-      date: seedBooking?.date ?? TODAY, bookingId: seedBooking?.id,
+      date: seedBooking?.date ?? TODAY, bookingId: seedBooking?.id, coachId: seedBooking?.coachId ?? 'pete',
       focusPoints: lines(focusPoints).length ? lines(focusPoints) : undefined,
       drills: lines(drills).length ? lines(drills) : undefined,
     }

@@ -36,6 +36,7 @@ export function AddPlayerModal({ T, accent, onClose }: { T: ThemeTokens; accent:
       parent: parent.trim() || undefined,
       status: 'green',
       trend: 'flat',
+      coachId: 'pete',
     }
     addPlayer(player)
     onClose()

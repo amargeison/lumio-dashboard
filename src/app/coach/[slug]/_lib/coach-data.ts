@@ -326,17 +326,20 @@ export type Player = {
   parent?: string
   status: 'green' | 'amber' | 'red'   // development flag
   trend: 'up' | 'flat' | 'down'
+  coachId: string            // the coach this player is assigned to (id in COACHES)
 }
 
+// Pete's assigned players. PLAYERS stays his roster so his roster/dashboard/right-rail
+// are unchanged; the rest of the club's players live in coaches-data.ts (STAFF_PLAYERS).
 export const PLAYERS: Player[] = [
-  { id: 'p1', name: 'Mia Chen',        initials: 'MC', age: 9,  group: 'Junior',      beltIndex: 2, seed: 3, goal: 'First serve over the net consistently', attendance: 96, nextSession: 'Today 09:00', parent: 'Lily Chen',    status: 'green', trend: 'up'   },
-  { id: 'p2', name: 'Tom Okafor',      initials: 'TO', age: 12, group: 'Performance', beltIndex: 4, seed: 7, goal: 'Reliable kick second serve',             attendance: 91, nextSession: 'Today 10:30', parent: 'Grace Okafor', status: 'green', trend: 'up'   },
-  { id: 'p3', name: 'Ava Romero',      initials: 'AR', age: 8,  group: 'Junior',      beltIndex: 1, seed: 2, goal: 'Rally 10 balls cross-court',            attendance: 88, nextSession: 'Today 16:00', parent: 'Sofia Romero', status: 'amber', trend: 'flat' },
-  { id: 'p4', name: 'Leo Whitfield',   initials: 'LW', age: 14, group: 'Performance', beltIndex: 6, seed: 5, goal: 'Build serve+1 forehand pattern',        attendance: 94, nextSession: 'Tomorrow 17:00', status: 'green', trend: 'up'   },
-  { id: 'p5', name: 'Hannah Berg',     initials: 'HB', age: 11, group: 'Junior',      beltIndex: 3, seed: 9, goal: 'Add topspin shape to forehand',         attendance: 79, nextSession: 'Fri 15:30',   parent: 'Mark Berg',    status: 'red',   trend: 'down' },
-  { id: 'p6', name: 'Daniel Cruz',     initials: 'DC', age: 16, group: 'Performance', beltIndex: 7, seed: 4, goal: 'Win first county-level match',          attendance: 97, nextSession: 'Today 18:00', status: 'green', trend: 'up'   },
-  { id: 'p7', name: 'Priya Patel',     initials: 'PP', age: 38, group: 'Adult',       beltIndex: 3, seed: 6, goal: 'Consistent doubles serve & volley',     attendance: 85, nextSession: 'Sat 11:00',   status: 'green', trend: 'flat' },
-  { id: 'p8', name: 'James Whitlock',  initials: 'JW', age: 10, group: 'Junior',      beltIndex: 2, seed: 8, goal: 'Backhand volley at the net',            attendance: 90, nextSession: 'Fri 16:30',   parent: 'Anna Whitlock', status: 'amber', trend: 'up'   },
+  { id: 'p1', name: 'Mia Chen',        initials: 'MC', age: 9,  group: 'Junior',      beltIndex: 2, seed: 3, goal: 'First serve over the net consistently', attendance: 96, nextSession: 'Today 09:00', parent: 'Lily Chen',    status: 'green', trend: 'up',   coachId: 'pete' },
+  { id: 'p2', name: 'Tom Okafor',      initials: 'TO', age: 12, group: 'Performance', beltIndex: 4, seed: 7, goal: 'Reliable kick second serve',             attendance: 91, nextSession: 'Today 10:30', parent: 'Grace Okafor', status: 'green', trend: 'up',   coachId: 'pete' },
+  { id: 'p3', name: 'Ava Romero',      initials: 'AR', age: 8,  group: 'Junior',      beltIndex: 1, seed: 2, goal: 'Rally 10 balls cross-court',            attendance: 88, nextSession: 'Today 16:00', parent: 'Sofia Romero', status: 'amber', trend: 'flat', coachId: 'pete' },
+  { id: 'p4', name: 'Leo Whitfield',   initials: 'LW', age: 14, group: 'Performance', beltIndex: 6, seed: 5, goal: 'Build serve+1 forehand pattern',        attendance: 94, nextSession: 'Tomorrow 17:00', status: 'green', trend: 'up',   coachId: 'pete' },
+  { id: 'p5', name: 'Hannah Berg',     initials: 'HB', age: 11, group: 'Junior',      beltIndex: 3, seed: 9, goal: 'Add topspin shape to forehand',         attendance: 79, nextSession: 'Fri 15:30',   parent: 'Mark Berg',    status: 'red',   trend: 'down', coachId: 'pete' },
+  { id: 'p6', name: 'Daniel Cruz',     initials: 'DC', age: 16, group: 'Performance', beltIndex: 7, seed: 4, goal: 'Win first county-level match',          attendance: 97, nextSession: 'Today 18:00', status: 'green', trend: 'up',   coachId: 'pete' },
+  { id: 'p7', name: 'Priya Patel',     initials: 'PP', age: 38, group: 'Adult',       beltIndex: 3, seed: 6, goal: 'Consistent doubles serve & volley',     attendance: 85, nextSession: 'Sat 11:00',   status: 'green', trend: 'flat', coachId: 'pete' },
+  { id: 'p8', name: 'James Whitlock',  initials: 'JW', age: 10, group: 'Junior',      beltIndex: 2, seed: 8, goal: 'Backhand volley at the net',            attendance: 90, nextSession: 'Fri 16:30',   parent: 'Anna Whitlock', status: 'amber', trend: 'up',   coachId: 'pete' },
 ]
 
 // ─── Lesson summaries ──────────────────────────────────────────────────────
@@ -451,27 +454,30 @@ export type Booking = {
   type: 'Private' | 'Group' | 'Cardio' | 'Match play' | 'Block'
   court: string
   status: 'confirmed' | 'pending' | 'cancelled'
+  coachId: string            // which coach owns this booking (id in COACHES; see coaches-data.ts)
 }
 
 export const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 export const DAY_DATES = ['8', '9', '10', '11', '12', '13', '14']  // Jun 2026 week
 export const CAL_HOURS = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00']
 
+// Pete's own bookings (the logged-in head coach). BOOKINGS stays his slice so all
+// his existing views are unchanged; the wider team's bookings live in coaches-data.ts.
 const BOOKINGS_SEED: Omit<Booking, 'date'>[] = [
-  { id: 'b1', day: 3, start: '09:00', end: '09:45', player: 'Mia Chen',      type: 'Private',    court: 'Court 1', status: 'confirmed' },
-  { id: 'b2', day: 3, start: '10:30', end: '11:30', player: 'Tom Okafor',    type: 'Private',    court: 'Court 2', status: 'confirmed' },
-  { id: 'b3', day: 3, start: '12:00', end: '13:00', player: 'Junior Squad',  type: 'Group',      court: 'Court 1', status: 'confirmed' },
-  { id: 'b4', day: 3, start: '16:00', end: '16:45', player: 'Ava Romero',    type: 'Private',    court: 'Court 3', status: 'confirmed' },
-  { id: 'b5', day: 3, start: '18:00', end: '19:00', player: 'Daniel Cruz',   type: 'Match play', court: 'Court 3', status: 'confirmed' },
-  { id: 'b6', day: 0, start: '15:30', end: '16:30', player: 'Performance Sq', type: 'Group',     court: 'Court 2', status: 'confirmed' },
-  { id: 'b7', day: 1, start: '17:00', end: '18:15', player: 'Leo Whitfield', type: 'Match play', court: 'Court 3', status: 'confirmed' },
-  { id: 'b8', day: 4, start: '15:30', end: '16:30', player: 'Hannah Berg',   type: 'Private',    court: 'Court 4', status: 'pending'   },
-  { id: 'b9', day: 4, start: '16:30', end: '17:15', player: 'James Whitlock',type: 'Private',    court: 'Court 1', status: 'confirmed' },
-  { id: 'b10', day: 5, start: '09:00', end: '10:30', player: 'Cardio Tennis', type: 'Cardio',    court: 'Court 1', status: 'confirmed' },
-  { id: 'b11', day: 5, start: '11:00', end: '12:00', player: 'Priya Patel',  type: 'Private',    court: 'Court 2', status: 'confirmed' },
-  { id: 'b12', day: 2, start: '12:00', end: '14:00', player: 'Admin / Planning', type: 'Block',  court: '—',       status: 'confirmed' },
-  { id: 'b13', day: 0, start: '17:00', end: '18:00', player: 'Adult Group',  type: 'Group',      court: 'Court 4', status: 'confirmed' },
-  { id: 'b14', day: 6, start: '10:00', end: '11:00', player: 'Open coaching', type: 'Block',     court: 'Court 1', status: 'pending'   },
+  { id: 'b1', day: 3, start: '09:00', end: '09:45', player: 'Mia Chen',      type: 'Private',    court: 'Court 1', status: 'confirmed', coachId: 'pete' },
+  { id: 'b2', day: 3, start: '10:30', end: '11:30', player: 'Tom Okafor',    type: 'Private',    court: 'Court 2', status: 'confirmed', coachId: 'pete' },
+  { id: 'b3', day: 3, start: '12:00', end: '13:00', player: 'Junior Squad',  type: 'Group',      court: 'Court 1', status: 'confirmed', coachId: 'pete' },
+  { id: 'b4', day: 3, start: '16:00', end: '16:45', player: 'Ava Romero',    type: 'Private',    court: 'Court 3', status: 'confirmed', coachId: 'pete' },
+  { id: 'b5', day: 3, start: '18:00', end: '19:00', player: 'Daniel Cruz',   type: 'Match play', court: 'Court 3', status: 'confirmed', coachId: 'pete' },
+  { id: 'b6', day: 0, start: '15:30', end: '16:30', player: 'Performance Sq', type: 'Group',     court: 'Court 2', status: 'confirmed', coachId: 'pete' },
+  { id: 'b7', day: 1, start: '17:00', end: '18:15', player: 'Leo Whitfield', type: 'Match play', court: 'Court 3', status: 'confirmed', coachId: 'pete' },
+  { id: 'b8', day: 4, start: '15:30', end: '16:30', player: 'Hannah Berg',   type: 'Private',    court: 'Court 4', status: 'pending',   coachId: 'pete' },
+  { id: 'b9', day: 4, start: '16:30', end: '17:15', player: 'James Whitlock',type: 'Private',    court: 'Court 1', status: 'confirmed', coachId: 'pete' },
+  { id: 'b10', day: 5, start: '09:00', end: '10:30', player: 'Cardio Tennis', type: 'Cardio',    court: 'Court 1', status: 'confirmed', coachId: 'pete' },
+  { id: 'b11', day: 5, start: '11:00', end: '12:00', player: 'Priya Patel',  type: 'Private',    court: 'Court 2', status: 'confirmed', coachId: 'pete' },
+  { id: 'b12', day: 2, start: '12:00', end: '14:00', player: 'Admin / Planning', type: 'Block',  court: '—',       status: 'confirmed', coachId: 'pete' },
+  { id: 'b13', day: 0, start: '17:00', end: '18:00', player: 'Adult Group',  type: 'Group',      court: 'Court 4', status: 'confirmed', coachId: 'pete' },
+  { id: 'b14', day: 6, start: '10:00', end: '11:00', player: 'Open coaching', type: 'Block',     court: 'Court 1', status: 'pending',   coachId: 'pete' },
 ]
 
 // Bookings are the canonical schedule record. Each row's calendar date is derived
@@ -945,6 +951,7 @@ export type TodaySession = {
   court: string; mins: number; focus: string; status: 'done' | 'now' | 'upcoming'
   date: string              // 'YYYY-MM-DD' — the day this session runs
   bookingId?: string        // the confirmed booking this session traces back to
+  coachId?: string          // the coach running it (from the booking; defaults to the head)
   focusPoints?: string[]; drills?: string[]   // set when created via "New session"
 }
 
@@ -974,7 +981,7 @@ function bookingForSession(s: { time: string; player: string }): Booking | undef
 // schedule: each carries a real date and links to its booking where one exists
 // (the 17:00 Cardio session has no Thursday booking, so its bookingId is unset).
 export const TODAY_SESSIONS: TodaySession[] = TODAY_SESSION_SEED.map(s => ({
-  ...s, date: TODAY, bookingId: bookingForSession(s)?.id,
+  ...s, date: TODAY, bookingId: bookingForSession(s)?.id, coachId: bookingForSession(s)?.coachId ?? 'pete',
 }))
 
 export const COACH_TODAY: CoachScheduleItem[] = [
