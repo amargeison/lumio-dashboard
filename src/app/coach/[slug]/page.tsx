@@ -97,8 +97,8 @@ export default function CoachPortalPage() {
     <SportsDemoGate
       sport="coach"
       defaultClubName="Lumio Tennis Coach"
-      accentColor="#a855f7"
-      accentColorLight="#c084fc"
+      accentColor="#3A8EE0"
+      accentColorLight="#7db3ea"
       sportEmoji="🎾"
       sportLabel="Lumio Coach"
       roles={COACH_ROLES}
@@ -162,7 +162,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
       case 'calendar':    return <CalendarView T={T} accent={accent} density={density} />
       case 'venues':      return <CourtPlannerView T={T} accent={accent} density={density} />
       case 'camps':       return <CampsView T={T} accent={accent} density={density} />
-      case 'roster':      return <RosterView T={T} accent={accent} density={density} />
+      case 'roster':      return <RosterView T={T} accent={accent} density={density} onNavigate={setActive} />
       case 'videoaudio':  return <VideoAudioView T={T} accent={accent} density={density} />
       case 'gpsheatmaps': return <HeatmapsView T={T} accent={accent} density={density} />
       case 'messages':    return <MessagesView T={T} accent={accent} density={density} />
@@ -281,7 +281,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
       {/* main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
         {showDemoBanner && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 24px', fontSize: 12, fontWeight: 500, background: '#0D9488', color: '#fff', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 24px', fontSize: 12, fontWeight: 500, background: accent.hex, color: '#fff', flexShrink: 0 }}>
             <span>This is a demo · sample data</span>
             <span style={{ opacity: 0.85 }}>Lumio Coach — Tennis</span>
           </div>

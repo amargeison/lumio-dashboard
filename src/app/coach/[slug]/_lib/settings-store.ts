@@ -32,7 +32,7 @@ export type CoachSettings = {
 
 export const DEFAULT_SETTINGS: CoachSettings = {
   theme: 'dark',
-  accentKey: 'purple',
+  accentKey: 'blue',
   density: 'regular',
   academy: COACH_ORG.academy,
   coach: COACH_ORG.coach,

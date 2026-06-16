@@ -134,7 +134,7 @@ export function CoachMobileShell({
       </div>
 
       {showDemoBanner && (
-        <div style={{ padding: '6px 14px', fontSize: 11.5, fontWeight: 500, background: '#0D9488', color: '#fff', textAlign: 'center' }}>Demo · sample data</div>
+        <div style={{ padding: '6px 14px', fontSize: 11.5, fontWeight: 500, background: accent.hex, color: '#fff', textAlign: 'center' }}>Demo · sample data</div>
       )}
 
       {/* Scrollable main — desktop views render single-column in here, unchanged */}

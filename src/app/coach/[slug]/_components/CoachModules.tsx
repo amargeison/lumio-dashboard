@@ -10,16 +10,19 @@ import {
   PLAYERS, LESSONS, RESOURCES,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
-  type Player, type Lesson, type Resource, type Camp,
+  WEEK_START,
+  type Player, type Lesson, type Resource, type Camp, type Booking,
 } from '../_lib/coach-data'
-import { WeekCalendarGrid, bookingTypeColour } from './WeekCalendar'
+import { WeekCalendarGrid, bookingTypeColour, MonthAgenda, agendaDayLabel } from './WeekCalendar'
 import { bookingCalItems } from '../_lib/schedule'
+import { getAddedBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
+import { AddBookingModal } from './AddBookingModal'
 import { printBeltCertificate } from './BeltCertificate'
 import { LessonShareMenu } from './ShareMenu'
 import { CampEquipment, CampPlayerPacks } from './CampPacks'
 import { LessonAiBrief, PlayerDetailModal, printLessonReport } from './CoachDetails'
 import { NewSummaryModal } from './NewSummary'
-import { getAllLessons, subscribe as subscribeLessons } from '../_lib/lessons-store'
+import { getAllLessons, subscribe as subscribeLessons, consumeOpenLesson } from '../_lib/lessons-store'
 import { BooksPanel } from './BooksPanel'
 import { openResource } from './ResourceDocs'
 import { DrillLibrary } from './DrillLibrary'
@@ -41,10 +44,17 @@ import { getCamps, subscribe as subscribeCamps } from '../_lib/camps-store'
 import { NewCampModal } from './NewCamp'
 import {
   getMessages, subscribe as subscribeMessages, markRead, addReply, addForward,
-  toggleReaction, softDelete, requestOpen, consumePendingOpen, type CoachInboxMessage,
+  toggleReaction, softDelete, consumePendingOpen, type CoachInboxMessage,
 } from '../_lib/messages-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
+
+// Cross-view signal (in-memory): the dashboard "Needs attention" panel records
+// which player to open, and DevelopmentView consumes it on mount so the CLICKED
+// player is selected — not the default first player. Both live in this file.
+let _pendingDevPlayerId: string | null = null
+function openDevPlayer(id: string) { _pendingDevPlayerId = id }
+function consumeDevPlayer(): string | null { const v = _pendingDevPlayerId; _pendingDevPlayerId = null; return v }
 
 // ─── Shared primitives ──────────────────────────────────────────────────────
 export function Card({ T, density, children, style, hover, onClick }: { T: ThemeTokens; density: Density; children: ReactNode; style?: CSSProperties; hover?: boolean; onClick?: () => void }) {
@@ -126,10 +136,20 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const settings = useCoachSettings()
   const [msgOpen, setMsgOpen] = useState(false)
-  // Inbox preview reads the shared messages store so it stays in sync with the
-  // Messages page (Phase B will add the interactions; here it's read-only).
+  // Inbox preview reads the shared messages store; actions route through the
+  // same store so reply/dismiss here sync to the Messages page and survive
+  // reload. Rows expand INLINE (football InteractiveFootballInbox pattern) so
+  // the coach acts without leaving the dashboard — only "All →" opens the page.
   const [messages, setMessages] = useState<CoachInboxMessage[]>([])
   useEffect(() => { const r = () => setMessages(getMessages()); r(); return subscribeMessages(r) }, [])
+  const [inboxOpen, setInboxOpen] = useState<string | null>(null)
+  const [inboxMode, setInboxMode] = useState<'idle' | 'replying' | 'forwarding'>('idle')
+  const [inboxReply, setInboxReply] = useState('')
+  const [inboxForwardTo, setInboxForwardTo] = useState(FORWARD_TARGETS[0])
+  const openInboxMsg = (id: string) => {
+    if (inboxOpen === id) { setInboxOpen(null); return }   // toggle closed
+    setInboxOpen(id); setInboxMode('idle'); setInboxReply(''); markRead(id)
+  }
   return (
     <div>
       {msgOpen && <CoachSendMessage T={T} accent={accent} onClose={() => setMsgOpen(false)} />}
@@ -142,7 +162,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
           lines would spawn implicit tracks and break the mobile layout. */}
       <div className="cm-12" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, marginBottom: density.gap }}>
       {/* Hero */}
-      <Card T={T} density={density} style={{ gridColumn: 'span 8', overflow: 'hidden', padding: `${density.pad + 2}px ${density.pad + 4}px` }}>
+      <Card T={T} density={density} style={{ gridColumn: 'span 8', overflow: 'hidden', padding: `${density.pad - 2}px ${density.pad + 4}px` }}>
         <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 240 }}>
@@ -151,11 +171,11 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
               <span style={{ width: 1, height: 10, background: T.borderHi }} />
               <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>{settings.academy}</span>
             </div>
-            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>7 sessions, 4 racket assessments due</h1>
-            <p style={{ marginTop: 6, marginBottom: 0, fontSize: 12.5, color: T.text2, maxWidth: 560 }}>{COACH_ORG.venue} · {settings.cert}</p>
-            <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 23, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>7 sessions, 4 racket assessments due</h1>
+            <p style={{ marginTop: 5, marginBottom: 0, fontSize: 12.5, color: T.text2, maxWidth: 560 }}>{COACH_ORG.venue} · {settings.cert}</p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               <button onClick={() => onNavigate('lessons')} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <Icon name="note" size={14} stroke={2} /> New lesson summary
+                <Icon name="note" size={14} stroke={2} /> Lesson Summaries
               </button>
               <button onClick={() => onNavigate('calendar')} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <Icon name="calendar" size={14} stroke={1.6} /> Open calendar
@@ -177,7 +197,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
           beside the hero. Scrollable, mirrors football's FbTodaySchedule. */}
       <Card T={T} density={density} hover style={{ gridColumn: 'span 4' }}>
         <SectionHead T={T} title="Today" right={<span className="tnum" style={{ fontFamily: FONT_MONO }}>{COACH_TODAY.length} blocks</span>} />
-        <div style={{ maxHeight: 224, overflowY: 'auto', marginRight: -2, paddingRight: 2 }}>
+        <div style={{ maxHeight: 176, overflowY: 'auto', marginRight: -2, paddingRight: 2 }}>
           <div style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />
             {COACH_TODAY.map((it, i) => (
@@ -222,21 +242,74 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
           <SectionHead T={T} title={<><Icon name="bell" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2 }} />Inbox</>}
             right={<button onClick={() => onNavigate('messages')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, cursor: 'pointer', fontSize: 11, fontFamily: FONT, padding: 0 }}>All →</button>} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {messages.slice(0, 5).map((m, i) => (
-              <div key={m.id} onClick={() => { requestOpen(m.id); onNavigate('messages') }}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', margin: '0 -4px', borderRadius: 6, borderTop: i ? `1px solid ${T.border}` : 'none', cursor: 'pointer' }}
-                onMouseEnter={e => { e.currentTarget.style.background = T.hover }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: m.unread > 0 ? (m.urgent ? T.bad : accent.hex) : T.text4 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 12, color: T.text, fontWeight: m.unread > 0 ? 600 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.outbound ? `To ${m.from}` : m.from}</span>
-                    <Pill T={T}>{m.outbound ? 'Sent' : m.role.split(' · ')[0]}</Pill>
+            {messages.slice(0, 5).map((m, i) => {
+              const isOpen = inboxOpen === m.id
+              return (
+                <div key={m.id} style={{ borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+                  {/* Row — click expands inline (does NOT navigate). */}
+                  <div onClick={() => openInboxMsg(m.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', margin: '0 -4px', borderRadius: 6, cursor: 'pointer', background: isOpen ? T.panel2 : 'transparent' }}
+                    onMouseEnter={e => { if (!isOpen) e.currentTarget.style.background = T.hover }} onMouseLeave={e => { if (!isOpen) e.currentTarget.style.background = 'transparent' }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: m.unread > 0 ? (m.urgent ? T.bad : accent.hex) : T.text4 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 12, color: T.text, fontWeight: m.unread > 0 ? 600 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.outbound ? `To ${m.from}` : m.from}</span>
+                        <Pill T={T}>{m.outbound ? 'Sent' : m.role.split(' · ')[0]}</Pill>
+                        {m.reactions.map(e => <span key={e} style={{ fontSize: 11 }}>{e}</span>)}
+                      </div>
+                      <div style={{ fontSize: 11, color: m.unread > 0 ? T.text2 : T.text3, whiteSpace: isOpen ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{m.last}</div>
+                    </div>
+                    <div className="tnum" style={{ fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO, flexShrink: 0 }}>{m.time}</div>
                   </div>
-                  <div style={{ fontSize: 11, color: m.unread > 0 ? T.text2 : T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{m.last}</div>
+
+                  {/* Expanded thread + actions — compact, scrollable so the card stays tidy. */}
+                  {isOpen && (
+                    <div style={{ padding: '2px 2px 10px' }}>
+                      <div style={{ maxHeight: 132, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6, padding: '4px 0 8px' }}>
+                        {m.thread.length === 0 && <div style={{ fontSize: 11.5, color: T.text2, lineHeight: 1.5 }}>{m.body}</div>}
+                        {m.thread.map((te, ti) => (
+                          <div key={ti} style={{ display: 'flex', justifyContent: te.from === 'coach' ? 'flex-end' : 'flex-start' }}>
+                            <div style={{ maxWidth: '85%', padding: '6px 9px', borderRadius: 9, fontSize: 11.5, lineHeight: 1.45, background: te.from === 'coach' ? accent.dim : T.panel, border: `1px solid ${te.from === 'coach' ? accent.border : T.border}`, color: T.text }}>{te.text}</div>
+                          </div>
+                        ))}
+                      </div>
+                      {m.forwards.map((f, fi) => <div key={fi} style={{ fontSize: 10.5, color: T.good, fontFamily: FONT_MONO, marginBottom: 4 }}>↪ Forwarded to {f.to} ✓</div>)}
+                      <div style={{ display: 'flex', gap: 5, marginBottom: 8 }}>
+                        {MSG_REACTIONS.map(emoji => (
+                          <ReactionButton key={emoji} T={T} accent={accent} emoji={emoji} active={m.reactions.includes(emoji)} count={m.reactions.includes(emoji) ? 1 : 0} onClick={() => toggleReaction(m.id, emoji)} />
+                        ))}
+                      </div>
+                      {inboxMode === 'idle' && (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                          <button onClick={() => { setInboxMode('replying'); setInboxReply('') }} style={msgBtnGhost(T)}>Reply</button>
+                          <button onClick={() => setInboxMode('forwarding')} style={msgBtnGhost(T)}>Forward</button>
+                          <button onClick={() => { softDelete(m.id); setInboxOpen(null) }} style={{ ...msgBtnGhost(T), color: T.bad }}>Dismiss</button>
+                        </div>
+                      )}
+                      {inboxMode === 'replying' && (
+                        <div>
+                          <textarea value={inboxReply} onChange={e => setInboxReply(e.target.value)} placeholder={`Reply to ${m.from}…`} rows={2} autoFocus
+                            style={{ width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.borderHi}`, borderRadius: 8, padding: 8, fontSize: 12, fontFamily: FONT, resize: 'vertical', outline: 'none' }} />
+                          <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                            <button onClick={() => { const t = inboxReply.trim(); if (!t) return; addReply(m.id, t); setInboxReply(''); setInboxMode('idle') }} disabled={!inboxReply.trim()} style={msgBtnPrimary(T, accent, !!inboxReply.trim())}>Send</button>
+                            <button onClick={() => { setInboxMode('idle'); setInboxReply('') }} style={msgBtnGhost(T)}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
+                      {inboxMode === 'forwarding' && (
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <select value={inboxForwardTo} onChange={e => setInboxForwardTo(e.target.value)} style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 8px', fontSize: 11.5, fontFamily: FONT }}>
+                            {FORWARD_TARGETS.map(t => <option key={t}>{t}</option>)}
+                          </select>
+                          <button onClick={() => { addForward(m.id, inboxForwardTo); setInboxMode('idle') }} style={msgBtnPrimary(T, accent, true)}>Forward</button>
+                          <button onClick={() => setInboxMode('idle')} style={msgBtnGhost(T)}>Cancel</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="tnum" style={{ fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO, flexShrink: 0 }}>{m.time}</div>
-              </div>
-            ))}
+              )
+            })}
             {messages.length === 0 && <div style={{ fontSize: 12, color: T.text3, fontStyle: 'italic', padding: '14px 0' }}>Inbox cleared.</div>}
           </div>
         </Card>
@@ -257,7 +330,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
           <SectionHead T={T} title="Needs attention" />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {PLAYERS.filter(p => p.status !== 'green').map(p => (
-              <div key={p.id} onClick={() => onNavigate('development')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 6px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}`, cursor: 'pointer' }}>
+              <div key={p.id} onClick={() => { openDevPlayer(p.id); onNavigate('development') }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 6px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}`, cursor: 'pointer' }}>
                 <Avatar accent={accent} initials={p.initials} size={26} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 11.5, color: T.text, fontWeight: 600 }}>{p.name}</div>
@@ -285,6 +358,8 @@ export function LessonsView({ T, accent, density }: Common) {
   const [allLessons, setAllLessons] = useState<Lesson[]>(LESSONS)
   useEffect(() => { const r = () => setAllLessons(getAllLessons()); r(); return subscribeLessons(r) }, [])
   const [selId, setSelId] = useState(LESSONS[0].id)
+  // Open the lesson the player-card "View full summary" link asked for, if any.
+  useEffect(() => { const id = consumeOpenLesson(); if (id) setSelId(id) }, [])
   const [shareOpen, setShareOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
   const sel = allLessons.find(l => l.id === selId) ?? allLessons[0]
@@ -397,6 +472,8 @@ function SubHead({ T, accent, icon, children, mt }: { T: ThemeTokens; accent: Ac
 export function DevelopmentView({ T, accent, density }: Common) {
   const players = useAllPlayers()
   const [selId, setSelId] = useState(PLAYERS[0].id)
+  // Open the player the dashboard "Needs attention" panel asked for, if any.
+  useEffect(() => { const id = consumeDevPlayer(); if (id) setSelId(id) }, [])
   const p = players.find(x => x.id === selId) ?? players[0]
   const belt = BELTS[p.beltIndex]
   const prog = beltProgress(p, p.beltIndex)
@@ -664,19 +741,44 @@ function ballColour(b: string) { return b === 'Red' ? '#C75A5A' : b === 'Orange'
 // BOOKING CALENDAR  (week grid)
 // ════════════════════════════════════════════════════════════════════════════
 export function CalendarView({ T, accent, density }: Common) {
+  const [addOpen, setAddOpen] = useState(false)
+  const [view, setView] = useState<'week' | 'month'>('week')
+  // Added bookings from the store — loaded after mount (SSR-safe) and kept live.
+  // BOTH views read this same source, so a new booking shows in week and month.
+  const [addedBookings, setAddedBookings] = useState<Booking[]>([])
+  useEffect(() => { const r = () => setAddedBookings(getAddedBookings()); r(); return subscribeBookings(r) }, [])
+  const items = bookingCalItems(undefined, addedBookings)
+  // Month view = 30 days from the start of the current week, grouped into the
+  // shared MonthAgenda (the same component the Session Planner's month tab uses).
+  const rangeEnd = (() => { const d = new Date(WEEK_START + 'T00:00:00'); d.setDate(d.getDate() + 30); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
+  const monthItems = items.filter(it => it.date >= WEEK_START && it.date < rangeEnd)
+  const monthGroups = Array.from(new Set(monthItems.map(it => it.date))).sort()
+    .map(date => ({ date, label: agendaDayLabel(date), items: monthItems.filter(it => it.date === date).sort((a, b) => a.start.localeCompare(b.start)) }))
+  const views: { id: 'week' | 'month'; label: string }[] = [{ id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }]
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Booking Calendar" sub="Your week across all courts — private lessons, group squads, cardio and match play."
-        action={<button style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> Add booking</button>} />
-      <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto' }}>
-        <WeekCalendarGrid T={T} accent={accent} density={density} items={bookingCalItems()} />
-      </Card>
+        action={<button onClick={() => setAddOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> Add booking</button>} />
+      {/* Week / Month switcher — same pill-tab styling as the Session Planner. */}
+      <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginBottom: 16, width: 'fit-content' }}>
+        {views.map(v => (
+          <button key={v.id} onClick={() => setView(v.id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: view === v.id ? T.panel : 'transparent', color: view === v.id ? T.text : T.text2, fontWeight: view === v.id ? 600 : 400, boxShadow: view === v.id ? `0 0 0 1px ${T.border}` : 'none' }}>{v.label}</button>
+        ))}
+      </div>
+      {view === 'week' ? (
+        <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto' }}>
+          <WeekCalendarGrid T={T} accent={accent} density={density} items={items} />
+        </Card>
+      ) : (
+        <MonthAgenda T={T} accent={accent} groups={monthGroups} empty="No bookings in the next 30 days — add one to get started." />
+      )}
       <div style={{ display: 'flex', gap: 14, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
         {['Private', 'Group', 'Cardio', 'Match play', 'Block'].map(t => (
           <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: bookingTypeColour(T, accent, t) }} />{t}</span>
         ))}
-        <span style={{ marginLeft: 'auto' }}>Faint fill = pending confirmation</span>
+        <span style={{ marginLeft: 'auto' }}>{view === 'week' ? 'Faint fill = pending confirmation' : `Next 30 days · ${monthItems.length} bookings`}</span>
       </div>
+      {addOpen && <AddBookingModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>
   )
 }
@@ -684,7 +786,7 @@ export function CalendarView({ T, accent, density }: Common) {
 // ════════════════════════════════════════════════════════════════════════════
 // ROSTER
 // ════════════════════════════════════════════════════════════════════════════
-export function RosterView({ T, accent, density }: Common) {
+export function RosterView({ T, accent, density, onNavigate }: Common & { onNavigate?: (s: string) => void }) {
   const [group, setGroup] = useState<'All' | 'Junior' | 'Performance' | 'Adult'>('All')
   const [sel, setSel] = useState<Player | null>(null)
   const [addOpen, setAddOpen] = useState(false)
@@ -737,7 +839,7 @@ export function RosterView({ T, accent, density }: Common) {
           </Card>
         ))}
       </div>
-      {sel && <PlayerDetailModal T={T} accent={accent} density={density} player={sel} onClose={() => setSel(null)} />}
+      {sel && <PlayerDetailModal T={T} accent={accent} density={density} player={sel} onClose={() => setSel(null)} onNavigate={onNavigate} />}
       {addOpen && <AddPlayerModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>
   )

@@ -48,6 +48,14 @@ export function subscribe(cb: () => void): () => void {
   return () => { window.removeEventListener(EVT, cb); window.removeEventListener('storage', cb) }
 }
 
+// ─── Cross-view open signal ──────────────────────────────────────────────────
+// In-memory (not persisted): the player-card lesson history calls
+// requestOpenLesson(id) then navigates to the Lesson Summaries page, which
+// consumes it on mount to auto-select that lesson's full summary.
+let _pendingOpenLesson: string | null = null
+export function requestOpenLesson(id: string) { _pendingOpenLesson = id }
+export function consumeOpenLesson(): string | null { const v = _pendingOpenLesson; _pendingOpenLesson = null; return v }
+
 // ─── Building a Lesson from a marked-done session ────────────────────────────
 // Deterministic id so the entry can be upserted (review completes later) and
 // removed (un-marking done) by session id. Cannot collide with demo ids (l1…)

@@ -24,7 +24,8 @@ import { getAddedSessions, getStatusOverrides, getHiddenSessions, setStatus, cle
 import { useAllPlayers } from '../_lib/use-roster'
 import { NewSessionModal } from './NewSession'
 import { getCalendarItems, getNeedsPlan, dayIndexForDate, mapBookingType, type CalItem } from '../_lib/schedule'
-import { WeekCalendarGrid, bookingTypeColour } from './WeekCalendar'
+import { WeekCalendarGrid, bookingTypeColour, MonthAgenda, agendaDayLabel } from './WeekCalendar'
+import { getAddedBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -116,6 +117,10 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
     const r = () => { setAdded(getAddedSessions()); setOverrides(getStatusOverrides()); setHidden(getHiddenSessions()) }
     r(); return subscribeSessions(r)
   }, [])
+  // Bookings added via "Add booking" — merged into the schedule so they appear
+  // here as buildable sessions too (bookings are the schedule source of truth).
+  const [addedBookings, setAddedBookings] = useState<Booking[]>([])
+  useEffect(() => { const r = () => setAddedBookings(getAddedBookings()); r(); return subscribeBookings(r) }, [])
   const allSessions = [...added, ...TODAY_SESSIONS]
     .filter(s => !hidden.includes(s.id))
     .map(s => overrides[s.id] ? { ...s, status: overrides[s.id] } : s)
@@ -167,15 +172,16 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   )
 
   // ─── multi-view data — all derived from the one dated dataset ──────────────
+  const allBookings = [...BOOKINGS, ...addedBookings]
   const todaySessions = allSessions.filter(s => s.date === TODAY)
-  const calItems = getCalendarItems(added)
-  const needsPlan = getNeedsPlan(added)
+  const calItems = getCalendarItems(added, undefined, addedBookings)
+  const needsPlan = getNeedsPlan(added, undefined, addedBookings)
   const nextUp = allSessions.filter(s => s.status !== 'done')
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0]
   const counts = {
     today: todaySessions.length,
     week: allSessions.filter(s => dayIndexForDate(s.date) >= 0).length,
-    pending: BOOKINGS.filter(b => b.status === 'pending').length,
+    pending: allBookings.filter(b => b.status === 'pending').length,
     rackets: COACH_TOP_STATS.find(s => s.label === 'Rackets due')?.value ?? 0,
   }
   const tabs: { id: typeof tab; label: string }[] = [
@@ -187,11 +193,14 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   const selectSession = (id: string) => { setSelId(id); setTab('today') }
   const onCalItemClick = (it: CalItem) => {
     if (it.sessionId) selectSession(it.sessionId)
-    else if (it.bookingId) { const b = BOOKINGS.find(x => x.id === it.bookingId); if (b && mapBookingType(b.type)) openWizard(b) }
+    else if (it.bookingId) { const b = allBookings.find(x => x.id === it.bookingId); if (b && mapBookingType(b.type)) openWizard(b) }
   }
-  // Month agenda — calendar items grouped by date (the June demo week).
+  // Month agenda — calendar items grouped by date, rendered by the shared
+  // MonthAgenda (same component the Booking Calendar's Month tab uses).
   const monthGroups = Array.from(new Set(calItems.map(it => it.date))).sort()
-    .map(date => ({ date, items: calItems.filter(it => it.date === date).sort((a, b) => a.start.localeCompare(b.start)) }))
+    .map(date => ({ date, label: agendaDayLabel(date), items: calItems.filter(it => it.date === date).sort((a, b) => a.start.localeCompare(b.start)) }))
+  const buildBadge = (it: CalItem): ReactNode => (!it.sessionId && it.bookingId && mapBookingType(it.type as Booking['type']))
+    ? <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Build</span> : null
 
   return (
     <div>
@@ -434,24 +443,7 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
 
       {/* ══ THIS MONTH (agenda) ══ */}
       {tab === 'month' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
-          {monthGroups.map(g => (
-            <Card key={g.date} T={T} density={density}>
-              <SectionHead T={T} title={dayLabel(g.date)} right={`${g.items.length}`} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {g.items.map(it => (
-                  <button key={it.key} onClick={() => onCalItemClick(it)} style={{ appearance: 'none', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8 }}>
-                    <span className="tnum" style={{ fontSize: 11.5, color: T.text2, fontFamily: FONT_MONO, width: 92, flexShrink: 0 }}>{it.start}–{it.end}</span>
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: bookingTypeColour(T, accent, it.type), flexShrink: 0 }} />
-                    <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.player}</span>
-                    <span style={{ fontSize: 11, color: T.text3 }}>{it.type} · {it.court}</span>
-                    {!it.sessionId && it.bookingId && mapBookingType(it.type as Booking['type']) && <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Build</span>}
-                  </button>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
+        <MonthAgenda T={T} accent={accent} groups={monthGroups} onItemClick={onCalItemClick} itemBadge={buildBadge} empty="No sessions or bookings this month." />
       )}
 
       {newOpen && <NewSessionModal T={T} accent={accent} density={density} players={rosterPlayers} seedBooking={seedBooking ?? undefined} onClose={() => { setNewOpen(false); setSeedBooking(null) }} onCreated={id => { selectSession(id); setSeedBooking(null) }} />}

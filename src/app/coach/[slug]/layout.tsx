@@ -37,7 +37,7 @@ export async function generateMetadata(
 }
 
 export const viewport: Viewport = {
-  themeColor: '#A855F7',
+  themeColor: '#3A8EE0',
 }
 
 export default function CoachSlugLayout({ children }: { children: React.ReactNode }) {
