@@ -96,7 +96,7 @@ export default function CoachPortalPage() {
   return (
     <SportsDemoGate
       sport="coach"
-      defaultClubName="Lumio Tennis Academy"
+      defaultClubName="Lumio Tennis Coach"
       accentColor="#a855f7"
       accentColorLight="#c084fc"
       sportEmoji="🎾"
@@ -214,7 +214,10 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
         <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${line}`, minHeight: 56, padding: expanded ? '12px 12px' : '12px 4px', gap: expanded ? 8 : 0, justifyContent: expanded ? 'flex-start' : 'center' }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0, fontSize: 17 }}>🎾</div>
+          <div style={{ width: 32, height: 32, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0, overflow: 'hidden' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/tennis_transparent_logo.png" alt="Lumio Tennis" style={{ width: 26, height: 26, objectFit: 'contain' }} />
+          </div>
           {expanded && (
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, whiteSpace: 'nowrap' }}>Lumio Coach</div>

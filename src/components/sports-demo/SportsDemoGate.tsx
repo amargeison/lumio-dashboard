@@ -397,6 +397,26 @@ const PortalLogo = memo(function PortalLogo({ sport }: { sport: string }) {
   )
 })
 
+// Stable, module-level overlay shell. MUST live outside the gate component:
+// when it was defined inside the render function it got a fresh identity every
+// render, so each keystroke in the controlled email/OTP inputs remounted the
+// whole subtree and the caret jumped to the end. Hoisting keeps the inputs
+// mounted across renders so the caret stays put.
+const GateOverlay = memo(function GateOverlay({ sport, sportLabel, children }: { sport: string; sportLabel: string; children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif' }}>
+      <div className="w-full max-w-md">
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <PortalLogo sport={sport} />
+          <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: 0 }}>{sportLabel}</h2>
+          <p style={{ color: '#6B7280', fontSize: 13, marginTop: 4 }}>Interactive demo</p>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+})
+
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────
 export default function SportsDemoGate({
   sport, defaultClubName, defaultSlug, accentColor, accentColorLight,
@@ -993,22 +1013,9 @@ export default function SportsDemoGate({
     return <>{children(session)}</>
   }
 
-  const Overlay = ({ children: inner }: { children: React.ReactNode }) => (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif' }}>
-      <div className="w-full max-w-md">
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <PortalLogo sport={sport} />
-          <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: 0 }}>{sportLabel}</h2>
-          <p style={{ color: '#6B7280', fontSize: 13, marginTop: 4 }}>Interactive demo</p>
-        </div>
-        {inner}
-      </div>
-    </div>
-  )
-
   // ── STEP 1: EMAIL ──
   if (step === 'email') return (
-    <Overlay>
+    <GateOverlay sport={sport} sportLabel={sportLabel}>
       <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8">
         <h2 className="text-lg font-bold text-white mb-1">Explore the demo</h2>
         <p className="text-sm text-gray-400 mb-6">Enter your email to get instant access. We&apos;ll send a quick verification code.</p>
@@ -1020,12 +1027,12 @@ export default function SportsDemoGate({
           style={{ background: loading ? '#374151' : accentColor }}>{loading ? 'Sending code...' : 'Get access →'}</button>
         <p className="text-[11px] text-gray-600 text-center mt-4">No password. No credit card. Just a quick code to keep bots out.</p>
       </div>
-    </Overlay>
+    </GateOverlay>
   )
 
   // ── STEP 2: OTP ──
   if (step === 'otp') return (
-    <Overlay>
+    <GateOverlay sport={sport} sportLabel={sportLabel}>
       <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8">
         <h2 className="text-lg font-bold text-white mb-1">Check your email</h2>
         <p className="text-sm text-gray-400 mb-6">We sent a 6-digit code to <span className="text-white font-medium">{email}</span>.</p>
@@ -1037,12 +1044,12 @@ export default function SportsDemoGate({
           style={{ background: accentColor }}>{loading ? 'Verifying...' : 'Verify →'}</button>
         <button onClick={() => { setStep('email'); setCode(''); setError('') }} className="w-full mt-3 py-2 text-xs text-gray-600 hover:text-gray-400">← Use a different email</button>
       </div>
-    </Overlay>
+    </GateOverlay>
   )
 
   // ── STEP 3: CLUB ──
   if (step === 'club') return (
-    <Overlay>
+    <GateOverlay sport={sport} sportLabel={sportLabel}>
       <ClubStep
         clubNameRef={clubNameRef}
         defaultClubName={defaultClubName}
@@ -1060,12 +1067,12 @@ export default function SportsDemoGate({
           setStep('profile')
         }}
       />
-    </Overlay>
+    </GateOverlay>
   )
 
   // ── STEP 4: PROFILE ──
   if (step === 'profile') return (
-    <Overlay>
+    <GateOverlay sport={sport} sportLabel={sportLabel}>
       <ProfileStep
         userNameRef={userNameRef}
         nicknameRef={nicknameRef}
@@ -1096,12 +1103,12 @@ export default function SportsDemoGate({
           setStep('earlyaccess')
         }}
       />
-    </Overlay>
+    </GateOverlay>
   )
 
   // ── STEP 5: EARLY ACCESS ──
   if (step === 'earlyaccess') return (
-    <Overlay>
+    <GateOverlay sport={sport} sportLabel={sportLabel}>
       <EarlyAccessStep
         accentColor={accentColor}
         email={email}
@@ -1111,12 +1118,12 @@ export default function SportsDemoGate({
         onApply={() => setStep('invite')}
         onContinue={() => setStep('invite')}
       />
-    </Overlay>
+    </GateOverlay>
   )
 
   // ── STEP 6: INVITE ──
   if (step === 'invite') return (
-    <Overlay>
+    <GateOverlay sport={sport} sportLabel={sportLabel}>
       <InviteStep
         accentColor={accentColor}
         sport={sport}
@@ -1137,7 +1144,7 @@ export default function SportsDemoGate({
         }}
         onSkip={finaliseSession}
       />
-    </Overlay>
+    </GateOverlay>
   )
 
   return null

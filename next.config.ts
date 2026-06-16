@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
     ],
   },
   redirects: async () => [
+    // Tennis Coach demo alias → the shared coach demo. A redirect runs before
+    // filesystem routing, so /tennis/coach/demo resolves to the coach demo
+    // (sport="coach") and never the tennis/coach/[slug] player route.
+    { source: '/tennis/coach/demo', destination: '/coach/demo', permanent: false },
     { source: '/sales-crm', destination: '/sales', permanent: true },
     { source: '/crm/:path*', destination: 'https://app.lumiocms.com/crm/:path*', permanent: false, has: [{ type: 'host', value: 'lumiocms.com' }] },
     { source: '/demo/football/:slug', destination: '/football/pro/:slug', permanent: true },

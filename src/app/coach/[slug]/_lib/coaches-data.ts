@@ -33,7 +33,7 @@ const HOME = COACH_ORG.venue.split(' · ')[0]   // 'Riverside Tennis Centre'
 // 15 coaches. Pete is the Head, reconciled from COACH_ORG (name + accreditation),
 // so the head coach appears in his own team rather than being mysteriously absent.
 export const COACHES: Coach[] = [
-  { id: 'pete',   name: COACH_ORG.coach,   initials: 'PG', role: 'Head',      accreditation: COACH_ORG.cert,                  specialisms: ['Performance', 'Match play'],     availability: 'Mon–Sat · full days', hoursPerWeek: 32, status: 'active', homeVenue: HOME },
+  { id: 'pete',   name: COACH_ORG.coach,   initials: 'VJ', role: 'Head',      accreditation: COACH_ORG.cert,                  specialisms: ['Performance', 'Match play'],     availability: 'Mon–Sat · full days', hoursPerWeek: 32, status: 'active', homeVenue: HOME },
   { id: 'rachel', name: 'Rachel Adeyemi',  initials: 'RA', role: 'Senior',    accreditation: 'LTA Accredited+ Coach',         specialisms: ['Performance', 'Doubles'],        availability: 'Mon–Fri · days',      hoursPerWeek: 30, status: 'active', homeVenue: HOME },
   { id: 'marcus', name: 'Marcus Bell',     initials: 'MB', role: 'Senior',    accreditation: 'LTA Accredited+ Coach',         specialisms: ['Cardio', 'Adult'],               availability: 'Tue–Sat · days',      hoursPerWeek: 30, status: 'active', homeVenue: HOME },
   { id: 'sofia',  name: 'Sofia Nilsson',   initials: 'SN', role: 'Senior',    accreditation: 'LTA Accredited Coach',          specialisms: ['Performance', 'Junior'],         availability: 'Mon–Fri · days',      hoursPerWeek: 28, status: 'active', homeVenue: HOME },
