@@ -97,8 +97,8 @@ export default function CoachPortalPage() {
     <SportsDemoGate
       sport="coach"
       defaultClubName="Lumio Tennis Coach"
-      accentColor="#a855f7"
-      accentColorLight="#c084fc"
+      accentColor="#3A8EE0"
+      accentColorLight="#7db3ea"
       sportEmoji="🎾"
       sportLabel="Lumio Coach"
       roles={COACH_ROLES}

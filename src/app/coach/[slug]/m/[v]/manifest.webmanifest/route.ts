@@ -34,7 +34,7 @@ export async function GET(
     display:          'standalone',
     orientation:      'portrait',
     background_color: '#07080F',
-    theme_color:      '#A855F7',
+    theme_color:      '#3A8EE0',
     icons: [
       { src: '/tennis_coach_logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/tennis_coach_logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

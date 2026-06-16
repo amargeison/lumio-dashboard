@@ -46,6 +46,13 @@ import {
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
+// Cross-view signal (in-memory): the dashboard "Needs attention" panel records
+// which player to open, and DevelopmentView consumes it on mount so the CLICKED
+// player is selected — not the default first player. Both live in this file.
+let _pendingDevPlayerId: string | null = null
+function openDevPlayer(id: string) { _pendingDevPlayerId = id }
+function consumeDevPlayer(): string | null { const v = _pendingDevPlayerId; _pendingDevPlayerId = null; return v }
+
 // ─── Shared primitives ──────────────────────────────────────────────────────
 export function Card({ T, density, children, style, hover, onClick }: { T: ThemeTokens; density: Density; children: ReactNode; style?: CSSProperties; hover?: boolean; onClick?: () => void }) {
   const [h, setH] = useState(false)
@@ -142,7 +149,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
           lines would spawn implicit tracks and break the mobile layout. */}
       <div className="cm-12" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, marginBottom: density.gap }}>
       {/* Hero */}
-      <Card T={T} density={density} style={{ gridColumn: 'span 8', overflow: 'hidden', padding: `${density.pad + 2}px ${density.pad + 4}px` }}>
+      <Card T={T} density={density} style={{ gridColumn: 'span 8', overflow: 'hidden', padding: `${density.pad - 2}px ${density.pad + 4}px` }}>
         <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 240 }}>
@@ -151,11 +158,11 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
               <span style={{ width: 1, height: 10, background: T.borderHi }} />
               <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>{settings.academy}</span>
             </div>
-            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>7 sessions, 4 racket assessments due</h1>
-            <p style={{ marginTop: 6, marginBottom: 0, fontSize: 12.5, color: T.text2, maxWidth: 560 }}>{COACH_ORG.venue} · {settings.cert}</p>
-            <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 23, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>7 sessions, 4 racket assessments due</h1>
+            <p style={{ marginTop: 5, marginBottom: 0, fontSize: 12.5, color: T.text2, maxWidth: 560 }}>{COACH_ORG.venue} · {settings.cert}</p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               <button onClick={() => onNavigate('lessons')} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <Icon name="note" size={14} stroke={2} /> New lesson summary
+                <Icon name="note" size={14} stroke={2} /> Lesson Summaries
               </button>
               <button onClick={() => onNavigate('calendar')} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <Icon name="calendar" size={14} stroke={1.6} /> Open calendar
@@ -177,7 +184,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
           beside the hero. Scrollable, mirrors football's FbTodaySchedule. */}
       <Card T={T} density={density} hover style={{ gridColumn: 'span 4' }}>
         <SectionHead T={T} title="Today" right={<span className="tnum" style={{ fontFamily: FONT_MONO }}>{COACH_TODAY.length} blocks</span>} />
-        <div style={{ maxHeight: 224, overflowY: 'auto', marginRight: -2, paddingRight: 2 }}>
+        <div style={{ maxHeight: 176, overflowY: 'auto', marginRight: -2, paddingRight: 2 }}>
           <div style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />
             {COACH_TODAY.map((it, i) => (
@@ -257,7 +264,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
           <SectionHead T={T} title="Needs attention" />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {PLAYERS.filter(p => p.status !== 'green').map(p => (
-              <div key={p.id} onClick={() => onNavigate('development')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 6px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}`, cursor: 'pointer' }}>
+              <div key={p.id} onClick={() => { openDevPlayer(p.id); onNavigate('development') }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 6px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}`, cursor: 'pointer' }}>
                 <Avatar accent={accent} initials={p.initials} size={26} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 11.5, color: T.text, fontWeight: 600 }}>{p.name}</div>
@@ -397,6 +404,8 @@ function SubHead({ T, accent, icon, children, mt }: { T: ThemeTokens; accent: Ac
 export function DevelopmentView({ T, accent, density }: Common) {
   const players = useAllPlayers()
   const [selId, setSelId] = useState(PLAYERS[0].id)
+  // Open the player the dashboard "Needs attention" panel asked for, if any.
+  useEffect(() => { const id = consumeDevPlayer(); if (id) setSelId(id) }, [])
   const p = players.find(x => x.id === selId) ?? players[0]
   const belt = BELTS[p.beltIndex]
   const prog = beltProgress(p, p.beltIndex)
