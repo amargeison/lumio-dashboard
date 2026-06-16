@@ -5829,7 +5829,9 @@ function WomensFootballPortalInner({ club, session, emptyMode = false }: { club:
         <div className="flex items-center gap-2 border-b border-gray-800" style={{ padding: expanded ? '16px' : '16px 0', justifyContent: expanded ? 'flex-start' : 'center' }}>
           {session.logoDataUrl
             ? <img src={session.logoDataUrl} className="w-7 h-7 rounded object-cover flex-shrink-0" alt="" />
-            : <img src="/badges/oakridge_fc_crest.svg" className="w-7 h-7 rounded object-contain flex-shrink-0" alt="Oakridge Women FC" />}
+            : emptyMode
+              ? <span className="w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: '#EC489922', color: '#EC4899', border: '1px solid #EC489944' }}>{(session.clubName || 'Club').split(/\s+/).filter(Boolean).map(x => x[0]).join('').slice(0, 2).toUpperCase()}</span>
+              : <img src="/badges/oakridge_fc_crest.svg" className="w-7 h-7 rounded object-contain flex-shrink-0" alt="Oakridge Women FC" />}
           {expanded && (
             <>
               <span className="text-sm font-bold text-white truncate flex-1">{session.clubName}</span>

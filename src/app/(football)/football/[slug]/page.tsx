@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
+import SportsSettings from '@/components/sports/SportsSettings'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { use } from 'react'
@@ -680,11 +681,11 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
         onMouseLeave={handleMouseLeave}
       >
         <div className="flex items-center justify-center gap-2.5 py-3 shrink-0" style={{ borderBottom: '1px solid #1F2937', minHeight: 72, padding: expanded ? '12px 16px' : '12px 0' }}>
-          <div className="relative flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: clubLogo ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}>
-            {clubLogo
-              ? <img key={clubLogo} src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setClubLogo(null)} />
-              : isFootballDemo
-                ? <img src="/badges/oakridge_fc_crest.svg" alt="Oakridge FC" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} />
+          <div className="relative flex items-center justify-center shrink-0 overflow-hidden" style={{ width: 64, height: 64, borderRadius: 10, backgroundColor: (isFootballDemo || clubLogo) ? 'transparent' : PRIMARY, color: '#F9FAFB', border: '1px solid #1F2937', fontSize: 26, fontWeight: 700 }}>
+            {isFootballDemo
+              ? <img src="/badges/oakridge_fc_crest.svg" alt="Oakridge FC" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 9 }} />
+              : clubLogo
+                ? <img key={clubLogo} src={clubLogo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9 }} onError={() => setClubLogo(null)} />
                 : 'FC'}
           </div>
           {expanded && (
@@ -6689,462 +6690,133 @@ function ApiStatusStrip() {
   )
 }
 
-function SettingsView({ isDemo = false, slug = '', clubLogo, onLogoUpload, onLogoRemove }: { isDemo?: boolean; slug?: string; clubLogo?: string | null; onLogoUpload?: (e: React.ChangeEvent<HTMLInputElement>) => void; onLogoRemove?: () => void }) {
-  const [ttsOn, setTtsOn] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_enabled') !== 'false' : true)
-  const [activeVoice, setActiveVoice] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('lumio_tts_voice') || 'EXAVITQu4vr4xnSDxMaL' : 'EXAVITQu4vr4xnSDxMaL')
-  const [zones, setZones] = useState(getStoredZones)
-  const localTz = getUserLocalTz()
-
-  function ToggleButton({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-    return (
-      <button onClick={onToggle} className="flex-shrink-0" style={{ width: 44, height: 24, borderRadius: 12, backgroundColor: on ? '#003DA5' : '#374151', transition: 'background 0.2s', border: 'none', cursor: 'pointer', position: 'relative' }}>
-        <span style={{ position: 'absolute', top: 3, left: on ? 22 : 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'left 0.2s' }} />
-      </button>
-    )
-  }
-
-  function toggleZone(zone: { label: string; tz: string }) {
-    const exists = zones.some(z => z.tz === zone.tz)
-    let next: { label: string; tz: string }[]
-    if (exists) { next = zones.filter(z => z.tz !== zone.tz) }
-    else { if (zones.length >= 4) return; next = [...zones, zone] }
-    setZones(next)
-    localStorage.setItem('lumio_world_zones', JSON.stringify(next))
-    window.dispatchEvent(new StorageEvent('storage', { key: 'lumio_world_zones', newValue: JSON.stringify(next) }))
-  }
-
+function SettingsView({ session, slug = '' }: { session?: { userName?: string; photoDataUrl?: string | null; email?: string; nickname?: string; clubName?: string; logoDataUrl?: string | null; isDemoShell?: boolean }; slug?: string }) {
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h2 className="text-xl font-bold" style={{ color: '#F9FAFB' }}>Settings</h2>
-        <p className="text-sm mt-1" style={{ color: '#9CA3AF' }}>Configure your football portal preferences.</p>
-      </div>
-
-      {/* ── Club Details ──────────────────────────────────────────────── */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Club</p>
-        </div>
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>Club name</span>
-            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>{slug ? slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'My Club'}</span>
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>Stadium</span>
-            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>—</span>
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>League</span>
-            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>—</span>
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>Season</span>
-            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>2025-26</span>
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>Plan</span>
-            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Lumio Football</span>
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>Status</span>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22C55E' }}>Active</span>
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>Billing</span>
-            <button className="text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>Manage billing</button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Football-Specific Settings ────────────────────────────────── */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Football Configuration</p>
-        </div>
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <div className="flex items-center justify-between px-5 py-3">
-            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>API-Football Team ID</p><p className="text-xs" style={{ color: '#6B7280' }}>For live fixture and stats data</p></div>
-            <input type="number" placeholder="e.g. 42" className="text-sm rounded-lg px-3 py-1.5 outline-none w-28 text-right" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>GPS Hardware Provider</p><p className="text-xs" style={{ color: '#6B7280' }}>Player tracking system</p></div>
-            <select className="text-sm rounded-lg px-3 py-1.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-              <option>None</option><option>Johan Sports (recommended)</option><option>CSV Upload (manual)</option>
-            </select>
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Home kit — primary colour</p></div>
-            <input type="color" defaultValue="#003DA5" className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Home kit — secondary colour</p></div>
-            <input type="color" defaultValue="#F1C40F" className="w-10 h-8 rounded cursor-pointer" style={{ border: '1px solid #374151' }} />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Integrations ──────────────────────────────────────────────── */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Integrations</p>
-        </div>
-        <div className="p-5 space-y-5">
-          <div>
-            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>DATA PROVIDERS</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {[
-                { name: 'API-Football', desc: 'Live fixtures, results & stats' },
-                { name: 'Lumio Data', desc: 'Advanced analytics & xG data' },
-                { name: 'Lumio Scout', desc: 'Scouting reports & video' },
-                { name: 'Lumio Data Pro', desc: 'Event-level match data' },
-              ].map(integ => (
-                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
-                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>Connect</button>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="text-xs font-semibold mb-2" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>COMMUNICATION</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {[
-                { name: 'Slack', desc: 'Team messaging & alerts' },
-                { name: 'Microsoft Teams', desc: 'Chat & video conferencing' },
-                { name: 'Google Workspace', desc: 'Calendar, Drive & email' },
-                { name: 'WhatsApp Business', desc: 'Player & agent messaging' },
-              ].map(integ => (
-                <div key={integ.name} className="flex items-center justify-between rounded-lg px-4 py-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-                  <div className="min-w-0"><p className="text-sm font-medium truncate" style={{ color: '#F9FAFB' }}>{integ.name}</p><p className="text-xs truncate" style={{ color: '#6B7280' }}>{integ.desc}</p></div>
-                  <button className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0 ml-3" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#60A5FA', border: '1px solid rgba(0,61,165,0.3)' }}>Connect</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Team & Staff ──────────────────────────────────────────────── */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Team & Staff</p>
-        </div>
-        <div className="divide-y" style={{ borderColor: '#1F2937' }}>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>Staff members</span>
-            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>1 (you)</span>
-          </div>
-          <div className="flex items-center justify-between px-5 py-3">
-            <span className="text-sm" style={{ color: '#9CA3AF' }}>Pending invites</span>
-            <span className="text-sm font-medium" style={{ color: '#F9FAFB' }}>0</span>
-          </div>
-          <div className="px-5 py-4">
-            <p className="text-xs font-semibold mb-3" style={{ color: '#6B7280', letterSpacing: '0.05em' }}>INVITE STAFF MEMBER</p>
-            <div className="flex gap-2">
-              <input placeholder="colleague@club.com" className="flex-1 text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }} />
-              <select className="text-sm rounded-lg px-3 py-2.5 outline-none" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-                <option>Manager</option><option>Coach</option><option>Analyst</option><option>Physio</option><option>Scout</option><option>Admin</option>
-              </select>
-              <button className="px-4 py-2.5 rounded-lg text-sm font-semibold whitespace-nowrap" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>Send Invite</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Notifications ─────────────────────────────────────────────── */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <div className="flex items-center gap-2">
-            <span className="text-base">🔔</span>
-            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Notifications</p>
-          </div>
-        </div>
-        <div className="px-5 py-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Email notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Receive match and squad updates via email</p></div>
-            <ToggleButton on={true} onToggle={() => {}} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>In-app notifications</p><p className="text-xs" style={{ color: '#6B7280' }}>Show alerts inside your Lumio dashboard</p></div>
-            <ToggleButton on={true} onToggle={() => {}} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Weekly summary email</p><p className="text-xs" style={{ color: '#6B7280' }}>A digest of your club activity every Monday</p></div>
-            <ToggleButton on={true} onToggle={() => {}} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Injury alerts</p><p className="text-xs" style={{ color: '#6B7280' }}>Instant notification when a player is flagged injured</p></div>
-            <ToggleButton on={true} onToggle={() => {}} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div><p className="text-sm" style={{ color: '#F9FAFB' }}>Transfer window alerts</p><p className="text-xs" style={{ color: '#6B7280' }}>Updates on transfer targets and agent activity</p></div>
-            <ToggleButton on={true} onToggle={() => {}} />
-          </div>
-        </div>
-      </div>
-
-      {/* TTS & Voice Commands */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <div className="flex items-center gap-2">
-            <span className="text-base">🎙️</span>
-            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Assistant</p>
-          </div>
-        </div>
-        <div className="px-5 py-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Text to Speech</p>
-              <p className="text-xs" style={{ color: '#6B7280' }}>AI voice reads your morning briefing</p>
-            </div>
-            <ToggleButton on={ttsOn} onToggle={() => { const v = !ttsOn; setTtsOn(v); localStorage.setItem('lumio_tts_enabled', String(v)) }} />
-          </div>
-        </div>
-      </div>
-
-      {/* Voice Selector */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Voice Selection</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-5">
-          {VOICES.map(voice => {
-            const isActive = activeVoice === voice.id
-            return (
-              <button key={voice.id} onClick={() => { setActiveVoice(voice.id); localStorage.setItem('lumio_tts_voice', voice.id) }}
-                className="rounded-xl p-4 text-left transition-colors" style={{ backgroundColor: '#0A0B10', border: isActive ? '1px solid #003DA5' : '1px solid #1F2937' }}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{voice.name}</p>
-                  {isActive && <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(0,61,165,0.15)', color: '#003DA5' }}>Active</span>}
-                </div>
-                <p className="text-xs" style={{ color: '#6B7280' }}>{voice.desc}</p>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* World Clock */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <div className="flex items-center gap-2">
-            <span className="text-base">🕐</span>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>World Clock Timezones</p>
-              <p className="text-xs" style={{ color: '#6B7280' }}>Choose up to 4 timezones for your dashboard</p>
-            </div>
-          </div>
-        </div>
-        <div className="p-5 space-y-3">
-          <div className="flex items-center justify-between rounded-lg px-4 py-2.5" style={{ backgroundColor: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}>
-            <div className="flex items-center gap-2">
-              <span className="text-xs" style={{ color: '#FBBF24' }}>📍</span>
-              <span className="text-sm font-medium" style={{ color: '#FBBF24' }}>{localTz.label}</span>
-              <span className="text-xs" style={{ color: 'rgba(251,191,36,0.6)' }}>Your timezone</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2 max-h-[240px] overflow-y-auto">
-            {ALL_TIMEZONES.map(zone => {
-              const isSelected = zones.some(z => z.tz === zone.tz)
-              return (
-                <button key={zone.tz} onClick={() => toggleZone(zone)} disabled={!isSelected && zones.length >= 4}
-                  className="flex items-center justify-between rounded-lg px-3 py-2.5 text-left transition-colors"
-                  style={{
-                    backgroundColor: isSelected ? 'rgba(0,61,165,0.08)' : '#0A0B10',
-                    border: isSelected ? '1px solid rgba(0,61,165,0.3)' : '1px solid #1F2937',
-                    opacity: !isSelected && zones.length >= 4 ? 0.4 : 1,
-                    cursor: !isSelected && zones.length >= 4 ? 'not-allowed' : 'pointer',
-                  }}>
-                  <span className="text-sm" style={{ color: isSelected ? '#003DA5' : '#9CA3AF' }}>{zone.label}</span>
-                  {isSelected && <span style={{ color: '#003DA5' }}>✓</span>}
-                </button>
-              )
-            })}
-          </div>
-          <p className="text-xs" style={{ color: '#6B7280' }}>{zones.length}/4 selected</p>
-        </div>
-      </div>
-
-      {/* Voice Settings */}
-      <VoiceSettings commands={[
-        { phrase: 'Show squad fitness', description: 'Lists fit, injured and suspended players' },
-        { phrase: 'Next fixture', description: 'Shows the next upcoming match details' },
-        { phrase: 'Top scorer this season', description: 'Current leading goalscorer' },
-        { phrase: 'Transfer activity', description: 'Latest transfer news and agent messages' },
-        { phrase: 'Show injured players', description: 'Full injury list with return dates' },
-        { phrase: 'Who is suspended', description: 'Players currently suspended' },
-        { phrase: 'Show training schedule today', description: "Today's training session plan" },
-        { phrase: 'What is our league position', description: 'Current league standing and points' },
-        { phrase: 'Show last match result', description: 'Most recent match score and stats' },
-        { phrase: 'Any agent messages', description: 'Unread agent communications' },
-        { phrase: 'Show board messages', description: 'Latest messages from the board' },
-        { phrase: 'What is our goal difference', description: 'Current goals for and against' },
-        { phrase: 'Show press requests', description: 'Outstanding media and press requests' },
-        { phrase: 'Any contract renewals due', description: 'Players with contracts expiring soon' },
-        { phrase: 'Show the team sheet', description: 'Current selected starting eleven' },
-        { phrase: 'What is our home record', description: 'Home match wins draws and losses' },
-        { phrase: 'Show youth team results', description: 'Latest academy and youth team scores' },
-        { phrase: 'Any scouting reports', description: 'New player scouting reports available' },
-        { phrase: 'Show PSR status', description: 'Profitability and sustainability rules position' },
-        { phrase: 'What is our wage bill', description: 'Current total squad wage expenditure' },
-        { phrase: 'Show transfer budget remaining', description: 'Available transfer window spend' },
-        { phrase: 'Any disciplinary issues', description: 'Yellow card accumulations and bans' },
-        { phrase: 'Show the tactics board', description: 'Current formation and tactical setup' },
-        { phrase: 'What is our clean sheet record', description: 'Clean sheets this season' },
-        { phrase: 'Show attendance figures', description: 'Recent home match attendance numbers' },
-        { phrase: 'Any loan players due back', description: 'Loan players returning from clubs' },
-        { phrase: 'Show the squad depth chart', description: 'Position by position squad coverage' },
-        { phrase: 'What is our xG this season', description: 'Expected goals for and against' },
-        { phrase: 'Show medical room update', description: 'Full medical and physio department update' },
-        { phrase: 'Any academy players ready', description: 'Academy players close to first team' },
-        { phrase: 'Show set piece analysis', description: 'Set piece goals scored and conceded' },
-        { phrase: 'What is our away record', description: 'Away match wins draws and losses' },
-        { phrase: 'Show the GPS data', description: 'Latest player GPS and load monitoring data' },
-        { phrase: 'Any contract disputes', description: 'Player or staff contract issues flagged' },
-        { phrase: 'Show matchday revenue', description: 'Last home match revenue breakdown' },
-        { phrase: 'What players are out of contract', description: 'Players whose deals end this summer' },
-        { phrase: 'Show the recruitment targets', description: 'Current transfer target shortlist' },
-        { phrase: 'Any international call ups', description: 'Players called up for international duty' },
-        { phrase: 'Show pressing stats', description: 'High press and PPDA metrics this season' },
-        { phrase: 'What is our possession average', description: 'Average possession percentage this season' },
-        { phrase: 'Show the fixture congestion', description: 'Upcoming fixture pile up and rotation needs' },
-        { phrase: 'Any travel arrangements needed', description: 'Away trip logistics and travel plans' },
-        { phrase: 'Show commercial revenue', description: 'Sponsorship and commercial income summary' },
-        { phrase: 'What is our fan base size', description: 'Season ticket holders and fan numbers' },
-        { phrase: 'Show social media engagement', description: 'Club social media stats and growth' },
-        { phrase: 'Any kit sponsorship updates', description: 'Kit and shirt sponsorship news' },
-        { phrase: 'Show the youth development plan', description: 'Academy pathway and development programme' },
-        { phrase: 'What is our longest unbeaten run', description: 'Current or best unbeaten sequence' },
-        { phrase: 'Show referee assignments', description: 'Upcoming match referee appointments' },
-        { phrase: 'Any VAR decisions pending', description: 'Outstanding VAR or appeal decisions' },
-        { phrase: 'Show the player ratings', description: 'Average player ratings across the season' },
-        { phrase: 'What is our corners won', description: 'Corners won and conversion rate' },
-        { phrase: 'Show the dressing room report', description: 'Squad morale and dynamics summary' },
-        { phrase: 'Any work permit applications', description: 'Outstanding international player permits' },
-        { phrase: 'Show the club planner', description: 'Season schedule and key club dates' },
-        { phrase: 'What is our shots on target ratio', description: 'Shots on target percentage this season' },
-        { phrase: 'Show offload pipeline', description: 'Players available for transfer or loan' },
-        { phrase: 'Any safeguarding concerns', description: 'Youth or community safeguarding flags' },
-        { phrase: 'Show the nutrition plan', description: 'Squad nutrition and diet programme' },
-        { phrase: 'What is our points per game', description: 'Average points earned per match' },
-        { phrase: 'Show fan trust updates', description: 'Latest communications from supporter trust' },
-        { phrase: 'Any community programme updates', description: 'Club community and outreach activity' },
-        { phrase: 'Show the video analysis', description: 'Latest match analysis and video reports' },
-        { phrase: 'What is our goal conversion rate', description: 'Shots to goals conversion percentage' },
-        { phrase: 'Show the physio report', description: 'Full squad injury and recovery status' },
-        { phrase: 'Any stadium maintenance issues', description: 'Ground and facility maintenance flags' },
-        { phrase: 'Show the half time stats', description: 'Half time performance data from last match' },
-        { phrase: 'What is our heading success rate', description: 'Aerial duel win percentage' },
-        { phrase: 'Show youth fixture list', description: 'Academy and youth team upcoming fixtures' },
-        { phrase: 'Any media training needed', description: 'Players scheduled for media training' },
-        { phrase: 'Show the match report', description: 'Latest post match report and analysis' },
-        { phrase: 'What is our dribble success rate', description: 'Successful dribbles per game average' },
-        { phrase: 'Show talent ID targets', description: 'Emerging talent on scouting radar' },
-        { phrase: 'Any charity partnership updates', description: 'Club charity and CSR commitments' },
-        { phrase: 'Show the FFP position', description: 'Financial fair play compliance status' },
-        { phrase: 'What is our save percentage', description: 'Goalkeeper save percentage this season' },
-        { phrase: 'Show the player welfare report', description: 'Player wellbeing and welfare checks' },
-        { phrase: 'Any kit issues flagged', description: 'Kit room and equipment issues reported' },
-        { phrase: 'Show the opponents analysis', description: 'Next opponent scouting and analysis' },
-        { phrase: 'What is our tackle success rate', description: 'Tackle win percentage this season' },
-        { phrase: 'Show the pre match plan', description: 'Pre match preparation and schedule' },
-        { phrase: 'Any loan signings available', description: 'Emergency loan options currently available' },
-        { phrase: 'Show the fan survey results', description: 'Latest supporter satisfaction survey' },
-        { phrase: 'What is our distance covered', description: 'Average distance covered per match' },
-        { phrase: 'Show the captain report', description: "Captain's squad report and feedback" },
-        { phrase: 'Any visa applications pending', description: 'Player or staff visa status' },
-        { phrase: 'Show the pitch report', description: 'Playing surface condition and forecast' },
-        { phrase: 'What is our interception rate', description: 'Interceptions per game this season' },
-        { phrase: 'Show the recovery sessions', description: 'Post match recovery programme' },
-        { phrase: 'Any kit launch updates', description: 'New kit design and launch planning' },
-        { phrase: 'Show the travel budget', description: 'Away travel costs and budget remaining' },
-        { phrase: 'What is our sprint speed average', description: 'Peak sprint speed across the squad' },
-        { phrase: 'Show the end of season plan', description: 'Season end review and planning schedule' },
-        { phrase: 'Any doping test results', description: 'Anti-doping programme and test outcomes' },
-        { phrase: 'Show the insurance claims', description: 'Player injury insurance claims status' },
-        { phrase: 'What is our pass completion rate', description: 'Passing accuracy percentage this season' },
-        { phrase: 'Show the mentorship programme', description: 'Senior and youth mentoring pairs' },
-        { phrase: 'Any pre season friendlies confirmed', description: 'Confirmed pre season match schedule' },
-      ]} />
-
-      {/* API & Integrations */}
-      <ApiUsageCard />
-
-      {/* Club Badge */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Appearance</p>
-        </div>
-        <div className="px-5">
-          <div className="flex items-center justify-between py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-            <div>
-              <div className="text-sm font-medium" style={{ color: '#F9FAFB' }}>Club badge</div>
-              <div className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Shown in your portal banner. Upload or change in Settings only.</div>
-            </div>
-            <div className="flex items-center gap-3">
-              {clubLogo ? (
-                <>
-                  <img src={clubLogo} alt="Club badge" className="h-10 w-10 rounded-lg object-cover" style={{ border: '1px solid #374151', backgroundColor: '#111318' }} />
-                  <label className="px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all" style={{ backgroundColor: '#1F2937', color: '#D1D5DB', border: '1px solid #374151' }}>
-                    Change
-                    <input type="file" accept="image/*" className="hidden" onChange={onLogoUpload} />
-                  </label>
-                  <button onClick={onLogoRemove} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all" style={{ backgroundColor: 'rgba(127,29,29,0.2)', color: '#F87171', border: '1px solid rgba(127,29,29,0.3)' }}>
-                    Remove
-                  </button>
-                </>
-              ) : (
-                <label className="px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-all" style={{ backgroundColor: '#003DA5', color: '#F1C40F' }}>
-                  Upload badge
-                  <input type="file" accept="image/*" className="hidden" onChange={onLogoUpload} />
-                </label>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Demo Data */}
-      <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-        <div className="px-5 py-4" style={{ borderBottom: '1px solid #1F2937' }}>
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>Data & Display</p>
-        </div>
-        <div className="px-5 py-4 space-y-4">
-          <div>
-            <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>{isDemo ? 'Demo data is active' : 'Demo data'}</p>
-            <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
-              {isDemo ? 'Your portal is showing sample data. Clear it to see your real workspace.' : 'Load sample data to explore all features before connecting your real data.'}
-            </p>
-          </div>
-          <button onClick={() => {
-            if (isDemo) { localStorage.removeItem('lumio_football_demo_active'); window.location.href = `/football/${slug}` }
-            else { localStorage.setItem('lumio_football_demo_active', 'true'); window.location.href = `/football/${slug}` }
-          }} className="w-full rounded-xl py-2.5 text-sm font-semibold" style={{
-            backgroundColor: isDemo ? 'rgba(239,68,68,0.1)' : 'rgba(0,61,165,0.1)',
-            color: isDemo ? '#EF4444' : '#003DA5',
-            border: `1px solid ${isDemo ? 'rgba(239,68,68,0.3)' : 'rgba(0,61,165,0.3)'}`,
-          }}>
-            {isDemo ? 'Clear demo data' : 'Load demo data'}
-          </button>
-        </div>
-      </div>
-    </div>
+    <SportsSettings
+      sport="football"
+      slug={slug}
+      sportLabel="Football Club"
+      entity="club"
+      accentColour="#003DA5"
+      accentLight="#60A5FA"
+      session={{
+        userName: session?.userName,
+        photoDataUrl: session?.photoDataUrl,
+        email: session?.email,
+        nickname: session?.nickname,
+        clubName: session?.clubName || 'Oakridge FC',
+        logoDataUrl: session?.logoDataUrl,
+        isDemoShell: session?.isDemoShell,
+      }}
+      storagePrefix="lumio_football_"
+      profile={{
+        name: 'Director Name',
+        tour: 'Competition',
+        tourValue: 'EFL Championship',
+        ranking: 'League Position',
+        rankingValue: '6th · Championship',
+        coach: 'Manager',
+        coachValue: 'James Hartley',
+        agent: 'Director of Football',
+        agentValue: 'Michael Reardon',
+        homeVenue: 'Home Stadium',
+        homeVenueValue: 'Oakridge Park',
+        playerIdLabel: 'EFL Club ID (demo)',
+        staffInviteRoles: ['Chairman','CEO','Director of Football','Manager','Assistant Manager','Head of Performance','Club Doctor','Physio','Head of Recruitment','Analyst','Commercial Director','Head of Operations','Academy Manager'],
+      }}
+      configFields={[
+        { id: 'eflClubId',   label: 'EFL Club ID (demo)',          description: 'Issued by the EFL for member clubs', kind: 'text',   placeholder: 'e.g. EFL-OAKR-2025', defaultValue: 'EFL-OAKR-2025' },
+        { id: 'faAffil',     label: 'FA Affiliation Number (demo)', description: 'FA affiliation reference for the club', kind: 'text', placeholder: 'e.g. FA-OAKR-0718', defaultValue: 'FA-OAKR-0718' },
+        { id: 'tier',        label: 'Tier',                        description: 'Drives sidebar gating — read-only', kind: 'select', options: ['Premier League','Championship','League One','League Two'], defaultValue: 'Championship' },
+        { id: 'competition', label: 'Primary competition',         description: 'Senior league competition', kind: 'select', options: ['Premier League','EFL Championship','EFL League One','EFL League Two'], defaultValue: 'EFL Championship' },
+        { id: 'homeStadium', label: 'Home stadium',                description: 'Primary match-day venue', kind: 'text',   placeholder: 'e.g. Oakridge Park', defaultValue: 'Oakridge Park' },
+        { id: 'founded',     label: 'Founded',                     description: 'Year of formation', kind: 'number', defaultValue: '1897' },
+        { id: 'kitSupplier', label: 'Kit supplier',                description: 'Current kit-supply partner', kind: 'text', placeholder: 'e.g. Apex Performance', defaultValue: 'Apex Performance' },
+        { id: 'gpsProvider', label: 'GPS hardware provider',       description: 'Player tracking / load monitoring', kind: 'select', options: ['None','Lumio GPS (recommended)','Lumio GPS Pro (with live data)','CSV Upload (manual)'], defaultValue: 'Lumio GPS (recommended)' },
+        { id: 'accentColor', label: 'Accent colour',               description: 'Drives in-portal accent', kind: 'color', defaultValue: '#003DA5' },
+      ]}
+      integrationGroups={[
+        {
+          title: 'FOOTBALL DATA',
+          items: [
+            { name: 'Lumio Data',             desc: 'Fixtures, results, league table + top scorers', connected: true },
+            { name: 'EFL Registration System', desc: 'Squad registration + loan agreements',          connected: true },
+            { name: 'Lumio Scout',            desc: 'Scouting database + opposition reports' },
+          ],
+        },
+        {
+          title: 'PERFORMANCE',
+          items: [
+            { name: 'Lumio GPS',   desc: 'GPS + load monitoring (matchday + training)', connected: true },
+            { name: 'Lumio Vision', desc: 'Video tagging + AI clip review' },
+            { name: 'JOHAN Sports', desc: 'GPS vest hardware · load and high-speed-run data' },
+            { name: 'CSV Upload',   desc: 'Generic GPS export · drop a file from any vendor' },
+          ],
+        },
+        {
+          title: 'COMMUNICATION',
+          items: [
+            { name: 'Slack',             desc: 'Squad + staff messaging' },
+            { name: 'Microsoft Teams',   desc: 'Board reviews + video conferencing' },
+            { name: 'Google Workspace',  desc: 'Calendar, Drive & email' },
+            { name: 'WhatsApp Business', desc: 'Match-day broadcast channel for squad + staff' },
+          ],
+        },
+      ]}
+      voiceOptions={[
+        { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah',     desc: 'Warm, confident British female — ideal for morning briefings' },
+        { id: 'XB0fDUnXU5powFXDhCwa', name: 'Charlotte', desc: 'Calm, authoritative British female — steady matchday narration' },
+        { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George',    desc: 'Professional British male — composed and match-report ready' },
+      ]}
+      notificationPreferences={[
+        'PSR compliance alerts',
+        'Injury & ACWR red flags',
+        'Contract & registration deadlines',
+        'Suspension tracker',
+        'Loan recall windows',
+        'Sponsorship renewals',
+        'Board meeting reminders',
+        'AI morning briefing email',
+      ]}
+      teamInvite={{
+        enabled: true,
+        staffCount: 10,
+        pendingInvites: 0,
+        roleOptions: ['Chairman','CEO','Director of Football','Manager','Assistant Manager','Head of Performance','Club Doctor','Physio','Head of Recruitment','Analyst','Commercial Director','Head of Operations','Academy Manager'],
+      }}
+      navItems={[
+        { key: 'dashboard',         label: 'Dashboard',           emoji: '\U0001F3E0' },
+        { key: 'briefing',          label: 'Morning Briefing',    emoji: '☀️' },
+        { key: 'insights',          label: 'Insights',            emoji: '\U0001F4CA' },
+        { key: 'squad',             label: 'Squad Management',    emoji: '\U0001F465' },
+        { key: 'tactics',           label: 'Tactics',             emoji: '\U0001F3AF' },
+        { key: 'training',          label: 'Training',            emoji: '\U0001F3C3' },
+        { key: 'performance',       label: 'GPS & Performance',   emoji: '⚽' },
+        { key: 'gps-heatmaps',      label: 'Heatmaps',            emoji: '\U0001F525' },
+        { key: 'performance-brief', label: 'AI Performance Brief', emoji: '\U0001F916' },
+        { key: 'fixtures',          label: 'Fixtures & Results',  emoji: '\U0001F5D3️' },
+        { key: 'transfers',         label: 'Transfers',           emoji: '\U0001F501' },
+        { key: 'academy',           label: 'Academy',             emoji: '\U0001F393' },
+        { key: 'welfare',           label: 'Player Welfare',      emoji: '\U0001F6E1️' },
+        { key: 'finance',           label: 'Club Finance',        emoji: '\U0001F4B7' },
+        { key: 'commercial',        label: 'Commercial',          emoji: '\U0001F3DF️' },
+        { key: 'compliance-centre', label: 'Compliance Centre',   emoji: '\U0001F9ED' },
+      ]}
+      featureItems={[
+        { key: 'morning-briefing', label: 'Morning Briefing',           emoji: '\U0001F305', description: 'AI summary at top of dashboard' },
+        { key: 'quick-actions',    label: 'Quick Actions bar',          emoji: '⚡', description: 'Action buttons below tab bar (Today only)' },
+        { key: 'ai-section',       label: 'AI Department Intelligence',  emoji: '✨', description: 'AI Summary + Key Highlights' },
+        { key: 'world-clock',      label: 'World Clock',                emoji: '\U0001F550', description: 'Multi-timezone clock in banner' },
+        { key: 'weather',          label: 'Weather widget',             emoji: '\U0001F324️', description: 'Matchday weather + forecast' },
+        { key: 'stat-tiles',       label: 'KPI stat tiles',             emoji: '\U0001F4CA', description: 'Squad / PSR / form tiles on Today' },
+      ]}
+      showWorldClock
+      showAppearance
+      showDeveloperTools
+      devApiRouteOptions={['/api/ai/football']}
+    />
   )
 }
-
-// ─── Toast ──────────────────────────────────────────────────────────────────
-
-// ─── Football Notifications Panel ───────────────────────────────────────────
-
-const FB_NOTIFICATIONS = [
-  { id: '1', read: false, icon: '🔴', cat: 'Transfer', title: 'Agent response received — Harvey Knibbs representation', time: '2 min ago' },
-  { id: '2', read: false, icon: '🟡', cat: 'Medical', title: 'Chris Nwosu fitness test — result available', time: '1 hour ago' },
-  { id: '3', read: false, icon: '🔵', cat: 'Match', title: 'Team sheet deadline — Eastcliff Town (A) · 2 hours remaining', time: '2 hours ago' },
-  { id: '4', read: true, icon: '✅', cat: 'Board', title: 'PSR calculation updated — within limits', time: '3 hours ago' },
-  { id: '5', read: true, icon: '🔵', cat: 'Scouting', title: 'Aaron Collins — Redmill United confirm availability to sell', time: 'Yesterday' },
-  { id: '6', read: true, icon: '🟡', cat: 'Training', title: 'GPS alert — Sean O\'Brien ACWR 1.58 · rest recommended', time: 'Yesterday' },
-]
 
 function FootballNotificationsPanel({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState(FB_NOTIFICATIONS)
@@ -7684,7 +7356,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {activeDept === 'opta' && <FootballEventDataView />}
             {activeDept === 'discover' && <DiscoverView />}
             {activeDept === 'lumio-data-pro' && <FootballLeagueDataView />}
-            {activeDept === 'settings' && <SettingsView isDemo={isFootballDemo} slug={slug} clubLogo={clubLogo} onLogoUpload={handleLogoUpload} onLogoRemove={handleLogoRemove} />}
+            {activeDept === 'settings' && <SettingsView session={liveSession} slug={slug} />}
             {activeDept === 'player-welfare' && <FootballWelfareHubView onNavigate={(id) => setActiveDept(id as DeptId)} />}
             {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" hiddenTabs={['integration', 'wellbeing', 'travel', 'matchday']} title="Club Operations" subtitle="Operations overview · club info · compliance & insurance" overviewSlot={<FootballClubOpsOverview accent="#003DA5" />} clubInfoSlot={<FootballClubInfoTab />} />}
           </main>
