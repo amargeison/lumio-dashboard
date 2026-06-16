@@ -19,7 +19,7 @@ import { getPlans, removePlan, toggleDone, subscribe, type PlannedSession } from
 import { getReviews, getReview, subscribe as subscribeReviews } from '../_lib/session-review'
 import { upsertLesson, removeLesson, lessonFromSession, sessionLessonId } from '../_lib/lessons-store'
 import { SessionReviewPanel } from './SessionReviewPanel'
-import { AudioFieldRecorder } from './AudioFieldRecorder'
+import { MediaFieldRecorder } from './MediaFieldRecorder'
 import { getAddedSessions, getStatusOverrides, getHiddenSessions, setStatus, clearStatus, deleteSession, subscribe as subscribeSessions } from '../_lib/sessions-store'
 import { useAllPlayers } from '../_lib/use-roster'
 import { NewSessionModal } from './NewSession'
@@ -410,7 +410,7 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
         </div>
 
         {showReview && <SessionReviewPanel T={T} accent={accent} density={density} session={sel} />}
-        {showRecord && <div style={{ marginTop: 14 }}><AudioFieldRecorder T={T} accent={accent} density={density} sessionLabel={`${sel.player} ${sel.time}`} /></div>}
+        {showRecord && <div style={{ marginTop: 14 }}><MediaFieldRecorder T={T} accent={accent} density={density} sessionLabel={`${sel.player} ${sel.time}`} /></div>}
       </Card>
 
       {/* saved from lesson briefs — for the selected player only */}
