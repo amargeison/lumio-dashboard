@@ -164,8 +164,8 @@ export function PlayerDetailModal({ T, accent, density, player, onClose }: Commo
           {/* stat row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 14 }}>
             {[
-              { l: 'Current belt', v: <BeltChip beltIndex={player.beltIndex} />, raw: true },
-              { l: 'Belt progress', v: `${prog}%`, c: accent.hex },
+              { l: 'Current racket', v: <BeltChip beltIndex={player.beltIndex} />, raw: true },
+              { l: 'Racket progress', v: `${prog}%`, c: accent.hex },
               { l: 'Attendance', v: `${player.attendance}%`, c: player.attendance >= 90 ? T.good : player.attendance >= 80 ? T.warn : T.bad },
               { l: 'Skills earned', v: `${earned}/${totalSkills}` },
               { l: 'Next session', v: player.nextSession, small: true },
@@ -197,7 +197,7 @@ export function PlayerDetailModal({ T, accent, density, player, onClose }: Commo
           <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             {/* working belt skills */}
             <div>
-              <SectionHead T={T} title={`Working belt · ${belt.name}`} right={<span style={{ fontFamily: FONT_MONO }}>{prog}%</span>} />
+              <SectionHead T={T} title={`Working racket · ${belt.name}`} right={<span style={{ fontFamily: FONT_MONO }}>{prog}%</span>} />
               {belt.skills.map((s, si) => {
                 const score = skillScore(player.seed, player.beltIndex, si, player.beltIndex)
                 return (
@@ -215,7 +215,7 @@ export function PlayerDetailModal({ T, accent, density, player, onClose }: Commo
             </div>
             {/* belt journey + lessons */}
             <div>
-              <SectionHead T={T} title="Belt journey" />
+              <SectionHead T={T} title="Racket journey" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
                 {BELTS.map((b, bi) => {
                   const state = bi < player.beltIndex ? 'done' : bi === player.beltIndex ? 'current' : 'locked'

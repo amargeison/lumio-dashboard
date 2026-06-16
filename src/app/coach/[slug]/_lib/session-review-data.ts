@@ -49,7 +49,7 @@ export const DEMO_REVIEWS: Record<string, DemoReview> = {
         note: 'Only slipped once when she tried to add pace — corrected immediately.' },
       { point: 'First serves into the box from the baseline', status: 'covered',
         evidence: '14:20 · "That is six out of ten in the box now."',
-        note: 'Up from 2/10 last week — close to the Green-belt serve criteria.' },
+        note: 'Up from 2/10 last week — close to the Green-racket serve criteria.' },
     ],
     drillResults: [
       { drill: 'Toss-and-catch (10 reps)', ran: true, note: 'Consistent landing spot by the second set of reps.' },

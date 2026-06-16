@@ -131,7 +131,7 @@ export function CampPlayerPacks({ T, accent, density, camp, attendees }: Common 
               { l: 'Court hours', v: stats.hours, s: 'over 14 days' },
               { l: 'Sets played', v: stats.sets, s: `${stats.setsWon} won` },
               { l: '1st serve %', v: `${stats.serveEnd}%`, s: `▲ ${serveGain} pts`, good: true },
-              { l: 'Belt', v: BELTS[stats.beltEnd].name, s: stats.beltEnd > stats.beltStart ? 'promoted!' : 'progressing' },
+              { l: 'Racket', v: BELTS[stats.beltEnd].name, s: stats.beltEnd > stats.beltStart ? 'promoted!' : 'progressing' },
             ].map((m, i) => (
               <div key={i} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' }}>
                 <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.l}</div>
@@ -238,7 +238,7 @@ function certificateInner(a: CampAttendee, camp: Camp) {
       </div>
       <div style="display:inline-flex;align-items:center;gap:10px;margin-top:22px;background:#faf7ff;border:1px solid #ead9ff;border-radius:30px;padding:8px 18px">
         <span style="width:22px;height:14px;border-radius:3px;background:${beltColour(stats.beltEnd)};border:1px solid rgba(0,0,0,.2)"></span>
-        <span style="font-weight:700;color:#1a1d29">${esc(beltName)} belt achieved</span>
+        <span style="font-weight:700;color:#1a1d29">${esc(beltName)} racket achieved</span>
       </div>
       <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:34px;padding:0 6mm">
         <div style="text-align:center">
@@ -288,7 +288,7 @@ function campPackHTML(a: CampAttendee, camp: Camp) {
     <h3 style="margin:22px 0 12px;font-size:14px">Your fortnight by the numbers</h3>
     <div class="grid4">${statCards}</div>
     <div style="margin-top:18px;border:1px solid #ecedf2;border-radius:12px;padding:16px 18px;background:#faf9ff">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#9099ad">Belt progression</div>
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#9099ad">Racket progression</div>
       <div style="font-size:20px;margin-top:6px">${beltMove}</div>
     </div>
     <div class="grid2" style="margin-top:18px">

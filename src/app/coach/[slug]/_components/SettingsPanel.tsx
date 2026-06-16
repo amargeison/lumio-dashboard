@@ -76,7 +76,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
 
   const cards = [
     { id: 'academy',     icon: 'shield',    t: 'Academy profile',     d: `${s.academy} · ${s.cert}` },
-    { id: 'belts',       icon: 'trophy',    t: 'Belt criteria',       d: `Award belt at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
+    { id: 'belts',       icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
     { id: 'availability',icon: 'calendar',  t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
     { id: 'pricing',     icon: 'pound',     t: 'Pricing & packages',  d: `Private £${s.privateRate}/hr · packs & renewals` },
     { id: 'sharing',     icon: 'megaphone', t: 'Parent sharing',      d: `Shares include: ${sharingList}` },
@@ -117,13 +117,13 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'belts' && (
-        <Modal T={T} accent={accent} title="Belt criteria" sub="When does a belt count as earned?" onClose={() => setOpen(null)}>
-          <Field T={T} label="Award a belt when every skill reaches" hint="Affects belt progress % everywhere — try it, then open Player Development.">
+        <Modal T={T} accent={accent} title="Racket criteria" sub="When does a racket count as earned?" onClose={() => setOpen(null)}>
+          <Field T={T} label="Award a racket when every skill reaches" hint="Affects racket progress % everywhere — try it, then open Player Development.">
             <Seg T={T} accent={accent} value={s.awardThreshold}
               options={[{ v: 3, label: 'Consistent' }, { v: 4, label: 'Mastered' }]}
               onChange={v => setSettings({ awardThreshold: v as 3 | 4 })} />
           </Field>
-          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>The skill-to-belt mapping itself is editable in <code>coach-data.ts</code>; a drag-and-drop editor is on the roadmap.</div>
+          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>The skill-to-racket mapping itself is editable in <code>coach-data.ts</code>; a drag-and-drop editor is on the roadmap.</div>
         </Modal>
       )}
 

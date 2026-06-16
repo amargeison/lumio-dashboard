@@ -344,7 +344,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
             </div>
 
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
-              <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 10 }}>Belt distribution</div>
+              <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 10 }}>Racket distribution</div>
               {BELTS.map((b, bi) => beltCounts[bi] > 0 && (
                 <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
                   <span style={{ width: 16, height: 10, borderRadius: 2, background: b.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
@@ -356,7 +356,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
 
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
               <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>This week</div>
-              {[['Belts awarded', COACH_ORG.season.beltsAwarded], ['Sessions', COACH_ORG.season.lessonsThisWeek], ['New players', '+3']].map(([k, v], i) => (
+              {[['Rackets awarded', COACH_ORG.season.beltsAwarded], ['Sessions', COACH_ORG.season.lessonsThisWeek], ['New players', '+3']].map(([k, v], i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, padding: '3px 0' }}>
                   <span style={{ color: T.text3 }}>{k}</span><span style={{ color: T.text, fontWeight: 600 }}>{v}</span>
                 </div>

@@ -158,7 +158,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                 <Icon name="note" size={14} stroke={1.6} style={{ color: accent.hex }} />
                 <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>From their onboarding</span>
-                <span style={{ fontSize: 10.5, color: T.text3 }}>place them at the right belt</span>
+                <span style={{ fontSize: 10.5, color: T.text3 }}>place them at the right racket</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.8fr', gap: 10, marginTop: 8 }}>
                 <div><label style={labelStyle}>Experience</label><select style={input} value={obLevel} onChange={e => { setObLevel(e.target.value); setMapped(false) }}>{ONBOARDING_LEVELS.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}</select></div>
@@ -166,7 +166,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
                 <div><label style={labelStyle}>Age</label><input style={input} inputMode="numeric" value={obAge} onChange={e => { setObAge(e.target.value.replace(/\D/g, '')); setMapped(false) }} placeholder="10" /></div>
               </div>
               <button onClick={mapFromOnboarding} style={{ marginTop: 10, appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-                <Icon name="sparkles" size={13} stroke={1.7} /> {mapped ? 'Re-map from onboarding' : 'Map to belt & draft plan'}
+                <Icon name="sparkles" size={13} stroke={1.7} /> {mapped ? 'Re-map from onboarding' : 'Map to racket & draft plan'}
               </button>
               {mapped && <div style={{ marginTop: 8, fontSize: 11, color: T.text2, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ width: 14, height: 14, borderRadius: 4, background: belt.colour, border: '1px solid rgba(0,0,0,.25)', display: 'inline-block' }} />
@@ -186,7 +186,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
 
           {/* Belt ⇄ standard — linked */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Field label="Belt">
+            <Field label="Racket">
               <select style={input} value={beltId} onChange={e => pickBelt(e.target.value)}>
                 {BELTS.map(b => <option key={b.id} value={b.id}>{b.name} — {b.theme}</option>)}
               </select>
@@ -208,8 +208,8 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
             </select>
             <div style={{ marginTop: 5, fontSize: 10.5, color: focusMatches ? accent.hex : T.text3 }}>
               {focusMatches
-                ? `✓ Matches ${belt.name} belt · ${standard.stage}`
-                : `Note: this focus aligns to the ${cap(focusBelt ?? belt.id)} belt — fine to mix, or pick one from ${belt.name}.`}
+                ? `✓ Matches ${belt.name} racket · ${standard.stage}`
+                : `Note: this focus aligns to the ${cap(focusBelt ?? belt.id)} racket — fine to mix, or pick one from ${belt.name}.`}
             </div>
           </Field>
 
@@ -230,7 +230,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
           <Field label="Focus points (one per line)"><textarea style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} rows={3} value={focusPoints} onChange={e => setFocusPoints(e.target.value)} /></Field>
           <Field label="Drills (one per line)"><textarea style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} rows={3} value={drills} onChange={e => setDrills(e.target.value)} /></Field>
 
-          <div style={{ fontSize: 10.5, color: T.text3, marginBottom: 12 }}>A timed run-sheet and the kit list are generated automatically for the session type.{source === 'new' && ' This player is added to your roster at the mapped belt.'}</div>
+          <div style={{ fontSize: 10.5, color: T.text3, marginBottom: 12 }}>A timed run-sheet and the kit list are generated automatically for the session type.{source === 'new' && ' This player is added to your roster at the mapped racket.'}</div>
 
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={save} disabled={!canSave} style={{ flex: 1, appearance: 'none', border: 0, padding: '11px 14px', borderRadius: 9, background: canSave ? accent.hex : T.hover, color: canSave ? T.btnText : T.text3, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: canSave ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>

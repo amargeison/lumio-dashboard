@@ -129,7 +129,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
               <span style={{ width: 1, height: 10, background: T.borderHi }} />
               <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>{settings.academy}</span>
             </div>
-            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>7 sessions, 4 belt assessments due</h1>
+            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>7 sessions, 4 racket assessments due</h1>
             <p style={{ marginTop: 6, marginBottom: 0, fontSize: 12.5, color: T.text2, maxWidth: 560 }}>{COACH_ORG.venue} · {settings.cert}</p>
             <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
               <button onClick={() => onNavigate('lessons')} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -215,7 +215,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
             ))}
             <div onClick={() => onNavigate('belts')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 6px', borderRadius: 6, background: accent.dim, border: `1px solid ${accent.border}`, cursor: 'pointer' }}>
               <Icon name="trophy" size={14} stroke={1.6} style={{ color: accent.hex }} />
-              <div style={{ fontSize: 11.5, color: T.text, fontWeight: 600 }}>4 belt assessments due</div>
+              <div style={{ fontSize: 11.5, color: T.text, fontWeight: 600 }}>4 racket assessments due</div>
             </div>
           </div>
         </Card>
@@ -299,7 +299,7 @@ export function LessonsView({ T, accent, density }: Common) {
               <SubHead T={T} icon="flag" accent={accent}>Drills used</SubHead>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{sel.drills.map((d, i) => <span key={i} style={{ fontSize: 11.5, color: T.text2, padding: '4px 8px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}` }}>{d}</span>)}</div>
 
-              <SubHead T={T} icon="trophy" accent={accent} mt>Skills worked (belt system)</SubHead>
+              <SubHead T={T} icon="trophy" accent={accent} mt>Skills worked (racket system)</SubHead>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{skillNames(sel.skillsWorked).map((s, i) => <Pill key={i} T={T} color={accent.hex} bg={accent.dim}>{s}</Pill>)}</div>
 
               <SubHead T={T} icon="home" accent={accent} mt>Homework</SubHead>
@@ -354,10 +354,10 @@ export function DevelopmentView({ T, accent, density }: Common) {
     + belt.skills.filter((_s, si) => skillScore(p.seed, p.beltIndex, si, p.beltIndex) >= 3).length
   const stats = playerDevStats(p)
   const devBoxes: { l: string; v: ReactNode; sub?: string; c?: string }[] = [
-    { l: 'Current belt',  v: <BeltChip beltIndex={p.beltIndex} size={16} /> },
-    { l: 'Belt progress', v: `${prog}%`, c: accent.hex, sub: `to ${BELTS[Math.min(p.beltIndex + 1, BELTS.length - 1)].name}` },
+    { l: 'Current racket',  v: <BeltChip beltIndex={p.beltIndex} size={16} /> },
+    { l: 'Racket progress', v: `${prog}%`, c: accent.hex, sub: `to ${BELTS[Math.min(p.beltIndex + 1, BELTS.length - 1)].name}` },
     { l: 'Attendance',    v: `${p.attendance}%`, c: p.attendance >= 90 ? T.good : p.attendance >= 80 ? T.warn : T.bad, sub: 'last 8 weeks' },
-    { l: 'Skills earned', v: `${earned}/${totalSkills}`, sub: 'all belts' },
+    { l: 'Skills earned', v: `${earned}/${totalSkills}`, sub: 'all rackets' },
     { l: 'Court hours',   v: stats.hoursTerm, sub: 'this term' },
     { l: 'Sessions',      v: stats.sessionsTerm, sub: `streak ${stats.streak}` },
     { l: 'Lessons',       v: stats.lessonsLogged, sub: 'logged' },
@@ -368,7 +368,7 @@ export function DevelopmentView({ T, accent, density }: Common) {
 
   return (
     <div>
-      <PageHead T={T} accent={accent} density={density} title="Player Development" sub="Track every player's journey — current belt, skill mastery, goals and trajectory." />
+      <PageHead T={T} accent={accent} density={density} title="Player Development" sub="Track every player's journey — current racket, skill mastery, goals and trajectory." />
       <div className="cm-md" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: density.gap }}>
         {/* Player list */}
         <Card T={T} density={density} style={{ padding: 8, alignSelf: 'start' }}>
@@ -400,9 +400,9 @@ export function DevelopmentView({ T, accent, density }: Common) {
                 <div style={{ fontSize: 18, fontWeight: 600, color: T.text }}>{p.name}</div>
                 <div style={{ fontSize: 12, color: T.text3 }}>{p.group} · Age {p.age}{p.parent ? ` · Parent: ${p.parent}` : ''}</div>
               </div>
-              <button onClick={() => printBeltCertificate(p, p.beltIndex)} title={`Print ${belt.name} belt certificate`}
+              <button onClick={() => printBeltCertificate(p, p.beltIndex)} title={`Print ${belt.name} racket certificate`}
                 style={{ marginLeft: 'auto', appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
-                <Icon name="trophy" size={14} stroke={2} /> Belt certificate
+                <Icon name="trophy" size={14} stroke={2} /> Racket certificate
               </button>
             </div>
             <div style={{ marginTop: 12, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -424,7 +424,7 @@ export function DevelopmentView({ T, accent, density }: Common) {
 
           {/* Working belt skill bars */}
           <Card T={T} density={density}>
-            <SectionHead T={T} title={<>Working belt · {belt.name} — {belt.theme}</>} right={<span style={{ fontFamily: FONT_MONO }}>{prog}% to award</span>} />
+            <SectionHead T={T} title={<>Working racket · {belt.name} — {belt.theme}</>} right={<span style={{ fontFamily: FONT_MONO }}>{prog}% to award</span>} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {belt.skills.map((s, si) => {
                 const score = skillScore(p.seed, p.beltIndex, si, p.beltIndex)
@@ -447,7 +447,7 @@ export function DevelopmentView({ T, accent, density }: Common) {
           {/* Belt ladder mini + recent lessons */}
           <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
             <Card T={T} density={density}>
-              <SectionHead T={T} title="Belt journey" />
+              <SectionHead T={T} title="Racket journey" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {BELTS.map((b, bi) => {
                   const state = bi < p.beltIndex ? 'done' : bi === p.beltIndex ? 'current' : 'locked'
@@ -496,14 +496,14 @@ export function BeltsView({ T, accent, density }: Common) {
   const [open, setOpen] = useState<string>('white')
   return (
     <div>
-      <PageHead T={T} accent={accent} density={density} title="Belt Progression System" sub="A Kyu-Dan style ranking adapted for tennis. Nine belts, each unlocking a cluster of skills — earn a belt when every skill is Consistent or better." />
+      <PageHead T={T} accent={accent} density={density} title="Racket Progression System" sub="A Kyu-Dan style ranking adapted for tennis. Nine rackets, each unlocking a cluster of skills — earn a racket when every skill is Consistent or better." />
 
       {/* LTA alignment note */}
       <Card T={T} density={density} style={{ marginBottom: density.gap, borderColor: accent.border, background: accent.dim }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <Icon name="shield" size={16} stroke={1.7} style={{ color: accent.hex, flexShrink: 0, marginTop: 1 }} />
           <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5 }}>
-            <strong>Aligned to the LTA Youth pathway.</strong> Each belt maps to a stage of the LTA Youth programme — the five official ball-colour stages <span style={{ color: T.text2 }}>Blue → Red → Orange → Green → Yellow</span>, then the LTA Youth Compete grades and the performance pathway. The belt is your academy ladder; the LTA stage is the national-framework equivalent shown on every belt below.
+            <strong>Aligned to the LTA Youth pathway.</strong> Each racket maps to a stage of the LTA Youth programme — the five official ball-colour stages <span style={{ color: T.text2 }}>Blue → Red → Orange → Green → Yellow</span>, then the LTA Youth Compete grades and the performance pathway. The racket is your academy ladder; the LTA stage is the national-framework equivalent shown on every racket below.
           </div>
         </div>
       </Card>
@@ -530,7 +530,7 @@ export function BeltsView({ T, accent, density }: Common) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
             <span style={{ width: 40, height: 26, borderRadius: 5, background: b.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
             <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{b.name} belt — {b.theme}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{b.name} racket — {b.theme}</div>
               <div style={{ fontSize: 11.5, color: T.text3 }}>{b.ageGuide} · {b.ball} ball stage</div>
             </div>
             <div style={{ marginLeft: 'auto' }}>
@@ -558,7 +558,7 @@ export function BeltsView({ T, accent, density }: Common) {
 
       {/* Cohort matrix: players × belts */}
       <Card T={T} density={density}>
-        <SectionHead T={T} title="Squad belt matrix" right={<span style={{ fontFamily: FONT_MONO }}>{players.length} players</span>} />
+        <SectionHead T={T} title="Squad racket matrix" right={<span style={{ fontFamily: FONT_MONO }}>{players.length} players</span>} />
         <div style={{ overflowX: 'auto' }}>
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
             <thead>
@@ -586,7 +586,7 @@ export function BeltsView({ T, accent, density }: Common) {
                   })}
                   <td style={{ padding: '8px 10px' }}><BeltChip beltIndex={p.beltIndex} size={16} /></td>
                   <td style={{ padding: '8px 8px', textAlign: 'right' }}>
-                    <button onClick={() => printBeltCertificate(p, p.beltIndex)} title={`Print ${BELTS[p.beltIndex].name} belt certificate`}
+                    <button onClick={() => printBeltCertificate(p, p.beltIndex)} title={`Print ${BELTS[p.beltIndex].name} racket certificate`}
                       style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: accent.hex, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                       <Icon name="trophy" size={12} stroke={1.9} /> Certificate
                     </button>
@@ -597,8 +597,8 @@ export function BeltsView({ T, accent, density }: Common) {
           </table>
         </div>
         <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', fontSize: 10.5, color: T.text3 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="check" size={12} stroke={2.4} style={{ color: T.good }} /> belt earned</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on current belt</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="check" size={12} stroke={2.4} style={{ color: T.good }} /> racket earned</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on current racket</span>
         </div>
       </Card>
     </div>
@@ -772,7 +772,7 @@ export function ResourcesView({ T, accent, density }: Common) {
   const fmtIcon = (f: Resource['format']) => f === 'Video' ? 'play' : f === 'Plan' ? 'calendar' : f === 'Worksheet' ? 'note' : 'note'
   return (
     <div>
-      <PageHead T={T} accent={accent} density={density} title="Resource Centre" sub="Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the belt system." />
+      <PageHead T={T} accent={accent} density={density} title="Resource Centre" sub="Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the racket system." />
       <div style={{ display: 'flex', gap: 6, marginBottom: density.gap, flexWrap: 'wrap' }}>
         {cats.map(c => <button key={c} onClick={() => setCat(c)} style={{ appearance: 'none', border: `1px solid ${cat === c ? accent.border : T.border}`, padding: '6px 12px', borderRadius: 8, fontSize: 11.5, cursor: 'pointer', background: cat === c ? accent.dim : 'transparent', color: cat === c ? accent.hex : T.text2, fontWeight: cat === c ? 600 : 400 }}>{c === 'Books' ? '📚 Books' : c === 'Drill Library' ? '🎾 Drill Library' : c}</button>)}
       </div>

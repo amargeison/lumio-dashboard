@@ -75,7 +75,7 @@ const TEMPLATES: Record<TodaySession['type'], { phase: string; pct: number; tone
     { phase: 'Warm-up games', pct: 0.20, tone: 'warm', d: () => 'Fun coordination and ball-skill games.' },
     { phase: 'Skill of the day', pct: 0.30, tone: 'tech', d: f => `Introduce / build ${f} through play.` },
     { phase: 'Challenge games', pct: 0.35, tone: 'live', d: () => 'Target and team games applying the skill.' },
-    { phase: 'Rewards & belt check', pct: 0.15, tone: 'review', d: () => 'Stickers, belt-skill check, celebrate the wins.' },
+    { phase: 'Rewards & racket check', pct: 0.15, tone: 'review', d: () => 'Stickers, racket-skill check, celebrate the wins.' },
   ],
 }
 function runSheet(s: TodaySession): Phase[] {

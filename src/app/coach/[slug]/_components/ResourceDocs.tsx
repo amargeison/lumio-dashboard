@@ -41,7 +41,7 @@ function generic(r: Resource): string {
       <li>Use a clear success target before progressing to the next level.</li>
       <li>Finish with one thing to keep and one thing to improve.</li>
     </ul>
-    <div class="accentbox"><strong>Belt focus:</strong> ${r.belt ? esc(beltName(r.belt)) + ' belt — ' : ''}${esc(r.tags.join(', '))}</div>
+    <div class="accentbox"><strong>Racket focus:</strong> ${r.belt ? esc(beltName(r.belt)) + ' racket — ' : ''}${esc(r.tags.join(', '))}</div>
     <h2>Coach notes</h2>
     <div class="fill"></div><div class="fill"></div><div class="fill"></div>`
 }
@@ -50,7 +50,7 @@ const BODY: Record<string, string> = {
   // 8-week Green-belt block (training plan)
   r4: `
     <h2>Overview</h2>
-    <p>An 8-week block to take a player to the Green-belt serve criteria: a repeatable service motion, the ball in the box from the baseline 7/10, and three placements on demand (wide, body, T).</p>
+    <p>An 8-week block to take a player to the Green-racket serve criteria: a repeatable service motion, the ball in the box from the baseline 7/10, and three placements on demand (wide, body, T).</p>
     <h2>Weekly plan</h2>
     <table>
       <thead><tr><th style="width:60px">Week</th><th>Focus</th><th>Key session</th><th>Success measure</th></tr></thead>
@@ -62,10 +62,10 @@ const BODY: Record<string, string> = {
         <tr><td>5</td><td>Targets — wide</td><td>Cones in the wide corner, deuce &amp; ad</td><td>Hits wide target 4/10</td></tr>
         <tr><td>6</td><td>Targets — body / T</td><td>Cone ladder to body and T</td><td>Two placements on demand</td></tr>
         <tr><td>7</td><td>Serve + rally</td><td>Serve then play out the point</td><td>In the box 7/10 under rally pressure</td></tr>
-        <tr><td>8</td><td>Belt assessment</td><td>Criteria test + first-serve game</td><td>Meets Green-belt serve criteria ✓</td></tr>
+        <tr><td>8</td><td>Racket assessment</td><td>Criteria test + first-serve game</td><td>Meets Green-racket serve criteria ✓</td></tr>
       </tbody>
     </table>
-    <div class="accentbox"><strong>Green-belt serve criteria:</strong> repeatable motion · continental grip · 7/10 in from the baseline · wide / body / T on demand.</div>`,
+    <div class="accentbox"><strong>Green-racket serve criteria:</strong> repeatable motion · continental grip · 7/10 in from the baseline · wide / body / T on demand.</div>`,
 
   // Cross-court rally targets (printable PDF + court)
   r5: `
@@ -179,7 +179,7 @@ export function openResource(r: Resource) {
       <div style="font-size:26px;font-weight:800;margin-top:4px">${esc(r.title)}</div>
       <div class="meta">
         <span>${esc(r.level)}</span>
-        ${r.belt ? `<span>${esc(beltName(r.belt))} belt</span>` : ''}
+        ${r.belt ? `<span>${esc(beltName(r.belt))} racket</span>` : ''}
         ${r.duration && r.duration !== '—' ? `<span>${esc(r.duration)}</span>` : ''}
         <span>${esc(COACH_ORG.academy)}</span>
       </div>

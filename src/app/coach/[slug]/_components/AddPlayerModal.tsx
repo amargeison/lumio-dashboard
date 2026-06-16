@@ -71,11 +71,11 @@ export function AddPlayerModal({ T, accent, onClose }: { T: ThemeTokens; accent:
             </div>
           </div>
           <div>
-            <label style={labelStyle}>Starting belt</label>
+            <label style={labelStyle}>Starting racket</label>
             <select value={beltIndex} onChange={e => setBeltIndex(Number(e.target.value))} style={inputStyle}>
               {BELTS.map((b, i) => <option key={b.id} value={i}>{b.name} — {b.theme}</option>)}
             </select>
-            <div style={{ fontSize: 10, color: T.text3, marginTop: 4 }}>Tip: send the welcome pack first — set the belt after their onboarding answers.</div>
+            <div style={{ fontSize: 10, color: T.text3, marginTop: 4 }}>Tip: send the welcome pack first — set the racket after their onboarding answers.</div>
           </div>
           <div>
             <label style={labelStyle}>Goal (optional)</label>

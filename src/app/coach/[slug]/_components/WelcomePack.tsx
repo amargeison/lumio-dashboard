@@ -43,12 +43,12 @@ export function printWelcomePack(player: Player) {
     </div>
     <p style="margin-top:18px">Hi ${esc(first)},</p>
     <p>A warm welcome to ${esc(COACH_ORG.academy)} — we're really pleased to have you on board. Whether you're brand new to tennis or coming back to it, our job is to help you improve, enjoy your tennis and hit some clear goals along the way.</p>
-    <p>We coach using a <strong>belt progression system</strong> (like martial arts) — you'll work through clear skills at each belt, earn certificates as you progress, and always know what you're working towards. Aligned to the LTA Youth pathway, it keeps things fun, structured and motivating.</p>
+    <p>We coach using a <strong>racket progression system</strong> (like martial arts) — you'll work through clear skills at each racket, earn certificates as you progress, and always know what you're working towards. Aligned to the LTA Youth pathway, it keeps things fun, structured and motivating.</p>
     <h2>What happens next</h2>
     <ol>
-      <li><strong>Complete the onboarding questions</strong> (page 3) and bring them to your first session — this helps us place you at exactly the right belt.</li>
+      <li><strong>Complete the onboarding questions</strong> (page 3) and bring them to your first session — this helps us place you at exactly the right racket.</li>
       <li><strong>First session = assessment & a hit</strong> — relaxed, no pressure, just so we can see your game.</li>
-      <li><strong>We agree your goals</strong> and set your starting belt and a simple plan.</li>
+      <li><strong>We agree your goals</strong> and set your starting racket and a simple plan.</li>
     </ol>
     <h2>Handy to know</h2>
     <ul>
@@ -65,7 +65,7 @@ export function printWelcomePack(player: Player) {
     <h2 style="margin-top:0">Your starting action plan</h2>
     <div class="accentbox" style="display:flex;align-items:center;gap:12px">
       <span style="width:40px;height:25px;border-radius:5px;background:${belt.colour};border:1px solid rgba(0,0,0,.25)"></span>
-      <div><div style="font-size:16px;font-weight:700">${esc(belt.name)} belt — ${esc(belt.theme)}</div><div style="font-size:11px;color:#6b7280">Your suggested starting point — confirmed after your first session</div></div>
+      <div><div style="font-size:16px;font-weight:700">${esc(belt.name)} racket — ${esc(belt.theme)}</div><div style="font-size:11px;color:#6b7280">Your suggested starting point — confirmed after your first session</div></div>
     </div>
     <h2>Skills you'll work on first</h2>
     <ul>${skills}</ul>
@@ -75,7 +75,7 @@ export function printWelcomePack(player: Player) {
     <table>
       <thead><tr><th style="width:70px">Week</th><th>Focus</th></tr></thead>
       <tbody>
-        <tr><td>Week 1</td><td>Assessment &amp; getting to know your game — set your belt and goal</td></tr>
+        <tr><td>Week 1</td><td>Assessment &amp; getting to know your game — set your racket and goal</td></tr>
         <tr><td>Week 2</td><td>Foundations of the ${esc(belt.theme.toLowerCase())}</td></tr>
         <tr><td>Week 3</td><td>Build &amp; repeat — take the new skills into rallies and games</td></tr>
         <tr><td>Week 4</td><td>First progress check — celebrate the wins and set the next target (${esc(next.name)})</td></tr>
@@ -87,7 +87,7 @@ export function printWelcomePack(player: Player) {
   <!-- 3. Onboarding questionnaire -->
   <div class="page">
     <h2 style="margin-top:0">Onboarding — tell us about your tennis</h2>
-    <p style="margin-top:0">Please complete and bring to your first session. This helps us place you at the right belt from day one.</p>
+    <p style="margin-top:0">Please complete and bring to your first session. This helps us place you at the right racket from day one.</p>
 
     <table>
       <tbody>
@@ -110,7 +110,7 @@ export function printWelcomePack(player: Player) {
     <div class="q"><div class="lbl">Which days / times generally suit you?</div>${line}</div>
     <div class="q"><div class="lbl">Any injuries, medical conditions or things we should know? (allergies, etc.)</div>${line}${line}</div>
 
-    <div class="accentbox" style="margin-top:14px"><strong>For the coach:</strong> suggested starting belt after review: ${fill('150px')} &nbsp; Date: ${fill('90px')}</div>
+    <div class="accentbox" style="margin-top:14px"><strong>For the coach:</strong> suggested starting racket after review: ${fill('150px')} &nbsp; Date: ${fill('90px')}</div>
     <div class="foot"><span>${esc(COACH_ORG.academy)}</span><span>Onboarding · ${esc(player.name)}</span></div>
   </div>
 

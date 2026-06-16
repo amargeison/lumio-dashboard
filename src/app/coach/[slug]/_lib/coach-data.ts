@@ -30,7 +30,7 @@ export const COACH_TOP_STATS: CoachStatTile[] = [
   { label: 'Sessions today', value: 7,       sub: '2 group · 5 private', tone: 'accent' },
   { label: 'Next lesson',    value: '09:00', sub: 'Mia Chen · Court 2',  tone: 'urgent' },
   { label: 'Active players', value: 34,      sub: '+3 this month',       tone: 'ok' },
-  { label: 'Belts due',      value: 4,       sub: 'assessments pending', tone: 'warn' },
+  { label: 'Rackets due',    value: 4,       sub: 'assessments pending', tone: 'warn' },
   { label: 'Utilisation',    value: '88%',   sub: 'court hours booked',  tone: 'accent' },
 ]
 
@@ -383,7 +383,7 @@ export const LESSONS: Lesson[] = [
     skillsWorked: ['serve-flat', 'toss', 'grips'],
     homework: 'Practise 20 tosses a day against a wall mark; keep the continental grip.',
     nextFocus: 'Add a target (wide vs T) once the box rate is steady at 7/10.',
-    coachNote: 'Lovely attitude. Close to her Green belt serve criteria — one more good week.',
+    coachNote: 'Lovely attitude. Close to her Green racket serve criteria — one more good week.',
     rating: 4,
   },
   {
@@ -421,7 +421,7 @@ export const LESSONS: Lesson[] = [
     skillsWorked: ['inside-out', 'approach', 'fh-volley'],
     homework: 'Watch the clip — note 3 moments to approach earlier.',
     nextFocus: 'Pattern: serve+1 inside-out forehand to the open court.',
-    coachNote: 'Brown belt tactics coming together. Ready to compete more.',
+    coachNote: 'Brown racket tactics coming together. Ready to compete more.',
     rating: 5,
   },
 ]
@@ -477,7 +477,7 @@ export const RESOURCES: Resource[] = [
   { id: 'r1',  title: 'Split-step & first-move reaction',  category: 'Drill',        level: 'Beginner',     format: 'Video',     duration: '4 min',  belt: 'white',  tags: ['movement','warm-up'],        desc: 'Reaction-cue split-step ladder for foundation movers.', video: 'J1UhPl1UrYs' },
   { id: 'r2',  title: 'Low-to-high topspin forehand',      category: 'Technique',    level: 'Intermediate', format: 'Video',     duration: '7 min',  belt: 'blue',   tags: ['forehand','spin'],           desc: 'Frame-by-frame swing path for heavy topspin.', video: 'KV9DTSNkLAg' },
   { id: 'r3',  title: 'Kick serve in 5 steps',             category: 'Technique',    level: 'Advanced',     format: 'Video',     duration: '9 min',  belt: 'brown',  tags: ['serve','spin'],              desc: 'Build a reliable kick serve from toss to pronation.' },
-  { id: 'r4',  title: '8-week Green-belt block',           category: 'Training plan',level: 'Intermediate', format: 'Plan',      duration: '8 weeks',belt: 'green',  tags: ['serve','periodisation'],     desc: 'Periodised plan to earn the Green belt serve criteria.' },
+  { id: 'r4',  title: '8-week Green-racket block',         category: 'Training plan',level: 'Intermediate', format: 'Plan',      duration: '8 weeks',belt: 'green',  tags: ['serve','periodisation'],     desc: 'Periodised plan to earn the Green racket serve criteria.' },
   { id: 'r5',  title: 'Cross-court rally targets',         category: 'Drill',        level: 'All levels',   format: 'PDF',       duration: '—',      belt: 'yellow', tags: ['consistency','rally'],       desc: 'Printable court targets for rally depth & direction.' },
   { id: 'r6',  title: 'Net play & volley progression',     category: 'Drill',        level: 'Intermediate', format: 'Video',     duration: '6 min',  belt: 'orange', tags: ['volley','net'],              desc: 'Feed sequence from block volley to closing the net.' },
   { id: 'r7',  title: 'Footwork agility ladder set',       category: 'Fitness',      level: 'All levels',   format: 'PDF',       duration: '15 min', tags: ['movement','warm-up'],        desc: 'Off-court ladder routine for split-step speed.' },
@@ -850,7 +850,7 @@ export const DRILL_LIBRARY: Drill[] = [
 export type CoachBriefItem = { tag: string; pri: 'high' | 'med' | 'low'; txt: string }
 
 export const COACH_AI_BRIEF: CoachBriefItem[] = [
-  { tag: 'belts',     pri: 'high', txt: 'Mia Chen is one good serving session from her Green belt — book a belt assessment this week.' },
+  { tag: 'rackets',   pri: 'high', txt: 'Mia Chen is one good serving session from her Green racket — book a racket assessment this week.' },
   { tag: 'retention', pri: 'high', txt: 'Hannah Berg has missed 2 of the last 4 sessions and her trend is down. Suggest a check-in with parents.' },
   { tag: 'schedule',  pri: 'med',  txt: '7 sessions today (09:00–19:00). Court 3 double-booked risk at 18:00 — confirm with desk.' },
   { tag: 'payments',  pri: 'med',  txt: '3 lesson packages expire this month; 2 players have an outstanding balance.' },
@@ -865,7 +865,7 @@ export const COACH_MESSAGES: CoachMessage[] = [
   { from: 'Mark Berg',    role: 'Parent · Hannah',  last: 'Sorry we missed Tuesday — back this week.',                 time: '07:20', unread: 2, urgent: true  },
   { from: 'Riverside Desk', role: 'Venue',          last: 'Court 3 maintenance moved to Friday AM.',                  time: 'Yesterday', unread: 1, urgent: true },
   { from: 'Daniel Cruz',  role: 'Player',           last: 'Confirmed for match play at 18:00 👍',                     time: 'Yesterday', unread: 0, urgent: false },
-  { from: 'Lily Chen',    role: 'Parent · Mia',     last: 'So excited about the belt assessment!',                    time: 'Yesterday', unread: 0, urgent: false },
+  { from: 'Lily Chen',    role: 'Parent · Mia',     last: 'So excited about the racket assessment!',                    time: 'Yesterday', unread: 0, urgent: false },
   { from: 'Adult Group',  role: 'Group · 6 players', last: 'Anyone for an extra Sunday hit?',                         time: 'Tue',       unread: 0, urgent: false },
 ]
 
@@ -898,10 +898,10 @@ export type PackageOffer = {
 export const PACKAGE_OFFERS: PackageOffer[] = [
   { id: 'of-priv10', name: '10-lesson private pack', type: 'Private', sessions: 10, price: 360, per: 'pack',
     desc: 'Ten 1-hour private lessons — best value for committed players.',
-    includes: ['10 × 60-min private lessons', 'Belt progress tracking', 'Lesson summary after each session', 'Saves £20 vs pay-as-you-go'] },
+    includes: ['10 × 60-min private lessons', 'Racket progress tracking', 'Lesson summary after each session', 'Saves £20 vs pay-as-you-go'] },
   { id: 'of-priv5', name: '5-lesson private pack', type: 'Private', sessions: 5, price: 185, per: 'pack',
     desc: 'A five-lesson block to get started or work on a specific goal.',
-    includes: ['5 × 60-min private lessons', 'Starting belt assessment', 'Lesson summaries', 'Flexible scheduling'] },
+    includes: ['5 × 60-min private lessons', 'Starting racket assessment', 'Lesson summaries', 'Flexible scheduling'] },
   { id: 'of-perf', name: 'Performance monthly', type: 'Performance', sessions: 12, price: 240, per: 'month',
     desc: 'Intensive monthly programme for competitive junior players.',
     includes: ['12 sessions per month', 'Match-play & tactical work', 'Fitness & movement block', 'Tournament planning'] },
@@ -910,7 +910,7 @@ export const PACKAGE_OFFERS: PackageOffer[] = [
     includes: ['8 × 60-min lessons', 'Cardio & rally fitness option', 'Doubles tactics', 'Evening slots available'] },
   { id: 'of-group', name: 'Junior group — term', type: 'Group', sessions: 10, price: 150, per: 'term',
     desc: 'Weekly small-group coaching across a 10-week term.',
-    includes: ['10 weekly group sessions', 'Max 6 players per court', 'Belt pathway curriculum', 'End-of-term report'] },
+    includes: ['10 weekly group sessions', 'Max 6 players per court', 'Racket pathway curriculum', 'End-of-term report'] },
   { id: 'of-cardio', name: 'Cardio tennis — 6 pack', type: 'Cardio', sessions: 6, price: 60, per: 'pack',
     desc: 'High-energy, music-led tennis fitness — all levels welcome.',
     includes: ['6 × 45-min cardio sessions', 'All abilities', 'No booking needed — just turn up', 'Great for fitness'] },
@@ -942,7 +942,7 @@ export const COACH_TODAY: CoachScheduleItem[] = [
   { t: '10:30', what: 'Tom Okafor — serve+1 patterns', where: 'Court 2',    type: 'Private' },
   { t: '12:00', what: 'Junior Squad (6)',              where: 'Court 1',    type: 'Group' },
   { t: '16:00', what: 'Ava Romero — rally control',    where: 'Court 3',    type: 'Private' },
-  { t: '17:00', what: 'Belt assessment prep',          where: 'Office',     type: 'Admin' },
+  { t: '17:00', what: 'Racket assessment prep',        where: 'Office',     type: 'Admin' },
   { t: '18:00', what: 'Daniel Cruz — match play',      where: 'Court 3',    type: 'Match' },
 ]
 
@@ -951,10 +951,10 @@ export type CoachNavItem = { id: string; label: string; icon: string; group: str
 
 export const COACH_SIDEBAR: CoachNavItem[] = [
   { id: 'dashboard',   label: 'Dashboard',          icon: 'home',         group: 'COACHING' },
-  { id: 'lessons',     label: 'Lesson Summaries',   icon: 'note',         group: 'COACHING' },
   { id: 'planner',     label: 'Session Planner',    icon: 'flag',         group: 'COACHING' },
+  { id: 'lessons',     label: 'Lesson Summaries',   icon: 'note',         group: 'COACHING' },
   { id: 'development', label: 'Player Development',  icon: 'arrow-up-right', group: 'COACHING' },
-  { id: 'belts',       label: 'Belt Progression',   icon: 'trophy',       group: 'COACHING', badge: 'NEW' },
+  { id: 'belts',       label: 'Racket Progression', icon: 'trophy',       group: 'COACHING', badge: 'NEW' },
   { id: 'calendar',    label: 'Booking Calendar',   icon: 'calendar',     group: 'SCHEDULE' },
   { id: 'venues',      label: 'Court Planner',      icon: 'pin',          group: 'SCHEDULE', badge: 'NEW' },
   { id: 'camps',       label: 'Training Camps',     icon: 'plane',        group: 'SCHEDULE', badge: 'NEW' },
@@ -1004,7 +1004,7 @@ export const CAMPS: Camp[] = [
     id: 'camp-costabrava', name: 'Costa Brava Junior Camp', country: 'Spain', location: 'Costa Brava', resort: 'Club Tennis Llafranc', flag: '🇪🇸',
     start: '3 Aug 2026', end: '16 Aug 2026', days: 14, status: 'upcoming', capacity: 20, booked: 9,
     pricePerHead: 1650, deposit: 350, surfaces: 'Clay', courts: 8,
-    summary: 'Junior development camp for red→green ball players. Skills, games and a belt-assessment week, with parents accommodated nearby.',
+    summary: 'Junior development camp for red→green ball players. Skills, games and a racket-assessment week, with parents accommodated nearby.',
   },
   {
     id: 'camp-marbella', name: 'Marbella Pre-Season Camp', country: 'Spain', location: 'Marbella', resort: 'Manolo Santana Racquets Club', flag: '🇪🇸',
@@ -1054,7 +1054,7 @@ export const CAMP_TARGETS: Record<string, { group: string[]; outcomes: string[] 
     ],
     outcomes: [
       'Player development report emailed to each parent on day 14',
-      'Belt re-assessment for any player who meets the criteria',
+      'Racket re-assessment for any player who meets the criteria',
       'Personal off-season plan for the 4 weeks after camp',
     ],
   },
@@ -1065,7 +1065,7 @@ export const CAMP_TARGETS: Record<string, { group: string[]; outcomes: string[] 
       'Daily skills awards to keep motivation high',
     ],
     outcomes: [
-      'Belt assessment day on day 12',
+      'Racket assessment day on day 12',
       'Parent showcase session on the final morning',
     ],
   },
@@ -1111,7 +1111,7 @@ export function buildCampItinerary(startDay = 6, month = 'Jul'): CampDay[] {
     }
     if (day === 14) {
       return { day, date, theme, sessions: [
-        { slot: 'AM', time: '09:00', title: 'Ladder finals & belt assessments',     type: 'Match play', where: 'Centre court' },
+        { slot: 'AM', time: '09:00', title: 'Ladder finals & racket assessments',   type: 'Match play', where: 'Centre court' },
         { slot: 'PM', time: '13:00', title: '1:1 reviews & off-season plans',        type: 'Review',     where: 'Clubhouse' },
         { slot: 'EVE',time: '16:00', title: 'Departures & transfers',                type: 'Logistics',  where: 'Resort → FAO' },
       ] }
@@ -1191,7 +1191,7 @@ export function buildPlayerCampLog(a: CampAttendee, camp: Camp): CampLogDay[] {
   return itin.map((d, i) => {
     if (d.rest) return { day: d.day, date: d.date, theme: d.theme, rest: true, am: 'Active recovery + pool — kept the body fresh.', pm: 'Team excursion and week-1 awards evening.', nextAction: 'Recharge and reset goals for week two.', effort: 4 }
     if (d.day === 1) return { day: d.day, date: d.date, theme: d.theme, am: 'Arrived and settled in; baseline assessment hit and filmed.', pm: `Set personal camp goal: ${a.goal}.`, nextAction: 'Review baseline video tonight with the group.', effort: 4 }
-    if (d.day === 14) return { day: d.day, date: d.date, theme: d.theme, am: 'Ladder finals and end-of-camp belt assessment.', pm: '1:1 review with coach and personal off-season plan agreed.', nextAction: 'Keep the off-season plan going — 4-week checkpoint set.', effort: 5 }
+    if (d.day === 14) return { day: d.day, date: d.date, theme: d.theme, am: 'Ladder finals and end-of-camp racket assessment.', pm: '1:1 review with coach and personal off-season plan agreed.', nextAction: 'Keep the off-season plan going — 4-week checkpoint set.', effort: 5 }
     const focus = d.theme.toLowerCase()
     const effort = 3 + ((s + d.day) % 3) // 3..5
     return {
@@ -1485,7 +1485,7 @@ export function playerCampStats(a: CampAttendee, _camp: Camp): CampStats {
     beltStart: a.beltIndex, beltEnd: progressed ? a.beltIndex + 1 : a.beltIndex,
     improvements,
     highlight: progressed
-      ? `Earned the ${BELTS[a.beltIndex + 1].name} belt on assessment day — a standout fortnight.`
+      ? `Earned the ${BELTS[a.beltIndex + 1].name} racket on assessment day — a standout fortnight.`
       : `Biggest leap of the camp: ${improvements[0].toLowerCase()} now holding up under match pressure.`,
   }
 }
