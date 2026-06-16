@@ -8,22 +8,28 @@ import { useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { COACH_ORG } from '../_lib/coach-data'
+import { sendMessage } from '../_lib/messages-store'
 
 const clean = (s: string) => s.replace(/[*_#`>]/g, '').replace(/^\s*[-•]\s*/gm, '').replace(/\n{3,}/g, '\n\n').trim()
 
+// Demo contacts. Emails are intentionally fictional (example.com / .example) so
+// the mailto channel opens the real mail client without addressing fake people.
 const TEAM = [
-  { name: 'Junior Squad parents', role: 'Group · 6 families', icon: '👨‍👩‍👧' },
-  { name: 'Grace Okafor', role: 'Parent · Tom', icon: '📋' },
-  { name: 'Lily Chen', role: 'Parent · Mia', icon: '📋' },
-  { name: 'Riverside Desk', role: 'Venue', icon: '🏟️' },
-  { name: 'Dan Pearce', role: 'Assistant Coach', icon: '🎾' },
-  { name: 'All players', role: 'Broadcast', icon: '📣' },
+  { name: 'Junior Squad parents', role: 'Group · 6 families', icon: '👨‍👩‍👧', email: '' },
+  { name: 'Grace Okafor', role: 'Parent · Tom', icon: '📋', email: 'grace.okafor@example.com' },
+  { name: 'Lily Chen', role: 'Parent · Mia', icon: '📋', email: 'lily.chen@example.com' },
+  { name: 'Riverside Desk', role: 'Venue', icon: '🏟️', email: 'desk@riversidetennis.example' },
+  { name: 'Dan Pearce', role: 'Assistant Coach', icon: '🎾', email: 'dan.pearce@example.com' },
+  { name: 'All players', role: 'Broadcast', icon: '📣', email: '' },
 ]
+// Channels, ordered live-first. `live` = genuinely does something on send
+// (in-app writes to the inbox store; email opens the mail client via mailto).
+// SMS/WhatsApp are honest demo/coming-soon — no real send is faked.
 const CHANNELS = [
-  { id: 'sms', label: 'Text / SMS', icon: '💬' },
-  { id: 'whatsapp', label: 'WhatsApp', icon: '🟢' },
-  { id: 'email', label: 'Email', icon: '📧' },
-  { id: 'internal', label: 'In-app message', icon: '🔔' },
+  { id: 'internal', label: 'In-app message', icon: '🔔', live: true,  note: 'Live — lands in the inbox instantly' },
+  { id: 'email',    label: 'Email',          icon: '📧', live: true,  note: 'Live — opens your mail app pre-filled' },
+  { id: 'sms',      label: 'Text / SMS',     icon: '💬', live: false, note: 'Demo — connects via Twilio in the live product' },
+  { id: 'whatsapp', label: 'WhatsApp',       icon: '🟢', live: false, note: 'Coming soon — needs WhatsApp Business verification' },
 ]
 
 export function CoachSendMessage({ T, accent, onClose }: { T: ThemeTokens; accent: AccentTokens; onClose: () => void }) {
@@ -39,6 +45,36 @@ export function CoachSendMessage({ T, accent, onClose }: { T: ThemeTokens; accen
   const togglePerson = (name: string) => setSelectedPeople(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
   const toggleChannel = (id: string) => setChannels(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id])
   const allRecipients = [...selectedPeople, ...(customPerson.trim() ? [customPerson.trim()] : [])]
+  // Resolved contact objects (with role + email) for the chosen recipients.
+  const recipients = [
+    ...TEAM.filter(t => selectedPeople.includes(t.name)),
+    ...(customPerson.trim() ? [{ name: customPerson.trim(), role: 'Contact', email: '' }] : []),
+  ]
+
+  // Channel ids actually used on this send (urgent fans out to everything).
+  const usedChannelIds = isUrgent ? CHANNELS.map(c => c.id) : channels
+
+  // Final send — wire each channel honestly:
+  //  • in-app + email → write a real inbox item per recipient (the live path),
+  //  • email          → also open the mail client pre-filled via mailto,
+  //  • sms / whatsapp → demo only, no real send (just the confirmation + note).
+  const handleConfirm = () => {
+    const ids = isUrgent ? CHANNELS.map(c => c.id) : channels
+    const liveLabels = ids
+      .filter(id => id === 'internal' || id === 'email')
+      .map(id => CHANNELS.find(c => c.id === id)!.label)
+    if (liveLabels.length) {
+      recipients.forEach(r => sendMessage({ to: r.name, role: r.role, channel: liveLabels.join(' · '), text: aiDraft }))
+    }
+    if (ids.includes('email')) {
+      const to = recipients.map(r => r.email).filter(Boolean).join(',')
+      if (to) {
+        const subject = `${isUrgent ? '[URGENT] ' : ''}Message from ${COACH_ORG.coach}`
+        window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(aiDraft)}`
+      }
+    }
+    setStep('sent')
+  }
 
   const handleSend = async (urgent: boolean) => {
     setIsUrgent(urgent)
@@ -122,13 +158,24 @@ export function CoachSendMessage({ T, accent, onClose }: { T: ThemeTokens; accen
           {step === 'how' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                {CHANNELS.map(ch => (
-                  <button key={ch.id} onClick={() => toggleChannel(ch.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: 16, textAlign: 'left', cursor: 'pointer', ...card(channels.includes(ch.id)) }}>
-                    <span style={{ fontSize: 22 }}>{ch.icon}</span>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{ch.label}</span>
-                    {channels.includes(ch.id) && <span style={{ marginLeft: 'auto', color: accent.hex }}>✓</span>}
-                  </button>
-                ))}
+                {CHANNELS.map(ch => {
+                  const on = channels.includes(ch.id)
+                  const tag = ch.id === 'whatsapp' ? 'Soon' : ch.live ? 'Live' : 'Demo'
+                  const tagColor = ch.id === 'whatsapp' ? T.text3 : ch.live ? T.good : T.warn
+                  return (
+                    <button key={ch.id} onClick={() => toggleChannel(ch.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, borderRadius: 12, padding: 14, textAlign: 'left', cursor: 'pointer', ...card(on) }}>
+                      <span style={{ fontSize: 22, lineHeight: 1 }}>{ch.icon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{ch.label}</span>
+                          <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', padding: '1px 5px', borderRadius: 4, color: tagColor, background: `${tagColor}1f` }}>{tag}</span>
+                          {on && <span style={{ marginLeft: 'auto', color: accent.hex }}>✓</span>}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: T.text3, marginTop: 3, lineHeight: 1.35 }}>{ch.note}</div>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setStep('who')} style={{ flex: 1, appearance: 'none', border: 0, borderRadius: 11, padding: '11px', fontSize: 13, background: T.hover, color: T.text2, cursor: 'pointer' }}>← Back</button>
@@ -164,9 +211,18 @@ export function CoachSendMessage({ T, accent, onClose }: { T: ThemeTokens; accen
                 </div>
               )}
               <div style={{ borderRadius: 12, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', background: T.panel2, border: `1px solid ${T.border}`, color: T.text2 }}>{aiDraft}</div>
+              {/* Honest per-channel outcome so the demo never implies a real send. */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 10.5 }}>
+                {usedChannelIds.map(id => {
+                  const ch = CHANNELS.find(c => c.id === id)!
+                  const outcome = id === 'internal' ? 'adds an inbox message' : id === 'email' ? 'opens your mail app' : id === 'whatsapp' ? 'coming soon' : 'demo only'
+                  const col = ch.live ? T.good : T.warn
+                  return <span key={id} style={{ padding: '3px 9px', borderRadius: 20, background: `${col}1a`, color: col, fontWeight: 600 }}>{ch.label} · {outcome}</span>
+                })}
+              </div>
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => { setStep('message'); setAiDraft('') }} style={{ flex: 1, appearance: 'none', border: 0, borderRadius: 11, padding: '11px', fontSize: 13, background: T.hover, color: T.text2, cursor: 'pointer' }}>← Edit</button>
-                <button onClick={() => setStep('sent')} style={{ flex: 1, ...primaryBtn(true, isUrgent ? T.bad : accent.hex) }}>✓ Confirm send</button>
+                <button onClick={handleConfirm} style={{ flex: 1, ...primaryBtn(true, isUrgent ? T.bad : accent.hex) }}>✓ Confirm send</button>
               </div>
             </div>
           )}
@@ -176,8 +232,21 @@ export function CoachSendMessage({ T, accent, onClose }: { T: ThemeTokens; accen
             <div style={{ textAlign: 'center', padding: '28px 0' }}>
               <div style={{ fontSize: 44, marginBottom: 10 }}>✅</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: T.text, marginBottom: 6 }}>Message sent!</div>
-              <div style={{ fontSize: 12.5, color: T.text3, marginBottom: 16, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}>
-                Sent via {isUrgent ? 'all channels' : channels.map(id => CHANNELS.find(c => c.id === id)?.label).join(', ')} to {allRecipients.join(', ')}.
+              <div style={{ fontSize: 12.5, color: T.text3, marginBottom: 14, maxWidth: 420, marginLeft: 'auto', marginRight: 'auto' }}>
+                To {allRecipients.join(', ')}.
+              </div>
+              {/* Honest outcome per channel — no fake sends. */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxWidth: 420, margin: '0 auto 16px', textAlign: 'left' }}>
+                {usedChannelIds.map(id => {
+                  const ch = CHANNELS.find(c => c.id === id)!
+                  const outcome = id === 'internal' ? 'Added to the inbox now.' : id === 'email' ? 'Your mail app opened, ready to send.' : id === 'whatsapp' ? 'Coming soon — WhatsApp Business pending.' : 'Demo only — live product sends via Twilio.'
+                  return (
+                    <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: ch.live ? T.good : T.warn, flexShrink: 0 }} />
+                      <span style={{ color: T.text2 }}><span style={{ fontWeight: 600, color: T.text }}>{ch.label}:</span> {outcome}</span>
+                    </div>
+                  )
+                })}
               </div>
               <button onClick={onClose} style={primaryBtn(true)}>Done</button>
             </div>

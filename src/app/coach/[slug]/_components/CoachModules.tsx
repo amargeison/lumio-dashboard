@@ -5,7 +5,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
-  COACH_ORG, COACH_TOP_STATS, COACH_TODAY, COACH_AI_BRIEF, COACH_MESSAGES,
+  COACH_ORG, COACH_TOP_STATS, COACH_TODAY, COACH_AI_BRIEF,
   BELTS, ALL_SKILLS, MASTERY_LABELS, skillScore, LTA_MAP,
   PLAYERS, LESSONS, RESOURCES,
   PACKAGES, PAY_SUMMARY,
@@ -39,6 +39,10 @@ import { getSettings } from '../_lib/settings-store'
 import { useCoachSettings } from '../_lib/use-settings'
 import { getCamps, subscribe as subscribeCamps } from '../_lib/camps-store'
 import { NewCampModal } from './NewCamp'
+import {
+  getMessages, subscribe as subscribeMessages, markRead, addReply, addForward,
+  toggleReaction, softDelete, requestOpen, consumePendingOpen, type CoachInboxMessage,
+} from '../_lib/messages-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -122,11 +126,23 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const settings = useCoachSettings()
   const [msgOpen, setMsgOpen] = useState(false)
+  // Inbox preview reads the shared messages store so it stays in sync with the
+  // Messages page (Phase B will add the interactions; here it's read-only).
+  const [messages, setMessages] = useState<CoachInboxMessage[]>([])
+  useEffect(() => { const r = () => setMessages(getMessages()); r(); return subscribeMessages(r) }, [])
   return (
     <div>
       {msgOpen && <CoachSendMessage T={T} accent={accent} onClose={() => setMsgOpen(false)} />}
+      {/* Hero row — 8/4 split: the hero banner (span 8) sits beside a Today
+          timeline (span 4), mirroring football's hero ‖ TodaySchedule pair.
+          Reuses the cm-12 grid class so it collapses to one column at ≤768px.
+          NB: we use `span N` (not football's explicit `1 / span 8` / `9 / span 4`
+          line form) because this single DashboardView also renders inside the
+          mobile shell — `span` clamps cleanly to one column, explicit start
+          lines would spawn implicit tracks and break the mobile layout. */}
+      <div className="cm-12" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap, marginBottom: density.gap }}>
       {/* Hero */}
-      <Card T={T} density={density} style={{ overflow: 'hidden', marginBottom: density.gap, padding: `${density.pad + 2}px ${density.pad + 4}px` }}>
+      <Card T={T} density={density} style={{ gridColumn: 'span 8', overflow: 'hidden', padding: `${density.pad + 2}px ${density.pad + 4}px` }}>
         <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 240 }}>
@@ -157,6 +173,28 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
         </div>
       </Card>
 
+      {/* Today timeline — transplanted out of the old grid slot into the space
+          beside the hero. Scrollable, mirrors football's FbTodaySchedule. */}
+      <Card T={T} density={density} hover style={{ gridColumn: 'span 4' }}>
+        <SectionHead T={T} title="Today" right={<span className="tnum" style={{ fontFamily: FONT_MONO }}>{COACH_TODAY.length} blocks</span>} />
+        <div style={{ maxHeight: 224, overflowY: 'auto', marginRight: -2, paddingRight: 2 }}>
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />
+            {COACH_TODAY.map((it, i) => (
+              <div key={i} style={{ position: 'relative', display: 'flex', gap: 14, padding: '6px 0' }}>
+                <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 11, color: it.highlight ? accent.hex : T.text3, width: 44, paddingTop: 2 }}>{it.t}</div>
+                <div style={{ position: 'absolute', left: 46, top: 9, width: 7, height: 7, borderRadius: '50%', background: it.highlight ? accent.hex : T.panel, border: `1.5px solid ${it.highlight ? accent.hex : T.borderHi}` }} />
+                <div style={{ flex: 1, paddingLeft: 14 }}>
+                  <div style={{ fontSize: 12.5, color: T.text, fontWeight: it.highlight ? 600 : 500 }}>{it.what}</div>
+                  <div style={{ fontSize: 10.5, color: T.text3 }}>{it.where} · {it.type}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Card>
+      </div>
+
       {/* Stat tiles */}
       <div style={{ display: 'flex', gap: density.gap, marginBottom: density.gap, flexWrap: 'wrap' }}>
         {COACH_TOP_STATS.map((s, i) => {
@@ -174,8 +212,35 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
         })}
       </div>
 
-      {/* Grid: AI brief + today + roster snapshot */}
+      {/* Grid re-budget after Today moved up to the hero row. Spans sum to 12:
+          Inbox (4) ‖ AI briefing (5) ‖ Needs attention (3). AI briefing keeps
+          its span-5 width and slides into Today's vacated middle area. */}
       <div className="cm-12" style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }}>
+        {/* Inbox — static preview of the latest 5 messages from the store.
+            Read-only in Phase A (no click-to-open/reply yet — that's Phase B). */}
+        <Card T={T} density={density} style={{ gridColumn: 'span 4' }}>
+          <SectionHead T={T} title={<><Icon name="bell" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2 }} />Inbox</>}
+            right={<button onClick={() => onNavigate('messages')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, cursor: 'pointer', fontSize: 11, fontFamily: FONT, padding: 0 }}>All →</button>} />
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {messages.slice(0, 5).map((m, i) => (
+              <div key={m.id} onClick={() => { requestOpen(m.id); onNavigate('messages') }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 4px', margin: '0 -4px', borderRadius: 6, borderTop: i ? `1px solid ${T.border}` : 'none', cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.background = T.hover }} onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
+                <div style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: m.unread > 0 ? (m.urgent ? T.bad : accent.hex) : T.text4 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 12, color: T.text, fontWeight: m.unread > 0 ? 600 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.outbound ? `To ${m.from}` : m.from}</span>
+                    <Pill T={T}>{m.outbound ? 'Sent' : m.role.split(' · ')[0]}</Pill>
+                  </div>
+                  <div style={{ fontSize: 11, color: m.unread > 0 ? T.text2 : T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>{m.last}</div>
+                </div>
+                <div className="tnum" style={{ fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO, flexShrink: 0 }}>{m.time}</div>
+              </div>
+            ))}
+            {messages.length === 0 && <div style={{ fontSize: 12, color: T.text3, fontStyle: 'italic', padding: '14px 0' }}>Inbox cleared.</div>}
+          </div>
+        </Card>
+
         {/* AI brief */}
         <Card T={T} density={density} style={{ gridColumn: 'span 5' }}>
           <SectionHead T={T} title={<><Icon name="sparkles" size={13} stroke={1.5} style={{ color: accent.hex, marginRight: 6, verticalAlign: -2 }} />Coach AI briefing</>} right={<span style={{ fontFamily: FONT_MONO }}>06:42</span>} />
@@ -185,24 +250,6 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
               <div style={{ flex: 1, fontSize: 12.5, color: T.text, lineHeight: 1.45 }}>{it.txt}</div>
             </div>
           ))}
-        </Card>
-
-        {/* Today timeline */}
-        <Card T={T} density={density} style={{ gridColumn: 'span 4' }}>
-          <SectionHead T={T} title="Today" right={<span className="tnum" style={{ fontFamily: FONT_MONO }}>{COACH_TODAY.length} blocks</span>} />
-          <div style={{ position: 'relative' }}>
-            <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />
-            {COACH_TODAY.map((it, i) => (
-              <div key={i} style={{ position: 'relative', display: 'flex', gap: 14, padding: '6px 0' }}>
-                <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 11, color: it.highlight ? accent.hex : T.text3, width: 44, paddingTop: 2 }}>{it.t}</div>
-                <div style={{ position: 'absolute', left: 46, top: 9, width: 7, height: 7, borderRadius: '50%', background: it.highlight ? accent.hex : T.panel, border: `1.5px solid ${it.highlight ? accent.hex : T.borderHi}` }} />
-                <div style={{ flex: 1, paddingLeft: 14 }}>
-                  <div style={{ fontSize: 12.5, color: T.text, fontWeight: it.highlight ? 600 : 500 }}>{it.what}</div>
-                  <div style={{ fontSize: 10.5, color: T.text3 }}>{it.where} · {it.type}</div>
-                </div>
-              </div>
-            ))}
-          </div>
         </Card>
 
         {/* Needs attention */}
@@ -699,32 +746,153 @@ export function RosterView({ T, accent, density }: Common) {
 // ════════════════════════════════════════════════════════════════════════════
 // MESSAGES
 // ════════════════════════════════════════════════════════════════════════════
+// Fixed reaction set (mirrors Junior's fixed-emoji approach — no picker).
+const MSG_REACTIONS = ['👍', '❤️', '😂', '✅']
+// Demo contacts the coach can forward a message to (players / parents / staff).
+const FORWARD_TARGETS = [
+  'Dan Pearce · Assistant Coach',
+  'Riverside Desk · Venue',
+  'Grace Okafor · Parent',
+  'Lily Chen · Parent',
+  'Performance Squad',
+]
+
 export function MessagesView({ T, accent, density }: Common) {
+  // Reads the shared messages store (same source as the dashboard Inbox card).
+  // Every action routes through the store so it persists AND syncs to the
+  // dashboard card live. This is the deliberate difference from football/Junior,
+  // which kept inbox actions in session-only useState.
+  const [messages, setMessages] = useState<CoachInboxMessage[]>([])
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [mode, setMode] = useState<'idle' | 'replying' | 'forwarding'>('idle')
+  const [replyText, setReplyText] = useState('')
+  const [forwardTo, setForwardTo] = useState(FORWARD_TARGETS[0])
+  useEffect(() => { const r = () => setMessages(getMessages()); r(); return subscribeMessages(r) }, [])
+  // If the dashboard card asked to open a specific thread, honour it on mount.
+  useEffect(() => { const p = consumePendingOpen(); if (p) { setOpenId(p); setMode('idle'); markRead(p) } }, [])
+
+  const open = (id: string) => {
+    if (openId === id) { setOpenId(null); return }
+    setOpenId(id); setMode('idle'); setReplyText(''); markRead(id)
+  }
+  const sendReply = (id: string) => { const t = replyText.trim(); if (!t) return; addReply(id, t); setReplyText(''); setMode('idle') }
+  const sendForward = (id: string) => { addForward(id, forwardTo); setMode('idle') }
+  const remove = (id: string) => { softDelete(id); setOpenId(null) }
+
   return (
     <div>
-      <PageHead T={T} accent={accent} density={density} title="Messages" sub="Parents, players, groups and the venue — one inbox." />
-      <Card T={T} density={density} style={{ maxWidth: 720 }}>
-        {COACH_MESSAGES.map((m, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 6px', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
-            <div style={{ position: 'relative' }}>
-              <Avatar accent={accent} initials={m.from.split(' ').map(w => w[0]).join('').slice(0, 2)} size={36} />
-              {m.urgent && <span style={{ position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: '50%', background: T.bad, border: `2px solid ${T.panel}` }} />}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{m.from}</span>
-                <Pill T={T}>{m.role}</Pill>
+      <PageHead T={T} accent={accent} density={density} title="Messages" sub="Parents, players, groups and the venue — one inbox. Open a message to read, reply, forward or react." />
+      <Card T={T} density={density} style={{ maxWidth: 720, padding: 8 }}>
+        {messages.map((m, i) => {
+          const isOpen = openId === m.id
+          return (
+            <div key={m.id} style={{ borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+              {/* Row header */}
+              <div onClick={() => open(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 8px', cursor: 'pointer', borderRadius: 8, background: isOpen ? T.panel2 : 'transparent' }}>
+                <div style={{ position: 'relative' }}>
+                  <Avatar accent={accent} initials={m.from.split(' ').map(w => w[0]).join('').slice(0, 2)} size={36} />
+                  {m.urgent && !m.read && <span style={{ position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: '50%', background: T.bad, border: `2px solid ${T.panel}` }} />}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, color: T.text, fontWeight: m.unread > 0 ? 700 : 600 }}>{m.outbound ? `To ${m.from}` : m.from}</span>
+                    <Pill T={T} color={m.outbound ? accent.hex : undefined} bg={m.outbound ? accent.dim : undefined}>{m.outbound ? `Sent · ${m.channel ?? 'In-app'}` : m.role}</Pill>
+                    {m.reactions.map(e => <span key={e} style={{ fontSize: 12 }}>{e}</span>)}
+                  </div>
+                  <div style={{ fontSize: 12, color: m.unread ? T.text2 : T.text3, whiteSpace: isOpen ? 'normal' : 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>{m.last}</div>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div className="tnum" style={{ fontSize: 11, color: T.text3, fontFamily: FONT_MONO }}>{m.time}</div>
+                  {m.unread > 0 && <div style={{ marginTop: 4, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, display: 'inline-grid', placeItems: 'center', fontSize: 10, fontWeight: 700, background: accent.dim, color: accent.hex }}>{m.unread}</div>}
+                </div>
               </div>
-              <div style={{ fontSize: 12, color: m.unread ? T.text2 : T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>{m.last}</div>
+
+              {/* Expanded thread + actions */}
+              {isOpen && (
+                <div style={{ padding: '4px 8px 14px 8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0 10px' }}>
+                    {m.thread.length === 0 && <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.5 }}>{m.body}</div>}
+                    {m.thread.map((te, ti) => (
+                      <div key={ti} style={{ display: 'flex', justifyContent: te.from === 'coach' ? 'flex-end' : 'flex-start' }}>
+                        <div style={{ maxWidth: '78%', padding: '8px 11px', borderRadius: 10, fontSize: 12.5, lineHeight: 1.5,
+                          background: te.from === 'coach' ? accent.dim : T.panel2, border: `1px solid ${te.from === 'coach' ? accent.border : T.border}`,
+                          color: T.text }}>
+                          <div>{te.text}</div>
+                          <div className="tnum" style={{ fontSize: 9.5, color: T.text3, fontFamily: FONT_MONO, marginTop: 3, textAlign: 'right' }}>{te.from === 'coach' ? `${COACH_ORG.coach.split(' ')[0]} · ${te.time}` : te.time}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Forward receipts */}
+                  {m.forwards.map((f, fi) => (
+                    <div key={fi} style={{ fontSize: 11, color: T.good, fontFamily: FONT_MONO, marginBottom: 4 }}>↪ Forwarded to {f.to} ✓ · {f.time}</div>
+                  ))}
+
+                  {/* Reactions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '6px 0 10px' }}>
+                    {MSG_REACTIONS.map(emoji => (
+                      <ReactionButton key={emoji} T={T} accent={accent} emoji={emoji} active={m.reactions.includes(emoji)} count={m.reactions.includes(emoji) ? 1 : 0} onClick={() => toggleReaction(m.id, emoji)} />
+                    ))}
+                  </div>
+
+                  {/* Action bar */}
+                  {mode === 'idle' && (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <button onClick={() => { setMode('replying'); setReplyText('') }} style={msgBtnGhost(T)}><Icon name="note" size={12} stroke={1.8} style={{ verticalAlign: -2, marginRight: 4 }} />Reply</button>
+                      <button onClick={() => setMode('forwarding')} style={msgBtnGhost(T)}><Icon name="megaphone" size={12} stroke={1.8} style={{ verticalAlign: -2, marginRight: 4 }} />Forward</button>
+                      <button onClick={() => remove(m.id)} style={{ ...msgBtnGhost(T), color: T.bad }}>Delete</button>
+                    </div>
+                  )}
+                  {mode === 'replying' && (
+                    <div>
+                      <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder={`Reply to ${m.from}…`} rows={3} autoFocus
+                        style={{ width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.borderHi}`, borderRadius: 8, padding: 9, fontSize: 12.5, fontFamily: FONT, resize: 'vertical', outline: 'none' }} />
+                      <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                        <button onClick={() => sendReply(m.id)} disabled={!replyText.trim()} style={msgBtnPrimary(T, accent, !!replyText.trim())}>Send reply</button>
+                        <button onClick={() => { setMode('idle'); setReplyText('') }} style={msgBtnGhost(T)}>Cancel</button>
+                      </div>
+                    </div>
+                  )}
+                  {mode === 'forwarding' && (
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11.5, color: T.text3 }}>Forward to:</span>
+                      <select value={forwardTo} onChange={e => setForwardTo(e.target.value)}
+                        style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 9px', fontSize: 12, fontFamily: FONT }}>
+                        {FORWARD_TARGETS.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                      <button onClick={() => sendForward(m.id)} style={msgBtnPrimary(T, accent, true)}>Forward</button>
+                      <button onClick={() => setMode('idle')} style={msgBtnGhost(T)}>Cancel</button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div className="tnum" style={{ fontSize: 11, color: T.text3, fontFamily: FONT_MONO }}>{m.time}</div>
-              {m.unread > 0 && <div style={{ marginTop: 4, minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, display: 'inline-grid', placeItems: 'center', fontSize: 10, fontWeight: 700, background: accent.dim, color: accent.hex }}>{m.unread}</div>}
-            </div>
-          </div>
-        ))}
+          )
+        })}
+        {messages.length === 0 && <div style={{ fontSize: 12.5, color: T.text3, fontStyle: 'italic', padding: '20px 8px' }}>Inbox cleared — no messages.</div>}
       </Card>
     </div>
+  )
+}
+
+function msgBtnGhost(T: ThemeTokens): CSSProperties {
+  return { appearance: 'none', fontSize: 11.5, padding: '6px 11px', background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, borderRadius: 7, cursor: 'pointer', fontFamily: FONT }
+}
+function msgBtnPrimary(T: ThemeTokens, accent: AccentTokens, enabled: boolean): CSSProperties {
+  return { appearance: 'none', fontSize: 11.5, padding: '6px 12px', background: enabled ? accent.hex : T.hover, color: enabled ? T.btnText : T.text3, border: 0, borderRadius: 7, fontWeight: 600, cursor: enabled ? 'pointer' : 'not-allowed', fontFamily: FONT }
+}
+
+// Reaction button — adapted from Junior's ReactionButton to the message shape.
+function ReactionButton({ T, accent, emoji, active, count, onClick }: { T: ThemeTokens; accent: AccentTokens; emoji: string; active: boolean; count: number; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} title={active ? 'Remove reaction' : 'React'}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 8, fontSize: 12.5, cursor: 'pointer',
+        background: active ? accent.dim : 'transparent', color: active ? accent.hex : T.text3,
+        border: `1px solid ${active ? accent.border : T.border}` }}>
+      <span>{emoji}</span>
+      {count > 0 && <span style={{ fontSize: 10.5, fontWeight: 700 }}>{count}</span>}
+    </button>
   )
 }
 
