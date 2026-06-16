@@ -7,6 +7,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import SportsSettings from '@/components/sports/SportsSettings'
+import FootballSettingsAdditions from '@/components/football/FootballSettingsAdditions'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import MediaContentModule from '@/components/sports/media-content/MediaContentModule'
 import { use } from 'react'
@@ -277,6 +278,17 @@ const SIDEBAR_ITEMS: { id: DeptId; label: string; icon: React.ElementType; secti
   { id: 'assets',           label: 'Asset Register',       icon: Wrench,         section: 'FACILITIES' },
   { id: 'settings',         label: 'Settings',             icon: Settings,       section: null },
 ]
+
+const NAV_EMOJI: Record<string, string> = {
+  overview: '🏠', insights: '📊', board: '👑',
+  squad: '👥', tactics: '🎯', training: '🏃', 'set-pieces': '🧩', 'video-analysis': '🎬', performance: '📈', 'gps-heatmaps': '🔥', 'performance-brief': '🤖', fixtures: '📅', 'cup-manager': '🏆', transfers: '🔁', dualreg: '🔄', academy: '🎓',
+  'player-welfare': '🛡️', 'player-integration': '🌍', 'injury-risk': '⚠️', 'load-recovery': '🔋', 'return-to-play': '🩹', 'mental-health': '🧠', medical: '🏥', 'concussion-tracker': '🤕',
+  finance: '💷', 'compliance-centre': '🧭', 'compliance-calendar': '🗓️', 'psr-scr-modeller': '📐', salary: '🪙', 'revenue-attribution': '📈', 'game-standards': '📋', 'club-licensing': '🏛️', registration: '📝', 'data-protection': '🔒', 'safeguarding-ops': '🛟', 'anti-doping': '💉', 'risk-insurance': '🧯', 'policy-library': '📚',
+  commercial: '🏟️', sponsorship: '🤝', 'club-vision': '🗺️', financial: '💰', 'player-trading': '💱', treasury: '🏦', 'payroll-ledger': '🧾', 'budget-actuals': '📊', 'revenue-receivables': '💵', 'central-distributions': '📡', 'mgmt-accounts': '📒', 'capex-appraisal': '🏗️', retail: '🛍️', ticketing: '🎫', 'sponsor-roi': '📣', media: '📰', social: '📱', fanhub: '💜', community: '🌐',
+  'matchday-ops': '🎯', 'club-operations': '🏟️', 'travel-logistics': '✈️', 'kit-manager': '🧦', staff: '👔', 'medical-records': '📁', 'tours-camps': '🧳', procurement: '📑',
+  facilities: '🏟️', 'pitch-grounds': '🌱', 'training-ground': '🥅', energy: '♻️', 'capital-projects': '🏗️', assets: '🔧',
+}
+const FOOTBALL_NAV_ITEMS = SIDEBAR_ITEMS.filter(i => i.id !== 'settings').map(i => ({ key: i.id as string, label: i.label, emoji: NAV_EMOJI[i.id as string] ?? '•' }))
 
 const FOOTBALL_ROLE_OPTIONS = [
   { key: 'chairman', label: 'Chairman/CEO', emoji: '👑', level: 1 },
@@ -628,12 +640,13 @@ function WorldClock() {
 
 // ─── Sidebar ─────────────────────────────────────────────────────────────────
 
-function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, session, onRoleChange, isFootballDemo }: {
+function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, session, onRoleChange, isFootballDemo, hiddenItems = [] }: {
   activeDept: DeptId; onSelect: (d: DeptId) => void; open: boolean; onClose: () => void; clubName?: string;
   allowedIds: 'all' | string[];
   session?: SportsDemoSession;
   onRoleChange?: (role: string) => void;
   isFootballDemo?: boolean;
+  hiddenItems?: string[];
 }) {
   const [pinned, setPinned] = useState(() => typeof window !== 'undefined' && localStorage.getItem('lumio_sidebar_pinned') === 'true')
   const [hovered, setHovered] = useState(false)
@@ -656,15 +669,15 @@ function Sidebar({ activeDept, onSelect, open, onClose, clubName, allowedIds, se
   // so the active role only sees the nav items it has access to.
   const isAllowed = (id: DeptId) => allowedIds === 'all' || (allowedIds as string[]).includes(id)
   const sections: { label: SidebarSection; items: typeof SIDEBAR_ITEMS }[] = [
-    { label: 'OVERVIEW', items: SIDEBAR_ITEMS.filter(i => i.section === 'OVERVIEW' && isAllowed(i.id)) },
-    { label: 'FOOTBALL', items: SIDEBAR_ITEMS.filter(i => i.section === 'FOOTBALL' && isAllowed(i.id)) },
-    { label: 'WELFARE', items: SIDEBAR_ITEMS.filter(i => i.section === 'WELFARE' && isAllowed(i.id)) },
-    { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE' && isAllowed(i.id)) },
-    { label: 'FINANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'FINANCE' && isAllowed(i.id)) },
-    { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL' && isAllowed(i.id)) },
-    { label: 'OPERATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'OPERATIONS' && isAllowed(i.id)) },
-    { label: 'FACILITIES', items: SIDEBAR_ITEMS.filter(i => i.section === 'FACILITIES' && isAllowed(i.id)) },
-    { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null && isAllowed(i.id)) },
+    { label: 'OVERVIEW', items: SIDEBAR_ITEMS.filter(i => i.section === 'OVERVIEW' && isAllowed(i.id) && (i.id === 'settings' || !hiddenItems.includes(i.id))) },
+    { label: 'FOOTBALL', items: SIDEBAR_ITEMS.filter(i => i.section === 'FOOTBALL' && isAllowed(i.id) && (i.id === 'settings' || !hiddenItems.includes(i.id))) },
+    { label: 'WELFARE', items: SIDEBAR_ITEMS.filter(i => i.section === 'WELFARE' && isAllowed(i.id) && (i.id === 'settings' || !hiddenItems.includes(i.id))) },
+    { label: 'COMPLIANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMPLIANCE' && isAllowed(i.id) && (i.id === 'settings' || !hiddenItems.includes(i.id))) },
+    { label: 'FINANCE', items: SIDEBAR_ITEMS.filter(i => i.section === 'FINANCE' && isAllowed(i.id) && (i.id === 'settings' || !hiddenItems.includes(i.id))) },
+    { label: 'COMMERCIAL', items: SIDEBAR_ITEMS.filter(i => i.section === 'COMMERCIAL' && isAllowed(i.id) && (i.id === 'settings' || !hiddenItems.includes(i.id))) },
+    { label: 'OPERATIONS', items: SIDEBAR_ITEMS.filter(i => i.section === 'OPERATIONS' && isAllowed(i.id) && (i.id === 'settings' || !hiddenItems.includes(i.id))) },
+    { label: 'FACILITIES', items: SIDEBAR_ITEMS.filter(i => i.section === 'FACILITIES' && isAllowed(i.id) && (i.id === 'settings' || !hiddenItems.includes(i.id))) },
+    { label: null, items: SIDEBAR_ITEMS.filter(i => i.section === null && isAllowed(i.id) && (i.id === 'settings' || !hiddenItems.includes(i.id))) },
   ]
 
   return (
@@ -6690,7 +6703,7 @@ function ApiStatusStrip() {
   )
 }
 
-function SettingsView({ session, slug = '' }: { session?: { userName?: string; photoDataUrl?: string | null; email?: string; nickname?: string; clubName?: string; logoDataUrl?: string | null; isDemoShell?: boolean }; slug?: string }) {
+function SettingsView({ session, slug = '', onNavigate }: { session?: { userName?: string; photoDataUrl?: string | null; email?: string; nickname?: string | null; clubName?: string; logoDataUrl?: string | null; isDemoShell?: boolean }; slug?: string; onNavigate?: (id: string) => void }) {
   return (
     <SportsSettings
       sport="football"
@@ -6784,39 +6797,32 @@ function SettingsView({ session, slug = '' }: { session?: { userName?: string; p
         pendingInvites: 0,
         roleOptions: ['Chairman','CEO','Director of Football','Manager','Assistant Manager','Head of Performance','Club Doctor','Physio','Head of Recruitment','Analyst','Commercial Director','Head of Operations','Academy Manager'],
       }}
-      navItems={[
-        { key: 'dashboard',         label: 'Dashboard',           emoji: '\U0001F3E0' },
-        { key: 'briefing',          label: 'Morning Briefing',    emoji: '☀️' },
-        { key: 'insights',          label: 'Insights',            emoji: '\U0001F4CA' },
-        { key: 'squad',             label: 'Squad Management',    emoji: '\U0001F465' },
-        { key: 'tactics',           label: 'Tactics',             emoji: '\U0001F3AF' },
-        { key: 'training',          label: 'Training',            emoji: '\U0001F3C3' },
-        { key: 'performance',       label: 'GPS & Performance',   emoji: '⚽' },
-        { key: 'gps-heatmaps',      label: 'Heatmaps',            emoji: '\U0001F525' },
-        { key: 'performance-brief', label: 'AI Performance Brief', emoji: '\U0001F916' },
-        { key: 'fixtures',          label: 'Fixtures & Results',  emoji: '\U0001F5D3️' },
-        { key: 'transfers',         label: 'Transfers',           emoji: '\U0001F501' },
-        { key: 'academy',           label: 'Academy',             emoji: '\U0001F393' },
-        { key: 'welfare',           label: 'Player Welfare',      emoji: '\U0001F6E1️' },
-        { key: 'finance',           label: 'Club Finance',        emoji: '\U0001F4B7' },
-        { key: 'commercial',        label: 'Commercial',          emoji: '\U0001F3DF️' },
-        { key: 'compliance-centre', label: 'Compliance Centre',   emoji: '\U0001F9ED' },
-      ]}
+      navItems={FOOTBALL_NAV_ITEMS}
       featureItems={[
-        { key: 'morning-briefing', label: 'Morning Briefing',           emoji: '\U0001F305', description: 'AI summary at top of dashboard' },
+        { key: 'morning-briefing', label: 'Morning Briefing',           emoji: '🌅', description: 'AI summary at top of dashboard' },
         { key: 'quick-actions',    label: 'Quick Actions bar',          emoji: '⚡', description: 'Action buttons below tab bar (Today only)' },
         { key: 'ai-section',       label: 'AI Department Intelligence',  emoji: '✨', description: 'AI Summary + Key Highlights' },
-        { key: 'world-clock',      label: 'World Clock',                emoji: '\U0001F550', description: 'Multi-timezone clock in banner' },
-        { key: 'weather',          label: 'Weather widget',             emoji: '\U0001F324️', description: 'Matchday weather + forecast' },
-        { key: 'stat-tiles',       label: 'KPI stat tiles',             emoji: '\U0001F4CA', description: 'Squad / PSR / form tiles on Today' },
+        { key: 'world-clock',      label: 'World Clock',                emoji: '🕐', description: 'Multi-timezone clock in banner' },
+        { key: 'weather',          label: 'Weather widget',             emoji: '🌤️', description: 'Matchday weather + forecast' },
+        { key: 'stat-tiles',       label: 'KPI stat tiles',             emoji: '📊', description: 'Squad / PSR / form tiles on Today' },
       ]}
       showWorldClock
       showAppearance
       showDeveloperTools
       devApiRouteOptions={['/api/ai/football']}
+      extraSections={<FootballSettingsAdditions onNavigate={onNavigate ?? (() => {})} roleConfig={FOOTBALL_ROLE_CONFIG} />}
     />
   )
 }
+
+const FB_NOTIFICATIONS = [
+  { id: '1', read: false, icon: '🔴', cat: 'Transfer', title: 'Agent response received — Harvey Knibbs representation', time: '2 min ago' },
+  { id: '2', read: false, icon: '🟡', cat: 'Medical', title: 'Chris Nwosu fitness test — result available', time: '1 hour ago' },
+  { id: '3', read: false, icon: '🔵', cat: 'Match', title: 'Team sheet deadline — Eastcliff Town (A) · 2 hours remaining', time: '2 hours ago' },
+  { id: '4', read: true, icon: '✅', cat: 'Board', title: 'PSR calculation updated — within limits', time: '3 hours ago' },
+  { id: '5', read: true, icon: '🔵', cat: 'Scouting', title: 'Aaron Collins — Redmill United confirm availability to sell', time: 'Yesterday' },
+  { id: '6', read: true, icon: '🟡', cat: 'Training', title: 'GPS alert — Sean O\'Brien ACWR 1.58 · rest recommended', time: 'Yesterday' },
+]
 
 function FootballNotificationsPanel({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState(FB_NOTIFICATIONS)
@@ -7146,6 +7152,18 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
     }
   }, [isFootballDemo])
 
+  // Customise Portal (Settings) hides nav items live via SportsSettings toggles.
+  const [hiddenNavItems, setHiddenNavItems] = useState<string[]>([])
+  useEffect(() => {
+    try { const saved = JSON.parse(localStorage.getItem('lumio_football_hidden_items') || '[]'); if (Array.isArray(saved)) setHiddenNavItems(saved) } catch { /* SSR / parse */ }
+    const handler = (e: Event) => {
+      const d = (e as CustomEvent).detail
+      if (d && d.storagePrefix === 'lumio_football_') setHiddenNavItems(Array.isArray(d.hiddenItems) ? d.hiddenItems : [])
+    }
+    window.addEventListener('lumio-visibility-changed', handler)
+    return () => window.removeEventListener('lumio-visibility-changed', handler)
+  }, [])
+
   function fireToast(msg: string) {
     setToast(msg)
     setTimeout(() => setToast(null), 3000)
@@ -7215,7 +7233,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
           <Bell size={16} strokeWidth={1.75} />
           <span style={{ position: 'absolute', top: 6, right: 6, width: 8, height: 8, borderRadius: '50%', backgroundColor: '#EF4444', fontSize: 6, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }} />
         </button>
-        <AvatarDropdown initials={initials} settingsHref={`/football/${slug}/settings`} />
+        <AvatarDropdown initials={initials} photoUrl={session?.photoDataUrl} userName={session?.userName} seedName={session?.userName} demoAvatar={isFootballDemo} settingsHref={`/football/${slug}/settings`} />
       </div>
       {fbNotifOpen && <FootballNotificationsPanel onClose={() => setFbNotifOpen(false)} />}
 
@@ -7236,6 +7254,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
           allowedIds={roleConfig.sidebar}
           session={liveSession}
           isFootballDemo={isFootballDemo}
+          hiddenItems={hiddenNavItems}
           onRoleChange={(role) => {
             setRoleOverride(role)
             const newConfig = FOOTBALL_ROLE_CONFIG[role as keyof typeof FOOTBALL_ROLE_CONFIG]
@@ -7356,7 +7375,7 @@ function FootballDashboardInner({ slug, session }: { slug: string; session: Spor
             {activeDept === 'opta' && <FootballEventDataView />}
             {activeDept === 'discover' && <DiscoverView />}
             {activeDept === 'lumio-data-pro' && <FootballLeagueDataView />}
-            {activeDept === 'settings' && <SettingsView session={liveSession} slug={slug} />}
+            {activeDept === 'settings' && <SettingsView session={liveSession} slug={slug} onNavigate={(id) => setActiveDept(id as DeptId)} />}
             {activeDept === 'player-welfare' && <FootballWelfareHubView onNavigate={(id) => setActiveDept(id as DeptId)} />}
             {activeDept === 'club-operations' && <PlayerWelfareHub accent="#003DA5" defaultTab="overview" hiddenTabs={['integration', 'wellbeing', 'travel', 'matchday']} title="Club Operations" subtitle="Operations overview · club info · compliance & insurance" overviewSlot={<FootballClubOpsOverview accent="#003DA5" />} clubInfoSlot={<FootballClubInfoTab />} />}
           </main>

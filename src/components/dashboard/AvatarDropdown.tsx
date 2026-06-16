@@ -14,15 +14,23 @@ interface Props {
   settingsHref?: string
   /** Parent-controlled photo override — takes precedence over internal state */
   photoUrl?: string | null
+  /** Explicit display name (e.g. from demo session) — overrides localStorage name */
+  userName?: string
+  /** Seed for the generated fallback avatar (same style as staff cards) */
+  seedName?: string
+  /** When true and no photo: show a generated demo avatar + "Demo User" fallback */
+  demoAvatar?: boolean
 }
 
-export default function AvatarDropdown({ initials, onConvert, logoutRedirect = '/', logoutClearKeys, settingsHref, photoUrl }: Props) {
+export default function AvatarDropdown({ initials, onConvert, logoutRedirect = '/', logoutClearKeys, settingsHref, photoUrl, userName, seedName, demoAvatar }: Props) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [showGoLive, setShowGoLive] = useState(false)
   const [internalAvatarUrl, setAvatarUrl] = useState<string | null>(null)
   const avatarUrl = photoUrl ?? internalAvatarUrl
+  const effectiveNameVal = (userName && userName.trim()) || name
+  const displayAvatar = avatarUrl || (demoAvatar ? `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(seedName || effectiveNameVal || 'Demo User')}&backgroundColor=transparent` : null)
   const ref = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -229,9 +237,9 @@ export default function AvatarDropdown({ initials, onConvert, logoutRedirect = '
       <button
         onClick={() => { setOpen(v => !v); setShowProfile(false); setShowChangeEmail(false); setShowResetPw(false) }}
         className="flex items-center justify-center rounded-full text-xs font-bold transition-opacity hover:opacity-80 overflow-hidden"
-        style={{ width: 36, height: 36, backgroundColor: avatarUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB', padding: 0, border: 'none', cursor: 'pointer' }}>
-        {avatarUrl ? (
-          <img src={avatarUrl} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} onError={() => setAvatarUrl(null)} />
+        style={{ width: 36, height: 36, backgroundColor: displayAvatar ? 'transparent' : '#6C3FC5', color: '#F9FAFB', padding: 0, border: 'none', cursor: 'pointer' }}>
+        {displayAvatar ? (
+          <img src={displayAvatar} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} onError={() => setAvatarUrl(null)} />
         ) : (
           initials
         )}
@@ -313,13 +321,13 @@ export default function AvatarDropdown({ initials, onConvert, logoutRedirect = '
               {/* User info header */}
               <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: '1px solid #1F2937' }}>
                 <div className="flex items-center justify-center rounded-full text-xs font-bold shrink-0 overflow-hidden"
-                  style={{ width: 48, height: 48, backgroundColor: avatarUrl ? 'transparent' : '#6C3FC5', color: '#F9FAFB' }}>
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} onError={() => setAvatarUrl(null)} />
+                  style={{ width: 48, height: 48, backgroundColor: displayAvatar ? 'transparent' : '#6C3FC5', color: '#F9FAFB' }}>
+                  {displayAvatar ? (
+                    <img src={displayAvatar} alt="" style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover' }} onError={() => setAvatarUrl(null)} />
                   ) : initials}
                 </div>
                 <div className="min-w-0">
-                  {name  && <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{name}</p>}
+                  {(effectiveNameVal || demoAvatar) && <p className="text-sm font-semibold truncate" style={{ color: '#F9FAFB' }}>{effectiveNameVal || 'Demo User'}</p>}
                   {email && <p className="text-xs truncate" style={{ color: '#6B7280' }}>{email}</p>}
                 </div>
               </div>
