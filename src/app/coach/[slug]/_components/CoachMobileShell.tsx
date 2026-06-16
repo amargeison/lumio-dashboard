@@ -11,11 +11,12 @@
 // Reuses ONLY the shared, sport-agnostic MobileMoreSheet — NOT the player
 // MobileSportLayout/MobileBottomNav (those are athlete-coupled).
 
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { COACH_SIDEBAR, COACH_GROUPS } from '../_lib/coach-data'
 import { MobileMoreSheet, type MoreSheetItem } from '@/components/mobile/sport/MobileMoreSheet'
+import { CoachPwaInstaller } from './CoachPwaInstaller'
 
 // Primary bottom-nav tabs (a subset of COACH_SIDEBAR). Everything else lives in
 // the More sheet. Dashboard is non-hideable, so it's a safe anchor tab.
@@ -54,6 +55,18 @@ export function CoachMobileShell({
   children: ReactNode
 }) {
   const [moreOpen, setMoreOpen] = useState(false)
+
+  // Match the browser/status-bar chrome to the coach accent while the mobile
+  // shell is mounted (so a standalone PWA's status bar reads as coach purple).
+  // Mirrors how the player MobileSportLayout swaps theme-color at runtime.
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
+    const prev = meta?.content
+    if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta) }
+    meta.content = accent.hex
+    return () => { if (meta) meta.content = prev ?? '#07080F' }
+  }, [accent.hex])
 
   const barBg = T.panel2
   const activeItem = COACH_SIDEBAR.find(i => i.id === active)
@@ -158,6 +171,8 @@ export function CoachMobileShell({
         onNavigate={(id) => onNavigate(id)}
         groupOrder={COACH_GROUPS}
       />
+
+      <CoachPwaInstaller T={T} accent={accent} />
     </div>
   )
 }
