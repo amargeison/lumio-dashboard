@@ -30,7 +30,7 @@ const TAB_LABEL: Record<string, string> = {
 const NAV_EMOJI: Record<string, string> = {
   dashboard: '🏠', planner: '🗓️', lessons: '📝', development: '📈', belts: '🎾',
   staff: '🧑‍🏫', calendar: '📅', venues: '📍', camps: '☀️', roster: '👥',
-  messages: '💬', gpsvideo: '🛰️', heatmaps: '🔥', resources: '📚',
+  messages: '💬', videoaudio: '🎥', gpsheatmaps: '🔥', resources: '📚',
   equipment: '🎒', payments: '💷', settings: '⚙️',
 }
 

@@ -41,7 +41,7 @@ export type GpsSession = {
   id: string
   date: string                 // 'YYYY-MM-DD'
   label: string                // e.g. 'Match vs C. Vega' / 'Practice — serve block'
-  type: 'Practice' | 'Match'
+  type: 'Practice' | 'Match' | 'Camp'
   surface: 'Clay' | 'Hard' | 'Grass'
   duration: number             // minutes
   distance: number             // km
@@ -103,6 +103,28 @@ const MIA: PlayerGpsData = {
     { date: '04 Jun', surface: 'Clay', coverage: '3.6km', load: 61, speed: '22.0km/h', outcome: 'W vs Ortega', win: true },
   ],
   sessions: [
+    {
+      id: 'p1-camp', date: '2026-04-09', label: 'Easter camp · Day 4', type: 'Camp', surface: 'Hard',
+      duration: 180, distance: 4.6, load: 55, topSpeed: 20.2, sprintCount: 22, recovery: 'Moderate', coverage: 68, acwr: 1.04,
+      court: [{x:200,y:320,r:40,o:0.64},{x:200,y:302,r:30,o:0.52},{x:166,y:314,r:22,o:0.42},{x:234,y:316,r:20,o:0.38},{x:200,y:178,r:16,o:0.26}],
+      courtZones: [
+        { x: 0.10, y: 0.78, w: 0.27, h: 0.18, label: 'Deuce baseline',  pct: 27 },
+        { x: 0.37, y: 0.78, w: 0.26, h: 0.18, label: 'Centre baseline', pct: 33 },
+        { x: 0.63, y: 0.78, w: 0.27, h: 0.18, label: 'Ad baseline',     pct: 25 },
+        { x: 0.10, y: 0.52, w: 0.27, h: 0.16, label: 'Deuce net',       pct: 6  },
+        { x: 0.37, y: 0.52, w: 0.26, h: 0.16, label: 'Centre net',      pct: 6  },
+        { x: 0.63, y: 0.52, w: 0.27, h: 0.16, label: 'Ad net',          pct: 3  },
+      ],
+      distanceBySet: [{ set: 'Full day', km: 4.6, load: 55 }],
+      hrBySet: [{ set: 'Full day', avg: 140, peak: 176 }],
+      sprintsPerSet: [{ set: 'Full day', n: 22 }],
+      topSpeedPerSet: [{ set: 'Full day', kmh: 20.2 }],
+      clips: [
+        { ctx: 'Camp · drill block', label: 'Cross-court depth', time: '0:31', tint: SKY },
+        { ctx: 'Camp · match play', label: 'Rally win', time: '0:38', tint: GREEN },
+      ],
+      brief: "Easter camp day — a high-volume day for Mia (4.6km across the full day), so load (55) reflects the whole camp block rather than a single lesson. No set structure (it's a camp day, not a match). Stayed engaged across drills and afternoon games; watch fatigue across consecutive camp days.",
+    },
     {
       id: 'p1-s2', date: '2026-06-11', label: 'Private — first serve block', type: 'Practice', surface: 'Clay',
       duration: 45, distance: 3.4, load: 58, topSpeed: 21.4, sprintCount: 19, recovery: 'Good', coverage: 74, acwr: 0.98,
@@ -179,6 +201,28 @@ const TOM: PlayerGpsData = {
     { date: '02 Jun', surface: 'Hard', coverage: '4.5km', load: 69, speed: '28.1km/h', outcome: 'L vs Novak', win: false },
   ],
   sessions: [
+    {
+      id: 'p2-camp', date: '2026-04-09', label: 'Easter camp · Day 4', type: 'Camp', surface: 'Hard',
+      duration: 210, distance: 6.9, load: 68, topSpeed: 27.4, sprintCount: 40, recovery: 'Moderate', coverage: 80, acwr: 1.10,
+      court: [{x:200,y:316,r:44,o:0.7},{x:200,y:296,r:36,o:0.6},{x:158,y:310,r:26,o:0.46},{x:242,y:312,r:24,o:0.43},{x:200,y:172,r:20,o:0.34},{x:165,y:178,r:15,o:0.26}],
+      courtZones: [
+        { x: 0.10, y: 0.78, w: 0.27, h: 0.18, label: 'Deuce baseline',  pct: 29 },
+        { x: 0.37, y: 0.78, w: 0.26, h: 0.18, label: 'Centre baseline', pct: 28 },
+        { x: 0.63, y: 0.78, w: 0.27, h: 0.18, label: 'Ad baseline',     pct: 21 },
+        { x: 0.10, y: 0.52, w: 0.27, h: 0.16, label: 'Deuce net',       pct: 9  },
+        { x: 0.37, y: 0.52, w: 0.26, h: 0.16, label: 'Centre net',      pct: 8  },
+        { x: 0.63, y: 0.52, w: 0.27, h: 0.16, label: 'Ad net',          pct: 5  },
+      ],
+      distanceBySet: [{ set: 'Full day', km: 6.9, load: 68 }],
+      hrBySet: [{ set: 'Full day', avg: 152, peak: 188 }],
+      sprintsPerSet: [{ set: 'Full day', n: 40 }],
+      topSpeedPerSet: [{ set: 'Full day', kmh: 27.4 }],
+      clips: [
+        { ctx: 'Camp · serve+1 block', label: 'Serve + forehand', time: '0:30', tint: SKY },
+        { ctx: 'Camp · match play', label: 'Net put-away', time: '0:24', tint: GREEN },
+      ],
+      brief: "Easter camp day for Tom — a big volume day (6.9km, load 68) with good net engagement (9% deuce-net). Recovery moderate after a full camp day. No set structure (camp day). Serve+1 patterning carried over well into the afternoon games.",
+    },
     {
       id: 'p2-s2', date: '2026-06-11', label: 'Private — serve+1 patterns', type: 'Practice', surface: 'Clay',
       duration: 60, distance: 4.8, load: 71, topSpeed: 27.6, sprintCount: 38, recovery: 'Good', coverage: 80, acwr: 1.04,
@@ -257,6 +301,28 @@ const AVA: PlayerGpsData = {
   ],
   sessions: [
     {
+      id: 'p3-camp', date: '2026-04-09', label: 'Easter camp · Day 4', type: 'Camp', surface: 'Hard',
+      duration: 180, distance: 4.2, load: 50, topSpeed: 19.6, sprintCount: 19, recovery: 'Good', coverage: 66, acwr: 0.99,
+      court: [{x:200,y:322,r:36,o:0.6},{x:200,y:304,r:28,o:0.48},{x:170,y:316,r:18,o:0.36},{x:230,y:318,r:16,o:0.32}],
+      courtZones: [
+        { x: 0.10, y: 0.78, w: 0.27, h: 0.18, label: 'Deuce baseline',  pct: 26 },
+        { x: 0.37, y: 0.78, w: 0.26, h: 0.18, label: 'Centre baseline', pct: 37 },
+        { x: 0.63, y: 0.78, w: 0.27, h: 0.18, label: 'Ad baseline',     pct: 25 },
+        { x: 0.10, y: 0.52, w: 0.27, h: 0.16, label: 'Deuce net',       pct: 4  },
+        { x: 0.37, y: 0.52, w: 0.26, h: 0.16, label: 'Centre net',      pct: 5  },
+        { x: 0.63, y: 0.52, w: 0.27, h: 0.16, label: 'Ad net',          pct: 3  },
+      ],
+      distanceBySet: [{ set: 'Full day', km: 4.2, load: 50 }],
+      hrBySet: [{ set: 'Full day', avg: 138, peak: 172 }],
+      sprintsPerSet: [{ set: 'Full day', n: 19 }],
+      topSpeedPerSet: [{ set: 'Full day', kmh: 19.6 }],
+      clips: [
+        { ctx: 'Camp · rally games', label: '10-ball rally', time: '0:40', tint: SKY },
+        { ctx: 'Camp · skills', label: 'Centre recovery', time: '0:20', tint: GREEN },
+      ],
+      brief: "Easter camp day for Ava — a steady high-volume day (4.2km, load 50) with recovery staying good. Centre-baseline coverage (37%) shows she held position well across the games. No set structure (camp day). A confidence-building block.",
+    },
+    {
       id: 'p3-s2', date: '2026-06-11', label: 'Private — rally control', type: 'Practice', surface: 'Clay',
       duration: 45, distance: 2.9, load: 47, topSpeed: 19.6, sprintCount: 12, recovery: 'Good', coverage: 69, acwr: 0.91,
       court: [{x:200,y:324,r:34,o:0.6},{x:200,y:304,r:26,o:0.48},{x:170,y:316,r:18,o:0.36},{x:230,y:318,r:16,o:0.32}],
@@ -331,6 +397,28 @@ const DANIEL: PlayerGpsData = {
     { date: '04 Jun', surface: 'Clay', coverage: '5.7km', load: 85, speed: '29.8km/h', outcome: 'L vs Holm', win: false },
   ],
   sessions: [
+    {
+      id: 'p6-camp', date: '2026-04-09', label: 'Easter camp · Day 4', type: 'Camp', surface: 'Hard',
+      duration: 225, distance: 7.4, load: 74, topSpeed: 29.8, sprintCount: 47, recovery: 'Watch', coverage: 83, acwr: 1.16,
+      court: [{x:200,y:320,r:46,o:0.74},{x:200,y:295,r:38,o:0.64},{x:150,y:310,r:30,o:0.52},{x:250,y:312,r:28,o:0.48},{x:200,y:168,r:24,o:0.4},{x:155,y:175,r:18,o:0.32}],
+      courtZones: [
+        { x: 0.10, y: 0.78, w: 0.27, h: 0.18, label: 'Deuce baseline',  pct: 26 },
+        { x: 0.37, y: 0.78, w: 0.26, h: 0.18, label: 'Centre baseline', pct: 28 },
+        { x: 0.63, y: 0.78, w: 0.27, h: 0.18, label: 'Ad baseline',     pct: 22 },
+        { x: 0.10, y: 0.52, w: 0.27, h: 0.16, label: 'Deuce net',       pct: 11 },
+        { x: 0.37, y: 0.52, w: 0.26, h: 0.16, label: 'Centre net',      pct: 8  },
+        { x: 0.63, y: 0.52, w: 0.27, h: 0.16, label: 'Ad net',          pct: 5  },
+      ],
+      distanceBySet: [{ set: 'Full day', km: 7.4, load: 74 }],
+      hrBySet: [{ set: 'Full day', avg: 158, peak: 192 }],
+      sprintsPerSet: [{ set: 'Full day', n: 47 }],
+      topSpeedPerSet: [{ set: 'Full day', kmh: 29.8 }],
+      clips: [
+        { ctx: 'Camp · match play', label: 'Forehand winner', time: '0:26', tint: GREEN },
+        { ctx: 'Camp · serve block', label: 'Ace down the T', time: '0:17', tint: SKY },
+      ],
+      brief: "Easter camp day for Daniel — the heaviest day of the camp (7.4km, load 74, ACWR 1.16 — recovery a watch flag). High net involvement (11% deuce-net). No set structure (camp day). Output is excellent but manage the back-to-back camp load.",
+    },
     {
       id: 'p6-s2', date: '2026-06-11', label: 'Match play — competitive sets', type: 'Match', surface: 'Clay',
       duration: 75, distance: 5.9, load: 88, topSpeed: 30.4, sprintCount: 54, recovery: 'Watch', coverage: 85, acwr: 1.17,
