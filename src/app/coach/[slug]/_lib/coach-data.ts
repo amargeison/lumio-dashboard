@@ -118,7 +118,7 @@ export const BELTS: Belt[] = [
     ],
   },
   {
-    id: 'purple', name: 'Purple', theme: 'Specialty Shots', colour: '#a855f7',
+    id: 'purple', name: 'Purple', theme: 'Specialty Shots', colour: '#7c5cbf',
     ageGuide: 'Ages 11–14 · developing', ball: 'Yellow',
     skills: [
       { id: 'overhead', name: 'Overhead smash',           note: 'Turn, point, finish high balls with authority' },
@@ -176,7 +176,7 @@ export const LTA_MAP: Record<string, LtaStage> = {
   orange: { stage: 'LTA Youth · Orange',        colour: '#E08A3C', ages: '8–9',   focus: 'A rounded game — develop the different shots' },
   green:  { stage: 'LTA Youth · Green',         colour: '#4FAE72', ages: '9–10',  focus: 'Full court — refine and test technique' },
   blue:   { stage: 'LTA Youth · Yellow',        colour: '#E5C76B', ages: '10–16', focus: 'Real balls, full court — game styles & spin' },
-  purple: { stage: 'LTA Youth Compete',         colour: '#a855f7', ages: '11–14', focus: 'Start & build competing — Youth Grades' },
+  purple: { stage: 'LTA Youth Compete',         colour: '#7c5cbf', ages: '11–14', focus: 'Start & build competing — Youth Grades' },
   brown:  { stage: 'LTA Youth Compete · County', colour: '#9A6B4F', ages: '13+',  focus: 'County-level competition & match weapons' },
   red:    { stage: 'Performance · County–Regional', colour: '#C75A5A', ages: 'Junior', focus: 'Tactical match-play on the performance pathway' },
   black:  { stage: 'Performance · Regional–National', colour: '#2A3142', ages: 'Elite', focus: 'National-level performance & mastery' },
@@ -883,16 +883,75 @@ export const COACH_AI_BRIEF: CoachBriefItem[] = [
 ]
 
 // ─── Messages / comms ───────────────────────────────────────────────────────
-export type CoachMessage = { from: string; role: string; last: string; time: string; unread: number; urgent: boolean }
+// A message carries its inbox summary (from/role/last/time/unread/urgent) plus
+// the full latest `body`. The conversation history lives separately in
+// COACH_MESSAGE_THREADS keyed by id — the seed content, mirroring how the
+// football inbox keeps a bodies/thread map apart from the channel list. The
+// messages-store layers per-message STATE (read/replies/reactions/deleted) over
+// this seed; it never duplicates the content.
+export type CoachMessage = { id: string; from: string; role: string; last: string; time: string; unread: number; urgent: boolean; body: string }
+
+// One turn in a conversation. `from: 'them'` = the sender (parent/player/venue/
+// group); `from: 'coach'` = Vincent Jones (the head coach in this demo).
+export type CoachThreadEntry = { from: 'coach' | 'them'; text: string; time: string }
 
 export const COACH_MESSAGES: CoachMessage[] = [
-  { from: 'Grace Okafor', role: 'Parent · Tom',     last: 'Tom loved the serve session — can we add a Saturday slot?', time: '07:48', unread: 1, urgent: false },
-  { from: 'Mark Berg',    role: 'Parent · Hannah',  last: 'Sorry we missed Tuesday — back this week.',                 time: '07:20', unread: 2, urgent: true  },
-  { from: 'Riverside Desk', role: 'Venue',          last: 'Court 3 maintenance moved to Friday AM.',                  time: 'Yesterday', unread: 1, urgent: true },
-  { from: 'Daniel Cruz',  role: 'Player',           last: 'Confirmed for match play at 18:00 👍',                     time: 'Yesterday', unread: 0, urgent: false },
-  { from: 'Lily Chen',    role: 'Parent · Mia',     last: 'So excited about the racket assessment!',                    time: 'Yesterday', unread: 0, urgent: false },
-  { from: 'Adult Group',  role: 'Group · 6 players', last: 'Anyone for an extra Sunday hit?',                         time: 'Tue',       unread: 0, urgent: false },
+  { id: 'm1', from: 'Grace Okafor',  role: 'Parent · Tom',      last: 'Tom loved the serve session — can we add a Saturday slot?', time: '07:48',     unread: 1, urgent: false,
+    body: 'Morning Vincent — Tom came home buzzing after the serve session, hasn’t stopped talking about the toss drill. He’s asking if we can add a regular Saturday slot on top of his Tuesday lesson. Mornings work best for us. What have you got free?' },
+  { id: 'm2', from: 'Mark Berg',     role: 'Parent · Hannah',   last: 'Sorry we missed Tuesday — back this week.',                 time: '07:20',     unread: 2, urgent: true,
+    body: 'Hi Vincent, really sorry we missed Tuesday again — Hannah’s been under the weather and we’ve had a few clashes with school. I know it’s the second one this month. She’s keen to keep going and we’ll definitely be there Thursday. Is there anything she should be practising at home to catch back up?' },
+  { id: 'm3', from: 'Riverside Desk', role: 'Venue',            last: 'Court 3 double-booked at 18:00 — please confirm.',          time: 'Yesterday', unread: 1, urgent: true,
+    body: 'Hi Vincent — flagging a clash: Court 3 shows both your 18:00 match-play block and an adult club booking under the same slot today. Our system let both through by mistake. Can you confirm whether you want to keep Court 3 or move to Court 4 (free from 17:45)? Whoever confirms first keeps the court.' },
+  { id: 'm4', from: 'Daniel Cruz',   role: 'Player',            last: 'Confirmed for match play at 18:00 👍',                      time: 'Yesterday', unread: 0, urgent: false,
+    body: 'All confirmed for the 18:00 match play 👍 Quick one — are we doing full sets or the serve+1 pattern games again? Want to know whether to bring the heavier racket. Looking forward to it.' },
+  { id: 'm5', from: 'Lily Chen',     role: 'Parent · Mia',      last: 'So excited about the racket assessment!',                   time: 'Yesterday', unread: 0, urgent: false,
+    body: 'Hi Vincent — Mia is SO excited about the Green racket assessment, she’s been practising her serve in the garden all week. Is there anything specific you’ll be looking for so she knows what to expect? And do parents get to watch? Thank you for everything — her confidence has come on so much.' },
+  { id: 'm6', from: 'Adult Group',   role: 'Group · 6 players', last: 'Anyone for an extra Sunday hit?',                           time: 'Tue',       unread: 0, urgent: false,
+    body: 'Priya: Anyone fancy an extra social hit this Sunday morning? Courts are quiet and the weather looks decent. Vincent — would you be up for running a quick cardio/doubles hour if enough of us are in? No worries if not!' },
+  { id: 'm7', from: 'Leo Whitfield', role: 'Player',            last: 'Gutted to miss Thursday — can we reschedule?',              time: 'Tue',       unread: 1, urgent: false,
+    body: 'Hi Vincent, gutted but I’ve got a clash Thursday — county trials got moved to the same evening. Really don’t want to lose the session before the performance block. Any chance we can reschedule to Friday or Saturday? Happy to take whatever’s going.' },
+  { id: 'm8', from: 'Sophie Romero', role: 'Parent · Ava',      last: 'Quick question about the term invoice.',                    time: 'Mon',       unread: 0, urgent: false,
+    body: 'Hi Vincent — quick one on the term invoice for Ava’s group sessions. I think we’ve been charged for 10 weeks but the term’s only 9 with the bank holiday closure. Could you take a look when you get a chance? No rush. Thanks!' },
 ]
+
+// Conversation history per message id — the SEED threads. The messages-store
+// appends the coach's replies (state) on top of these at read time.
+export const COACH_MESSAGE_THREADS: Record<string, CoachThreadEntry[]> = {
+  m1: [
+    { from: 'them',  text: 'Morning Vincent — Tom came home buzzing after the serve session, hasn’t stopped talking about the toss drill.', time: '07:46' },
+    { from: 'them',  text: 'He’s asking if we can add a regular Saturday slot on top of his Tuesday lesson. Mornings work best for us — what have you got free?', time: '07:48' },
+  ],
+  m2: [
+    { from: 'coach', text: 'No problem at all Mark — hope Hannah feels better soon. She’s not far behind, a couple of sessions will sort it.', time: '07:05' },
+    { from: 'them',  text: 'Thanks Vincent. She’s keen to keep going and we’ll definitely be there Thursday.', time: '07:18' },
+    { from: 'them',  text: 'Is there anything she should be practising at home to catch back up?', time: '07:20' },
+  ],
+  m3: [
+    { from: 'them',  text: 'Hi Vincent — flagging a clash: Court 3 shows both your 18:00 match-play block and an adult club booking under the same slot today.', time: '16:31' },
+    { from: 'them',  text: 'Can you confirm whether you want to keep Court 3 or move to Court 4 (free from 17:45)? Whoever confirms first keeps the court.', time: '16:32' },
+  ],
+  m4: [
+    { from: 'them',  text: 'All confirmed for the 18:00 match play 👍', time: '15:02' },
+    { from: 'them',  text: 'Are we doing full sets or the serve+1 pattern games again? Want to know whether to bring the heavier racket.', time: '15:03' },
+  ],
+  m5: [
+    { from: 'them',  text: 'Hi Vincent — Mia is SO excited about the Green racket assessment, she’s been practising her serve in the garden all week.', time: '18:40' },
+    { from: 'them',  text: 'Is there anything specific you’ll be looking for so she knows what to expect? And do parents get to watch?', time: '18:41' },
+  ],
+  m6: [
+    { from: 'them',  text: 'Priya: Anyone fancy an extra social hit this Sunday morning? Courts are quiet and the weather looks decent.', time: 'Tue 19:10' },
+    { from: 'them',  text: 'Vincent — would you be up for running a quick cardio/doubles hour if enough of us are in?', time: 'Tue 19:12' },
+    { from: 'them',  text: 'Daniel: I’m in if it happens 🎾', time: 'Tue 19:20' },
+  ],
+  m7: [
+    { from: 'them',  text: 'Hi Vincent, gutted but I’ve got a clash Thursday — county trials got moved to the same evening.', time: 'Tue 12:30' },
+    { from: 'them',  text: 'Really don’t want to lose the session before the performance block. Any chance we can reschedule to Friday or Saturday?', time: 'Tue 12:31' },
+  ],
+  m8: [
+    { from: 'them',  text: 'Hi Vincent — quick one on the term invoice for Ava’s group sessions.', time: 'Mon 09:15' },
+    { from: 'them',  text: 'I think we’ve been charged for 10 weeks but the term’s only 9 with the bank holiday closure. Could you take a look when you get a chance?', time: 'Mon 09:16' },
+  ],
+}
 
 // ─── Payments / packages ────────────────────────────────────────────────────
 export type Package = { id: string; player: string; plan: string; used: number; total: number; status: 'active' | 'expiring' | 'overdue'; renews: string }
@@ -1019,7 +1078,7 @@ export const COACH_SIDEBAR: CoachNavItem[] = [
 
 export const COACH_GROUPS = ['COACHING', 'SCHEDULE', 'PLAYERS', 'PERFORMANCE', 'RESOURCES', 'TEAM', 'BUSINESS', 'SETTINGS']
 
-export const COACH_ACCENT = { hex: '#a855f7', dim: 'rgba(168,85,247,0.16)', border: 'rgba(168,85,247,0.45)' }
+export const COACH_ACCENT = { hex: '#7c5cbf', dim: 'rgba(124,92,191,0.16)', border: 'rgba(124,92,191,0.45)' }
 
 // ════════════════════════════════════════════════════════════════════════════
 // TRAINING CAMP  (14-day paid camps in Spain / Portugal)
@@ -1341,7 +1400,7 @@ export type Book = {
 }
 
 export const BOOKS: Book[] = [
-  { id: 'b1', title: 'The Inner Game of Tennis', author: 'W. Timothy Gallwey', topic: 'Mental', audience: 'All players', year: 1974, spine: '#a855f7', why: 'The classic. Quiet the mind, trust your strokes — I give this to anyone who overthinks on court.' },
+  { id: 'b1', title: 'The Inner Game of Tennis', author: 'W. Timothy Gallwey', topic: 'Mental', audience: 'All players', year: 1974, spine: '#7c5cbf', why: 'The classic. Quiet the mind, trust your strokes — I give this to anyone who overthinks on court.' },
   { id: 'b2', title: 'Winning Ugly', author: 'Brad Gilbert', topic: 'Tactics', audience: 'Teen & adult', year: 1993, spine: '#3A8EE0', why: 'Match-play street smarts: how to win when you’re not at your best, and how to beat better players.' },
   { id: 'b3', title: 'Open', author: 'Andre Agassi', topic: 'Memoir', audience: 'Teen & adult', year: 2009, spine: '#C75A5A', why: 'A brutally honest autobiography — brilliant for perspective and motivation when the grind feels hard.' },
   { id: 'b4', title: 'Mindset', author: 'Carol S. Dweck', topic: 'Development', audience: 'Parents & juniors', year: 2006, spine: '#4FAE72', why: 'Growth vs fixed mindset. Essential reading for parents supporting a young player.' },
