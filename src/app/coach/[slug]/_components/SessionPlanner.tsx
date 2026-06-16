@@ -25,6 +25,7 @@ import { useAllPlayers } from '../_lib/use-roster'
 import { NewSessionModal } from './NewSession'
 import { getCalendarItems, getNeedsPlan, dayIndexForDate, mapBookingType, type CalItem } from '../_lib/schedule'
 import { WeekCalendarGrid, bookingTypeColour } from './WeekCalendar'
+import { getAddedBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -116,6 +117,10 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
     const r = () => { setAdded(getAddedSessions()); setOverrides(getStatusOverrides()); setHidden(getHiddenSessions()) }
     r(); return subscribeSessions(r)
   }, [])
+  // Bookings added via "Add booking" — merged into the schedule so they appear
+  // here as buildable sessions too (bookings are the schedule source of truth).
+  const [addedBookings, setAddedBookings] = useState<Booking[]>([])
+  useEffect(() => { const r = () => setAddedBookings(getAddedBookings()); r(); return subscribeBookings(r) }, [])
   const allSessions = [...added, ...TODAY_SESSIONS]
     .filter(s => !hidden.includes(s.id))
     .map(s => overrides[s.id] ? { ...s, status: overrides[s.id] } : s)
@@ -167,15 +172,16 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   )
 
   // ─── multi-view data — all derived from the one dated dataset ──────────────
+  const allBookings = [...BOOKINGS, ...addedBookings]
   const todaySessions = allSessions.filter(s => s.date === TODAY)
-  const calItems = getCalendarItems(added)
-  const needsPlan = getNeedsPlan(added)
+  const calItems = getCalendarItems(added, undefined, addedBookings)
+  const needsPlan = getNeedsPlan(added, undefined, addedBookings)
   const nextUp = allSessions.filter(s => s.status !== 'done')
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0]
   const counts = {
     today: todaySessions.length,
     week: allSessions.filter(s => dayIndexForDate(s.date) >= 0).length,
-    pending: BOOKINGS.filter(b => b.status === 'pending').length,
+    pending: allBookings.filter(b => b.status === 'pending').length,
     rackets: COACH_TOP_STATS.find(s => s.label === 'Rackets due')?.value ?? 0,
   }
   const tabs: { id: typeof tab; label: string }[] = [
@@ -187,7 +193,7 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   const selectSession = (id: string) => { setSelId(id); setTab('today') }
   const onCalItemClick = (it: CalItem) => {
     if (it.sessionId) selectSession(it.sessionId)
-    else if (it.bookingId) { const b = BOOKINGS.find(x => x.id === it.bookingId); if (b && mapBookingType(b.type)) openWizard(b) }
+    else if (it.bookingId) { const b = allBookings.find(x => x.id === it.bookingId); if (b && mapBookingType(b.type)) openWizard(b) }
   }
   // Month agenda — calendar items grouped by date (the June demo week).
   const monthGroups = Array.from(new Set(calItems.map(it => it.date))).sort()

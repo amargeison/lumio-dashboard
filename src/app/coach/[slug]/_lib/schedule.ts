@@ -27,8 +27,13 @@ export type CalItem = {
 
 // Booking source for a view: a specific coach's slice of the whole club, or — by
 // default (no coachId) — Pete's own BOOKINGS, so existing callers are unchanged.
-function bookingsSource(coachId?: string): Booking[] {
-  return coachId ? ALL_BOOKINGS.filter(b => b.coachId === coachId) : BOOKINGS
+// `addedBookings` are the locally-added bookings from bookings-store, passed in
+// by the caller (kept out of this pure module to avoid a store↔data cycle AND to
+// stay SSR-safe — callers load them via useEffect, never during render).
+function bookingsSource(coachId?: string, addedBookings: Booking[] = []): Booking[] {
+  const base = coachId ? ALL_BOOKINGS.filter(b => b.coachId === coachId) : BOOKINGS
+  const added = coachId ? addedBookings.filter(b => b.coachId === coachId) : addedBookings
+  return [...base, ...added]
 }
 
 // Index 0=Mon … 6=Sun of a date within the demo week, or -1 if outside it.
@@ -62,16 +67,16 @@ export function sessionForBooking(bookingId: string, added: TodaySession[]): Tod
 
 // Confirmed, today-or-future, coachable bookings that have no session yet —
 // the "needs a plan" list and the booking→wizard candidates.
-export function getNeedsPlan(added: TodaySession[], coachId?: string): Booking[] {
-  return bookingsSource(coachId)
+export function getNeedsPlan(added: TodaySession[], coachId?: string, addedBookings: Booking[] = []): Booking[] {
+  return bookingsSource(coachId, addedBookings)
     .filter(b => b.status === 'confirmed' && b.date >= TODAY && mapBookingType(b.type) !== null && !sessionForBooking(b.id, added))
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
 }
 
 // Calendar items for the static Booking Calendar page (every booking, as-is).
 // Defaults to Pete's bookings; pass a coachId for a coach-scoped calendar (Phase B).
-export function bookingCalItems(coachId?: string): CalItem[] {
-  return bookingsSource(coachId).map(b => ({
+export function bookingCalItems(coachId?: string, addedBookings: Booking[] = []): CalItem[] {
+  return bookingsSource(coachId, addedBookings).map(b => ({
     key: b.id, date: b.date, start: b.start, end: b.end,
     player: b.player, court: b.court, type: b.type, status: b.status, bookingId: b.id, coachId: b.coachId,
   }))
@@ -81,8 +86,8 @@ export function bookingCalItems(coachId?: string): CalItem[] {
 // Calendar exactly), each resolved to its built session where one exists, plus
 // any manually-added sessions that aren't tied to a booking. Defaults to Pete;
 // pass a coachId for a coach-scoped list (Phase B).
-export function getCalendarItems(added: TodaySession[], coachId?: string): CalItem[] {
-  const fromBookings: CalItem[] = bookingsSource(coachId).map(b => ({
+export function getCalendarItems(added: TodaySession[], coachId?: string, addedBookings: Booking[] = []): CalItem[] {
+  const fromBookings: CalItem[] = bookingsSource(coachId, addedBookings).map(b => ({
     key: b.id, date: b.date, start: b.start, end: b.end,
     player: b.player, court: b.court, type: b.type, status: b.status,
     bookingId: b.id, sessionId: sessionForBooking(b.id, added)?.id, coachId: b.coachId,

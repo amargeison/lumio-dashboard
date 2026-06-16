@@ -10,10 +10,12 @@ import {
   PLAYERS, LESSONS, RESOURCES,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
-  type Player, type Lesson, type Resource, type Camp,
+  type Player, type Lesson, type Resource, type Camp, type Booking,
 } from '../_lib/coach-data'
 import { WeekCalendarGrid, bookingTypeColour } from './WeekCalendar'
 import { bookingCalItems } from '../_lib/schedule'
+import { getAddedBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
+import { AddBookingModal } from './AddBookingModal'
 import { printBeltCertificate } from './BeltCertificate'
 import { LessonShareMenu } from './ShareMenu'
 import { CampEquipment, CampPlayerPacks } from './CampPacks'
@@ -673,12 +675,16 @@ function ballColour(b: string) { return b === 'Red' ? '#C75A5A' : b === 'Orange'
 // BOOKING CALENDAR  (week grid)
 // ════════════════════════════════════════════════════════════════════════════
 export function CalendarView({ T, accent, density }: Common) {
+  const [addOpen, setAddOpen] = useState(false)
+  // Added bookings from the store — loaded after mount (SSR-safe) and kept live.
+  const [addedBookings, setAddedBookings] = useState<Booking[]>([])
+  useEffect(() => { const r = () => setAddedBookings(getAddedBookings()); r(); return subscribeBookings(r) }, [])
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Booking Calendar" sub="Your week across all courts — private lessons, group squads, cardio and match play."
-        action={<button style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> Add booking</button>} />
+        action={<button onClick={() => setAddOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> Add booking</button>} />
       <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto' }}>
-        <WeekCalendarGrid T={T} accent={accent} density={density} items={bookingCalItems()} />
+        <WeekCalendarGrid T={T} accent={accent} density={density} items={bookingCalItems(undefined, addedBookings)} />
       </Card>
       <div style={{ display: 'flex', gap: 14, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
         {['Private', 'Group', 'Cardio', 'Match play', 'Block'].map(t => (
@@ -686,6 +692,7 @@ export function CalendarView({ T, accent, density }: Common) {
         ))}
         <span style={{ marginLeft: 'auto' }}>Faint fill = pending confirmation</span>
       </div>
+      {addOpen && <AddBookingModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>
   )
 }
