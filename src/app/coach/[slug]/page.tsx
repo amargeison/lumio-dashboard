@@ -33,6 +33,7 @@ import { EquipmentView } from './_components/Equipment'
 import { GpsVideoView } from './_components/CoachGpsVideo'
 import { HeatmapsView } from './_components/CoachHeatmaps'
 import { StaffView } from './_components/StaffView'
+import { CoachMobileShell } from './_components/CoachMobileShell'
 
 const COACH_ROLES = [
   { id: 'head',      label: 'Head Coach',      icon: '🎾', description: 'Full access to every module' },
@@ -133,7 +134,6 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
   const [active, setActive] = useState('dashboard')
   const [pinned, setPinned] = useState(false)
   const [hovered, setHovered] = useState(false)
-  const [drawerOpen, setDrawerOpen] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const expanded = pinned || hovered
 
@@ -150,8 +150,6 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
   const togglePin = () => setPinned(p => { const n = !p; try { localStorage.setItem('lumio_coach_sidebar_pinned', String(n)) } catch {} ; return n })
   const onEnter = () => { if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null } ; setHovered(true) }
   const onLeave = () => { leaveTimer.current = setTimeout(() => setHovered(false), 350) }
-
-  const activeItem = COACH_SIDEBAR.find(i => i.id === active)
 
   const renderView = () => {
     switch (active) {
@@ -190,66 +188,13 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
   // ─── Mobile shell ─────────────────────────────────────────────────────────
   if (isMobile) {
     return (
-      <div style={{ minHeight: '100vh', background: T.bg, color: T.text, fontFamily: 'var(--font-geist-sans, system-ui)' }}>
-        <style>{responsiveStyle}</style>
-        {/* top app bar */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 30, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: sideBg, borderBottom: `1px solid ${line}` }}>
-          <button onClick={() => setDrawerOpen(true)} aria-label="Menu" style={{ background: 'transparent', border: 0, color: T.text, cursor: 'pointer', padding: 4 }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
-          </button>
-          <div style={{ width: 28, height: 28, borderRadius: 8, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, fontSize: 15 }}>🎾</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, lineHeight: 1 }}>Lumio Coach</div>
-            <div style={{ fontSize: 10, color: T.text3 }}>{activeItem?.label ?? 'Dashboard'}</div>
-          </div>
-          <CoachAvatar size={30} />
-        </div>
-
-        {showDemoBanner && (
-          <div style={{ padding: '6px 14px', fontSize: 11.5, fontWeight: 500, background: '#0D9488', color: '#fff', textAlign: 'center' }}>Demo · sample data</div>
-        )}
-
-        {/* drawer */}
-        {drawerOpen && (
-          <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.6)' }}>
-            <div onClick={e => e.stopPropagation()} style={{ width: 264, maxWidth: '82vw', height: '100%', background: sideBg, borderRight: `1px solid ${line}`, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 14px', borderBottom: `1px solid ${line}` }}>
-                <div style={{ width: 32, height: 32, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, fontSize: 17 }}>🎾</div>
-                <div><div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Lumio Coach</div><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Tennis</div></div>
-                <button onClick={() => setDrawerOpen(false)} style={{ marginLeft: 'auto', background: 'transparent', border: 0, color: T.text3, cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
-              </div>
-              <nav style={{ flex: 1, padding: '6px 8px' }}>
-                {COACH_GROUPS.map(group => {
-                  const items = visibleSidebar.filter(i => i.group === group)
-                  if (!items.length) return null
-                  return (
-                    <div key={group} style={{ marginBottom: 4 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '0 8px', marginTop: 10, marginBottom: 3 }}>{group}</div>
-                      {items.map(item => {
-                        const on = active === item.id
-                        return (
-                          <button key={item.id} onClick={() => { setActive(item.id); setDrawerOpen(false) }}
-                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text3, border: 0, borderRadius: 8, padding: '9px 10px', fontSize: 13, cursor: 'pointer' }}>
-                            <Icon name={item.icon} size={17} stroke={1.7} />
-                            <span style={{ fontWeight: on ? 600 : 500, flex: 1 }}>{item.label}</span>
-                            {item.badge && <span style={{ fontSize: 8.5, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '1px 5px', borderRadius: 4 }}>{item.badge}</span>}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )
-                })}
-              </nav>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderTop: `1px solid ${line}` }}>
-                <CoachAvatar size={30} />
-                <div><div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{coachName}</div><div style={{ fontSize: 9.5, color: T.text3 }}>Head Coach</div></div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ padding: 14 }}>{renderView()}</div>
-      </div>
+      <CoachMobileShell
+        T={T} accent={accent} active={active} onNavigate={setActive}
+        showDemoBanner={showDemoBanner} hiddenMenu={hiddenMenu}
+        avatar={<CoachAvatar size={30} />}
+      >
+        {renderView()}
+      </CoachMobileShell>
     )
   }
 
