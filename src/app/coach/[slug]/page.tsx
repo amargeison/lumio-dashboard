@@ -30,6 +30,7 @@ import { SessionPlannerView } from './_components/SessionPlanner'
 import { CourtPlannerView } from './_components/CourtPlanner'
 import { EquipmentView } from './_components/Equipment'
 import { GpsVideoView } from './_components/CoachGpsVideo'
+import { StaffView } from './_components/StaffView'
 
 const COACH_ROLES = [
   { id: 'head',      label: 'Head Coach',      icon: '🎾', description: 'Full access to every module' },
@@ -148,6 +149,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
       case 'dashboard':   return <DashboardView T={T} accent={accent} density={density} onNavigate={setActive} />
       case 'lessons':     return <LessonsView T={T} accent={accent} density={density} />
       case 'planner':     return <SessionPlannerView T={T} accent={accent} density={density} onNavigate={setActive} />
+      case 'staff':       return <StaffView T={T} accent={accent} density={density} onNavigate={setActive} />
       case 'development': return <DevelopmentView T={T} accent={accent} density={density} />
       case 'belts':       return <BeltsView T={T} accent={accent} density={density} />
       case 'calendar':    return <CalendarView T={T} accent={accent} density={density} />
