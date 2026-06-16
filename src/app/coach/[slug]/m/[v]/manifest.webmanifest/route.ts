@@ -25,8 +25,12 @@ export async function GET(
     name:             `Lumio Coach — ${slug}`,
     short_name:       'Lumio Coach',
     description:      'Your coaching OS — sessions, players, camps, GPS & video.',
+    // Stable, coach-specific app identity so the installed PWA is a distinct
+    // app (not colliding with the site root or other portals) and always
+    // re-resolves to the coach start_url rather than the global root manifest.
+    id:               '/coach',
     start_url:        `/coach/${slug}`,
-    scope:            '/coach',
+    scope:            '/coach/',
     display:          'standalone',
     orientation:      'portrait',
     background_color: '#07080F',

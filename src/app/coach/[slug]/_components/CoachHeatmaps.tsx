@@ -1,28 +1,39 @@
 'use client'
 
-// ─── Coach portal — Heatmaps ─────────────────────────────────────────────────
-// Ported from the tennis PLAYER portal's TennisGPSHeatmapsView. The SVG suite
-// (court, positional heatmap, serve placement, return/winner/error maps, 12-zone
-// coverage grid, sprint map, per-set bars, speed zones, weekly load) is copied
-// VERBATIM in geometry — only colours and wrapping card styles are swapped onto
-// the coach portal's T/accent/density tokens (no Tailwind, no #0d1117, no
-// tennis-brand localStorage). Wired to the coach's per-player data
-// (gps-video-data.ts): a player picker + the player's sessions drive the maps
-// and the headline stat numbers. Demo only — procedural/canned, no devices.
+// ─── Coach portal — GPS & Heatmaps department ────────────────────────────────
+// The single GPS home. Folds the old GPS & Video GPS-side content (GPS stats,
+// AI brief, KPI strip, session history) together with the GPS-honest heatmap
+// suite, simplified to four spatial visuals (the shot-data-dependent Serve
+// Placement and Returns & Rally sections were dropped — GPS can't produce them).
+//
+// Overlap reconciliation (distance/coverage/speed could appear twice): the
+// GPS STATS tab owns the non-spatial analytics (KPI strip, distance-by-set,
+// distance-by-phase, speed-zone breakdown, sprints, top-speed, HR, drop-off).
+// The MOVEMENT & FITNESS heatmap tab owns only the spatial maps (12-zone court
+// coverage, sprint-initiation map, recovery-position heatmap) — its duplicate
+// distance-by-set and speed-zone cards were removed. One clear home per metric.
+//
+// Selector: a SESSION TYPE filter (All · Coaching session · Camp) scopes the
+// session picker; the period segment (Full · Set 1-3) only shows for match
+// sessions (camp/practice have no sets). Demo only — procedural/canned data.
 
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { PLAYERS } from '../_lib/coach-data'
-import { GPS_VIDEO_DATA, type GpsSession } from '../_lib/gps-video-data'
+import { GPS_VIDEO_DATA, type GpsSession, type PlayerGpsData } from '../_lib/gps-video-data'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
-const AMBER = '#F59E0B'        // serve-dot / 2nd-serve accent (kept — not brand)
+// Semantic palette for multi-series charts (chrome uses the coach accent token).
+const GREEN = '#22C55E', AMBER = '#F59E0B', RED = '#EF4444', PURPLE = '#A855F7'
 const COURT_GREEN = '#0a3d1a'  // court surface — a court colour, not a brand hue
 
-// ─── Foundational helpers (copied verbatim from the source) ──────────────────
+const recoveryColor = (T: ThemeTokens, r: GpsSession['recovery']) =>
+  r === 'Good' ? T.good : r === 'Moderate' ? T.warn : T.bad
+
+// ─── Foundational heatmap helpers (copied verbatim) ──────────────────────────
 
 // Neutral green → red density ramp (data-viz scale, not brand).
 const TENNIS_HEAT_STOPS = ['#0E7C3A', '#22C55E', '#FACC15', '#F59E0B', '#EF4444', '#7F1D1D']
@@ -41,7 +52,6 @@ function tennisHash(str: string, salt: number): number {
   return ((h >>> 0) % 10000) / 10000
 }
 
-// Player position anchors for movement / recovery / drill density.
 const TENNIS_RALLY_ANCHORS = [
   { x: 0.5, y: 0.86, weight: 0.95 },
   { x: 0.32, y: 0.84, weight: 0.85 },
@@ -58,7 +68,6 @@ const TENNIS_RECOVERY_ANCHORS = [
   { x: 0.5, y: 0.92, weight: 0.65 },
 ]
 
-// Academy training blocks (generic — not pro tour).
 const TRAINING_SESSIONS = [
   'Service-box footwork (60 min)',
   'Cross-court rally patterns (60 min)',
@@ -106,7 +115,6 @@ function HeatLegend({ T }: { T: ThemeTokens }) {
   )
 }
 
-// Court positional heatmap — movement / recovery / drill / footwork / surface.
 function CourtPositionalHeatmap({
   width, height, seed, doubles = false, anchors, intensity = 1,
 }: {
@@ -147,119 +155,6 @@ function CourtPositionalHeatmap({
             fill={tennisHeatColor(cell.t)} opacity={0.4 + cell.t * 0.55} />
         ))}
       </g>
-    </svg>
-  )
-}
-
-function ServePlacementMap({
-  width, height, seed, side, serveType, accentHex,
-}: {
-  width: number; height: number; seed: string; side: 'deuce' | 'ad'; serveType: 'first' | 'second'; accentHex: string
-}) {
-  const xLo = side === 'deuce' ? 0.5 : 0.0
-  const xHi = side === 'deuce' ? 1.0 : 0.5
-  const yLo = 0.0
-  const yHi = 0.31
-  const count = serveType === 'first' ? 22 : 14
-  const dots = Array.from({ length: count }, (_, i) => {
-    const fx = xLo + tennisHash(`${seed}-${side}-${serveType}-${i}-x`, 11) * (xHi - xLo)
-    const fy = yLo + tennisHash(`${seed}-${side}-${serveType}-${i}-y`, 13) * (yHi - yLo)
-    const tier = tennisHash(`${seed}-${side}-${serveType}-${i}-t`, 17)
-    let x = fx, y = fy
-    if (serveType === 'first') {
-      if (tier < 0.4) {
-        x = side === 'deuce' ? xHi - 0.06 - tier * 0.06 : xLo + 0.06 + tier * 0.06
-      } else if (tier > 0.65) {
-        x = (xLo + xHi) / 2 + (tier - 0.65) * 0.05
-      }
-    } else {
-      x = (xLo + xHi) / 2 + (tier - 0.5) * 0.18
-    }
-    return {
-      x: x * width,
-      y: y * height,
-      r: serveType === 'first' ? 5 + tennisHash(`${seed}-r-${i}`, 19) * 2.5 : 4 + tennisHash(`${seed}-r-${i}`, 19) * 1.5,
-    }
-  })
-  const zoneW = (xHi - xLo) / 3
-  const zones = [
-    { key: side === 'deuce' ? 'T' : 'Wide', xMin: xLo, label: side === 'deuce' ? 'T' : 'Wide', winPct: side === 'deuce' ? 78 : 71 },
-    { key: 'Body', xMin: xLo + zoneW, label: 'Body', winPct: 62 },
-    { key: side === 'deuce' ? 'Wide' : 'T', xMin: xLo + zoneW * 2, label: side === 'deuce' ? 'Wide' : 'T', winPct: side === 'deuce' ? 73 : 76 },
-  ]
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 360 }}>
-      <TennisCourt width={width} height={height} />
-      {zones.map(z => (
-        <g key={z.key + z.label}>
-          <rect x={z.xMin * width} y={yLo * height} width={zoneW * width} height={(yHi - yLo) * height}
-            fill={tennisHeatColor(z.winPct / 100)} opacity={0.15} stroke="rgba(255,255,255,0.35)" strokeDasharray="4 3" />
-          <text x={(z.xMin + zoneW / 2) * width} y={(yHi / 2 + 0.05) * height}
-            fontSize={11} fontWeight={700} fill="white" textAnchor="middle" opacity={0.7}>{z.label}</text>
-          <text x={(z.xMin + zoneW / 2) * width} y={(yHi / 2 + 0.13) * height}
-            fontSize={14} fontWeight={800} fill={tennisHeatColor(z.winPct / 100)} textAnchor="middle">{z.winPct}%</text>
-        </g>
-      ))}
-      {dots.map((d, i) => (
-        <circle key={i} cx={d.x} cy={d.y} r={d.r}
-          fill={serveType === 'first' ? accentHex : AMBER}
-          stroke="white" strokeOpacity={0.4} strokeWidth={0.6} opacity={0.85} />
-      ))}
-    </svg>
-  )
-}
-
-function ReturnMap({ width, height, seed, accentHex }: { width: number; height: number; seed: string; accentHex: string }) {
-  const dots = Array.from({ length: 30 }, (_, i) => ({
-    x: (0.15 + tennisHash(`${seed}-rtn-${i}-x`, 23) * 0.7) * width,
-    y: (0.78 + tennisHash(`${seed}-rtn-${i}-y`, 29) * 0.18) * height,
-    aggression: tennisHash(`${seed}-rtn-${i}-a`, 31),
-  }))
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 360 }}>
-      <TennisCourt width={width} height={height} />
-      {dots.map((d, i) => (
-        <circle key={i} cx={d.x} cy={d.y} r={4 + d.aggression * 4}
-          fill={tennisHeatColor(d.aggression)} stroke={accentHex} strokeOpacity={0.4} strokeWidth={0.6} opacity={0.85} />
-      ))}
-    </svg>
-  )
-}
-
-function WinnerErrorMap({ width, height, seed, mode }: {
-  width: number; height: number; seed: string; mode: 'winners' | 'errors'
-}) {
-  const count = mode === 'winners' ? 18 : 22
-  const dots = Array.from({ length: count }, (_, i) => {
-    if (mode === 'winners') {
-      const cluster = tennisHash(`${seed}-w-${i}-c`, 37)
-      const x = cluster < 0.5
-        ? 0.1 + tennisHash(`${seed}-w-${i}-x`, 41) * 0.15
-        : 0.75 + tennisHash(`${seed}-w-${i}-x`, 41) * 0.15
-      const y = 0.05 + tennisHash(`${seed}-w-${i}-y`, 43) * 0.4
-      return { x: x * width, y: y * height, ok: true }
-    }
-    return {
-      x: (0.05 + tennisHash(`${seed}-e-${i}-x`, 47) * 0.9) * width,
-      y: (0.0 + tennisHash(`${seed}-e-${i}-y`, 53) * 0.5) * height,
-      ok: false,
-    }
-  })
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxHeight: 360 }}>
-      <TennisCourt width={width} height={height} />
-      {dots.map((d, i) => (
-        <g key={i}>
-          {d.ok ? (
-            <circle cx={d.x} cy={d.y} r={6} fill="#22C55E" stroke="white" strokeOpacity={0.5} strokeWidth={0.8} opacity={0.9} />
-          ) : (
-            <g transform={`translate(${d.x},${d.y})`}>
-              <line x1={-5} y1={-5} x2={5} y2={5} stroke="#EF4444" strokeWidth={2.2} strokeLinecap="round" />
-              <line x1={5} y1={-5} x2={-5} y2={5} stroke="#EF4444" strokeWidth={2.2} strokeLinecap="round" />
-            </g>
-          )}
-        </g>
-      ))}
     </svg>
   )
 }
@@ -331,57 +226,6 @@ function SprintInitiationMap({ width, height, seed }: { width: number; height: n
   )
 }
 
-// Per-set distance bars — wired to the selected session's distanceBySet.
-function DistanceBySetBars({ T, sets }: { T: ThemeTokens; sets: { set: string; km: number; load: number }[] }) {
-  const maxKm = Math.max(...sets.map(s => s.km), 1)
-  const slotW = 700 / Math.max(sets.length, 1)
-  return (
-    <svg viewBox="0 0 700 260" width="100%" style={{ maxHeight: 280 }}>
-      <rect width={700} height={260} fill={T.panel2} rx={6} />
-      {sets.map((s, i) => {
-        const intensity = Math.min(1, s.load / 45)
-        const x = i * slotW + 30
-        const barW = slotW - 60
-        const barH = (s.km / (maxKm * 1.15)) * 180
-        return (
-          <g key={s.set}>
-            <text x={x + barW / 2} y={20} textAnchor="middle" fontSize={12} fontWeight={700} fill={T.text}>{s.set}</text>
-            <rect x={x} y={220 - barH} width={barW} height={barH} rx={6}
-              fill={tennisHeatColor(intensity)} opacity={0.35 + intensity * 0.55} />
-            <rect x={x} y={220 - barH} width={barW} height={barH} rx={6}
-              fill="none" stroke={tennisHeatColor(intensity)} strokeOpacity={0.7} strokeWidth={1} />
-            <text x={x + barW / 2} y={220 - barH - 8} textAnchor="middle" fontSize={20} fontWeight={800} fill={T.text}>{s.km.toFixed(1)} km</text>
-            <text x={x + barW / 2} y={240} textAnchor="middle" fontSize={10} fill={T.text3}>load {s.load} · intensity {(intensity * 100).toFixed(0)}%</text>
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
-// Speed-zone bars — wired to the player's speed profile.
-function SpeedZoneBars({ T, zones }: { T: ThemeTokens; zones: { zone: string; pct: number }[] }) {
-  const W = 700, BAR_H = 28, GAP = 12
-  const totalH = zones.length * (BAR_H + GAP) + 16
-  const maxPct = Math.max(...zones.map(z => z.pct), 1)
-  return (
-    <svg viewBox={`0 0 ${W} ${totalH}`} width="100%" style={{ maxHeight: totalH + 8 }}>
-      {zones.map((z, i) => {
-        const y = 8 + i * (BAR_H + GAP)
-        const barW = (z.pct / maxPct) * (W - 260)
-        return (
-          <g key={z.zone}>
-            <text x={4} y={y + BAR_H / 2 + 4} fontSize={11} fontWeight={600} fill={T.text2}>{z.zone}</text>
-            <rect x={200} y={y} width={W - 260} height={BAR_H} rx={4} fill={T.hover} />
-            <rect x={200} y={y} width={barW} height={BAR_H} rx={4} fill={TENNIS_HEAT_STOPS[i]} opacity={0.85} />
-            <text x={200 + barW + 8} y={y + BAR_H / 2 + 4} fontSize={11} fontWeight={700} fill={T.text}>{z.pct.toFixed(0)}%</text>
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
 // 7-day load microcycle (generic academy week).
 function WeeklyLoadCalendar({ T }: { T: ThemeTokens }) {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -414,34 +258,306 @@ function WeeklyLoadCalendar({ T }: { T: ThemeTokens }) {
   )
 }
 
+// ─── GPS stats helpers (folded in from the old GPS & Video view) ─────────────
+function GpsCard({ T, density, title, sub, children }: Common & { title?: string; sub?: string; children: ReactNode }) {
+  return (
+    <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad, boxShadow: T.cardShadow }}>
+      {(title || sub) && (
+        <div style={{ marginBottom: 12 }}>
+          {title && <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{title}</div>}
+          {sub && <div style={{ fontSize: 11, color: T.text3, marginTop: 2, lineHeight: 1.4 }}>{sub}</div>}
+        </div>
+      )}
+      {children}
+    </div>
+  )
+}
+
+function GpsKpi({ T, label, value, sub, color }: { T: ThemeTokens; label: string; value: string | number; sub?: string; color: string }) {
+  return (
+    <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
+      <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+      <div className="tnum" style={{ fontSize: 22, fontWeight: 800, color, marginTop: 2 }}>{value}</div>
+      {sub && <div style={{ fontSize: 10, color: T.text3, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+
+function GpsSectionHead({ T, accent, n, title, sub }: Common & { n: number; title: string; sub?: string }) {
+  return (
+    <div style={{ paddingTop: 4 }}>
+      <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: accent.hex }}>{n} · {title}</h2>
+      {sub && <p style={{ margin: '2px 0 0', fontSize: 11, color: T.text3 }}>{sub}</p>}
+    </div>
+  )
+}
+
+function GpsLineChart({
+  T, values, max, min = 0, labels, valueFormat, colour, area = true, height = 150, width = 400, target,
+}: {
+  T: ThemeTokens; values: number[]; max: number; min?: number; labels?: string[]
+  valueFormat?: (v: number) => string; colour: string; area?: boolean
+  height?: number; width?: number; target?: number
+}) {
+  const padX = 32, padY = 22
+  const innerW = width - padX * 2, innerH = height - padY * 2
+  const xy = (i: number, v: number): [number, number] => [
+    padX + (i / (values.length - 1 || 1)) * innerW,
+    padY + (1 - (v - min) / (max - min)) * innerH,
+  ]
+  const pts = values.map((v, i) => xy(i, v).join(',')).join(' ')
+  const baseY = padY + innerH
+  const areaPts = `${padX},${baseY} ${pts} ${padX + innerW},${baseY}`
+  const gid = `gpsln-${colour.replace('#', '')}`
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', maxHeight: height + 4 }}>
+      <defs>
+        <linearGradient id={gid} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={colour} stopOpacity="0.40" />
+          <stop offset="100%" stopColor={colour} stopOpacity="0.04" />
+        </linearGradient>
+      </defs>
+      {[0, 0.5, 1].map(p => {
+        const y = padY + p * innerH
+        return <line key={p} x1={padX} y1={y} x2={padX + innerW} y2={y} stroke={T.border} />
+      })}
+      {target !== undefined && (() => {
+        const ty = padY + (1 - (target - min) / (max - min)) * innerH
+        return <line x1={padX} y1={ty} x2={padX + innerW} y2={ty} stroke={AMBER} strokeWidth="1" strokeDasharray="6 4" />
+      })()}
+      {area && <polygon points={areaPts} fill={`url(#${gid})`} />}
+      <polyline fill="none" stroke={colour} strokeWidth="2.4" strokeLinecap="round" points={pts} />
+      {values.map((v, i) => {
+        const [x, y] = xy(i, v)
+        return (
+          <g key={i}>
+            <circle cx={x} cy={y} r={3.2} fill={colour} stroke={T.panel} strokeWidth={1.2} />
+            <text x={x} y={y - 8} textAnchor="middle" fontSize="9" fontWeight="700" fill={T.text}>{valueFormat ? valueFormat(v) : v}</text>
+          </g>
+        )
+      })}
+      {labels && labels.map((l, i) => {
+        const [x] = xy(i, values[i])
+        return <text key={l + i} x={x} y={height - 4} textAnchor="middle" fontSize="9" fill={T.text3}>{l}</text>
+      })}
+    </svg>
+  )
+}
+
+// GPS analytics panel — owns the non-spatial movement/speed/HR metrics. The
+// spatial coverage/sprint/recovery maps live in the Movement & Fitness tab.
+function GpsStatsPanel({ T, accent, density, session, data }: Common & { session: GpsSession; data: PlayerGpsData }) {
+  const totalDistance = session.distanceBySet.reduce((a, b) => a + b.km, 0)
+  const avgPerSet = totalDistance / session.distanceBySet.length
+  const phaseTotal = data.distanceByPhase.reduce((a, b) => a + b.km, 0)
+  const maxSetKm = Math.max(...session.distanceBySet.map(s => s.km))
+  const maxSprint = Math.max(...session.sprintsPerSet.map(s => s.n))
+  const firstSpeed = session.topSpeedPerSet[0]?.kmh ?? 0
+  const lastSpeed = session.topSpeedPerSet[session.topSpeedPerSet.length - 1]?.kmh ?? 0
+  const setWord = session.distanceBySet.length > 1 ? 'block' : 'day'
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
+      {/* 1 · KPI strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+        <GpsKpi T={T} label="Total distance" value={`${session.distance.toFixed(1)} km`} sub={`avg ${avgPerSet.toFixed(1)} km/${setWord}`} color={accent.hex} />
+        <GpsKpi T={T} label="Max speed" value={session.topSpeed.toFixed(1)} sub="km/h" color={RED} />
+        <GpsKpi T={T} label="Sprint count" value={session.sprintCount} sub="this session" color={AMBER} />
+        <GpsKpi T={T} label="Load score" value={`${session.load} / 100`} sub={`ACWR ${session.acwr.toFixed(2)}`} color={session.load > 80 ? RED : session.load > 60 ? AMBER : T.good} />
+        <GpsKpi T={T} label="Recovery" value={session.recovery} sub="between points" color={recoveryColor(T, session.recovery)} />
+        <GpsKpi T={T} label="Court coverage" value={`${session.coverage}%`} sub="of own half" color={accent.hex} />
+      </div>
+
+      {/* 1 · Distance & Movement */}
+      <GpsSectionHead T={T} accent={accent} density={density} n={1} title="Distance & Movement" sub="Per-set/block and by phase of play." />
+      <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
+        <GpsCard T={T} accent={accent} density={density} title={`Distance by ${setWord === 'block' ? 'Set / Block' : 'Day'}`} sub={`Total ${totalDistance.toFixed(1)} km · avg ${avgPerSet.toFixed(1)} km/${setWord}`}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 112 }}>
+            {session.distanceBySet.map(s => (
+              <div key={s.set} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: accent.hex }}>{s.km} km</div>
+                <div style={{ width: '100%', borderRadius: '4px 4px 0 0', height: `${(s.km / maxSetKm) * 100}%`, minHeight: 8, background: `linear-gradient(180deg, ${accent.hex}, ${accent.hex}40)` }} />
+                <div style={{ fontSize: 10, color: T.text3 }}>{s.set}</div>
+                <div style={{ fontSize: 10, color: T.text4 }}>Load {s.load}</div>
+              </div>
+            ))}
+          </div>
+        </GpsCard>
+
+        <GpsCard T={T} accent={accent} density={density} title="Distance by Phase" sub="What the player was doing when covering ground.">
+          <div style={{ display: 'flex', height: 24, borderRadius: 6, overflow: 'hidden', marginBottom: 12 }}>
+            {data.distanceByPhase.map(p => (
+              <div key={p.phase} title={`${p.phase} ${((p.km / phaseTotal) * 100).toFixed(0)}%`} style={{ width: `${(p.km / phaseTotal) * 100}%`, background: p.c }} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {data.distanceByPhase.map(p => (
+              <div key={p.phase} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 3, background: p.c }} />
+                <span style={{ flex: 1, color: T.text2 }}>{p.phase}</span>
+                <span style={{ fontWeight: 700, color: T.text }}>{p.km.toFixed(1)} km</span>
+                <span style={{ color: T.text3 }}>{((p.km / phaseTotal) * 100).toFixed(0)}%</span>
+              </div>
+            ))}
+          </div>
+        </GpsCard>
+      </div>
+
+      {/* 2 · Speed & Sprint */}
+      <GpsSectionHead T={T} accent={accent} density={density} n={2} title="Speed & Sprint" sub="Time-in-zone, sprint count, and peak speed." />
+      <GpsCard T={T} accent={accent} density={density} title="Speed Zone Breakdown" sub="Time spent in each speed band">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {data.speedZones.map(z => (
+            <div key={z.zone} style={{ display: 'grid', gridTemplateColumns: '160px 1fr auto auto', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 11.5, color: T.text2 }}>{z.zone}</span>
+              <div style={{ height: 14, borderRadius: 4, overflow: 'hidden', background: T.hover }}>
+                <div style={{ height: 14, borderRadius: 4, width: `${Math.min(100, z.pct * 2.4)}%`, background: z.c, opacity: 0.85 }} />
+              </div>
+              <span style={{ fontSize: 11.5, fontWeight: 700, width: 40, textAlign: 'right', color: z.c }}>{z.pct}%</span>
+              <span style={{ fontSize: 10, fontFamily: FONT_MONO, width: 52, textAlign: 'right', color: T.text3 }}>{z.time}</span>
+            </div>
+          ))}
+        </div>
+      </GpsCard>
+
+      <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
+        <GpsCard T={T} accent={accent} density={density} title="Sprints" sub="Sprint count per set/block — pacing across the session">
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 112 }}>
+            {session.sprintsPerSet.map(s => (
+              <div key={s.set} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: AMBER }}>{s.n}</div>
+                <div style={{ width: '100%', borderRadius: '4px 4px 0 0', height: `${(s.n / maxSprint) * 100}%`, minHeight: 8, background: `linear-gradient(180deg, ${AMBER}, ${AMBER}30)` }} />
+                <div style={{ fontSize: 10, color: T.text3 }}>{s.set}</div>
+              </div>
+            ))}
+          </div>
+        </GpsCard>
+
+        <GpsCard T={T} accent={accent} density={density} title="Top Speed" sub="Did peak speed hold, or drop late?">
+          <GpsLineChart T={T} values={session.topSpeedPerSet.map(s => s.kmh)} labels={session.topSpeedPerSet.map(s => s.set)} max={32} min={16} valueFormat={v => v.toFixed(1)} colour={RED} height={150} width={400} />
+          <div style={{ fontSize: 10, marginTop: 4, textAlign: 'center', color: T.text3 }}>
+            Peak speed {firstSpeed >= lastSpeed ? 'dropped' : 'rose'} {Math.abs(firstSpeed - lastSpeed).toFixed(1)} km/h across the session{firstSpeed - lastSpeed > 2 ? ' — fatigue indicator' : ''}
+          </div>
+        </GpsCard>
+      </div>
+
+      {/* 3 · Heart Rate & Intensity */}
+      <GpsSectionHead T={T} accent={accent} density={density} n={3} title="Heart Rate & Intensity" sub="Where effort was spent and how hard the player worked." />
+      <GpsCard T={T} accent={accent} density={density} title="Heart Rate Zones" sub="Time-in-zone across the session">
+        <div style={{ display: 'flex', height: 24, borderRadius: 6, overflow: 'hidden', marginBottom: 12 }}>
+          {data.hrZones.map(z => <div key={z.zone} title={`${z.zone} ${z.pct}%`} style={{ width: `${z.pct}%`, background: z.color }} />)}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {data.hrZones.map(z => (
+            <div key={z.zone} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5 }}>
+              <span style={{ width: 10, height: 10, borderRadius: 3, background: z.color }} />
+              <span style={{ flex: 1, color: T.text2 }}>{z.zone}</span>
+              <span style={{ fontWeight: 700, color: z.color }}>{z.pct}%</span>
+            </div>
+          ))}
+        </div>
+      </GpsCard>
+
+      <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
+        <GpsCard T={T} accent={accent} density={density} title="HR by Set / Block" sub="Average HR — did intensity build?">
+          <GpsLineChart T={T} values={session.hrBySet.map(s => s.avg)} labels={session.hrBySet.map(s => s.set)} max={180} min={120} valueFormat={v => `${v}`} colour={PURPLE} height={150} width={400} />
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${session.hrBySet.length}, 1fr)`, gap: 8, marginTop: 8 }}>
+            {session.hrBySet.map(s => (
+              <div key={s.set} style={{ borderRadius: 8, padding: 8, textAlign: 'center', background: T.panel2, border: `1px solid ${T.border}` }}>
+                <div style={{ fontSize: 9, color: T.text3 }}>{s.set}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: PURPLE }}>{s.avg}</div>
+                <div style={{ fontSize: 9, color: T.text3 }}>peak {s.peak}</div>
+              </div>
+            ))}
+          </div>
+        </GpsCard>
+
+        <GpsCard T={T} accent={accent} density={density} title="Start → Finish Drop-Off" sub="% change across the session — ideal: minimal drop">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {[
+              { metric: 'Distance', s1: session.distanceBySet[0]?.km ?? 0, s3: session.distanceBySet[session.distanceBySet.length - 1]?.km ?? 0, unit: 'km' },
+              { metric: 'Sprints', s1: session.sprintsPerSet[0]?.n ?? 0, s3: session.sprintsPerSet[session.sprintsPerSet.length - 1]?.n ?? 0, unit: '' },
+              { metric: 'Top speed', s1: firstSpeed, s3: lastSpeed, unit: 'km/h' },
+              { metric: 'HR avg', s1: session.hrBySet[0]?.avg ?? 0, s3: session.hrBySet[session.hrBySet.length - 1]?.avg ?? 0, unit: 'bpm', invert: true },
+            ].map(m => {
+              const delta = m.s1 ? ((m.s3 - m.s1) / m.s1) * 100 : 0
+              const good = m.invert ? delta < 5 : delta > -25
+              return (
+                <div key={m.metric} style={{ borderRadius: 8, padding: 10, background: T.panel2, border: `1px solid ${T.border}` }}>
+                  <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.metric}</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 4 }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{m.s1}{m.unit && ` ${m.unit}`}</div>
+                      <div style={{ fontSize: 10, color: T.text3 }}>→ {m.s3}{m.unit && ` ${m.unit}`}</div>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: good ? T.good : T.bad }}>{delta > 0 ? '+' : ''}{delta.toFixed(0)}%</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </GpsCard>
+      </div>
+    </div>
+  )
+}
+
+function AiBriefPanel({ T, accent, session }: { T: ThemeTokens; accent: AccentTokens; session: GpsSession }) {
+  return (
+    <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderLeft: `4px solid ${accent.hex}`, borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: `1px solid ${T.border}` }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon name="sparkles" size={14} stroke={1.6} style={{ color: accent.hex }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>AI Coaching Brief — GPS + Lumio Vision</span>
+        </div>
+        <span style={{ fontSize: 10, color: T.text3 }}>Generated: just now</span>
+      </div>
+      <div style={{ padding: '14px 16px', fontSize: 13, lineHeight: 1.6, color: T.text2, whiteSpace: 'pre-wrap' }}>{session.brief}</div>
+    </div>
+  )
+}
+
+type Tab = 'gps' | 'brief' | 'movement' | 'fitness' | 'comparison' | 'training'
+
 // ─── Main view ───────────────────────────────────────────────────────────────
 export function HeatmapsView({ T, accent, density }: Common) {
   const firstWithData = PLAYERS.find(p => GPS_VIDEO_DATA[p.id])?.id ?? PLAYERS[0].id
   const [playerId, setPlayerId] = useState(firstWithData)
 
   const data = GPS_VIDEO_DATA[playerId]
-  const sessions = data?.sessions ?? []
+  const allSessions = (data?.sessions ?? []).slice().sort((a, b) => b.date.localeCompare(a.date))
 
-  const [matchId, setMatchId] = useState(sessions[0]?.id ?? '')
+  const catOf = (s: GpsSession) => (s.type === 'Camp' ? 'camp' : 'coaching')
+  const [typeFilter, setTypeFilter] = useState<'all' | 'coaching' | 'camp'>('all')
+  const sessions = typeFilter === 'all' ? allSessions : allSessions.filter(s => catOf(s) === typeFilter)
+
+  const [matchId, setMatchId] = useState(allSessions[0]?.id ?? '')
   const [setSel, setSetSel] = useState<'full' | 'set1' | 'set2' | 'set3'>('full')
   const [doublesView, setDoublesView] = useState(false)
   const [movementMode, setMovementMode] = useState<'serve' | 'return' | 'rally' | 'net'>('rally')
-  const [serveSide, setServeSide] = useState<'deuce' | 'ad'>('deuce')
-  const [serveType, setServeType] = useState<'first' | 'second'>('first')
   const [trainingIdx, setTrainingIdx] = useState(0)
   const [compareA, setCompareA] = useState(0)
   const [compareB, setCompareB] = useState(1)
-  const [tab, setTab] = useState(1)   // active heatmap section (1–6); player/session pickers stay above it
+  const [tab, setTab] = useState<Tab>('gps')
 
   const player = PLAYERS.find(p => p.id === playerId)
   const session = sessions.find(s => s.id === matchId) ?? sessions[0]
+  const hasSets = session?.type === 'Match'   // only matches carry Set 1/2/3
 
   const onPlayer = (id: string) => {
     setPlayerId(id)
-    const ns = GPS_VIDEO_DATA[id]?.sessions ?? []
-    setMatchId(ns[0]?.id ?? '')
+    const ns = (GPS_VIDEO_DATA[id]?.sessions ?? []).slice().sort((a, b) => b.date.localeCompare(a.date))
+    const filtered = typeFilter === 'all' ? ns : ns.filter(s => catOf(s) === typeFilter)
+    setMatchId((filtered[0] ?? ns[0])?.id ?? '')
     setCompareA(0)
     setCompareB(Math.min(1, ns.length - 1))
+  }
+
+  const onTypeFilter = (f: 'all' | 'coaching' | 'camp') => {
+    setTypeFilter(f)
+    const filtered = f === 'all' ? allSessions : allSessions.filter(s => catOf(s) === f)
+    setMatchId(filtered[0]?.id ?? '')
+    if (f === 'camp') setSetSel('full')
   }
 
   const selectStyle: CSSProperties = {
@@ -467,10 +583,9 @@ export function HeatmapsView({ T, accent, density }: Common) {
       {children}
     </div>
   )
-  // Each section is its own tab — render only the active one. (The pickers and
-  // set/court controls live above the tab bar, so they apply to whichever tab is open.)
-  const Section = ({ n, title, sub, children }: { n: number; title: string; sub?: string; children: ReactNode }) => (
-    tab !== n ? null : (
+  // Each heatmap section is its own tab — render only the active one.
+  const Section = ({ id, n, title, sub, children }: { id: Tab; n: number; title: string; sub?: string; children: ReactNode }) => (
+    tab !== id ? null : (
     <section style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 16 }}>
         <div>
@@ -498,7 +613,6 @@ export function HeatmapsView({ T, accent, density }: Common) {
   const CW = 600, CH = 1100
   const matchOpt = (s: GpsSession) => `${s.date} · ${s.label}`
 
-  // Player + session pickers always visible.
   const pickers = (
     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
       <div style={{ minWidth: 200 }}>
@@ -509,7 +623,7 @@ export function HeatmapsView({ T, accent, density }: Common) {
       </div>
       <div style={{ minWidth: 260 }}>
         <label style={labelStyle}>Session</label>
-        <select style={selectStyle} value={matchId} onChange={e => setMatchId(e.target.value)} disabled={sessions.length === 0}>
+        <select style={selectStyle} value={session?.id ?? ''} onChange={e => setMatchId(e.target.value)} disabled={sessions.length === 0}>
           {sessions.length === 0 && <option>—</option>}
           {sessions.map(s => <option key={s.id} value={s.id}>{matchOpt(s)}</option>)}
         </select>
@@ -524,12 +638,12 @@ export function HeatmapsView({ T, accent, density }: Common) {
           <Icon name="flame" size={20} stroke={1.7} style={{ color: accent.hex }} />
         </div>
         <div>
-          <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Heatmaps</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Court coverage, serve placement, return &amp; rally — per player, by session and surface.</p>
+          <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>GPS &amp; Heatmaps</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Movement load, court coverage and GPS stats — per player, by session.</p>
         </div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '4px 9px', borderRadius: 999, background: accent.dim, color: accent.hex, border: `1px solid ${accent.border}` }}>10Hz GPS · Lumio Vision</span>
+        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '4px 9px', borderRadius: 999, background: accent.dim, color: accent.hex, border: `1px solid ${accent.border}` }}>10Hz GPS · Lumio Tracker</span>
         <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '4px 9px', borderRadius: 999, background: 'rgba(34,197,94,0.12)', color: T.good, border: `1px solid ${T.good}` }}>Synced 8 min ago</span>
       </div>
     </div>
@@ -542,14 +656,14 @@ export function HeatmapsView({ T, accent, density }: Common) {
         {pickers}
         <div style={{ background: T.panel, border: `1px dashed ${T.border}`, borderRadius: density.radius, padding: '40px 20px', textAlign: 'center' }}>
           <Icon name="flame" size={26} stroke={1.4} style={{ color: T.text3 }} />
-          <div style={{ fontSize: 14, fontWeight: 600, color: T.text, marginTop: 10 }}>No session data logged for {player?.name ?? 'this player'} yet</div>
-          <div style={{ fontSize: 12, color: T.text3, marginTop: 4 }}>Heatmaps appear once this player has trained or played with Lumio GPS Tracker + Lumio Vision.</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: T.text, marginTop: 10 }}>No {typeFilter === 'camp' ? 'camp ' : ''}session data for {player?.name ?? 'this player'} yet</div>
+          <div style={{ fontSize: 12, color: T.text3, marginTop: 4 }}>Sessions appear once this player has trained or played with Lumio GPS Tracker + Lumio Vision.</div>
         </div>
       </div>
     )
   }
 
-  // ─── derived, per-player headline numbers ─────────────────────────────────
+  // ─── derived headline numbers for the Court Movement section ───────────────
   const seed = `${playerId}-${session.id}-${setSel}`
   const pick = (key: string, salt: number, lo: number, hi: number) => lo + tennisHash(`${playerId}-${session.id}-${key}`, salt) * (hi - lo)
   const baselinePct = Math.round(session.courtZones.slice(0, 3).reduce((a, z) => a + z.pct, 0))
@@ -565,40 +679,41 @@ export function HeatmapsView({ T, accent, density }: Common) {
     ? [{ x: 0.5, y: 0.92, weight: 1 }, { x: 0.32, y: 0.92, weight: 0.7 }, { x: 0.68, y: 0.92, weight: 0.7 }]
     : TENNIS_RECOVERY_ANCHORS
 
-  // Academy-appropriate serve speeds (NOT pro tour), scaled by group + age.
-  const serveBase = player?.group === 'Performance' ? 130 : player?.group === 'Adult' ? 115 : 90
-  const ageAdj = ((player?.age ?? 10) - 10) * 2
-  const firstSpeed = Math.round(serveBase + ageAdj + pick('srv', 5, 0, 10))
-  const secondSpeed = Math.round(firstSpeed * 0.74)
-  const firstInPct = Math.round(pick('fin', 7, 58, 70))
-  const secondInPct = Math.round(pick('sin', 11, 88, 95))
-  const aces = Math.max(0, Math.round(session.sprintCount / 16))
-  const dfs = 1 + Math.round(pick('df', 13, 0, 2))
-  const wideTSplit = Math.round(pick('wts', 17, 46, 58))
-
-  // rally-length splits (vary per player/session)
-  const rShort = Math.round(pick('rshort', 19, 38, 48))
-  const rMid = Math.round(pick('rmid', 23, 32, 40))
-  const rLong = Math.max(8, 100 - rShort - rMid)
-
   const matchSeed = `${playerId}-${session.id}-${setSel}`
+  const periodLabel = setSel === 'full' ? 'Full session' : setSel.replace('set', 'Set ')
+
+  const tabs: [Tab, string][] = [
+    ['gps', 'GPS Stats'], ['brief', 'AI Brief'],
+    ['movement', '1 · Court Movement'], ['fitness', '2 · Movement & Fitness'],
+    ['comparison', '3 · Comparison'], ['training', '4 · Training'],
+  ]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap * 1.6 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap * 1.4 }}>
       {header}
 
-      {/* Player + match/set/court controls */}
+      {/* Pickers + two-control selector */}
       <HCard>
         <div style={{ marginBottom: 12 }}>{pickers}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
           <div>
-            <label style={labelStyle}>Set</label>
+            <label style={labelStyle}>Session type</label>
             <div style={{ display: 'flex', gap: 6 }}>
-              {(['full', 'set1', 'set2', 'set3'] as const).map(s => (
-                <button key={s} onClick={() => setSetSel(s)} style={seg(setSel === s)}>{s === 'full' ? 'Full' : s.replace('set', 'Set ')}</button>
+              {([['all', 'All'], ['coaching', 'Coaching'], ['camp', 'Camp']] as [typeof typeFilter, string][]).map(([v, lbl]) => (
+                <button key={v} onClick={() => onTypeFilter(v)} style={seg(typeFilter === v)}>{lbl}</button>
               ))}
             </div>
           </div>
+          {hasSets && (
+            <div>
+              <label style={labelStyle}>Period</label>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {(['full', 'set1', 'set2', 'set3'] as const).map(s => (
+                  <button key={s} onClick={() => setSetSel(s)} style={seg(setSel === s)}>{s === 'full' ? 'Full' : s.replace('set', 'Set ')}</button>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <label style={labelStyle}>Court</label>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -610,9 +725,9 @@ export function HeatmapsView({ T, accent, density }: Common) {
         </div>
       </HCard>
 
-      {/* section tabs — each heatmap section is its own screen */}
+      {/* tab bar */}
       <div style={{ display: 'flex', gap: 4, padding: 3, background: T.hover, borderRadius: 9, width: 'fit-content', flexWrap: 'wrap' }}>
-        {([[1, '1 · Court Movement'], [2, '2 · Serve Placement'], [3, '3 · Returns & Rally'], [4, '4 · Movement & Fitness'], [5, '5 · Comparison'], [6, '6 · Training']] as [number, string][]).map(([id, label]) => (
+        {tabs.map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             style={{ appearance: 'none', border: tab === id ? `1px solid ${accent.border}` : '1px solid transparent', padding: '6px 14px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === id ? accent.dim : 'transparent', color: tab === id ? accent.hex : T.text2, fontWeight: tab === id ? 600 : 400 }}>
             {label}
@@ -620,8 +735,59 @@ export function HeatmapsView({ T, accent, density }: Common) {
         ))}
       </div>
 
+      {/* GPS STATS (folded in from the old GPS & Video view) */}
+      {tab === 'gps' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
+          <GpsCard T={T} accent={accent} density={density} title="Selected Session">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 14 }}>
+              {[
+                ['Date', `${session.date}`],
+                ['Type', `${session.type} · ${session.surface}`],
+                ['Duration', `${session.duration} min`],
+                ['Coverage', `${session.distance.toFixed(1)} km · Load ${session.load}`],
+                ['Clips', `${session.clips.length} tagged`],
+              ].map(([l, v]) => (
+                <div key={l}>
+                  <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{l}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginTop: 3 }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </GpsCard>
+          <GpsStatsPanel T={T} accent={accent} density={density} session={session} data={data} />
+          <GpsCard T={T} accent={accent} density={density} title="Session History" sub={`${player?.name ?? ''} · recent tracked sessions`}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ color: T.text3, borderBottom: `1px solid ${T.border}` }}>
+                    {['Date', 'Surface', 'Coverage', 'Load', 'Top speed', 'Outcome'].map((h, i) => (
+                      <th key={h} style={{ textAlign: i > 1 ? 'right' : 'left', padding: '6px 8px', fontWeight: 600 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.history.map((r, i) => (
+                    <tr key={i} style={{ borderBottom: `1px solid ${T.border}` }}>
+                      <td style={{ padding: '7px 8px', color: T.text2 }}>{r.date}</td>
+                      <td style={{ padding: '7px 8px', color: T.text3 }}>{r.surface}</td>
+                      <td style={{ padding: '7px 8px', textAlign: 'right', color: T.text, fontWeight: 600 }}>{r.coverage}</td>
+                      <td style={{ padding: '7px 8px', textAlign: 'right', color: r.load > 80 ? T.bad : r.load > 60 ? T.warn : T.good }}>{r.load}</td>
+                      <td style={{ padding: '7px 8px', textAlign: 'right', color: T.text2 }}>{r.speed}</td>
+                      <td style={{ padding: '7px 8px', textAlign: 'right', color: r.win === true ? T.good : r.win === false ? T.bad : T.text3 }}>{r.outcome}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </GpsCard>
+        </div>
+      )}
+
+      {/* AI BRIEF */}
+      {tab === 'brief' && <AiBriefPanel T={T} accent={accent} session={session} />}
+
       {/* 1 · COURT MOVEMENT */}
-      <Section n={1} title="Court Movement Heatmap" sub="Where the player held position, by phase. Toggle serve, return, rally, and net approach.">
+      <Section id="movement" n={1} title="Court Movement Heatmap" sub="Where the player held position, by phase. Toggle serve, return, rally, and net approach.">
         <HCard>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -631,7 +797,7 @@ export function HeatmapsView({ T, accent, density }: Common) {
                 </button>
               ))}
             </div>
-            <div style={{ fontSize: 10, color: T.text3 }}>{session.label} · {setSel === 'full' ? 'Full session' : setSel.replace('set', 'Set ')}</div>
+            <div style={{ fontSize: 10, color: T.text3 }}>{session.label} · {hasSets ? periodLabel : 'Full session'}</div>
           </div>
           <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -649,99 +815,8 @@ export function HeatmapsView({ T, accent, density }: Common) {
         </HCard>
       </Section>
 
-      {/* 2 · SERVE PLACEMENT */}
-      <Section n={2} title="Serve Placement Heatmap" sub="Service-box landing zones with win % per zone. Toggle deuce/ad and 1st/2nd serve.">
-        <HCard>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {(['deuce', 'ad'] as const).map(s => (
-                <button key={s} onClick={() => setServeSide(s)} style={{ ...seg(serveSide === s), flex: 'none', padding: '6px 12px', textTransform: 'capitalize' }}>{s} side</button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {(['first', 'second'] as const).map(s => (
-                <button key={s} onClick={() => setServeType(s)} style={{ ...seg(serveType === s), flex: 'none', padding: '6px 12px', textTransform: 'capitalize' }}>{s} serve</button>
-              ))}
-            </div>
-          </div>
-          <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ maxWidth: 360, width: '100%' }}>
-                <ServePlacementMap width={CW} height={CH} seed={`${matchSeed}-${serveSide}-${serveType}`} side={serveSide} serveType={serveType} accentHex={accent.hex} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <StatTile label={`${serveSide} · ${serveType === 'first' ? '1st' : '2nd'} serve`} value={`${serveType === 'first' ? firstInPct : secondInPct}%`} sub={`In-court rate · target ${serveType === 'first' ? firstInPct + 4 : Math.min(98, secondInPct + 3)}%`} />
-              <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px' }}>
-                <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Wide vs T split</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                  <div style={{ flex: 1, height: 12, borderRadius: 999, background: T.hover }}>
-                    <div style={{ height: 12, borderRadius: 999, width: `${wideTSplit}%`, background: accent.hex }} />
-                  </div>
-                  <span style={{ fontSize: 10, color: T.text, fontWeight: 700 }}>{wideTSplit} / {100 - wideTSplit}</span>
-                </div>
-                <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>Slight bias to {serveSide === 'deuce' ? 'wide' : 'T'} on this side</div>
-              </div>
-              <StatTile label="Avg speed (km/h)" value={`${serveType === 'first' ? firstSpeed : secondSpeed}`} sub={serveType === 'first' ? `Top: ${firstSpeed + 8} km/h` : `Kick avg · top ${secondSpeed + 10} km/h`} />
-              <StatTile label="Aces · Double faults" value={`${aces} · ${dfs}`} sub="This session" />
-            </div>
-          </div>
-        </HCard>
-      </Section>
-
-      {/* 3 · RETURN & RALLY */}
-      <Section n={3} title="Return &amp; Rally Heatmap" sub="Where returns were hit from, where winners landed, and where unforced errors went.">
-        <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
-          <HCard title="Return Positions" sub="Bigger / hotter dots = more aggressive return">
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ maxWidth: 300, width: '100%' }}>
-                <ReturnMap width={CW} height={CH} seed={`${matchSeed}-rtn`} accentHex={accent.hex} />
-              </div>
-            </div>
-          </HCard>
-          <HCard title="Rally Length Heatmap" sub="Where points were won/lost — short rallies (≤3) vs long (8+)">
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ maxWidth: 300, width: '100%' }}>
-                <CourtPositionalHeatmap width={CW} height={CH} seed={`${matchSeed}-rallylen`} anchors={[
-                  { x: 0.4, y: 0.84, weight: 0.95 }, { x: 0.62, y: 0.84, weight: 0.85 }, { x: 0.5, y: 0.7, weight: 0.55 }, { x: 0.5, y: 0.5, weight: 0.35 },
-                ]} />
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
-              {[['Short (≤3)', rShort, T.good], ['Mid (4–7)', rMid, T.warn], ['Long (8+)', rLong, T.bad]].map(([lbl, v, c]) => (
-                <div key={lbl as string} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: 8, textAlign: 'center' }}>
-                  <div style={{ fontSize: 9, color: T.text3 }}>{lbl}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{v}%</div>
-                  <div style={{ fontSize: 10, color: c as string }}>won {Math.round((v as number) * 1.4)}%</div>
-                </div>
-              ))}
-            </div>
-          </HCard>
-        </div>
-        <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
-          <HCard title="Winner Placement" sub="Where winners landed on the opponent's side">
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ maxWidth: 300, width: '100%' }}><WinnerErrorMap width={CW} height={CH} seed={`${matchSeed}-w`} mode="winners" /></div>
-            </div>
-          </HCard>
-          <HCard title="Error Zones" sub="Where unforced errors were hit (✗ = error landing zone)">
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ maxWidth: 300, width: '100%' }}><WinnerErrorMap width={CW} height={CH} seed={`${matchSeed}-e`} mode="errors" /></div>
-            </div>
-          </HCard>
-        </div>
-      </Section>
-
-      {/* 4 · MOVEMENT & FITNESS */}
-      <Section n={4} title="Movement &amp; Fitness Heatmap" sub="Distance, court coverage, sprint pattern, recovery position, and speed-zone breakdown.">
-        <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
-          <HCard title="Distance Covered per Set" sub="Bar height = km · colour = average intensity">
-            <DistanceBySetBars T={T} sets={session.distanceBySet} />
-          </HCard>
-          <HCard title="Distance by Speed Zone" sub="Time-share across speed bands">
-            <SpeedZoneBars T={T} zones={data.speedZones} />
-          </HCard>
-        </div>
+      {/* 2 · MOVEMENT & FITNESS — spatial maps only (analytics live in GPS Stats) */}
+      <Section id="fitness" n={2} title="Movement &amp; Fitness Heatmap" sub="Court coverage, sprint pattern, and recovery position. (Distance/speed analytics are in the GPS Stats tab.)">
         <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
           <HCard title="Court Coverage (12 zones)" sub="% time spent in each of 12 zones on the player's half">
             <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -761,20 +836,20 @@ export function HeatmapsView({ T, accent, density }: Common) {
         </HCard>
       </Section>
 
-      {/* 5 · SESSION-BY-SESSION COMPARISON */}
-      <Section n={5} title="Session-by-Session Comparison" sub="Compare two of this player's sessions, season trend, and movement by surface.">
+      {/* 3 · SESSION-BY-SESSION COMPARISON */}
+      <Section id="comparison" n={3} title="Session-by-Session Comparison" sub="Compare two of this player's sessions, season trend, and movement by surface.">
         <HCard title="Side-by-Side Court Heatmaps">
           <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <select style={selectStyle} value={compareA} onChange={e => setCompareA(Number(e.target.value))}>
-              {sessions.map((s, i) => <option key={s.id} value={i}>{matchOpt(s)}</option>)}
+              {allSessions.map((s, i) => <option key={s.id} value={i}>{matchOpt(s)}</option>)}
             </select>
             <select style={selectStyle} value={compareB} onChange={e => setCompareB(Number(e.target.value))}>
-              {sessions.map((s, i) => <option key={s.id} value={i}>{matchOpt(s)}</option>)}
+              {allSessions.map((s, i) => <option key={s.id} value={i}>{matchOpt(s)}</option>)}
             </select>
           </div>
           <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
             {[compareA, compareB].map((mIdx, slot) => {
-              const cs = sessions[mIdx]
+              const cs = allSessions[mIdx]
               return (
                 <div key={slot}>
                   <div style={{ fontSize: 11, color: T.text3, marginBottom: 4 }}>{cs ? matchOpt(cs) : '—'}</div>
@@ -846,8 +921,8 @@ export function HeatmapsView({ T, accent, density }: Common) {
         </HCard>
       </Section>
 
-      {/* 6 · TRAINING SESSION */}
-      <Section n={6} title="Training Session Heatmap" sub="Drill placement, footwork intensity, and weekly load microcycle.">
+      {/* 4 · TRAINING SESSION */}
+      <Section id="training" n={4} title="Training Session Heatmap" sub="Drill placement, footwork intensity, and weekly load microcycle.">
         <div style={{ maxWidth: 360 }}>
           <label style={labelStyle}>Training block</label>
           <select style={selectStyle} value={trainingIdx} onChange={e => setTrainingIdx(Number(e.target.value))}>

@@ -30,7 +30,7 @@ import {
 import { SessionPlannerView } from './_components/SessionPlanner'
 import { CourtPlannerView } from './_components/CourtPlanner'
 import { EquipmentView } from './_components/Equipment'
-import { GpsVideoView } from './_components/CoachGpsVideo'
+import { VideoAudioView } from './_components/CoachVideoAudio'
 import { HeatmapsView } from './_components/CoachHeatmaps'
 import { StaffView } from './_components/StaffView'
 import { CoachMobileShell } from './_components/CoachMobileShell'
@@ -163,8 +163,8 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
       case 'venues':      return <CourtPlannerView T={T} accent={accent} density={density} />
       case 'camps':       return <CampsView T={T} accent={accent} density={density} />
       case 'roster':      return <RosterView T={T} accent={accent} density={density} />
-      case 'gpsvideo':    return <GpsVideoView T={T} accent={accent} density={density} />
-      case 'heatmaps':    return <HeatmapsView T={T} accent={accent} density={density} />
+      case 'videoaudio':  return <VideoAudioView T={T} accent={accent} density={density} />
+      case 'gpsheatmaps': return <HeatmapsView T={T} accent={accent} density={density} />
       case 'messages':    return <MessagesView T={T} accent={accent} density={density} />
       case 'resources':   return <ResourcesView T={T} accent={accent} density={density} />
       case 'equipment':   return <EquipmentView T={T} accent={accent} density={density} />
