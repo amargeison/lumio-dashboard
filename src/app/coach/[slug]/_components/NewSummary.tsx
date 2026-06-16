@@ -118,7 +118,7 @@ export function NewSummaryModal({ T, accent, players, onClose, onCreated }: { T:
           <Field label="Drills used" hint="One per line"><textarea style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} rows={3} value={drills} onChange={e => setDrills(e.target.value)} /></Field>
 
           {beltSkills.length > 0 && (
-            <Field label="Skills worked (belt system)" hint="Tap to tag">
+            <Field label="Skills worked (racket system)" hint="Tap to tag">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {beltSkills.map(s => {
                   const on = skills.has(s.id)

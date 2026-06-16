@@ -31,6 +31,13 @@ export function getAddedSessions(): TodaySession[] {
   return read()
 }
 
+// The built session (if any) created from a given booking. Phase 1 sets no
+// bookingId on created sessions, so this returns undefined until Phase 2 wires
+// the "build session from booking" flow.
+export function getSessionForBooking(bookingId: string): TodaySession | undefined {
+  return read().find(s => s.bookingId === bookingId)
+}
+
 export function addSession(s: TodaySession) {
   write([s, ...read()])
 }

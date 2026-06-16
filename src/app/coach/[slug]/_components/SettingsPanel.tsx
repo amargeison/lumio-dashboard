@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
 import { setSettings, resetSettings, ACCENT_PRESETS, type AccentKey } from '../_lib/settings-store'
+import { COACH_SIDEBAR, COACH_GROUPS } from '../_lib/coach-data'
+import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -72,15 +74,20 @@ export function SettingsPanel({ T, accent, density }: Common) {
   const s = useCoachSettings()
   const [open, setOpen] = useState<string | null>(null)
 
+  const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
+  useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
+  const shownCount = COACH_SIDEBAR.filter(i => !hiddenMenu.includes(i.id)).length
+
   const sharingList = [s.shareHomework && 'homework', s.shareNextFocus && 'next focus', s.shareCoachNote && 'coach note'].filter(Boolean).join(', ') || 'nothing'
 
   const cards = [
     { id: 'academy',     icon: 'shield',    t: 'Academy profile',     d: `${s.academy} · ${s.cert}` },
-    { id: 'belts',       icon: 'trophy',    t: 'Belt criteria',       d: `Award belt at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
+    { id: 'belts',       icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
     { id: 'availability',icon: 'calendar',  t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
     { id: 'pricing',     icon: 'pound',     t: 'Pricing & packages',  d: `Private £${s.privateRate}/hr · packs & renewals` },
     { id: 'sharing',     icon: 'megaphone', t: 'Parent sharing',      d: `Shares include: ${sharingList}` },
     { id: 'appearance',  icon: 'settings',  t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
+    { id: 'menu',        icon: 'eye',       t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
   ]
 
   return (
@@ -117,13 +124,13 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'belts' && (
-        <Modal T={T} accent={accent} title="Belt criteria" sub="When does a belt count as earned?" onClose={() => setOpen(null)}>
-          <Field T={T} label="Award a belt when every skill reaches" hint="Affects belt progress % everywhere — try it, then open Player Development.">
+        <Modal T={T} accent={accent} title="Racket criteria" sub="When does a racket count as earned?" onClose={() => setOpen(null)}>
+          <Field T={T} label="Award a racket when every skill reaches" hint="Affects racket progress % everywhere — try it, then open Player Development.">
             <Seg T={T} accent={accent} value={s.awardThreshold}
               options={[{ v: 3, label: 'Consistent' }, { v: 4, label: 'Mastered' }]}
               onChange={v => setSettings({ awardThreshold: v as 3 | 4 })} />
           </Field>
-          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>The skill-to-belt mapping itself is editable in <code>coach-data.ts</code>; a drag-and-drop editor is on the roadmap.</div>
+          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>The skill-to-racket mapping itself is editable in <code>coach-data.ts</code>; a drag-and-drop editor is on the roadmap.</div>
         </Modal>
       )}
 
@@ -176,6 +183,31 @@ export function SettingsPanel({ T, accent, density }: Common) {
           <Field T={T} label="Density">
             <Seg T={T} accent={accent} value={s.density} options={[{ v: 'compact', label: 'Compact' }, { v: 'regular', label: 'Regular' }, { v: 'spacious', label: 'Spacious' }]} onChange={v => setSettings({ density: v as 'compact' | 'regular' | 'spacious' })} />
           </Field>
+        </Modal>
+      )}
+
+      {open === 'menu' && (
+        <Modal T={T} accent={accent} title="Menu visibility" sub="Hide nav items you don't use — they leave the sidebar instantly. Dashboard and Settings always stay." onClose={() => setOpen(null)}>
+          {COACH_GROUPS.map(group => {
+            const items = COACH_SIDEBAR.filter(i => i.group === group)
+            if (!items.length) return null
+            return (
+              <div key={group} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{group}</div>
+                {items.map(item => {
+                  const locked = ALWAYS_VISIBLE.includes(item.id)
+                  if (locked) return (
+                    <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 8, opacity: 0.65 }}>
+                      <Icon name={item.icon} size={15} stroke={1.7} style={{ color: T.text3 }} />
+                      <div style={{ flex: 1, fontSize: 12.5, color: T.text, fontWeight: 600 }}>{item.label}</div>
+                      <span style={{ fontSize: 9.5, color: T.text3, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Always on</span>
+                    </div>
+                  )
+                  return <Toggle key={item.id} T={T} accent={accent} on={!hiddenMenu.includes(item.id)} onChange={v => setMenuHidden(item.id, !v)} label={item.label} />
+                })}
+              </div>
+            )
+          })}
         </Modal>
       )}
     </div>

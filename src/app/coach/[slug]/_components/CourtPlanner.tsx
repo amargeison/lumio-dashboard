@@ -1,10 +1,12 @@
 'use client'
 
-import { type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { VENUES, type CourtStatus } from '../_lib/coach-data'
+import { VENUES, type CourtStatus, type Venue } from '../_lib/coach-data'
+import { getAddedVenues, subscribe as subscribeVenues } from '../_lib/venues-store'
+import { AddVenueModal } from './AddVenueModal'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -16,21 +18,31 @@ export function CourtPlannerView({ T, accent, density }: Common) {
   const statusColour = (s: CourtStatus) => s === 'free' ? T.good : s === 'lesson' ? accent.hex : s === 'booked' ? T.warn : T.bad
   const statusLabel = (s: CourtStatus) => s === 'free' ? 'Free' : s === 'lesson' ? 'Your lesson' : s === 'booked' ? 'Booked' : 'Maintenance'
 
-  const allCourts = VENUES.flatMap(v => v.courts)
+  const [addedVenues, setAddedVenues] = useState<Venue[]>([])
+  const [addOpen, setAddOpen] = useState(false)
+  useEffect(() => { const r = () => setAddedVenues(getAddedVenues()); r(); return subscribeVenues(r) }, [])
+
+  const venues = [...VENUES, ...addedVenues]
+  const allCourts = venues.flatMap(v => v.courts)
   const freeNow = allCourts.filter(c => c.status === 'free').length
   const yours = allCourts.filter(c => c.status === 'lesson').length
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Court Planner</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>The sites you coach across — contacts, facilities and live court availability. (Customer bookings live in the Booking Calendar.)</p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Court Planner</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>The sites you coach across — contacts, facilities and live court availability. (Customer bookings live in the Booking Calendar.)</p>
+        </div>
+        <button onClick={() => setAddOpen(true)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+          <Icon name="plus" size={14} stroke={2} /> Add venue
+        </button>
       </div>
 
       {/* summary */}
       <div style={{ display: 'flex', gap: density.gap, marginBottom: density.gap, flexWrap: 'wrap' }}>
         {[
-          { l: 'Sites', v: VENUES.length, c: T.text },
+          { l: 'Sites', v: venues.length, c: T.text },
           { l: 'Courts total', v: allCourts.length, c: T.text },
           { l: 'Free right now', v: freeNow, c: T.good },
           { l: 'Your lessons on', v: yours, c: accent.hex },
@@ -44,7 +56,7 @@ export function CourtPlannerView({ T, accent, density }: Common) {
 
       {/* venues */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(440px, 1fr))', gap: density.gap }} className="cm-venues">
-        {VENUES.map(v => (
+        {venues.map(v => (
           <Card key={v.id} T={T} density={density}>
             {/* header */}
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 12 }}>
@@ -115,6 +127,8 @@ export function CourtPlannerView({ T, accent, density }: Common) {
           <span key={s} style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: statusColour(s) }} />{statusLabel(s)}</span>
         ))}
       </div>
+
+      {addOpen && <AddVenueModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>
   )
 }

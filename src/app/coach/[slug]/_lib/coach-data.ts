@@ -22,6 +22,20 @@ export const COACH_ORG = {
   season:     { activePlayers: 34, lessonsThisWeek: 41, retention: 92, beltsAwarded: 7 },
 } as const
 
+// ─── Demo date anchor ────────────────────────────────────────────────────────
+// Deterministic "today" for the demo — fixed constants, never new Date(), so the
+// portal renders identically regardless of the real clock. The demo week runs
+// Mon 8 Jun → Sun 14 Jun 2026; "today" is Thursday the 11th (= COACH_ORG.date).
+export const WEEK_START = '2026-06-08'   // Monday of the demo week
+export const TODAY = '2026-06-11'        // Thursday — the portal's "today"
+
+// Calendar date for a weekday index (0=Mon … 6=Sun) within the demo week. Pure
+// string arithmetic (no Date()) — valid because the whole week sits inside June.
+export function dateForDay(dayIndex: number): string {
+  const [y, m, d] = WEEK_START.split('-').map(Number)
+  return `${y}-${String(m).padStart(2, '0')}-${String(d + dayIndex).padStart(2, '0')}`
+}
+
 // ─── Top stat tiles ────────────────────────────────────────────────────────
 export type CoachStatTone = 'urgent' | 'warn' | 'danger' | 'ok' | 'accent'
 export type CoachStatTile = { label: string; value: string | number; sub: string; tone: CoachStatTone }
@@ -30,7 +44,7 @@ export const COACH_TOP_STATS: CoachStatTile[] = [
   { label: 'Sessions today', value: 7,       sub: '2 group · 5 private', tone: 'accent' },
   { label: 'Next lesson',    value: '09:00', sub: 'Mia Chen · Court 2',  tone: 'urgent' },
   { label: 'Active players', value: 34,      sub: '+3 this month',       tone: 'ok' },
-  { label: 'Belts due',      value: 4,       sub: 'assessments pending', tone: 'warn' },
+  { label: 'Rackets due',    value: 4,       sub: 'assessments pending', tone: 'warn' },
   { label: 'Utilisation',    value: '88%',   sub: 'court hours booked',  tone: 'accent' },
 ]
 
@@ -312,17 +326,20 @@ export type Player = {
   parent?: string
   status: 'green' | 'amber' | 'red'   // development flag
   trend: 'up' | 'flat' | 'down'
+  coachId: string            // the coach this player is assigned to (id in COACHES)
 }
 
+// Pete's assigned players. PLAYERS stays his roster so his roster/dashboard/right-rail
+// are unchanged; the rest of the club's players live in coaches-data.ts (STAFF_PLAYERS).
 export const PLAYERS: Player[] = [
-  { id: 'p1', name: 'Mia Chen',        initials: 'MC', age: 9,  group: 'Junior',      beltIndex: 2, seed: 3, goal: 'First serve over the net consistently', attendance: 96, nextSession: 'Today 09:00', parent: 'Lily Chen',    status: 'green', trend: 'up'   },
-  { id: 'p2', name: 'Tom Okafor',      initials: 'TO', age: 12, group: 'Performance', beltIndex: 4, seed: 7, goal: 'Reliable kick second serve',             attendance: 91, nextSession: 'Today 10:30', parent: 'Grace Okafor', status: 'green', trend: 'up'   },
-  { id: 'p3', name: 'Ava Romero',      initials: 'AR', age: 8,  group: 'Junior',      beltIndex: 1, seed: 2, goal: 'Rally 10 balls cross-court',            attendance: 88, nextSession: 'Today 16:00', parent: 'Sofia Romero', status: 'amber', trend: 'flat' },
-  { id: 'p4', name: 'Leo Whitfield',   initials: 'LW', age: 14, group: 'Performance', beltIndex: 6, seed: 5, goal: 'Build serve+1 forehand pattern',        attendance: 94, nextSession: 'Tomorrow 17:00', status: 'green', trend: 'up'   },
-  { id: 'p5', name: 'Hannah Berg',     initials: 'HB', age: 11, group: 'Junior',      beltIndex: 3, seed: 9, goal: 'Add topspin shape to forehand',         attendance: 79, nextSession: 'Fri 15:30',   parent: 'Mark Berg',    status: 'red',   trend: 'down' },
-  { id: 'p6', name: 'Daniel Cruz',     initials: 'DC', age: 16, group: 'Performance', beltIndex: 7, seed: 4, goal: 'Win first county-level match',          attendance: 97, nextSession: 'Today 18:00', status: 'green', trend: 'up'   },
-  { id: 'p7', name: 'Priya Patel',     initials: 'PP', age: 38, group: 'Adult',       beltIndex: 3, seed: 6, goal: 'Consistent doubles serve & volley',     attendance: 85, nextSession: 'Sat 11:00',   status: 'green', trend: 'flat' },
-  { id: 'p8', name: 'James Whitlock',  initials: 'JW', age: 10, group: 'Junior',      beltIndex: 2, seed: 8, goal: 'Backhand volley at the net',            attendance: 90, nextSession: 'Fri 16:30',   parent: 'Anna Whitlock', status: 'amber', trend: 'up'   },
+  { id: 'p1', name: 'Mia Chen',        initials: 'MC', age: 9,  group: 'Junior',      beltIndex: 2, seed: 3, goal: 'First serve over the net consistently', attendance: 96, nextSession: 'Today 09:00', parent: 'Lily Chen',    status: 'green', trend: 'up',   coachId: 'pete' },
+  { id: 'p2', name: 'Tom Okafor',      initials: 'TO', age: 12, group: 'Performance', beltIndex: 4, seed: 7, goal: 'Reliable kick second serve',             attendance: 91, nextSession: 'Today 10:30', parent: 'Grace Okafor', status: 'green', trend: 'up',   coachId: 'pete' },
+  { id: 'p3', name: 'Ava Romero',      initials: 'AR', age: 8,  group: 'Junior',      beltIndex: 1, seed: 2, goal: 'Rally 10 balls cross-court',            attendance: 88, nextSession: 'Today 16:00', parent: 'Sofia Romero', status: 'amber', trend: 'flat', coachId: 'pete' },
+  { id: 'p4', name: 'Leo Whitfield',   initials: 'LW', age: 14, group: 'Performance', beltIndex: 6, seed: 5, goal: 'Build serve+1 forehand pattern',        attendance: 94, nextSession: 'Tomorrow 17:00', status: 'green', trend: 'up',   coachId: 'pete' },
+  { id: 'p5', name: 'Hannah Berg',     initials: 'HB', age: 11, group: 'Junior',      beltIndex: 3, seed: 9, goal: 'Add topspin shape to forehand',         attendance: 79, nextSession: 'Fri 15:30',   parent: 'Mark Berg',    status: 'red',   trend: 'down', coachId: 'pete' },
+  { id: 'p6', name: 'Daniel Cruz',     initials: 'DC', age: 16, group: 'Performance', beltIndex: 7, seed: 4, goal: 'Win first county-level match',          attendance: 97, nextSession: 'Today 18:00', status: 'green', trend: 'up',   coachId: 'pete' },
+  { id: 'p7', name: 'Priya Patel',     initials: 'PP', age: 38, group: 'Adult',       beltIndex: 3, seed: 6, goal: 'Consistent doubles serve & volley',     attendance: 85, nextSession: 'Sat 11:00',   status: 'green', trend: 'flat', coachId: 'pete' },
+  { id: 'p8', name: 'James Whitlock',  initials: 'JW', age: 10, group: 'Junior',      beltIndex: 2, seed: 8, goal: 'Backhand volley at the net',            attendance: 90, nextSession: 'Fri 16:30',   parent: 'Anna Whitlock', status: 'amber', trend: 'up',   coachId: 'pete' },
 ]
 
 // ─── Lesson summaries ──────────────────────────────────────────────────────
@@ -383,7 +400,7 @@ export const LESSONS: Lesson[] = [
     skillsWorked: ['serve-flat', 'toss', 'grips'],
     homework: 'Practise 20 tosses a day against a wall mark; keep the continental grip.',
     nextFocus: 'Add a target (wide vs T) once the box rate is steady at 7/10.',
-    coachNote: 'Lovely attitude. Close to her Green belt serve criteria — one more good week.',
+    coachNote: 'Lovely attitude. Close to her Green racket serve criteria — one more good week.',
     rating: 4,
   },
   {
@@ -421,7 +438,7 @@ export const LESSONS: Lesson[] = [
     skillsWorked: ['inside-out', 'approach', 'fh-volley'],
     homework: 'Watch the clip — note 3 moments to approach earlier.',
     nextFocus: 'Pattern: serve+1 inside-out forehand to the open court.',
-    coachNote: 'Brown belt tactics coming together. Ready to compete more.',
+    coachNote: 'Brown racket tactics coming together. Ready to compete more.',
     rating: 5,
   },
 ]
@@ -430,34 +447,42 @@ export const LESSONS: Lesson[] = [
 export type Booking = {
   id: string
   day: number                // 0=Mon … 6=Sun
+  date: string               // 'YYYY-MM-DD' — derived from day via dateForDay()
   start: string              // 'HH:MM'
   end: string
   player: string
   type: 'Private' | 'Group' | 'Cardio' | 'Match play' | 'Block'
   court: string
   status: 'confirmed' | 'pending' | 'cancelled'
+  coachId: string            // which coach owns this booking (id in COACHES; see coaches-data.ts)
 }
 
 export const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 export const DAY_DATES = ['8', '9', '10', '11', '12', '13', '14']  // Jun 2026 week
 export const CAL_HOURS = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00']
 
-export const BOOKINGS: Booking[] = [
-  { id: 'b1', day: 3, start: '09:00', end: '09:45', player: 'Mia Chen',      type: 'Private',    court: 'Court 1', status: 'confirmed' },
-  { id: 'b2', day: 3, start: '10:30', end: '11:30', player: 'Tom Okafor',    type: 'Private',    court: 'Court 2', status: 'confirmed' },
-  { id: 'b3', day: 3, start: '12:00', end: '13:00', player: 'Junior Squad',  type: 'Group',      court: 'Court 1', status: 'confirmed' },
-  { id: 'b4', day: 3, start: '16:00', end: '16:45', player: 'Ava Romero',    type: 'Private',    court: 'Court 3', status: 'confirmed' },
-  { id: 'b5', day: 3, start: '18:00', end: '19:00', player: 'Daniel Cruz',   type: 'Match play', court: 'Court 3', status: 'confirmed' },
-  { id: 'b6', day: 0, start: '15:30', end: '16:30', player: 'Performance Sq', type: 'Group',     court: 'Court 2', status: 'confirmed' },
-  { id: 'b7', day: 1, start: '17:00', end: '18:15', player: 'Leo Whitfield', type: 'Match play', court: 'Court 3', status: 'confirmed' },
-  { id: 'b8', day: 4, start: '15:30', end: '16:30', player: 'Hannah Berg',   type: 'Private',    court: 'Court 4', status: 'pending'   },
-  { id: 'b9', day: 4, start: '16:30', end: '17:15', player: 'James Whitlock',type: 'Private',    court: 'Court 1', status: 'confirmed' },
-  { id: 'b10', day: 5, start: '09:00', end: '10:30', player: 'Cardio Tennis', type: 'Cardio',    court: 'Court 1', status: 'confirmed' },
-  { id: 'b11', day: 5, start: '11:00', end: '12:00', player: 'Priya Patel',  type: 'Private',    court: 'Court 2', status: 'confirmed' },
-  { id: 'b12', day: 2, start: '12:00', end: '14:00', player: 'Admin / Planning', type: 'Block',  court: '—',       status: 'confirmed' },
-  { id: 'b13', day: 0, start: '17:00', end: '18:00', player: 'Adult Group',  type: 'Group',      court: 'Court 4', status: 'confirmed' },
-  { id: 'b14', day: 6, start: '10:00', end: '11:00', player: 'Open coaching', type: 'Block',     court: 'Court 1', status: 'pending'   },
+// Pete's own bookings (the logged-in head coach). BOOKINGS stays his slice so all
+// his existing views are unchanged; the wider team's bookings live in coaches-data.ts.
+const BOOKINGS_SEED: Omit<Booking, 'date'>[] = [
+  { id: 'b1', day: 3, start: '09:00', end: '09:45', player: 'Mia Chen',      type: 'Private',    court: 'Court 1', status: 'confirmed', coachId: 'pete' },
+  { id: 'b2', day: 3, start: '10:30', end: '11:30', player: 'Tom Okafor',    type: 'Private',    court: 'Court 2', status: 'confirmed', coachId: 'pete' },
+  { id: 'b3', day: 3, start: '12:00', end: '13:00', player: 'Junior Squad',  type: 'Group',      court: 'Court 1', status: 'confirmed', coachId: 'pete' },
+  { id: 'b4', day: 3, start: '16:00', end: '16:45', player: 'Ava Romero',    type: 'Private',    court: 'Court 3', status: 'confirmed', coachId: 'pete' },
+  { id: 'b5', day: 3, start: '18:00', end: '19:00', player: 'Daniel Cruz',   type: 'Match play', court: 'Court 3', status: 'confirmed', coachId: 'pete' },
+  { id: 'b6', day: 0, start: '15:30', end: '16:30', player: 'Performance Sq', type: 'Group',     court: 'Court 2', status: 'confirmed', coachId: 'pete' },
+  { id: 'b7', day: 1, start: '17:00', end: '18:15', player: 'Leo Whitfield', type: 'Match play', court: 'Court 3', status: 'confirmed', coachId: 'pete' },
+  { id: 'b8', day: 4, start: '15:30', end: '16:30', player: 'Hannah Berg',   type: 'Private',    court: 'Court 4', status: 'pending',   coachId: 'pete' },
+  { id: 'b9', day: 4, start: '16:30', end: '17:15', player: 'James Whitlock',type: 'Private',    court: 'Court 1', status: 'confirmed', coachId: 'pete' },
+  { id: 'b10', day: 5, start: '09:00', end: '10:30', player: 'Cardio Tennis', type: 'Cardio',    court: 'Court 1', status: 'confirmed', coachId: 'pete' },
+  { id: 'b11', day: 5, start: '11:00', end: '12:00', player: 'Priya Patel',  type: 'Private',    court: 'Court 2', status: 'confirmed', coachId: 'pete' },
+  { id: 'b12', day: 2, start: '12:00', end: '14:00', player: 'Admin / Planning', type: 'Block',  court: '—',       status: 'confirmed', coachId: 'pete' },
+  { id: 'b13', day: 0, start: '17:00', end: '18:00', player: 'Adult Group',  type: 'Group',      court: 'Court 4', status: 'confirmed', coachId: 'pete' },
+  { id: 'b14', day: 6, start: '10:00', end: '11:00', player: 'Open coaching', type: 'Block',     court: 'Court 1', status: 'pending',   coachId: 'pete' },
 ]
+
+// Bookings are the canonical schedule record. Each row's calendar date is derived
+// from its weekday index so we never hand-type dates.
+export const BOOKINGS: Booking[] = BOOKINGS_SEED.map(b => ({ ...b, date: dateForDay(b.day) }))
 
 // ─── Resource centre ────────────────────────────────────────────────────────
 export type Resource = {
@@ -477,7 +502,7 @@ export const RESOURCES: Resource[] = [
   { id: 'r1',  title: 'Split-step & first-move reaction',  category: 'Drill',        level: 'Beginner',     format: 'Video',     duration: '4 min',  belt: 'white',  tags: ['movement','warm-up'],        desc: 'Reaction-cue split-step ladder for foundation movers.', video: 'J1UhPl1UrYs' },
   { id: 'r2',  title: 'Low-to-high topspin forehand',      category: 'Technique',    level: 'Intermediate', format: 'Video',     duration: '7 min',  belt: 'blue',   tags: ['forehand','spin'],           desc: 'Frame-by-frame swing path for heavy topspin.', video: 'KV9DTSNkLAg' },
   { id: 'r3',  title: 'Kick serve in 5 steps',             category: 'Technique',    level: 'Advanced',     format: 'Video',     duration: '9 min',  belt: 'brown',  tags: ['serve','spin'],              desc: 'Build a reliable kick serve from toss to pronation.' },
-  { id: 'r4',  title: '8-week Green-belt block',           category: 'Training plan',level: 'Intermediate', format: 'Plan',      duration: '8 weeks',belt: 'green',  tags: ['serve','periodisation'],     desc: 'Periodised plan to earn the Green belt serve criteria.' },
+  { id: 'r4',  title: '8-week Green-racket block',         category: 'Training plan',level: 'Intermediate', format: 'Plan',      duration: '8 weeks',belt: 'green',  tags: ['serve','periodisation'],     desc: 'Periodised plan to earn the Green racket serve criteria.' },
   { id: 'r5',  title: 'Cross-court rally targets',         category: 'Drill',        level: 'All levels',   format: 'PDF',       duration: '—',      belt: 'yellow', tags: ['consistency','rally'],       desc: 'Printable court targets for rally depth & direction.' },
   { id: 'r6',  title: 'Net play & volley progression',     category: 'Drill',        level: 'Intermediate', format: 'Video',     duration: '6 min',  belt: 'orange', tags: ['volley','net'],              desc: 'Feed sequence from block volley to closing the net.' },
   { id: 'r7',  title: 'Footwork agility ladder set',       category: 'Fitness',      level: 'All levels',   format: 'PDF',       duration: '15 min', tags: ['movement','warm-up'],        desc: 'Off-court ladder routine for split-step speed.' },
@@ -850,7 +875,7 @@ export const DRILL_LIBRARY: Drill[] = [
 export type CoachBriefItem = { tag: string; pri: 'high' | 'med' | 'low'; txt: string }
 
 export const COACH_AI_BRIEF: CoachBriefItem[] = [
-  { tag: 'belts',     pri: 'high', txt: 'Mia Chen is one good serving session from her Green belt — book a belt assessment this week.' },
+  { tag: 'rackets',   pri: 'high', txt: 'Mia Chen is one good serving session from her Green racket — book a racket assessment this week.' },
   { tag: 'retention', pri: 'high', txt: 'Hannah Berg has missed 2 of the last 4 sessions and her trend is down. Suggest a check-in with parents.' },
   { tag: 'schedule',  pri: 'med',  txt: '7 sessions today (09:00–19:00). Court 3 double-booked risk at 18:00 — confirm with desk.' },
   { tag: 'payments',  pri: 'med',  txt: '3 lesson packages expire this month; 2 players have an outstanding balance.' },
@@ -865,7 +890,7 @@ export const COACH_MESSAGES: CoachMessage[] = [
   { from: 'Mark Berg',    role: 'Parent · Hannah',  last: 'Sorry we missed Tuesday — back this week.',                 time: '07:20', unread: 2, urgent: true  },
   { from: 'Riverside Desk', role: 'Venue',          last: 'Court 3 maintenance moved to Friday AM.',                  time: 'Yesterday', unread: 1, urgent: true },
   { from: 'Daniel Cruz',  role: 'Player',           last: 'Confirmed for match play at 18:00 👍',                     time: 'Yesterday', unread: 0, urgent: false },
-  { from: 'Lily Chen',    role: 'Parent · Mia',     last: 'So excited about the belt assessment!',                    time: 'Yesterday', unread: 0, urgent: false },
+  { from: 'Lily Chen',    role: 'Parent · Mia',     last: 'So excited about the racket assessment!',                    time: 'Yesterday', unread: 0, urgent: false },
   { from: 'Adult Group',  role: 'Group · 6 players', last: 'Anyone for an extra Sunday hit?',                         time: 'Tue',       unread: 0, urgent: false },
 ]
 
@@ -898,10 +923,10 @@ export type PackageOffer = {
 export const PACKAGE_OFFERS: PackageOffer[] = [
   { id: 'of-priv10', name: '10-lesson private pack', type: 'Private', sessions: 10, price: 360, per: 'pack',
     desc: 'Ten 1-hour private lessons — best value for committed players.',
-    includes: ['10 × 60-min private lessons', 'Belt progress tracking', 'Lesson summary after each session', 'Saves £20 vs pay-as-you-go'] },
+    includes: ['10 × 60-min private lessons', 'Racket progress tracking', 'Lesson summary after each session', 'Saves £20 vs pay-as-you-go'] },
   { id: 'of-priv5', name: '5-lesson private pack', type: 'Private', sessions: 5, price: 185, per: 'pack',
     desc: 'A five-lesson block to get started or work on a specific goal.',
-    includes: ['5 × 60-min private lessons', 'Starting belt assessment', 'Lesson summaries', 'Flexible scheduling'] },
+    includes: ['5 × 60-min private lessons', 'Starting racket assessment', 'Lesson summaries', 'Flexible scheduling'] },
   { id: 'of-perf', name: 'Performance monthly', type: 'Performance', sessions: 12, price: 240, per: 'month',
     desc: 'Intensive monthly programme for competitive junior players.',
     includes: ['12 sessions per month', 'Match-play & tactical work', 'Fitness & movement block', 'Tournament planning'] },
@@ -910,7 +935,7 @@ export const PACKAGE_OFFERS: PackageOffer[] = [
     includes: ['8 × 60-min lessons', 'Cardio & rally fitness option', 'Doubles tactics', 'Evening slots available'] },
   { id: 'of-group', name: 'Junior group — term', type: 'Group', sessions: 10, price: 150, per: 'term',
     desc: 'Weekly small-group coaching across a 10-week term.',
-    includes: ['10 weekly group sessions', 'Max 6 players per court', 'Belt pathway curriculum', 'End-of-term report'] },
+    includes: ['10 weekly group sessions', 'Max 6 players per court', 'Racket pathway curriculum', 'End-of-term report'] },
   { id: 'of-cardio', name: 'Cardio tennis — 6 pack', type: 'Cardio', sessions: 6, price: 60, per: 'pack',
     desc: 'High-energy, music-led tennis fitness — all levels welcome.',
     includes: ['6 × 45-min cardio sessions', 'All abilities', 'No booking needed — just turn up', 'Great for fitness'] },
@@ -924,10 +949,17 @@ export type TodaySession = {
   id: string; time: string; end: string; player: string; playerId?: string
   type: 'Private' | 'Group' | 'Cardio' | 'Match play' | 'Mini / red ball'
   court: string; mins: number; focus: string; status: 'done' | 'now' | 'upcoming'
+  date: string              // 'YYYY-MM-DD' — the day this session runs
+  bookingId?: string        // the confirmed booking this session traces back to
+  coachId?: string          // the coach running it (from the booking; defaults to the head)
   focusPoints?: string[]; drills?: string[]   // set when created via "New session"
 }
 
-export const TODAY_SESSIONS: TodaySession[] = [
+// Internal seed for today's sessions. Preserves the demo content (focus, status,
+// drills) AND the ts1–ts6 ids the AI Session Review (DEMO_REVIEWS) is keyed by.
+// Bookings are the schedule source of truth; this seed only enriches the derived
+// list below — it is not a parallel schedule.
+const TODAY_SESSION_SEED: Omit<TodaySession, 'date' | 'bookingId'>[] = [
   { id: 'ts1', time: '09:00', end: '09:45', player: 'Mia Chen',     playerId: 'p1', type: 'Private',    court: 'Court 1', mins: 45, focus: 'First serve fundamentals', status: 'done' },
   { id: 'ts2', time: '10:30', end: '11:30', player: 'Tom Okafor',   playerId: 'p2', type: 'Private',    court: 'Court 2', mins: 60, focus: 'Second serve into serve+1 patterns', status: 'now' },
   { id: 'ts3', time: '12:00', end: '13:00', player: 'Junior Squad (6)',              type: 'Group',      court: 'Court 1', mins: 60, focus: 'Rally tolerance & match games', status: 'upcoming' },
@@ -936,13 +968,29 @@ export const TODAY_SESSIONS: TodaySession[] = [
   { id: 'ts6', time: '18:00', end: '19:15', player: 'Daniel Cruz',  playerId: 'p6', type: 'Match play', court: 'Court 3', mins: 75, focus: 'Competitive sets — serve+1 patterns', status: 'upcoming' },
 ]
 
+// The confirmed booking a seed session traces back to: same date (today), same
+// start time, and the booking's player name matches or is a prefix of the
+// session's (bookings say 'Junior Squad'; the session shows 'Junior Squad (6)').
+function bookingForSession(s: { time: string; player: string }): Booking | undefined {
+  return BOOKINGS.find(b =>
+    b.date === TODAY && b.status === 'confirmed' && b.start === s.time &&
+    (b.player === s.player || s.player.startsWith(b.player)))
+}
+
+// Today's sessions — the source for the Session Planner. Derived from the dated
+// schedule: each carries a real date and links to its booking where one exists
+// (the 17:00 Cardio session has no Thursday booking, so its bookingId is unset).
+export const TODAY_SESSIONS: TodaySession[] = TODAY_SESSION_SEED.map(s => ({
+  ...s, date: TODAY, bookingId: bookingForSession(s)?.id, coachId: bookingForSession(s)?.coachId ?? 'pete',
+}))
+
 export const COACH_TODAY: CoachScheduleItem[] = [
   { t: '08:00', what: 'Court setup & planning',        where: 'Courts 1–3', type: 'Admin' },
   { t: '09:00', what: 'Mia Chen — first serve',        where: 'Court 1',    type: 'Private', highlight: true },
   { t: '10:30', what: 'Tom Okafor — serve+1 patterns', where: 'Court 2',    type: 'Private' },
   { t: '12:00', what: 'Junior Squad (6)',              where: 'Court 1',    type: 'Group' },
   { t: '16:00', what: 'Ava Romero — rally control',    where: 'Court 3',    type: 'Private' },
-  { t: '17:00', what: 'Belt assessment prep',          where: 'Office',     type: 'Admin' },
+  { t: '17:00', what: 'Racket assessment prep',        where: 'Office',     type: 'Admin' },
   { t: '18:00', what: 'Daniel Cruz — match play',      where: 'Court 3',    type: 'Match' },
 ]
 
@@ -951,22 +999,25 @@ export type CoachNavItem = { id: string; label: string; icon: string; group: str
 
 export const COACH_SIDEBAR: CoachNavItem[] = [
   { id: 'dashboard',   label: 'Dashboard',          icon: 'home',         group: 'COACHING' },
-  { id: 'lessons',     label: 'Lesson Summaries',   icon: 'note',         group: 'COACHING' },
   { id: 'planner',     label: 'Session Planner',    icon: 'flag',         group: 'COACHING' },
+  { id: 'lessons',     label: 'Lesson Summaries',   icon: 'note',         group: 'COACHING' },
   { id: 'development', label: 'Player Development',  icon: 'arrow-up-right', group: 'COACHING' },
-  { id: 'belts',       label: 'Belt Progression',   icon: 'trophy',       group: 'COACHING', badge: 'NEW' },
+  { id: 'belts',       label: 'Racket Progression', icon: 'trophy',       group: 'COACHING', badge: 'NEW' },
+  { id: 'staff',       label: 'Coaches',            icon: 'people',       group: 'TEAM', badge: 'NEW' },
   { id: 'calendar',    label: 'Booking Calendar',   icon: 'calendar',     group: 'SCHEDULE' },
   { id: 'venues',      label: 'Court Planner',      icon: 'pin',          group: 'SCHEDULE', badge: 'NEW' },
-  { id: 'camps',       label: 'Training Camps',     icon: 'plane',        group: 'SCHEDULE', badge: 'NEW' },
+  { id: 'camps',       label: 'Training Camps',     icon: 'sun',          group: 'SCHEDULE', badge: 'NEW' },
   { id: 'roster',      label: 'Player Roster',      icon: 'people',       group: 'PLAYERS' },
   { id: 'messages',    label: 'Messages',           icon: 'megaphone',    group: 'PLAYERS' },
+  { id: 'gpsvideo',    label: 'GPS & Video',        icon: 'crosshair',    group: 'PERFORMANCE', badge: 'NEW' },
+  { id: 'heatmaps',    label: 'Heatmaps',           icon: 'flame',        group: 'PERFORMANCE', badge: 'NEW' },
   { id: 'equipment',   label: 'Equipment & Kit',    icon: 'wrench',       group: 'RESOURCES', badge: 'NEW' },
   { id: 'resources',   label: 'Resource Centre',    icon: 'grid',         group: 'RESOURCES', badge: 'NEW' },
   { id: 'payments',    label: 'Payments & Packs',   icon: 'pound',        group: 'BUSINESS' },
   { id: 'settings',    label: 'Settings',           icon: 'settings',     group: 'SETTINGS' },
 ]
 
-export const COACH_GROUPS = ['COACHING', 'SCHEDULE', 'PLAYERS', 'RESOURCES', 'BUSINESS', 'SETTINGS']
+export const COACH_GROUPS = ['COACHING', 'SCHEDULE', 'PLAYERS', 'PERFORMANCE', 'RESOURCES', 'TEAM', 'BUSINESS', 'SETTINGS']
 
 export const COACH_ACCENT = { hex: '#a855f7', dim: 'rgba(168,85,247,0.16)', border: 'rgba(168,85,247,0.45)' }
 
@@ -976,7 +1027,7 @@ export const COACH_ACCENT = { hex: '#a855f7', dim: 'rgba(168,85,247,0.16)', bord
 export type Camp = {
   id: string
   name: string
-  country: 'Portugal' | 'Spain'
+  country: 'Portugal' | 'Spain' | 'England'
   location: string
   resort: string
   flag: string
@@ -1004,7 +1055,13 @@ export const CAMPS: Camp[] = [
     id: 'camp-costabrava', name: 'Costa Brava Junior Camp', country: 'Spain', location: 'Costa Brava', resort: 'Club Tennis Llafranc', flag: '🇪🇸',
     start: '3 Aug 2026', end: '16 Aug 2026', days: 14, status: 'upcoming', capacity: 20, booked: 9,
     pricePerHead: 1650, deposit: 350, surfaces: 'Clay', courts: 8,
-    summary: 'Junior development camp for red→green ball players. Skills, games and a belt-assessment week, with parents accommodated nearby.',
+    summary: 'Junior development camp for red→green ball players. Skills, games and a racket-assessment week, with parents accommodated nearby.',
+  },
+  {
+    id: 'camp-halfterm-oct', name: 'October Half-Term Tennis Camp', country: 'England', location: 'Riverside Tennis Centre', resort: 'Riverside Tennis Centre', flag: '🇬🇧',
+    start: '26 Oct 2026', end: '30 Oct 2026', days: 5, status: 'upcoming', capacity: 24, booked: 11,
+    pricePerHead: 220, deposit: 50, surfaces: 'Indoor & outdoor hard', courts: 6,
+    summary: 'Five-day October half-term day camp at Riverside for ages 6–14. Red, orange and green-ball groups, 9am–3pm daily — skills, games and a Friday mini-tournament. No overnight stay; coached by Pete Griffiths and the academy team.',
   },
   {
     id: 'camp-marbella', name: 'Marbella Pre-Season Camp', country: 'Spain', location: 'Marbella', resort: 'Manolo Santana Racquets Club', flag: '🇪🇸',
@@ -1054,7 +1111,7 @@ export const CAMP_TARGETS: Record<string, { group: string[]; outcomes: string[] 
     ],
     outcomes: [
       'Player development report emailed to each parent on day 14',
-      'Belt re-assessment for any player who meets the criteria',
+      'Racket re-assessment for any player who meets the criteria',
       'Personal off-season plan for the 4 weeks after camp',
     ],
   },
@@ -1065,8 +1122,20 @@ export const CAMP_TARGETS: Record<string, { group: string[]; outcomes: string[] 
       'Daily skills awards to keep motivation high',
     ],
     outcomes: [
-      'Belt assessment day on day 12',
+      'Racket assessment day on day 12',
       'Parent showcase session on the final morning',
+    ],
+  },
+  'camp-halfterm-oct': {
+    group: [
+      'Every junior leaves with one clear technical focus for the winter',
+      'Red/orange-ball groups play the Friday mini-tournament',
+      'Daily skills awards and a fun, high-energy environment',
+      'Spot and invite 3–4 players for the performance squad pathway',
+    ],
+    outcomes: [
+      'Short progress note shared with each parent at pick-up Friday',
+      'Follow-up term lessons offered to interested families',
     ],
   },
   'camp-marbella': {
@@ -1090,11 +1159,56 @@ const ALGARVE_DAY_THEMES = [
   'Pressure & tie-breaks', 'Finals, reviews & departure',
 ]
 
-export function buildCampItinerary(startDay = 6, month = 'Jul'): CampDay[] {
-  return ALGARVE_DAY_THEMES.map((theme, i) => {
+// Domestic day-camp themes (no overnight) — used for short, non-residential
+// camps (e.g. the half-term day camps run at the home venue).
+const DAYCAMP_THEMES = [
+  'Groundstroke skills', 'Serve & return', 'Net play & volleys', 'Movement & rally games', 'Tactics & match play',
+]
+
+function dayCampDay(day: number, date: string, total: number): CampDay {
+  if (day === 1) {
+    return { day, date, theme: 'Welcome & assessment', sessions: [
+      { slot: 'AM', time: '09:30', title: 'Registration, warm-up & group assessment', type: 'Briefing',   where: 'Courts 1–6' },
+      { slot: 'PM', time: '13:30', title: 'Fun games & first skills block',            type: 'Technical',  where: 'Courts 1–6' },
+    ] }
+  }
+  if (day === total) {
+    return { day, date, theme: 'Mini-tournament & awards', sessions: [
+      { slot: 'AM', time: '09:30', title: 'Mini-tournament rounds',          type: 'Match play', where: 'Courts 1–6' },
+      { slot: 'PM', time: '13:30', title: 'Finals, awards & parent pick-up', type: 'Review',     where: 'Courts 1–6' },
+    ] }
+  }
+  const theme = DAYCAMP_THEMES[(day - 2) % DAYCAMP_THEMES.length]
+  return { day, date, theme, sessions: [
+    { slot: 'AM', time: '09:30', title: `Skills — ${theme.toLowerCase()}`, type: 'Technical',  where: 'Courts 1–6' },
+    { slot: 'PM', time: '13:30', title: 'Games & match play',              type: 'Match play', where: 'Courts 1–6' },
+  ] }
+}
+
+// Length- and kind-aware itinerary. Pass the camp to size the itinerary to its
+// real number of days and pick the right rhythm: overseas residential camps get
+// the AM/PM/EVE block with arrival, a mid-camp rest day and finals/departures;
+// domestic day camps (country England) get a no-overnight 9:30–15:30 day.
+// Called with no camp it defaults to a 14-day residential template.
+export function buildCampItinerary(camp?: Pick<Camp, 'start' | 'days' | 'country'>): CampDay[] {
+  const startDay = camp ? (parseInt(camp.start) || 6) : 6
+  const month = camp ? (camp.start.split(' ')[1] || 'Jul') : 'Jul'
+  const total = Math.max(1, camp?.days ?? 14)
+  const dateFor = (i: number) => `${startDay + i} ${month}`
+
+  // Domestic day camp — short, no overnight.
+  if (camp?.country === 'England') {
+    return Array.from({ length: total }, (_, i) => dayCampDay(i + 1, dateFor(i), total))
+  }
+
+  // Residential overseas camp — the original 14-day rhythm, generalised to length.
+  return Array.from({ length: total }, (_, i) => {
     const day = i + 1
-    const date = `${startDay + i} ${month}`
-    const rest = day === 7
+    const date = dateFor(i)
+    const theme = day === total
+      ? ALGARVE_DAY_THEMES[ALGARVE_DAY_THEMES.length - 1]
+      : ALGARVE_DAY_THEMES[i % ALGARVE_DAY_THEMES.length]
+    const rest = total >= 9 && day === 7
     if (rest) {
       return { day, date, theme, rest: true, sessions: [
         { slot: 'AM', time: '—',     title: 'Rest / optional pool recovery', type: 'Recovery', where: 'Resort' },
@@ -1109,9 +1223,9 @@ export function buildCampItinerary(startDay = 6, month = 'Jul'): CampDay[] {
         { slot: 'EVE',time: '19:30', title: 'Welcome briefing & goal-setting',      type: 'Briefing',  where: 'Clubhouse' },
       ] }
     }
-    if (day === 14) {
+    if (day === total) {
       return { day, date, theme, sessions: [
-        { slot: 'AM', time: '09:00', title: 'Ladder finals & belt assessments',     type: 'Match play', where: 'Centre court' },
+        { slot: 'AM', time: '09:00', title: 'Ladder finals & racket assessments',   type: 'Match play', where: 'Centre court' },
         { slot: 'PM', time: '13:00', title: '1:1 reviews & off-season plans',        type: 'Review',     where: 'Clubhouse' },
         { slot: 'EVE',time: '16:00', title: 'Departures & transfers',                type: 'Logistics',  where: 'Resort → FAO' },
       ] }
@@ -1119,7 +1233,7 @@ export function buildCampItinerary(startDay = 6, month = 'Jul'): CampDay[] {
     // Standard training day
     return { day, date, theme, sessions: [
       { slot: 'AM', time: '08:30', title: `Technical — ${theme.toLowerCase()}`, type: 'Technical', where: 'Courts 1–4' },
-      { slot: 'PM', time: '15:30', title: day >= 11 ? 'Match-play ladder rounds' : 'Tactical drills & live points', type: day >= 11 ? 'Match play' : 'Tactical', where: 'Courts 1–6' },
+      { slot: 'PM', time: '15:30', title: day >= total - 3 ? 'Match-play ladder rounds' : 'Tactical drills & live points', type: day >= total - 3 ? 'Match play' : 'Tactical', where: 'Courts 1–6' },
       { slot: 'EVE',time: '18:30', title: day % 2 === 0 ? 'Video review & analysis' : 'Fitness & mobility', type: day % 2 === 0 ? 'Video' : 'Fitness', where: day % 2 === 0 ? 'Clubhouse' : 'Gym / track' },
     ] }
   })
@@ -1183,21 +1297,20 @@ function seedOf(a: CampAttendee): number {
 }
 
 export function buildPlayerCampLog(a: CampAttendee, camp: Camp): CampLogDay[] {
-  const start = parseInt(camp.start) || 6
-  const month = camp.start.split(' ')[1] || 'Jul'
-  const itin = buildCampItinerary(start, month)
+  const itin = buildCampItinerary(camp)
+  const lastDay = itin.length
   const goal = a.goal.toLowerCase()
   const s = seedOf(a)
   return itin.map((d, i) => {
     if (d.rest) return { day: d.day, date: d.date, theme: d.theme, rest: true, am: 'Active recovery + pool — kept the body fresh.', pm: 'Team excursion and week-1 awards evening.', nextAction: 'Recharge and reset goals for week two.', effort: 4 }
     if (d.day === 1) return { day: d.day, date: d.date, theme: d.theme, am: 'Arrived and settled in; baseline assessment hit and filmed.', pm: `Set personal camp goal: ${a.goal}.`, nextAction: 'Review baseline video tonight with the group.', effort: 4 }
-    if (d.day === 14) return { day: d.day, date: d.date, theme: d.theme, am: 'Ladder finals and end-of-camp belt assessment.', pm: '1:1 review with coach and personal off-season plan agreed.', nextAction: 'Keep the off-season plan going — 4-week checkpoint set.', effort: 5 }
+    if (d.day === lastDay) return { day: d.day, date: d.date, theme: d.theme, am: 'Ladder finals and end-of-camp racket assessment.', pm: '1:1 review with coach and personal off-season plan agreed.', nextAction: 'Keep the off-season plan going — 4-week checkpoint set.', effort: 5 }
     const focus = d.theme.toLowerCase()
     const effort = 3 + ((s + d.day) % 3) // 3..5
     return {
       day: d.day, date: d.date, theme: d.theme,
       am: `Technical block on ${focus}; clear progress towards "${a.goal}".`,
-      pm: d.day >= 11 ? 'Competitive ladder matches — applying it under pressure.' : 'Tactical drills and live points to lock it in.',
+      pm: d.day >= lastDay - 3 ? 'Competitive ladder matches — applying it under pressure.' : 'Tactical drills and live points to lock it in.',
       nextAction: ((s + d.day) % 2 === 0)
         ? `Shadow-rep tonight: 20 reps focused on ${focus.split(' ')[0]}.`
         : 'Watch your clip and note one thing to keep, one to improve.',
@@ -1485,7 +1598,7 @@ export function playerCampStats(a: CampAttendee, _camp: Camp): CampStats {
     beltStart: a.beltIndex, beltEnd: progressed ? a.beltIndex + 1 : a.beltIndex,
     improvements,
     highlight: progressed
-      ? `Earned the ${BELTS[a.beltIndex + 1].name} belt on assessment day — a standout fortnight.`
+      ? `Earned the ${BELTS[a.beltIndex + 1].name} racket on assessment day — a standout fortnight.`
       : `Biggest leap of the camp: ${improvements[0].toLowerCase()} now holding up under match pressure.`,
   }
 }

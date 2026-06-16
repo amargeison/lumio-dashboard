@@ -7,11 +7,13 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   COACH_ORG, COACH_TOP_STATS, COACH_TODAY, COACH_AI_BRIEF, COACH_MESSAGES,
   BELTS, ALL_SKILLS, MASTERY_LABELS, skillScore, LTA_MAP,
-  PLAYERS, LESSONS, BOOKINGS, WEEK_DAYS, DAY_DATES, CAL_HOURS, RESOURCES,
+  PLAYERS, LESSONS, RESOURCES,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
   type Player, type Lesson, type Resource, type Camp,
 } from '../_lib/coach-data'
+import { WeekCalendarGrid, bookingTypeColour } from './WeekCalendar'
+import { bookingCalItems } from '../_lib/schedule'
 import { printBeltCertificate } from './BeltCertificate'
 import { LessonShareMenu } from './ShareMenu'
 import { CampEquipment, CampPlayerPacks } from './CampPacks'
@@ -25,6 +27,8 @@ import { OfferedPackages, PackageProgressModal } from './Packages'
 import { usedFromProgress, subscribe as subscribePackages } from '../_lib/packages-store'
 import type { Package } from '../_lib/coach-data'
 import { VideoModal } from './VideoModal'
+import { getAddedResources, subscribe as subscribeResources } from '../_lib/resources-store'
+import { AddResourceModal } from './AddResourceModal'
 import { AddPlayerModal } from './AddPlayerModal'
 import { printWelcomePack } from './WelcomePack'
 import { getAddedPlayers, subscribe as subscribeRoster } from '../_lib/roster-store'
@@ -33,6 +37,8 @@ import { useAllPlayers } from '../_lib/use-roster'
 import { SettingsPanel } from './SettingsPanel'
 import { getSettings } from '../_lib/settings-store'
 import { useCoachSettings } from '../_lib/use-settings'
+import { getCamps, subscribe as subscribeCamps } from '../_lib/camps-store'
+import { NewCampModal } from './NewCamp'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -129,7 +135,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
               <span style={{ width: 1, height: 10, background: T.borderHi }} />
               <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>{settings.academy}</span>
             </div>
-            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>7 sessions, 4 belt assessments due</h1>
+            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 26, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>7 sessions, 4 racket assessments due</h1>
             <p style={{ marginTop: 6, marginBottom: 0, fontSize: 12.5, color: T.text2, maxWidth: 560 }}>{COACH_ORG.venue} · {settings.cert}</p>
             <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
               <button onClick={() => onNavigate('lessons')} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -215,7 +221,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
             ))}
             <div onClick={() => onNavigate('belts')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 6px', borderRadius: 6, background: accent.dim, border: `1px solid ${accent.border}`, cursor: 'pointer' }}>
               <Icon name="trophy" size={14} stroke={1.6} style={{ color: accent.hex }} />
-              <div style={{ fontSize: 11.5, color: T.text, fontWeight: 600 }}>4 belt assessments due</div>
+              <div style={{ fontSize: 11.5, color: T.text, fontWeight: 600 }}>4 racket assessments due</div>
             </div>
           </div>
         </Card>
@@ -299,7 +305,7 @@ export function LessonsView({ T, accent, density }: Common) {
               <SubHead T={T} icon="flag" accent={accent}>Drills used</SubHead>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{sel.drills.map((d, i) => <span key={i} style={{ fontSize: 11.5, color: T.text2, padding: '4px 8px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}` }}>{d}</span>)}</div>
 
-              <SubHead T={T} icon="trophy" accent={accent} mt>Skills worked (belt system)</SubHead>
+              <SubHead T={T} icon="trophy" accent={accent} mt>Skills worked (racket system)</SubHead>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{skillNames(sel.skillsWorked).map((s, i) => <Pill key={i} T={T} color={accent.hex} bg={accent.dim}>{s}</Pill>)}</div>
 
               <SubHead T={T} icon="home" accent={accent} mt>Homework</SubHead>
@@ -354,10 +360,10 @@ export function DevelopmentView({ T, accent, density }: Common) {
     + belt.skills.filter((_s, si) => skillScore(p.seed, p.beltIndex, si, p.beltIndex) >= 3).length
   const stats = playerDevStats(p)
   const devBoxes: { l: string; v: ReactNode; sub?: string; c?: string }[] = [
-    { l: 'Current belt',  v: <BeltChip beltIndex={p.beltIndex} size={16} /> },
-    { l: 'Belt progress', v: `${prog}%`, c: accent.hex, sub: `to ${BELTS[Math.min(p.beltIndex + 1, BELTS.length - 1)].name}` },
+    { l: 'Current racket',  v: <BeltChip beltIndex={p.beltIndex} size={16} /> },
+    { l: 'Racket progress', v: `${prog}%`, c: accent.hex, sub: `to ${BELTS[Math.min(p.beltIndex + 1, BELTS.length - 1)].name}` },
     { l: 'Attendance',    v: `${p.attendance}%`, c: p.attendance >= 90 ? T.good : p.attendance >= 80 ? T.warn : T.bad, sub: 'last 8 weeks' },
-    { l: 'Skills earned', v: `${earned}/${totalSkills}`, sub: 'all belts' },
+    { l: 'Skills earned', v: `${earned}/${totalSkills}`, sub: 'all rackets' },
     { l: 'Court hours',   v: stats.hoursTerm, sub: 'this term' },
     { l: 'Sessions',      v: stats.sessionsTerm, sub: `streak ${stats.streak}` },
     { l: 'Lessons',       v: stats.lessonsLogged, sub: 'logged' },
@@ -368,7 +374,7 @@ export function DevelopmentView({ T, accent, density }: Common) {
 
   return (
     <div>
-      <PageHead T={T} accent={accent} density={density} title="Player Development" sub="Track every player's journey — current belt, skill mastery, goals and trajectory." />
+      <PageHead T={T} accent={accent} density={density} title="Player Development" sub="Track every player's journey — current racket, skill mastery, goals and trajectory." />
       <div className="cm-md" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: density.gap }}>
         {/* Player list */}
         <Card T={T} density={density} style={{ padding: 8, alignSelf: 'start' }}>
@@ -400,9 +406,9 @@ export function DevelopmentView({ T, accent, density }: Common) {
                 <div style={{ fontSize: 18, fontWeight: 600, color: T.text }}>{p.name}</div>
                 <div style={{ fontSize: 12, color: T.text3 }}>{p.group} · Age {p.age}{p.parent ? ` · Parent: ${p.parent}` : ''}</div>
               </div>
-              <button onClick={() => printBeltCertificate(p, p.beltIndex)} title={`Print ${belt.name} belt certificate`}
+              <button onClick={() => printBeltCertificate(p, p.beltIndex)} title={`Print ${belt.name} racket certificate`}
                 style={{ marginLeft: 'auto', appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
-                <Icon name="trophy" size={14} stroke={2} /> Belt certificate
+                <Icon name="trophy" size={14} stroke={2} /> Racket certificate
               </button>
             </div>
             <div style={{ marginTop: 12, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -424,7 +430,7 @@ export function DevelopmentView({ T, accent, density }: Common) {
 
           {/* Working belt skill bars */}
           <Card T={T} density={density}>
-            <SectionHead T={T} title={<>Working belt · {belt.name} — {belt.theme}</>} right={<span style={{ fontFamily: FONT_MONO }}>{prog}% to award</span>} />
+            <SectionHead T={T} title={<>Working racket · {belt.name} — {belt.theme}</>} right={<span style={{ fontFamily: FONT_MONO }}>{prog}% to award</span>} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {belt.skills.map((s, si) => {
                 const score = skillScore(p.seed, p.beltIndex, si, p.beltIndex)
@@ -447,7 +453,7 @@ export function DevelopmentView({ T, accent, density }: Common) {
           {/* Belt ladder mini + recent lessons */}
           <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
             <Card T={T} density={density}>
-              <SectionHead T={T} title="Belt journey" />
+              <SectionHead T={T} title="Racket journey" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {BELTS.map((b, bi) => {
                   const state = bi < p.beltIndex ? 'done' : bi === p.beltIndex ? 'current' : 'locked'
@@ -496,14 +502,14 @@ export function BeltsView({ T, accent, density }: Common) {
   const [open, setOpen] = useState<string>('white')
   return (
     <div>
-      <PageHead T={T} accent={accent} density={density} title="Belt Progression System" sub="A Kyu-Dan style ranking adapted for tennis. Nine belts, each unlocking a cluster of skills — earn a belt when every skill is Consistent or better." />
+      <PageHead T={T} accent={accent} density={density} title="Racket Progression System" sub="A Kyu-Dan style ranking adapted for tennis. Nine rackets, each unlocking a cluster of skills — earn a racket when every skill is Consistent or better." />
 
       {/* LTA alignment note */}
       <Card T={T} density={density} style={{ marginBottom: density.gap, borderColor: accent.border, background: accent.dim }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <Icon name="shield" size={16} stroke={1.7} style={{ color: accent.hex, flexShrink: 0, marginTop: 1 }} />
           <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5 }}>
-            <strong>Aligned to the LTA Youth pathway.</strong> Each belt maps to a stage of the LTA Youth programme — the five official ball-colour stages <span style={{ color: T.text2 }}>Blue → Red → Orange → Green → Yellow</span>, then the LTA Youth Compete grades and the performance pathway. The belt is your academy ladder; the LTA stage is the national-framework equivalent shown on every belt below.
+            <strong>Aligned to the LTA Youth pathway.</strong> Each racket maps to a stage of the LTA Youth programme — the five official ball-colour stages <span style={{ color: T.text2 }}>Blue → Red → Orange → Green → Yellow</span>, then the LTA Youth Compete grades and the performance pathway. The racket is your academy ladder; the LTA stage is the national-framework equivalent shown on every racket below.
           </div>
         </div>
       </Card>
@@ -530,7 +536,7 @@ export function BeltsView({ T, accent, density }: Common) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
             <span style={{ width: 40, height: 26, borderRadius: 5, background: b.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
             <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{b.name} belt — {b.theme}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{b.name} racket — {b.theme}</div>
               <div style={{ fontSize: 11.5, color: T.text3 }}>{b.ageGuide} · {b.ball} ball stage</div>
             </div>
             <div style={{ marginLeft: 'auto' }}>
@@ -558,7 +564,7 @@ export function BeltsView({ T, accent, density }: Common) {
 
       {/* Cohort matrix: players × belts */}
       <Card T={T} density={density}>
-        <SectionHead T={T} title="Squad belt matrix" right={<span style={{ fontFamily: FONT_MONO }}>{players.length} players</span>} />
+        <SectionHead T={T} title="Squad racket matrix" right={<span style={{ fontFamily: FONT_MONO }}>{players.length} players</span>} />
         <div style={{ overflowX: 'auto' }}>
           <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
             <thead>
@@ -586,7 +592,7 @@ export function BeltsView({ T, accent, density }: Common) {
                   })}
                   <td style={{ padding: '8px 10px' }}><BeltChip beltIndex={p.beltIndex} size={16} /></td>
                   <td style={{ padding: '8px 8px', textAlign: 'right' }}>
-                    <button onClick={() => printBeltCertificate(p, p.beltIndex)} title={`Print ${BELTS[p.beltIndex].name} belt certificate`}
+                    <button onClick={() => printBeltCertificate(p, p.beltIndex)} title={`Print ${BELTS[p.beltIndex].name} racket certificate`}
                       style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: accent.hex, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                       <Icon name="trophy" size={12} stroke={1.9} /> Certificate
                     </button>
@@ -597,8 +603,8 @@ export function BeltsView({ T, accent, density }: Common) {
           </table>
         </div>
         <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', fontSize: 10.5, color: T.text3 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="check" size={12} stroke={2.4} style={{ color: T.good }} /> belt earned</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on current belt</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="check" size={12} stroke={2.4} style={{ color: T.good }} /> racket earned</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on current racket</span>
         </div>
       </Card>
     </div>
@@ -611,55 +617,18 @@ function ballColour(b: string) { return b === 'Red' ? '#C75A5A' : b === 'Orange'
 // BOOKING CALENDAR  (week grid)
 // ════════════════════════════════════════════════════════════════════════════
 export function CalendarView({ T, accent, density }: Common) {
-  const typeColour = (t: string) => t === 'Private' ? accent.hex : t === 'Group' ? '#3A8EE0' : t === 'Cardio' ? T.warn : t === 'Match play' ? T.good : T.text3
-  const hourIdx = (hhmm: string) => CAL_HOURS.indexOf(hhmm.slice(0, 2) + ':00')
-  const rowH = 46
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Booking Calendar" sub="Your week across all courts — private lessons, group squads, cardio and match play."
         action={<button style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> Add booking</button>} />
       <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto' }}>
-       <div style={{ minWidth: 680 }}>
-        {/* header */}
-        <div style={{ display: 'grid', gridTemplateColumns: `60px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}` }}>
-          <div />
-          {WEEK_DAYS.map((d, i) => (
-            <div key={d} style={{ padding: '10px 6px', textAlign: 'center', borderLeft: `1px solid ${T.border}`, background: i === 3 ? accent.dim : 'transparent' }}>
-              <div style={{ fontSize: 11, color: i === 3 ? accent.hex : T.text2, fontWeight: 600 }}>{d}</div>
-              <div className="tnum" style={{ fontSize: 16, color: i === 3 ? accent.hex : T.text, fontWeight: 600 }}>{DAY_DATES[i]}</div>
-            </div>
-          ))}
-        </div>
-        {/* grid */}
-        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: `60px repeat(7, 1fr)` }}>
-          {/* hour rows */}
-          <div>
-            {CAL_HOURS.map(h => <div key={h} style={{ height: rowH, fontSize: 10, color: T.text3, fontFamily: FONT_MONO, padding: '2px 6px', textAlign: 'right' }}>{h}</div>)}
-          </div>
-          {WEEK_DAYS.map((_d, di) => (
-            <div key={di} style={{ position: 'relative', borderLeft: `1px solid ${T.border}` }}>
-              {CAL_HOURS.map(h => <div key={h} style={{ height: rowH, borderTop: `1px solid ${T.border}` }} />)}
-              {BOOKINGS.filter(b => b.day === di).map(b => {
-                const top = hourIdx(b.start) * rowH + (parseInt(b.start.slice(3)) / 60) * rowH
-                const endTop = hourIdx(b.end) * rowH + (parseInt(b.end.slice(3)) / 60) * rowH
-                const c = typeColour(b.type)
-                return (
-                  <div key={b.id} style={{ position: 'absolute', left: 3, right: 3, top: top + 1, height: Math.max(endTop - top - 2, 22), background: b.status === 'pending' ? `${c}14` : `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '3px 6px', overflow: 'hidden', opacity: b.status === 'cancelled' ? 0.4 : 1 }}>
-                    <div style={{ fontSize: 10.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.player}</div>
-                    <div style={{ fontSize: 9, color: T.text2, fontFamily: FONT_MONO }}>{b.start}–{b.end} · {b.court}</div>
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-        </div>
-       </div>
+        <WeekCalendarGrid T={T} accent={accent} density={density} items={bookingCalItems()} />
       </Card>
       <div style={{ display: 'flex', gap: 14, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
         {['Private', 'Group', 'Cardio', 'Match play', 'Block'].map(t => (
-          <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: typeColour(t) }} />{t}</span>
+          <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: bookingTypeColour(T, accent, t) }} />{t}</span>
         ))}
-        <span style={{ marginLeft: 'auto' }}>Dashed fill = pending confirmation</span>
+        <span style={{ marginLeft: 'auto' }}>Faint fill = pending confirmation</span>
       </div>
     </div>
   )
@@ -766,13 +735,18 @@ export function ResourcesView({ T, accent, density }: Common) {
   const cats = ['All', 'Drill Library', 'Drill', 'Technique', 'Training plan', 'Fitness', 'Mental', 'Books'] as const
   const [cat, setCat] = useState<typeof cats[number]>('All')
   const [video, setVideo] = useState<Resource | null>(null)
+  const [addedResources, setAddedResources] = useState<Resource[]>([])
+  const [addOpen, setAddOpen] = useState(false)
+  useEffect(() => { const r = () => setAddedResources(getAddedResources()); r(); return subscribeResources(r) }, [])
+  const allResources = [...RESOURCES, ...addedResources]
   const fullList = cat === 'All' || cat === 'Books' || cat === 'Drill Library'
   const hideGrid = cat === 'Books' || cat === 'Drill Library'
-  const list = fullList ? RESOURCES : RESOURCES.filter(r => r.category === cat)
+  const list = fullList ? allResources : allResources.filter(r => r.category === cat)
   const fmtIcon = (f: Resource['format']) => f === 'Video' ? 'play' : f === 'Plan' ? 'calendar' : f === 'Worksheet' ? 'note' : 'note'
   return (
     <div>
-      <PageHead T={T} accent={accent} density={density} title="Resource Centre" sub="Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the belt system." />
+      <PageHead T={T} accent={accent} density={density} title="Resource Centre" sub="Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the racket system."
+        action={<button onClick={() => setAddOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> Add resource</button>} />
       <div style={{ display: 'flex', gap: 6, marginBottom: density.gap, flexWrap: 'wrap' }}>
         {cats.map(c => <button key={c} onClick={() => setCat(c)} style={{ appearance: 'none', border: `1px solid ${cat === c ? accent.border : T.border}`, padding: '6px 12px', borderRadius: 8, fontSize: 11.5, cursor: 'pointer', background: cat === c ? accent.dim : 'transparent', color: cat === c ? accent.hex : T.text2, fontWeight: cat === c ? 600 : 400 }}>{c === 'Books' ? '📚 Books' : c === 'Drill Library' ? '🎾 Drill Library' : c}</button>)}
       </div>
@@ -809,6 +783,7 @@ export function ResourcesView({ T, accent, density }: Common) {
       </div>
       )}
       {video && <VideoModal T={T} accent={accent} resource={video} onClose={() => setVideo(null)} />}
+      {addOpen && <AddResourceModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>
   )
 }
@@ -888,9 +863,12 @@ export function PaymentsView({ T, accent, density }: Common) {
 // TRAINING CAMPS  (14-day paid camps — overview / itinerary / attendees / targets / finance)
 // ════════════════════════════════════════════════════════════════════════════
 export function CampsView({ T, accent, density }: Common) {
+  const [camps, setCamps] = useState<Camp[]>(getCamps())
+  useEffect(() => { setCamps(getCamps()); return subscribeCamps(() => setCamps(getCamps())) }, [])
   const [selId, setSelId] = useState(CAMPS[0].id)
   const [tab, setTab] = useState<'overview' | 'itinerary' | 'equipment' | 'attendees' | 'targets' | 'packs' | 'finance'>('overview')
-  const camp = CAMPS.find(c => c.id === selId)!
+  const [newOpen, setNewOpen] = useState(false)
+  const camp = camps.find(c => c.id === selId) ?? camps[0]
   const attendees = CAMP_ATTENDEES.filter(a => a.campId === camp.id)
   const targets = CAMP_TARGETS[camp.id]
   const statusTone = (s: Camp['status']) => s === 'in-progress' ? T.good : s === 'upcoming' ? accent.hex : T.text3
@@ -899,11 +877,11 @@ export function CampsView({ T, accent, density }: Common) {
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Training Camps" sub="Run your 14-day camps in Spain and Portugal: bookings, itinerary, targets and finances in one place."
-        action={<button style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New camp</button>} />
+        action={<button onClick={() => setNewOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New camp</button>} />
 
       {/* Camp selector cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: density.gap, marginBottom: density.gap }}>
-        {CAMPS.map(c => (
+        {camps.map(c => (
             <Card key={c.id} T={T} density={density} hover onClick={() => selectCamp(c.id)} style={{ borderColor: c.id === selId ? accent.border : undefined, background: c.id === selId ? accent.dim : T.panel }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 22 }}>{c.flag}</span>
@@ -956,6 +934,8 @@ export function CampsView({ T, accent, density }: Common) {
       {tab === 'targets' && <CampTargets T={T} accent={accent} density={density} targets={targets} attendees={attendees} />}
       {tab === 'packs' && <CampPlayerPacks T={T} accent={accent} density={density} camp={camp} attendees={attendees} />}
       {tab === 'finance' && <CampFinance T={T} accent={accent} density={density} camp={camp} attendees={attendees} />}
+
+      {newOpen && <NewCampModal T={T} accent={accent} density={density} onClose={() => setNewOpen(false)} onCreated={(id) => { setSelId(id); setTab('overview') }} />}
     </div>
   )
 }
@@ -965,7 +945,8 @@ type CampSub = Common & { camp: Camp }
 function CampOverview({ T, accent, density, camp, attendees, targets }: CampSub & { attendees: typeof CAMP_ATTENDEES; targets: typeof CAMP_TARGETS[string] }) {
   const collected = attendees.reduce((s, a) => s + (camp.pricePerHead - a.balance), 0)
   const outstanding = attendees.reduce((s, a) => s + a.balance, 0)
-  const days = buildCampItinerary()
+  const dayCamp = camp.country === 'England'
+  const days = buildCampItinerary(camp)
   const sessionCount = days.reduce((s, d) => s + d.sessions.filter(x => x.type !== 'Logistics' && x.type !== 'Social' && x.type !== 'Culture').length, 0)
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }} className="cm-12">
@@ -975,7 +956,7 @@ function CampOverview({ T, accent, density, camp, attendees, targets }: CampSub 
           {[
             ['Location', `${camp.resort}`], ['Region', `${camp.location}, ${camp.country}`],
             ['Duration', `${camp.days} days · ${camp.start}–${camp.end}`], ['Courts', `${camp.courts} · ${camp.surfaces}`],
-            ['Coaching sessions', `${sessionCount} across the fortnight`], ['Daily rhythm', 'AM technical · PM tactical/match · EVE video/fitness'],
+            ['Coaching sessions', `${sessionCount} across the camp`], ['Daily rhythm', dayCamp ? 'AM skills · PM games & match play' : 'AM technical · PM tactical/match · EVE video/fitness'],
             ['Capacity', `${camp.booked} of ${camp.capacity} booked`], ['Board', 'Full board at resort'],
           ].map(([k, v], i) => (
             <div key={i} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' }}>
@@ -995,9 +976,10 @@ function CampOverview({ T, accent, density, camp, attendees, targets }: CampSub 
         </div>
         <div style={{ marginTop: 12 }}>
           <SectionHead T={T} title="Top objectives" />
-          {targets.group.slice(0, 3).map((g, i) => (
+          {(targets?.group ?? []).slice(0, 3).map((g, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, color: T.text2, padding: '4px 0' }}><span style={{ color: accent.hex }}>›</span>{g}</div>
           ))}
+          {!targets && <div style={{ fontSize: 11.5, color: T.text3, padding: '4px 0' }}>No objectives set for this camp yet.</div>}
         </div>
       </Card>
     </div>
@@ -1014,14 +996,15 @@ function FinRow({ T, label, value, tone }: { T: ThemeTokens; label: string; valu
 }
 
 function CampItinerary({ T, accent, density, camp }: CampSub) {
-  const days = buildCampItinerary(parseInt(camp.start), camp.start.split(' ')[1])
+  const days = buildCampItinerary(camp)
+  const dayCamp = camp.country === 'England'
   const slotColour = (type: string) => ({
     Technical: accent.hex, Tactical: '#3A8EE0', 'Match play': T.good, Video: '#E5C76B', Fitness: T.warn,
     Recovery: T.text3, Culture: '#3A8EE0', Social: '#E08A3C', Logistics: T.text3, Briefing: accent.hex, Review: accent.hex,
   } as Record<string, string>)[type] ?? T.text3
   return (
     <Card T={T} density={density} style={{ padding: density.pad }}>
-      <SectionHead T={T} title={`14-day itinerary — ${camp.name}`} right={<span style={{ fontFamily: FONT_MONO }}>AM · PM · EVE</span>} />
+      <SectionHead T={T} title={`${camp.days}-day itinerary — ${camp.name}`} right={<span style={{ fontFamily: FONT_MONO }}>{dayCamp ? 'AM · PM' : 'AM · PM · EVE'}</span>} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {days.map(d => (
           <div key={d.day} style={{ display: 'grid', gridTemplateColumns: '64px 1fr', gap: 12, padding: '10px 0', borderTop: d.day > 1 ? `1px solid ${T.border}` : 'none', opacity: d.rest ? 0.85 : 1 }}>
@@ -1096,15 +1079,16 @@ function CampTargets({ T, accent, density, targets, attendees }: Common & { targ
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }} className="cm-12">
       <Card T={T} density={density} style={{ gridColumn: 'span 6' }}>
         <SectionHead T={T} title="Camp targets" right={<Icon name="flag" size={13} stroke={1.7} style={{ color: accent.hex }} />} />
-        {targets.group.map((g, i) => (
+        {(targets?.group ?? []).map((g, i) => (
           <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '9px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
             <div style={{ width: 20, height: 20, borderRadius: 6, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{i + 1}</div>
             <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.45 }}>{g}</div>
           </div>
         ))}
+        {!targets && <div style={{ fontSize: 11.5, color: T.text3, padding: '9px 0' }}>No targets set for this camp yet — add them in coach-data.ts.</div>}
         <div style={{ marginTop: 14 }}>
           <SectionHead T={T} title="Camp outcomes" />
-          {targets.outcomes.map((o, i) => (
+          {(targets?.outcomes ?? []).map((o, i) => (
             <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, color: T.text2, padding: '4px 0' }}><Icon name="check" size={13} stroke={2} style={{ color: T.good, flexShrink: 0, marginTop: 1 }} />{o}</div>
           ))}
         </div>

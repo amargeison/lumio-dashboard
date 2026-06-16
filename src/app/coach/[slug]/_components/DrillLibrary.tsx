@@ -54,12 +54,12 @@ export function DrillLibrary({ T, accent, density }: { T: ThemeTokens; accent: A
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
         <div style={{ position: 'relative', flex: 1, minWidth: 220, maxWidth: 360 }}>
           <Icon name="search" size={15} stroke={1.7} style={{ position: 'absolute', left: 11, top: 10, color: T.text3 }} />
-          <input style={input} value={q} onChange={e => setQ(e.target.value)} placeholder="Search drills — focus, tag or belt…" />
+          <input style={input} value={q} onChange={e => setQ(e.target.value)} placeholder="Search drills — focus, tag or racket…" />
         </div>
         <div style={{ fontSize: 11.5, color: T.text3 }}>{filtered.length} of {DRILL_LIBRARY.length} drills</div>
       </div>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: density.gap }}>
-        <Chip id="all" label="All belts" />
+        <Chip id="all" label="All rackets" />
         {BELTS.map(b => <Chip key={b.id} id={b.id} label={b.name} colour={b.colour} />)}
       </div>
 

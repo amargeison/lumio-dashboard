@@ -6,8 +6,9 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   BELTS, LTA_MAP, STANDARDS, FOCUS_CATALOGUE, focusForBelt, beltIndexOf,
-  ONBOARDING_LEVELS, mapOnboardingToBelt, type Player, type TodaySession,
+  ONBOARDING_LEVELS, mapOnboardingToBelt, TODAY, type Player, type TodaySession, type Booking,
 } from '../_lib/coach-data'
+import { mapBookingType } from '../_lib/schedule'
 import { addSession } from '../_lib/sessions-store'
 import { addPlayer } from '../_lib/roster-store'
 
@@ -18,6 +19,10 @@ function computeEnd(time: string, mins: number) {
   let total = parseInt(m[1]) * 60 + parseInt(m[2]) + (mins || 0)
   total = ((total % 1440) + 1440) % 1440
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
+function minsBetween(start: string, end: string) {
+  const at = (t: string) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim()); return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : 0 }
+  return Math.max(at(end) - at(start), 0)
 }
 function draftFocus(focus: string, note: string) {
   const fl = (focus.trim() || 'the focus').toLowerCase()
@@ -33,10 +38,16 @@ function draftFocus(focus: string, note: string) {
 
 type SessType = TodaySession['type']
 
-export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T: ThemeTokens; accent: AccentTokens; density: Density; players: Player[]; onClose: () => void; onCreated: (id: string) => void }) {
-  const [source, setSource] = useState<'roster' | 'new'>('roster')
-  const [playerId, setPlayerId] = useState(players[0]?.id ?? '')
-  const [customName, setCustomName] = useState('')
+export function NewSessionModal({ T, accent, players, seedBooking, onClose, onCreated }: { T: ThemeTokens; accent: AccentTokens; density: Density; players: Player[]; seedBooking?: Booking; onClose: () => void; onCreated: (id: string) => void }) {
+  // When launched from a confirmed booking, pre-fill from it. A roster match wires
+  // racket/focus; a squad/cardio booking with no roster player falls back to a
+  // free-text name (the coach fills focus manually) — never crashes on no player.
+  const seedPlayer = seedBooking ? players.find(p => p.name === seedBooking.player) : undefined
+  const seedType = seedBooking ? (mapBookingType(seedBooking.type) ?? 'Private') : undefined
+
+  const [source, setSource] = useState<'roster' | 'new'>(seedBooking && !seedPlayer ? 'new' : 'roster')
+  const [playerId, setPlayerId] = useState(seedPlayer?.id ?? players[0]?.id ?? '')
+  const [customName, setCustomName] = useState(seedBooking && !seedPlayer ? seedBooking.player : '')
 
   // Onboarding intake (new player)
   const [obLevel, setObLevel] = useState(ONBOARDING_LEVELS[0].id)
@@ -45,10 +56,10 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
   const [mapped, setMapped] = useState(false)
 
   // Session detail
-  const [time, setTime] = useState('14:00')
-  const [mins, setMins] = useState('60')
-  const [type, setType] = useState<SessType>('Private')
-  const [court, setCourt] = useState('Court 1')
+  const [time, setTime] = useState(seedBooking?.start ?? '14:00')
+  const [mins, setMins] = useState(seedBooking ? String(minsBetween(seedBooking.start, seedBooking.end)) : '60')
+  const [type, setType] = useState<SessType>(seedType ?? 'Private')
+  const [court, setCourt] = useState(seedBooking && seedBooking.court !== '—' ? seedBooking.court : 'Court 1')
 
   // Belt ⇄ standard (1:1) + matched focus
   const rosterPlayer0 = players.find(p => p.id === playerId)
@@ -110,7 +121,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
         id: `new-${Date.now()}`, name: customName.trim(), initials, age, group,
         beltIndex: beltIndexOf(beltId), seed: Date.now() % 100,
         goal: focus.trim(), attendance: 100, nextSession: `${time.trim()} today`,
-        parent: undefined, status: 'green', trend: 'flat',
+        parent: undefined, status: 'green', trend: 'flat', coachId: 'pete',
       }
       addPlayer(np)
       linkedId = np.id
@@ -122,6 +133,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
       player: playerName, playerId: linkedId,
       type, court: court.trim() || 'Court 1', mins: Number(mins) || 60,
       focus: focus.trim(), status: 'upcoming',
+      date: seedBooking?.date ?? TODAY, bookingId: seedBooking?.id, coachId: seedBooking?.coachId ?? 'pete',
       focusPoints: lines(focusPoints).length ? lines(focusPoints) : undefined,
       drills: lines(drills).length ? lines(drills) : undefined,
     }
@@ -158,7 +170,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
                 <Icon name="note" size={14} stroke={1.6} style={{ color: accent.hex }} />
                 <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>From their onboarding</span>
-                <span style={{ fontSize: 10.5, color: T.text3 }}>place them at the right belt</span>
+                <span style={{ fontSize: 10.5, color: T.text3 }}>place them at the right racket</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.8fr 0.8fr', gap: 10, marginTop: 8 }}>
                 <div><label style={labelStyle}>Experience</label><select style={input} value={obLevel} onChange={e => { setObLevel(e.target.value); setMapped(false) }}>{ONBOARDING_LEVELS.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}</select></div>
@@ -166,7 +178,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
                 <div><label style={labelStyle}>Age</label><input style={input} inputMode="numeric" value={obAge} onChange={e => { setObAge(e.target.value.replace(/\D/g, '')); setMapped(false) }} placeholder="10" /></div>
               </div>
               <button onClick={mapFromOnboarding} style={{ marginTop: 10, appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-                <Icon name="sparkles" size={13} stroke={1.7} /> {mapped ? 'Re-map from onboarding' : 'Map to belt & draft plan'}
+                <Icon name="sparkles" size={13} stroke={1.7} /> {mapped ? 'Re-map from onboarding' : 'Map to racket & draft plan'}
               </button>
               {mapped && <div style={{ marginTop: 8, fontSize: 11, color: T.text2, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ width: 14, height: 14, borderRadius: 4, background: belt.colour, border: '1px solid rgba(0,0,0,.25)', display: 'inline-block' }} />
@@ -186,7 +198,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
 
           {/* Belt ⇄ standard — linked */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Field label="Belt">
+            <Field label="Racket">
               <select style={input} value={beltId} onChange={e => pickBelt(e.target.value)}>
                 {BELTS.map(b => <option key={b.id} value={b.id}>{b.name} — {b.theme}</option>)}
               </select>
@@ -208,8 +220,8 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
             </select>
             <div style={{ marginTop: 5, fontSize: 10.5, color: focusMatches ? accent.hex : T.text3 }}>
               {focusMatches
-                ? `✓ Matches ${belt.name} belt · ${standard.stage}`
-                : `Note: this focus aligns to the ${cap(focusBelt ?? belt.id)} belt — fine to mix, or pick one from ${belt.name}.`}
+                ? `✓ Matches ${belt.name} racket · ${standard.stage}`
+                : `Note: this focus aligns to the ${cap(focusBelt ?? belt.id)} racket — fine to mix, or pick one from ${belt.name}.`}
             </div>
           </Field>
 
@@ -230,7 +242,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
           <Field label="Focus points (one per line)"><textarea style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} rows={3} value={focusPoints} onChange={e => setFocusPoints(e.target.value)} /></Field>
           <Field label="Drills (one per line)"><textarea style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} rows={3} value={drills} onChange={e => setDrills(e.target.value)} /></Field>
 
-          <div style={{ fontSize: 10.5, color: T.text3, marginBottom: 12 }}>A timed run-sheet and the kit list are generated automatically for the session type.{source === 'new' && ' This player is added to your roster at the mapped belt.'}</div>
+          <div style={{ fontSize: 10.5, color: T.text3, marginBottom: 12 }}>A timed run-sheet and the kit list are generated automatically for the session type.{source === 'new' && ' This player is added to your roster at the mapped racket.'}</div>
 
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={save} disabled={!canSave} style={{ flex: 1, appearance: 'none', border: 0, padding: '11px 14px', borderRadius: 9, background: canSave ? accent.hex : T.hover, color: canSave ? T.btnText : T.text3, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: canSave ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>

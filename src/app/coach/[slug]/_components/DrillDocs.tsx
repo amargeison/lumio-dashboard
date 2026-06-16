@@ -100,7 +100,7 @@ export function openDrill(d: Drill) {
       <div style="font-size:25px;font-weight:800;margin-top:4px">${esc(d.focus)}</div>
       <div class="meta">
         <span>${esc(drillLevel(d.belt))}</span>
-        <span>${esc(beltName(d.belt))} belt${b ? ' — ' + esc(b.theme) : ''}</span>
+        <span>${esc(beltName(d.belt))} racket${b ? ' — ' + esc(b.theme) : ''}</span>
         <span>${esc(COACH_ORG.academy)}</span>
       </div>
     </div>
