@@ -11,7 +11,8 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   TODAY_SESSIONS, PLAYERS, LESSONS, BELTS, SESSION_KITS, skillScore, COACH_ORG,
-  type TodaySession,
+  BOOKINGS, COACH_TOP_STATS, TODAY, WEEK_DAYS, DAY_DATES,
+  type TodaySession, type Booking,
 } from '../_lib/coach-data'
 import { getSettings } from '../_lib/settings-store'
 import { getPlans, removePlan, toggleDone, subscribe, type PlannedSession } from '../_lib/session-plan'
@@ -21,6 +22,8 @@ import { SessionReviewPanel } from './SessionReviewPanel'
 import { getAddedSessions, getStatusOverrides, getHiddenSessions, setStatus, clearStatus, deleteSession, subscribe as subscribeSessions } from '../_lib/sessions-store'
 import { useAllPlayers } from '../_lib/use-roster'
 import { NewSessionModal } from './NewSession'
+import { getCalendarItems, getNeedsPlan, dayIndexForDate, mapBookingType, type CalItem } from '../_lib/schedule'
+import { WeekCalendarGrid, bookingTypeColour } from './WeekCalendar'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -103,6 +106,8 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   const [newOpen, setNewOpen] = useState(false)
   const [showReview, setShowReview] = useState(false)
   const [reviewedIds, setReviewedIds] = useState<string[]>([])
+  const [tab, setTab] = useState<'overview' | 'today' | 'week' | 'month'>('overview')
+  const [seedBooking, setSeedBooking] = useState<Booking | null>(null)
   useEffect(() => { const r = () => setPlans(getPlans()); r(); return subscribe(r) }, [])
   useEffect(() => { const r = () => setReviewedIds(getReviews().map(x => x.sessionId)); r(); return subscribeReviews(r) }, [])
   useEffect(() => {
@@ -159,6 +164,33 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
     </button>
   )
 
+  // ─── multi-view data — all derived from the one dated dataset ──────────────
+  const todaySessions = allSessions.filter(s => s.date === TODAY)
+  const calItems = getCalendarItems(added)
+  const needsPlan = getNeedsPlan(added)
+  const nextUp = allSessions.filter(s => s.status !== 'done')
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0]
+  const counts = {
+    today: todaySessions.length,
+    week: allSessions.filter(s => dayIndexForDate(s.date) >= 0).length,
+    pending: BOOKINGS.filter(b => b.status === 'pending').length,
+    rackets: COACH_TOP_STATS.find(s => s.label === 'Rackets due')?.value ?? 0,
+  }
+  const tabs: { id: typeof tab; label: string }[] = [
+    { id: 'overview', label: 'Overview' }, { id: 'today', label: 'Today' },
+    { id: 'week', label: 'This week' }, { id: 'month', label: 'This month' },
+  ]
+  const dayLabel = (date: string) => { const i = dayIndexForDate(date); return i >= 0 ? `${WEEK_DAYS[i]} ${DAY_DATES[i]}` : date }
+  const openWizard = (b: Booking | null) => { setSeedBooking(b); setNewOpen(true) }
+  const selectSession = (id: string) => { setSelId(id); setTab('today') }
+  const onCalItemClick = (it: CalItem) => {
+    if (it.sessionId) selectSession(it.sessionId)
+    else if (it.bookingId) { const b = BOOKINGS.find(x => x.id === it.bookingId); if (b && mapBookingType(b.type)) openWizard(b) }
+  }
+  // Month agenda — calendar items grouped by date (the June demo week).
+  const monthGroups = Array.from(new Set(calItems.map(it => it.date))).sort()
+    .map(date => ({ date, items: calItems.filter(it => it.date === date).sort((a, b) => a.start.localeCompare(b.start)) }))
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -166,7 +198,7 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
           <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Session Planner</h1>
           <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Everything you need for the session you&apos;re about to run — tap a session to load its plan.</p>
         </div>
-        <button onClick={() => setNewOpen(true)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+        <button onClick={() => openWizard(null)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
           <Icon name="plus" size={14} stroke={2} /> New session
         </button>
         <button onClick={() => printRunSheet(sel, sheet, kit)} style={{ appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -174,10 +206,81 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
         </button>
       </div>
 
+      {/* view tabs */}
+      <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginBottom: 16, width: 'fit-content' }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ appearance: 'none', border: 0, padding: '6px 14px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === t.id ? T.panel : 'transparent', color: tab === t.id ? T.text : T.text2, fontWeight: tab === t.id ? 600 : 400, boxShadow: tab === t.id ? `0 0 0 1px ${T.border}` : 'none' }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* ══ OVERVIEW ══ */}
+      {tab === 'overview' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
+          <div className="cm-md" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: density.gap }}>
+            <Card T={T} density={density}>
+              <SectionHead T={T} title="Next up" right={nextUp ? dayLabel(nextUp.date) : ''} />
+              {nextUp ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                  <Avatar accent={accent} initials={initialsOf(nextUp.player)} size={44} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: T.text }}>{nextUp.player}</div>
+                    <div className="tnum" style={{ fontSize: 12, color: T.text3, fontFamily: FONT_MONO }}>{nextUp.time}–{nextUp.end} · {nextUp.type} · {nextUp.court}</div>
+                    <div style={{ fontSize: 12, color: T.text2, marginTop: 4 }}>{nextUp.focus}</div>
+                  </div>
+                  <button onClick={() => selectSession(nextUp.id)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' }}>Open</button>
+                </div>
+              ) : <div style={{ fontSize: 12, color: T.text3 }}>No upcoming sessions.</div>}
+            </Card>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: density.gap }}>
+              {[
+                { l: 'Sessions today', v: counts.today, c: accent.hex },
+                { l: 'This week', v: counts.week, c: T.text },
+                { l: 'Rackets due', v: counts.rackets, c: T.warn },
+                { l: 'Pending bookings', v: counts.pending, c: '#3A8EE0' },
+              ].map((m, i) => (
+                <Card key={i} T={T} density={density}>
+                  <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{m.l}</div>
+                  <div className="tnum" style={{ fontSize: 24, fontWeight: 500, color: m.c, marginTop: 4 }}>{m.v}</div>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <Card T={T} density={density}>
+            <SectionHead T={T} title="Needs a plan" right={`${needsPlan.length}`} />
+            {needsPlan.length ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {needsPlan.map(b => (
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, flexWrap: 'wrap' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: bookingTypeColour(T, accent, b.type), flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{b.player}</div>
+                      <div className="tnum" style={{ fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO }}>{dayLabel(b.date)} · {b.start}–{b.end} · {b.type} · {b.court}</div>
+                    </div>
+                    <button onClick={() => openWizard(b)} style={{ appearance: 'none', border: 0, padding: '7px 12px', borderRadius: 8, background: accent.hex, color: T.btnText, fontSize: 11.5, fontWeight: 600, fontFamily: FONT, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="plus" size={12} stroke={2} /> Build session</button>
+                  </div>
+                ))}
+              </div>
+            ) : <div style={{ fontSize: 12, color: T.text3 }}>Every confirmed booking has a session. Nice.</div>}
+          </Card>
+
+          <div>
+            <SectionHead T={T} title="This week’s calendar" right="synced from Booking Calendar" />
+            <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto' }}>
+              <WeekCalendarGrid T={T} accent={accent} density={density} items={calItems} onItemClick={onCalItemClick} />
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* ══ TODAY (the original single-day planner) ══ */}
+      {tab === 'today' && (
+        <>
+
       {/* today's sessions */}
-      <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Today · {allSessions.length} sessions</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Today · {todaySessions.length} sessions</div>
       <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, marginBottom: density.gap }}>
-        {allSessions.map(s => {
+        {todaySessions.map(s => {
           const on = s.id === selId; const b = statusBadge(s)
           return (
             <button key={s.id} onClick={() => setSelId(s.id)} style={{ appearance: 'none', textAlign: 'left', cursor: 'pointer', flexShrink: 0, width: 190, padding: 12, borderRadius: 12, background: on ? accent.dim : T.panel, border: `1px solid ${on ? accent.border : T.border}`, opacity: s.status === 'done' && !on ? 0.6 : 1 }}>
@@ -313,8 +416,39 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
           </div>
         </>
       )}
+        </>
+      )}
 
-      {newOpen && <NewSessionModal T={T} accent={accent} density={density} players={rosterPlayers} onClose={() => setNewOpen(false)} onCreated={id => setSelId(id)} />}
+      {/* ══ THIS WEEK ══ */}
+      {tab === 'week' && (
+        <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto' }}>
+          <WeekCalendarGrid T={T} accent={accent} density={density} items={calItems} onItemClick={onCalItemClick} />
+        </Card>
+      )}
+
+      {/* ══ THIS MONTH (agenda) ══ */}
+      {tab === 'month' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
+          {monthGroups.map(g => (
+            <Card key={g.date} T={T} density={density}>
+              <SectionHead T={T} title={dayLabel(g.date)} right={`${g.items.length}`} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {g.items.map(it => (
+                  <button key={it.key} onClick={() => onCalItemClick(it)} style={{ appearance: 'none', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8 }}>
+                    <span className="tnum" style={{ fontSize: 11.5, color: T.text2, fontFamily: FONT_MONO, width: 92, flexShrink: 0 }}>{it.start}–{it.end}</span>
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: bookingTypeColour(T, accent, it.type), flexShrink: 0 }} />
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.player}</span>
+                    <span style={{ fontSize: 11, color: T.text3 }}>{it.type} · {it.court}</span>
+                    {!it.sessionId && it.bookingId && mapBookingType(it.type as Booking['type']) && <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' }}>Build</span>}
+                  </button>
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {newOpen && <NewSessionModal T={T} accent={accent} density={density} players={rosterPlayers} seedBooking={seedBooking ?? undefined} onClose={() => { setNewOpen(false); setSeedBooking(null) }} onCreated={id => { selectSession(id); setSeedBooking(null) }} />}
     </div>
   )
 }

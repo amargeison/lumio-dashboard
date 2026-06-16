@@ -7,11 +7,13 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   COACH_ORG, COACH_TOP_STATS, COACH_TODAY, COACH_AI_BRIEF, COACH_MESSAGES,
   BELTS, ALL_SKILLS, MASTERY_LABELS, skillScore, LTA_MAP,
-  PLAYERS, LESSONS, BOOKINGS, WEEK_DAYS, DAY_DATES, CAL_HOURS, RESOURCES, TODAY, dateForDay,
+  PLAYERS, LESSONS, RESOURCES,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
   type Player, type Lesson, type Resource, type Camp,
 } from '../_lib/coach-data'
+import { WeekCalendarGrid, bookingTypeColour } from './WeekCalendar'
+import { bookingCalItems } from '../_lib/schedule'
 import { printBeltCertificate } from './BeltCertificate'
 import { LessonShareMenu } from './ShareMenu'
 import { CampEquipment, CampPlayerPacks } from './CampPacks'
@@ -611,53 +613,16 @@ function ballColour(b: string) { return b === 'Red' ? '#C75A5A' : b === 'Orange'
 // BOOKING CALENDAR  (week grid)
 // ════════════════════════════════════════════════════════════════════════════
 export function CalendarView({ T, accent, density }: Common) {
-  const typeColour = (t: string) => t === 'Private' ? accent.hex : t === 'Group' ? '#3A8EE0' : t === 'Cardio' ? T.warn : t === 'Match play' ? T.good : T.text3
-  const hourIdx = (hhmm: string) => CAL_HOURS.indexOf(hhmm.slice(0, 2) + ':00')
-  const rowH = 46
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Booking Calendar" sub="Your week across all courts — private lessons, group squads, cardio and match play."
         action={<button style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> Add booking</button>} />
       <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto' }}>
-       <div style={{ minWidth: 680 }}>
-        {/* header */}
-        <div style={{ display: 'grid', gridTemplateColumns: `60px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}` }}>
-          <div />
-          {WEEK_DAYS.map((d, i) => (
-            <div key={d} style={{ padding: '10px 6px', textAlign: 'center', borderLeft: `1px solid ${T.border}`, background: dateForDay(i) === TODAY ? accent.dim : 'transparent' }}>
-              <div style={{ fontSize: 11, color: dateForDay(i) === TODAY ? accent.hex : T.text2, fontWeight: 600 }}>{d}</div>
-              <div className="tnum" style={{ fontSize: 16, color: dateForDay(i) === TODAY ? accent.hex : T.text, fontWeight: 600 }}>{DAY_DATES[i]}</div>
-            </div>
-          ))}
-        </div>
-        {/* grid */}
-        <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: `60px repeat(7, 1fr)` }}>
-          {/* hour rows */}
-          <div>
-            {CAL_HOURS.map(h => <div key={h} style={{ height: rowH, fontSize: 10, color: T.text3, fontFamily: FONT_MONO, padding: '2px 6px', textAlign: 'right' }}>{h}</div>)}
-          </div>
-          {WEEK_DAYS.map((_d, di) => (
-            <div key={di} style={{ position: 'relative', borderLeft: `1px solid ${T.border}` }}>
-              {CAL_HOURS.map(h => <div key={h} style={{ height: rowH, borderTop: `1px solid ${T.border}` }} />)}
-              {BOOKINGS.filter(b => b.day === di).map(b => {
-                const top = hourIdx(b.start) * rowH + (parseInt(b.start.slice(3)) / 60) * rowH
-                const endTop = hourIdx(b.end) * rowH + (parseInt(b.end.slice(3)) / 60) * rowH
-                const c = typeColour(b.type)
-                return (
-                  <div key={b.id} style={{ position: 'absolute', left: 3, right: 3, top: top + 1, height: Math.max(endTop - top - 2, 22), background: b.status === 'pending' ? `${c}14` : `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '3px 6px', overflow: 'hidden', opacity: b.status === 'cancelled' ? 0.4 : 1 }}>
-                    <div style={{ fontSize: 10.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.player}</div>
-                    <div style={{ fontSize: 9, color: T.text2, fontFamily: FONT_MONO }}>{b.start}–{b.end} · {b.court}</div>
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-        </div>
-       </div>
+        <WeekCalendarGrid T={T} accent={accent} density={density} items={bookingCalItems()} />
       </Card>
       <div style={{ display: 'flex', gap: 14, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
         {['Private', 'Group', 'Cardio', 'Match play', 'Block'].map(t => (
-          <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: typeColour(t) }} />{t}</span>
+          <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: bookingTypeColour(T, accent, t) }} />{t}</span>
         ))}
         <span style={{ marginLeft: 'auto' }}>Faint fill = pending confirmation</span>
       </div>

@@ -6,8 +6,9 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   BELTS, LTA_MAP, STANDARDS, FOCUS_CATALOGUE, focusForBelt, beltIndexOf,
-  ONBOARDING_LEVELS, mapOnboardingToBelt, TODAY, type Player, type TodaySession,
+  ONBOARDING_LEVELS, mapOnboardingToBelt, TODAY, type Player, type TodaySession, type Booking,
 } from '../_lib/coach-data'
+import { mapBookingType } from '../_lib/schedule'
 import { addSession } from '../_lib/sessions-store'
 import { addPlayer } from '../_lib/roster-store'
 
@@ -18,6 +19,10 @@ function computeEnd(time: string, mins: number) {
   let total = parseInt(m[1]) * 60 + parseInt(m[2]) + (mins || 0)
   total = ((total % 1440) + 1440) % 1440
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
+}
+function minsBetween(start: string, end: string) {
+  const at = (t: string) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim()); return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : 0 }
+  return Math.max(at(end) - at(start), 0)
 }
 function draftFocus(focus: string, note: string) {
   const fl = (focus.trim() || 'the focus').toLowerCase()
@@ -33,10 +38,16 @@ function draftFocus(focus: string, note: string) {
 
 type SessType = TodaySession['type']
 
-export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T: ThemeTokens; accent: AccentTokens; density: Density; players: Player[]; onClose: () => void; onCreated: (id: string) => void }) {
-  const [source, setSource] = useState<'roster' | 'new'>('roster')
-  const [playerId, setPlayerId] = useState(players[0]?.id ?? '')
-  const [customName, setCustomName] = useState('')
+export function NewSessionModal({ T, accent, players, seedBooking, onClose, onCreated }: { T: ThemeTokens; accent: AccentTokens; density: Density; players: Player[]; seedBooking?: Booking; onClose: () => void; onCreated: (id: string) => void }) {
+  // When launched from a confirmed booking, pre-fill from it. A roster match wires
+  // racket/focus; a squad/cardio booking with no roster player falls back to a
+  // free-text name (the coach fills focus manually) — never crashes on no player.
+  const seedPlayer = seedBooking ? players.find(p => p.name === seedBooking.player) : undefined
+  const seedType = seedBooking ? (mapBookingType(seedBooking.type) ?? 'Private') : undefined
+
+  const [source, setSource] = useState<'roster' | 'new'>(seedBooking && !seedPlayer ? 'new' : 'roster')
+  const [playerId, setPlayerId] = useState(seedPlayer?.id ?? players[0]?.id ?? '')
+  const [customName, setCustomName] = useState(seedBooking && !seedPlayer ? seedBooking.player : '')
 
   // Onboarding intake (new player)
   const [obLevel, setObLevel] = useState(ONBOARDING_LEVELS[0].id)
@@ -45,10 +56,10 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
   const [mapped, setMapped] = useState(false)
 
   // Session detail
-  const [time, setTime] = useState('14:00')
-  const [mins, setMins] = useState('60')
-  const [type, setType] = useState<SessType>('Private')
-  const [court, setCourt] = useState('Court 1')
+  const [time, setTime] = useState(seedBooking?.start ?? '14:00')
+  const [mins, setMins] = useState(seedBooking ? String(minsBetween(seedBooking.start, seedBooking.end)) : '60')
+  const [type, setType] = useState<SessType>(seedType ?? 'Private')
+  const [court, setCourt] = useState(seedBooking && seedBooking.court !== '—' ? seedBooking.court : 'Court 1')
 
   // Belt ⇄ standard (1:1) + matched focus
   const rosterPlayer0 = players.find(p => p.id === playerId)
@@ -121,7 +132,8 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
       time: time.trim(), end: computeEnd(time, Number(mins) || 60),
       player: playerName, playerId: linkedId,
       type, court: court.trim() || 'Court 1', mins: Number(mins) || 60,
-      focus: focus.trim(), status: 'upcoming', date: TODAY,
+      focus: focus.trim(), status: 'upcoming',
+      date: seedBooking?.date ?? TODAY, bookingId: seedBooking?.id,
       focusPoints: lines(focusPoints).length ? lines(focusPoints) : undefined,
       drills: lines(drills).length ? lines(drills) : undefined,
     }
