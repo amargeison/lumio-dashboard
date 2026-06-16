@@ -937,7 +937,8 @@ type CampSub = Common & { camp: Camp }
 function CampOverview({ T, accent, density, camp, attendees, targets }: CampSub & { attendees: typeof CAMP_ATTENDEES; targets: typeof CAMP_TARGETS[string] }) {
   const collected = attendees.reduce((s, a) => s + (camp.pricePerHead - a.balance), 0)
   const outstanding = attendees.reduce((s, a) => s + a.balance, 0)
-  const days = buildCampItinerary()
+  const dayCamp = camp.country === 'England'
+  const days = buildCampItinerary(camp)
   const sessionCount = days.reduce((s, d) => s + d.sessions.filter(x => x.type !== 'Logistics' && x.type !== 'Social' && x.type !== 'Culture').length, 0)
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: density.gap }} className="cm-12">
@@ -947,7 +948,7 @@ function CampOverview({ T, accent, density, camp, attendees, targets }: CampSub 
           {[
             ['Location', `${camp.resort}`], ['Region', `${camp.location}, ${camp.country}`],
             ['Duration', `${camp.days} days · ${camp.start}–${camp.end}`], ['Courts', `${camp.courts} · ${camp.surfaces}`],
-            ['Coaching sessions', `${sessionCount} across the fortnight`], ['Daily rhythm', 'AM technical · PM tactical/match · EVE video/fitness'],
+            ['Coaching sessions', `${sessionCount} across the camp`], ['Daily rhythm', dayCamp ? 'AM skills · PM games & match play' : 'AM technical · PM tactical/match · EVE video/fitness'],
             ['Capacity', `${camp.booked} of ${camp.capacity} booked`], ['Board', 'Full board at resort'],
           ].map(([k, v], i) => (
             <div key={i} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' }}>
@@ -987,14 +988,15 @@ function FinRow({ T, label, value, tone }: { T: ThemeTokens; label: string; valu
 }
 
 function CampItinerary({ T, accent, density, camp }: CampSub) {
-  const days = buildCampItinerary(parseInt(camp.start), camp.start.split(' ')[1])
+  const days = buildCampItinerary(camp)
+  const dayCamp = camp.country === 'England'
   const slotColour = (type: string) => ({
     Technical: accent.hex, Tactical: '#3A8EE0', 'Match play': T.good, Video: '#E5C76B', Fitness: T.warn,
     Recovery: T.text3, Culture: '#3A8EE0', Social: '#E08A3C', Logistics: T.text3, Briefing: accent.hex, Review: accent.hex,
   } as Record<string, string>)[type] ?? T.text3
   return (
     <Card T={T} density={density} style={{ padding: density.pad }}>
-      <SectionHead T={T} title={`14-day itinerary — ${camp.name}`} right={<span style={{ fontFamily: FONT_MONO }}>AM · PM · EVE</span>} />
+      <SectionHead T={T} title={`${camp.days}-day itinerary — ${camp.name}`} right={<span style={{ fontFamily: FONT_MONO }}>{dayCamp ? 'AM · PM' : 'AM · PM · EVE'}</span>} />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {days.map(d => (
           <div key={d.day} style={{ display: 'grid', gridTemplateColumns: '64px 1fr', gap: 12, padding: '10px 0', borderTop: d.day > 1 ? `1px solid ${T.border}` : 'none', opacity: d.rest ? 0.85 : 1 }}>

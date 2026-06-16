@@ -1159,11 +1159,56 @@ const ALGARVE_DAY_THEMES = [
   'Pressure & tie-breaks', 'Finals, reviews & departure',
 ]
 
-export function buildCampItinerary(startDay = 6, month = 'Jul'): CampDay[] {
-  return ALGARVE_DAY_THEMES.map((theme, i) => {
+// Domestic day-camp themes (no overnight) — used for short, non-residential
+// camps (e.g. the half-term day camps run at the home venue).
+const DAYCAMP_THEMES = [
+  'Groundstroke skills', 'Serve & return', 'Net play & volleys', 'Movement & rally games', 'Tactics & match play',
+]
+
+function dayCampDay(day: number, date: string, total: number): CampDay {
+  if (day === 1) {
+    return { day, date, theme: 'Welcome & assessment', sessions: [
+      { slot: 'AM', time: '09:30', title: 'Registration, warm-up & group assessment', type: 'Briefing',   where: 'Courts 1–6' },
+      { slot: 'PM', time: '13:30', title: 'Fun games & first skills block',            type: 'Technical',  where: 'Courts 1–6' },
+    ] }
+  }
+  if (day === total) {
+    return { day, date, theme: 'Mini-tournament & awards', sessions: [
+      { slot: 'AM', time: '09:30', title: 'Mini-tournament rounds',          type: 'Match play', where: 'Courts 1–6' },
+      { slot: 'PM', time: '13:30', title: 'Finals, awards & parent pick-up', type: 'Review',     where: 'Courts 1–6' },
+    ] }
+  }
+  const theme = DAYCAMP_THEMES[(day - 2) % DAYCAMP_THEMES.length]
+  return { day, date, theme, sessions: [
+    { slot: 'AM', time: '09:30', title: `Skills — ${theme.toLowerCase()}`, type: 'Technical',  where: 'Courts 1–6' },
+    { slot: 'PM', time: '13:30', title: 'Games & match play',              type: 'Match play', where: 'Courts 1–6' },
+  ] }
+}
+
+// Length- and kind-aware itinerary. Pass the camp to size the itinerary to its
+// real number of days and pick the right rhythm: overseas residential camps get
+// the AM/PM/EVE block with arrival, a mid-camp rest day and finals/departures;
+// domestic day camps (country England) get a no-overnight 9:30–15:30 day.
+// Called with no camp it defaults to a 14-day residential template.
+export function buildCampItinerary(camp?: Pick<Camp, 'start' | 'days' | 'country'>): CampDay[] {
+  const startDay = camp ? (parseInt(camp.start) || 6) : 6
+  const month = camp ? (camp.start.split(' ')[1] || 'Jul') : 'Jul'
+  const total = Math.max(1, camp?.days ?? 14)
+  const dateFor = (i: number) => `${startDay + i} ${month}`
+
+  // Domestic day camp — short, no overnight.
+  if (camp?.country === 'England') {
+    return Array.from({ length: total }, (_, i) => dayCampDay(i + 1, dateFor(i), total))
+  }
+
+  // Residential overseas camp — the original 14-day rhythm, generalised to length.
+  return Array.from({ length: total }, (_, i) => {
     const day = i + 1
-    const date = `${startDay + i} ${month}`
-    const rest = day === 7
+    const date = dateFor(i)
+    const theme = day === total
+      ? ALGARVE_DAY_THEMES[ALGARVE_DAY_THEMES.length - 1]
+      : ALGARVE_DAY_THEMES[i % ALGARVE_DAY_THEMES.length]
+    const rest = total >= 9 && day === 7
     if (rest) {
       return { day, date, theme, rest: true, sessions: [
         { slot: 'AM', time: '—',     title: 'Rest / optional pool recovery', type: 'Recovery', where: 'Resort' },
@@ -1178,7 +1223,7 @@ export function buildCampItinerary(startDay = 6, month = 'Jul'): CampDay[] {
         { slot: 'EVE',time: '19:30', title: 'Welcome briefing & goal-setting',      type: 'Briefing',  where: 'Clubhouse' },
       ] }
     }
-    if (day === 14) {
+    if (day === total) {
       return { day, date, theme, sessions: [
         { slot: 'AM', time: '09:00', title: 'Ladder finals & racket assessments',   type: 'Match play', where: 'Centre court' },
         { slot: 'PM', time: '13:00', title: '1:1 reviews & off-season plans',        type: 'Review',     where: 'Clubhouse' },
@@ -1188,7 +1233,7 @@ export function buildCampItinerary(startDay = 6, month = 'Jul'): CampDay[] {
     // Standard training day
     return { day, date, theme, sessions: [
       { slot: 'AM', time: '08:30', title: `Technical — ${theme.toLowerCase()}`, type: 'Technical', where: 'Courts 1–4' },
-      { slot: 'PM', time: '15:30', title: day >= 11 ? 'Match-play ladder rounds' : 'Tactical drills & live points', type: day >= 11 ? 'Match play' : 'Tactical', where: 'Courts 1–6' },
+      { slot: 'PM', time: '15:30', title: day >= total - 3 ? 'Match-play ladder rounds' : 'Tactical drills & live points', type: day >= total - 3 ? 'Match play' : 'Tactical', where: 'Courts 1–6' },
       { slot: 'EVE',time: '18:30', title: day % 2 === 0 ? 'Video review & analysis' : 'Fitness & mobility', type: day % 2 === 0 ? 'Video' : 'Fitness', where: day % 2 === 0 ? 'Clubhouse' : 'Gym / track' },
     ] }
   })
@@ -1252,21 +1297,20 @@ function seedOf(a: CampAttendee): number {
 }
 
 export function buildPlayerCampLog(a: CampAttendee, camp: Camp): CampLogDay[] {
-  const start = parseInt(camp.start) || 6
-  const month = camp.start.split(' ')[1] || 'Jul'
-  const itin = buildCampItinerary(start, month)
+  const itin = buildCampItinerary(camp)
+  const lastDay = itin.length
   const goal = a.goal.toLowerCase()
   const s = seedOf(a)
   return itin.map((d, i) => {
     if (d.rest) return { day: d.day, date: d.date, theme: d.theme, rest: true, am: 'Active recovery + pool — kept the body fresh.', pm: 'Team excursion and week-1 awards evening.', nextAction: 'Recharge and reset goals for week two.', effort: 4 }
     if (d.day === 1) return { day: d.day, date: d.date, theme: d.theme, am: 'Arrived and settled in; baseline assessment hit and filmed.', pm: `Set personal camp goal: ${a.goal}.`, nextAction: 'Review baseline video tonight with the group.', effort: 4 }
-    if (d.day === 14) return { day: d.day, date: d.date, theme: d.theme, am: 'Ladder finals and end-of-camp racket assessment.', pm: '1:1 review with coach and personal off-season plan agreed.', nextAction: 'Keep the off-season plan going — 4-week checkpoint set.', effort: 5 }
+    if (d.day === lastDay) return { day: d.day, date: d.date, theme: d.theme, am: 'Ladder finals and end-of-camp racket assessment.', pm: '1:1 review with coach and personal off-season plan agreed.', nextAction: 'Keep the off-season plan going — 4-week checkpoint set.', effort: 5 }
     const focus = d.theme.toLowerCase()
     const effort = 3 + ((s + d.day) % 3) // 3..5
     return {
       day: d.day, date: d.date, theme: d.theme,
       am: `Technical block on ${focus}; clear progress towards "${a.goal}".`,
-      pm: d.day >= 11 ? 'Competitive ladder matches — applying it under pressure.' : 'Tactical drills and live points to lock it in.',
+      pm: d.day >= lastDay - 3 ? 'Competitive ladder matches — applying it under pressure.' : 'Tactical drills and live points to lock it in.',
       nextAction: ((s + d.day) % 2 === 0)
         ? `Shadow-rep tonight: 20 reps focused on ${focus.split(' ')[0]}.`
         : 'Watch your clip and note one thing to keep, one to improve.',
