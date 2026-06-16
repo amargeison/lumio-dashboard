@@ -19,7 +19,7 @@ import { getRecordings, subscribe as subscribeRecordings, tagRecording } from '.
 import { suggestSessionForRecording, sessionsForRecordingPlayer, type Recording } from '../_lib/recordings-data'
 import { getAddedSessions, subscribe as subscribeSessions } from '../_lib/sessions-store'
 import { SessionReviewPanel } from './SessionReviewPanel'
-import { AudioFieldRecorder } from './AudioFieldRecorder'
+import { MediaFieldRecorder } from './MediaFieldRecorder'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -140,6 +140,7 @@ export function VideoAudioView({ T, accent, density }: Common) {
       {tab === 'video' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
           <DeviceLine T={T} icon="eye" name="Lumio Vision" meta={`${videoRecs.length} clips logged`} />
+          <MediaFieldRecorder T={T} accent={accent} density={density} defaultMode="video" />
           {videoRecs.length === 0 ? (
             <div style={{ background: T.panel, border: `1px dashed ${T.border}`, borderRadius: density.radius, padding: '40px 20px', textAlign: 'center' }}>
               <Icon name="play" size={26} stroke={1.4} style={{ color: T.text3 }} />
@@ -171,7 +172,7 @@ export function VideoAudioView({ T, accent, density }: Common) {
       {tab === 'audio' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
           <DeviceLine T={T} icon="mic" name="Lumio Mic" meta={`${audioRecs.length} recordings`} />
-          <AudioFieldRecorder T={T} accent={accent} density={density} />
+          <MediaFieldRecorder T={T} accent={accent} density={density} defaultMode="audio" />
           {audioRecs.length === 0 ? (
             <div style={{ background: T.panel, border: `1px dashed ${T.border}`, borderRadius: density.radius, padding: '40px 20px', textAlign: 'center' }}>
               <Icon name="mic" size={26} stroke={1.5} style={{ color: T.text3 }} />
