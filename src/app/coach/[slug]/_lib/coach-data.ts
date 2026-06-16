@@ -22,6 +22,20 @@ export const COACH_ORG = {
   season:     { activePlayers: 34, lessonsThisWeek: 41, retention: 92, beltsAwarded: 7 },
 } as const
 
+// ─── Demo date anchor ────────────────────────────────────────────────────────
+// Deterministic "today" for the demo — fixed constants, never new Date(), so the
+// portal renders identically regardless of the real clock. The demo week runs
+// Mon 8 Jun → Sun 14 Jun 2026; "today" is Thursday the 11th (= COACH_ORG.date).
+export const WEEK_START = '2026-06-08'   // Monday of the demo week
+export const TODAY = '2026-06-11'        // Thursday — the portal's "today"
+
+// Calendar date for a weekday index (0=Mon … 6=Sun) within the demo week. Pure
+// string arithmetic (no Date()) — valid because the whole week sits inside June.
+export function dateForDay(dayIndex: number): string {
+  const [y, m, d] = WEEK_START.split('-').map(Number)
+  return `${y}-${String(m).padStart(2, '0')}-${String(d + dayIndex).padStart(2, '0')}`
+}
+
 // ─── Top stat tiles ────────────────────────────────────────────────────────
 export type CoachStatTone = 'urgent' | 'warn' | 'danger' | 'ok' | 'accent'
 export type CoachStatTile = { label: string; value: string | number; sub: string; tone: CoachStatTone }
@@ -430,6 +444,7 @@ export const LESSONS: Lesson[] = [
 export type Booking = {
   id: string
   day: number                // 0=Mon … 6=Sun
+  date: string               // 'YYYY-MM-DD' — derived from day via dateForDay()
   start: string              // 'HH:MM'
   end: string
   player: string
@@ -442,7 +457,7 @@ export const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 export const DAY_DATES = ['8', '9', '10', '11', '12', '13', '14']  // Jun 2026 week
 export const CAL_HOURS = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00']
 
-export const BOOKINGS: Booking[] = [
+const BOOKINGS_SEED: Omit<Booking, 'date'>[] = [
   { id: 'b1', day: 3, start: '09:00', end: '09:45', player: 'Mia Chen',      type: 'Private',    court: 'Court 1', status: 'confirmed' },
   { id: 'b2', day: 3, start: '10:30', end: '11:30', player: 'Tom Okafor',    type: 'Private',    court: 'Court 2', status: 'confirmed' },
   { id: 'b3', day: 3, start: '12:00', end: '13:00', player: 'Junior Squad',  type: 'Group',      court: 'Court 1', status: 'confirmed' },
@@ -458,6 +473,10 @@ export const BOOKINGS: Booking[] = [
   { id: 'b13', day: 0, start: '17:00', end: '18:00', player: 'Adult Group',  type: 'Group',      court: 'Court 4', status: 'confirmed' },
   { id: 'b14', day: 6, start: '10:00', end: '11:00', player: 'Open coaching', type: 'Block',     court: 'Court 1', status: 'pending'   },
 ]
+
+// Bookings are the canonical schedule record. Each row's calendar date is derived
+// from its weekday index so we never hand-type dates.
+export const BOOKINGS: Booking[] = BOOKINGS_SEED.map(b => ({ ...b, date: dateForDay(b.day) }))
 
 // ─── Resource centre ────────────────────────────────────────────────────────
 export type Resource = {
@@ -924,10 +943,16 @@ export type TodaySession = {
   id: string; time: string; end: string; player: string; playerId?: string
   type: 'Private' | 'Group' | 'Cardio' | 'Match play' | 'Mini / red ball'
   court: string; mins: number; focus: string; status: 'done' | 'now' | 'upcoming'
+  date: string              // 'YYYY-MM-DD' — the day this session runs
+  bookingId?: string        // the confirmed booking this session traces back to
   focusPoints?: string[]; drills?: string[]   // set when created via "New session"
 }
 
-export const TODAY_SESSIONS: TodaySession[] = [
+// Internal seed for today's sessions. Preserves the demo content (focus, status,
+// drills) AND the ts1–ts6 ids the AI Session Review (DEMO_REVIEWS) is keyed by.
+// Bookings are the schedule source of truth; this seed only enriches the derived
+// list below — it is not a parallel schedule.
+const TODAY_SESSION_SEED: Omit<TodaySession, 'date' | 'bookingId'>[] = [
   { id: 'ts1', time: '09:00', end: '09:45', player: 'Mia Chen',     playerId: 'p1', type: 'Private',    court: 'Court 1', mins: 45, focus: 'First serve fundamentals', status: 'done' },
   { id: 'ts2', time: '10:30', end: '11:30', player: 'Tom Okafor',   playerId: 'p2', type: 'Private',    court: 'Court 2', mins: 60, focus: 'Second serve into serve+1 patterns', status: 'now' },
   { id: 'ts3', time: '12:00', end: '13:00', player: 'Junior Squad (6)',              type: 'Group',      court: 'Court 1', mins: 60, focus: 'Rally tolerance & match games', status: 'upcoming' },
@@ -935,6 +960,22 @@ export const TODAY_SESSIONS: TodaySession[] = [
   { id: 'ts5', time: '17:00', end: '18:00', player: 'Cardio Tennis (8)',            type: 'Cardio',     court: 'Court 4', mins: 60, focus: 'High-tempo fitness & live games', status: 'upcoming' },
   { id: 'ts6', time: '18:00', end: '19:15', player: 'Daniel Cruz',  playerId: 'p6', type: 'Match play', court: 'Court 3', mins: 75, focus: 'Competitive sets — serve+1 patterns', status: 'upcoming' },
 ]
+
+// The confirmed booking a seed session traces back to: same date (today), same
+// start time, and the booking's player name matches or is a prefix of the
+// session's (bookings say 'Junior Squad'; the session shows 'Junior Squad (6)').
+function bookingForSession(s: { time: string; player: string }): Booking | undefined {
+  return BOOKINGS.find(b =>
+    b.date === TODAY && b.status === 'confirmed' && b.start === s.time &&
+    (b.player === s.player || s.player.startsWith(b.player)))
+}
+
+// Today's sessions — the source for the Session Planner. Derived from the dated
+// schedule: each carries a real date and links to its booking where one exists
+// (the 17:00 Cardio session has no Thursday booking, so its bookingId is unset).
+export const TODAY_SESSIONS: TodaySession[] = TODAY_SESSION_SEED.map(s => ({
+  ...s, date: TODAY, bookingId: bookingForSession(s)?.id,
+}))
 
 export const COACH_TODAY: CoachScheduleItem[] = [
   { t: '08:00', what: 'Court setup & planning',        where: 'Courts 1–3', type: 'Admin' },

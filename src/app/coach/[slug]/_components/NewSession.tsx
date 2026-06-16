@@ -6,7 +6,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   BELTS, LTA_MAP, STANDARDS, FOCUS_CATALOGUE, focusForBelt, beltIndexOf,
-  ONBOARDING_LEVELS, mapOnboardingToBelt, type Player, type TodaySession,
+  ONBOARDING_LEVELS, mapOnboardingToBelt, TODAY, type Player, type TodaySession,
 } from '../_lib/coach-data'
 import { addSession } from '../_lib/sessions-store'
 import { addPlayer } from '../_lib/roster-store'
@@ -121,7 +121,7 @@ export function NewSessionModal({ T, accent, players, onClose, onCreated }: { T:
       time: time.trim(), end: computeEnd(time, Number(mins) || 60),
       player: playerName, playerId: linkedId,
       type, court: court.trim() || 'Court 1', mins: Number(mins) || 60,
-      focus: focus.trim(), status: 'upcoming',
+      focus: focus.trim(), status: 'upcoming', date: TODAY,
       focusPoints: lines(focusPoints).length ? lines(focusPoints) : undefined,
       drills: lines(drills).length ? lines(drills) : undefined,
     }

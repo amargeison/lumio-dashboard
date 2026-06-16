@@ -7,7 +7,7 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   COACH_ORG, COACH_TOP_STATS, COACH_TODAY, COACH_AI_BRIEF, COACH_MESSAGES,
   BELTS, ALL_SKILLS, MASTERY_LABELS, skillScore, LTA_MAP,
-  PLAYERS, LESSONS, BOOKINGS, WEEK_DAYS, DAY_DATES, CAL_HOURS, RESOURCES,
+  PLAYERS, LESSONS, BOOKINGS, WEEK_DAYS, DAY_DATES, CAL_HOURS, RESOURCES, TODAY, dateForDay,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
   type Player, type Lesson, type Resource, type Camp,
@@ -624,9 +624,9 @@ export function CalendarView({ T, accent, density }: Common) {
         <div style={{ display: 'grid', gridTemplateColumns: `60px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}` }}>
           <div />
           {WEEK_DAYS.map((d, i) => (
-            <div key={d} style={{ padding: '10px 6px', textAlign: 'center', borderLeft: `1px solid ${T.border}`, background: i === 3 ? accent.dim : 'transparent' }}>
-              <div style={{ fontSize: 11, color: i === 3 ? accent.hex : T.text2, fontWeight: 600 }}>{d}</div>
-              <div className="tnum" style={{ fontSize: 16, color: i === 3 ? accent.hex : T.text, fontWeight: 600 }}>{DAY_DATES[i]}</div>
+            <div key={d} style={{ padding: '10px 6px', textAlign: 'center', borderLeft: `1px solid ${T.border}`, background: dateForDay(i) === TODAY ? accent.dim : 'transparent' }}>
+              <div style={{ fontSize: 11, color: dateForDay(i) === TODAY ? accent.hex : T.text2, fontWeight: 600 }}>{d}</div>
+              <div className="tnum" style={{ fontSize: 16, color: dateForDay(i) === TODAY ? accent.hex : T.text, fontWeight: 600 }}>{DAY_DATES[i]}</div>
             </div>
           ))}
         </div>
@@ -659,7 +659,7 @@ export function CalendarView({ T, accent, density }: Common) {
         {['Private', 'Group', 'Cardio', 'Match play', 'Block'].map(t => (
           <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: typeColour(t) }} />{t}</span>
         ))}
-        <span style={{ marginLeft: 'auto' }}>Dashed fill = pending confirmation</span>
+        <span style={{ marginLeft: 'auto' }}>Faint fill = pending confirmation</span>
       </div>
     </div>
   )
