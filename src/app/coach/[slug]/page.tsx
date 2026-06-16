@@ -162,7 +162,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
       case 'calendar':    return <CalendarView T={T} accent={accent} density={density} />
       case 'venues':      return <CourtPlannerView T={T} accent={accent} density={density} />
       case 'camps':       return <CampsView T={T} accent={accent} density={density} />
-      case 'roster':      return <RosterView T={T} accent={accent} density={density} />
+      case 'roster':      return <RosterView T={T} accent={accent} density={density} onNavigate={setActive} />
       case 'videoaudio':  return <VideoAudioView T={T} accent={accent} density={density} />
       case 'gpsheatmaps': return <HeatmapsView T={T} accent={accent} density={density} />
       case 'messages':    return <MessagesView T={T} accent={accent} density={density} />

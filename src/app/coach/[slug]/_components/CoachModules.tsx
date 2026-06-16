@@ -22,7 +22,7 @@ import { LessonShareMenu } from './ShareMenu'
 import { CampEquipment, CampPlayerPacks } from './CampPacks'
 import { LessonAiBrief, PlayerDetailModal, printLessonReport } from './CoachDetails'
 import { NewSummaryModal } from './NewSummary'
-import { getAllLessons, subscribe as subscribeLessons } from '../_lib/lessons-store'
+import { getAllLessons, subscribe as subscribeLessons, consumeOpenLesson } from '../_lib/lessons-store'
 import { BooksPanel } from './BooksPanel'
 import { openResource } from './ResourceDocs'
 import { DrillLibrary } from './DrillLibrary'
@@ -295,6 +295,8 @@ export function LessonsView({ T, accent, density }: Common) {
   const [allLessons, setAllLessons] = useState<Lesson[]>(LESSONS)
   useEffect(() => { const r = () => setAllLessons(getAllLessons()); r(); return subscribeLessons(r) }, [])
   const [selId, setSelId] = useState(LESSONS[0].id)
+  // Open the lesson the player-card "View full summary" link asked for, if any.
+  useEffect(() => { const id = consumeOpenLesson(); if (id) setSelId(id) }, [])
   const [shareOpen, setShareOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
   const sel = allLessons.find(l => l.id === selId) ?? allLessons[0]
@@ -721,7 +723,7 @@ export function CalendarView({ T, accent, density }: Common) {
 // ════════════════════════════════════════════════════════════════════════════
 // ROSTER
 // ════════════════════════════════════════════════════════════════════════════
-export function RosterView({ T, accent, density }: Common) {
+export function RosterView({ T, accent, density, onNavigate }: Common & { onNavigate?: (s: string) => void }) {
   const [group, setGroup] = useState<'All' | 'Junior' | 'Performance' | 'Adult'>('All')
   const [sel, setSel] = useState<Player | null>(null)
   const [addOpen, setAddOpen] = useState(false)
@@ -774,7 +776,7 @@ export function RosterView({ T, accent, density }: Common) {
           </Card>
         ))}
       </div>
-      {sel && <PlayerDetailModal T={T} accent={accent} density={density} player={sel} onClose={() => setSel(null)} />}
+      {sel && <PlayerDetailModal T={T} accent={accent} density={density} player={sel} onClose={() => setSel(null)} onNavigate={onNavigate} />}
       {addOpen && <AddPlayerModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>
   )

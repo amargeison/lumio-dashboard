@@ -15,6 +15,7 @@ import {
 } from '../_lib/coach-data'
 import { addPlan, hasPlan } from '../_lib/session-plan'
 import { getSettings } from '../_lib/settings-store'
+import { requestOpenLesson } from '../_lib/lessons-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -132,7 +133,14 @@ export function LessonAiBrief({ T, accent, density, lesson }: Common & { lesson:
 // ════════════════════════════════════════════════════════════════════════════
 // PLAYER DETAIL MODAL
 // ════════════════════════════════════════════════════════════════════════════
-export function PlayerDetailModal({ T, accent, density, player, onClose }: Common & { player: Player; onClose: () => void }) {
+export function PlayerDetailModal({ T, accent, density, player, onClose, onNavigate }: Common & { player: Player; onClose: () => void; onNavigate?: (s: string) => void }) {
+  // Open the full summary for a history row on the Lesson Summaries page. The
+  // history id is `r-<lessonId>`; strip the prefix to match the real record.
+  const openFullSummary = (histId: string) => {
+    requestOpenLesson(histId.replace(/^r-/, ''))
+    onNavigate?.('lessons')
+    onClose()
+  }
   const belt = BELTS[player.beltIndex]
   const prog = beltProgress(player, player.beltIndex)
   const totalSkills = ALL_SKILLS.length
@@ -247,6 +255,12 @@ export function PlayerDetailModal({ T, accent, density, player, onClose }: Commo
                   </div>
                   <div style={{ fontSize: 11.5, color: T.text2, marginTop: 3 }}>{l.takeaway}</div>
                   {l.homework && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2 }}>🏠 {l.homework}</div>}
+                  {l.detailed && onNavigate && (
+                    <button onClick={() => openFullSummary(l.id)}
+                      style={{ marginTop: 5, appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 11, fontWeight: 600, fontFamily: FONT, cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      View full summary →
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
