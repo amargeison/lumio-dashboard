@@ -11,7 +11,7 @@
 // Progression, Booking Calendar, Training Camps, Roster, Messages, Resource
 // Centre, Payments.
 
-import { useState, useRef, useEffect, type ReactNode } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { SportsDemoGate, type SportsDemoSession } from '@/components/sports-demo'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -28,6 +28,7 @@ import {
   normalizeRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole,
 } from './_lib/role-scope'
 import { coachById } from './_lib/coaches-data'
+import { StudentView } from './_components/StudentView'
 import {
   DashboardView, LessonsView, DevelopmentView, BeltsView, CalendarView,
   RosterView, MessagesView, ResourcesView, PaymentsView, SettingsView, CampsView,
@@ -230,12 +231,21 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
       .cm-3{ grid-template-columns:1fr !important }
     }`
 
-  // ─── Student role — Phase 1 placeholder ───────────────────────────────────
-  // Student is a purpose-built player/parent view, built in Phase 2. For now it
-  // short-circuits to a placeholder so the switcher offers all three roles; the
-  // switcher (and an Exit button) keep Head/Coach reachable.
+  // ─── Student role — the player/parent view (Phase 2) ──────────────────────
+  // Swaps the whole dashboard for the purpose-built StudentView (defaults to
+  // Mia Chen; its own picker switches child). The Phase-1 "viewing as" banner
+  // stays so a head coach can exit back to their own portal.
   if (role === 'student') {
-    return <StudentPlaceholder T={T} accent={accent} onExit={() => setRole('head')} switcher={roleSwitcher} />
+    return (
+      <div style={{ minHeight: '100vh', background: T.bg, color: T.text, fontFamily: 'var(--font-geist-sans, system-ui)', display: 'flex', flexDirection: 'column' }}>
+        {ViewingAsBanner}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ maxWidth: 1080, margin: '0 auto', padding: isMobile ? '14px 12px 36px' : '24px 24px 44px' }}>
+            <StudentView T={T} accent={accent} density={density} playerId="p1" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // ─── Mobile shell ─────────────────────────────────────────────────────────
@@ -387,25 +397,6 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-// Phase 1 placeholder for the Student role — a player/parent view, built in
-// Phase 2 (models on the Junior parent app). Full-screen so it reads as a
-// distinct surface; the switcher + Exit button keep Head/Coach reachable.
-function StudentPlaceholder({ T, accent, onExit, switcher }: { T: typeof THEMES.dark; accent: (typeof ACCENT_PRESETS)[keyof typeof ACCENT_PRESETS]; onExit: () => void; switcher: ReactNode }) {
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, background: T.bg, color: T.text, fontFamily: 'var(--font-geist-sans, system-ui)', padding: 24 }}>
-      <div style={{ width: 64, height: 64, borderRadius: 18, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, fontSize: 30 }}>🎓</div>
-      <div style={{ textAlign: 'center', maxWidth: 440 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text, letterSpacing: '-0.02em' }}>Student view — coming in the next build</h1>
-        <p style={{ margin: '8px 0 0', fontSize: 13, color: T.text3, lineHeight: 1.55 }}>
-          A purpose-built player &amp; parent view — lesson highlight videos, GPS stats, heatmaps, homework, racket progression and resources for one player. Shipping in Phase 2.
-        </p>
-      </div>
-      <button onClick={onExit} style={{ appearance: 'none', border: 0, borderRadius: 10, padding: '10px 18px', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>← Back to Head Coach</button>
-      {switcher && <div style={{ width: 240, marginTop: 4 }}>{switcher}</div>}
     </div>
   )
 }

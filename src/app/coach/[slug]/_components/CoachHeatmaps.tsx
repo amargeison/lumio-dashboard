@@ -39,7 +39,7 @@ const recoveryColor = (T: ThemeTokens, r: GpsSession['recovery']) =>
 
 // Neutral green → red density ramp (data-viz scale, not brand).
 const TENNIS_HEAT_STOPS = ['#0E7C3A', '#22C55E', '#FACC15', '#F59E0B', '#EF4444', '#7F1D1D']
-const tennisHeatColor = (t: number) => {
+export const tennisHeatColor = (t: number) => {
   const c = Math.max(0, Math.min(1, t))
   const idx = Math.min(TENNIS_HEAT_STOPS.length - 1, Math.floor(c * (TENNIS_HEAT_STOPS.length - 1)))
   return TENNIS_HEAT_STOPS[idx]
@@ -54,7 +54,7 @@ function tennisHash(str: string, salt: number): number {
   return ((h >>> 0) % 10000) / 10000
 }
 
-const TENNIS_RALLY_ANCHORS = [
+export const TENNIS_RALLY_ANCHORS = [
   { x: 0.5, y: 0.86, weight: 0.95 },
   { x: 0.32, y: 0.84, weight: 0.85 },
   { x: 0.68, y: 0.84, weight: 0.85 },
@@ -65,7 +65,7 @@ const TENNIS_NET_APPROACH_ANCHORS = [
   { x: 0.42, y: 0.58, weight: 0.7 },
   { x: 0.58, y: 0.58, weight: 0.7 },
 ]
-const TENNIS_RECOVERY_ANCHORS = [
+export const TENNIS_RECOVERY_ANCHORS = [
   { x: 0.5, y: 0.88, weight: 1.0 },
   { x: 0.5, y: 0.92, weight: 0.65 },
 ]
@@ -109,7 +109,7 @@ function TennisCourt({ width, height, doubles = false, lineCol = 'rgba(255,255,2
   )
 }
 
-function HeatLegend({ T }: { T: ThemeTokens }) {
+export function HeatLegend({ T }: { T: ThemeTokens }) {
   return (
     <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', border: `1px solid ${T.border}`, width: 220 }}>
       {TENNIS_HEAT_STOPS.map(c => <div key={c} style={{ flex: 1, background: c }} />)}
@@ -117,7 +117,7 @@ function HeatLegend({ T }: { T: ThemeTokens }) {
   )
 }
 
-function CourtPositionalHeatmap({
+export function CourtPositionalHeatmap({
   width, height, seed, doubles = false, anchors, intensity = 1,
 }: {
   width: number; height: number; seed: string; doubles?: boolean
@@ -161,7 +161,7 @@ function CourtPositionalHeatmap({
   )
 }
 
-function CourtCoverageGrid({ width, height, seed }: { width: number; height: number; seed: string }) {
+export function CourtCoverageGrid({ width, height, seed }: { width: number; height: number; seed: string }) {
   const COLS = 4, ROWS = 3
   const baseDist: number[] = [
     8, 6, 6, 8,
