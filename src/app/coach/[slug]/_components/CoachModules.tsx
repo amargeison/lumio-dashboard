@@ -186,31 +186,34 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
       {/* Hero */}
       <Card T={T} density={density} style={{ gridColumn: 'span 8', overflow: 'hidden', padding: `${density.pad - 2}px ${density.pad + 4}px` }}>
         <div style={{ position: 'absolute', right: -60, top: -60, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${accent.dim}, transparent 65%)`, pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 240 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: FONT_MONO }}>{greeting}, {coachLabel.split(' ')[0]}</span>
-              <span style={{ width: 1, height: 10, background: T.borderHi }} />
-              <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>{settings.academy}</span>
-            </div>
-            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 23, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>{heroLine}</h1>
-            <p style={{ marginTop: 5, marginBottom: 0, fontSize: 12.5, color: T.text2, maxWidth: 560 }}>{COACH_ORG.venue} · {settings.cert}</p>
-            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-              <button onClick={() => onNavigate('lessons')} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <Icon name="note" size={14} stroke={2} /> Lesson Summaries
-              </button>
-              <button onClick={() => onNavigate('calendar')} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <Icon name="calendar" size={14} stroke={1.6} /> Open calendar
-              </button>
-              <button onClick={() => setMsgOpen(true)} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <Icon name="megaphone" size={14} stroke={1.6} /> Send message
-              </button>
+        <div style={{ position: 'relative' }}>
+          {/* Top meta strip — date + weather pinned to the top of the hero so it
+              reads first on the mobile PWA (previously a right column that wrapped
+              to the bottom on narrow widths). */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14, color: T.text2, fontSize: 12 }}>
+            <div className="tnum" style={{ color: T.text, fontSize: 13, fontWeight: 600 }}>{COACH_ORG.date}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="cloud" size={13} stroke={1.5} /> 21° · dry · light wind</span>
+              <span style={{ fontSize: 10.5, color: T.text3 }}>All outdoor courts playable</span>
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, color: T.text2, fontSize: 12 }}>
-            <div className="tnum" style={{ color: T.text, fontSize: 13 }}>{COACH_ORG.date}</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="cloud" size={13} stroke={1.5} /> 21° · dry · light wind</div>
-            <div style={{ fontSize: 10.5, color: T.text3 }}>All outdoor courts playable</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: FONT_MONO }}>{greeting}, {coachLabel.split(' ')[0]}</span>
+            <span style={{ width: 1, height: 10, background: T.borderHi }} />
+            <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>{settings.academy}</span>
+          </div>
+          <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 23, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>{heroLine}</h1>
+          <p style={{ marginTop: 5, marginBottom: 0, fontSize: 12.5, color: T.text2, maxWidth: 560 }}>{COACH_ORG.venue} · {settings.cert}</p>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+            <button onClick={() => onNavigate('lessons')} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <Icon name="note" size={14} stroke={2} /> Lesson Summaries
+            </button>
+            <button onClick={() => onNavigate('calendar')} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <Icon name="calendar" size={14} stroke={1.6} /> Open calendar
+            </button>
+            <button onClick={() => setMsgOpen(true)} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <Icon name="megaphone" size={14} stroke={1.6} /> Send message
+            </button>
           </div>
         </div>
       </Card>
