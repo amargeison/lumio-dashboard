@@ -21,6 +21,7 @@ import { bookingCalItems } from '../_lib/schedule'
 import { getAddedBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
 import { AddBookingModal } from './AddBookingModal'
 import { printBeltCertificate } from './BeltCertificate'
+import { getAwards, award as awardRacket, awardKey, subscribe as subscribeAwards } from '../_lib/awards-store'
 import { LessonShareMenu } from './ShareMenu'
 import { CampEquipment, CampPlayerPacks } from './CampPacks'
 import { LessonAiBrief, PlayerDetailModal, printLessonReport } from './CoachDetails'
@@ -668,6 +669,10 @@ function Metric({ T, label, value, accent }: { T: ThemeTokens; label: string; va
 export function BeltsView({ T, accent, density }: Common) {
   const players = useAllPlayers()
   const [open, setOpen] = useState<string>('white')
+  // Racket Reward awards (trophy racket + certificate) the coach has made — demo
+  // only, persisted so the matrix keeps its "Awarded ✓" state across reloads.
+  const [awards, setAwards] = useState<string[]>([])
+  useEffect(() => { const r = () => setAwards(getAwards()); r(); return subscribeAwards(r) }, [])
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Racket Progression System" sub="A Kyu-Dan style ranking adapted for tennis. Nine rackets, each unlocking a cluster of skills — earn a racket when every skill is Consistent or better." />
@@ -679,6 +684,57 @@ export function BeltsView({ T, accent, density }: Common) {
           <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5 }}>
             <strong>Aligned to the LTA Youth pathway.</strong> Each racket maps to a stage of the LTA Youth programme — the five official ball-colour stages <span style={{ color: T.text2 }}>Blue → Red → Orange → Green → Yellow</span>, then the LTA Youth Compete grades and the performance pathway. The racket is your academy ladder; the LTA stage is the national-framework equivalent shown on every racket below.
           </div>
+        </div>
+      </Card>
+
+      {/* Racket Reward System — the physical trophy-racket + certificate reward
+          that pairs with the digital ladder. Separate from the LTA banner.
+          Coach-facing (the academy's reward/retention tool), not salesy. */}
+      <Card T={T} density={density} style={{ marginBottom: density.gap }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ width: 34, height: 34, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0 }}>
+            <Icon name="trophy" size={17} stroke={1.8} style={{ color: accent.hex }} />
+          </span>
+          <div style={{ flex: 1, minWidth: 240 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>Racket Reward System — earn the racket, earn the trophy</div>
+            <div style={{ fontSize: 12.5, color: T.text2, marginTop: 3, lineHeight: 1.5, maxWidth: 640 }}>
+              Every level is a milestone players keep. When a student masters every skill in their racket (Consistent or better), you award them the <strong style={{ color: T.text }}>physical coloured trophy racket</strong> for that level plus a <strong style={{ color: T.text }}>certificate</strong> — a tangible reward that drives motivation and retention.
+            </div>
+          </div>
+        </div>
+
+        {/* the loop */}
+        <div style={{ display: 'flex', alignItems: 'stretch', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+          {[
+            { icon: 'check',    t: 'Complete the level', d: 'Every skill Consistent or better' },
+            { icon: 'trophy',   t: 'Award racket + cert', d: 'Hand over the trophy racket & certificate' },
+            { icon: 'sparkles', t: 'Celebrate',           d: 'A milestone the player keeps' },
+            { icon: 'flag',     t: 'On to the next',      d: 'New racket, new skills to earn' },
+          ].map((s, i, arr) => (
+            <div key={s.t} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 180px' }}>
+              <div style={{ flex: 1, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <span style={{ width: 18, height: 18, borderRadius: 5, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>
+                  <Icon name={s.icon} size={13} stroke={1.8} style={{ color: accent.hex }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{s.t}</span>
+                </div>
+                <div style={{ fontSize: 10.5, color: T.text3, marginTop: 4 }}>{s.d}</div>
+              </div>
+              {i < arr.length - 1 && <Icon name="chevron-right" size={15} stroke={2} style={{ color: T.text4, flexShrink: 0 }} />}
+            </div>
+          ))}
+        </div>
+
+        {/* the 9 physical rackets + the unobtrusive reordering link */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}`, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            {BELTS.map(b => <span key={b.id} title={`${b.name} trophy racket`} style={{ fontSize: 13, filter: 'grayscale(0.1)' }}><span style={{ display: 'inline-block', width: 13, height: 13, borderRadius: 3, background: b.colour, border: '1px solid rgba(128,128,128,0.4)' }} /></span>)}
+            <span style={{ fontSize: 11, color: T.text3, marginLeft: 4 }}>9 trophy rackets · one per level</span>
+          </div>
+          <span style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>
+            <Icon name="wrench" size={11} stroke={1.7} style={{ color: accent.hex, verticalAlign: -1, marginRight: 4 }} />
+            Trophy racket sets &amp; certificates — order &amp; reorder in <strong style={{ color: T.text2 }}>Settings → Lumio Coach Kit &amp; rackets</strong>
+          </span>
         </div>
       </Card>
 
@@ -744,7 +800,11 @@ export function BeltsView({ T, accent, density }: Common) {
               </tr>
             </thead>
             <tbody>
-              {players.map(p => (
+              {players.map(p => {
+                const curProg = beltProgress(p, p.beltIndex)
+                const awarded = awards.includes(awardKey(p.id, p.beltIndex))
+                const ready = curProg >= 100
+                return (
                 <tr key={p.id} style={{ borderTop: `1px solid ${T.border}` }}>
                   <td style={{ padding: '8px 10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar accent={accent} initials={p.initials} size={24} /><span style={{ fontSize: 12, color: T.text, fontWeight: 500 }}>{p.name}</span></div>
@@ -760,19 +820,29 @@ export function BeltsView({ T, accent, density }: Common) {
                   })}
                   <td style={{ padding: '8px 10px' }}><BeltChip beltIndex={p.beltIndex} size={16} /></td>
                   <td style={{ padding: '8px 8px', textAlign: 'right' }}>
-                    <button onClick={() => printBeltCertificate(p, p.beltIndex)} title={`Print ${BELTS[p.beltIndex].name} racket certificate`}
-                      style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: accent.hex, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-                      <Icon name="trophy" size={12} stroke={1.9} /> Certificate
-                    </button>
+                    {awarded ? (
+                      <button onClick={() => printBeltCertificate(p, p.beltIndex)} title="Trophy racket + certificate awarded — click to reprint the certificate"
+                        style={{ appearance: 'none', border: `1px solid ${T.good}`, background: 'rgba(111,168,138,0.14)', color: T.good, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                        <Icon name="check" size={12} stroke={2.4} /> Racket + cert ✓
+                      </button>
+                    ) : (
+                      <button onClick={() => { awardRacket(p.id, p.beltIndex); printBeltCertificate(p, p.beltIndex) }}
+                        title={ready ? `Award the ${BELTS[p.beltIndex].name} trophy racket + certificate` : `${p.name} is ${curProg}% through this racket — awarding gives the trophy racket + certificate`}
+                        style={{ appearance: 'none', border: `1px solid ${ready ? accent.hex : T.border}`, background: ready ? accent.hex : 'transparent', color: ready ? T.btnText : accent.hex, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                        <Icon name="trophy" size={12} stroke={1.9} /> Award racket + cert
+                      </button>
+                    )}
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
         <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', fontSize: 10.5, color: T.text3 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="check" size={12} stroke={2.4} style={{ color: T.good }} /> racket earned</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on current racket</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="trophy" size={12} stroke={1.9} style={{ color: accent.hex }} /> award = trophy racket + certificate · demo only, no fulfilment</span>
         </div>
       </Card>
     </div>
