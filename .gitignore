@@ -80,3 +80,13 @@ next-env.d.ts
 !public/Dr_Paul_Reid.jpg
 !public/red_dragon.jpg
 .env*.local
+
+# stray tooling / build-script artifacts (regenerated, not source)
+build-accent.log
+public/.wtest
+
+# user-dropped video clips — large binaries, typically dropped into /public by
+# accident (same policy as the image rules above; allow-list if one is ever real)
+*.mov
+*.mp4
+public/vids/
