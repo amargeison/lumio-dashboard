@@ -69,10 +69,19 @@ function Modal({ T, accent, title, sub, onClose, children }: { T: ThemeTokens; a
   )
 }
 
+// Lumio Coach Kit & trophy-racket rewards the coach can order (demo only — no
+// real checkout/fulfilment). Kit/mic pricing is indicative → "from £85".
+const KIT_OFFERS = [
+  { id: 'kit',     name: 'Lumio Coach Kit',        price: 'from £85', desc: 'Stand + mic + your first set of 9 trophy rackets — everything to start capturing.', cta: 'Order kit' },
+  { id: 'rackets', name: 'Trophy racket set (×9)', price: '£45 / set', desc: 'The Racket Progression rewards. Reorder as you award them — one racket per level.', cta: 'Reorder set' },
+]
+
 // ════════════════════════════════════════════════════════════════════════════
 export function SettingsPanel({ T, accent, density }: Common) {
   const s = useCoachSettings()
   const [open, setOpen] = useState<string | null>(null)
+  // Demo "order" state — which kit items the coach has added to their order.
+  const [ordered, setOrdered] = useState<string[]>([])
 
   const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
   useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
@@ -85,6 +94,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
     { id: 'belts',       icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
     { id: 'availability',icon: 'calendar',  t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
     { id: 'pricing',     icon: 'pound',     t: 'Pricing & packages',  d: `Private £${s.privateRate}/hr · packs & renewals` },
+    { id: 'kit',         icon: 'wrench',    t: 'Lumio Coach Kit & rackets', d: 'Your plan: Coach £39/mo · order kit & trophy rackets' },
     { id: 'sharing',     icon: 'megaphone', t: 'Parent sharing',      d: `Shares include: ${sharingList}` },
     { id: 'appearance',  icon: 'settings',  t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
     { id: 'menu',        icon: 'eye',       t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
@@ -155,6 +165,48 @@ export function SettingsPanel({ T, accent, density }: Common) {
             <input style={input(T)} inputMode="numeric" value={String(s.privateRate)} onChange={e => setSettings({ privateRate: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
           </Field>
           <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>Packages and renewal rules are managed on the Payments page; this rate feeds new quotes and the Payments header.</div>
+        </Modal>
+      )}
+
+      {open === 'kit' && (
+        <Modal T={T} accent={accent} title="Lumio Coach Kit & rackets" sub="Order your capture kit and trophy-racket rewards" onClose={() => setOpen(null)}>
+          {/* Read-only plan line */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
+            <Icon name="shield" size={15} stroke={1.7} style={{ color: accent.hex }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 10.5, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Your Lumio plan</div>
+              <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Coach · £39 / month</div>
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 700, color: T.text3, background: T.hover, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Demo</span>
+          </div>
+
+          {/* Orderable kit / rackets */}
+          {KIT_OFFERS.map(item => {
+            const on = ordered.includes(item.id)
+            return (
+              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1px solid ${on ? accent.border : T.border}`, background: on ? accent.dim : T.panel2, borderRadius: 10, padding: '11px 12px', marginBottom: 8 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                    <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{item.name}</span>
+                    <span style={{ fontSize: 12, color: accent.hex, fontWeight: 700 }}>{item.price}</span>
+                  </div>
+                  <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2, lineHeight: 1.4 }}>{item.desc}</div>
+                </div>
+                <button onClick={() => setOrdered(prev => on ? prev.filter(x => x !== item.id) : [...prev, item.id])}
+                  style={{ appearance: 'none', flexShrink: 0, border: on ? `1px solid ${accent.border}` : 0, borderRadius: 8, padding: '8px 12px', fontSize: 11.5, fontWeight: 600, fontFamily: FONT, cursor: 'pointer', background: on ? 'transparent' : accent.hex, color: on ? accent.hex : T.btnText, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  {on ? <><Icon name="check" size={12} stroke={2.2} /> Added to order</> : item.cta}
+                </button>
+              </div>
+            )
+          })}
+
+          <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>
+            Racket certificates are included — print them per player from <strong style={{ color: T.text2 }}>Player Development</strong>. Kit &amp; mic pricing is indicative while the hardware is field-tested.
+          </div>
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, background: T.panel2, border: `1px dashed ${T.border}`, borderRadius: 9, padding: '9px 12px' }}>
+            <span style={{ fontSize: 15 }}>🛒</span>
+            <span style={{ fontSize: 11.5, color: T.text2 }}>{ordered.length ? `${ordered.length} item${ordered.length > 1 ? 's' : ''} in your order` : 'Your order is empty'} · <span style={{ color: T.text3 }}>demo only — no real checkout or fulfilment yet</span></span>
+          </div>
         </Modal>
       )}
 

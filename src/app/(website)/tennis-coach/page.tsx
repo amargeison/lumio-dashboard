@@ -30,6 +30,28 @@ const TIERS = [
   { name: 'Academy Manager', desc: 'Run the academy end-to-end — staff, camps, bookings and player development across the club, with utilisation, accreditations and progress at a glance.' },
 ]
 
+const COACH_PLAN_FEATURES = [
+  'Session Planner & AI session reviews',
+  'GPS, Vision & heatmaps',
+  'Racket Progression pathway',
+  'Staff directory & training camps',
+  'Booking calendar & payments',
+  'Mobile coach app',
+]
+const PARENT_FEATURES = [
+  'Player highlights & clips',
+  'GPS & heatmaps',
+  'Progress & racket journey',
+  'Homework & lesson summaries',
+]
+// Hardware pack. Prices are INDICATIVE — the mic spec/price may change after
+// field testing, so the bundle is framed as "from £85", not locked.
+const KIT_PARTS = [
+  { name: 'Capture stand', price: '£10', note: 'Court stand for phone or tablet' },
+  { name: 'Microphone', price: 'from £10', note: 'Spec under field test' },
+  { name: 'Trophy rackets — set of 9', price: '£45', note: 'One reward racket per level' },
+]
+
 export default function TennisCoachPage() {
   return (
     <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
@@ -105,6 +127,129 @@ export default function TennisCoachPage() {
                 <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{t.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section id="pricing" style={{ padding: '96px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: PURPLE_LIGHT, textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>PRICING</div>
+          <h2 style={{ fontSize: 44, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            One platform. Two revenue streams.
+          </h2>
+          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', maxWidth: 780, margin: '0 auto 56px', lineHeight: 1.6 }}>
+            A simple subscription runs your whole academy. The kit gets you capturing from day one — and the trophy-racket reward system turns player progress into recurring income you control.
+          </p>
+
+          {/* A — Subscription */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 24 }}>
+            {/* Coach plan */}
+            <div style={{ backgroundColor: CARD, border: `2px solid ${PURPLE}`, borderRadius: 16, padding: 32, position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 20, right: 20, background: `${PURPLE}22`, border: `1px solid ${PURPLE}`, color: PURPLE_LIGHT, fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Founding access</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Coach plan</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
+                <span style={{ fontSize: 52, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£39</span>
+                <span style={{ fontSize: 16, color: MUTED, fontWeight: 600 }}>/month</span>
+              </div>
+              <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6, marginBottom: 20 }}>
+                The all-in-one academy platform. Every module, no tiers to climb — sessions, players, video &amp; audio, GPS &amp; heatmaps, staff and camps, the lot.
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px' }}>
+                {COACH_PLAN_FEATURES.map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: TEXT, padding: '6px 0' }}>
+                    <span style={{ color: PURPLE_LIGHT, fontWeight: 900 }}>✓</span>{f}
+                  </li>
+                ))}
+              </ul>
+              <Link href="/sports-signup?sport=tennis" style={{ display: 'block', textAlign: 'center', padding: '14px 24px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
+                Apply for free founding access →
+              </Link>
+            </div>
+
+            {/* Parent / Student access — coach-resold add-on */}
+            <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 32 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#06b6d4', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Suggested add-on</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                <span style={{ fontSize: 52, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£9.99</span>
+                <span style={{ fontSize: 15, color: MUTED, fontWeight: 600 }}>/month per family</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: MUTED, marginBottom: 16, fontStyle: 'italic' }}>suggested price — you set it</div>
+              <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6, marginBottom: 20 }}>
+                Give your families the Student app — the player &amp; parent view of everything you capture. Resell it or bundle it into a package: <strong style={{ color: TEXT }}>you keep the margin.</strong>
+              </p>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px' }}>
+                {PARENT_FEATURES.map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: TEXT, padding: '6px 0' }}>
+                    <span style={{ color: '#06b6d4', fontWeight: 900 }}>✓</span>{f}
+                  </li>
+                ))}
+              </ul>
+              <div style={{ background: '#06b6d410', border: '1px solid #06b6d433', borderRadius: 10, padding: '10px 14px', fontSize: 12.5, color: MUTED, lineHeight: 1.5 }}>
+                A revenue stream <strong style={{ color: TEXT }}>for you</strong> — not a Lumio charge to your parents. Give your families the journey; keep the recurring margin.
+              </div>
+            </div>
+          </div>
+
+          {/* B — Lumio Coach Kit */}
+          <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 32, marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
+              <div style={{ maxWidth: 560 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 10 }}>Lumio Coach Kit</div>
+                <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 8, lineHeight: 1.15 }}>Everything you need to start capturing.</h3>
+                <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>One stand, one mic and your first set of trophy rackets — out of the box and onto the court.</p>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, justifyContent: 'flex-end' }}>
+                  <span style={{ fontSize: 18, color: MUTED, fontWeight: 700 }}>from</span>
+                  <span style={{ fontSize: 48, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£85</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: MUTED }}>bundle · one-off</div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 16 }}>
+              {KIT_PARTS.map(p => (
+                <div key={p.name} style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: PURPLE_LIGHT, marginBottom: 4 }}>{p.price}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{p.name}</div>
+                  <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.45 }}>{p.note}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 12.5, color: MUTED, fontStyle: 'italic' }}>
+              Kit &amp; mic pricing is indicative while we field-test the hardware — final spec and price may change.
+            </div>
+          </div>
+
+          {/* B2 — Trophy racket reorder / reward system */}
+          <div style={{ backgroundColor: CARD, border: `1px solid ${PURPLE}`, borderRadius: 16, padding: 32, marginBottom: 40, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 44 }}>🎾🏆</div>
+            <div style={{ flex: 1, minWidth: 260 }}>
+              <h3 style={{ fontSize: 22, fontWeight: 900, color: TEXT, marginBottom: 8 }}>The Racket Progression reward system</h3>
+              <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>
+                As students pass each level, you award a coloured <strong style={{ color: TEXT }}>trophy racket + certificate</strong>. Players collect the set; parents pay for the journey. Reorder sets as you award them — a consumable reward that keeps families invested.
+              </p>
+            </div>
+            <div style={{ textAlign: 'center', flexShrink: 0 }}>
+              <div style={{ fontSize: 34, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£45</div>
+              <div style={{ fontSize: 12.5, color: MUTED }}>reorder set of 9 · ~£5 each</div>
+            </div>
+          </div>
+
+          {/* C — Commercial story */}
+          <div style={{ textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
+            <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 12 }}>Two revenue streams the coach drives.</h3>
+            <p style={{ fontSize: 15, color: MUTED, lineHeight: 1.7, marginBottom: 28 }}>
+              The platform runs your academy and the kit gets you started. Then it pays you back twice over: <strong style={{ color: TEXT }}>award trophy rackets</strong> as players progress and parents fund the journey, and <strong style={{ color: TEXT }}>resell the Student app</strong> to your families as recurring margin. You set the prices; you keep the upside.
+            </p>
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 30px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
+                Apply for founding access →
+              </Link>
+              <Link href="/tennis/coach/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 30px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 15, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+                Try the demo →
+              </Link>
+            </div>
           </div>
         </div>
       </section>

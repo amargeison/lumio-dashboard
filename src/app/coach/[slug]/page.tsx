@@ -23,6 +23,12 @@ import {
 import { useCoachSettings } from './_lib/use-settings'
 import { ACCENT_PRESETS } from './_lib/settings-store'
 import { getHidden, subscribe as subscribeMenu, ALWAYS_VISIBLE } from './_lib/menu-visibility'
+import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
+import {
+  normalizeRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole,
+} from './_lib/role-scope'
+import { coachById } from './_lib/coaches-data'
+import { StudentView } from './_components/StudentView'
 import {
   DashboardView, LessonsView, DevelopmentView, BeltsView, CalendarView,
   RosterView, MessagesView, ResourcesView, PaymentsView, SettingsView, CampsView,
@@ -35,10 +41,13 @@ import { HeatmapsView } from './_components/CoachHeatmaps'
 import { StaffView } from './_components/StaffView'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 
+// The three view roles for the role switcher. Head + Coach are the same portal
+// filtered by permission; Student is a purpose-built player/parent view (a
+// placeholder this phase — built in Phase 2).
 const COACH_ROLES = [
-  { id: 'head',      label: 'Head Coach',      icon: '🎾', description: 'Full access to every module' },
-  { id: 'assistant', label: 'Assistant Coach', icon: '🧑‍🏫', description: 'Sessions, players & lessons' },
-  { id: 'manager',   label: 'Academy Manager', icon: '📋', description: 'Bookings, camps & finance' },
+  { id: 'head',    label: 'Head Coach', icon: '🎾',   description: 'Head Coach — full academy access' },
+  { id: 'coach',   label: 'Coach',      icon: '🧑‍🏫', description: 'Coach — your players & sessions' },
+  { id: 'student', label: 'Student',    icon: '🎓',   description: 'Student — player & parent view' },
 ]
 
 // ─── Page entry: auth check → demo gate → portal ────────────────────────────
@@ -137,12 +146,49 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const expanded = pinned || hovered
 
+  // ─── Active VIEW ROLE (role switcher) ──────────────────────────────────────
+  // Initialised from the demo session (legacy/unknown roles normalise to head);
+  // RoleSwitcher persists the choice back into the session blob so it survives
+  // reload. The active role drives (a) which coachId the data views scope to and
+  // (b) which nav items are available.
+  const [role, setRole] = useState<CoachViewRole>(normalizeRole(session?.role))
+  // Mirror the role's coachId into the module-level scope the data views read.
+  useEffect(() => { setScopeCoachId(coachIdForRole(role)); return () => setScopeCoachId(null) }, [role])
+
   // Live menu-visibility: items the coach hid in Settings are filtered out of
   // the sidebar; if the active view gets hidden, fall back to the dashboard.
   const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
   useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
-  useEffect(() => { if (hiddenMenu.includes(active) && !ALWAYS_VISIBLE.includes(active)) setActive('dashboard') }, [hiddenMenu, active])
-  const visibleSidebar = COACH_SIDEBAR.filter(i => !hiddenMenu.includes(i.id))
+  // Fall back to the dashboard if the active view is hidden by the coach OR is
+  // unavailable for the current role (e.g. switching to Coach while on Payments).
+  useEffect(() => {
+    if (active === 'dashboard') return
+    if ((hiddenMenu.includes(active) && !ALWAYS_VISIBLE.includes(active)) || !roleAllowsNav(role, active)) setActive('dashboard')
+  }, [hiddenMenu, active, role])
+  // Two-pass filter: the role decides availability, the coach's own menu-hiding
+  // stays as a layer on top.
+  const visibleSidebar = COACH_SIDEBAR.filter(i => roleAllowsNav(role, i.id) && !hiddenMenu.includes(i.id))
+  // Nav items the role removes — folded into the mobile shell's hidden set so
+  // its tabs + More sheet honour the role too.
+  const roleHiddenIds = COACH_SIDEBAR.filter(i => !roleAllowsNav(role, i.id)).map(i => i.id)
+
+  // Banner / switcher context. The role switcher reuses the shared component;
+  // we hand it a session whose role mirrors live state so its "current view"
+  // marker tracks the switch. impersonatedCoach names the coach the Coach role
+  // is viewing as, for the "viewing as" banner.
+  const switcherSession = session ? { ...session, role } : null
+  const impersonatedCoach = role === 'coach' ? (coachById(coachIdForRole(role) ?? '')?.name ?? null) : null
+  const roleLabel = COACH_ROLES.find(r => r.id === role)?.label ?? 'Head Coach'
+  const roleSwitcher = switcherSession ? (
+    <RoleSwitcher session={switcherSession} roles={COACH_ROLES} accentColor={accent.hex} onRoleChange={r => setRole(normalizeRole(r))} />
+  ) : null
+  const ViewingAsBanner = role === 'head' ? null : (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 24px', fontSize: 12, fontWeight: 600, background: 'rgba(245,158,11,0.14)', color: '#B45309', borderBottom: '1px solid rgba(245,158,11,0.3)', flexShrink: 0 }}>
+      <span style={{ fontSize: 13 }}>👁</span>
+      <span>Viewing as {roleLabel}{impersonatedCoach ? ` — ${impersonatedCoach}` : ''}</span>
+      <button onClick={() => setRole('head')} style={{ marginLeft: 'auto', appearance: 'none', border: '1px solid rgba(245,158,11,0.5)', background: 'transparent', color: '#B45309', borderRadius: 7, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Exit to Head Coach</button>
+    </div>
+  )
 
   useEffect(() => {
     try { setPinned(localStorage.getItem('lumio_coach_sidebar_pinned') === 'true') } catch {}
@@ -185,13 +231,31 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
       .cm-3{ grid-template-columns:1fr !important }
     }`
 
+  // ─── Student role — the player/parent view (Phase 2) ──────────────────────
+  // Swaps the whole dashboard for the purpose-built StudentView (defaults to
+  // Mia Chen; its own picker switches child). The Phase-1 "viewing as" banner
+  // stays so a head coach can exit back to their own portal.
+  if (role === 'student') {
+    return (
+      <div style={{ minHeight: '100vh', background: T.bg, color: T.text, fontFamily: 'var(--font-geist-sans, system-ui)', display: 'flex', flexDirection: 'column' }}>
+        {ViewingAsBanner}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ maxWidth: 1080, margin: '0 auto', padding: isMobile ? '14px 12px 36px' : '24px 24px 44px' }}>
+            <StudentView T={T} accent={accent} density={density} playerId="p1" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // ─── Mobile shell ─────────────────────────────────────────────────────────
   if (isMobile) {
     return (
       <CoachMobileShell
         T={T} accent={accent} active={active} onNavigate={setActive}
-        showDemoBanner={showDemoBanner} hiddenMenu={hiddenMenu}
+        showDemoBanner={showDemoBanner} hiddenMenu={[...hiddenMenu, ...roleHiddenIds]}
         avatar={<CoachAvatar size={30} />}
+        roleSwitcher={roleSwitcher} roleBanner={ViewingAsBanner}
       >
         {renderView()}
       </CoachMobileShell>
@@ -266,10 +330,15 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
           {expanded && (
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: T.text, whiteSpace: 'nowrap' }}>{coachName}</div>
-              <div style={{ fontSize: 9.5, color: T.text3, whiteSpace: 'nowrap' }}>Head Coach</div>
+              <div style={{ fontSize: 9.5, color: T.text3, whiteSpace: 'nowrap' }}>{roleLabel}</div>
             </div>
           )}
         </div>
+        {/* Role switcher (Switch view) — reuses the shared RoleSwitcher; its
+            popover opens upward from this footer. Only when the rail is open. */}
+        {expanded && roleSwitcher && (
+          <div style={{ padding: '8px 12px', borderTop: `1px solid ${line}` }}>{roleSwitcher}</div>
+        )}
         {expanded && (
           <div style={{ padding: '8px 12px', borderTop: `1px solid ${line}` }}>
             <div style={{ fontSize: 9, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Plan</div>
@@ -280,6 +349,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
 
       {/* main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
+        {ViewingAsBanner}
         {showDemoBanner && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 24px', fontSize: 12, fontWeight: 500, background: accent.hex, color: '#fff', flexShrink: 0 }}>
             <span>This is a demo · sample data</span>

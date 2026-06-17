@@ -17,17 +17,19 @@
 // session picker; the period segment (Full · Set 1-3) only shows for match
 // sessions (camp/practice have no sets). Demo only — procedural/canned data.
 
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { PLAYERS } from '../_lib/coach-data'
+import { ALL_PLAYERS } from '../_lib/coaches-data'
+import { useScopeCoachId } from '../_lib/role-scope'
 import { GPS_VIDEO_DATA, type GpsSession, type PlayerGpsData } from '../_lib/gps-video-data'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
 // Semantic palette for multi-series charts (chrome uses the coach accent token).
-const GREEN = '#22C55E', AMBER = '#F59E0B', RED = '#EF4444', PURPLE = '#A855F7'
+const GREEN = '#22C55E', AMBER = '#F59E0B', RED = '#EF4444', PURPLE = '#7C5CBF'
 const COURT_GREEN = '#0a3d1a'  // court surface — a court colour, not a brand hue
 
 const recoveryColor = (T: ThemeTokens, r: GpsSession['recovery']) =>
@@ -37,7 +39,7 @@ const recoveryColor = (T: ThemeTokens, r: GpsSession['recovery']) =>
 
 // Neutral green → red density ramp (data-viz scale, not brand).
 const TENNIS_HEAT_STOPS = ['#0E7C3A', '#22C55E', '#FACC15', '#F59E0B', '#EF4444', '#7F1D1D']
-const tennisHeatColor = (t: number) => {
+export const tennisHeatColor = (t: number) => {
   const c = Math.max(0, Math.min(1, t))
   const idx = Math.min(TENNIS_HEAT_STOPS.length - 1, Math.floor(c * (TENNIS_HEAT_STOPS.length - 1)))
   return TENNIS_HEAT_STOPS[idx]
@@ -52,7 +54,7 @@ function tennisHash(str: string, salt: number): number {
   return ((h >>> 0) % 10000) / 10000
 }
 
-const TENNIS_RALLY_ANCHORS = [
+export const TENNIS_RALLY_ANCHORS = [
   { x: 0.5, y: 0.86, weight: 0.95 },
   { x: 0.32, y: 0.84, weight: 0.85 },
   { x: 0.68, y: 0.84, weight: 0.85 },
@@ -63,7 +65,7 @@ const TENNIS_NET_APPROACH_ANCHORS = [
   { x: 0.42, y: 0.58, weight: 0.7 },
   { x: 0.58, y: 0.58, weight: 0.7 },
 ]
-const TENNIS_RECOVERY_ANCHORS = [
+export const TENNIS_RECOVERY_ANCHORS = [
   { x: 0.5, y: 0.88, weight: 1.0 },
   { x: 0.5, y: 0.92, weight: 0.65 },
 ]
@@ -107,7 +109,7 @@ function TennisCourt({ width, height, doubles = false, lineCol = 'rgba(255,255,2
   )
 }
 
-function HeatLegend({ T }: { T: ThemeTokens }) {
+export function HeatLegend({ T }: { T: ThemeTokens }) {
   return (
     <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', border: `1px solid ${T.border}`, width: 220 }}>
       {TENNIS_HEAT_STOPS.map(c => <div key={c} style={{ flex: 1, background: c }} />)}
@@ -115,7 +117,7 @@ function HeatLegend({ T }: { T: ThemeTokens }) {
   )
 }
 
-function CourtPositionalHeatmap({
+export function CourtPositionalHeatmap({
   width, height, seed, doubles = false, anchors, intensity = 1,
 }: {
   width: number; height: number; seed: string; doubles?: boolean
@@ -159,7 +161,7 @@ function CourtPositionalHeatmap({
   )
 }
 
-function CourtCoverageGrid({ width, height, seed }: { width: number; height: number; seed: string }) {
+export function CourtCoverageGrid({ width, height, seed }: { width: number; height: number; seed: string }) {
   const COLS = 4, ROWS = 3
   const baseDist: number[] = [
     8, 6, 6, 8,
@@ -521,8 +523,15 @@ type Tab = 'gps' | 'brief' | 'movement' | 'fitness' | 'comparison' | 'training'
 
 // ─── Main view ───────────────────────────────────────────────────────────────
 export function HeatmapsView({ T, accent, density }: Common) {
-  const firstWithData = PLAYERS.find(p => GPS_VIDEO_DATA[p.id])?.id ?? PLAYERS[0].id
+  // Coach role: only that coach's players in the picker (GPS data keys by
+  // playerId, so a coach with none falls through to the existing empty state).
+  const scope = useScopeCoachId()
+  const players = scope ? ALL_PLAYERS.filter(p => p.coachId === scope) : PLAYERS
+  const firstWithData = players.find(p => GPS_VIDEO_DATA[p.id])?.id ?? players[0]?.id ?? ''
   const [playerId, setPlayerId] = useState(firstWithData)
+  // Keep the selected player inside the current scope — reset on role switch so
+  // we never surface another coach's GPS data.
+  useEffect(() => { setPlayerId(prev => players.some(p => p.id === prev) ? prev : (players[0]?.id ?? '')) }, [scope])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const data = GPS_VIDEO_DATA[playerId]
   const allSessions = (data?.sessions ?? []).slice().sort((a, b) => b.date.localeCompare(a.date))
@@ -540,7 +549,7 @@ export function HeatmapsView({ T, accent, density }: Common) {
   const [compareB, setCompareB] = useState(1)
   const [tab, setTab] = useState<Tab>('gps')
 
-  const player = PLAYERS.find(p => p.id === playerId)
+  const player = players.find(p => p.id === playerId)
   const session = sessions.find(s => s.id === matchId) ?? sessions[0]
   const hasSets = session?.type === 'Match'   // only matches carry Set 1/2/3
 
@@ -618,7 +627,7 @@ export function HeatmapsView({ T, accent, density }: Common) {
       <div style={{ minWidth: 200 }}>
         <label style={labelStyle}>Player</label>
         <select style={selectStyle} value={playerId} onChange={e => onPlayer(e.target.value)}>
-          {PLAYERS.map(p => <option key={p.id} value={p.id}>{p.name}{GPS_VIDEO_DATA[p.id] ? '' : ' — no data'}</option>)}
+          {players.map(p => <option key={p.id} value={p.id}>{p.name}{GPS_VIDEO_DATA[p.id] ? '' : ' — no data'}</option>)}
         </select>
       </div>
       <div style={{ minWidth: 260 }}>

@@ -14,6 +14,8 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { PLAYERS, type TodaySession } from '../_lib/coach-data'
+import { ALL_PLAYERS } from '../_lib/coaches-data'
+import { useScopeCoachId } from '../_lib/role-scope'
 import { allKnownSessions } from '../_lib/schedule'
 import { getRecordings, subscribe as subscribeRecordings, tagRecording } from '../_lib/recordings-store'
 import { suggestSessionForRecording, sessionsForRecordingPlayer, type Recording } from '../_lib/recordings-data'
@@ -65,11 +67,18 @@ function Waveform({ accent }: { accent: AccentTokens }) {
 }
 
 export function VideoAudioView({ T, accent, density }: Common) {
+  // Coach role: only that coach's players in the picker (recordings key by
+  // playerId, so a coach with none falls through to the existing empty state).
+  const scope = useScopeCoachId()
+  const players = scope ? ALL_PLAYERS.filter(p => p.coachId === scope) : PLAYERS
   const firstWithRec = (() => {
     const recs = getRecordings()
-    return PLAYERS.find(p => recs.some(r => r.playerId === p.id))?.id ?? PLAYERS[0].id
+    return players.find(p => recs.some(r => r.playerId === p.id))?.id ?? players[0]?.id ?? ''
   })()
   const [playerId, setPlayerId] = useState(firstWithRec)
+  // Keep the selected player inside the current scope — reset when the role
+  // switches so we never show another coach's recordings.
+  useEffect(() => { setPlayerId(prev => players.some(p => p.id === prev) ? prev : (players[0]?.id ?? '')) }, [scope])  // eslint-disable-line react-hooks/exhaustive-deps
   const [tab, setTab] = useState<'video' | 'audio'>('video')
 
   const [recordings, setRecordings] = useState<Recording[]>(getRecordings())
@@ -86,7 +95,7 @@ export function VideoAudioView({ T, accent, density }: Common) {
     return () => { unR(); unS() }
   }, [])
 
-  const player = PLAYERS.find(p => p.id === playerId)
+  const player = players.find(p => p.id === playerId)
   const videoRecs = recordings.filter(r => r.kind === 'video' && r.playerId === playerId)
   const audioRecs = recordings.filter(r => r.kind === 'audio' && r.playerId === playerId)
   const sessionById = (id?: string) => (id ? allKnownSessions(added).find(s => s.id === id) : undefined)
@@ -122,7 +131,7 @@ export function VideoAudioView({ T, accent, density }: Common) {
         <div style={{ minWidth: 220 }}>
           <label style={labelStyle}>Player</label>
           <select style={selectStyle} value={playerId} onChange={e => setPlayerId(e.target.value)}>
-            {PLAYERS.map(p => {
+            {players.map(p => {
               const n = recordings.filter(r => r.playerId === p.id).length
               return <option key={p.id} value={p.id}>{p.name}{n ? '' : ' — no recordings'}</option>
             })}

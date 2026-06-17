@@ -43,7 +43,7 @@ function MoreGlyph() {
 }
 
 export function CoachMobileShell({
-  T, accent, active, onNavigate, showDemoBanner, hiddenMenu, avatar, children,
+  T, accent, active, onNavigate, showDemoBanner, hiddenMenu, avatar, children, roleSwitcher, roleBanner,
 }: {
   T: ThemeTokens
   accent: AccentTokens
@@ -53,6 +53,10 @@ export function CoachMobileShell({
   hiddenMenu: string[]
   avatar: ReactNode
   children: ReactNode
+  // Role switcher (Switch view) + "viewing as" banner — passed from the portal
+  // shell so the mobile shell stays role-agnostic.
+  roleSwitcher?: ReactNode
+  roleBanner?: ReactNode
 }) {
   const [moreOpen, setMoreOpen] = useState(false)
 
@@ -135,6 +139,13 @@ export function CoachMobileShell({
 
       {showDemoBanner && (
         <div style={{ padding: '6px 14px', fontSize: 11.5, fontWeight: 500, background: accent.hex, color: '#fff', textAlign: 'center' }}>Demo · sample data</div>
+      )}
+
+      {roleBanner}
+
+      {/* Role switcher strip (Switch view) */}
+      {roleSwitcher && (
+        <div style={{ padding: '8px 14px', borderBottom: `1px solid ${T.border}`, background: barBg }}>{roleSwitcher}</div>
       )}
 
       {/* Scrollable main — desktop views render single-column in here, unchanged */}

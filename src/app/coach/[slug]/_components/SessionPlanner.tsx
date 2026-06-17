@@ -22,6 +22,7 @@ import { SessionReviewPanel } from './SessionReviewPanel'
 import { MediaFieldRecorder } from './MediaFieldRecorder'
 import { getAddedSessions, getStatusOverrides, getHiddenSessions, setStatus, clearStatus, deleteSession, subscribe as subscribeSessions } from '../_lib/sessions-store'
 import { useAllPlayers } from '../_lib/use-roster'
+import { useScopeCoachId } from '../_lib/role-scope'
 import { NewSessionModal } from './NewSession'
 import { getCalendarItems, getNeedsPlan, dayIndexForDate, mapBookingType, type CalItem } from '../_lib/schedule'
 import { WeekCalendarGrid, bookingTypeColour, MonthAgenda, agendaDayLabel } from './WeekCalendar'
@@ -100,6 +101,7 @@ const kitFor = (type: TodaySession['type']) => {
 
 // ════════════════════════════════════════════════════════════════════════════
 export function SessionPlannerView({ T, accent, density, onNavigate }: Common & { onNavigate?: (s: string) => void }) {
+  const scope = useScopeCoachId()
   const rosterPlayers = useAllPlayers()
   const [plans, setPlans] = useState<PlannedSession[]>([])
   const [added, setAdded] = useState<TodaySession[]>([])
@@ -121,16 +123,50 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   // here as buildable sessions too (bookings are the schedule source of truth).
   const [addedBookings, setAddedBookings] = useState<Booking[]>([])
   useEffect(() => { const r = () => setAddedBookings(getAddedBookings()); r(); return subscribeBookings(r) }, [])
+  // Coach role: only that coach's own sessions (sessions carry coachId). Head
+  // keeps the full single-coach schedule unchanged.
   const allSessions = [...added, ...TODAY_SESSIONS]
     .filter(s => !hidden.includes(s.id))
+    .filter(s => !scope || s.coachId === scope)
     .map(s => overrides[s.id] ? { ...s, status: overrides[s.id] } : s)
 
   const defaultId = (TODAY_SESSIONS.find(s => s.status === 'now') ?? TODAY_SESSIONS.find(s => s.status === 'upcoming') ?? TODAY_SESSIONS[0]).id
   const [selId, setSelId] = useState(defaultId)
   const sel = allSessions.find(s => s.id === selId) ?? allSessions[0]
-  const isDone = sel.status === 'done'
-  const reviewed = reviewedIds.includes(sel.id)
+  const isDone = sel?.status === 'done'
+  const reviewed = sel ? reviewedIds.includes(sel.id) : false
   useEffect(() => { setShowReview(false); setShowRecord(false) }, [selId])
+
+  // Scoped coach with no sessions of their own — the single-day planner assumes
+  // a selected session, so short-circuit to a lean view of what still needs a
+  // plan (their bookings) rather than dereferencing an undefined session.
+  if (!sel) {
+    const scopedNeedsPlan = getNeedsPlan(added, scope ?? undefined, addedBookings)
+    return (
+      <div>
+        <div style={{ marginBottom: 16 }}>
+          <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Session Planner</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>You have no built sessions yet — build one from a booking below.</p>
+        </div>
+        <Card T={T} density={density}>
+          <SectionHead T={T} title="Needs a plan" right={`${scopedNeedsPlan.length}`} />
+          {scopedNeedsPlan.length ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {scopedNeedsPlan.map(b => (
+                <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, flexWrap: 'wrap' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: bookingTypeColour(T, accent, b.type), flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{b.player}</div>
+                    <div className="tnum" style={{ fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO }}>{b.date} · {b.start}–{b.end} · {b.type} · {b.court}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : <div style={{ fontSize: 12, color: T.text3 }}>No upcoming bookings need a plan.</div>}
+        </Card>
+      </div>
+    )
+  }
 
   const markDone = () => {
     if (isDone) {
@@ -174,8 +210,8 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
   // ─── multi-view data — all derived from the one dated dataset ──────────────
   const allBookings = [...BOOKINGS, ...addedBookings]
   const todaySessions = allSessions.filter(s => s.date === TODAY)
-  const calItems = getCalendarItems(added, undefined, addedBookings)
-  const needsPlan = getNeedsPlan(added, undefined, addedBookings)
+  const calItems = getCalendarItems(added, scope ?? undefined, addedBookings)
+  const needsPlan = getNeedsPlan(added, scope ?? undefined, addedBookings)
   const nextUp = allSessions.filter(s => s.status !== 'done')
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))[0]
   const counts = {
@@ -508,12 +544,12 @@ function printRunSheet(s: TodaySession, sheet: Phase[], kit: string[]) {
   ul{margin:0;padding-left:18px}li{font-size:12px;margin-bottom:4px}
   @page{size:A4;margin:0}</style></head><body>
   <div class="page">
-    <div style="background:linear-gradient(120deg,#7c3aed,#a855f7);color:#fff;border-radius:14px;padding:20px 24px">
+    <div style="background:linear-gradient(120deg,#7c3aed,#7c5cbf);color:#fff;border-radius:14px;padding:20px 24px">
       <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;opacity:.85">Session Run-sheet</div>
       <div style="font-size:28px;font-weight:800;margin-top:4px">${esc(s.player)}</div>
       <div style="opacity:.9;margin-top:4px">${esc(s.time)}–${esc(s.end)} · ${esc(s.type)} · ${esc(s.court)} · ${s.mins} min</div>
     </div>
-    <div style="background:#f7f4ff;border-left:4px solid #a855f7;border-radius:0 8px 8px 0;padding:12px 16px;margin-top:16px"><strong>Focus:</strong> ${esc(s.focus)}</div>
+    <div style="background:#f7f4ff;border-left:4px solid #7c5cbf;border-radius:0 8px 8px 0;padding:12px 16px;margin-top:16px"><strong>Focus:</strong> ${esc(s.focus)}</div>
     <h2>Run-sheet</h2><table style="width:100%;border-collapse:collapse">${rows}</table>
     <h2>Kit to bring</h2><ul>${kitHtml}</ul>
     <div style="position:absolute;bottom:12mm;left:16mm;right:16mm;display:flex;justify-content:space-between;font-size:9px;color:#aab;border-top:1px solid #eee;padding-top:8px"><span>${esc(COACH_ORG.academy)} · ${esc(COACH_ORG.coach)}</span><span>Lumio Coach · Session Planner</span></div>
