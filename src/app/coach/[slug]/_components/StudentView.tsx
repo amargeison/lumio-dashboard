@@ -28,7 +28,7 @@ import { RECORDINGS_SEED, type Recording } from '../_lib/recordings-data'
 import { GPS_VIDEO_DATA, type GpsSession } from '../_lib/gps-video-data'
 import { getSettings } from '../_lib/settings-store'
 import {
-  CourtPositionalHeatmap, CourtCoverageGrid, HeatLegend, TENNIS_RALLY_ANCHORS,
+  CourtPositionalHeatmap, CourtCoverageGrid, HeatLegend, TENNIS_RALLY_ANCHORS, GpsLineChart,
 } from './CoachHeatmaps'
 
 type Props = { T: ThemeTokens; accent: AccentTokens; density: Density; playerId: string }
@@ -77,11 +77,87 @@ function EmptyHint({ T, accent, icon, title, sub }: { T: ThemeTokens; accent: Ac
 
 const recoveryColour = (T: ThemeTokens, r: GpsSession['recovery']) => r === 'Good' ? T.good : r === 'Moderate' ? T.warn : T.bad
 
+// ─── GPS report — parent-friendly building blocks (tabbed, so no endless scroll) ──
+type GpsTabKey = 'overview' | 'distance' | 'speed' | 'heart' | 'maps'
+
+function GpsTabBar({ T, accent, tab, setTab }: { T: ThemeTokens; accent: AccentTokens; tab: GpsTabKey; setTab: (t: GpsTabKey) => void }) {
+  const tabs: { key: GpsTabKey; label: string }[] = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'distance', label: 'Distance & movement' },
+    { key: 'speed', label: 'Speed & sprint' },
+    { key: 'heart', label: 'Heart rate' },
+  ]
+  return (
+    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 14, WebkitOverflowScrolling: 'touch' }}>
+      {tabs.map(t => {
+        const on = t.key === tab
+        return (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            style={{ appearance: 'none', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, fontFamily: FONT, fontSize: 12.5, fontWeight: 700,
+              padding: '8px 14px', borderRadius: 999, border: `1px solid ${on ? accent.border : T.border}`,
+              background: on ? accent.dim : T.panel2, color: on ? accent.hex : T.text2 }}>
+            {t.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+// Vertical bar chart for per-block series (distance / sprints).
+function VBars({ T, items, color, fmt }: { T: ThemeTokens; items: { label: string; value: number; sub?: string }[]; color: string; fmt?: (v: number) => string }) {
+  const max = Math.max(...items.map(i => i.value)) || 1
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16, height: 124 }}>
+      {items.map(s => (
+        <div key={s.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color }}>{fmt ? fmt(s.value) : s.value}</div>
+          <div style={{ width: '100%', borderRadius: '4px 4px 0 0', height: `${(s.value / max) * 100}%`, minHeight: 8, background: `linear-gradient(180deg, ${color}, ${color}40)` }} />
+          <div style={{ fontSize: 10, color: T.text3, textAlign: 'center' }}>{s.label}</div>
+          {s.sub && <div style={{ fontSize: 10, color: T.text4 }}>{s.sub}</div>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Stacked proportion bar + legend rows (distance-by-phase, HR zones).
+function StackedBar({ T, segments }: { T: ThemeTokens; segments: { label: string; pct: number; colour: string; right?: string }[] }) {
+  return (
+    <>
+      <div style={{ display: 'flex', height: 24, borderRadius: 6, overflow: 'hidden', marginBottom: 12 }}>
+        {segments.map(s => <div key={s.label} title={`${s.label} ${s.pct.toFixed(0)}%`} style={{ width: `${s.pct}%`, background: s.colour }} />)}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {segments.map(s => (
+          <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5 }}>
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: s.colour }} />
+            <span style={{ flex: 1, color: T.text2 }}>{s.label}</span>
+            {s.right && <span style={{ fontWeight: 700, color: T.text }}>{s.right}</span>}
+            <span style={{ color: T.text3, width: 40, textAlign: 'right' }}>{s.pct.toFixed(0)}%</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+function SubCard({ T, title, sub, children }: { T: ThemeTokens; title: string; sub?: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 14, padding: '14px 16px' }}>
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>{title}</div>
+      {sub && <div style={{ fontSize: 11, color: T.text3, marginTop: 2, lineHeight: 1.4 }}>{sub}</div>}
+      <div style={{ marginTop: 12 }}>{children}</div>
+    </div>
+  )
+}
+
 export function StudentView({ T, accent, density, playerId }: Props) {
   // The picker lets a head coach demoing "view as student" switch which child's
   // view they see. Defaults to the playerId handed in (Mia Chen / p1).
   const [selId, setSelId] = useState(playerId)
   const [playing, setPlaying] = useState<Recording | null>(null)
+  const [gpsTab, setGpsTab] = useState<GpsTabKey>('overview')
   const player = PLAYERS.find(p => p.id === selId) ?? PLAYERS[0]
   const first = player.name.split(' ')[0]
 
@@ -99,6 +175,11 @@ export function StudentView({ T, accent, density, playerId }: Props) {
 
   const gps = GPS_VIDEO_DATA[player.id]
   const gpsSession = (gps?.sessions ?? []).slice().sort((a, b) => b.date.localeCompare(a.date))[0]
+  // derived GPS report values (safe when no session)
+  const phaseTotal = (gps?.distanceByPhase ?? []).reduce((a, b) => a + b.km, 0) || 1
+  const blockWord = gpsSession && gpsSession.distanceBySet.length > 1 ? 'block' : 'day'
+  const tsFirst = gpsSession?.topSpeedPerSet[0]?.kmh ?? 0
+  const tsLast = gpsSession?.topSpeedPerSet[gpsSession.topSpeedPerSet.length - 1]?.kmh ?? 0
 
   const playerLessons = LESSONS.filter(l => l.playerId === player.id)
   const latestLesson: Lesson | undefined = playerLessons[playerLessons.length - 1]
@@ -128,12 +209,12 @@ export function StudentView({ T, accent, density, playerId }: Props) {
       </div>
 
       <PCard T={T} density={density} style={{ background: `linear-gradient(135deg, ${accent.dim}, ${T.panel})`, borderColor: accent.border }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <Avatar accent={accent} initials={player.initials} size={58} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Avatar accent={accent} initials={player.initials} size={56} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, color: T.text3 }}>👋 Good to see you — here&apos;s how {first} is getting on</div>
-            <h1 style={{ margin: '2px 0 0', fontFamily: FONT, fontSize: 26, fontWeight: 700, color: T.text, letterSpacing: '-0.02em' }}>{first}&apos;s progress</h1>
-            <div style={{ fontSize: 12.5, color: T.text2, marginTop: 4, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <h1 style={{ margin: '2px 0 0', fontFamily: FONT, fontSize: 22, fontWeight: 700, color: T.text, letterSpacing: '-0.02em', lineHeight: 1.15 }}>{first}&apos;s progress</h1>
+            <div style={{ fontSize: 12.5, color: T.text2, marginTop: 6, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span>{player.group} · Age {player.age}</span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 18, height: 11, borderRadius: 3, background: belt.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
@@ -141,10 +222,10 @@ export function StudentView({ T, accent, density, playerId }: Props) {
               </span>
             </div>
           </div>
-          <div style={{ textAlign: 'center', background: T.panel, border: `1px solid ${accent.border}`, borderRadius: 14, padding: '10px 16px' }}>
-            <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Goal</div>
-            <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, marginTop: 2, maxWidth: 160 }}>🎯 {player.goal}</div>
-          </div>
+        </div>
+        <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, background: T.panel, border: `1px solid ${accent.border}`, borderRadius: 14, padding: '10px 14px' }}>
+          <span style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, flexShrink: 0 }}>Goal</span>
+          <span style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>🎯 {player.goal}</span>
         </div>
       </PCard>
 
@@ -189,23 +270,97 @@ export function StudentView({ T, accent, density, playerId }: Props) {
         )}
       </PCard>
 
-      {/* 2 · GPS STATS */}
+      {/* 2 · GPS REPORT — full coach-grade detail, tabbed so it's not endless scroll */}
       <PCard T={T} density={density}>
-        <PSection T={T} accent={accent} icon="flame" title={`How hard ${first} worked`} sub={gpsSession ? `Latest session · ${gpsSession.date} · ${gpsSession.surface} court` : 'Movement & effort from Lumio GPS'} lead />
+        <PSection T={T} accent={accent} icon="flame" title={`${first}'s session report`} sub={gpsSession ? `Latest session · ${gpsSession.date} · ${gpsSession.surface} court · ${gpsSession.duration} min` : 'Movement & effort from Lumio GPS'} lead />
         {gpsSession ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
-            <Tile T={T} label="Distance" value={`${gpsSession.distance.toFixed(1)} km`} sub="covered on court" color={accent.hex} />
-            <Tile T={T} label="Court coverage" value={`${gpsSession.coverage}%`} sub="of their half" color={accent.hex} />
-            <Tile T={T} label="Top speed" value={gpsSession.topSpeed.toFixed(1)} sub="km/h" color={T.text} />
-            <Tile T={T} label="Effort" value={`${gpsSession.load}`} sub="load score /100" color={gpsSession.load > 80 ? T.bad : gpsSession.load > 60 ? T.warn : T.good} />
-            <Tile T={T} label="Recovery" value={gpsSession.recovery} sub="between points" color={recoveryColour(T, gpsSession.recovery)} />
-          </div>
+          <>
+            <GpsTabBar T={T} accent={accent} tab={gpsTab} setTab={setGpsTab} />
+
+            {/* ── OVERVIEW ── */}
+            {gpsTab === 'overview' && (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
+                  <Tile T={T} label="Distance" value={`${gpsSession.distance.toFixed(1)} km`} sub="covered on court" color={accent.hex} />
+                  <Tile T={T} label="Court coverage" value={`${gpsSession.coverage}%`} sub="of their half" color={accent.hex} />
+                  <Tile T={T} label="Top speed" value={gpsSession.topSpeed.toFixed(1)} sub="km/h" color={T.text} />
+                  <Tile T={T} label="Sprints" value={gpsSession.sprintCount} sub="bursts of pace" color={T.text} />
+                  <Tile T={T} label="Effort" value={`${gpsSession.load}`} sub="load score /100" color={gpsSession.load > 80 ? T.bad : gpsSession.load > 60 ? T.warn : T.good} />
+                  <Tile T={T} label="Recovery" value={gpsSession.recovery} sub="between points" color={recoveryColour(T, gpsSession.recovery)} />
+                </div>
+                <div style={{ marginTop: 12, fontSize: 12, color: T.text2, lineHeight: 1.55, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 12, padding: '12px 14px' }}>
+                  {first} covered <strong style={{ color: T.text }}>{gpsSession.distance.toFixed(1)} km</strong> over {gpsSession.duration} minutes, hit a top speed of <strong style={{ color: T.text }}>{gpsSession.topSpeed.toFixed(1)} km/h</strong>, and finished with <strong style={{ color: T.text }}>{gpsSession.recovery.toLowerCase()}</strong> recovery. Tap the tabs above for the full breakdown.
+                </div>
+              </>
+            )}
+
+            {/* ── DISTANCE & MOVEMENT ── */}
+            {gpsTab === 'distance' && (
+              <div style={twoCol}>
+                <SubCard T={T} title={`Distance by ${blockWord === 'block' ? 'block' : 'day'}`} sub={`Total ${gpsSession.distance.toFixed(1)} km across the session`}>
+                  <VBars T={T} color={accent.hex} fmt={v => `${v} km`} items={gpsSession.distanceBySet.map(s => ({ label: s.set, value: s.km, sub: `Load ${s.load}` }))} />
+                </SubCard>
+                <SubCard T={T} title="What the movement was" sub="Where the running happened during play">
+                  <StackedBar T={T} segments={(gps?.distanceByPhase ?? []).map(p => ({ label: p.phase, pct: (p.km / phaseTotal) * 100, colour: p.c, right: `${p.km.toFixed(1)} km` }))} />
+                </SubCard>
+              </div>
+            )}
+
+            {/* ── SPEED & SPRINT ── */}
+            {gpsTab === 'speed' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
+                <SubCard T={T} title="Speed zones" sub="How much time was spent walking, jogging, running and sprinting">
+                  {(gps?.speedZones ?? []).map(z => (
+                    <div key={z.zone} style={{ marginBottom: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: T.text2, marginBottom: 4 }}>
+                        <span>{z.zone}</span>
+                        <span style={{ color: z.c, fontWeight: 700 }}>{z.pct}% · {z.time}</span>
+                      </div>
+                      <div style={{ height: 12, borderRadius: 4, background: T.hover, overflow: 'hidden' }}>
+                        <div style={{ height: 12, width: `${Math.min(100, z.pct * 2.4)}%`, background: z.c, opacity: 0.85, borderRadius: 4 }} />
+                      </div>
+                    </div>
+                  ))}
+                </SubCard>
+                <div style={twoCol}>
+                  <SubCard T={T} title="Sprints" sub="Bursts of pace across the session">
+                    <VBars T={T} color={T.warn} items={gpsSession.sprintsPerSet.map(s => ({ label: s.set, value: s.n }))} />
+                  </SubCard>
+                  <SubCard T={T} title="Top speed" sub={`Peak speed ${tsFirst >= tsLast ? 'eased off' : 'rose'} ${Math.abs(tsFirst - tsLast).toFixed(1)} km/h through the session`}>
+                    <GpsLineChart T={T} values={gpsSession.topSpeedPerSet.map(s => s.kmh)} labels={gpsSession.topSpeedPerSet.map(s => s.set)} max={32} min={16} valueFormat={v => v.toFixed(1)} colour={T.bad} height={150} width={400} />
+                  </SubCard>
+                </div>
+              </div>
+            )}
+
+            {/* ── HEART RATE ── */}
+            {gpsTab === 'heart' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
+                <SubCard T={T} title="Heart-rate zones" sub="How hard the heart was working across the session">
+                  <StackedBar T={T} segments={(gps?.hrZones ?? []).map(z => ({ label: z.zone, pct: z.pct, colour: z.color }))} />
+                </SubCard>
+                <SubCard T={T} title={`Effort by ${blockWord}`} sub="Average heart rate — did the intensity build?">
+                  <GpsLineChart T={T} values={gpsSession.hrBySet.map(s => s.avg)} labels={gpsSession.hrBySet.map(s => s.set)} max={180} min={120} valueFormat={v => `${v}`} colour={accent.hex} height={150} width={400} />
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${gpsSession.hrBySet.length}, 1fr)`, gap: 8, marginTop: 10 }}>
+                    {gpsSession.hrBySet.map(s => (
+                      <div key={s.set} style={{ borderRadius: 8, padding: 8, textAlign: 'center', background: T.panel, border: `1px solid ${T.border}` }}>
+                        <div style={{ fontSize: 9, color: T.text3 }}>{s.set}</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: accent.hex }}>{s.avg}</div>
+                        <div style={{ fontSize: 9, color: T.text3 }}>peak {s.peak}</div>
+                      </div>
+                    ))}
+                  </div>
+                </SubCard>
+              </div>
+            )}
+
+          </>
         ) : (
           <EmptyHint T={T} accent={accent} icon="flame" title={`No GPS sessions for ${first} yet`} sub="Stats appear after a session tracked with Lumio GPS." />
         )}
       </PCard>
 
-      {/* 3 · HEATMAPS */}
+      {/* HEATMAPS — kept as its own section on the main page */}
       <PCard T={T} density={density}>
         <PSection T={T} accent={accent} icon="grid" title={`Where ${first} plays`} sub="Movement & court coverage from their latest session" lead />
         {gpsSession ? (

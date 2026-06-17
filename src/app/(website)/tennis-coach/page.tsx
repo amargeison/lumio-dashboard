@@ -2,11 +2,14 @@
 
 import Link from 'next/link'
 
-const PURPLE = '#7C3AED'
-const PURPLE_LIGHT = '#A855F7'
+// "Ocean" accent — matches the coach portal's blue accent preset (#3A8EE0).
+const PURPLE = '#1F6FCC'        // primary (buttons, shadows) — deep ocean
+const PURPLE_LIGHT = '#3A8EE0'  // accent (text, highlights) — Ocean
 const BG = '#07080F'
 const CARD = '#0D1117'
+const CARD_ALT = '#111827'
 const BORDER = '#1E293B'
+const BORDER_ALT = '#1F2937'
 const TEXT = '#F9FAFB'
 const MUTED = '#9CA3AF'
 
@@ -15,13 +18,25 @@ const STAT_PILLS = ['9 coach modules', 'AI powered', 'GPS + Vision', 'LTA racket
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '📋', title: 'Session Planner', desc: 'Plan every session in minutes. Overview, Today, This week and This month views over one dated schedule synced from your booking calendar — a confirmed booking becomes a ready-to-build session in two clicks, with a timed run-sheet and kit list generated for you.' },
   { icon: '🤖', title: 'AI Session Review', desc: 'Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player’s plan so the next session writes itself.' },
-  { icon: '🎾', title: 'Racket Progression', desc: 'A clear skill pathway for every player. Track each racket stage against its criteria with progress bars and award thresholds — so players and parents always know exactly what’s next.' },
+  { icon: '🎾', title: 'Racket Progression reward system', desc: 'The reward system at the heart of Lumio Coach. A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds. Players collect a trophy racket and certificate at every level, and parents fund the journey: your second revenue stream, built in.' },
   { icon: '🛰️', title: 'GPS & Video', desc: 'Player movement and match or training footage in one place. Lumio GPS Tracker and Lumio Vision give you load, court coverage and clips with coach annotations — no third-party analysis stack to wire up.' },
   { icon: '🔥', title: 'Heatmaps', desc: 'Court coverage, serve placement, returns and rally, winners and errors, sprint and speed, and weekly load — paginated into clean tabs per player, by session and by surface.' },
   { icon: '👥', title: 'Staff / Coaches', desc: 'Run a club of coaches, not just yourself. A directory with each coach’s calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team’s week.' },
   { icon: '🏕️', title: 'Training Camps', desc: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft and a per-player camp log that captures progress day by day.' },
   { icon: '🗓️', title: 'Booking Calendar', desc: 'Your whole week across every court — private, group, cardio and match play. The single source of truth that feeds the Session Planner, so the schedule and the plans never drift apart.' },
   { icon: '📱', title: 'Mobile App', desc: 'An app-like experience on the phone — a bottom tab bar, your day at a glance, and the tools you actually reach for on court — wherever you’re coaching that day.' },
+]
+
+const INTEGRATIONS = [
+  { icon: '🛰️', name: 'Lumio GPS Tracker', desc: 'Court coverage and load' },
+  { icon: '🎬', name: 'Lumio Vision', desc: 'Video clips and annotations' },
+  { icon: '🤖', name: 'Claude AI', desc: 'Session reviews and camp drafts' },
+  { icon: '🏛️', name: 'LTA Youth Pathway', desc: 'Racket stage mapping' },
+  { icon: '💳', name: 'Stripe', desc: 'Bookings and subscriptions' },
+  { icon: '💰', name: 'Xero', desc: 'Academy finances' },
+  { icon: '📧', name: 'Microsoft 365', desc: 'Email and calendar' },
+  { icon: '🔔', name: 'Slack', desc: 'Team and parent updates' },
+  { icon: '📱', name: 'Mobile PWA', desc: 'Install on any phone' },
 ]
 
 const TIERS = [
@@ -52,6 +67,295 @@ const KIT_PARTS = [
   { name: 'Trophy rackets — set of 9', price: '£45', note: 'One reward racket per level' },
 ]
 
+// The real nine-stage racket pathway from the coach portal (coach-data.ts BELTS).
+const RACKET_STAGES: Array<{ name: string; theme: string; colour: string }> = [
+  { name: 'White', theme: 'Foundations', colour: '#E8EAEE' },
+  { name: 'Yellow', theme: 'Rallying', colour: '#E5C76B' },
+  { name: 'Orange', theme: 'Net & Touch', colour: '#E08A3C' },
+  { name: 'Green', theme: 'The Serve', colour: '#4FAE72' },
+  { name: 'Blue', theme: 'Spin & Shape', colour: '#3A8EE0' },
+  { name: 'Purple', theme: 'Specialty Shots', colour: '#7c5cbf' },
+  { name: 'Brown', theme: 'Weapons', colour: '#9A6B4F' },
+  { name: 'Red', theme: 'Tactics', colour: '#C75A5A' },
+  { name: 'Black', theme: 'Mastery', colour: '#2A3142' },
+]
+
+// ── Mockup chrome ────────────────────────────────────────────────────────────
+function MockupFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER_ALT}`, borderRadius: 12, overflow: 'hidden', boxShadow: `0 30px 80px ${PURPLE}22` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: `1px solid ${BORDER_ALT}`, backgroundColor: '#0B1020' }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#EF4444' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#F59E0B' }} />
+          <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#10B981' }} />
+        </div>
+        <div style={{ flex: 1, height: 18, borderRadius: 5, backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}` }} />
+      </div>
+      <div style={{ padding: 18 }}>{children}</div>
+    </div>
+  )
+}
+
+function Badge({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) {
+  return (
+    <span style={{ fontSize: 9, fontWeight: 800, padding: '3px 8px', borderRadius: 999, color, backgroundColor: bg, border: `1px solid ${color}55`, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+      {children}
+    </span>
+  )
+}
+
+function KPI({ value, label, sub, color }: { value: string; label: string; sub?: string; color: string }) {
+  return (
+    <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${color}55`, borderRadius: 10, padding: 12 }}>
+      <div style={{ fontSize: 18, fontWeight: 900, color }}>{value}</div>
+      <div style={{ fontSize: 9, fontWeight: 700, color: TEXT, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+      {sub && <div style={{ fontSize: 9, color: MUTED, marginTop: 2 }}>{sub}</div>}
+    </div>
+  )
+}
+
+// ── Mockups ──────────────────────────────────────────────────────────────────
+function SessionPlannerMockup() {
+  const runsheet = [
+    { t: '16:00', block: 'Warm-up & movement', kit: '4 cones · ladder' },
+    { t: '16:15', block: 'Cross-court rally — depth', kit: 'basket · targets' },
+    { t: '16:40', block: 'Serve +1 patterns', kit: 'tube · markers' },
+    { t: '17:05', block: 'Match-play points', kit: 'scoreboard' },
+  ]
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+        {['Overview', 'Today', 'This week', 'This month'].map((t, i) => (
+          <span key={t} style={{ fontSize: 9, fontWeight: 800, padding: '5px 10px', borderRadius: 999, backgroundColor: i === 1 ? PURPLE : '#0A0B10', color: i === 1 ? '#fff' : MUTED, border: `1px solid ${i === 1 ? PURPLE : BORDER_ALT}` }}>{t}</span>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 10 }}>
+        <KPI value="6" label="Sessions today" color={PURPLE} />
+        <KPI value="2 left" label="To build" color="#F59E0B" />
+        <KPI value="14" label="Players" color="#10B981" />
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${PURPLE}55`, borderRadius: 10, padding: 12 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: TEXT }}>U14 Squad — Court 2</div>
+            <div style={{ fontSize: 9, color: MUTED }}>16:00–17:30 · from booking #2381</div>
+          </div>
+          <Badge color={PURPLE_LIGHT} bg="rgba(58,142,224,0.15)">Run-sheet ready</Badge>
+        </div>
+        {runsheet.map(r => (
+          <div key={r.t} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0', borderTop: `1px solid ${BORDER_ALT}` }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: PURPLE_LIGHT, width: 34 }}>{r.t}</span>
+            <span style={{ fontSize: 10, color: TEXT, flex: 1 }}>{r.block}</span>
+            <span style={{ fontSize: 8, color: MUTED }}>{r.kit}</span>
+          </div>
+        ))}
+      </div>
+    </MockupFrame>
+  )
+}
+
+function SessionReviewMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>🤖 AI Session Review</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Mia Chen · U12 private · Wed 16:00 · Green stage</div>
+      <div style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.4)', borderRadius: 10, padding: 10, marginBottom: 8 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: '#10B981', marginBottom: 4 }}>✓ WHAT WENT WELL</div>
+        <div style={{ fontSize: 9.5, color: MUTED, lineHeight: 1.5 }}>Consistent toss height on the serve; first-serve contact point much improved over last two sessions.</div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.4)', borderRadius: 10, padding: 10, marginBottom: 8 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: '#F59E0B', marginBottom: 4 }}>◎ WORK ON NEXT</div>
+        <div style={{ fontSize: 9.5, color: MUTED, lineHeight: 1.5 }}>Racket-drop on the second serve; tends to rush under pressure at deuce.</div>
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${PURPLE}55`, borderRadius: 10, padding: 10 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: PURPLE_LIGHT, marginBottom: 6 }}>🎯 DRILLS FOR NEXT SESSION</div>
+        {['Shadow serve — slow racket drop ×20', 'Second-serve targets, deuce court', 'Pressure points: 30-40 serve game'].map(d => (
+          <div key={d} style={{ display: 'flex', gap: 6, fontSize: 9.5, color: TEXT, padding: '3px 0' }}>
+            <span style={{ color: PURPLE_LIGHT, fontWeight: 900 }}>›</span>{d}
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 8.5, color: MUTED, marginTop: 8, fontStyle: 'italic' }}>Saved to Mia’s plan — auto-loaded into next week’s session.</div>
+    </MockupFrame>
+  )
+}
+
+function RacketProgressionMockup() {
+  // current player sits at Green (index 3): first four awarded, Green in progress.
+  const current = 3
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>🎾🏆 Racket Progression</div>
+        <Badge color={PURPLE_LIGHT} bg="rgba(58,142,224,0.15)">4 of 9 awarded</Badge>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Mia Chen · pathway White → Black</div>
+      <div style={{ display: 'flex', gap: 5, marginBottom: 12 }}>
+        {RACKET_STAGES.map((s, i) => (
+          <div key={s.name} style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ height: 26, borderRadius: 5, backgroundColor: s.colour, opacity: i <= current ? 1 : 0.28, border: i === current ? `2px solid ${PURPLE_LIGHT}` : '1px solid rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: i <= 1 ? '#1a1d29' : '#fff', fontWeight: 900 }}>
+              {i < current ? '✓' : i === current ? '★' : ''}
+            </div>
+            <div style={{ fontSize: 6.5, color: i === current ? PURPLE_LIGHT : MUTED, marginTop: 3, fontWeight: i === current ? 800 : 600 }}>{s.name}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${PURPLE}55`, borderRadius: 10, padding: 10, marginBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, color: TEXT }}>Green Racket · The Serve</span>
+          <span style={{ fontSize: 9, color: '#10B981', fontWeight: 800 }}>78% to award</span>
+        </div>
+        <div style={{ height: 6, borderRadius: 3, backgroundColor: '#1F2937', marginBottom: 8 }}>
+          <div style={{ width: '78%', height: '100%', borderRadius: 3, backgroundColor: '#4FAE72' }} />
+        </div>
+        {[['Flat & slice serve', 'Mastered'], ['Serve placement — wide/T', 'Consistent'], ['Second-serve spin', 'Developing']].map(([skill, lvl]) => (
+          <div key={skill} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, padding: '3px 0' }}>
+            <span style={{ color: MUTED }}>{skill}</span>
+            <span style={{ color: lvl === 'Mastered' ? '#10B981' : lvl === 'Consistent' ? PURPLE_LIGHT : '#F59E0B', fontWeight: 700 }}>{lvl}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ backgroundColor: 'rgba(31,111,204,0.12)', border: `1px solid ${PURPLE}55`, borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 9, color: TEXT, fontWeight: 700 }}>🏆 Award trophy racket + certificate</span>
+        <span style={{ fontSize: 8.5, color: MUTED }}>parents fund the journey</span>
+      </div>
+    </MockupFrame>
+  )
+}
+
+function HeatmapMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>🔥 GPS &amp; Court Heatmaps</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Mia Chen · last session · Lumio GPS Tracker</div>
+      <div style={{ display: 'flex', gap: 5, marginBottom: 10, flexWrap: 'wrap' }}>
+        {['Coverage', 'Serve', 'Rally', 'Load'].map((t, i) => (
+          <span key={t} style={{ fontSize: 8.5, fontWeight: 800, padding: '4px 9px', borderRadius: 999, backgroundColor: i === 0 ? PURPLE : '#0A0B10', color: i === 0 ? '#fff' : MUTED, border: `1px solid ${i === 0 ? PURPLE : BORDER_ALT}` }}>{t}</span>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <svg width="120" height="180" viewBox="0 0 120 180">
+            <rect x="0" y="0" width="120" height="180" fill="#0c2a1a" />
+            <rect x="10" y="8" width="100" height="164" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
+            <line x1="10" y1="90" x2="110" y2="90" stroke="#fff" strokeWidth="1.5" opacity="0.7" />
+            <line x1="30" y1="50" x2="90" y2="50" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+            <line x1="30" y1="130" x2="90" y2="130" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+            <line x1="60" y1="50" x2="60" y2="130" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+            <circle cx="60" cy="162" r="22" fill={PURPLE} opacity="0.7" style={{ filter: 'blur(6px)' }} />
+            <circle cx="42" cy="158" r="13" fill={PURPLE_LIGHT} opacity="0.55" style={{ filter: 'blur(5px)' }} />
+            <circle cx="84" cy="156" r="12" fill={PURPLE} opacity="0.5" style={{ filter: 'blur(5px)' }} />
+            <circle cx="60" cy="100" r="9" fill="#F59E0B" opacity="0.35" style={{ filter: 'blur(4px)' }} />
+            <text x="60" y="176" textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="6">BASELINE 71%</text>
+          </svg>
+        </div>
+        <div>
+          {[{ l: 'Baseline', v: 71, c: PURPLE }, { l: 'Mid-court', v: 19, c: '#F59E0B' }, { l: 'Net', v: 10, c: '#10B981' }].map(z => (
+            <div key={z.l} style={{ marginBottom: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8.5, color: MUTED }}>
+                <span>{z.l}</span><span style={{ color: z.c, fontWeight: 800 }}>{z.v}%</span>
+              </div>
+              <div style={{ height: 5, borderRadius: 3, backgroundColor: '#1F2937', marginTop: 2 }}>
+                <div style={{ width: `${z.v}%`, height: '100%', borderRadius: 3, backgroundColor: z.c }} />
+              </div>
+            </div>
+          ))}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginTop: 6 }}>
+            <KPI value="3.1km" label="Distance" color={PURPLE} />
+            <KPI value="0.96" label="Load AU" color={PURPLE_LIGHT} />
+          </div>
+        </div>
+      </div>
+    </MockupFrame>
+  )
+}
+
+function StaffMockup() {
+  const coaches = [
+    { name: 'Dave Askew', role: 'Head Coach', util: 92, c: '#EF4444', spec: 'Performance · LTA Accredited+' },
+    { name: 'Elena Russo', role: 'Coach', util: 74, c: '#F59E0B', spec: 'Mini tennis · serve' },
+    { name: 'James Okafor', role: 'Coach', util: 61, c: '#10B981', spec: 'Cardio · groups' },
+    { name: 'Priya Sharma', role: 'Assistant', util: 48, c: '#10B981', spec: 'Foundations · U10' },
+  ]
+  return (
+    <MockupFrame>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 10 }}>👥 Coaches Directory</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 12 }}>
+        <KPI value="4" label="Coaches" color={PURPLE} />
+        <KPI value="69%" label="Avg utilisation" color="#F59E0B" />
+        <KPI value="2" label="Certs expiring" sub="next 90 days" color="#EF4444" />
+      </div>
+      {coaches.map(c => (
+        <div key={c.name} style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10, marginBottom: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: TEXT }}>{c.name}</div>
+              <div style={{ fontSize: 8.5, color: PURPLE_LIGHT }}>{c.role} · {c.spec}</div>
+            </div>
+            <span style={{ fontSize: 11, fontWeight: 900, color: c.c }}>{c.util}%</span>
+          </div>
+          <div style={{ height: 4, borderRadius: 2, backgroundColor: '#1F2937' }}>
+            <div style={{ width: `${c.util}%`, height: '100%', borderRadius: 2, backgroundColor: c.c }} />
+          </div>
+        </div>
+      ))}
+    </MockupFrame>
+  )
+}
+
+function CampMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>🏕️ Easter Performance Camp</div>
+        <Badge color="#10B981" bg="rgba(16,185,129,0.15)">AI draft ready</Badge>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>4 days · 24 players · 3 courts</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 10 }}>
+        <KPI value="24" label="Attendees" color={PURPLE} />
+        <KPI value="£4,320" label="Revenue" color="#10B981" />
+        <KPI value="£1,180" label="Margin" color={PURPLE_LIGHT} />
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: 10 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: TEXT, marginBottom: 6 }}>Day 1 itinerary</div>
+        {[['09:00', 'Warm-up & movement screen'], ['10:00', 'Serve clinic — by stage'], ['12:00', 'Lunch & video review'], ['14:00', 'Match-play ladder']].map(([t, b]) => (
+          <div key={t} style={{ display: 'flex', gap: 8, padding: '3px 0', borderTop: `1px solid ${BORDER_ALT}` }}>
+            <span style={{ fontSize: 9, fontWeight: 800, color: PURPLE_LIGHT, width: 32 }}>{t}</span>
+            <span style={{ fontSize: 9.5, color: MUTED }}>{b}</span>
+          </div>
+        ))}
+      </div>
+    </MockupFrame>
+  )
+}
+
+// ── Spotlight wrapper ─────────────────────────────────────────────────────────
+function Spotlight({ eyebrow, title, body, bullets, mockup, reverse, altBg }: {
+  eyebrow: string; title: string; body: string; bullets: string[]; mockup: React.ReactNode; reverse?: boolean; altBg?: boolean
+}) {
+  return (
+    <section style={{ padding: '96px 24px', backgroundColor: altBg ? '#0A0C14' : BG }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+        <div style={{ order: reverse ? 2 : 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, marginBottom: 16, lineHeight: 1.1 }}>{title}</h2>
+          <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.6, marginBottom: 24 }}>{body}</p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {bullets.map(b => (
+              <li key={b} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 15, color: TEXT }}>
+                <span style={{ color: PURPLE_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div style={{ order: reverse ? 1 : 2 }}>{mockup}</div>
+      </div>
+    </section>
+  )
+}
+
 export default function TennisCoachPage() {
   return (
     <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
@@ -59,22 +363,20 @@ export default function TennisCoachPage() {
       <section style={{ padding: '128px 24px 64px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${PURPLE}33, transparent 50%), radial-gradient(circle at 80% 60%, ${PURPLE_LIGHT}22, transparent 55%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/tennis_coach_logo.png" alt="Lumio Tennis Coach" style={{ height: 72, width: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto 24px' }} />
           <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: PURPLE_LIGHT, textTransform: 'uppercase', marginBottom: 24 }}>
             LUMIO TENNIS COACH
           </div>
           <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, color: TEXT, marginBottom: 24, maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
-            The all-in-one platform<br />
-            <span style={{ color: PURPLE_LIGHT }}>for tennis coaches.</span>
+            One platform.<br />
+            <span style={{ color: PURPLE_LIGHT }}>Two revenue streams.</span>
           </h1>
-          <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 820, margin: '0 auto 32px' }}>
-            Session planning, AI session reviews, GPS &amp; video, racket progression and a full coaches directory — everything a coach or academy needs to run their week, in one portal.
+          <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 840, margin: '0 auto 32px' }}>
+            The all-in-one platform that runs your whole tennis academy — session planning, AI reviews, GPS &amp; video — and pays you back through <strong style={{ color: TEXT }}>the Racket Progression reward system</strong>: a nine-stage pathway where players collect trophy rackets and parents fund the journey.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', margin: '16px 0 32px' }}>
-            <span style={{ background: '#7c3aed18', border: `1px solid ${PURPLE}`, color: PURPLE_LIGHT, padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🤖 AI Session Review</span>
-            <span style={{ background: '#06b6d418', border: '1px solid #06b6d4', color: '#06b6d4', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🛰️ Lumio GPS + Vision</span>
-            <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🔥 Heatmaps</span>
+            <span style={{ background: '#1f6fcc18', border: `1px solid ${PURPLE}`, color: PURPLE_LIGHT, padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎾🏆 Racket Progression reward system</span>
+            <span style={{ background: '#06b6d418', border: '1px solid #06b6d4', color: '#06b6d4', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🤖 AI Session Review</span>
+            <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🛰️ GPS + Vision</span>
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
             <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
@@ -86,8 +388,42 @@ export default function TennisCoachPage() {
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {STAT_PILLS.map(p => (
-              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(124,58,237,0.1)', border: `1px solid ${PURPLE}66`, color: PURPLE_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
+              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(31,111,204,0.12)', border: `1px solid ${PURPLE}66`, color: PURPLE_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── REVENUE HIGHLIGHT PANEL ── */}
+      <section style={{ padding: '0 24px 48px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #0a1628 50%, #061020 100%)', border: `1px solid ${PURPLE}30`, borderRadius: 24, padding: '64px 48px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: `radial-gradient(circle, ${PURPLE}22 0%, transparent 70%)`, pointerEvents: 'none' }} />
+            <div style={{ position: 'relative' }}>
+              <div style={{ marginBottom: 24 }}>
+                <span style={{ background: PURPLE, color: '#fff', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>💸 One platform. Two revenue streams.</span>
+              </div>
+              <h2 style={{ fontSize: 42, fontWeight: 800, color: '#fff', marginBottom: 16, maxWidth: 760, lineHeight: 1.2 }}>The software runs your academy.<br /><span style={{ color: PURPLE_LIGHT }}>The Racket Progression reward system pays you back.</span></h2>
+              <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 720, lineHeight: 1.7, marginBottom: 48 }}>One simple subscription runs every part of your week. Then it earns its keep twice over — you award trophy rackets as players climb the nine-stage pathway and parents fund the journey, and you resell the Student app to your families as recurring margin. You set the prices; you keep the upside.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
+                {[
+                  { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured trophy racket + certificate at each of the 9 stages. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £45 (~£5 each)' },
+                  { icon: '📱', title: 'Stream 2 — Student app resale', color: '#06b6d4', desc: 'Give families the player & parent view of everything you capture. Resell it or bundle it into a package — you keep the margin, not Lumio.', price: 'Suggested £9.99/family · you set it' },
+                  { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Every module, no tiers to climb — sessions, players, GPS, heatmaps, staff and camps. The platform that makes both revenue streams possible.', price: 'From £39/month · founding access' },
+                ].map((f, i) => (
+                  <div key={i} style={{ background: `${f.color}10`, border: `1px solid ${f.color}30`, borderRadius: 16, padding: 28 }}>
+                    <div style={{ fontSize: 30, marginBottom: 12 }}>{f.icon}</div>
+                    <h3 style={{ color: f.color, fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{f.title}</h3>
+                    <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6 }}>{f.desc}</p>
+                    <div style={{ marginTop: 16, color: f.color, fontSize: 13, fontWeight: 600 }}>{f.price}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <Link href="/sports-signup?sport=tennis" style={{ background: PURPLE, color: '#fff', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>Apply for founding access →</Link>
+                <a href="#pricing" style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', color: PURPLE_LIGHT, padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: `1px solid ${PURPLE}`, textDecoration: 'none' }}>See the numbers →</a>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -99,19 +435,74 @@ export default function TennisCoachPage() {
             Built for tennis coaches and academies.
           </h2>
           <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 56, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
-            Nine modules that take you from the booking to the lesson to the review — and from a single coach to a whole academy. Everything in one place.
+            Nine modules that take you from the booking to the lesson to the review — and from a single coach to a whole academy. One platform, two revenue streams, with the Racket Progression reward system at its heart.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-            {FEATURES.map(f => (
-              <div key={f.title} style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24 }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8 }}>{f.title}</h3>
-                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{f.desc}</p>
-              </div>
-            ))}
+            {FEATURES.map(f => {
+              const featured = f.title === 'Racket Progression reward system'
+              return (
+                <div key={f.title} style={{ backgroundColor: CARD, border: `1px solid ${featured ? PURPLE : BORDER}`, borderRadius: 16, padding: 24, boxShadow: featured ? `0 0 0 1px ${PURPLE}55, 0 20px 50px ${PURPLE}22` : undefined }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8 }}>{f.title}</h3>
+                  <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{f.desc}</p>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
+
+      {/* ── SPOTLIGHTS ── */}
+      <Spotlight
+        eyebrow="SPOTLIGHT · SESSION PLANNER"
+        title="Plan your whole week in minutes."
+        body="Overview, Today, This week and This month views sit over one dated schedule synced from your booking calendar. A confirmed booking becomes a ready-to-build session in two clicks — with a timed run-sheet and kit list generated for you."
+        bullets={['One schedule fed straight from your bookings', 'Booking → ready-to-build session in two clicks', 'Timed run-sheet and kit list auto-generated', 'Today / week / month views over the same data']}
+        mockup={<SessionPlannerMockup />}
+      />
+
+      <Spotlight
+        altBg reverse
+        eyebrow="SPOTLIGHT · AI SESSION REVIEW"
+        title="The next session writes itself."
+        body="Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player's plan so you walk on court next week already prepared."
+        bullets={["What went well · work on next · drills to get there", "Saved straight to the player's development plan", 'Auto-loaded into next week’s session', 'Written in an LTA coaching tone']}
+        mockup={<SessionReviewMockup />}
+      />
+
+      <Spotlight
+        eyebrow="SPOTLIGHT · RACKET PROGRESSION REWARD SYSTEM"
+        title="A reward system that pays you back."
+        body="A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds, so players and parents always know exactly what's next. As students pass each level, you award a coloured trophy racket and certificate: your second revenue stream, built right into the product."
+        bullets={['Nine stages — White, Yellow, Orange … to Black', 'Skills tracked: Learning → Developing → Consistent → Mastered', 'Award thresholds and progress bars per player', 'Trophy racket + certificate at each level — parents fund the journey']}
+        mockup={<RacketProgressionMockup />}
+      />
+
+      <Spotlight
+        altBg reverse
+        eyebrow="SPOTLIGHT · GPS & HEATMAPS"
+        title="See where every player wins and loses."
+        body="Player movement and footage in one place. Lumio GPS Tracker and Lumio Vision give you court coverage, serve placement, rally patterns and weekly load — paginated into clean tabs per player, by session and by surface. No third-party analysis stack to wire up."
+        bullets={['Court coverage, serve placement, rally and load', 'Per player, by session and by surface', 'Video clips with coach annotations via Lumio Vision', 'Load tracking to manage fatigue across the squad']}
+        mockup={<HeatmapMockup />}
+      />
+
+      <Spotlight
+        eyebrow="SPOTLIGHT · STAFF & COACHES"
+        title="Run a club of coaches, not just yourself."
+        body="A directory with each coach's calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team's week. See who's busy, who has room, and which certifications are about to expire."
+        bullets={['Per-coach calendar, specialisms and assigned players', 'Utilisation across the whole team at a glance', 'Accreditation and certification expiry alerts', 'The head-coach view of the academy week']}
+        mockup={<StaffMockup />}
+      />
+
+      <Spotlight
+        altBg reverse
+        eyebrow="SPOTLIGHT · TRAINING CAMPS"
+        title="Day camps and tours, drafted by AI."
+        body="Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft to get you started and a per-player camp log that captures progress day by day — and shows you the margin before you publish."
+        bullets={['Itineraries, attendees, targets and finances in one place', 'One-click AI draft for the whole camp', 'Per-player camp log captures progress day by day', 'Revenue and margin visible before you publish']}
+        mockup={<CampMockup />}
+      />
 
       {/* ── WHO IT'S FOR ── */}
       <section style={{ padding: '96px 24px', backgroundColor: BG }}>
@@ -131,8 +522,31 @@ export default function TennisCoachPage() {
         </div>
       </section>
 
+      {/* ── INTEGRATIONS ── */}
+      <section style={{ padding: '96px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Lumio Tennis Coach — built-in and connected.
+          </h2>
+          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 8, maxWidth: 720, marginLeft: 'auto', marginRight: 'auto' }}>
+            The capture, intelligence and admin you need — already wired into the portal.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 48 }}>
+            {INTEGRATIONS.map(i => (
+              <div key={i.name} style={{ display: 'flex', alignItems: 'center', gap: 14, backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
+                <div style={{ fontSize: 26 }}>{i.icon}</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>{i.name}</div>
+                  <div style={{ fontSize: 12, color: MUTED }}>{i.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── PRICING ── */}
-      <section id="pricing" style={{ padding: '96px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
+      <section id="pricing" style={{ padding: '96px 24px', backgroundColor: BG, borderTop: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: PURPLE_LIGHT, textTransform: 'uppercase', textAlign: 'center', marginBottom: 12 }}>PRICING</div>
           <h2 style={{ fontSize: 44, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
@@ -261,7 +675,7 @@ export default function TennisCoachPage() {
             Everything a tennis coach needs. One portal.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            Explore the live demo — no signup, no account needed. Plan a session, run an AI review, and see the coaches directory for yourself.
+            Explore the live demo — no signup, no account needed. Plan a session, run an AI review, and see the Racket Progression reward system for yourself.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
             <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>

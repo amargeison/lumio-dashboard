@@ -294,7 +294,7 @@ function GpsSectionHead({ T, accent, n, title, sub }: Common & { n: number; titl
   )
 }
 
-function GpsLineChart({
+export function GpsLineChart({
   T, values, max, min = 0, labels, valueFormat, colour, area = true, height = 150, width = 400, target,
 }: {
   T: ThemeTokens; values: number[]; max: number; min?: number; labels?: string[]
