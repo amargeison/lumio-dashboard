@@ -197,14 +197,14 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
       }}
     >
       <div
-        className={`w-full mx-auto flex max-w-7xl items-center justify-between ${isSports ? 'px-6 py-2' : ''}`}
-        style={isSports ? { minHeight: 200 } : { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', width: '100%', boxSizing: 'border-box', overflow: 'hidden', minHeight: 96 }}
+        className={`w-full mx-auto flex max-w-7xl items-center justify-between ${isSports ? 'px-6 py-2 min-h-[84px] md:min-h-[150px] lg:min-h-[200px]' : ''}`}
+        style={isSports ? {} : { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', width: '100%', boxSizing: 'border-box', overflow: 'hidden', minHeight: 96 }}
       >
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2" style={{ flexShrink: 0, overflow: 'visible' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={isTennis ? '/tennis_transparent_logo.png' : isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isTennis ? 'Lumio Tennis' : isSports ? 'Lumio Sports' : 'Lumio'}
-            className={isSports ? 'h-24 md:h-32 lg:h-40' : 'h-12 md:h-16 lg:h-20'}
+            className={isSports ? 'h-14 md:h-28 lg:h-40' : 'h-12 md:h-16 lg:h-20'}
             style={{ width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
           {/* BETA pill removed on both domains — it was a launch signal. */}
         </Link>
@@ -317,7 +317,7 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden border-t px-6 py-4 flex flex-col gap-4"
-          style={{ backgroundColor: '#07080F', borderColor: '#1F2937' }}>
+          style={{ backgroundColor: '#07080F', borderColor: '#1F2937', maxHeight: 'calc(100dvh - 88px)', overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           {navLinks.map(l => {
             if (l.label === 'Football') {
               return (

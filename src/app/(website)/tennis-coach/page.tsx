@@ -59,12 +59,14 @@ const PARENT_FEATURES = [
   'Progress & racket journey',
   'Homework & lesson summaries',
 ]
-// Hardware pack. Prices are INDICATIVE — the mic spec/price may change after
-// field testing, so the bundle is framed as "from £85", not locked.
+// Hardware pack. Listed as a single bundle (no per-item prices) — the GPS
+// tracker + mic specs are still under field test, so the £125 total is framed
+// as the one-off bundle price.
 const KIT_PARTS = [
-  { name: 'Capture stand', price: '£10', note: 'Court stand for phone or tablet' },
-  { name: 'Microphone', price: 'from £10', note: 'Spec under field test' },
-  { name: 'Trophy rackets — set of 9', price: '£45', note: 'One reward racket per level' },
+  { name: 'Lumio GPS Tracker', note: 'Clip-on court tracker — load, coverage & heatmaps' },
+  { name: 'Capture stand', note: 'Court stand for phone or tablet' },
+  { name: 'Microphone', note: 'Spec under field test' },
+  { name: 'Trophy rackets — set of 9', note: 'One reward racket per level' },
 ]
 
 // The real nine-stage racket pathway from the coach portal (coach-data.ts BELTS).
@@ -407,7 +409,7 @@ export default function TennisCoachPage() {
               <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 720, lineHeight: 1.7, marginBottom: 48 }}>One simple subscription runs every part of your week. Then it earns its keep twice over — you award trophy rackets as players climb the nine-stage pathway and parents fund the journey, and you resell the Student app to your families as recurring margin. You set the prices; you keep the upside.</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
                 {[
-                  { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured trophy racket + certificate at each of the 9 stages. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £45 (~£5 each)' },
+                  { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured trophy racket + certificate at each of the 9 stages. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £50 (~£5.50 each)' },
                   { icon: '📱', title: 'Stream 2 — Student app resale', color: '#06b6d4', desc: 'Give families the player & parent view of everything you capture. Resell it or bundle it into a package — you keep the margin, not Lumio.', price: 'Suggested £9.99/family · you set it' },
                   { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Every module, no tiers to climb — sessions, players, GPS, heatmaps, staff and camps. The platform that makes both revenue streams possible.', price: 'From £39/month · founding access' },
                 ].map((f, i) => (
@@ -611,27 +613,30 @@ export default function TennisCoachPage() {
               <div style={{ maxWidth: 560 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 10 }}>Lumio Coach Kit</div>
                 <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 8, lineHeight: 1.15 }}>Everything you need to start capturing.</h3>
-                <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>One stand, one mic and your first set of trophy rackets — out of the box and onto the court.</p>
+                <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>The GPS tracker, capture stand, microphone and your first set of trophy rackets — one bundle, out of the box and onto the court.</p>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, justifyContent: 'flex-end' }}>
-                  <span style={{ fontSize: 18, color: MUTED, fontWeight: 700 }}>from</span>
-                  <span style={{ fontSize: 48, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£85</span>
+                  <span style={{ fontSize: 48, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£125</span>
                 </div>
-                <div style={{ fontSize: 12.5, color: MUTED }}>bundle · one-off</div>
+                <div style={{ fontSize: 12.5, color: MUTED }}>full kit · one-off</div>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 16 }}>
+            <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '8px 18px', marginBottom: 16 }}>
               {KIT_PARTS.map(p => (
-                <div key={p.name} style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18 }}>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: PURPLE_LIGHT, marginBottom: 4 }}>{p.price}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 4 }}>{p.name}</div>
-                  <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.45 }}>{p.note}</div>
+                <div key={p.name} style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
+                  <span style={{ color: PURPLE_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontSize: 14.5, fontWeight: 700, color: TEXT, flexShrink: 0 }}>{p.name}</span>
+                  <span style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.45 }}>{p.note}</span>
                 </div>
               ))}
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '12px 0 4px' }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: TEXT, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Full kit total</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: PURPLE_LIGHT }}>£125</span>
+              </div>
             </div>
             <div style={{ fontSize: 12.5, color: MUTED, fontStyle: 'italic' }}>
-              Kit &amp; mic pricing is indicative while we field-test the hardware — final spec and price may change.
+              Kit pricing is indicative while we field-test the GPS tracker and microphone — final spec and price may change.
             </div>
           </div>
 
@@ -645,8 +650,8 @@ export default function TennisCoachPage() {
               </p>
             </div>
             <div style={{ textAlign: 'center', flexShrink: 0 }}>
-              <div style={{ fontSize: 34, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£45</div>
-              <div style={{ fontSize: 12.5, color: MUTED }}>reorder set of 9 · ~£5 each</div>
+              <div style={{ fontSize: 34, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£50</div>
+              <div style={{ fontSize: 12.5, color: MUTED }}>reorder set of 9 · ~£5.50 each</div>
             </div>
           </div>
 
