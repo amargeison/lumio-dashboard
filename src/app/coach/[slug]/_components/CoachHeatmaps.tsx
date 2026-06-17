@@ -17,17 +17,19 @@
 // session picker; the period segment (Full · Set 1-3) only shows for match
 // sessions (camp/practice have no sets). Demo only — procedural/canned data.
 
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { PLAYERS } from '../_lib/coach-data'
+import { ALL_PLAYERS } from '../_lib/coaches-data'
+import { useScopeCoachId } from '../_lib/role-scope'
 import { GPS_VIDEO_DATA, type GpsSession, type PlayerGpsData } from '../_lib/gps-video-data'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
 // Semantic palette for multi-series charts (chrome uses the coach accent token).
-const GREEN = '#22C55E', AMBER = '#F59E0B', RED = '#EF4444', PURPLE = '#A855F7'
+const GREEN = '#22C55E', AMBER = '#F59E0B', RED = '#EF4444', PURPLE = '#7C5CBF'
 const COURT_GREEN = '#0a3d1a'  // court surface — a court colour, not a brand hue
 
 const recoveryColor = (T: ThemeTokens, r: GpsSession['recovery']) =>
@@ -521,8 +523,15 @@ type Tab = 'gps' | 'brief' | 'movement' | 'fitness' | 'comparison' | 'training'
 
 // ─── Main view ───────────────────────────────────────────────────────────────
 export function HeatmapsView({ T, accent, density }: Common) {
-  const firstWithData = PLAYERS.find(p => GPS_VIDEO_DATA[p.id])?.id ?? PLAYERS[0].id
+  // Coach role: only that coach's players in the picker (GPS data keys by
+  // playerId, so a coach with none falls through to the existing empty state).
+  const scope = useScopeCoachId()
+  const players = scope ? ALL_PLAYERS.filter(p => p.coachId === scope) : PLAYERS
+  const firstWithData = players.find(p => GPS_VIDEO_DATA[p.id])?.id ?? players[0]?.id ?? ''
   const [playerId, setPlayerId] = useState(firstWithData)
+  // Keep the selected player inside the current scope — reset on role switch so
+  // we never surface another coach's GPS data.
+  useEffect(() => { setPlayerId(prev => players.some(p => p.id === prev) ? prev : (players[0]?.id ?? '')) }, [scope])  // eslint-disable-line react-hooks/exhaustive-deps
 
   const data = GPS_VIDEO_DATA[playerId]
   const allSessions = (data?.sessions ?? []).slice().sort((a, b) => b.date.localeCompare(a.date))
@@ -540,7 +549,7 @@ export function HeatmapsView({ T, accent, density }: Common) {
   const [compareB, setCompareB] = useState(1)
   const [tab, setTab] = useState<Tab>('gps')
 
-  const player = PLAYERS.find(p => p.id === playerId)
+  const player = players.find(p => p.id === playerId)
   const session = sessions.find(s => s.id === matchId) ?? sessions[0]
   const hasSets = session?.type === 'Match'   // only matches carry Set 1/2/3
 
@@ -618,7 +627,7 @@ export function HeatmapsView({ T, accent, density }: Common) {
       <div style={{ minWidth: 200 }}>
         <label style={labelStyle}>Player</label>
         <select style={selectStyle} value={playerId} onChange={e => onPlayer(e.target.value)}>
-          {PLAYERS.map(p => <option key={p.id} value={p.id}>{p.name}{GPS_VIDEO_DATA[p.id] ? '' : ' — no data'}</option>)}
+          {players.map(p => <option key={p.id} value={p.id}>{p.name}{GPS_VIDEO_DATA[p.id] ? '' : ' — no data'}</option>)}
         </select>
       </div>
       <div style={{ minWidth: 260 }}>

@@ -10,9 +10,12 @@ import {
   PLAYERS, LESSONS, RESOURCES,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
-  WEEK_START,
+  WEEK_START, TODAY,
   type Player, type Lesson, type Resource, type Camp, type Booking,
+  type CoachStatTile, type CoachScheduleItem,
 } from '../_lib/coach-data'
+import { ALL_PLAYERS, bookingsForCoach, coachStats, coachById } from '../_lib/coaches-data'
+import { useScopeCoachId } from '../_lib/role-scope'
 import { WeekCalendarGrid, bookingTypeColour, MonthAgenda, agendaDayLabel } from './WeekCalendar'
 import { bookingCalItems } from '../_lib/schedule'
 import { getAddedBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
@@ -135,6 +138,24 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
   const settings = useCoachSettings()
+  // Coach role: scope the dashboard's player/booking-derived panels to that
+  // coach. Head (scope null) keeps the academy-wide demo seeds exactly as-is.
+  const scope = useScopeCoachId()
+  const scopedPlayers = useAllPlayers()                 // scope-aware roster
+  const stats = scope ? coachStats(scope) : null
+  const coachLabel = scope ? (coachById(scope)?.name ?? settings.coach) : settings.coach
+  const naSource = scope ? scopedPlayers : PLAYERS
+  const topStats: CoachStatTile[] = scope && stats ? [
+    { label: 'My players',     value: stats.players,            sub: 'assigned to you', tone: 'accent' },
+    { label: 'Sessions today', value: stats.today,              sub: 'your bookings',   tone: stats.today ? 'accent' : 'ok' },
+    { label: 'This week',      value: stats.week,               sub: 'sessions booked', tone: 'ok' },
+    { label: 'Utilisation',    value: `${stats.utilisation}%`,  sub: 'of your hours',   tone: 'warn' },
+  ] : COACH_TOP_STATS
+  const todayItems: CoachScheduleItem[] = scope
+    ? bookingsForCoach(scope).filter(b => b.date === TODAY).sort((a, b) => a.start.localeCompare(b.start))
+        .map(b => ({ t: b.start, what: b.player, where: b.court, type: b.type }))
+    : COACH_TODAY
+  const heroLine = scope && stats ? `${stats.week} sessions this week · ${stats.today} today` : '7 sessions, 4 racket assessments due'
   const [msgOpen, setMsgOpen] = useState(false)
   // Inbox preview reads the shared messages store; actions route through the
   // same store so reply/dismiss here sync to the Messages page and survive
@@ -167,11 +188,11 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
         <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 240 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: FONT_MONO }}>{greeting}, {settings.coach.split(' ')[0]}</span>
+              <span style={{ fontSize: 10, color: accent.hex, letterSpacing: '0.18em', fontWeight: 700, textTransform: 'uppercase', fontFamily: FONT_MONO }}>{greeting}, {coachLabel.split(' ')[0]}</span>
               <span style={{ width: 1, height: 10, background: T.borderHi }} />
               <span style={{ fontSize: 10.5, color: T.text3, letterSpacing: '0.12em', textTransform: 'uppercase', fontFamily: FONT_MONO }}>{settings.academy}</span>
             </div>
-            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 23, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>7 sessions, 4 racket assessments due</h1>
+            <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 23, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>{heroLine}</h1>
             <p style={{ marginTop: 5, marginBottom: 0, fontSize: 12.5, color: T.text2, maxWidth: 560 }}>{COACH_ORG.venue} · {settings.cert}</p>
             <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
               <button onClick={() => onNavigate('lessons')} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
@@ -196,11 +217,12 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
       {/* Today timeline — transplanted out of the old grid slot into the space
           beside the hero. Scrollable, mirrors football's FbTodaySchedule. */}
       <Card T={T} density={density} hover style={{ gridColumn: 'span 4' }}>
-        <SectionHead T={T} title="Today" right={<span className="tnum" style={{ fontFamily: FONT_MONO }}>{COACH_TODAY.length} blocks</span>} />
+        <SectionHead T={T} title="Today" right={<span className="tnum" style={{ fontFamily: FONT_MONO }}>{todayItems.length} blocks</span>} />
         <div style={{ maxHeight: 176, overflowY: 'auto', marginRight: -2, paddingRight: 2 }}>
           <div style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />
-            {COACH_TODAY.map((it, i) => (
+            {todayItems.length === 0 && <div style={{ fontSize: 11.5, color: T.text3, fontStyle: 'italic', padding: '8px 0 8px 14px' }}>No bookings scheduled for today.</div>}
+            {todayItems.map((it, i) => (
               <div key={i} style={{ position: 'relative', display: 'flex', gap: 14, padding: '6px 0' }}>
                 <div className="tnum" style={{ fontFamily: FONT_MONO, fontSize: 11, color: it.highlight ? accent.hex : T.text3, width: 44, paddingTop: 2 }}>{it.t}</div>
                 <div style={{ position: 'absolute', left: 46, top: 9, width: 7, height: 7, borderRadius: '50%', background: it.highlight ? accent.hex : T.panel, border: `1.5px solid ${it.highlight ? accent.hex : T.borderHi}` }} />
@@ -217,7 +239,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
 
       {/* Stat tiles */}
       <div style={{ display: 'flex', gap: density.gap, marginBottom: density.gap, flexWrap: 'wrap' }}>
-        {COACH_TOP_STATS.map((s, i) => {
+        {topStats.map((s, i) => {
           const dot = s.tone === 'urgent' ? T.bad : s.tone === 'warn' ? T.warn : s.tone === 'ok' ? T.good : accent.hex
           return (
             <Card key={i} T={T} density={density} hover style={{ flex: '1 1 150px', padding: density.pad - 2 }}>
@@ -329,7 +351,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
         <Card T={T} density={density} style={{ gridColumn: 'span 3' }}>
           <SectionHead T={T} title="Needs attention" />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {PLAYERS.filter(p => p.status !== 'green').map(p => (
+            {naSource.filter(p => p.status !== 'green').map(p => (
               <div key={p.id} onClick={() => { openDevPlayer(p.id); onNavigate('development') }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 6px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}`, cursor: 'pointer' }}>
                 <Avatar accent={accent} initials={p.initials} size={26} />
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -354,6 +376,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
 // LESSON SUMMARIES  (master–detail)
 // ════════════════════════════════════════════════════════════════════════════
 export function LessonsView({ T, accent, density }: Common) {
+  const scope = useScopeCoachId()
   const players = useAllPlayers()
   const [allLessons, setAllLessons] = useState<Lesson[]>(LESSONS)
   useEffect(() => { const r = () => setAllLessons(getAllLessons()); r(); return subscribeLessons(r) }, [])
@@ -362,16 +385,37 @@ export function LessonsView({ T, accent, density }: Common) {
   useEffect(() => { const id = consumeOpenLesson(); if (id) setSelId(id) }, [])
   const [shareOpen, setShareOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
-  const sel = allLessons.find(l => l.id === selId) ?? allLessons[0]
+  // Coach role: only lessons for that coach's players (lessons key by playerId).
+  const playerIds = new Set(players.map(p => p.id))
+  const visibleLessons = scope ? allLessons.filter(l => playerIds.has(l.playerId)) : allLessons
+  const sel = visibleLessons.find(l => l.id === selId) ?? visibleLessons[0]
   const skillNames = (ids: string[]) => ids.map(id => ALL_SKILLS.find(s => s.id === id)?.name ?? id)
+  const newBtn = (
+    <button onClick={() => setNewOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New summary</button>
+  )
+  // Scoped coach with no logged lessons yet — empty state (avoids a crash on the
+  // master–detail layout, which assumes at least one lesson).
+  if (!sel) {
+    return (
+      <div>
+        <PageHead T={T} accent={accent} density={density} title="Lesson Summaries" sub="What you covered, the key takeaways and the homework — ready to share with players and parents." action={newBtn} />
+        <Card T={T} density={density} style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Icon name="note" size={26} stroke={1.4} style={{ color: T.text3 }} />
+          <div style={{ fontSize: 14, fontWeight: 600, color: T.text, marginTop: 10 }}>No lesson summaries for your players yet</div>
+          <div style={{ fontSize: 12, color: T.text3, marginTop: 4 }}>Mark a session done in the Planner, or add one with “New summary”.</div>
+        </Card>
+        {newOpen && <NewSummaryModal T={T} accent={accent} density={density} players={players} onClose={() => setNewOpen(false)} onCreated={id => setSelId(id)} />}
+      </div>
+    )
+  }
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Lesson Summaries" sub="What you covered, the key takeaways and the homework — ready to share with players and parents."
-        action={<button onClick={() => setNewOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New summary</button>} />
+        action={newBtn} />
       <div className="cm-md" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: density.gap }}>
         {/* List */}
         <Card T={T} density={density} style={{ padding: 8, alignSelf: 'start' }}>
-          {allLessons.map(l => {
+          {visibleLessons.map(l => {
             const active = l.id === selId
             return (
               <div key={l.id} onClick={() => setSelId(l.id)} style={{ padding: '10px 10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 4 }}>
@@ -741,13 +785,15 @@ function ballColour(b: string) { return b === 'Red' ? '#C75A5A' : b === 'Orange'
 // BOOKING CALENDAR  (week grid)
 // ════════════════════════════════════════════════════════════════════════════
 export function CalendarView({ T, accent, density }: Common) {
+  const scope = useScopeCoachId()
   const [addOpen, setAddOpen] = useState(false)
   const [view, setView] = useState<'week' | 'month'>('week')
   // Added bookings from the store — loaded after mount (SSR-safe) and kept live.
   // BOTH views read this same source, so a new booking shows in week and month.
   const [addedBookings, setAddedBookings] = useState<Booking[]>([])
   useEffect(() => { const r = () => setAddedBookings(getAddedBookings()); r(); return subscribeBookings(r) }, [])
-  const items = bookingCalItems(undefined, addedBookings)
+  // Coach role: only that coach's bookings (bookingCalItems filters by coachId).
+  const items = bookingCalItems(scope ?? undefined, addedBookings)
   // Month view = 30 days from the start of the current week, grouped into the
   // shared MonthAgenda (the same component the Session Planner's month tab uses).
   const rangeEnd = (() => { const d = new Date(WEEK_START + 'T00:00:00'); d.setDate(d.getDate() + 30); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
@@ -787,12 +833,14 @@ export function CalendarView({ T, accent, density }: Common) {
 // ROSTER
 // ════════════════════════════════════════════════════════════════════════════
 export function RosterView({ T, accent, density, onNavigate }: Common & { onNavigate?: (s: string) => void }) {
+  const scope = useScopeCoachId()
   const [group, setGroup] = useState<'All' | 'Junior' | 'Performance' | 'Adult'>('All')
   const [sel, setSel] = useState<Player | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [added, setAdded] = useState<Player[]>([])
   useEffect(() => { const r = () => setAdded(getAddedPlayers()); r(); return subscribeRoster(r) }, [])
-  const allPlayers = [...PLAYERS, ...added]
+  // Coach role: only that coach's players; head keeps its squad + added players.
+  const allPlayers = scope ? ALL_PLAYERS.filter(p => p.coachId === scope) : [...PLAYERS, ...added]
   const list = group === 'All' ? allPlayers : allPlayers.filter(p => p.group === group)
   const tabs: typeof group[] = ['All', 'Junior', 'Performance', 'Adult']
   return (
