@@ -1,24 +1,30 @@
 'use client'
 
-// Smart Sourcing — for the restock list, compares suppliers for each flagged
-// item, picks the cheapest, shows the saving, and prints a grouped purchase
-// order. Suppliers are fictional (Lumio brand universe); prices are indicative.
+// Smart Sourcing — for the selected restock items, compares suppliers, picks the
+// cheapest per item, groups into per-supplier orders, and lets the coach send
+// each order as an AI-drafted email (opens in their mail app) or copy it. Then
+// "Mark ordered" moves the items to the on-order state.
+//
+// Suppliers/prices are indicative (Lumio brand universe). The single `quote()`
+// function is the seam to swap in a live price-lookup API later — replace its
+// body with a fetch to your price provider and the rest of the workflow is unchanged.
 
+import { useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { COACH_ORG } from '../_lib/coach-data'
+import { markOrdered } from '../_lib/equipment-store'
 
 export type SrcItem = { name: string; qty: string; category: string }
 
 const SUPPLIERS = [
-  { name: 'Apex Court Supplies',   factor: 0.91, note: 'Trade account · free delivery over £75' },
-  { name: 'Crown Racquet & Co',    factor: 0.97, note: 'Bulk discounts on balls' },
-  { name: 'Meridian Sports Trade', factor: 1.00, note: 'Next-day delivery' },
-  { name: 'Baseline Wholesale',    factor: 1.12, note: 'Premium stock' },
+  { name: 'Apex Court Supplies',   factor: 0.91, note: 'Trade account · free delivery over £75', email: 'orders@apexcourt.example' },
+  { name: 'Crown Racquet & Co',    factor: 0.97, note: 'Bulk discounts on balls',               email: 'sales@crownracquet.example' },
+  { name: 'Meridian Sports Trade', factor: 1.00, note: 'Next-day delivery',                      email: 'trade@meridiansports.example' },
+  { name: 'Baseline Wholesale',    factor: 1.12, note: 'Premium stock',                          email: 'orders@baselinewholesale.example' },
 ]
 
-// indicative cost to bring an item back to full stock
 const COSTS: Record<string, number> = {
   'Green (transition) balls': 56, 'Ball tubes (pickup)': 30, 'Hand targets / hoops': 18,
   'Portable mini-nets': 120, 'Line tape': 24, 'Spare batteries': 22, 'Sunscreen SPF50': 16,
@@ -26,6 +32,7 @@ const COSTS: Record<string, number> = {
 }
 const hash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 997; return h }
 const baseCost = (name: string) => COSTS[name] ?? 25
+// LIVE-PRICE SEAM: replace this body with a call to your price API per (item, supplier).
 function quote(name: string, supplierIdx: number) {
   const f = SUPPLIERS[supplierIdx].factor
   const variance = 0.94 + ((hash(name) + supplierIdx * 5) % 13) / 100
@@ -38,28 +45,55 @@ function build(items: SrcItem[]): Row[] {
     const quotes = SUPPLIERS.map((_s, i) => quote(item.name, i))
     let bestIdx = 0
     quotes.forEach((q, i) => { if (q < quotes[bestIdx]) bestIdx = i })
-    const typical = quotes[2] // Meridian = list/typical
-    return { item, quotes, bestIdx, best: quotes[bestIdx], typical }
+    return { item, quotes, bestIdx, best: quotes[bestIdx], typical: quotes[2] }
   })
+}
+
+function orderEmail(supplier: string, rows: Row[], total: number) {
+  const subject = `Restock order — ${COACH_ORG.academy} — ${supplier}`
+  const lines = rows.map(r => `• ${r.item.name} (${r.item.qty}) — approx £${r.best}`).join('\n')
+  const body = `Hi ${supplier},\n\nPlease could you supply the following for ${COACH_ORG.academy}:\n\n${lines}\n\nIndicative order total: £${total}\nDeliver to: ${COACH_ORG.venue}\n\nMany thanks,\n${COACH_ORG.coach}\n${COACH_ORG.cert}`
+  return { subject, body }
 }
 
 export function RestockSourcingModal({ T, accent, items, onClose }: { T: ThemeTokens; accent: AccentTokens; items: SrcItem[]; onClose: () => void }) {
   const rows = build(items)
-  const basket = rows.reduce((s, r) => s + r.best, 0)
-  const typical = rows.reduce((s, r) => s + r.typical, 0)
+  const [excluded, setExcluded] = useState<Set<string>>(new Set())
+  const [copied, setCopied] = useState<string | null>(null)
+  const [ordered, setOrderedState] = useState(false)
+  const included = rows.filter(r => !excluded.has(r.item.name))
+  const toggle = (name: string) => setExcluded(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n })
+
+  const basket = included.reduce((s, r) => s + r.best, 0)
+  const typical = included.reduce((s, r) => s + r.typical, 0)
   const saving = Math.max(typical - basket, 0)
-  const usedSuppliers = Array.from(new Set(rows.map(r => SUPPLIERS[r.bestIdx].name)))
+
+  // group INCLUDED items by cheapest supplier
+  const groups = new Map<number, Row[]>()
+  included.forEach(r => { groups.set(r.bestIdx, [...(groups.get(r.bestIdx) ?? []), r]) })
+
+  const sendEmail = (supplierIdx: number, gRows: Row[], total: number) => {
+    const s = SUPPLIERS[supplierIdx]
+    const { subject, body } = orderEmail(s.name, gRows, total)
+    if (typeof window !== 'undefined') window.location.href = `mailto:${s.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }
+  const copyOrder = async (supplierIdx: number, gRows: Row[], total: number) => {
+    const s = SUPPLIERS[supplierIdx]
+    const { body } = orderEmail(s.name, gRows, total)
+    try { await navigator.clipboard.writeText(body); setCopied(s.name); setTimeout(() => setCopied(null), 1800) } catch { /* ignore */ }
+  }
+  const markAllOrdered = () => { markOrdered(included.map(r => r.item.name)); setOrderedState(true); setTimeout(onClose, 700) }
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
       style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.84)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
-      <div style={{ width: '100%', maxWidth: 760, background: T.panel, border: `1px solid ${T.borderHi}`, borderRadius: 16, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
+      <div style={{ width: '100%', maxWidth: 780, background: T.panel, border: `1px solid ${T.borderHi}`, borderRadius: 16, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: `1px solid ${T.border}` }}>
           <div style={{ width: 34, height: 34, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim }}><Icon name="sparkles" size={16} stroke={1.6} style={{ color: accent.hex }} /></div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Smart sourcing</div>
-            <div style={{ fontSize: 11.5, color: T.text3 }}>Cheapest restock matched across {SUPPLIERS.length} suppliers</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Smart sourcing &amp; order</div>
+            <div style={{ fontSize: 11.5, color: T.text3 }}>Cheapest supplier per item · AI drafts the order email</div>
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 16 }}>✕</button>
         </div>
@@ -72,48 +106,87 @@ export function RestockSourcingModal({ T, accent, items, onClose }: { T: ThemeTo
           </div>
           <div style={{ width: 1, height: 36, background: T.border }} />
           <div>
-            <div style={{ fontSize: 11, color: T.text3 }}>Saves vs buying at list</div>
+            <div style={{ fontSize: 11, color: T.text3 }}>Saves vs list</div>
             <div className="tnum" style={{ fontSize: 18, fontWeight: 700, color: T.good }}>−£{saving}</div>
           </div>
-          <div style={{ marginLeft: 'auto', fontSize: 11.5, color: T.text2, maxWidth: 240, lineHeight: 1.5 }}>
+          <div style={{ marginLeft: 'auto', fontSize: 11.5, color: T.text2, maxWidth: 250, lineHeight: 1.5 }}>
             <Icon name="sparkles" size={12} stroke={1.6} style={{ color: accent.hex, verticalAlign: -1, marginRight: 4 }} />
-            Lumio compared {rows.length} items across {SUPPLIERS.length} suppliers and picked the cheapest for each — spread over {usedSuppliers.length} orders.
+            Lumio compared {included.length} item{included.length === 1 ? '' : 's'} across {SUPPLIERS.length} suppliers and split them into {groups.size} order{groups.size === 1 ? '' : 's'}.
           </div>
         </div>
 
-        {/* rows */}
-        <div style={{ padding: '0 18px 4px', maxHeight: '46vh', overflowY: 'auto' }}>
-          {rows.map((r, ri) => (
-            <div key={ri} style={{ padding: '11px 0', borderTop: ri ? `1px solid ${T.border}` : 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 7 }}>
-                <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{r.item.name}</span>
-                <span style={{ fontSize: 10.5, color: T.text3 }}>{r.item.qty} · {r.item.category}</span>
-                <span className="tnum" style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: T.good, fontFamily: FONT_MONO }}>£{r.best}</span>
+        {/* item rows — tick to include */}
+        <div style={{ padding: '0 18px 4px', maxHeight: '34vh', overflowY: 'auto' }}>
+          {rows.map((r, ri) => {
+            const on = !excluded.has(r.item.name)
+            return (
+              <div key={ri} style={{ padding: '10px 0', borderTop: ri ? `1px solid ${T.border}` : 'none', opacity: on ? 1 : 0.5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 7 }}>
+                  <button onClick={() => toggle(r.item.name)} style={{ appearance: 'none', flexShrink: 0, width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${on ? accent.hex : T.border}`, background: on ? accent.hex : 'transparent', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+                    {on && <Icon name="check" size={12} stroke={2.4} style={{ color: T.btnText }} />}
+                  </button>
+                  <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{r.item.name}</span>
+                  <span style={{ fontSize: 10.5, color: T.text3 }}>{r.item.qty} · {r.item.category}</span>
+                  <span className="tnum" style={{ marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: T.good, fontFamily: FONT_MONO }}>£{r.best}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 27 }}>
+                  {SUPPLIERS.map((s, si) => {
+                    const best = si === r.bestIdx
+                    return (
+                      <div key={si} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 9px', borderRadius: 8, border: `1px solid ${best ? T.good : T.border}`, background: best ? `${T.good}14` : 'transparent' }}>
+                        <span style={{ fontSize: 10.5, color: best ? T.text : T.text3 }}>{s.name.split(' ')[0]}</span>
+                        <span className="tnum" style={{ fontSize: 11, fontWeight: 600, color: best ? T.good : T.text2, fontFamily: FONT_MONO }}>£{r.quotes[si]}</span>
+                        {best && <span style={{ fontSize: 8, fontWeight: 700, color: T.good, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Best</span>}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {SUPPLIERS.map((s, si) => {
-                  const best = si === r.bestIdx
-                  return (
-                    <div key={si} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 9px', borderRadius: 8, border: `1px solid ${best ? T.good : T.border}`, background: best ? `${T.good}14` : 'transparent' }}>
-                      <span style={{ fontSize: 10.5, color: best ? T.text : T.text3 }}>{s.name.split(' ')[0]}</span>
-                      <span className="tnum" style={{ fontSize: 11, fontWeight: 600, color: best ? T.good : T.text2, fontFamily: FONT_MONO }}>£{r.quotes[si]}</span>
-                      {best && <span style={{ fontSize: 8, fontWeight: 700, color: T.good, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Best</span>}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
+        {/* per-supplier orders — draft email / copy */}
+        {included.length > 0 && (
+          <div style={{ padding: '6px 18px 0' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '8px 0 8px' }}>Orders to send</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {Array.from(groups.entries()).map(([si, gRows]) => {
+                const s = SUPPLIERS[si]
+                const total = gRows.reduce((a, r) => a + r.best, 0)
+                return (
+                  <div key={si} style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px', background: T.panel2 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>{s.name} <span className="tnum" style={{ color: T.good }}>£{total}</span></div>
+                        <div style={{ fontSize: 10.5, color: T.text3 }}>{gRows.length} item{gRows.length === 1 ? '' : 's'} · {s.note}</div>
+                      </div>
+                      <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                        <button onClick={() => copyOrder(si, gRows, total)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, fontSize: 11, fontWeight: 600, padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Icon name="note" size={12} stroke={1.8} /> {copied === s.name ? 'Copied' : 'Copy'}
+                        </button>
+                        <button onClick={() => sendEmail(si, gRows, total)} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 8, fontSize: 11, fontWeight: 600, padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Icon name="megaphone" size={12} stroke={1.8} /> Draft email
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* footer */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', borderTop: `1px solid ${T.border}`, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11.5, color: T.text3 }}>Indicative prices · {usedSuppliers.length} suppliers in this basket</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', marginTop: 6, borderTop: `1px solid ${T.border}`, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: T.text3, maxWidth: 320, lineHeight: 1.4 }}>Prices indicative — live price lookup is ready to connect to a price provider.</span>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-            <button onClick={() => printPO(rows)} style={{ appearance: 'none', padding: '9px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
-              <Icon name="note" size={13} stroke={1.8} /> Print purchase order
+            <button onClick={() => printPO(included)} style={{ appearance: 'none', padding: '9px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <Icon name="note" size={13} stroke={1.8} /> Print PO
             </button>
-            <button onClick={onClose} style={{ appearance: 'none', border: 0, padding: '9px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' }}>Done</button>
+            <button onClick={markAllOrdered} disabled={included.length === 0 || ordered} style={{ appearance: 'none', border: 0, padding: '9px 16px', borderRadius: 9, background: included.length && !ordered ? accent.hex : T.hover, color: included.length && !ordered ? T.btnText : T.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: included.length && !ordered ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Icon name="check" size={13} stroke={2} /> {ordered ? 'Marked ordered' : 'Mark ordered'}
+            </button>
           </div>
         </div>
       </div>
@@ -124,7 +197,7 @@ export function RestockSourcingModal({ T, accent, items, onClose }: { T: ThemeTo
 // ─── print: purchase order grouped by cheapest supplier ───────────────────────
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 function printPO(rows: Row[]) {
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined' || rows.length === 0) return
   const bySupplier = new Map<string, { items: Row[]; total: number; note: string }>()
   rows.forEach(r => {
     const s = SUPPLIERS[r.bestIdx]

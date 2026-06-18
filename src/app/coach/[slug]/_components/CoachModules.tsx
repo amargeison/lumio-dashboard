@@ -1267,7 +1267,7 @@ export function CampsView({ T, accent, density }: Common) {
 
   return (
     <div>
-      <PageHead T={T} accent={accent} density={density} title="Training Camps" sub="Run your 14-day camps in Spain and Portugal: bookings, itinerary, targets and finances in one place."
+      <PageHead T={T} accent={accent} density={density} title="Training Camps" sub="Run your camps end to end — bookings, itinerary, targets and finances in one place."
         action={<button onClick={() => setNewOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New camp</button>} />
 
       {/* Camp selector cards */}
@@ -1313,7 +1313,7 @@ export function CampsView({ T, accent, density }: Common) {
 
       {/* Sub-tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: density.gap, flexWrap: 'wrap' }}>
-        {([['overview', 'Overview'], ['itinerary', '14-Day Itinerary'], ['equipment', 'Equipment'], ['attendees', `Attendees · ${attendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['finance', 'Finance']] as const).map(([id, lbl]) => (
+        {([['overview', 'Overview'], ['itinerary', `${camp.days}-Day Itinerary`], ['equipment', 'Equipment'], ['attendees', `Attendees · ${attendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['finance', 'Finance']] as const).map(([id, lbl]) => (
           <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: `1px solid ${tab === id ? accent.border : T.border}`, padding: '7px 14px', borderRadius: 9, fontSize: 12, cursor: 'pointer', background: tab === id ? accent.dim : 'transparent', color: tab === id ? accent.hex : T.text2, fontWeight: tab === id ? 600 : 400 }}>{lbl}</button>
         ))}
       </div>

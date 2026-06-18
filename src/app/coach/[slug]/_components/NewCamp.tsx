@@ -4,17 +4,30 @@
 // to the camps-store (localStorage) so the new camp appears live in the Training
 // Camps list and survives reload. Demo only — no API, no real booking.
 
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { COACH_ORG, type Camp } from '../_lib/coach-data'
 import { addCamp } from '../_lib/camps-store'
 
+// Best-effort inclusive day count from two free-text dates (e.g. "16 Feb 2027").
+// Returns null when either date can't be parsed, so the manual Days field wins.
+function campDaysFromDates(start: string, end: string): number | null {
+  const a = new Date(start), b = new Date(end)
+  if (isNaN(a.getTime()) || isNaN(b.getTime())) return null
+  const d = Math.round((b.getTime() - a.getTime()) / 86400000) + 1
+  return d >= 1 && d <= 60 ? d : null
+}
+
 export function NewCampModal({ T, accent, onClose, onCreated }: { T: ThemeTokens; accent: AccentTokens; density: Density; onClose: () => void; onCreated: (id: string) => void }) {
   const [name, setName] = useState('')
   const [start, setStart] = useState('')
   const [end, setEnd] = useState('')
+  const [days, setDays] = useState('5')
+  // Auto-match the itinerary length to the dates whenever both parse; the coach
+  // can still override the Days field by hand for TBC dates.
+  useEffect(() => { const d = campDaysFromDates(start, end); if (d) setDays(String(d)) }, [start, end])
   const [ageGroup, setAgeGroup] = useState('Ages 6–14 · all levels')
   const [capacity, setCapacity] = useState('24')
   const [price, setPrice] = useState('220')
@@ -42,7 +55,7 @@ export function NewCampModal({ T, accent, onClose, onCreated }: { T: ThemeTokens
       flag: '🇬🇧',
       start: start.trim() || 'TBC',
       end: end.trim() || 'TBC',
-      days: 5,
+      days: Math.max(1, Number(days) || 5),
       status: 'upcoming',
       capacity: cap,
       booked: 0,
@@ -69,10 +82,12 @@ export function NewCampModal({ T, accent, onClose, onCreated }: { T: ThemeTokens
 
         <div style={{ padding: 20 }}>
           <Field label="Camp name *"><input style={input} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. February Half-Term Tennis Camp" autoFocus /></Field>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.6fr', gap: 12 }}>
             <Field label="Start date"><input style={input} value={start} onChange={e => setStart(e.target.value)} placeholder="16 Feb 2027" /></Field>
             <Field label="End date"><input style={input} value={end} onChange={e => setEnd(e.target.value)} placeholder="20 Feb 2027" /></Field>
+            <Field label="Days"><input style={input} inputMode="numeric" value={days} onChange={e => setDays(e.target.value.replace(/\D/g, ''))} placeholder="5" /></Field>
           </div>
+          <div style={{ fontSize: 10.5, color: T.text3, margin: '-6px 0 12px' }}>Itinerary builds {Math.max(1, Number(days) || 5)} day{(Math.max(1, Number(days) || 5)) === 1 ? '' : 's'} — auto-set from your dates, edit if needed.</div>
           <Field label="Ages / group"><input style={input} value={ageGroup} onChange={e => setAgeGroup(e.target.value)} placeholder="e.g. Ages 6–14 · all levels" /></Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <Field label="Capacity *"><input style={input} inputMode="numeric" value={capacity} onChange={e => setCapacity(e.target.value.replace(/\D/g, ''))} placeholder="24" /></Field>
