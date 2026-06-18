@@ -69,11 +69,11 @@ function Modal({ T, accent, title, sub, onClose, children }: { T: ThemeTokens; a
   )
 }
 
-// Lumio Coach Kit & trophy-racket rewards the coach can order (demo only — no
-// real checkout/fulfilment). Kit/mic pricing is indicative → "from £85".
+// Lumio Coach Kit & Racket Progression rewards the coach can order (demo only —
+// no real checkout/fulfilment). Kit pricing is indicative → "£125".
 const KIT_OFFERS = [
-  { id: 'kit',     name: 'Lumio Coach Kit',        price: 'from £85', desc: 'Stand + mic + your first set of 9 trophy rackets — everything to start capturing.', cta: 'Order kit' },
-  { id: 'rackets', name: 'Trophy racket set (×9)', price: '£45 / set', desc: 'The Racket Progression rewards. Reorder as you award them — one racket per level.', cta: 'Reorder set' },
+  { id: 'kit',     name: 'Lumio Coach Kit',     price: '£125', desc: 'GPS tracker, stand, mic, your first set of 9 reward keyrings & dampeners and the Black-stage trophy — everything to start capturing.', cta: 'Order kit' },
+  { id: 'rackets', name: 'Reward set (×9)',     price: '£50 / set', desc: 'The Racket Progression rewards — a coloured keyring + matching dampener per level. Reorder as you award them.', cta: 'Reorder set' },
 ]
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -94,7 +94,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
     { id: 'belts',       icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
     { id: 'availability',icon: 'calendar',  t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
     { id: 'pricing',     icon: 'pound',     t: 'Pricing & packages',  d: `Private £${s.privateRate}/hr · packs & renewals` },
-    { id: 'kit',         icon: 'wrench',    t: 'Lumio Coach Kit & rackets', d: 'Your plan: Coach £39/mo · order kit & trophy rackets' },
+    { id: 'kit',         icon: 'wrench',    t: 'Lumio Coach Kit & rewards', d: 'Your plan: Coach £39/mo · order kit & rewards' },
     { id: 'sharing',     icon: 'megaphone', t: 'Parent sharing',      d: `Shares include: ${sharingList}` },
     { id: 'appearance',  icon: 'settings',  t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
     { id: 'menu',        icon: 'eye',       t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
@@ -169,7 +169,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'kit' && (
-        <Modal T={T} accent={accent} title="Lumio Coach Kit & rackets" sub="Order your capture kit and trophy-racket rewards" onClose={() => setOpen(null)}>
+        <Modal T={T} accent={accent} title="Lumio Coach Kit & rewards" sub="Order your capture kit and Racket Progression rewards" onClose={() => setOpen(null)}>
           {/* Read-only plan line */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
             <Icon name="shield" size={15} stroke={1.7} style={{ color: accent.hex }} />

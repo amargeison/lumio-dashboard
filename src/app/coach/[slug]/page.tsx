@@ -229,6 +229,7 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
       .cm-md{ grid-template-columns:1fr !important }
       .cm-2{ grid-template-columns:1fr !important }
       .cm-3{ grid-template-columns:1fr !important }
+      .cm-12 > *, .cm-md > *, .cm-2 > *, .cm-3 > *{ grid-column:auto !important }
     }`
 
   // ─── Student role — the player/parent view (Phase 2) ──────────────────────

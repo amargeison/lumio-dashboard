@@ -3,7 +3,7 @@
 // Racket Reward System — which (player, racket-level) trophy+certificate awards
 // the coach has made. DEMO ONLY: this records the award workflow so the matrix
 // shows an "Awarded ✓" state that survives reload — there is NO real fulfilment,
-// ordering or billing behind it (the physical trophy rackets are reordered from
+// ordering or billing behind it (the physical rewards are reordered from
 // Settings → Lumio Coach Kit & rackets). Mirrors menu-visibility.ts's pub/sub.
 
 const KEY = 'lumio_coach_racket_awards'
@@ -33,7 +33,7 @@ export function isAwarded(playerId: string, beltIndex: number): boolean {
   return read().includes(awardKey(playerId, beltIndex))
 }
 
-// Record the trophy-racket + certificate award (demo). Idempotent.
+// Record the keyring + dampener + certificate award (demo). Idempotent.
 export function award(playerId: string, beltIndex: number) {
   const k = awardKey(playerId, beltIndex)
   const cur = read()

@@ -36,6 +36,7 @@ export function printBeltCertificate(player: Player, beltIndex: number) {
         <span style="font-family:Georgia,serif;font-size:34px;font-weight:700;color:#1a1d29">${esc(belt.name)} Racket</span>
       </div>
       <div style="font-size:13px;color:#6b7280;font-style:italic">${esc(belt.theme)}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:8px">Awarded with the coloured racket keyring &amp; matching dampener</div>
 
       <div style="margin:20px auto 0;max-width:150mm">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#9099ad;margin-bottom:8px">Skills mastered</div>
