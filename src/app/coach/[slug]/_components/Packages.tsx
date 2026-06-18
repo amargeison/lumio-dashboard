@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { type PackageOffer, type Package } from '../_lib/coach-data'
+import { PACKAGE_TYPE_TO_KIT, type PackageOffer, type Package } from '../_lib/coach-data'
 import {
   getOffers, addOffer, removeOffer, getProgress, setProgress, getNotes, setNotes, subscribe,
 } from '../_lib/packages-store'
@@ -68,6 +68,7 @@ function AddPackageModal({ T, accent, onClose }: { T: ThemeTokens; accent: Accen
   const [per, setPer] = useState<PackageOffer['per']>('pack')
   const [desc, setDesc] = useState('')
   const [includes, setIncludes] = useState('')
+  const [equipment, setEquipment] = useState('')
 
   const input: CSSProperties = { width: '100%', appearance: 'none', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, fontSize: 13, padding: '9px 11px', fontFamily: FONT, outline: 'none' }
   const lab: CSSProperties = { fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4, display: 'block' }
@@ -81,6 +82,7 @@ function AddPackageModal({ T, accent, onClose }: { T: ThemeTokens; accent: Accen
       sessions: Number(sessions) || 1, price: Number(price) || 0, per,
       desc: desc.trim() || `${sessions} ${type.toLowerCase()} sessions.`,
       includes: includes.split('\n').map(s => s.trim()).filter(Boolean),
+      equipment: equipment.split('\n').map(s => s.trim()).filter(Boolean),
     }
     addOffer(offer); onClose()
   }
@@ -105,6 +107,8 @@ function AddPackageModal({ T, accent, onClose }: { T: ThemeTokens; accent: Accen
           </div>
           <Field label="Description"><input style={input} value={desc} onChange={e => setDesc(e.target.value)} placeholder="One line about this package" /></Field>
           <Field label="What's included (one per line)"><textarea style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} rows={4} value={includes} onChange={e => setIncludes(e.target.value)} placeholder={'10 × 60-min lessons\nRacket progress tracking\nLesson summaries'} /></Field>
+          <Field label="Equipment needed per session (one per line)"><textarea style={{ ...input, resize: 'vertical', lineHeight: 1.5 }} rows={3} value={equipment} onChange={e => setEquipment(e.target.value)} placeholder={'Ball basket (60+)\nCones ×8\nTarget hoops'} /></Field>
+          <div style={{ fontSize: 10.5, color: T.text3, margin: '-6px 0 12px' }}>Added to <strong style={{ color: T.text2 }}>Equipment &amp; Kit → {PACKAGE_TYPE_TO_KIT[type]}</strong> so it&apos;s on the grab-and-go checklist.</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={save} disabled={!canSave} style={{ flex: 1, appearance: 'none', border: 0, padding: '11px 14px', borderRadius: 9, background: canSave ? accent.hex : T.hover, color: canSave ? T.btnText : T.text3, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: canSave ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}><Icon name="plus" size={14} stroke={2} /> Add package</button>
             <button onClick={onClose} style={{ appearance: 'none', padding: '11px 16px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer' }}>Cancel</button>

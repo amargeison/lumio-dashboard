@@ -977,6 +977,7 @@ export type PackageOffer = {
   per: 'pack' | 'month' | 'term'
   desc: string
   includes: string[]
+  equipment?: string[]   // kit needed per session — flows into Equipment & Kit
 }
 
 export const PACKAGE_OFFERS: PackageOffer[] = [
@@ -1560,6 +1561,17 @@ export const SESSION_KITS: { type: string; icon: string; items: string[] }[] = [
   { type: 'Match play',     icon: 'trophy',   items: ['New pressurised balls', 'Scoreboard', 'Net measure stick', 'Singles sticks', 'Shade / brolly'] },
   { type: 'Mini / red ball',icon: 'sparkles', items: ['Red & orange balls', 'Mini-nets ×4', 'Fun targets / hoops', 'Reward stickers', 'Foam balls'] },
 ]
+
+// Map a package type to the session-kit checklist it feeds, so equipment listed
+// on a package shows up under the matching "Kit for each session type".
+export const PACKAGE_TYPE_TO_KIT: Record<PackageOffer['type'], string> = {
+  Private: 'Private lesson',
+  Adult: 'Private lesson',
+  Performance: 'Match play',
+  Group: 'Group / squad',
+  Cardio: 'Cardio Tennis',
+  Junior: 'Mini / red ball',
+}
 
 // ─── Player contact details ─────────────────────────────────────────────────
 export type PlayerContact = {
