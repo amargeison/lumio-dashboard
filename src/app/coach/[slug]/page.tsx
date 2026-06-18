@@ -11,7 +11,7 @@
 // Progression, Booking Calendar, Training Camps, Roster, Messages, Resource
 // Centre, Payments.
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, use } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { SportsDemoGate, type SportsDemoSession } from '@/components/sports-demo'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -40,6 +40,7 @@ import { VideoAudioView } from './_components/CoachVideoAudio'
 import { HeatmapsView } from './_components/CoachHeatmaps'
 import { StaffView } from './_components/StaffView'
 import { CoachMobileShell } from './_components/CoachMobileShell'
+import { EmptyCoachDashboard, EmptyModule } from './_components/EmptyCoachDashboard'
 
 // The three view roles for the role switcher. Head + Coach are the same portal
 // filtered by permission; Student is a purpose-built player/parent view (a
@@ -50,8 +51,19 @@ const COACH_ROLES = [
   { id: 'student', label: 'Student',    icon: '🎓',   description: 'Student — player & parent view' },
 ]
 
+// Known demo slug(s) keep the full sample-data portal. Any other slug is a
+// brand-new academy → render the EMPTY onboarding portal (mirrors Women's FC).
+const DEMO_SLUGS = new Set(['demo'])
+
+function clubNameFromSlug(slug: string): string {
+  return slug.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Your Academy'
+}
+
 // ─── Page entry: auth check → demo gate → portal ────────────────────────────
-export default function CoachPortalPage() {
+export default function CoachPortalPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params)
+  const isEmpty = !DEMO_SLUGS.has(slug)
+  const slugClubName = clubNameFromSlug(slug)
   const [authChecked, setAuthChecked] = useState(false)
   const [authSession, setAuthSession] = useState<SportsDemoSession | null>(null)
 
@@ -100,7 +112,7 @@ export default function CoachPortalPage() {
     </div>
   )
 
-  if (authSession) return <CoachPortalInner session={authSession} />
+  if (authSession) return <CoachPortalInner session={authSession} isEmpty={isEmpty} slugClubName={slugClubName} />
 
   return (
     <SportsDemoGate
@@ -112,13 +124,13 @@ export default function CoachPortalPage() {
       sportLabel="Lumio Coach"
       roles={COACH_ROLES}
     >
-      {(session) => <CoachPortalInner session={session} />}
+      {(session) => <CoachPortalInner session={session} isEmpty={isEmpty} slugClubName={slugClubName} />}
     </SportsDemoGate>
   )
 }
 
 // ─── Portal shell ───────────────────────────────────────────────────────────
-function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
+function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?: SportsDemoSession; isEmpty?: boolean; slugClubName?: string }) {
   const settings = useCoachSettings()
   const T = THEMES[settings.theme]
   const accent = ACCENT_PRESETS[settings.accentKey]
@@ -130,7 +142,8 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
   const coachName = session?.userName || settings.coach
   const coachInitials = coachName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   const coachPhoto = session?.photoDataUrl || COACH_PHOTO
-  const showDemoBanner = session?.isDemoShell !== false
+  const clubName = session?.clubName || slugClubName || settings.academy
+  const showDemoBanner = !isEmpty && session?.isDemoShell !== false
 
   const CoachAvatar = ({ size }: { size: number }) => (
     <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: size * 0.36, fontWeight: 700 }}>
@@ -198,6 +211,11 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
   const onLeave = () => { leaveTimer.current = setTimeout(() => setHovered(false), 350) }
 
   const renderView = () => {
+    if (isEmpty) {
+      if (active === 'dashboard') return <EmptyCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} />
+      const title = COACH_SIDEBAR.find(i => i.id === active)?.label ?? 'This section'
+      return <EmptyModule T={T} accent={accent} density={density} title={title} onNavigate={setActive} />
+    }
     switch (active) {
       case 'dashboard':   return <DashboardView T={T} accent={accent} density={density} onNavigate={setActive} />
       case 'lessons':     return <LessonsView T={T} accent={accent} density={density} />
@@ -370,31 +388,41 @@ function CoachPortalInner({ session }: { session?: SportsDemoSession }) {
               <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{coachName}</div>
               <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{settings.cert}</div>
               <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
-                <RailStat T={T} label="Players" value={COACH_ORG.season.activePlayers} />
-                <RailStat T={T} label="Lessons/wk" value={COACH_ORG.season.lessonsThisWeek} />
-                <RailStat T={T} label="Retention" value={`${COACH_ORG.season.retention}%`} />
+                <RailStat T={T} label="Players" value={isEmpty ? 0 : COACH_ORG.season.activePlayers} />
+                <RailStat T={T} label="Lessons/wk" value={isEmpty ? 0 : COACH_ORG.season.lessonsThisWeek} />
+                <RailStat T={T} label="Retention" value={isEmpty ? '—' : `${COACH_ORG.season.retention}%`} />
               </div>
             </div>
 
-            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
-              <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 10 }}>Racket distribution</div>
-              {BELTS.map((b, bi) => beltCounts[bi] > 0 && (
-                <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-                  <span style={{ width: 16, height: 10, borderRadius: 2, background: b.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
-                  <span style={{ fontSize: 11, color: T.text2, flex: 1 }}>{b.name}</span>
-                  <span className="tnum" style={{ fontSize: 11, color: T.text, fontWeight: 600 }}>{beltCounts[bi]}</span>
+            {isEmpty ? (
+              <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
+                <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>Set up your academy</div>
+                <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5, margin: 0 }}>Add players, coaches and bookings from the dashboard and these stats fill in automatically.</p>
+                <button onClick={() => setActive('dashboard')} style={{ appearance: 'none', border: 0, cursor: 'pointer', marginTop: 10, width: '100%', padding: '9px 12px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12, fontWeight: 700 }}>Connect your data</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
+                  <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 10 }}>Racket distribution</div>
+                  {BELTS.map((b, bi) => beltCounts[bi] > 0 && (
+                    <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                      <span style={{ width: 16, height: 10, borderRadius: 2, background: b.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
+                      <span style={{ fontSize: 11, color: T.text2, flex: 1 }}>{b.name}</span>
+                      <span className="tnum" style={{ fontSize: 11, color: T.text, fontWeight: 600 }}>{beltCounts[bi]}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
-              <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>This week</div>
-              {[['Rackets awarded', COACH_ORG.season.beltsAwarded], ['Sessions', COACH_ORG.season.lessonsThisWeek], ['New players', '+3']].map(([k, v], i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, padding: '3px 0' }}>
-                  <span style={{ color: T.text3 }}>{k}</span><span style={{ color: T.text, fontWeight: 600 }}>{v}</span>
+                <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
+                  <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>This week</div>
+                  {[['Rackets awarded', COACH_ORG.season.beltsAwarded], ['Sessions', COACH_ORG.season.lessonsThisWeek], ['New players', '+3']].map(([k, v], i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, padding: '3px 0' }}>
+                      <span style={{ color: T.text3 }}>{k}</span><span style={{ color: T.text, fontWeight: 600 }}>{v}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>
