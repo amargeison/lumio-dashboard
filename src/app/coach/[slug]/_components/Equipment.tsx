@@ -12,10 +12,21 @@ import {
 } from '../_lib/equipment-store'
 import { getOffers, subscribe as subscribePackages } from '../_lib/packages-store'
 import { AddEquipmentModal } from './AddEquipmentModal'
+import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags, type FeatureKey } from '../_lib/feature-flags'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
 const STATUSES: KitStatus[] = ['good', 'low', 'order', 'repair']
+
+// Tag a kit item to a feature so it drops out of inventory / restock / session
+// kits when that feature is turned off (e.g. cameras when Video is off).
+function itemFeature(name: string): FeatureKey | null {
+  const n = name.toLowerCase()
+  if (/gps|tracker|vest|beacon/.test(n)) return 'gps'
+  if (/camera|tripod|tablet|sd card|vision|\bvideo\b/.test(n)) return 'video'
+  if (/\bmic\b|microphone|\baudio\b/.test(n)) return 'audio'
+  return null
+}
 
 function Card({ T, density, children, style }: { T: ThemeTokens; density: Density; children: ReactNode; style?: CSSProperties }) {
   return <div style={{ position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad, boxShadow: T.cardShadow, ...style }}>{children}</div>
@@ -35,12 +46,16 @@ export function EquipmentView({ T, accent, density }: Common) {
   const [kitEdits, setKitEdits] = useState<Record<string, { added: string[]; removed: string[] }>>({})
   const [ordered, setOrdered] = useState<string[]>([])
   const [offers, setOffers] = useState(getOffers())
+  const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags())
   useEffect(() => {
     const r = () => { setAddedItems(getAddedEquipment()); setOverrides(getInvOverrides()); setKitEdits(getKitEdits()); setOrdered(getOrdered()) }
     r(); const u1 = subscribeEquipment(r)
     const r2 = () => setOffers(getOffers()); r2(); const u2 = subscribePackages(r2)
-    return () => { u1(); u2() }
+    const r3 = () => setFeat(getFeatureFlags()); r3(); const u3 = subscribeFeatures(r3)
+    return () => { u1(); u2(); u3() }
   }, [])
+  // A kit item is shown only if its tagged feature is on (untagged = always on).
+  const featureOn = (name: string) => { const f = itemFeature(name); return !f || feat[f] }
 
   const tone = (s: KitStatus) => s === 'good' ? T.good : s === 'low' ? T.warn : s === 'order' ? '#3A8EE0' : T.bad
   const label = (s: KitStatus) => s === 'good' ? 'In stock' : s === 'low' ? 'Running low' : s === 'order' ? 'To order' : 'Repair'
@@ -50,7 +65,7 @@ export function EquipmentView({ T, accent, density }: Common) {
     qty: overrides[name]?.qty ?? base.qty,
     status: overrides[name]?.status ?? base.status,
   })
-  const mergedInventory = EQUIPMENT_INVENTORY.map(c => ({ ...c, items: [...c.items, ...addedItems.filter(a => a.category === c.category)] }))
+  const mergedInventory = EQUIPMENT_INVENTORY.map(c => ({ ...c, items: [...c.items, ...addedItems.filter(a => a.category === c.category)].filter(it => featureOn(it.name)) })).filter(c => c.items.length)
   const allItems = mergedInventory.flatMap(c => c.items.map(it => { const e = eff(it.name, it); return { ...it, qty: e.qty, status: e.status, category: c.category } }))
   const orderedSet = new Set(ordered)
   // restock = anything not "good" and not already ordered
@@ -69,7 +84,7 @@ export function EquipmentView({ T, accent, density }: Common) {
     const edit = kitEdits[type] ?? { added: [], removed: [] }
     const seen = new Set<string>()
     return [...base, ...fromPackages, ...edit.added].filter(it => {
-      if (edit.removed.includes(it) || seen.has(it)) return false
+      if (edit.removed.includes(it) || seen.has(it) || !featureOn(it)) return false
       seen.add(it); return true
     })
   }

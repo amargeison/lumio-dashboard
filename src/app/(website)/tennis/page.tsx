@@ -475,9 +475,9 @@ export default function TennisLandingPage() {
             <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
               Apply for free access →
             </Link>
-            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
+            <Link href="/tennis/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the demo →
-            </span>
+            </Link>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {STAT_PILLS.map(p => (
@@ -519,7 +519,7 @@ export default function TennisLandingPage() {
               </div>
               <div style={{ display: 'flex', gap: 16 }}>
                 <a href="mailto:hello@lumiosports.com?subject=Johan%20Sports%20for%20Tennis%20Order" style={{ background: '#06b6d4', color: '#000', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', textDecoration: 'none' }}>Order Johan Sports for Tennis →</a>
-                <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', color: '#06b6d4', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: '1px solid #06b6d4', opacity: 0.5, cursor: 'not-allowed' }}>See it in the portal</span>
+                <Link href="/tennis/demo" style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', color: '#06b6d4', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: '1px solid #06b6d4', textDecoration: 'none' }}>See it in the portal</Link>
               </div>
             </div>
           </div>
@@ -548,7 +548,7 @@ export default function TennisLandingPage() {
         </div>
       </section>
 
-      <SportRoleTabs sport="tennis" demoHref="/tennis/demo" accentColor="#8B5CF6" accentColorDim="rgba(139,92,246,0.15)" roles={TENNIS_ROLES} demoDisabled={true} />
+      <SportRoleTabs sport="tennis" demoHref="/tennis/demo" accentColor="#8B5CF6" accentColorDim="rgba(139,92,246,0.15)" roles={TENNIS_ROLES} demoDisabled={false} />
 
       {/* ── SPOTLIGHTS ── */}
       <Spotlight
@@ -832,9 +832,9 @@ export default function TennisLandingPage() {
             <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
               Apply for free founding access →
             </Link>
-            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
+            <Link href="/tennis/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Or try the demo →
-            </span>
+            </Link>
           </div>
         </div>
       </section>

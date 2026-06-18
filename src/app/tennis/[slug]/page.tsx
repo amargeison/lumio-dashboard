@@ -1064,9 +1064,7 @@ const IncomeExpenseChart = () => {
 
 // ─── DASHBOARD VIEW ────────────────────────────────────────────────────────────
 function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDismissWin, tasks, taskChecked, onToggleTask, newTaskText, setNewTaskText, showAddTask, setShowAddTask, onAddTask, dismissedAlerts, onDismissAlert, teamSubTab, setTeamSubTab, onNavigate, activeModal, onOpenModal, onCloseModal, roleConfig, currentRole }: { player: TennisPlayer; session: SportsDemoSession; photos: string[]; setPhotos: (fn: string[] | ((prev: string[]) => string[])) => void; dismissedWins: Set<string>; onDismissWin: (id: string) => void; tasks: TennisTask[]; taskChecked: Record<string, boolean>; onToggleTask: (id: string) => void; newTaskText: string; setNewTaskText: (v: string) => void; showAddTask: boolean; setShowAddTask: (v: boolean) => void; onAddTask: () => void; dismissedAlerts: Set<string>; onDismissAlert: (id: string) => void; teamSubTab: 'today'|'org'|'info'|'club'; setTeamSubTab: (v: 'today'|'org'|'info'|'club') => void; onNavigate: (section: string) => void; activeModal: string | null; onOpenModal: (id: string) => void; onCloseModal: () => void; roleConfig: typeof TENNIS_ROLE_CONFIG[keyof typeof TENNIS_ROLE_CONFIG]; currentRole: string }) {
-  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
-    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('tennis_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
-  })
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
   // ── v2 dashboard state ─────────────────────────────────────────────
   const v2T       = THEMES.dark
   const v2Accent  = TENNIS_ACCENT
@@ -1334,7 +1332,6 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
       {/* Tab bar — matches cricket v2 styling exactly */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: `1px solid ${v2T.border}`, overflowX: 'auto', marginBottom: v2Density.gap }}>
         {([
-          { id:'gettingstarted' as const, label:'Getting Started', icon:'sparkles' },
           { id:'today' as const,          label:'Today',           icon:'home' },
           { id:'quickwins' as const,      label:'Quick Wins',      icon:'lightning' },
           { id:'dailytasks' as const,     label:'Daily Tasks',     icon:'check' },

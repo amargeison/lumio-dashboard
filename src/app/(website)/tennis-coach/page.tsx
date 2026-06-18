@@ -412,7 +412,7 @@ export default function TennisCoachPage() {
                 {[
                   { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured racket keyring + matching dampener + certificate at each of the 9 stages — and a full trophy at Black. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £50 (~£5.50 each)' },
                   { icon: '📱', title: 'Stream 2 — Student app resale', color: '#06b6d4', desc: 'Give families the player & parent view of everything you capture. Resell it or bundle it into a package — you keep the margin, not Lumio.', price: 'Suggested £9.99/family · you set it' },
-                  { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Every module, no tiers to climb — sessions, players, GPS, heatmaps, staff and camps. The platform that makes both revenue streams possible.', price: 'From £39/month · founding access' },
+                  { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Pick the tier that fits — Essential to Elite — adding GPS, video, audio and rewards as you grow. The platform that makes both revenue streams possible.', price: 'From £19/month · 4 tiers' },
                 ].map((f, i) => (
                   <div key={i} style={{ background: `${f.color}10`, border: `1px solid ${f.color}30`, borderRadius: 16, padding: 28 }}>
                     <div style={{ fontSize: 30, marginBottom: 12 }}>{f.icon}</div>
@@ -559,31 +559,34 @@ export default function TennisCoachPage() {
             A simple subscription runs your whole academy. The kit gets you capturing from day one — and the Racket Progression reward system turns player progress into recurring income you control.
           </p>
 
-          {/* A — Subscription */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 24 }}>
-            {/* Coach plan */}
-            <div style={{ backgroundColor: CARD, border: `2px solid ${PURPLE}`, borderRadius: 16, padding: 32, position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 20, right: 20, background: `${PURPLE}22`, border: `1px solid ${PURPLE}`, color: PURPLE_LIGHT, fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Founding access</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Coach plan</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
-                <span style={{ fontSize: 52, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£39</span>
-                <span style={{ fontSize: 16, color: MUTED, fontWeight: 600 }}>/month</span>
+          {/* Plan tiers */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16, marginBottom: 20 }}>
+            {[
+              { name: 'Essential', price: 19, popular: false, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Staff & training camps', 'Mobile coach app'], off: ['No GPS, video or audio', 'No Racket Progression'] },
+              { name: 'Pro Lite', price: 29, popular: false, tag: 'Adds the reward system', feats: ['Everything in Essential', 'Racket Progression reward system', 'Trophy keyrings, dampeners & certificates'], off: ['No GPS, video or audio'] },
+              { name: 'Pro', price: 39, popular: true, tag: 'Most popular', feats: ['Everything in Pro Lite', 'Video & audio + AI session reviews', 'Clip library & coach voice notes'], off: ['No GPS', 'No GPS heatmaps'] },
+              { name: 'Elite', price: 59, popular: false, tag: 'The full system', feats: ['Everything in Pro', 'Lumio GPS Tracker', 'GPS load, court coverage & heatmaps'], off: [] },
+            ].map(t => (
+              <div key={t.name} style={{ backgroundColor: CARD, border: `${t.popular ? 2 : 1}px solid ${t.popular ? PURPLE : BORDER}`, borderRadius: 16, padding: 24, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                {t.popular && <div style={{ position: 'absolute', top: -11, left: 24, background: PURPLE, color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most popular</div>}
+                <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{t.name}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, margin: '8px 0 2px' }}>
+                  <span style={{ fontSize: 40, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£{t.price}</span>
+                  <span style={{ fontSize: 14, color: MUTED, fontWeight: 600 }}>/month</span>
+                </div>
+                <div style={{ fontSize: 12, color: MUTED, marginBottom: 14 }}>{t.tag}</div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 14px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                  {t.feats.map(f => <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: TEXT }}><span style={{ color: PURPLE_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>{f}</li>)}
+                  {t.off.map(f => <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: MUTED }}><span style={{ color: MUTED, fontWeight: 900, flexShrink: 0 }}>—</span>{f}</li>)}
+                </ul>
+                <Link href="/sports-signup?sport=tenniscoach" style={{ marginTop: 'auto', display: 'block', textAlign: 'center', padding: '11px 18px', borderRadius: 11, backgroundColor: t.popular ? PURPLE : 'transparent', color: t.popular ? '#fff' : TEXT, border: t.popular ? 'none' : `1px solid ${BORDER}`, fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>Choose {t.name} →</Link>
               </div>
-              <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6, marginBottom: 20 }}>
-                The all-in-one academy platform. Every module, no tiers to climb — sessions, players, video &amp; audio, GPS &amp; heatmaps, staff and camps, the lot.
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px' }}>
-                {COACH_PLAN_FEATURES.map(f => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: TEXT, padding: '6px 0' }}>
-                    <span style={{ color: PURPLE_LIGHT, fontWeight: 900 }}>✓</span>{f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/sports-signup?sport=tennis" style={{ display: 'block', textAlign: 'center', padding: '14px 24px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
-                Apply for free founding access →
-              </Link>
-            </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 12, color: MUTED, textAlign: 'center', margin: '0 0 40px' }}>Founding access — free for 3 months on any tier. Kit sold separately; Essential needs no kit.</p>
 
+          {/* A — Student add-on (second revenue stream) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 24 }}>
             {/* Parent / Student access — coach-resold add-on */}
             <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 32 }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#06b6d4', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Suggested add-on</div>
