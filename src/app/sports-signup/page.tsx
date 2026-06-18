@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 
-type SportId = 'tennis' | 'golf' | 'darts' | 'boxing' | 'cricket' | 'rugby' | 'football' | 'nonleague' | 'grassroots' | 'womens' | 'junior'
+type SportId = 'tennis' | 'tenniscoach' | 'golf' | 'darts' | 'boxing' | 'cricket' | 'rugby' | 'football' | 'nonleague' | 'grassroots' | 'womens' | 'junior'
 
 const SPORTS: { id: SportId; label: string; logo: string; color: string }[] = [
   { id: 'football', label: 'Football Pro', logo: '/football_logo.png', color: '#2563eb' },
@@ -19,13 +19,14 @@ const SPORTS: { id: SportId; label: string; logo: string; color: string }[] = [
   { id: 'cricket', label: 'Cricket', logo: '/cricket_logo.png', color: '#10b981' },
   { id: 'rugby', label: 'Rugby', logo: '/rugby_logo.png', color: '#f97316' },
   { id: 'tennis', label: 'Tennis', logo: '/tennis_logo.png', color: '#7C3AED' },
+  { id: 'tenniscoach', label: 'Tennis Coach', logo: '/tennis_coach_logo.png', color: '#3A8EE0' },
   { id: 'boxing', label: 'Boxing', logo: '/boxing_logo.png', color: '#dc2626' },
   { id: 'golf', label: 'Golf', logo: '/golf_logo.png', color: '#15803D' },
   { id: 'darts', label: 'Darts', logo: '/darts_logo.png', color: '#dc2626' },
 ]
 
-// Only Women's FC is live for sign-up right now; the rest show as coming soon.
-const LIVE_SPORTS = new Set<SportId>(['womens'])
+// Women's FC and Tennis Coach are live for sign-up; the rest show as coming soon.
+const LIVE_SPORTS = new Set<SportId>(['womens', 'tenniscoach'])
 
 export default function SportsSignupPage() {
   const router = useRouter()
@@ -61,7 +62,7 @@ export default function SportsSignupPage() {
     try {
       const res = await fetch('/api/sports-auth/create-profile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), displayName: name.trim(), sport, clubName: club.trim() }),
+        body: JSON.stringify({ email: email.trim(), displayName: name.trim(), sport: sport === 'tenniscoach' ? 'coach' : sport, clubName: club.trim() }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Signup failed')
@@ -88,7 +89,7 @@ export default function SportsSignupPage() {
       const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
       const { error: verifyError } = await supabase.auth.verifyOtp({ email: email.trim(), token: code, type: 'email' })
       if (verifyError) throw verifyError
-      router.push(sport === 'womens' ? `/womens/${clubSlug}` : `/${sport}/app`)
+      router.push(sport === 'womens' ? `/womens/${clubSlug}` : sport === 'tenniscoach' ? `/tennis/coach/${clubSlug}` : `/${sport}/app`)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Invalid or expired code.')
     }
@@ -139,7 +140,7 @@ export default function SportsSignupPage() {
                 <label style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Club name</label>
                 <input value={club} onChange={e => setClub(e.target.value)} placeholder="e.g. Riverside Rovers Women"
                   style={{ width: '100%', padding: '11px 14px', borderRadius: 10, background: '#111318', border: '1px solid #374151', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
-                {club.trim() && <p style={{ color: '#4B5563', fontSize: 11, marginTop: 5 }}>Your portal: lumiosports.com/womens/{clubSlug}</p>}
+                {club.trim() && <p style={{ color: '#4B5563', fontSize: 11, marginTop: 5 }}>Your portal: lumiosports.com{sport === 'tenniscoach' ? `/tennis/coach/${clubSlug}` : sport === 'womens' ? `/womens/${clubSlug}` : `/${sport}/${clubSlug}`}</p>}
               </div>
               <div>
                 <label style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Your sport</label>
