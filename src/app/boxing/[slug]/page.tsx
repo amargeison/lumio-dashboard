@@ -998,9 +998,7 @@ function InteractiveBoxingInbox({ T, accent, density }: { T: typeof THEMES.dark;
 // ─── CAMP DASHBOARD VIEW ──────────────────────────────────────────────────────
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingFighter; session: SportsDemoSession; onOpenModal?: (id: string) => void }) {
-  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
-    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('boxing_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
-  })
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
   const [brandPrimary, setBrandPrimary] = useState(() => {
     try { return typeof window !== 'undefined' ? (localStorage.getItem('lumio_boxing_brand_primary') || '#1e3a8a') : '#1e3a8a' } catch { return '#1e3a8a' }
   })
@@ -1253,7 +1251,6 @@ function CampDashboardView({ fighter, session, onOpenModal }: { fighter: BoxingF
       {/* Tab bar — matches cricket v2 styling exactly */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: '1px solid rgba(255,255,255,0.06)', overflowX: 'auto', marginBottom: v2Density.gap }}>
         {([
-          { id:'gettingstarted' as const, label:'Getting Started', icon:'sparkles' },
           { id:'today' as const,          label:'Today',           icon:'home' },
           { id:'quickwins' as const,      label:'Quick Wins',      icon:'lightning' },
           { id:'dailytasks' as const,     label:'Daily Tasks',     icon:'check' },

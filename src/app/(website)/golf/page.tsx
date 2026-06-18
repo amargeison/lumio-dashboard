@@ -286,9 +286,9 @@ export default function GolfPage() {
             <Link href="/sports-signup?sport=golf" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: ACCENT, color: '#07080F', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${ACCENT}66` }}>
               Apply for founding access →
             </Link>
-            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: '#F9FAFB', fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
-              Try the demo
-            </span>
+            <Link href="/golf/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: '#F9FAFB', fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
+              Try the demo →
+            </Link>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {STAT_PILLS.map(p => (
@@ -313,7 +313,7 @@ export default function GolfPage() {
         </div>
       </section>
 
-      <SportRoleTabs sport="golf" demoHref="/golf/demo" accentColor="#0D9488" accentColorDim="rgba(13,148,136,0.15)" roles={GOLF_ROLES} demoDisabled={true} />
+      <SportRoleTabs sport="golf" demoHref="/golf/demo" accentColor="#0D9488" accentColorDim="rgba(13,148,136,0.15)" roles={GOLF_ROLES} demoDisabled={false} />
 
       {/* Spotlights */}
       <Spotlight
@@ -444,9 +444,9 @@ export default function GolfPage() {
             <a href="mailto:hello@lumiosports.com?subject=Golf%20Early%20Access" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#07080F' }}>
               Apply for early access →
             </a>
-            <span role="button" aria-disabled="true" title="Coming soon" className="px-6 py-3 rounded-xl text-sm font-bold" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB', opacity: 0.5, cursor: 'not-allowed' }}>
+            <Link href="/golf/demo" className="px-6 py-3 rounded-xl text-sm font-bold" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB', textDecoration: 'none' }}>
               Or try the demo →
-            </span>
+            </Link>
           </div>
         </div>
       </section>

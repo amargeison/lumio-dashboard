@@ -41,6 +41,7 @@ import { HeatmapsView } from './_components/CoachHeatmaps'
 import { StaffView } from './_components/StaffView'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { EmptyCoachDashboard, EmptyModule } from './_components/EmptyCoachDashboard'
+import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, tierForFlags, TIERS, type FeatureFlags } from './_lib/feature-flags'
 
 // The three view roles for the role switcher. Head + Coach are the same portal
 // filtered by permission; Student is a purpose-built player/parent view (a
@@ -172,18 +173,26 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // the sidebar; if the active view gets hidden, fall back to the dashboard.
   const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
   useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
+  // Feature flags (admin/plan) — a disabled feature removes its whole module.
+  const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags())
+  useEffect(() => { const r = () => setFeat(getFeatureFlags()); r(); return subscribeFeatures(r) }, [])
+  const featureHidden = (id: string) =>
+    (id === 'gpsheatmaps' && !feat.gps) ||
+    (id === 'belts' && !feat.racket) ||
+    (id === 'videoaudio' && !feat.video && !feat.audio)
+  const planTier = TIERS.find(t => t.key === tierForFlags(feat))
   // Fall back to the dashboard if the active view is hidden by the coach OR is
   // unavailable for the current role (e.g. switching to Coach while on Payments).
   useEffect(() => {
     if (active === 'dashboard') return
-    if ((hiddenMenu.includes(active) && !ALWAYS_VISIBLE.includes(active)) || !roleAllowsNav(role, active)) setActive('dashboard')
-  }, [hiddenMenu, active, role])
-  // Two-pass filter: the role decides availability, the coach's own menu-hiding
-  // stays as a layer on top.
-  const visibleSidebar = COACH_SIDEBAR.filter(i => roleAllowsNav(role, i.id) && !hiddenMenu.includes(i.id))
-  // Nav items the role removes — folded into the mobile shell's hidden set so
-  // its tabs + More sheet honour the role too.
-  const roleHiddenIds = COACH_SIDEBAR.filter(i => !roleAllowsNav(role, i.id)).map(i => i.id)
+    if ((hiddenMenu.includes(active) && !ALWAYS_VISIBLE.includes(active)) || !roleAllowsNav(role, active) || featureHidden(active)) setActive('dashboard')
+  }, [hiddenMenu, active, role, feat])
+  // Three-pass filter: the role decides availability, feature flags remove whole
+  // modules, and the coach's own menu-hiding stays as a layer on top.
+  const visibleSidebar = COACH_SIDEBAR.filter(i => roleAllowsNav(role, i.id) && !hiddenMenu.includes(i.id) && !featureHidden(i.id))
+  // Nav items the role or feature flags remove — folded into the mobile shell's
+  // hidden set so its tabs + More sheet honour them too.
+  const roleHiddenIds = COACH_SIDEBAR.filter(i => !roleAllowsNav(role, i.id) || featureHidden(i.id)).map(i => i.id)
 
   // Banner / switcher context. The role switcher reuses the shared component;
   // we hand it a session whose role mirrors live state so its "current view"
@@ -360,8 +369,11 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         )}
         {expanded && (
           <div style={{ padding: '8px 12px', borderTop: `1px solid ${line}` }}>
-            <div style={{ fontSize: 9, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Plan</div>
-            <div style={{ fontSize: 10, color: accent.hex, fontWeight: 600, marginTop: 1 }}>Coach Pro · £39/mo</div>
+            <div style={{ fontSize: 9, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Plan</div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 9px', borderRadius: 999, background: accent.dim, border: `1px solid ${accent.border}` }}>
+              <span style={{ fontSize: 10.5, color: accent.hex, fontWeight: 700 }}>{planTier ? `Lumio ${planTier.name}` : 'Custom plan'}</span>
+              {planTier && <span style={{ fontSize: 9.5, color: T.text3 }}>£{planTier.price}/mo</span>}
+            </div>
           </div>
         )}
       </aside>
@@ -402,6 +414,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
               </div>
             ) : (
               <>
+                {feat.racket && (
                 <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
                   <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 10 }}>Racket distribution</div>
                   {BELTS.map((b, bi) => beltCounts[bi] > 0 && (
@@ -412,6 +425,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
                     </div>
                   ))}
                 </div>
+                )}
 
                 <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
                   <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>This week</div>

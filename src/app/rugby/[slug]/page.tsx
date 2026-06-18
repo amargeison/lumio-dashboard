@@ -173,18 +173,9 @@ const Card = ({children,className=''}:{children:React.ReactNode;className?:strin
   <div className={`bg-[#0d1117] border border-gray-800 rounded-xl p-5 ${className}`}>{children}</div>
 );
 
-const QuickActionsBar = () => {
-  const actions = ['Log Training','Match Report','Cap Check','Medical Review','Sponsor Post','Selection','Scouting','Travel','AI Briefing','Compliance'];
-  return (
-    <div className="mb-6 overflow-x-auto pb-2 -mx-1">
-      <div className="flex gap-2 px-1 min-w-max">
-        {actions.map((a:string,i:number)=>(
-          <button key={i} className="bg-[#0d1117] border border-gray-800 hover:border-purple-500/50 rounded-full px-4 py-2 text-xs text-gray-400 hover:text-white transition-all whitespace-nowrap">{a}</button>
-        ))}
-      </div>
-    </div>
-  );
-};
+// Quick-actions button bar removed at the client's request. Kept as a no-op so
+// the many existing <QuickActionsBar /> call sites don't each need editing.
+const QuickActionsBar = () => null;
 
 // ─── CLUB DASHBOARD VIEW (v2 modular grid + polish) ──────────────────────────
 // Quick Actions row (8 modal-opening buttons + Ask Lumio) · v2 grid (HeroToday ·
@@ -3427,6 +3418,313 @@ function StadiumVenueView({club}:{club:RugbyClub}) {
         <div className="text-sm font-semibold text-white mb-2">Ground Grading</div>
         <div className="text-xs text-green-400">Step 2 compliant ✓ — Last inspection: Sep 2025 — Next: Sep 2026</div>
       </Card>
+    </div>
+  );
+}
+
+// ─── OPERATIONS & FACILITIES VIEWS (adapted from football & women's) ──────────
+function RugbyClubOperationsView() {
+  const tone = (s:string) => s==='Active'||s==='On-site'||s==='Confirmed' ? 'text-green-400' : s==='Remote' ? 'text-blue-400' : s.includes('Review')||s.includes('Renew')||s.includes('needed') ? 'text-amber-400' : 'text-gray-300';
+  const staff = [
+    {name:'Karl Foster',role:'Director of Rugby',status:'On-site'},
+    {name:'Danny Cole',role:'Commercial Manager',status:'On-site'},
+    {name:'Sarah Whitmore',role:'Club Administrator',status:'On-site'},
+    {name:'Mike Reardon',role:'Head Groundsman',status:'On-site'},
+    {name:'Lucy Hartley',role:'Physio Lead',status:'Matchday only'},
+    {name:'Tom Beckett',role:'Volunteer Coordinator',status:'Remote'},
+  ];
+  const suppliers = [
+    {name:'Gilbert',service:'Match & training balls',renewal:'Aug 2026',status:'Active'},
+    {name:'Samurai Sportswear',service:'Playing & training kit',renewal:'Jun 2027',status:'Active'},
+    {name:'County Catering Co',service:'Matchday hospitality',renewal:'Jul 2026',status:'Review due'},
+    {name:'GreenTurf Ltd',service:'Pitch maintenance',renewal:'Sep 2026',status:'Active'},
+    {name:'SecureEvents',service:'Matchday stewarding',renewal:'May 2026',status:'Renew soon'},
+  ];
+  const checklist = [
+    {task:'Submit team sheet to RFU portal',owner:'Sarah W',done:true},
+    {task:'Confirm matchday stewards (12)',owner:'SecureEvents',done:true},
+    {task:'Order hospitality covers (40)',owner:'County Catering',done:false},
+    {task:'Matchday programme to print',owner:'Danny C',done:false},
+    {task:'Defibrillator check',owner:'Lucy H',done:true},
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🏉" title="Club Operations" subtitle="Staff, suppliers and the week's running of the club." />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Staff & volunteers" value="18" color="purple" />
+        <StatCard label="Active suppliers" value="9" color="teal" />
+        <StatCard label="Open actions" value="2" sub="this week" color="amber" />
+        <StatCard label="Compliance" value="Green" sub="RFU Step 2" color="green" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Staff directory</div>
+          <div className="space-y-2">
+            {staff.map((s,i)=>(
+              <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 text-xs">
+                <div><span className="text-gray-200">{s.name}</span> — <span className="text-gray-400">{s.role}</span></div>
+                <span className={tone(s.status)}>{s.status}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Key suppliers & contracts</div>
+          <div className="space-y-2">
+            {suppliers.map((s,i)=>(
+              <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 text-xs">
+                <div><span className="text-gray-200">{s.name}</span> — <span className="text-gray-400">{s.service}</span></div>
+                <div className="text-right whitespace-nowrap"><span className="text-gray-500">{s.renewal}</span> <span className={tone(s.status)}>· {s.status}</span></div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">This week's operations checklist</div>
+        <div className="space-y-2">
+          {checklist.map((c,i)=>(
+            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50 text-xs">
+              <span className={c.done?'text-green-400':'text-gray-600'}>{c.done?'✓':'○'}</span>
+              <span className="text-gray-300 flex-1">{c.task}</span>
+              <span className="text-gray-500">{c.owner}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function RugbyMatchdayOpsView() {
+  const runsheet = [
+    {t:'08:30',item:'Groundstaff — pitch markings, posts & padding',who:'Mike R'},
+    {t:'10:00',item:'Stewards & first-aid briefing',who:'SecureEvents'},
+    {t:'11:00',item:'Hospitality set-up (40 covers)',who:'County Catering'},
+    {t:'12:30',item:'Gates & turnstiles open',who:'Front of house'},
+    {t:'13:15',item:'Teams warm up',who:'S&C'},
+    {t:'14:00',item:'Kick-off',who:'Match officials'},
+    {t:'14:40',item:'Half-time — sponsor pitch draw',who:'Danny C'},
+    {t:'16:00',item:'Full-time — players to hospitality',who:'Karl F'},
+  ];
+  const rota = [
+    {role:'Match manager',who:'Sarah Whitmore',status:'Confirmed'},
+    {role:'Head steward + team',who:'SecureEvents (12)',status:'Confirmed'},
+    {role:'First aid / physio',who:'Lucy Hartley',status:'Confirmed'},
+    {role:'Announcer / PA',who:'Tom Beckett',status:'Confirmed'},
+    {role:'Programme sellers',who:'Volunteers (4)',status:'2 needed'},
+    {role:'Turnstiles',who:'Volunteers (3)',status:'Confirmed'},
+  ];
+  const checks = ['Pitch marked & posts padded','Defib on-site & checked','Match programmes delivered','Hospitality covers laid','PA & scoreboard tested','Team sheets exchanged'];
+  const tone = (s:string)=> s==='Confirmed'?'text-green-400':'text-amber-400';
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="📋" title="Matchday Operations" subtitle="Champ Rugby vs Jersey Reds · Sat 11 Apr · 14:00 KO" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Kick-off" value="14:00" color="purple" />
+        <StatCard label="Stewards" value="12" color="teal" />
+        <StatCard label="Volunteers" value="9" sub="2 still needed" color="amber" />
+        <StatCard label="Hospitality" value="40" sub="covers" color="orange" />
+      </div>
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">Matchday run sheet</div>
+        <div className="space-y-2">
+          {runsheet.map((r,i)=>(
+            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50">
+              <span className="text-xs text-purple-400 font-medium w-12">{r.t}</span>
+              <span className="text-sm text-gray-300 flex-1">{r.item}</span>
+              <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded whitespace-nowrap">{r.who}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Role rota</div>
+          <div className="space-y-2">
+            {rota.map((r,i)=>(
+              <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 text-xs">
+                <div><span className="text-gray-200">{r.role}</span> — <span className="text-gray-400">{r.who}</span></div>
+                <span className={tone(r.status)}>{r.status}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Final checks</div>
+          <div className="grid grid-cols-1 gap-1.5">
+            {checks.map((c,i)=>(
+              <div key={i} className="flex items-center gap-2 text-xs text-gray-300"><span className="text-green-400">✓</span>{c}</div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function RugbyTravelLogisticsView() {
+  const trips = [
+    {date:'19 Apr',opp:'Jersey Reds (A)',depart:'06:30',transport:'Coach + ferry',ret:'Overnight',note:'Hotel: St Helier Bay · 28 rooms'},
+    {date:'3 May',opp:'Cornish Pirates (A)',depart:'08:00',transport:'Team coach',ret:'Same day',note:'Meal stop: Exeter services'},
+    {date:'17 May',opp:'Coventry (A)',depart:'09:30',transport:'Team coach',ret:'Same day',note:'2h15 · pre-match meal on arrival'},
+  ];
+  const detail = [
+    {l:'Transport',v:'53-seat coach — County Travel (driver: Ray)'},
+    {l:'Pickups',v:'17:30 The Grange · 17:45 J24 services'},
+    {l:'Kit van',v:'Departs 15:00 Friday — Mike R + 2'},
+    {l:'Hotel',v:'St Helier Bay — 28 twin rooms, dinner 20:00'},
+    {l:'Return',v:'Sunday 11:00 ferry, ETA club 17:30'},
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🚌" title="Travel & Logistics" subtitle="Away-day planning — transport, overnights and kit movement." />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Next away" value="Jersey Reds" sub="19 Apr" color="purple" />
+        <StatCard label="Departure" value="06:30" color="teal" />
+        <StatCard label="Mode" value="Coach + ferry" color="blue" />
+        <StatCard label="Coach seats" value="53" sub="38 squad + staff" color="orange" />
+      </div>
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">Upcoming away trips</div>
+        <div className="space-y-2">
+          {trips.map((t,i)=>(
+            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50 text-xs">
+              <span className="text-purple-400 font-medium w-12">{t.date}</span>
+              <span className="text-gray-200 w-40">{t.opp}</span>
+              <span className="text-gray-400 flex-1">Depart {t.depart} · {t.transport} · {t.note}</span>
+              <span className="text-[10px] bg-gray-800 text-gray-400 px-2 py-0.5 rounded whitespace-nowrap">{t.ret}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">Next trip — Jersey Reds (overnight)</div>
+        <div className="space-y-2">
+          {detail.map((d,i)=>(
+            <div key={i} className="flex items-start gap-3 py-1.5 border-b border-gray-800/50 text-xs">
+              <span className="text-gray-500 w-24">{d.l}</span>
+              <span className="text-gray-300 flex-1">{d.v}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function RugbyKitManagerView() {
+  const tone = (s:string)=> s==='Ready'?'text-green-400':s==='Low'?'text-amber-400':s.includes('repair')||s==='Reorder'?'text-red-400':'text-gray-300';
+  const stock = [
+    {item:'Home jerseys (1–23)',qty:'2 sets',status:'Ready'},
+    {item:'Away jerseys (1–23)',qty:'2 sets',status:'Ready'},
+    {item:'Alternate / clash set',qty:'1 set',status:'Ready'},
+    {item:'Training kit',qty:'40',status:'Reorder'},
+    {item:'Match shorts',qty:'30',status:'Ready'},
+    {item:'Socks (pairs)',qty:'24',status:'Low'},
+    {item:'Tackle suits / shields',qty:'12',status:'2 repair'},
+  ];
+  const matchKit = [
+    {no:'1',player:'J. Marsh',size:'XXL'},
+    {no:'2',player:'D. Hughes',size:'XL'},
+    {no:'9',player:'S. Patel',size:'M'},
+    {no:'10',player:'T. Henderson',size:'L'},
+    {no:'15',player:'C. Williams',size:'L'},
+  ];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🎽" title="Kit Manager" subtitle="Match & training kit, allocation, laundry and stock." />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Home sets" value="2" color="purple" />
+        <StatCard label="Away sets" value="2" color="teal" />
+        <StatCard label="Training kit" value="40" sub="reorder due" color="amber" />
+        <StatCard label="Laundry" value="Friday" sub="pre-matchday" color="blue" />
+      </div>
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">Stock & reorder</div>
+        <div className="space-y-2">
+          {stock.map((s,i)=>(
+            <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 text-xs">
+              <span className="text-gray-300 flex-1">{s.item}</span>
+              <span className="text-gray-500 w-16 text-right">{s.qty}</span>
+              <span className={`w-20 text-right ${tone(s.status)}`}>{s.status}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">Match kit allocation (sample)</div>
+        <div className="space-y-2">
+          {matchKit.map((m,i)=>(
+            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50 text-xs">
+              <span className="text-purple-400 font-bold w-8">{m.no}</span>
+              <span className="text-gray-200 flex-1">{m.player}</span>
+              <span className="text-gray-500">Size {m.size}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function RugbyPitchGroundsView() {
+  const condTone = (c:string)=> c==='Good'?'text-green-400':c==='Fair'?'text-amber-400':'text-red-400';
+  const pitches = [
+    {name:'Main pitch',cond:'Good',note:'Verti-drained March — firm and true'},
+    {name:'Training pitch',cond:'Fair',note:'Heavy wear in the 22s — rotate drills'},
+    {name:'3G area',cond:'Good',note:'Infill top-up due Q3'},
+  ];
+  const maint = [
+    {task:'Mowing (25mm)',freq:'2× weekly',last:'8 Apr',next:'Wed 10 Apr'},
+    {task:'Line marking',freq:'Matchweek',last:'5 Apr',next:'Fri 11 Apr'},
+    {task:'Aeration / spiking',freq:'Monthly',last:'28 Mar',next:'28 Apr'},
+    {task:'Goal-post inspection',freq:'Monthly',last:'1 Apr',next:'1 May'},
+    {task:'Ground grading (RFU)',freq:'Annual',last:'Sep 2025',next:'Sep 2026'},
+  ];
+  const week = ['Mow main + training (Wed)','Re-mark main pitch (Fri AM)','Repair divots — east touchline','Top-dress worn 22m areas','Check covers ahead of weekend rain'];
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon="🌱" title="Pitch & Grounds" subtitle="Pitch condition, maintenance schedule and weekly groundwork." />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="Main pitch" value="Good" color="green" />
+        <StatCard label="Training pitch" value="Fair" color="orange" />
+        <StatCard label="Next mow" value="Wed" color="teal" />
+        <StatCard label="Next inspection" value="Sep 26" color="purple" />
+      </div>
+      <Card>
+        <div className="text-sm font-semibold text-white mb-3">Pitch status</div>
+        <div className="space-y-2">
+          {pitches.map((p,i)=>(
+            <div key={i} className="flex items-center gap-3 py-1.5 border-b border-gray-800/50 text-xs">
+              <span className="text-gray-200 w-32">{p.name}</span>
+              <span className={`w-12 ${condTone(p.cond)}`}>{p.cond}</span>
+              <span className="text-gray-400 flex-1">{p.note}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">Maintenance schedule</div>
+          <div className="space-y-2">
+            {maint.map((m,i)=>(
+              <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-800/50 text-xs">
+                <div><span className="text-gray-200">{m.task}</span> <span className="text-gray-500">· {m.freq}</span></div>
+                <div className="text-right whitespace-nowrap"><span className="text-gray-500">last {m.last}</span> <span className="text-purple-400">· next {m.next}</span></div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Card>
+          <div className="text-sm font-semibold text-white mb-3">This week's groundwork</div>
+          <div className="grid grid-cols-1 gap-1.5">
+            {week.map((w,i)=>(
+              <div key={i} className="flex items-center gap-2 text-xs text-gray-300"><span className="text-purple-400">›</span>{w}</div>
+            ))}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -7483,17 +7781,11 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
       case 'clubtocountry':   return <ClubToCountryView/>;
       case 'opposition':      return <OppositionAnalysisView/>;
       case 'industrynews':    return <IndustryNewsView/>;
-      case 'club-operations':
-      case 'matchday-ops':
-      case 'travel-logistics':
-      case 'kit-manager':
-      case 'pitch-grounds':
-        return (
-          <div style={{padding:32,borderRadius:12,border:`1px solid ${THEMES.dark.border}`,background:THEMES.dark.bg,textAlign:'center'}}>
-            <div style={{fontSize:14,fontWeight:700,color:THEMES.dark.text,marginBottom:6}}>Coming soon</div>
-            <div style={{fontSize:12,color:THEMES.dark.text3}}>This module is part of the Operations &amp; Facilities buildout.</div>
-          </div>
-        );
+      case 'club-operations': return <RugbyClubOperationsView/>;
+      case 'matchday-ops':    return <RugbyMatchdayOpsView/>;
+      case 'travel-logistics':return <RugbyTravelLogisticsView/>;
+      case 'kit-manager':     return <RugbyKitManagerView/>;
+      case 'pitch-grounds':   return <RugbyPitchGroundsView/>;
       default:                return <ClubDashboardView onOpenModal={setActiveModal}/>;
     }
   };

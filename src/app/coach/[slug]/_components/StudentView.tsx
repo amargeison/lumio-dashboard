@@ -16,7 +16,7 @@
 // phone-friendly (single-column, auto-fit grids). Leads with the differentiated
 // trio — highlights · GPS · heatmaps — then the supporting cast.
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
@@ -30,6 +30,7 @@ import { getSettings } from '../_lib/settings-store'
 import {
   CourtPositionalHeatmap, CourtCoverageGrid, HeatLegend, TENNIS_RALLY_ANCHORS, GpsLineChart,
 } from './CoachHeatmaps'
+import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags } from '../_lib/feature-flags'
 
 type Props = { T: ThemeTokens; accent: AccentTokens; density: Density; playerId: string }
 
@@ -158,6 +159,8 @@ export function StudentView({ T, accent, density, playerId }: Props) {
   const [selId, setSelId] = useState(playerId)
   const [playing, setPlaying] = useState<Recording | null>(null)
   const [gpsTab, setGpsTab] = useState<GpsTabKey>('overview')
+  const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags())
+  useEffect(() => { const r = () => setFeat(getFeatureFlags()); r(); return subscribeFeatures(r) }, [])
   const player = PLAYERS.find(p => p.id === selId) ?? PLAYERS[0]
   const first = player.name.split(' ')[0]
 
@@ -232,9 +235,10 @@ export function StudentView({ T, accent, density, playerId }: Props) {
       {/* ════ THE DIFFERENTIATED TRIO — lead with these ════════════════════════ */}
 
       {/* 1 · HIGHLIGHTS */}
+      {(feat.video || feat.audio) && (
       <PCard T={T} density={density}>
         <PSection T={T} accent={accent} icon="play" title={`${first}'s session highlights`} sub="Clips your coach saved from recent sessions" lead />
-        {videoRecs.length === 0 ? (
+        {feat.video && (videoRecs.length === 0 ? (
           <EmptyHint T={T} accent={accent} icon="play" title={`No highlight clips for ${first} yet`} sub="Clips appear here after a session your coach records with Lumio Vision." />
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: density.gap }}>
@@ -251,8 +255,8 @@ export function StudentView({ T, accent, density, playerId }: Props) {
               </button>
             ))}
           </div>
-        )}
-        {audioRecs.length > 0 && (
+        ))}
+        {feat.audio && audioRecs.length > 0 && (
           <div style={{ marginTop: density.gap }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Coach voice notes</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -269,7 +273,9 @@ export function StudentView({ T, accent, density, playerId }: Props) {
           </div>
         )}
       </PCard>
+      )}
 
+      {feat.gps && (<>
       {/* 2 · GPS REPORT — full coach-grade detail, tabbed so it's not endless scroll */}
       <PCard T={T} density={density}>
         <PSection T={T} accent={accent} icon="flame" title={`${first}'s session report`} sub={gpsSession ? `Latest session · ${gpsSession.date} · ${gpsSession.surface} court · ${gpsSession.duration} min` : 'Movement & effort from Lumio GPS'} lead />
@@ -389,9 +395,11 @@ export function StudentView({ T, accent, density, playerId }: Props) {
           <EmptyHint T={T} accent={accent} icon="grid" title={`No movement maps for ${first} yet`} sub="Heatmaps appear after a GPS-tracked session." />
         )}
       </PCard>
+      </>)}
 
       {/* ════ SUPPORTING CAST ══════════════════════════════════════════════════ */}
 
+      {feat.racket && (<>
       {/* RACKET PROGRESSION — framed as a reward to earn */}
       <PCard T={T} density={density}>
         <PSection T={T} accent={accent} icon="trophy" title="Racket progression" sub="Earn the next racket by mastering every skill" />
@@ -459,6 +467,7 @@ export function StudentView({ T, accent, density, playerId }: Props) {
           })}
         </div>
       </PCard>
+      </>)}
 
       {/* HOMEWORK + NEXT FOCUS */}
       <PCard T={T} density={density}>

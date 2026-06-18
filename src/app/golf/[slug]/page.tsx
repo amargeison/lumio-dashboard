@@ -945,9 +945,7 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
   const aiSummaryLabel = (() => { const h = new Date().getHours(); return h < 12 ? 'AI Morning Summary' : h < 17 ? 'AI Afternoon Summary' : 'AI Evening Summary' })()
   // Speech state — morning briefing TTS
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'tasks'|'insights'|'dontmiss'|'team'>(() => {
-    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('golf_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
-  });
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'tasks'|'insights'|'dontmiss'|'team'>('today');
   const [brandPrimary, setBrandPrimary] = useState(() => {
     try { return typeof window !== 'undefined' ? (localStorage.getItem('lumio_golf_brand_primary') || '#15803d') : '#15803d' } catch { return '#15803d' }
   });
@@ -1164,7 +1162,6 @@ function DashboardView({ player, session, setActiveSection, onOpenModal }: { pla
       {/* Tab Bar — matches cricket v2 styling exactly */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderBottom: `1px solid ${GOLF_THEME.border}`, overflowX: 'auto' }}>
         {([
-          { id: 'gettingstarted' as const, label: 'Getting Started', icon: 'sparkles' },
           { id: 'today' as const,          label: 'Today',           icon: 'home' },
           { id: 'quickwins' as const,      label: 'Quick Wins',      icon: 'lightning' },
           { id: 'tasks' as const,          label: 'Daily Tasks',     icon: 'check' },

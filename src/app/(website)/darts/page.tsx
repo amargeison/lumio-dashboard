@@ -417,9 +417,9 @@ export default function DartsLandingPage() {
             <Link href="/sports-signup?sport=darts" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
               Apply for founding access →
             </Link>
-            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
-              Try the demo
-            </span>
+            <Link href="/darts/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
+              Try the demo →
+            </Link>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {STAT_PILLS.map(p => (
@@ -451,7 +451,7 @@ export default function DartsLandingPage() {
         </div>
       </section>
 
-      <SportRoleTabs sport="darts" demoHref="/darts/demo" accentColor="#EF4444" accentColorDim="rgba(239,68,68,0.15)" roles={DARTS_ROLES} demoDisabled={true} />
+      <SportRoleTabs sport="darts" demoHref="/darts/demo" accentColor="#EF4444" accentColorDim="rgba(239,68,68,0.15)" roles={DARTS_ROLES} demoDisabled={false} />
 
       {/* ── SPOTLIGHTS ── */}
       <Spotlight
@@ -561,9 +561,9 @@ export default function DartsLandingPage() {
             <a href="mailto:hello@lumiosports.com?subject=Darts%20Early%20Access" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
               Apply for early access →
             </a>
-            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
+            <Link href="/darts/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Or try the demo →
-            </span>
+            </Link>
           </div>
         </div>
       </section>

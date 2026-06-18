@@ -682,9 +682,7 @@ function DartsMatchBriefPanel({ T, accent, open, onClose }: { T: typeof THEMES.d
 
 // ─── DASHBOARD VIEW ───────────────────────────────────────────────────────────
 function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; session: SportsDemoSession; onOpenModal: (id: string) => void }) {
-  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>(() => {
-    try { const seen = typeof window !== 'undefined' ? localStorage.getItem('darts_getting_started_seen') : null; return seen ? 'today' : 'gettingstarted' } catch { return 'gettingstarted' }
-  })
+  const [dashTab, setDashTab] = useState<'gettingstarted'|'today'|'quickwins'|'dailytasks'|'insights'|'dontmiss'|'team'>('today')
   // ── v2 dashboard state ─────────────────────────────────────────────
   const v2T       = THEMES.dark
   const v2Accent  = DARTS_ACCENT
@@ -927,12 +925,6 @@ function DashboardView({ player, session, onOpenModal }: { player: DartsPlayer; 
     <div className="space-y-6">
       {/* Tab bar */}
       <div className="flex gap-0 border-b border-gray-800" style={{ overflowX: 'hidden' }}>
-        <button onClick={() => setDashTab('gettingstarted')}
-          className="flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all -mb-px whitespace-nowrap"
-          style={{ borderBottomColor: dashTab === 'gettingstarted' ? '#dc2626' : 'transparent', color: dashTab === 'gettingstarted' ? '#f87171' : '#6B7280', backgroundColor: dashTab === 'gettingstarted' ? '#dc26260d' : 'transparent' }}>
-          <span className="text-base">🚀</span>Getting Started
-          <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-white" style={{ backgroundColor: '#dc2626' }}>10</span>
-        </button>
         {([
           { id:'today' as const,      label:'Today',       icon:'🏠' },
           { id:'quickwins' as const,  label:'Quick Wins',  icon:'⚡' },

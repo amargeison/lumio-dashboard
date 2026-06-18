@@ -22,6 +22,7 @@ import { suggestSessionForRecording, sessionsForRecordingPlayer, type Recording 
 import { getAddedSessions, subscribe as subscribeSessions } from '../_lib/sessions-store'
 import { SessionReviewPanel } from './SessionReviewPanel'
 import { MediaFieldRecorder } from './MediaFieldRecorder'
+import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags } from '../_lib/feature-flags'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -79,7 +80,14 @@ export function VideoAudioView({ T, accent, density }: Common) {
   // Keep the selected player inside the current scope — reset when the role
   // switches so we never show another coach's recordings.
   useEffect(() => { setPlayerId(prev => players.some(p => p.id === prev) ? prev : (players[0]?.id ?? '')) }, [scope])  // eslint-disable-line react-hooks/exhaustive-deps
+  const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags())
+  useEffect(() => { const r = () => setFeat(getFeatureFlags()); r(); return subscribeFeatures(r) }, [])
   const [tab, setTab] = useState<'video' | 'audio'>('video')
+  // Keep the active tab on an enabled feature.
+  useEffect(() => {
+    if (tab === 'video' && !feat.video && feat.audio) setTab('audio')
+    if (tab === 'audio' && !feat.audio && feat.video) setTab('video')
+  }, [feat, tab])
 
   const [recordings, setRecordings] = useState<Recording[]>(getRecordings())
   const [added, setAdded] = useState<TodaySession[]>([])
@@ -141,8 +149,8 @@ export function VideoAudioView({ T, accent, density }: Common) {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, padding: 3, background: T.hover, borderRadius: 9, width: 'fit-content' }}>
-        {tabBtn('video', `Video${videoRecs.length ? ` · ${videoRecs.length}` : ''}`)}
-        {tabBtn('audio', `Audio${audioRecs.length ? ` · ${audioRecs.length}` : ''}`)}
+        {feat.video && tabBtn('video', `Video${videoRecs.length ? ` · ${videoRecs.length}` : ''}`)}
+        {feat.audio && tabBtn('audio', `Audio${audioRecs.length ? ` · ${audioRecs.length}` : ''}`)}
       </div>
 
       {/* VIDEO TAB — clip grid from the recordings store */}

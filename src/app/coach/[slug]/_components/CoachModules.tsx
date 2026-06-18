@@ -42,6 +42,7 @@ import { getAddedPlayers, subscribe as subscribeRoster } from '../_lib/roster-st
 import { CoachSendMessage } from './SendMessage'
 import { useAllPlayers } from '../_lib/use-roster'
 import { SettingsPanel } from './SettingsPanel'
+import { FeatureAdminPanel } from './FeatureAdminPanel'
 import { getSettings } from '../_lib/settings-store'
 import { useCoachSettings } from '../_lib/use-settings'
 import { getCamps, subscribe as subscribeCamps } from '../_lib/camps-store'
@@ -1568,5 +1569,10 @@ function CampFinance({ T, accent, density, camp, attendees }: CampSub & { attend
 // SETTINGS (light placeholder)
 // ════════════════════════════════════════════════════════════════════════════
 export function SettingsView({ T, accent, density }: Common) {
-  return <SettingsPanel T={T} accent={accent} density={density} />
+  return (
+    <>
+      <FeatureAdminPanel T={T} accent={accent} density={density} />
+      <SettingsPanel T={T} accent={accent} density={density} />
+    </>
+  )
 }
