@@ -18,7 +18,7 @@ const STAT_PILLS = ['9 coach modules', 'AI powered', 'GPS + Vision', 'LTA racket
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '📋', title: 'Session Planner', desc: 'Plan every session in minutes. Overview, Today, This week and This month views over one dated schedule synced from your booking calendar — a confirmed booking becomes a ready-to-build session in two clicks, with a timed run-sheet and kit list generated for you.' },
   { icon: '🤖', title: 'AI Session Review', desc: 'Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player’s plan so the next session writes itself.' },
-  { icon: '🎾', title: 'Racket Progression reward system', desc: 'The reward system at the heart of Lumio Coach. A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds. Players collect a trophy racket and certificate at every level, and parents fund the journey: your second revenue stream, built in.' },
+  { icon: '🎾', title: 'Racket Progression reward system', desc: 'The reward system at the heart of Lumio Coach. A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds. At every level players earn a coloured racket keyring, a matching dampener and a certificate — with a full trophy at Black — and parents fund the journey: your second revenue stream, built in.' },
   { icon: '🛰️', title: 'GPS & Video', desc: 'Player movement and match or training footage in one place. Lumio GPS Tracker and Lumio Vision give you load, court coverage and clips with coach annotations — no third-party analysis stack to wire up.' },
   { icon: '🔥', title: 'Heatmaps', desc: 'Court coverage, serve placement, returns and rally, winners and errors, sprint and speed, and weekly load — paginated into clean tabs per player, by session and by surface.' },
   { icon: '👥', title: 'Staff / Coaches', desc: 'Run a club of coaches, not just yourself. A directory with each coach’s calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team’s week.' },
@@ -66,7 +66,8 @@ const KIT_PARTS = [
   { name: 'Lumio GPS Tracker', note: 'Clip-on court tracker — load, coverage & heatmaps' },
   { name: 'Capture stand', note: 'Court stand for phone or tablet' },
   { name: 'Microphone', note: 'Spec under field test' },
-  { name: 'Trophy rackets — set of 9', note: 'One reward racket per level' },
+  { name: 'Reward keyrings & dampeners — set of 9', note: 'A coloured keyring + matching dampener per level' },
+  { name: 'Black-stage trophy', note: 'A full trophy for reaching the top level' },
 ]
 
 // The real nine-stage racket pathway from the coach portal (coach-data.ts BELTS).
@@ -219,7 +220,7 @@ function RacketProgressionMockup() {
         ))}
       </div>
       <div style={{ backgroundColor: 'rgba(31,111,204,0.12)', border: `1px solid ${PURPLE}55`, borderRadius: 8, padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 9, color: TEXT, fontWeight: 700 }}>🏆 Award trophy racket + certificate</span>
+        <span style={{ fontSize: 9, color: TEXT, fontWeight: 700 }}>🏆 Award keyring + dampener + certificate</span>
         <span style={{ fontSize: 8.5, color: MUTED }}>parents fund the journey</span>
       </div>
     </MockupFrame>
@@ -373,7 +374,7 @@ export default function TennisCoachPage() {
             <span style={{ color: PURPLE_LIGHT }}>Two revenue streams.</span>
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 840, margin: '0 auto 32px' }}>
-            The all-in-one platform that runs your whole tennis academy — session planning, AI reviews, GPS &amp; video — and pays you back through <strong style={{ color: TEXT }}>the Racket Progression reward system</strong>: a nine-stage pathway where players collect trophy rackets and parents fund the journey.
+            The all-in-one platform that runs your whole tennis academy — session planning, AI reviews, GPS &amp; video — and pays you back through <strong style={{ color: TEXT }}>the Racket Progression reward system</strong>: a nine-stage pathway where players collect a coloured racket keyring and dampener at each level — a full trophy at Black — and parents fund the journey.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', margin: '16px 0 32px' }}>
             <span style={{ background: '#1f6fcc18', border: `1px solid ${PURPLE}`, color: PURPLE_LIGHT, padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎾🏆 Racket Progression reward system</span>
@@ -406,10 +407,10 @@ export default function TennisCoachPage() {
                 <span style={{ background: PURPLE, color: '#fff', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>💸 One platform. Two revenue streams.</span>
               </div>
               <h2 style={{ fontSize: 42, fontWeight: 800, color: '#fff', marginBottom: 16, maxWidth: 760, lineHeight: 1.2 }}>The software runs your academy.<br /><span style={{ color: PURPLE_LIGHT }}>The Racket Progression reward system pays you back.</span></h2>
-              <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 720, lineHeight: 1.7, marginBottom: 48 }}>One simple subscription runs every part of your week. Then it earns its keep twice over — you award trophy rackets as players climb the nine-stage pathway and parents fund the journey, and you resell the Student app to your families as recurring margin. You set the prices; you keep the upside.</p>
+              <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 720, lineHeight: 1.7, marginBottom: 48 }}>One simple subscription runs every part of your week. Then it earns its keep twice over — you award a coloured racket keyring and matching dampener (and a trophy at Black) as players climb the nine-stage pathway and parents fund the journey, and you resell the Student app to your families as recurring margin. You set the prices; you keep the upside.</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
                 {[
-                  { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured trophy racket + certificate at each of the 9 stages. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £50 (~£5.50 each)' },
+                  { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured racket keyring + matching dampener + certificate at each of the 9 stages — and a full trophy at Black. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £50 (~£5.50 each)' },
                   { icon: '📱', title: 'Stream 2 — Student app resale', color: '#06b6d4', desc: 'Give families the player & parent view of everything you capture. Resell it or bundle it into a package — you keep the margin, not Lumio.', price: 'Suggested £9.99/family · you set it' },
                   { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Every module, no tiers to climb — sessions, players, GPS, heatmaps, staff and camps. The platform that makes both revenue streams possible.', price: 'From £39/month · founding access' },
                 ].map((f, i) => (
@@ -475,7 +476,7 @@ export default function TennisCoachPage() {
       <Spotlight
         eyebrow="SPOTLIGHT · RACKET PROGRESSION REWARD SYSTEM"
         title="A reward system that pays you back."
-        body="A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds, so players and parents always know exactly what's next. As students pass each level, you award a coloured trophy racket and certificate: your second revenue stream, built right into the product."
+        body="A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds, so players and parents always know exactly what's next. As students pass each level, you award a coloured racket keyring, a matching dampener and a certificate — and a full trophy when they reach Black: your second revenue stream, built right into the product."
         bullets={['Nine stages — White, Yellow, Orange … to Black', 'Skills tracked: Learning → Developing → Consistent → Mastered', 'Award thresholds and progress bars per player', 'Trophy racket + certificate at each level — parents fund the journey']}
         mockup={<RacketProgressionMockup />}
       />
@@ -555,7 +556,7 @@ export default function TennisCoachPage() {
             One platform. Two revenue streams.
           </h2>
           <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', maxWidth: 780, margin: '0 auto 56px', lineHeight: 1.6 }}>
-            A simple subscription runs your whole academy. The kit gets you capturing from day one — and the trophy-racket reward system turns player progress into recurring income you control.
+            A simple subscription runs your whole academy. The kit gets you capturing from day one — and the Racket Progression reward system turns player progress into recurring income you control.
           </p>
 
           {/* A — Subscription */}
@@ -613,7 +614,7 @@ export default function TennisCoachPage() {
               <div style={{ maxWidth: 560 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 10 }}>Lumio Coach Kit</div>
                 <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 8, lineHeight: 1.15 }}>Everything you need to start capturing.</h3>
-                <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>The GPS tracker, capture stand, microphone and your first set of trophy rackets — one bundle, out of the box and onto the court.</p>
+                <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>The GPS tracker, capture stand, microphone, your first set of reward keyrings &amp; dampeners and the Black-stage trophy — one bundle, out of the box and onto the court.</p>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, justifyContent: 'flex-end' }}>
@@ -646,7 +647,7 @@ export default function TennisCoachPage() {
             <div style={{ flex: 1, minWidth: 260 }}>
               <h3 style={{ fontSize: 22, fontWeight: 900, color: TEXT, marginBottom: 8 }}>The Racket Progression reward system</h3>
               <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>
-                As students pass each level, you award a coloured <strong style={{ color: TEXT }}>trophy racket + certificate</strong>. Players collect the set; parents pay for the journey. Reorder sets as you award them — a consumable reward that keeps families invested.
+                As students pass each level, you award a coloured <strong style={{ color: TEXT }}>racket keyring + matching dampener + certificate</strong> — with a full trophy at Black. Players collect the set; parents pay for the journey. Reorder sets as you award them — a consumable reward that keeps families invested.
               </p>
             </div>
             <div style={{ textAlign: 'center', flexShrink: 0 }}>
@@ -659,7 +660,7 @@ export default function TennisCoachPage() {
           <div style={{ textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
             <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 12 }}>Two revenue streams the coach drives.</h3>
             <p style={{ fontSize: 15, color: MUTED, lineHeight: 1.7, marginBottom: 28 }}>
-              The platform runs your academy and the kit gets you started. Then it pays you back twice over: <strong style={{ color: TEXT }}>award trophy rackets</strong> as players progress and parents fund the journey, and <strong style={{ color: TEXT }}>resell the Student app</strong> to your families as recurring margin. You set the prices; you keep the upside.
+              The platform runs your academy and the kit gets you started. Then it pays you back twice over: <strong style={{ color: TEXT }}>award racket keyrings &amp; dampeners</strong> (and a trophy at Black) as players progress and parents fund the journey, and <strong style={{ color: TEXT }}>resell the Student app</strong> to your families as recurring margin. You set the prices; you keep the upside.
             </p>
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 30px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>

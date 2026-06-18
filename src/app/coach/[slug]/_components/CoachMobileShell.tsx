@@ -125,6 +125,9 @@ export function CoachMobileShell({
           .cm-md{ grid-template-columns:1fr !important }
           .cm-2{ grid-template-columns:1fr !important }
           .cm-3{ grid-template-columns:1fr !important }
+          /* collapsed to one column → stop children spanning multiple tracks,
+             which would otherwise spawn implicit auto columns and overflow */
+          .cm-12 > *, .cm-md > *, .cm-2 > *, .cm-3 > *{ grid-column:auto !important }
         }`}</style>
 
       {/* Top app bar */}

@@ -411,7 +411,7 @@ export function StudentView({ T, accent, density, playerId }: Props) {
             </div>
           </div>
         ) : (
-          <div style={{ padding: '14px 16px', borderRadius: 14, background: accent.dim, border: `1px solid ${accent.border}`, fontSize: 14, fontWeight: 700, color: T.text }}>🏆 {first} has reached the top racket — {belt.name}!</div>
+          <div style={{ padding: '14px 16px', borderRadius: 14, background: accent.dim, border: `1px solid ${accent.border}`, fontSize: 14, fontWeight: 700, color: T.text }}>🏆 {first} has reached {belt.name} — the top racket — and earned the Lumio trophy!</div>
         )}
 
         {/* progress + the journey ahead */}
