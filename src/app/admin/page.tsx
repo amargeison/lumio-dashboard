@@ -85,7 +85,7 @@ export default function AdminDashboard() {
         <StatCard label="Active" value={active} icon={TrendingUp} color="#22C55E" />
         <StatCard label="Trial" value={trial} icon={Clock} color="#F59E0B" />
         <StatCard label="Suspended" value={suspended} icon={AlertTriangle} color="#EF4444" />
-        <StatCard label="MRR" value={`£${(active * 49).toLocaleString()}`} icon={TrendingUp} color="#0D9488" />
+        <StatCard label="MRR (est.)" value={`£${(active * 49).toLocaleString()}`} icon={TrendingUp} color="#0D9488" />
         <StatCard label="New This Month" value={accounts.filter(a => new Date(a.created_at) > new Date(Date.now() - 30 * 86400000)).length} icon={Users} color="#6C3FC5" />
       </div>
 
@@ -123,7 +123,7 @@ export default function AdminDashboard() {
                     <td className="px-5 py-3 capitalize" style={{ color: '#9CA3AF' }}>{plan}</td>
                     <td className="px-5 py-3"><StatusBadge status={status} /></td>
                     <td className="px-5 py-3" style={{ color: '#6B7280' }}>{new Date(a.created_at).toLocaleDateString('en-GB')}</td>
-                    <td className="px-5 py-3"><RagBadge rag={calculateRag({ lastLogin: a.created_at, onboardingComplete: a.onboarding_complete || a.onboarded, integrationsCount: 0 })} /></td>
+                    <td className="px-5 py-3"><RagBadge rag={calculateRag({ lastLogin: a.last_active_at || a.last_login || a.created_at, onboardingComplete: a.onboarding_complete || a.onboarded, integrationsCount: Object.values(a.integrations || {}).filter(Boolean).length })} /></td>
                   </tr>
                 )
               })}

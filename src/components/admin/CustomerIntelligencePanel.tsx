@@ -67,8 +67,8 @@ function OverviewTab({ account, type, rag }: { account: any; type: string; rag: 
         {[
           { label: 'Account Age', value: `${age} days` },
           { label: 'Plan', value: plan },
-          { label: 'Monthly Value', value: `£${monthlyValue}` },
-          { label: 'LTV (24mo)', value: `£${(monthlyValue * 24).toLocaleString()}` },
+          { label: 'Monthly Value (est.)', value: `£${monthlyValue}` },
+          { label: 'LTV (24mo · est.)', value: `£${(monthlyValue * 24).toLocaleString()}` },
         ].map(s => (
           <div key={s.label} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
             <p className="text-xs" style={{ color: '#6B7280' }}>{s.label}</p>

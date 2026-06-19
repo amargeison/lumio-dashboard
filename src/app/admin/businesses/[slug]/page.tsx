@@ -105,7 +105,7 @@ export default function BusinessDetailPage({ params }: { params: Promise<{ slug:
         type="business"
         account={account}
         activity={activity}
-        rag={calculateRag({ lastLogin: account.created_at, onboardingComplete: account.onboarding_complete, integrationsCount: 0 })}
+        rag={calculateRag({ lastLogin: account.last_active_at || account.last_login || account.created_at, onboardingComplete: account.onboarding_complete, integrationsCount: Object.values(account.integrations || {}).filter(Boolean).length })}
       />
 
       {/* Account Info */}
