@@ -33,6 +33,10 @@ const PORTALS: Array<{emoji:string;name:string;pill:string;accent:string;feature
     features:['Salary cap manager — ceiling AND floor, live to the pound','Squad availability — Lumio GPS for match & training load','Player welfare — Lumio Health, concussion & HIA legal-grade audit','Pre-Season Camp mode — periodisation, fitness testing, friendlies','Franchise readiness dashboard — 6 RFU criteria + recruitment pipeline','AI Director of Rugby briefing — GPS, welfare, cap, availability'],
     hook:'The only platform built around the RFU salary cap year — every contract decision modelled against ceiling, floor and franchise readiness before it\'s signed.',
     url:'lumiosports.com/rugby',href:'/rugby'},
+  {emoji:'🎾',name:'Tennis Coach',pill:'Academies · Coaches · One platform, two revenue streams',accent:'#3A8EE0',
+    features:['Session Planner, bookings & player roster — your whole academy in one place','Player Development Tracker — four-corner reviews and lesson summaries','AI session reviews — log a lesson, get a shareable write-up in seconds','Racket Progression reward system — a nine-stage pathway parents fund','Lumio GPS & Vision — on-court load and video analysis per session','Payments, packages & camps — your second revenue stream, built in'],
+    hook:'The platform that runs your whole tennis academy — and pays you back through the Racket Progression reward system, where players collect the journey and parents fund it. One platform, two revenue streams.',
+    url:'lumiosports.com/tennis-coach',href:'/tennis-coach'},
   {emoji:'🎾',name:'Tennis',pill:'ATP · WTA · Touring professionals',accent:'#A3E635',
     features:['ATP/WTA ranking tracker with points expiry calendar','Tournament scheduling — surface load and travel distance','Match analytics — Lumio Vision for serve, return & rally patterns','Workload management — Lumio Wear across hard, clay and grass','Prize money & sponsorship pipeline — live earnings','AI Tour Briefing — ranking trajectory, fitness, opponent draw'],
     hook:'Built for the realities of touring — points expiry, surface transitions and travel load modelled together, not in three separate spreadsheets.',
@@ -52,14 +56,14 @@ const PORTALS: Array<{emoji:string;name:string;pill:string;accent:string;feature
 ]
 
 const PROBLEMS: Array<{accent:string;category:string;emoji:string;quote:string;fact:string;statNum:string;statLabel:string}> = [
-  {accent:'#EF4444',category:'THE ATHLETE',emoji:'🥊',
-    quote:'A world title contender signs a fight contract without knowing what they\'ll take home after manager fees, trainer cut, sanction fees, camp costs and tax across three jurisdictions.',
-    fact:'Most professional fighters have never seen a full purse breakdown before signing a major contract.',
-    statNum:'£0',statLabel:'Financial transparency tools built for athletes'},
-  {accent:'#8B5CF6',category:'THE CLUB',emoji:'🏉',
-    quote:'A Champ Rugby club tracks salary cap headroom in Excel — one formula error from a breach that cost Saracens their league title, 35 points and relegation.',
-    fact:'56 pages of Premiership salary cap regulations. Zero dedicated tools to track compliance in real time.',
-    statNum:'3',statLabel:'Clubs collapsed in 3 years: Wasps, Worcester, London Irish'},
+  {accent:'#3A8EE0',category:'THE COACH',emoji:'🎾',
+    quote:'A tennis coach runs a 60-player academy from a notebook and three WhatsApp groups — chasing lesson payments, remembering who is due to progress, with nothing a parent can actually see.',
+    fact:'Most academy and grassroots coaches run on no software at all. The work that builds loyalty — progress, reviews, rewards — stays invisible and unbilled.',
+    statNum:'£0',statLabel:'Dedicated platforms built for the working coach'},
+  {accent:'#10B981',category:'THE CLUB',emoji:'⚽',
+    quote:'A Championship club models PSR headroom by hand in Excel across a rolling three-year window — one formula error from the points deduction that can undo a whole season on the pitch.',
+    fact:'Profit & Sustainability Rules are enforced across three seasons of accounts, yet most clubs still track compliance in spreadsheets.',
+    statNum:'0',statLabel:'Real-time PSR compliance tools built for football clubs'},
   {accent:'#EC4899',category:'THE WOMEN\'S GAME',emoji:'⚽',
     quote:'A WSL club\'s finance director tracks FSR compliance in a spreadsheet — regulations introduced this season, with points deduction penalties for breach.',
     fact:'75% of women\'s football clubs globally still don\'t have a kit sponsor. The commercial infrastructure of women\'s sport is being built right now.',
@@ -69,15 +73,15 @@ const PROBLEMS: Array<{accent:string;category:string;emoji:string;quote:string;f
 const HERO_CARDS: Array<{border:string;label:string;value:string;pill:string;pillColor:string}> = [
   {border:'#8B5CF6',label:'Cap Headroom',value:'£460,000',pill:'COMPLIANT',pillColor:'#10B981'},
   {border:'#EC4899',label:'FSR Status',value:'74%',pill:'REVIEW',pillColor:'#F59E0B'},
-  {border:'#A3E635',label:'ATP Ranking',value:'#67',pill:'+3 this week',pillColor:'#6B7280'},
-  {border:'#EF4444',label:'Fight Camp',value:'Day 14/56',pill:'Weight on track',pillColor:'#10B981'},
-  {border:'#38BDF8',label:'OWGR',value:'#87',pill:'Race to Dubai: 12th',pillColor:'#6B7280'},
+  {border:'#10B981',label:'Squad Available',value:'21/24',pill:'GPS green',pillColor:'#10B981'},
+  {border:'#3A8EE0',label:'Racket Progression',value:'3 awarded',pill:'This week',pillColor:'#3A8EE0'},
+  {border:'#16A34A',label:'Lessons / week',value:'42',pill:'Academy live',pillColor:'#6B7280'},
 ]
 
 const PILLARS: Array<{icon:string;accent:string;heading:string;body:string;extra?:string;tags?:string[]}> = [
-  {icon:'⚡',accent:'linear-gradient(135deg, #8B5CF6, #06B6D4)',heading:'The briefing that changes how professionals start their day',
-    body:'Delivered at the time you set. Voice or text. Every relevant metric, every compliance deadline, every commercial obligation, every selection decision — synthesised before the first training session, meeting or call of the day. Different content for each role on the same team.',
-    tags:['Football','Rugby','Tennis','Boxing','Golf','Darts','Cricket',"Women's FC"]},
+  {icon:'⚡',accent:'linear-gradient(135deg, #8B5CF6, #06B6D4)',heading:'AI that does the write-up — not just the data.',
+    body:'Log a session, a match or a contract and Lumio turns it into a finished, shareable write-up. AI session reviews for coaches, match recaps for parents, board-ready summaries for clubs — written in your voice, from your real data. The reporting that used to eat your evening, done in seconds.',
+    tags:['Football','Rugby','Cricket',"Women's FC",'Tennis Coach','Junior']},
   {icon:'📡',accent:'#06B6D4',heading:'GPS that syncs itself.',
     body:'Johan Sports units sync session load, ACWR readiness scores, sprint counts, heat maps and fatigue flags directly into your portal — automatically, after every session. No export. No copy-paste. No manual entry.'},
   {icon:'💰',accent:'#10B981',heading:'Every pound. Every contract. Every clause.',
@@ -112,7 +116,7 @@ export default function SportsLandingPage() {
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           {/* Eyebrow */}
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-8 text-sm font-medium" style={{border:'1px solid rgba(139,92,246,0.3)',background:'rgba(139,92,246,0.08)',color:'#D1D5DB'}}>
-            🏆 Ten portals. One platform. Built for sport.
+            🏆 Twelve portals. One platform. Built for sport.
           </div>
 
           {/* Headline */}
@@ -126,13 +130,13 @@ export default function SportsLandingPage() {
 
           {/* Subheadline */}
           <p className="text-lg leading-relaxed mb-10 mx-auto" style={{color:'#94A3B8',maxWidth:680}}>
-            From the Champ Rugby salary cap to the PDC Order of Merit. From WSL FSR compliance to ATP ranking points expiry. From Premiership transfer deadlines to OWGR exemptions. Every sport. Every regulation. Every decision — one platform.
+            From the Premiership salary cap to grassroots Sunday football. From WSL financial-sustainability compliance to the coaching academy court. Football clubs at every level, the rugby, cricket and women&apos;s teams around them, and the academies developing the next generation. Every club, every team, every coach — one platform.
           </p>
 
           {/* Stats */}
           <div className="flex flex-wrap justify-center gap-8 mb-10">
             {[
-              {n:'10',l:'Portals live'},{n:'0',l:'Dedicated sport OS platforms that existed before this'},{n:'£500m',l:"Women's football global revenue with zero dedicated software"},{n:'56',l:'Pages of Premiership salary cap regulations tracked in Excel'},
+              {n:'12',l:'Portals live'},{n:'0',l:'Dedicated sport OS platforms that existed before this'},{n:'£500m',l:"Women's football global revenue with zero dedicated software"},{n:'56',l:'Pages of Premiership salary cap regulations tracked in Excel'},
             ].map((s:{n:string;l:string},i:number)=>(
               <div key={i} className="text-center">
                 <div className="font-black text-3xl md:text-4xl" style={{background:'linear-gradient(135deg, #8B5CF6, #06B6D4)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>{s.n}</div>
@@ -192,7 +196,7 @@ export default function SportsLandingPage() {
       <section ref={portalRef} className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
         <div className="max-w-6xl mx-auto">
           <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>THE PORTALS</p>
-          <h2 className="text-3xl md:text-5xl font-black text-center mb-3">Ten portals. Every sport covered.</h2>
+          <h2 className="text-3xl md:text-5xl font-black text-center mb-3">Twelve portals. Every sport covered.</h2>
           <p className="text-center text-sm mb-14 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>Each portal is a complete club management platform for that sport — not a generic admin tool with a sports logo.</p>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -280,7 +284,7 @@ export default function SportsLandingPage() {
         <div className="absolute bottom-[-60px] right-[-60px] w-[400px] h-[400px] rounded-full" style={{background:'radial-gradient(circle, #06B6D4, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite 4s'}}/>
         <div className="relative z-10 max-w-3xl mx-auto text-center">
           <h2 className="font-black leading-tight mb-4" style={{fontSize:'clamp(2.5rem, 6vw, 5rem)'}}>
-            Ten portals.<br/>One platform.
+            Twelve portals.<br/>One platform.
           </h2>
           <p className="text-2xl md:text-3xl font-bold mb-6" style={{background:'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 50%, #EC4899 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
             Professional sport finally has infrastructure.
