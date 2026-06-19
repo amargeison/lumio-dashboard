@@ -562,10 +562,10 @@ export default function TennisCoachPage() {
           {/* Plan tiers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16, marginBottom: 20 }}>
             {[
-              { name: 'Essential', price: 19, popular: false, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Staff & training camps', 'Mobile coach app'], off: ['No GPS, video or audio', 'No Racket Progression'] },
-              { name: 'Pro Lite', price: 29, popular: false, tag: 'Adds the reward system', feats: ['Everything in Essential', 'Racket Progression reward system', 'Trophy keyrings, dampeners & certificates'], off: ['No GPS, video or audio'] },
-              { name: 'Pro', price: 39, popular: true, tag: 'Most popular', feats: ['Everything in Pro Lite', 'Video & audio + AI session reviews', 'Clip library & coach voice notes'], off: ['No GPS', 'No GPS heatmaps'] },
-              { name: 'Elite', price: 59, popular: false, tag: 'The full system', feats: ['Everything in Pro', 'Lumio GPS Tracker', 'GPS load, court coverage & heatmaps'], off: [] },
+              { name: 'Essential', price: 19, popular: false, available: true, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Staff & training camps', 'Mobile coach app'], off: ['No GPS, video or audio', 'No Racket Progression'] },
+              { name: 'Pro Lite', price: 29, popular: false, available: false, tag: 'Adds the reward system', feats: ['Everything in Essential', 'Racket Progression reward system', 'Trophy keyrings, dampeners & certificates'], off: ['No GPS, video or audio'] },
+              { name: 'Pro', price: 39, popular: true, available: false, tag: 'Most popular', feats: ['Everything in Pro Lite', 'Video & audio + AI session reviews', 'Clip library & coach voice notes'], off: ['No GPS', 'No GPS heatmaps'] },
+              { name: 'Elite', price: 59, popular: false, available: false, tag: 'The full system', feats: ['Everything in Pro', 'Lumio GPS Tracker', 'GPS load, court coverage & heatmaps'], off: [] },
             ].map(t => (
               <div key={t.name} style={{ backgroundColor: CARD, border: `${t.popular ? 2 : 1}px solid ${t.popular ? PURPLE : BORDER}`, borderRadius: 16, padding: 24, position: 'relative', display: 'flex', flexDirection: 'column' }}>
                 {t.popular && <div style={{ position: 'absolute', top: -11, left: 24, background: PURPLE, color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most popular</div>}
@@ -579,7 +579,11 @@ export default function TennisCoachPage() {
                   {t.feats.map(f => <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: TEXT }}><span style={{ color: PURPLE_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>{f}</li>)}
                   {t.off.map(f => <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: MUTED }}><span style={{ color: MUTED, fontWeight: 900, flexShrink: 0 }}>—</span>{f}</li>)}
                 </ul>
-                <Link href="/sports-signup?sport=tenniscoach" style={{ marginTop: 'auto', display: 'block', textAlign: 'center', padding: '11px 18px', borderRadius: 11, backgroundColor: t.popular ? PURPLE : 'transparent', color: t.popular ? '#fff' : TEXT, border: t.popular ? 'none' : `1px solid ${BORDER}`, fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>Choose {t.name} →</Link>
+                {t.available ? (
+                  <Link href="/sports-signup?sport=tenniscoach" style={{ marginTop: 'auto', display: 'block', textAlign: 'center', padding: '11px 18px', borderRadius: 11, backgroundColor: PURPLE, color: '#fff', border: 'none', fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>Choose {t.name} →</Link>
+                ) : (
+                  <div style={{ marginTop: 'auto', display: 'block', textAlign: 'center', padding: '11px 18px', borderRadius: 11, backgroundColor: 'transparent', color: MUTED, border: `1px solid ${BORDER}`, fontSize: 14, fontWeight: 800, cursor: 'default' }}>Coming soon</div>
+                )}
               </div>
             ))}
           </div>
@@ -589,6 +593,7 @@ export default function TennisCoachPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 24 }}>
             {/* Parent / Student access — coach-resold add-on */}
             <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 32 }}>
+              <div style={{ marginBottom: 14 }}><span style={{ display: 'inline-block', background: '#ffffff12', border: `1px solid ${BORDER}`, color: MUTED, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>⏳ Coming soon</span></div>
               <div style={{ fontSize: 13, fontWeight: 800, color: '#06b6d4', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Suggested add-on</div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
                 <span style={{ fontSize: 52, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£9.99</span>
@@ -613,6 +618,7 @@ export default function TennisCoachPage() {
 
           {/* B — Lumio Coach Kit */}
           <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 32, marginBottom: 24 }}>
+            <div style={{ marginBottom: 16 }}><span style={{ display: 'inline-block', background: '#ffffff12', border: `1px solid ${BORDER}`, color: MUTED, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>⏳ Coming soon</span></div>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
               <div style={{ maxWidth: 560 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 10 }}>Lumio Coach Kit</div>
@@ -648,6 +654,7 @@ export default function TennisCoachPage() {
           <div style={{ backgroundColor: CARD, border: `1px solid ${PURPLE}`, borderRadius: 16, padding: 32, marginBottom: 40, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>
             <div style={{ fontSize: 44 }}>🎾🏆</div>
             <div style={{ flex: 1, minWidth: 260 }}>
+              <div style={{ marginBottom: 10 }}><span style={{ display: 'inline-block', background: '#ffffff12', border: `1px solid ${BORDER}`, color: MUTED, padding: '4px 12px', borderRadius: 999, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>⏳ Coming soon</span></div>
               <h3 style={{ fontSize: 22, fontWeight: 900, color: TEXT, marginBottom: 8 }}>The Racket Progression reward system</h3>
               <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>
                 As students pass each level, you award a coloured <strong style={{ color: TEXT }}>racket keyring + matching dampener + certificate</strong> — with a full trophy at Black. Players collect the set; parents pay for the journey. Reorder sets as you award them — a consumable reward that keeps families invested.
