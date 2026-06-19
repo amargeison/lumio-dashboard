@@ -43,6 +43,7 @@ import { CoachMobileShell } from './_components/CoachMobileShell'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
 import { LiveCoachDashboard } from './_components/LiveCoachDashboard'
 import { LiveMessages } from './_components/LiveMessages'
+import { CoachOnboardingWizard } from './_components/CoachOnboardingWizard'
 import {
   LiveModule, RacketProgressionView,
   PLAYERS_CONFIG, STAFF_CONFIG, BOOKINGS_CONFIG, LESSONS_CONFIG, CAMPS_CONFIG, PAYMENTS_CONFIG, GPS_CONFIG,
@@ -105,6 +106,7 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
               isDemoShell: false,
               enabledFeatures: profile.enabled_features || [],
               nickname: profile.nickname ?? null,
+              onboardingComplete: !!profile.onboarding_complete,
             })
           }
         }
@@ -185,6 +187,17 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
   // Live data stats for the rail (real coach portal only; skipped on demo).
   const liveStats = useCoachStats(isEmpty)
+  // Onboarding wizard overlay (real coach portal).
+  const [showWizard, setShowWizard] = useState(false)
+  // Auto-open the wizard on a real coach's first visit (before onboarding is
+  // complete). Skipping it just closes for now; it reopens next visit until
+  // finished. Never fires on the demo portal.
+  useEffect(() => {
+    if (isEmpty && session?.isDemoShell === false && session?.onboardingComplete === false) {
+      setShowWizard(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // Feature flags (admin/plan) — a disabled feature removes its whole module.
   const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags())
   useEffect(() => { const r = () => setFeat(getFeatureFlags()); r(); return subscribeFeatures(r) }, [])
@@ -245,7 +258,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'gpsheatmaps': return <LiveModule config={GPS_CONFIG} T={T} accent={accent} />
         case 'videoaudio':  return <LiveModule config={GPS_CONFIG} T={T} accent={accent} />
         case 'messages':    return <LiveMessages T={T} accent={accent} />
-        case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} />
+        case 'settings':    return <SettingsView T={T} accent={accent} density={density} />
+        case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)} />
       }
       const title = COACH_SIDEBAR.find(i => i.id === active)?.label ?? 'This section'
       return <EmptyModule T={T} accent={accent} density={density} title={title} onNavigate={setActive} />
@@ -288,6 +302,16 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // Swaps the whole dashboard for the purpose-built StudentView (defaults to
   // Mia Chen; its own picker switches child). The Phase-1 "viewing as" banner
   // stays so a head coach can exit back to their own portal.
+  // Onboarding wizard overlay — rendered above whichever shell is active.
+  const wizard = showWizard ? (
+    <CoachOnboardingWizard
+      defaultName={session?.userName || ''}
+      defaultAcademy={session?.clubName || slugClubName || ''}
+      onClose={() => setShowWizard(false)}
+      onDone={() => { if (typeof window !== 'undefined') window.location.reload() }}
+    />
+  ) : null
+
   if (role === 'student') {
     return (
       <div style={{ minHeight: '100vh', background: T.bg, color: T.text, fontFamily: 'var(--font-geist-sans, system-ui)', display: 'flex', flexDirection: 'column' }}>
@@ -304,14 +328,17 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // ─── Mobile shell ─────────────────────────────────────────────────────────
   if (isMobile) {
     return (
-      <CoachMobileShell
-        T={T} accent={accent} active={active} onNavigate={setActive}
-        showDemoBanner={showDemoBanner} hiddenMenu={[...hiddenMenu, ...roleHiddenIds]}
-        avatar={<CoachAvatar size={30} />}
-        roleSwitcher={roleSwitcher} roleBanner={ViewingAsBanner}
-      >
-        {renderView()}
-      </CoachMobileShell>
+      <>
+        {wizard}
+        <CoachMobileShell
+          T={T} accent={accent} active={active} onNavigate={setActive}
+          showDemoBanner={showDemoBanner} hiddenMenu={[...hiddenMenu, ...roleHiddenIds]}
+          avatar={<CoachAvatar size={30} />}
+          roleSwitcher={roleSwitcher} roleBanner={ViewingAsBanner}
+        >
+          {renderView()}
+        </CoachMobileShell>
+      </>
     )
   }
 
@@ -319,6 +346,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   return (
     <div style={{ minHeight: '100vh', display: 'flex', background: T.bg, color: T.text, fontFamily: 'var(--font-geist-sans, system-ui)' }}>
       <style>{responsiveStyle}</style>
+      {wizard}
 
       {/* sidebar */}
       <aside
@@ -435,7 +463,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
               <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
                 <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>Set up your academy</div>
                 <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5, margin: 0 }}>Add players, coaches and bookings from the dashboard and these stats fill in automatically.</p>
-                <button onClick={() => setActive('dashboard')} style={{ appearance: 'none', border: 0, cursor: 'pointer', marginTop: 10, width: '100%', padding: '9px 12px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12, fontWeight: 700 }}>Connect your data</button>
+                <button onClick={() => setShowWizard(true)} style={{ appearance: 'none', border: 0, cursor: 'pointer', marginTop: 10, width: '100%', padding: '9px 12px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12, fontWeight: 700 }}>Set up your academy</button>
               </div>
             ) : (
               <>

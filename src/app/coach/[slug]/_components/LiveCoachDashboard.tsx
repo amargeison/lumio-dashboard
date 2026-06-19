@@ -12,7 +12,7 @@ import { EmptyCoachDashboard } from './EmptyCoachDashboard'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
-export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate }: Common & { clubName: string; onNavigate: (id: string) => void }) {
+export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void }) {
   const [loading, setLoading] = useState(true)
   const [players, setPlayers] = useState<any[]>([])
   const [bookings, setBookings] = useState<any[]>([])
@@ -38,7 +38,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate }:
   const total = players.length + bookings.length + lessons.length + payments.length
   if (total === 0) {
     // Nothing added yet — show the onboarding setup grid.
-    return <EmptyCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={onNavigate} />
+    return <EmptyCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={onNavigate} onStartWizard={onStartWizard} />
   }
 
   const today = new Date().toISOString().slice(0, 10)
