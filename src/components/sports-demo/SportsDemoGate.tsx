@@ -41,6 +41,8 @@ export interface SportsDemoSession {
   enabledFeatures?: string[]
   invites?: { name: string; role: string; email?: string }[]
   nickname?: string | null
+  /** Real coach accounts only — drives first-visit onboarding wizard. */
+  onboardingComplete?: boolean
 }
 
 export type SportKey =

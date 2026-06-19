@@ -24,7 +24,8 @@ const SETUP_CARDS: { id: string; icon: string; title: string; desc: string }[] =
   { id: 'payments',    icon: 'pound',     title: 'Payments',           desc: 'Packages, invoices and renewals' },
 ]
 
-export function EmptyCoachDashboard({ T, accent, density, clubName, onNavigate }: Common & { clubName: string; onNavigate: (id: string) => void }) {
+export function EmptyCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void }) {
+  const connect = () => (onStartWizard ? onStartWizard() : onNavigate('roster'))
   return (
     <div style={{ fontFamily: FONT, display: 'flex', flexDirection: 'column', gap: density.gap }}>
       {/* Welcome hero */}
@@ -36,9 +37,9 @@ export function EmptyCoachDashboard({ T, accent, density, clubName, onNavigate }
           <p style={{ margin: '10px 0 18px', fontSize: 14, color: T.text2, lineHeight: 1.6 }}>
             Your portal is ready and empty. Connect your data — or let our onboarding set it up for you — and every section below fills with your academy&apos;s live information.
           </p>
-          <button onClick={() => onNavigate('roster')}
+          <button onClick={connect}
             style={{ appearance: 'none', border: 0, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 18px', borderRadius: 11, background: accent.hex, color: T.btnText, fontSize: 14, fontWeight: 700, fontFamily: FONT }}>
-            <Icon name="grid" size={15} stroke={1.9} /> Connect your data
+            <Icon name="grid" size={15} stroke={1.9} /> Set up your academy
           </button>
         </div>
       </div>
