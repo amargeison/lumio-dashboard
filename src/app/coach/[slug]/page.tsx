@@ -40,7 +40,13 @@ import { VideoAudioView } from './_components/CoachVideoAudio'
 import { HeatmapsView } from './_components/CoachHeatmaps'
 import { StaffView } from './_components/StaffView'
 import { CoachMobileShell } from './_components/CoachMobileShell'
-import { EmptyCoachDashboard, EmptyModule } from './_components/EmptyCoachDashboard'
+import { EmptyModule } from './_components/EmptyCoachDashboard'
+import { LiveCoachDashboard } from './_components/LiveCoachDashboard'
+import {
+  LiveModule, RacketProgressionView,
+  PLAYERS_CONFIG, STAFF_CONFIG, BOOKINGS_CONFIG, LESSONS_CONFIG, CAMPS_CONFIG, PAYMENTS_CONFIG, GPS_CONFIG,
+} from './_components/LiveModules'
+import { useCoachStats } from './_lib/coach-db'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, tierForFlags, TIERS, type FeatureFlags } from './_lib/feature-flags'
 
 // The three view roles for the role switcher. Head + Coach are the same portal
@@ -176,6 +182,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // the sidebar; if the active view gets hidden, fall back to the dashboard.
   const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
   useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
+  // Live data stats for the rail (real coach portal only; skipped on demo).
+  const liveStats = useCoachStats(isEmpty)
   // Feature flags (admin/plan) — a disabled feature removes its whole module.
   const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags())
   useEffect(() => { const r = () => setFeat(getFeatureFlags()); r(); return subscribeFeatures(r) }, [])
@@ -224,7 +232,19 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
 
   const renderView = () => {
     if (isEmpty) {
-      if (active === 'dashboard') return <EmptyCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} />
+      // Live, persisted data modules for a real coach's portal (Supabase-backed).
+      switch (active) {
+        case 'roster':   return <LiveModule config={PLAYERS_CONFIG} T={T} accent={accent} />
+        case 'staff':    return <LiveModule config={STAFF_CONFIG} T={T} accent={accent} />
+        case 'calendar': return <LiveModule config={BOOKINGS_CONFIG} T={T} accent={accent} />
+        case 'belts':       return <RacketProgressionView T={T} accent={accent} />
+        case 'lessons':     return <LiveModule config={LESSONS_CONFIG} T={T} accent={accent} />
+        case 'camps':       return <LiveModule config={CAMPS_CONFIG} T={T} accent={accent} />
+        case 'payments':    return <LiveModule config={PAYMENTS_CONFIG} T={T} accent={accent} />
+        case 'gpsheatmaps': return <LiveModule config={GPS_CONFIG} T={T} accent={accent} />
+        case 'videoaudio':  return <LiveModule config={GPS_CONFIG} T={T} accent={accent} />
+        case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} />
+      }
       const title = COACH_SIDEBAR.find(i => i.id === active)?.label ?? 'This section'
       return <EmptyModule T={T} accent={accent} density={density} title={title} onNavigate={setActive} />
     }
@@ -403,8 +423,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
               <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{coachName}</div>
               {!isEmpty && <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{settings.cert}</div>}
               <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
-                <RailStat T={T} label="Players" value={isEmpty ? 0 : COACH_ORG.season.activePlayers} />
-                <RailStat T={T} label="Lessons/wk" value={isEmpty ? 0 : COACH_ORG.season.lessonsThisWeek} />
+                <RailStat T={T} label="Players" value={isEmpty ? liveStats.players : COACH_ORG.season.activePlayers} />
+                <RailStat T={T} label="Lessons/wk" value={isEmpty ? liveStats.lessonsThisWeek : COACH_ORG.season.lessonsThisWeek} />
                 <RailStat T={T} label="Retention" value={isEmpty ? '—' : `${COACH_ORG.season.retention}%`} />
               </div>
             </div>
