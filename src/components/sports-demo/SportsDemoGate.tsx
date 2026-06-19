@@ -9,6 +9,7 @@ import { clearDemoSession, wipeDemoSurvivors, touchDemoSessionTs, DEMO_SESSION_T
 // ── SPORT LOGOS ───────────────────────────────────────────────────────────
 const SPORT_LOGOS: Record<string, string> = {
   tennis: '/tennis_logo.png',
+  coach: '/tennis_coach_logo.png',
   darts: '/darts_logo.png',
   golf: '/golf_logo.png',
   boxing: '/boxing_logo.png',

@@ -4,6 +4,7 @@ import { Suspense, useState, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
+import { portalUrlFor } from '@/lib/sports-admin/portal-url'
 
 function getSupabase() {
   return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
@@ -14,10 +15,24 @@ interface IdentifyResult {
   type: UserType
   sport?: string
   founderSport?: string
+  founderSlug?: string | null
+  founderBrand?: string | null
+  founderDisplayName?: string | null
   demoSport?: string
   userName?: string
   clubName?: string
   role?: string
+}
+
+// Resolve a founder's portal destination from identify-user fields, without a
+// client-side DB read. Coach/Women's are slug-based; others go to /{sport}/app.
+function founderDest(info: IdentifyResult): string {
+  const sport = info.founderSport || info.sport
+  if (!sport) return '/sports-signup'
+  if (sport === 'coach' || sport === 'womens') {
+    return portalUrlFor({ sport, portal_slug: info.founderSlug, brand_name: info.founderBrand, display_name: info.founderDisplayName })
+  }
+  return `/${sport}/app`
 }
 
 function SportsLoginForm() {
@@ -56,13 +71,14 @@ function SportsLoginForm() {
       setUserInfo(data)
 
       if (data.type === 'founder') {
-        // Send Supabase Auth OTP
-        const supabase = getSupabase()
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: email.trim(),
-          options: { shouldCreateUser: false },
+        // Send the branded founder OTP (same email as signup, purpose='founder').
+        const otpRes = await fetch('/api/sports-demo/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), sport: data.founderSport || data.sport, clubName: data.founderBrand || undefined, purpose: 'founder' }),
         })
-        if (otpError) throw otpError
+        const otpData = await otpRes.json().catch(() => ({}))
+        if (!otpRes.ok || otpData.error) throw new Error(otpData.error || 'Failed to send code')
         setStep('otp')
         setResendCountdown(30)
         setTimeout(() => inputRefs.current[0]?.focus(), 100)
@@ -96,9 +112,12 @@ function SportsLoginForm() {
     setLoading(true); setError('')
     try {
       if (path === 'founder') {
-        const supabase = getSupabase()
-        const { error: otpError } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false } })
-        if (otpError) throw otpError
+        const otpRes = await fetch('/api/sports-demo/send-otp', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), sport: userInfo.founderSport || userInfo.sport, clubName: userInfo.founderBrand || undefined, purpose: 'founder' }),
+        })
+        const otpData = await otpRes.json().catch(() => ({}))
+        if (!otpRes.ok || otpData.error) throw new Error(otpData.error || 'Failed to send code')
       } else {
         const sport = userInfo.demoSport || userInfo.sport || 'darts'
         const otpRes = await fetch('/api/sports-demo/send-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim(), sport }) })
@@ -119,24 +138,16 @@ function SportsLoginForm() {
     try {
       const effectiveType = userInfo.type === 'both' ? chosenPath : userInfo.type
       if (effectiveType === 'founder') {
-        const supabase = getSupabase()
-        const { data, error: verifyError } = await supabase.auth.verifyOtp({
-          email: email.trim(),
-          token: code,
-          type: 'email',
+        // Branded OTP verify (mints the Supabase session cookie, purpose=founder).
+        const res = await fetch('/api/sports-demo/verify-otp', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), code, sport: userInfo.founderSport || userInfo.sport, purpose: 'founder' }),
         })
-        if (verifyError) throw verifyError
-        if (!data.session) throw new Error('Verification failed — no session returned.')
-
-        if (intendedRedirect) { router.push(intendedRedirect); return }
-
-        const { data: profile } = await supabase
-          .from('sports_profiles')
-          .select('sport')
-          .eq('id', data.session.user.id)
-          .maybeSingle()
-
-        router.push(profile ? `/${profile.sport}/app` : '/sports-signup')
+        const data = await res.json().catch(() => ({}))
+        if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
+        // Hard navigation so the portal reads the freshly-minted session cookie.
+        window.location.href = intendedRedirect || founderDest(userInfo)
+        return
       } else if (effectiveType === 'demo') {
         const res = await fetch('/api/sports-demo/verify-otp', {
           method: 'POST',
@@ -154,6 +165,8 @@ function SportsLoginForm() {
         if (!data.success && !data.verified) throw new Error(data.error || 'Invalid code')
 
         const sport = userInfo.demoSport || userInfo.sport || 'darts'
+        // Coach demo lives at /tennis/coach/demo; other sports at /{sport}/{sport}-demo.
+        const demoBase = sport === 'coach' ? '/tennis/coach/demo' : `/${sport}/${sport}-demo`
 
         // Check if returning demo user has a completed profile — skip the gate
         const supabase = getSupabase()
@@ -173,7 +186,7 @@ function SportsLoginForm() {
             ...(lead.nickname ? { nickname: lead.nickname } : {}),
             ...(lead.role ? { role: lead.role } : {}),
           }).toString()
-          router.push(`/${sport}/${sport}-demo?${restoreParams}`)
+          router.push(`${demoBase}?${restoreParams}`)
           return
         }
 
@@ -184,7 +197,7 @@ function SportsLoginForm() {
           ...(userInfo.clubName ? { club: userInfo.clubName } : {}),
           ...(userInfo.role ? { role: userInfo.role } : {}),
         })
-        router.push(`/${sport}/${sport}-demo?${restoreParams}`)
+        router.push(`${demoBase}?${restoreParams}`)
       }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Invalid or expired code.')

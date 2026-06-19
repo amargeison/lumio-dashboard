@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Eye, Trash2, Download } from 'lucide-react'
 import RagBadge from '@/components/admin/RagBadge'
 import { calculateRag } from '@/lib/rag-score'
-import { portalUrlFor } from '@/lib/sports-admin/portal-url'
+import { impersonateUrl } from '@/lib/sports-admin/portal-url'
 
 const SE: Record<string, string> = { tennis:'🎾', coach:'🎾', golf:'⛳', darts:'🎯', boxing:'🥊', cricket:'🏏', rugby:'🏉', football:'⚽', nonleague:'⚽', grassroots:'⚽', womens:'⚽' }
 const SLABEL: Record<string, string> = { coach: 'Tennis Coach' }
@@ -13,7 +13,6 @@ const ATHLETE_SPORTS = ['tennis','coach','golf','darts','boxing']
 const CLUB_SPORTS = ['football','cricket','rugby','nonleague','grassroots','womens']
 
 function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('sports_admin_token') || '' : '' }
-const portalUrl = portalUrlFor
 const sportLabel = (s: string) => SLABEL[s] || s
 
 function StatusBadge({ status }: { status: string }) {
@@ -125,7 +124,7 @@ export default function SportsAdminUsers() {
                   <td className="px-5 py-3"><RagBadge rag={calculateRag({ lastLogin: u.last_login || u.created_at, onboardingComplete: u.onboarding_complete, integrationsCount: u.enabled_features?.length || 0 })} /></td>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2 justify-end">
-                      <button onClick={() => window.open(portalUrl(u), '_blank')} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
+                      <button onClick={() => window.open(impersonateUrl(u.id, getToken()), '_blank')} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
                         <Eye size={12} /> Impersonate
                       </button>
                       <button onClick={e => handleDelete(e, u.id, u.email)} title="Delete" className="inline-flex items-center px-2 py-1.5 rounded-lg" style={{ border: '1px solid #374151', color: '#6B7280' }}>

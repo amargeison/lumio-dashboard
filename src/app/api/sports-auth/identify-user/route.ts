@@ -18,14 +18,20 @@ export async function POST(req: NextRequest) {
     const authUser = authUsers?.users?.find(u => u.email === normalised)
 
     let founderSport: string | null = null
+    let founderProfile: { sport: string; portal_slug: string | null; brand_name: string | null; display_name: string | null } | null = null
     if (authUser) {
       const { data: profile } = await supabase
         .from('sports_profiles')
-        .select('sport')
+        .select('sport, portal_slug, brand_name, display_name')
         .eq('id', authUser.id)
         .maybeSingle()
-      if (profile) founderSport = profile.sport
+      if (profile) { founderSport = profile.sport; founderProfile = profile }
     }
+    const founderFields = founderProfile ? {
+      founderSlug: founderProfile.portal_slug,
+      founderBrand: founderProfile.brand_name,
+      founderDisplayName: founderProfile.display_name,
+    } : {}
 
     // Check 2: Is this a demo user? (exists in sports_demo_leads)
     const { data: demoLead } = await supabase
@@ -41,6 +47,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         type: 'both',
         founderSport,
+        ...founderFields,
         demoSport: demoLead.sport,
         userName: demoLead.user_name,
         clubName: demoLead.club_name,
@@ -49,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (founderSport) {
-      return NextResponse.json({ type: 'founder', sport: founderSport })
+      return NextResponse.json({ type: 'founder', sport: founderSport, ...founderFields })
     }
 
     if (demoLead) {

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Users2, Building2, TrendingUp, Clock, Sparkles, Activity, Eye } from 'lucide-react'
 import RagBadge from '@/components/admin/RagBadge'
 import { calculateRag } from '@/lib/rag-score'
-import { portalUrlFor } from '@/lib/sports-admin/portal-url'
+import { impersonateUrl } from '@/lib/sports-admin/portal-url'
 
 const SE: Record<string, string> = { tennis:'🎾', golf:'⛳', darts:'🎯', boxing:'🥊', cricket:'🏏', rugby:'🏉', football:'⚽', nonleague:'⚽', grassroots:'⚽', womens:'⚽', coach:'🎾' }
 const ATHLETE_SPORTS = new Set(['tennis','golf','darts','boxing','coach'])
@@ -90,7 +90,7 @@ export default function SportsAdminDashboard() {
   const withLogins = rows.filter(u => (u.login_count || 0) > 0).length
   const aiCalls = rows.reduce((s, u) => s + (u.ai_calls || 0), 0)
 
-  const impersonate = (u: any) => window.open(portalUrlFor(u), '_blank')
+  const impersonate = (u: any) => window.open(impersonateUrl(u.id, getToken()), '_blank')
   const status = (u: any) => u.setup_complete ? 'live' : u.onboarding_complete ? 'active' : 'pending'
 
   return (

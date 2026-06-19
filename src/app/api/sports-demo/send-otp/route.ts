@@ -11,7 +11,8 @@ function getSupabase() {
 export async function POST(req: NextRequest) {
   const supabase = getSupabase()
   try {
-    const { email, sport, clubName } = await req.json()
+    const { email, sport, clubName, purpose } = await req.json()
+    const isFounder = purpose === 'founder'
 
     if (!email || !sport) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -82,16 +83,16 @@ export async function POST(req: NextRequest) {
       await resend.emails.send({
         from: 'Lumio Sports <hello@lumiocms.com>',
         to: email,
-        subject: `Your ${cfg.name} demo code — ${code}`,
+        subject: isFounder ? `Your ${cfg.name} sign-in code — ${code}` : `Your ${cfg.name} demo code — ${code}`,
         html: `<!DOCTYPE html><html><body style="background:#07080F;font-family:DM Sans,Arial,sans-serif;margin:0;padding:40px 20px;">
           <div style="max-width:480px;margin:0 auto;background:#0d1117;border:1px solid #1f2937;border-radius:16px;padding:40px;">
             <div style="text-align:center;margin-bottom:32px;">
               <img src="${cfg.logo}" width="64" height="64" style="display:block;margin:0 auto 12px;object-fit:contain;" alt="${cfg.name}" />
               <div style="font-size:20px;font-weight:700;color:#ffffff;">${cfg.name}</div>
-              <div style="font-size:13px;color:#6b7280;margin-top:4px;">Demo access</div>
+              <div style="font-size:13px;color:#6b7280;margin-top:4px;">${isFounder ? 'Founding member sign-in' : 'Demo access'}</div>
             </div>
             <p style="color:#9ca3af;font-size:14px;margin-bottom:24px;text-align:center;">
-              Your verification code for ${clubName ? `<strong style="color:#fff">${clubName}</strong>` : 'the demo'} is:
+              Your ${isFounder ? 'sign-in' : 'verification'} code for ${clubName ? `<strong style="color:#fff">${clubName}</strong>` : isFounder ? 'your portal' : 'the demo'} is:
             </p>
             <div style="background:#0a0b12;border:2px solid ${cfg.color}40;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
               <div style="font-size:40px;font-weight:800;letter-spacing:12px;color:${cfg.color};">${code}</div>
@@ -104,8 +105,9 @@ export async function POST(req: NextRequest) {
       console.log(`[EMAIL SUPPRESSED — dev] To: ${email} | Code: ${code} | Sport: ${sport}`)
     }
 
-    // Notify Arron of new demo signup (fire and forget)
-    if (process.env.RESEND_API_KEY) {
+    // Notify Arron of new demo signup (fire and forget). Founders sign up
+    // through the founding-member flow which has its own notifications.
+    if (process.env.RESEND_API_KEY && !isFounder) {
       try {
         const { Resend: R2 } = await import('resend')
         const notifier = new R2(process.env.RESEND_API_KEY)

@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION on each deploy that ships SW changes so old caches are
  * pruned and clients pick up the new SW on next reload.
  */
-const CACHE_VERSION = 'v2-2026-04-20-png-icons';
+const CACHE_VERSION = 'v3-2026-06-19-css-refresh';
 const STATIC_CACHE  = `lumio-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `lumio-runtime-${CACHE_VERSION}`;
 const HTML_CACHE    = `lumio-html-${CACHE_VERSION}`;
