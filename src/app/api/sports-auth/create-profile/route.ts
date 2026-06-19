@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { generateSportsWelcomeEmail } from '@/lib/emails/welcome-sports'
+import { slugify } from '@/lib/sports-admin/portal-url'
 
 // All sport IDs the picker exposes
 const ALLOWED_SPORTS = new Set([
@@ -29,9 +30,15 @@ export async function POST(req: NextRequest) {
       nickname,
       sport,
       brandName,
+      clubName,
       avatarUrl,
       brandLogoUrl,
     } = body as Record<string, string | null | undefined>
+
+    // The signup form sends `clubName`; older callers send `brandName`. Accept
+    // either and derive the portal slug from it so impersonation works.
+    const brand = brandName || clubName || null
+    const portalSlug = brand ? slugify(brand) : null
 
     if (!email || !displayName || !sport) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
@@ -64,7 +71,8 @@ export async function POST(req: NextRequest) {
       display_name: displayName,
       nickname: nickname ?? null,
       avatar_url: avatarUrl ?? null,
-      brand_name: brandName ?? null,
+      brand_name: brand,
+      portal_slug: portalSlug,
       brand_logo_url: brandLogoUrl ?? null,
       plan: 'founding',
     })

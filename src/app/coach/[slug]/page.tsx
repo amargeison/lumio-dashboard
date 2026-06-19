@@ -140,10 +140,13 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const line = T.border
   const isMobile = useIsMobile()
 
-  const coachName = session?.userName || settings.coach
+  // Empty (brand-new) portals must show NO demo data — no demo coach photo,
+  // name or credential. Only the account's own real values (or blanks) appear
+  // until they connect their data.
+  const coachName = session?.userName || (isEmpty ? (slugClubName || '') : settings.coach)
   const coachInitials = coachName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-  const coachPhoto = session?.photoDataUrl || COACH_PHOTO
-  const clubName = session?.clubName || slugClubName || settings.academy
+  const coachPhoto = session?.photoDataUrl || (isEmpty ? null : COACH_PHOTO)
+  const clubName = session?.clubName || slugClubName || (isEmpty ? '' : settings.academy)
   const showDemoBanner = !isEmpty && session?.isDemoShell !== false
 
   const CoachAvatar = ({ size }: { size: number }) => (
@@ -398,7 +401,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, textAlign: 'center' }}>
               <div style={{ width: 72, margin: '0 auto' }}><CoachAvatar size={72} /></div>
               <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{coachName}</div>
-              <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{settings.cert}</div>
+              {!isEmpty && <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{settings.cert}</div>}
               <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
                 <RailStat T={T} label="Players" value={isEmpty ? 0 : COACH_ORG.season.activePlayers} />
                 <RailStat T={T} label="Lessons/wk" value={isEmpty ? 0 : COACH_ORG.season.lessonsThisWeek} />
