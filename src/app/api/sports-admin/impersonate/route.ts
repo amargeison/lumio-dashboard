@@ -44,8 +44,13 @@ export async function GET(req: NextRequest) {
 
   // Build the redirect response up-front so the SSR cookie writer can attach the
   // session cookie directly to it (the documented @supabase/ssr App Router pattern).
+  //
+  // Use a RELATIVE Location header rather than NextResponse.redirect(new URL(dest,
+  // req.url)): behind the nginx → PM2 proxy, req.url reflects the internal host
+  // (0.0.0.0:3000), so an absolute redirect points at an invalid address. A
+  // relative path is resolved by the browser against the real public origin.
   const cookieStore = await cookies()
-  const response = NextResponse.redirect(new URL(dest, req.url))
+  const response = new NextResponse(null, { status: 302, headers: { Location: dest } })
   const ssr = createServerClient(url, anonKey, {
     cookies: {
       getAll: () => cookieStore.getAll(),
