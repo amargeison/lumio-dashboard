@@ -321,6 +321,85 @@ export const PAYMENTS_CONFIG: ModuleConfig = {
   columns: ['player_name', 'item', 'amount', 'status', 'due_date'],
 }
 
+export const SESSION_PLANS_CONFIG: ModuleConfig = {
+  table: 'coach_session_plans', title: 'Session Planner', singular: 'Session plan',
+  blurb: 'Plan your coaching sessions and drills.',
+  fields: [
+    { key: 'title', label: 'Title', type: 'text', required: true, placeholder: 'e.g. U10 squad — serve & volley' },
+    { key: 'session_date', label: 'Date', type: 'date' },
+    { key: 'group_name', label: 'Group / player', type: 'text' },
+    { key: 'focus', label: 'Focus', type: 'text' },
+    { key: 'duration_min', label: 'Duration (min)', type: 'number' },
+    { key: 'drills', label: 'Drills', type: 'textarea', placeholder: 'List the drills for this session…' },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
+  columns: ['title', 'session_date', 'group_name', 'focus', 'duration_min'],
+}
+
+export const COURTS_CONFIG: ModuleConfig = {
+  table: 'coach_courts', title: 'Court Planner', singular: 'Court',
+  blurb: 'Your courts, surfaces and hours.',
+  fields: [
+    { key: 'name', label: 'Court name', type: 'text', required: true, placeholder: 'e.g. Court 1' },
+    { key: 'surface', label: 'Surface', type: 'select', options: [
+      { value: 'hard', label: 'Hard' }, { value: 'clay', label: 'Clay' }, { value: 'grass', label: 'Grass' }, { value: 'astro', label: 'Astro' }, { value: 'indoor', label: 'Indoor' },
+    ] },
+    { key: 'location', label: 'Location', type: 'text' },
+    { key: 'hours', label: 'Hours', type: 'text', placeholder: 'e.g. Mon–Fri 8am–8pm' },
+    { key: 'status', label: 'Status', type: 'select', options: [
+      { value: 'available', label: 'Available' }, { value: 'maintenance', label: 'Maintenance' }, { value: 'booked', label: 'Booked out' },
+    ] },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
+  columns: ['name', 'surface', 'location', 'hours', 'status'],
+}
+
+export const DEVELOPMENT_CONFIG: ModuleConfig = {
+  table: 'coach_development', title: 'Player Development', singular: 'Development note',
+  blurb: 'Four-corner development tracking per player.',
+  fields: [
+    { key: 'player_name', label: 'Player', type: 'text', required: true },
+    { key: 'area', label: 'Area', type: 'select', options: [
+      { value: 'technical', label: 'Technical' }, { value: 'tactical', label: 'Tactical' }, { value: 'physical', label: 'Physical' }, { value: 'social', label: 'Social' }, { value: 'psychological', label: 'Psychological' },
+    ] },
+    { key: 'rating', label: 'Rating (1–5)', type: 'number' },
+    { key: 'target', label: 'Target', type: 'text' },
+    { key: 'review_date', label: 'Review date', type: 'date' },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
+  columns: ['player_name', 'area', 'rating', 'target', 'review_date'],
+}
+
+export const EQUIPMENT_CONFIG: ModuleConfig = {
+  table: 'coach_equipment', title: 'Equipment', singular: 'Item',
+  blurb: 'Your equipment inventory.',
+  fields: [
+    { key: 'item', label: 'Item', type: 'text', required: true, placeholder: 'e.g. Balls (dozen)' },
+    { key: 'category', label: 'Category', type: 'text', placeholder: 'e.g. Balls, Rackets, Nets' },
+    { key: 'quantity', label: 'Quantity', type: 'number' },
+    { key: 'status', label: 'Status', type: 'select', options: [
+      { value: 'in_stock', label: 'In stock' }, { value: 'low', label: 'Low' }, { value: 'order', label: 'Order needed' },
+    ] },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
+  columns: ['item', 'category', 'quantity', 'status'],
+}
+
+export const RESOURCES_CONFIG: ModuleConfig = {
+  table: 'coach_resources', title: 'Resource Centre', singular: 'Resource',
+  blurb: 'Documents, links, drills and policies.',
+  fields: [
+    { key: 'title', label: 'Title', type: 'text', required: true },
+    { key: 'type', label: 'Type', type: 'select', options: [
+      { value: 'document', label: 'Document' }, { value: 'video', label: 'Video' }, { value: 'link', label: 'Link' }, { value: 'drill', label: 'Drill' }, { value: 'policy', label: 'Policy' },
+    ] },
+    { key: 'category', label: 'Category', type: 'text' },
+    { key: 'url', label: 'Link / URL', type: 'text', placeholder: 'https://…' },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
+  columns: ['title', 'type', 'category', 'url'],
+}
+
 // ── Racket Progression view (lives over the players table) ───────────────────
 export function RacketProgressionView({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const { rows, loading, edit } = useCoachTable<any>('coach_players')

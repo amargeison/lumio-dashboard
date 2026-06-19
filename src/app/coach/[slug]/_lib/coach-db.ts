@@ -18,6 +18,11 @@ export type CoachTable =
   | 'coach_payments'
   | 'coach_gps_sessions'
   | 'coach_messages'
+  | 'coach_session_plans'
+  | 'coach_courts'
+  | 'coach_development'
+  | 'coach_equipment'
+  | 'coach_resources'
 
 let _sb: ReturnType<typeof createBrowserClient> | null = null
 export function sb() {
