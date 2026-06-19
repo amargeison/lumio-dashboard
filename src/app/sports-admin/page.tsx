@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Users2, Building2, TrendingUp, Clock, Sparkles, Activity, Eye } from 'lucide-react'
 import RagBadge from '@/components/admin/RagBadge'
 import { calculateRag } from '@/lib/rag-score'
+import { portalUrlFor } from '@/lib/sports-admin/portal-url'
 
 const SE: Record<string, string> = { tennis:'🎾', golf:'⛳', darts:'🎯', boxing:'🥊', cricket:'🏏', rugby:'🏉', football:'⚽', nonleague:'⚽', grassroots:'⚽', womens:'⚽', coach:'🎾' }
 const ATHLETE_SPORTS = new Set(['tennis','golf','darts','boxing','coach'])
@@ -33,23 +34,38 @@ function StatusBadge({ status }: { status: string }) {
   return <span className="text-xs font-medium px-2 py-0.5 rounded-full capitalize" style={{ backgroundColor: s.bg, color: s.color }}>{status}</span>
 }
 
-// AI spend tile — visual match to the CMS dashboard tile (demo figures).
+// AI spend tile — live from the global daily spend counter.
 function AiSpendTile() {
+  const [data, setData] = useState<any>(null)
+  useEffect(() => {
+    const load = () => fetch('/api/sports-admin/ai-spend', { headers: { 'x-admin-token': getToken() } })
+      .then(r => r.ok ? r.json() : null).then(setData).catch(() => {})
+    load()
+    const t = setInterval(load, 60000)
+    return () => clearInterval(t)
+  }, [])
+
+  const spend = data?.spendUsd ?? 0
+  const cap = data?.capUsd ?? 5
+  const pct = Math.min(100, Math.round((data?.utilisation ?? 0) * 100))
+  const calls = data?.calls ?? 0
+  const color = pct >= 90 ? '#EF4444' : pct >= 60 ? '#F59E0B' : '#22C55E'
+
   return (
     <div className="rounded-xl p-4" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: '#22C55E' }}><Sparkles size={12} /> AI SPEND TODAY</p>
+        <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color }}><Sparkles size={12} /> AI SPEND TODAY</p>
         <span className="text-[10px]" style={{ color: '#6B7280' }}>resets 00:00 UTC</span>
       </div>
       <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>$0.00</span>
-        <span className="text-xs" style={{ color: '#6B7280' }}>/ $5.00</span>
-        <span className="ml-auto text-xs font-bold" style={{ color: '#22C55E' }}>0%</span>
+        <span className="text-2xl font-bold" style={{ color: '#F9FAFB' }}>${spend.toFixed(2)}</span>
+        <span className="text-xs" style={{ color: '#6B7280' }}>/ ${cap.toFixed(2)}</span>
+        <span className="ml-auto text-xs font-bold" style={{ color }}>{pct}%</span>
       </div>
       <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2937' }}>
-        <div className="h-full" style={{ width: '0%', backgroundColor: '#22C55E' }} />
+        <div className="h-full" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <p className="text-[10px] mt-2" style={{ color: '#6B7280' }}>0 calls today · in-memory (resets on restart)</p>
+      <p className="text-[10px] mt-2" style={{ color: '#6B7280' }}>{data ? `${calls} calls today · ${data.storage || 'in-memory'}` : 'Loading…'}</p>
     </div>
   )
 }
@@ -74,10 +90,7 @@ export default function SportsAdminDashboard() {
   const withLogins = rows.filter(u => (u.login_count || 0) > 0).length
   const aiCalls = rows.reduce((s, u) => s + (u.ai_calls || 0), 0)
 
-  const impersonate = (u: any) => {
-    const slug = u.portal_slug || 'demo'
-    window.open(`/${u.sport}/${slug}`, '_blank')
-  }
+  const impersonate = (u: any) => window.open(portalUrlFor(u), '_blank')
   const status = (u: any) => u.setup_complete ? 'live' : u.onboarding_complete ? 'active' : 'pending'
 
   return (
@@ -87,7 +100,7 @@ export default function SportsAdminDashboard() {
         <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid #1F2937' }}>
           <button onClick={() => setView('athletes')} className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold"
             style={{ backgroundColor: view === 'athletes' ? '#F5A623' : '#111318', color: view === 'athletes' ? '#0A0B10' : '#6B7280' }}>
-            <Users2 size={13} /> Athletes
+            <Users2 size={13} /> Sports
           </button>
           <button onClick={() => setView('clubs')} className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold"
             style={{ backgroundColor: view === 'clubs' ? '#F5A623' : '#111318', color: view === 'clubs' ? '#0A0B10' : '#6B7280' }}>

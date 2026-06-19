@@ -4,14 +4,15 @@ import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { LayoutDashboard, Users2, Building2, Rocket, Activity, Settings, LogOut, Search, Bell } from 'lucide-react'
+import { LayoutDashboard, Users2, Building2, Rocket, Activity, Settings, LogOut, Search, Bell, FlaskConical } from 'lucide-react'
 
 const ADMIN_TOKEN = 'lumio-sports-admin-2026'
 
 const NAV = [
   { href: '/sports-admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/sports-admin/users', label: 'Athletes', icon: Users2 },
+  { href: '/sports-admin/users', label: 'Sports', icon: Users2 },
   { href: '/sports-admin/clubs', label: 'Clubs', icon: Building2 },
+  { href: '/sports-admin/demo', label: 'Demo', icon: FlaskConical },
   { href: '/sports-admin/onboarding', label: 'Onboarding', icon: Rocket },
   { href: '/sports-admin/events', label: 'Activity', icon: Activity },
   { href: '/sports-admin/settings', label: 'Settings', icon: Settings },

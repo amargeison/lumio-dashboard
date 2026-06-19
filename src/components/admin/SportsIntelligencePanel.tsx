@@ -1,13 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, Search, Sparkles, RefreshCw, Copy, Mail, ExternalLink, AlertTriangle, CheckCircle2, Clock, TrendingUp, Users, Zap } from 'lucide-react'
+import { Loader2, Search, Sparkles, RefreshCw, Copy, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import RagBadge from './RagBadge'
-import { type RagBreakdown, calculateRag, ragColor, ragBg } from '@/lib/rag-score'
+import { type RagBreakdown, ragColor } from '@/lib/rag-score'
 
 interface Props {
-  slug: string
-  type: 'business' | 'schools'
+  id: string
   account: any
   activity: any[]
   rag: RagBreakdown
@@ -15,21 +14,25 @@ interface Props {
 
 type Tab = 'overview' | 'research' | 'usage' | 'sales' | 'insights'
 
-export default function CustomerIntelligencePanel({ slug, type, account, activity, rag }: Props) {
+const SE: Record<string, string> = { tennis:'🎾', coach:'🎾', golf:'⛳', darts:'🎯', boxing:'🥊', cricket:'🏏', rugby:'🏉', football:'⚽', nonleague:'⚽', grassroots:'⚽', womens:'⚽' }
+const SLABEL: Record<string, string> = { coach: 'Tennis Coach' }
+function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('sports_admin_token') || '' : '' }
+
+export default function SportsIntelligencePanel({ id, account, activity, rag }: Props) {
   const [tab, setTab] = useState<Tab>('overview')
-  const token = typeof window !== 'undefined' ? localStorage.getItem('admin_session_token') || '' : ''
+  const token = getToken()
+  const isActive = account.setup_complete || account.onboarding_complete
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Company Overview' },
     { id: 'research', label: 'Research & Background' },
     { id: 'usage', label: 'Usage & Behaviour' },
-    { id: 'sales', label: account.status === 'active' ? 'Account Health' : 'Sales Intelligence' },
+    { id: 'sales', label: isActive ? 'Account Health' : 'Sales Intelligence' },
     { id: 'insights', label: 'AI Insights' },
   ]
 
   return (
     <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
-      {/* Tab bar */}
       <div className="flex overflow-x-auto" style={{ borderBottom: '1px solid #1F2937' }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -41,11 +44,11 @@ export default function CustomerIntelligencePanel({ slug, type, account, activit
       </div>
 
       <div className="p-5">
-        {tab === 'overview' && <OverviewTab account={account} type={type} rag={rag} />}
-        {tab === 'research' && <ResearchTab slug={slug} type={type} token={token} />}
+        {tab === 'overview' && <OverviewTab account={account} rag={rag} />}
+        {tab === 'research' && <ResearchTab id={id} token={token} />}
         {tab === 'usage' && <UsageTab activity={activity} />}
         {tab === 'sales' && <SalesTab account={account} rag={rag} activity={activity} />}
-        {tab === 'insights' && <InsightsTab slug={slug} type={type} token={token} />}
+        {tab === 'insights' && <InsightsTab id={id} token={token} />}
       </div>
     </div>
   )
@@ -53,22 +56,21 @@ export default function CustomerIntelligencePanel({ slug, type, account, activit
 
 // ─── Tab 1: Overview ─────────────────────────────────────────────────────────
 
-function OverviewTab({ account, type, rag }: { account: any; type: string; rag: RagBreakdown }) {
-  const name = account.company_name || account.name || '—'
-  const email = account.owner_email || account.email || '—'
+function OverviewTab({ account, rag }: { account: any; rag: RagBreakdown }) {
+  const name = account.brand_name || account.display_name || '—'
+  const email = account.email || '—'
   const domain = email.includes('@') ? email.split('@')[1] : '—'
   const age = account.created_at ? Math.floor((Date.now() - new Date(account.created_at).getTime()) / 86400000) : 0
-  const plan = account.plan || 'trial'
-  const monthlyValue = plan === 'paid' || plan === 'growth' ? 49 : plan === 'enterprise' ? 199 : plan === 'starter' ? 29 : 0
+  const status = account.setup_complete ? 'live' : account.onboarding_complete ? 'active' : 'pending'
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: 'Account Age', value: `${age} days` },
-          { label: 'Plan', value: plan },
-          { label: 'Monthly Value (est.)', value: `£${monthlyValue}` },
-          { label: 'LTV (24mo · est.)', value: `£${(monthlyValue * 24).toLocaleString()}` },
+          { label: 'Plan', value: account.plan || 'trial' },
+          { label: 'Logins', value: account.login_count ?? 0 },
+          { label: 'AI Calls', value: account.ai_calls ?? 0 },
         ].map(s => (
           <div key={s.label} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
             <p className="text-xs" style={{ color: '#6B7280' }}>{s.label}</p>
@@ -78,9 +80,12 @@ function OverviewTab({ account, type, rag }: { account: any; type: string; rag: 
       </div>
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Company', value: name }, { label: 'Domain', value: domain },
-          { label: 'Owner', value: account.owner_name || account.headteacher || '—' }, { label: 'Email', value: email },
-          { label: 'Status', value: account.status || (account.active ? 'active' : 'trial') }, { label: 'Onboarding', value: account.onboarding_complete || account.onboarded ? 'Complete' : 'Incomplete' },
+          { label: 'Sport', value: `${SE[account.sport] || ''} ${SLABEL[account.sport] || account.sport}` },
+          { label: 'Club / brand', value: name },
+          { label: 'Owner', value: account.display_name || '—' },
+          { label: 'Email', value: email },
+          { label: 'Status', value: status },
+          { label: 'Onboarding', value: account.onboarding_complete ? 'Complete' : 'Incomplete' },
         ].map(f => (
           <div key={f.label} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
             <p className="text-xs" style={{ color: '#6B7280' }}>{f.label}</p>
@@ -98,22 +103,22 @@ function OverviewTab({ account, type, rag }: { account: any; type: string; rag: 
 
 // ─── Tab 2: Research ─────────────────────────────────────────────────────────
 
-function ResearchTab({ slug, type, token }: { slug: string; type: string; token: string }) {
+function ResearchTab({ id, token }: { id: string; token: string }) {
   const [research, setResearch] = useState<any>(null)
   const [researchedAt, setResearchedAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/admin/research/${slug}?type=${type}`, { headers: { 'x-admin-token': token } })
+    fetch(`/api/sports-admin/research/${id}`, { headers: { 'x-admin-token': token } })
       .then(r => r.ok ? r.json() : { research: null })
       .then(d => { setResearch(d.research); setResearchedAt(d.researched_at); setFetching(false) })
       .catch(() => setFetching(false))
-  }, [slug, type, token])
+  }, [id, token])
 
   async function doResearch() {
     setLoading(true)
-    const res = await fetch(`/api/admin/research/${slug}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': token }, body: JSON.stringify({ type }) })
+    const res = await fetch(`/api/sports-admin/research/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': token } })
     if (res.ok) { const d = await res.json(); setResearch(d.research); setResearchedAt(d.researched_at) }
     setLoading(false)
   }
@@ -124,9 +129,9 @@ function ResearchTab({ slug, type, token }: { slug: string; type: string; token:
     <div className="py-12 text-center">
       <Search size={32} style={{ color: '#F5A623', margin: '0 auto 12px' }} />
       <p className="text-sm font-bold mb-2" style={{ color: '#F9FAFB' }}>No research yet</p>
-      <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Click below to run AI-powered research on this company</p>
+      <p className="text-xs mb-4" style={{ color: '#6B7280' }}>Click below to run AI-powered research on this account</p>
       <button onClick={doResearch} disabled={loading} className="px-6 py-2.5 rounded-lg text-xs font-bold" style={{ backgroundColor: '#F5A623', color: '#0A0B10' }}>
-        {loading ? <><Loader2 size={12} className="inline animate-spin mr-1" /> Researching...</> : 'Research This Company'}
+        {loading ? <><Loader2 size={12} className="inline animate-spin mr-1" /> Researching...</> : 'Research This Account'}
       </button>
     </div>
   )
@@ -141,7 +146,6 @@ function ResearchTab({ slug, type, token }: { slug: string; type: string; token:
         </button>
       </div>
 
-      {/* Company overview */}
       {r.company_overview && (
         <div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
           <p className="text-xs font-bold mb-2" style={{ color: '#F5A623' }}>Company Overview</p>
@@ -154,7 +158,6 @@ function ResearchTab({ slug, type, token }: { slug: string; type: string; token:
         </div>
       )}
 
-      {/* Lumio fit score */}
       {r.lumio_fit_score && (
         <div className="rounded-lg p-4 flex items-center gap-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
           <div className="text-3xl font-black" style={{ color: r.lumio_fit_score >= 7 ? '#22C55E' : r.lumio_fit_score >= 4 ? '#F59E0B' : '#EF4444' }}>{r.lumio_fit_score}/10</div>
@@ -162,7 +165,6 @@ function ResearchTab({ slug, type, token }: { slug: string; type: string; token:
         </div>
       )}
 
-      {/* Key people */}
       {r.key_people?.length > 0 && (
         <div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
           <p className="text-xs font-bold mb-2" style={{ color: '#F5A623' }}>Key People</p>
@@ -175,7 +177,6 @@ function ResearchTab({ slug, type, token }: { slug: string; type: string; token:
         </div>
       )}
 
-      {/* Sales talking points */}
       {r.sales_talking_points?.length > 0 && (
         <div className="rounded-lg p-4" style={{ backgroundColor: 'rgba(245,166,35,0.04)', border: '1px solid rgba(245,166,35,0.2)' }}>
           <p className="text-xs font-bold mb-2" style={{ color: '#F5A623' }}>Sales Talking Points</p>
@@ -185,7 +186,6 @@ function ResearchTab({ slug, type, token }: { slug: string; type: string; token:
         </div>
       )}
 
-      {/* Risk factors */}
       {r.risk_factors?.length > 0 && (
         <div className="rounded-lg p-4" style={{ backgroundColor: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.2)' }}>
           <p className="text-xs font-bold mb-2" style={{ color: '#EF4444' }}>Risk Factors</p>
@@ -195,7 +195,6 @@ function ResearchTab({ slug, type, token }: { slug: string; type: string; token:
         </div>
       )}
 
-      {/* Competitors, products, tech stack as chip lists */}
       {['competitors', 'products_and_services', 'tech_stack_hints', 'pain_points'].map(key => {
         const items = r[key]
         if (!items?.length) return null
@@ -210,18 +209,6 @@ function ResearchTab({ slug, type, token }: { slug: string; type: string; token:
           </div>
         )
       })}
-
-      {/* Ofsted (schools only) */}
-      {r.ofsted && (
-        <div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-          <p className="text-xs font-bold mb-2" style={{ color: '#F5A623' }}>Ofsted</p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {Object.entries(r.ofsted).map(([k, v]) => (
-              <div key={k}><span style={{ color: '#6B7280' }}>{k.replace(/_/g, ' ')}:</span> <span style={{ color: '#F9FAFB' }}>{String(v || '—')}</span></div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -233,13 +220,11 @@ function UsageTab({ activity }: { activity: any[] }) {
   const totalViews = activity.filter(a => a.action === 'page_view').length
   const lastActive = activity[0]?.created_at ? new Date(activity[0].created_at).toLocaleString('en-GB') : 'Never'
 
-  // Department breakdown
   const deptCounts: Record<string, number> = {}
   activity.filter(a => a.department).forEach(a => { deptCounts[a.department] = (deptCounts[a.department] || 0) + 1 })
   const deptSorted = Object.entries(deptCounts).sort((a, b) => b[1] - a[1])
   const maxDept = deptSorted[0]?.[1] || 1
 
-  // Active days this month
   const thisMonth = new Date().getMonth()
   const activeDays = new Set(activity.filter(a => new Date(a.created_at).getMonth() === thisMonth).map(a => new Date(a.created_at).toDateString())).size
 
@@ -259,10 +244,9 @@ function UsageTab({ activity }: { activity: any[] }) {
         ))}
       </div>
 
-      {/* Department breakdown */}
       {deptSorted.length > 0 && (
         <div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
-          <p className="text-xs font-bold mb-3" style={{ color: '#F5A623' }}>Most Visited Departments</p>
+          <p className="text-xs font-bold mb-3" style={{ color: '#F5A623' }}>Most Visited Areas</p>
           <div className="space-y-2">{deptSorted.slice(0, 8).map(([dept, count]) => (
             <div key={dept} className="flex items-center gap-3">
               <span className="text-xs w-24 truncate" style={{ color: '#9CA3AF' }}>{dept}</span>
@@ -275,7 +259,6 @@ function UsageTab({ activity }: { activity: any[] }) {
         </div>
       )}
 
-      {/* Activity timeline */}
       <div className="rounded-lg p-4" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}>
         <p className="text-xs font-bold mb-3" style={{ color: '#F5A623' }}>Activity Timeline</p>
         {activity.length === 0 ? <p className="text-xs text-center py-4" style={{ color: '#6B7280' }}>No activity yet</p> : (
@@ -294,57 +277,47 @@ function UsageTab({ activity }: { activity: any[] }) {
   )
 }
 
-// ─── Tab 4: Sales / Account Health ───────────────────────────────────────────
+// ─── Tab 4: Account Health / Sales ───────────────────────────────────────────
 
 function SalesTab({ account, rag, activity }: { account: any; rag: RagBreakdown; activity: any[] }) {
-  const isPaid = account.status === 'active' && (account.plan === 'paid' || account.plan === 'growth' || account.plan === 'enterprise')
+  const isActive = account.setup_complete || account.onboarding_complete
   const loginCount = activity.filter(a => a.action === 'login').length
   const deptCount = new Set(activity.filter(a => a.department).map(a => a.department)).size
-  const featureCount = new Set(activity.map(a => a.action)).size
+  const featureCount = (account.enabled_features?.length) || new Set(activity.map(a => a.action)).size
 
-  if (isPaid) {
-    const monthlyValue = account.plan === 'enterprise' ? 199 : account.plan === 'growth' ? 49 : 29
+  if (isActive) {
+    const featureList: string[] = account.enabled_features || []
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>MRR</p><p className="text-lg font-bold" style={{ color: '#22C55E' }}>£{monthlyValue}</p></div>
-          <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>Annual Value</p><p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>£{(monthlyValue * 12).toLocaleString()}</p></div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>Logins</p><p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{loginCount}</p></div>
+          <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>Features Enabled</p><p className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{featureList.length}</p></div>
           <div className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: '1px solid #1F2937' }}><p className="text-xs" style={{ color: '#6B7280' }}>Churn Risk</p><p className="text-lg font-bold" style={{ color: ragColor(rag.band) }}>{rag.band === 'green' ? 'Low' : rag.band === 'amber' ? 'Medium' : 'High'}</p></div>
         </div>
-        {account.plan === 'starter' && (
+        {featureList.length < 4 && (
           <div className="rounded-lg p-4" style={{ backgroundColor: 'rgba(108,63,197,0.06)', border: '1px solid rgba(108,63,197,0.2)' }}>
             <p className="text-xs font-bold mb-1" style={{ color: '#A78BFA' }}>Expansion Opportunity</p>
-            <p className="text-xs" style={{ color: '#D1D5DB' }}>Upgrade to Growth — +£20/mo additional MRR</p>
+            <p className="text-xs" style={{ color: '#D1D5DB' }}>Only {featureList.length} feature{featureList.length === 1 ? '' : 's'} enabled — upsell GPS, Video or the Racket reward system.</p>
           </div>
         )}
       </div>
     )
   }
 
-  // Trial / demo — Sales Intelligence
-  const trialEnds = account.expires_at || account.trial_ends_at
-  const daysLeft = trialEnds ? Math.max(0, Math.ceil((new Date(trialEnds).getTime() - Date.now()) / 86400000)) : '—'
-
   const buyingSignals: string[] = []
   if (loginCount >= 5) buyingSignals.push(`Logged in ${loginCount} times — strong engagement`)
-  if (deptCount >= 3) buyingSignals.push(`Explored ${deptCount} departments`)
+  if (deptCount >= 3) buyingSignals.push(`Explored ${deptCount} areas`)
   if (featureCount >= 3) buyingSignals.push(`Used ${featureCount} different features`)
-  if (account.onboarding_complete || account.onboarded) buyingSignals.push('Completed onboarding')
+  if (account.onboarding_complete) buyingSignals.push('Completed onboarding')
 
   const riskSignals: string[] = []
   if (loginCount < 3) riskSignals.push('Low login count — may not be engaged')
-  if (deptCount < 2) riskSignals.push('Only explored 1 department')
-  if (!(account.onboarding_complete || account.onboarded)) riskSignals.push('Never completed onboarding')
+  if (deptCount < 2) riskSignals.push('Only explored 1 area')
+  if (!account.onboarding_complete) riskSignals.push('Never completed onboarding')
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="rounded-lg p-4 text-center" style={{ backgroundColor: typeof daysLeft === 'number' && daysLeft <= 3 ? 'rgba(239,68,68,0.08)' : 'rgba(245,166,35,0.08)', border: `1px solid ${typeof daysLeft === 'number' && daysLeft <= 3 ? 'rgba(239,68,68,0.3)' : 'rgba(245,166,35,0.3)'}`, minWidth: 80 }}>
-          <p className="text-3xl font-black" style={{ color: typeof daysLeft === 'number' && daysLeft <= 3 ? '#EF4444' : '#F5A623' }}>{daysLeft}</p>
-          <p className="text-xs" style={{ color: '#6B7280' }}>days left</p>
-        </div>
-        <p className="text-sm" style={{ color: '#D1D5DB' }}>This account has logged in {loginCount} times, visited {deptCount} departments, and used {featureCount} features.</p>
-      </div>
+      <p className="text-sm" style={{ color: '#D1D5DB' }}>This account has logged in {loginCount} times, visited {deptCount} areas, and used {featureCount} features.</p>
 
       {buyingSignals.length > 0 && (
         <div className="rounded-lg p-4" style={{ backgroundColor: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.2)' }}>
@@ -365,13 +338,13 @@ function SalesTab({ account, rag, activity }: { account: any; rag: RagBreakdown;
 
 // ─── Tab 5: AI Insights ──────────────────────────────────────────────────────
 
-function InsightsTab({ slug, type, token }: { slug: string; type: string; token: string }) {
+function InsightsTab({ id, token }: { id: string; token: string }) {
   const [report, setReport] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
   async function generate() {
     setLoading(true)
-    const res = await fetch(`/api/admin/insights/${slug}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': token }, body: JSON.stringify({ type }) })
+    const res = await fetch(`/api/sports-admin/insights/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-token': token } })
     if (res.ok) { const d = await res.json(); setReport(d.report) }
     setLoading(false)
   }

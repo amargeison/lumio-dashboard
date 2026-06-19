@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Building2, TrendingUp, Clock, Trophy, Eye } from 'lucide-react'
 import RagBadge from '@/components/admin/RagBadge'
 import { calculateRag } from '@/lib/rag-score'
+import { portalUrlFor } from '@/lib/sports-admin/portal-url'
 
 const SE: Record<string, string> = { football:'⚽', cricket:'🏏', rugby:'🏉', nonleague:'⚽', grassroots:'⚽', womens:'⚽' }
 const CLUB_SPORTS = new Set(['football','cricket','rugby','nonleague','grassroots','womens'])
@@ -45,7 +47,7 @@ export default function SportsAdminClubs() {
   const thisMonth = users.filter(u => new Date(u.created_at) > new Date(Date.now() - 30 * 86400000)).length
   const topSport = users.length ? Object.entries(users.reduce((a: Record<string, number>, u) => { a[u.sport] = (a[u.sport] || 0) + 1; return a }, {})).sort((a, b) => b[1] - a[1])[0]?.[0] || '—' : '—'
   const status = (u: any) => u.setup_complete ? 'live' : u.onboarding_complete ? 'active' : 'pending'
-  const impersonate = (u: any) => window.open(`/${u.sport}/${u.portal_slug || 'demo'}`, '_blank')
+  const impersonate = (u: any) => window.open(portalUrlFor(u), '_blank')
 
   return (
     <div className="space-y-6">
@@ -80,7 +82,9 @@ export default function SportsAdminClubs() {
                 <tr><td colSpan={8} className="px-5 py-8 text-center text-xs" style={{ color: '#6B7280' }}>No clubs yet</td></tr>
               ) : users.map(u => (
                 <tr key={u.id} className="transition-colors hover:bg-white/[0.02]" style={{ borderBottom: '1px solid #1F2937' }}>
-                  <td className="px-5 py-3 font-medium" style={{ color: '#F9FAFB' }}>{u.brand_name || u.display_name || '—'}</td>
+                  <td className="px-5 py-3 font-medium">
+                    <Link href={`/sports-admin/users/${u.id}`} className="hover:underline" style={{ color: '#F9FAFB' }}>{u.brand_name || u.display_name || '—'}</Link>
+                  </td>
                   <td className="px-5 py-3 capitalize" style={{ color: '#9CA3AF' }}>{SE[u.sport] || ''} {u.sport}</td>
                   <td className="px-5 py-3 font-mono text-xs" style={{ color: '#6B7280' }}>{u.portal_slug || '—'}</td>
                   <td className="px-5 py-3 capitalize" style={{ color: '#9CA3AF' }}>{u.plan || 'trial'}</td>

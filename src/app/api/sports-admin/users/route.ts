@@ -64,9 +64,15 @@ export async function GET(req: NextRequest) {
       total_events: events.total,
       has_photo: !!p.avatar_url,
       has_brand: !!p.brand_name,
+      brand_name: p.brand_name || null,
+      portal_slug: p.portal_slug || null,
+      avatar_url: p.avatar_url || null,
+      enabled_features: p.enabled_features || [],
       onboarding_complete: !!p.onboarding_complete,
       setup_type: p.setup_type || null,
       setup_complete: !!p.setup_complete,
+      status: p.status || null,
+      admin_notes: p.admin_notes || null,
     }
   }) || []
 
