@@ -42,6 +42,7 @@ import { StaffView } from './_components/StaffView'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
 import { LiveCoachDashboard } from './_components/LiveCoachDashboard'
+import { LiveMessages } from './_components/LiveMessages'
 import {
   LiveModule, RacketProgressionView,
   PLAYERS_CONFIG, STAFF_CONFIG, BOOKINGS_CONFIG, LESSONS_CONFIG, CAMPS_CONFIG, PAYMENTS_CONFIG, GPS_CONFIG,
@@ -243,6 +244,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'payments':    return <LiveModule config={PAYMENTS_CONFIG} T={T} accent={accent} />
         case 'gpsheatmaps': return <LiveModule config={GPS_CONFIG} T={T} accent={accent} />
         case 'videoaudio':  return <LiveModule config={GPS_CONFIG} T={T} accent={accent} />
+        case 'messages':    return <LiveMessages T={T} accent={accent} />
         case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} />
       }
       const title = COACH_SIDEBAR.find(i => i.id === active)?.label ?? 'This section'
