@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Eye, Trash2, Save, Send, CheckCircle2, XCircle, Pause, Play } from 'lucide-react'
 import SportsIntelligencePanel from '@/components/admin/SportsIntelligencePanel'
 import { calculateRag } from '@/lib/rag-score'
-import { portalUrlFor, slugify } from '@/lib/sports-admin/portal-url'
+import { portalUrlFor, slugify, impersonateUrl } from '@/lib/sports-admin/portal-url'
 
 const SE: Record<string, string> = { tennis:'🎾', coach:'🎾', golf:'⛳', darts:'🎯', boxing:'🥊', cricket:'🏏', rugby:'🏉', football:'⚽', nonleague:'⚽', grassroots:'⚽', womens:'⚽' }
 const SLABEL: Record<string, string> = { coach: 'Tennis Coach' }
@@ -99,7 +99,7 @@ export default function SportsAccountDetail({ params }: { params: Promise<{ id: 
         </div>
         <div className="flex items-center gap-2">
           <Badge status={status} />
-          <button onClick={() => window.open(portalUrl(account), '_blank')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
+          <button onClick={() => window.open(impersonateUrl(id, token), '_blank')} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
             <Eye size={12} /> Impersonate
           </button>
         </div>

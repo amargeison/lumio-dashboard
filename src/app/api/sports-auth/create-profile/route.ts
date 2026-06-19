@@ -54,6 +54,9 @@ export async function POST(req: NextRequest) {
       email,
       email_confirm: true,
       user_metadata: { display_name: displayName, sport, plan: 'founding' },
+      // Mark as a founder up-front so the shared OTP verify route preserves the
+      // role (never downgrades them to a demo user) and skips the demo welcome.
+      app_metadata: { role: 'founder', sport },
     })
 
     if (authError || !authData?.user) {

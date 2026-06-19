@@ -18,3 +18,10 @@ export function portalUrlFor(u: any): string {
   if (u?.sport === 'womens') return `/womens/${slug}`
   return `/${u?.sport}/${slug}`
 }
+
+// Superadmin impersonation: opening this endpoint mints a real Supabase session
+// for the account server-side, then 302-redirects into their live portal — so
+// admins land straight inside the portal instead of the demo sign-in gate.
+export function impersonateUrl(userId: string, token: string): string {
+  return `/api/sports-admin/impersonate?userId=${encodeURIComponent(userId)}&token=${encodeURIComponent(token)}`
+}

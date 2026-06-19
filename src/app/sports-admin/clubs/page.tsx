@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Building2, TrendingUp, Clock, Trophy, Eye } from 'lucide-react'
 import RagBadge from '@/components/admin/RagBadge'
 import { calculateRag } from '@/lib/rag-score'
-import { portalUrlFor } from '@/lib/sports-admin/portal-url'
+import { impersonateUrl } from '@/lib/sports-admin/portal-url'
 
 const SE: Record<string, string> = { football:'⚽', cricket:'🏏', rugby:'🏉', nonleague:'⚽', grassroots:'⚽', womens:'⚽' }
 const CLUB_SPORTS = new Set(['football','cricket','rugby','nonleague','grassroots','womens'])
@@ -47,7 +47,7 @@ export default function SportsAdminClubs() {
   const thisMonth = users.filter(u => new Date(u.created_at) > new Date(Date.now() - 30 * 86400000)).length
   const topSport = users.length ? Object.entries(users.reduce((a: Record<string, number>, u) => { a[u.sport] = (a[u.sport] || 0) + 1; return a }, {})).sort((a, b) => b[1] - a[1])[0]?.[0] || '—' : '—'
   const status = (u: any) => u.setup_complete ? 'live' : u.onboarding_complete ? 'active' : 'pending'
-  const impersonate = (u: any) => window.open(portalUrlFor(u), '_blank')
+  const impersonate = (u: any) => window.open(impersonateUrl(u.id, getToken()), '_blank')
 
   return (
     <div className="space-y-6">

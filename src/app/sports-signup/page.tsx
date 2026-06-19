@@ -4,9 +4,7 @@
 // Flow: Name + Email + Sport → OTP verify → /{sport}/app (wizard handles rest)
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createBrowserClient } from '@supabase/ssr'
 
 type SportId = 'tennis' | 'tenniscoach' | 'golf' | 'darts' | 'boxing' | 'cricket' | 'rugby' | 'football' | 'nonleague' | 'grassroots' | 'womens' | 'junior'
 
@@ -29,7 +27,6 @@ const SPORTS: { id: SportId; label: string; logo: string; color: string }[] = [
 const LIVE_SPORTS = new Set<SportId>(['womens', 'tenniscoach'])
 
 export default function SportsSignupPage() {
-  const router = useRouter()
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
   const preselectedSport = searchParams?.get('sport') || ''
 
@@ -53,6 +50,20 @@ export default function SportsSignupPage() {
     return () => clearTimeout(t)
   }, [resendCountdown])
 
+  // Sport key used by the auth/profile + OTP routes ('coach' for Tennis Coach).
+  const apiSport = () => (sport === 'tenniscoach' ? 'coach' : sport)
+
+  // Sends the branded founder OTP (same email infrastructure as the demo gate,
+  // purpose='founder' so it reads as a sign-in code, not a demo code).
+  const sendFounderOtp = async () => {
+    const res = await fetch('/api/sports-demo/send-otp', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), sport: apiSport(), clubName: club.trim(), purpose: 'founder' }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || data.error) throw new Error(data.error || 'Could not send your code.')
+  }
+
   const handleSubmit = async () => {
     if (!name.trim()) { setError('Enter your full name.'); return }
     if (!email.includes('@')) { setError('Enter a valid email.'); return }
@@ -62,15 +73,13 @@ export default function SportsSignupPage() {
     try {
       const res = await fetch('/api/sports-auth/create-profile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), displayName: name.trim(), sport: sport === 'tenniscoach' ? 'coach' : sport, clubName: club.trim() }),
+        body: JSON.stringify({ email: email.trim(), displayName: name.trim(), sport: apiSport(), clubName: club.trim() }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Signup failed')
 
-      // Send OTP for login
-      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-      const { error: otpError } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: false } })
-      if (otpError) throw otpError
+      // Send the branded founder OTP (replaces Supabase's default code email).
+      await sendFounderOtp()
 
       setStep('otp')
       setResendCountdown(30)
@@ -86,10 +95,18 @@ export default function SportsSignupPage() {
     if (code.length < 6) { setError('Enter the 6-digit code.'); return }
     setLoading(true); setError('')
     try {
-      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-      const { error: verifyError } = await supabase.auth.verifyOtp({ email: email.trim(), token: code, type: 'email' })
-      if (verifyError) throw verifyError
-      router.push(sport === 'womens' ? `/womens/${clubSlug}` : sport === 'tenniscoach' ? `/tennis/coach/${clubSlug}` : `/${sport}/app`)
+      // Verify via the branded OTP route, which also mints the Supabase session
+      // cookie (Path C) and — for purpose='founder' — preserves the founder role
+      // and skips the demo welcome/lead.
+      const res = await fetch('/api/sports-demo/verify-otp', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), code, sport: apiSport(), slug: clubSlug, userName: name.trim(), clubName: club.trim(), purpose: 'founder' }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
+      // Hard navigation so the portal reads the freshly-minted session cookie.
+      const dest = sport === 'womens' ? `/womens/${clubSlug}` : sport === 'tenniscoach' ? `/tennis/coach/${clubSlug}` : `/${sport}/app`
+      window.location.href = dest
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Invalid or expired code.')
     }
@@ -204,7 +221,7 @@ export default function SportsSignupPage() {
             <div style={{ textAlign: 'center' }}>
               {resendCountdown > 0
                 ? <span style={{ color: '#6B7280', fontSize: 12 }}>Resend in {resendCountdown}s</span>
-                : <button onClick={() => { setDigits(['','','','','','']); setError(''); handleSubmit() }}
+                : <button onClick={async () => { setDigits(['','','','','','']); setError(''); try { await sendFounderOtp(); setResendCountdown(30) } catch (e) { setError(e instanceof Error ? e.message : 'Could not resend code.') } }}
                     style={{ background: 'none', border: 'none', color: accent, fontSize: 12, cursor: 'pointer' }}>Resend code</button>
               }
             </div>

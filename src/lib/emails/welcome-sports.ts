@@ -1,22 +1,27 @@
 import { emailLayout, ctaButton } from './layout'
 
 const SPORT_LABELS: Record<string, string> = {
-  tennis: 'Tennis', golf: 'Golf', darts: 'Darts', boxing: 'Boxing',
+  tennis: 'Tennis', coach: 'Tennis Coach', golf: 'Golf', darts: 'Darts', boxing: 'Boxing',
   cricket: 'Cricket', rugby: 'Rugby', football: 'Football',
   nonleague: 'Non-League Football', grassroots: 'Grassroots Football', womens: "Women's Football",
   junior: 'Junior Football',
 }
 
 const DEMO_SLUGS: Record<string, string> = {
-  tennis: 'demo', golf: 'demo', darts: 'demo',
+  tennis: 'demo', coach: 'demo', golf: 'demo', darts: 'demo',
   boxing: 'lumio-demo', cricket: 'cricket-demo', rugby: 'rugby-demo',
   football: 'lumio-dev', nonleague: 'harfield-fc',
   grassroots: 'sunday-rovers-fc', womens: 'oakridge-women-fc',
   junior: 'oakridge-juniors',
 }
 
+// Coach (Tennis Coach) portals live under /tennis/coach/{slug}; every other
+// sport is /{sport}/{slug}.
+const SPORT_PATH_BASE: Record<string, string> = { coach: 'tennis/coach' }
+
 const SPORT_LOGOS: Record<string, string> = {
   tennis: 'https://www.lumiosports.com/tennis_logo.png',
+  coach: 'https://www.lumiosports.com/tennis_coach_logo.png',
   darts: 'https://www.lumiosports.com/darts_logo.png',
   golf: 'https://www.lumiosports.com/golf_logo.png',
   boxing: 'https://www.lumiosports.com/boxing_logo.png',
@@ -86,6 +91,13 @@ const SPORT_FEATURES_EMAIL: Record<string, string[]> = {
     '📋 <strong>Dual Registration Manager</strong> &mdash; expiry alerts, window tracking, parent club comms.',
     '⚡ <strong>Demerger Readiness Tracker</strong> &mdash; for clubs going standalone. Legal checklist, financial modelling.',
   ],
+  coach: [
+    '🎾 <strong>AI Coaching Briefing</strong> &mdash; your day in 60 seconds. Today&rsquo;s lessons, who&rsquo;s progressing, camp prep, payments due and court availability.',
+    '🏆 <strong>Racket Progression reward system</strong> &mdash; a colour-graded reward pathway per player: a coloured racket keyring, matching dampener and certificate at each stage, building to a full trophy at Black.',
+    '📈 <strong>Player Development Tracker</strong> &mdash; lesson summaries, four-corner reviews and AI session notes that build each player&rsquo;s story over time.',
+    '📡 <strong>Lumio GPS &amp; Vision</strong> &mdash; on-court GPS tracking and video analysis: distance, speed, heart rate and movement heatmaps for every session.',
+    '💷 <strong>Payments, Packages &amp; Camps</strong> &mdash; invoices, renewals, package carryover, day camps and tours. One platform. Two revenue streams.',
+  ],
   junior: [
     '⚽ <strong>Safeguarding &amp; Consent Hub</strong> &mdash; welfare officer dashboard, DBS register, photography and filming consent per child, court-order restrictions handled with column-level care. Auditable end to end.',
     '📋 <strong>FA Charter Standard evidence</strong> &mdash; the accreditation pack assembled automatically. Coach qualifications, session counts, welfare officer status, parent-consent coverage. Everything the FA asks for, ready to send.',
@@ -113,9 +125,12 @@ export function generateSportsWelcomeEmail(
   const firstName = name.split(' ')[0] || name
   const sportLabel = SPORT_LABELS[sport] || sport
   const demoSlug = DEMO_SLUGS[sport] || `${sport}-demo`
-  const demoUrl = `https://www.lumiosports.com/${sport}/${demoSlug}`
-  const appUrl = `https://www.lumiosports.com/${sport}/app`
-  const loginUrl = `https://www.lumiosports.com/sports-login?email=${encodeURIComponent(email || '')}&redirectTo=/${sport}/app`
+  const pathBase = SPORT_PATH_BASE[sport] || sport
+  const demoUrl = `https://www.lumiosports.com/${pathBase}/${demoSlug}`
+  const appUrl = `https://www.lumiosports.com/${pathBase}/app`
+  // No redirectTo — let /sports-login resolve the correct destination from the
+  // profile (coach/women's are slug-based, others go to /{sport}/app).
+  const loginUrl = `https://www.lumiosports.com/sports-login?email=${encodeURIComponent(email || '')}`
   const logoHtml = `<img src="${SPORT_LOGOS[sport] || SPORT_LOGOS.tennis}" width="48" height="48" style="object-fit:contain;margin-bottom:16px;" alt="${sportLabel}" />`
 
   if (emailType === 'demo') {

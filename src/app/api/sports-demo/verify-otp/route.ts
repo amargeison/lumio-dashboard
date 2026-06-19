@@ -73,11 +73,15 @@ export async function POST(req: NextRequest) {
   )
 
   try {
-    const { email, code, sport, slug, clubName, userName, role, nickname } = await req.json()
+    const { email, code, sport, slug, clubName, userName, role, nickname, purpose } = await req.json()
 
     if (!email || !code || !sport) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
+
+    // Founder signups reuse this route (branded OTP) but must NOT be treated as
+    // demo users: keep their role, skip the demo welcome email and demo lead.
+    let isFounder = purpose === 'founder'
 
     const normalisedEmail = email.toLowerCase()
 
@@ -147,7 +151,8 @@ export async function POST(req: NextRequest) {
           // refresh demo_last_login only.
           const priorMeta = (linkUser.app_metadata ?? {}) as Record<string, unknown>
           const priorRole = typeof priorMeta.role === 'string' ? priorMeta.role : null
-          if (priorRole !== 'founder') {
+          if (priorRole === 'founder') isFounder = true
+          if (priorRole !== 'founder' && !isFounder) {
             const nowIso = new Date().toISOString()
             const nextMeta: Record<string, unknown> = {
               ...priorMeta,
@@ -168,6 +173,12 @@ export async function POST(req: NextRequest) {
             await admin.auth.admin.updateUserById(linkUser.id, updateAttrs).catch(
               (e: unknown) => console.error('[sports-demo/verify-otp] updateUserById failed:', e),
             )
+          } else if (isFounder && priorRole !== 'founder') {
+            // Branded OTP used for a founder whose role wasn't set yet — set it.
+            await admin.auth.admin.updateUserById(linkUser.id, {
+              app_metadata: { ...priorMeta, role: 'founder', sport },
+              ...(userName ? { user_metadata: { ...(linkUser.user_metadata ?? {}), display_name: userName } } : {}),
+            }).catch((e: unknown) => console.error('[sports-demo/verify-otp] founder updateUserById failed:', e))
           }
 
           // Verify the magic-link's hashed_token via the SSR client to mint
@@ -188,8 +199,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Demo lead log (lead capture table, separate from auth).
-    try {
+    // Demo lead log (lead capture table, separate from auth). Founders are
+    // tracked through the founding-member pipeline, not the demo leads table.
+    if (!isFounder) try {
       await anon.from('sports_demo_leads').upsert({
         email: normalisedEmail,
         sport,
@@ -223,7 +235,9 @@ export async function POST(req: NextRequest) {
       junior: 'Junior Football',
       golf: 'Golf', tennis: 'Tennis', cricket: 'Cricket', darts: 'Darts',
     }
-    if (process.env.RESEND_API_KEY) {
+    // Demo welcome email — founders already received their founding-member
+    // welcome from create-profile, so don't double-send.
+    if (process.env.RESEND_API_KEY && !isFounder) {
       try {
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)

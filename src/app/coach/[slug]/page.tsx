@@ -122,7 +122,7 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
       accentColor="#3A8EE0"
       accentColorLight="#7db3ea"
       sportEmoji="🎾"
-      sportLabel="Lumio Coach"
+      sportLabel="Lumio Tennis Coach"
       roles={COACH_ROLES}
     >
       {(session) => <CoachPortalInner session={session} isEmpty={isEmpty} slugClubName={slugClubName} />}
