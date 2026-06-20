@@ -50,6 +50,7 @@ import { CoachCompliance } from './_components/CoachCompliance'
 import { LiveRoster } from './_components/LiveRoster'
 import { LiveSessionPlanner } from './_components/LiveSessionPlanner'
 import { CoachGpsVideo } from './_components/CoachGpsVideo'
+import { LiveEffortRewards } from './_components/LiveEffortRewards'
 import { LiveStaff } from './_components/LiveStaff'
 import {
   LiveModule, RacketProgressionView,
@@ -275,7 +276,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'lessons':     return <LiveModule config={LESSONS_CONFIG} T={T} accent={accent} />
         case 'camps':       return <LiveModule config={CAMPS_CONFIG} T={T} accent={accent} />
         case 'payments':    return <LiveModule config={PAYMENTS_CONFIG} T={T} accent={accent} />
-        case 'gpsheatmaps': return <CoachGpsVideo T={T} accent={accent} />
+        case 'gpsheatmaps': return <LiveEffortRewards T={T} accent={accent} density={density} />
         case 'videoaudio':  return <CoachGpsVideo T={T} accent={accent} />
         case 'planner':     return <LiveSessionPlanner T={T} accent={accent} density={density} />
         case 'venues':      return <LiveModule config={COURTS_CONFIG} T={T} accent={accent} />
@@ -306,7 +307,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       case 'resources':   return <ResourcesView T={T} accent={accent} density={density} />
       case 'equipment':   return <EquipmentView T={T} accent={accent} density={density} />
       case 'payments':    return <PaymentsView T={T} accent={accent} density={density} />
-      case 'settings':    return <SettingsView T={T} accent={accent} density={density} />
+      case 'settings':    return <><CoachCompliance T={T} accent={accent} demo /><SettingsView T={T} accent={accent} density={density} /></>
       default:            return <DashboardView T={T} accent={accent} density={density} onNavigate={setActive} />
     }
   }

@@ -27,10 +27,10 @@ import {
 import { RECORDINGS_SEED, type Recording } from '../_lib/recordings-data'
 import { GPS_VIDEO_DATA, type GpsSession } from '../_lib/gps-video-data'
 import { getSettings } from '../_lib/settings-store'
-import {
-  CourtPositionalHeatmap, CourtCoverageGrid, HeatLegend, TENNIS_RALLY_ANCHORS, GpsLineChart,
-} from './CoachHeatmaps'
+import { GpsLineChart } from './CoachHeatmaps'
+import { scoreGpsSession, levelFor, bandLabel } from '../_lib/effort-rewards'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags } from '../_lib/feature-flags'
+import { WatchConnectPanel } from './WatchConnectPanel'
 
 type Props = { T: ThemeTokens; accent: AccentTokens; density: Density; playerId: string }
 
@@ -232,6 +232,14 @@ export function StudentView({ T, accent, density, playerId }: Props) {
         </div>
       </PCard>
 
+      {/* Connect a watch — earn XP from your own smartwatch */}
+      <WatchConnectPanel
+        T={T} accent={accent}
+        token={`demo-${player.seed}-lumio-watch-sample-token`}
+        playerName={first}
+        consentOk
+      />
+
       {/* ════ THE DIFFERENTIATED TRIO — lead with these ════════════════════════ */}
 
       {/* 1 · HIGHLIGHTS */}
@@ -366,34 +374,51 @@ export function StudentView({ T, accent, density, playerId }: Props) {
         )}
       </PCard>
 
-      {/* HEATMAPS — kept as its own section on the main page */}
+      {/* EFFORT REWARDS — XP from their own watch (separate from Racket Progression) */}
       <PCard T={T} density={density}>
-        <PSection T={T} accent={accent} icon="grid" title={`Where ${first} plays`} sub="Movement & court coverage from their latest session" lead />
-        {gpsSession ? (
-          <>
-            <div style={twoCol}>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 6 }}>Rally movement</div>
-                <div style={{ maxWidth: 320, margin: '0 auto' }}>
-                  <CourtPositionalHeatmap width={CW} height={CH} seed={`${player.id}-${gpsSession.id}-rally`} anchors={TENNIS_RALLY_ANCHORS} />
+        <PSection T={T} accent={accent} icon="trophy" title={`${first}'s effort rewards`} sub="XP earned from sessions on their own smartwatch" lead />
+        {(() => {
+          const es = (gps?.sessions ?? []).map(s => ({ s, sc: scoreGpsSession(s, player.age) }))
+          if (!es.length) return <EmptyHint T={T} accent={accent} icon="trophy" title={`No watch sessions for ${first} yet`} sub="Connect a watch to start earning XP each session." />
+          const xpTotal = es.reduce((a, x) => a + x.sc.xp, 0)
+          const lvl = levelFor(xpTotal)
+          const latest = es[0]
+          const tone = (n: number) => n >= 70 ? T.good : n >= 40 ? T.warn : T.bad
+          return (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 14 }}>
+                <div style={{ minWidth: 110 }}>
+                  <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total XP</div>
+                  <div className="tnum" style={{ fontSize: 32, fontWeight: 800, color: accent.hex, lineHeight: 1.1 }}>{xpTotal.toLocaleString()}</div>
                 </div>
-                <div style={{ fontSize: 11, color: T.text3, marginTop: 6, textAlign: 'center' }}>Mostly around the baseline, building rallies — exactly where we want them at this level.</div>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: T.text, marginBottom: 6 }}>Court coverage</div>
-                <div style={{ maxWidth: 320, margin: '0 auto' }}>
-                  <CourtCoverageGrid width={CW} height={CH} seed={`${player.id}-${gpsSession.id}-cov`} />
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
+                    <span style={{ color: T.text2, fontWeight: 700 }}>🏅 Level {lvl.idx + 1} · {lvl.cur.name}</span>
+                    <span style={{ color: T.text3 }}>{lvl.next ? `Next: ${lvl.next.name}` : 'Max level'}</span>
+                  </div>
+                  <div style={{ height: 12, borderRadius: 999, background: T.hover, overflow: 'hidden', border: `1px solid ${T.border}` }}>
+                    <div style={{ width: `${lvl.pct}%`, height: '100%', background: accent.hex }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: T.text3, marginTop: 5 }}>{lvl.next ? `${(lvl.next.min - xpTotal).toLocaleString()} XP to ${lvl.next.name}` : 'Top level reached'} · {es.length} session{es.length === 1 ? '' : 's'}</div>
                 </div>
-                <div style={{ fontSize: 11, color: T.text3, marginTop: 6, textAlign: 'center' }}>How {first} covers their side of the court across the session.</div>
               </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 12, fontSize: 10, color: T.text3 }}>
-              <span style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>Less</span><HeatLegend T={T} /><span style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>More</span>
-            </div>
-          </>
-        ) : (
-          <EmptyHint T={T} accent={accent} icon="grid" title={`No movement maps for ${first} yet`} sub="Heatmaps appear after a GPS-tracked session." />
-        )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10 }}>
+                {([['Effort', latest.sc.effort], ['Movement', latest.sc.movement], ['Consistency', latest.sc.consistency]] as const).map(([l, n]) => (
+                  <div key={l} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '11px 13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <span style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{l}</span>
+                      <span style={{ fontSize: 9.5, fontWeight: 800, color: tone(n) }}>{bandLabel(n)}</span>
+                    </div>
+                    <div className="tnum" style={{ fontSize: 22, fontWeight: 800, color: T.text, marginTop: 2 }}>{n}<span style={{ fontSize: 11, color: T.text3 }}>/100</span></div>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, margin: '12px 0 0' }}>
+                Estimated smartwatch effort — it builds XP and effort levels, stays separate from racket progression, and never tracks court position.
+              </p>
+            </>
+          )
+        })()}
       </PCard>
       </>)}
 

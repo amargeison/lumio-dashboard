@@ -26,6 +26,7 @@ export type CoachTable =
   | 'coach_attendance'
   | 'coach_player_skills'
   | 'coach_consent_submissions'
+  | 'coach_watch_sessions'
 
 let _sb: ReturnType<typeof createBrowserClient> | null = null
 export function sb() {

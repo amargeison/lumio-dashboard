@@ -56,6 +56,42 @@ function MiniStat({ T, label, value, c }: { T: ThemeTokens; label: string; value
   )
 }
 
+// ─── DBS / safeguarding register (demo) ──────────────────────────────────────
+// Sample DBS + safeguarding records per coach so the demo shows the same
+// register the live portal captures. A couple are deliberately expired / due /
+// missing so the "attention needed" warning has something to flag.
+type DbsRecord = { number: string | null; issued: string | null; expiry: string | null; safeTrained: boolean; safeDate: string | null }
+const DEMO_DBS: Record<string, DbsRecord> = {
+  pete:   { number: '0012 3456 7890', issued: '2024-09-02', expiry: '2027-09-02', safeTrained: true,  safeDate: '2025-10-14' },
+  rachel: { number: '0023 4567 8901', issued: '2024-06-18', expiry: '2027-06-18', safeTrained: true,  safeDate: '2025-09-03' },
+  marcus: { number: '0034 5678 9012', issued: '2023-08-20', expiry: '2026-08-20', safeTrained: true,  safeDate: '2025-04-22' }, // expiring soon
+  sofia:  { number: '0045 6789 0123', issued: '2024-11-05', expiry: '2027-11-05', safeTrained: true,  safeDate: '2025-11-19' },
+  david:  { number: '0056 7890 1234', issued: '2024-02-12', expiry: '2027-02-12', safeTrained: true,  safeDate: '2025-06-30' },
+  elena:  { number: '0067 8901 2345', issued: '2023-04-12', expiry: '2026-04-12', safeTrained: true,  safeDate: '2024-12-01' }, // expired
+  jamie:  { number: '0078 9012 3456', issued: '2024-07-30', expiry: '2027-07-30', safeTrained: true,  safeDate: '2025-08-15' },
+  aisha:  { number: '0089 0123 4567', issued: '2024-05-09', expiry: '2027-05-09', safeTrained: false, safeDate: null },        // safeguarding gap
+  theo:   { number: '0090 1234 5678', issued: '2024-10-01', expiry: '2027-10-01', safeTrained: true,  safeDate: '2025-10-01' },
+  grace:  { number: '0101 2345 6789', issued: '2023-09-08', expiry: '2026-09-08', safeTrained: true,  safeDate: '2025-03-12' }, // expiring soon
+  ben:    { number: '0112 3456 7890', issued: '2025-01-15', expiry: '2028-01-15', safeTrained: true,  safeDate: '2025-02-04' },
+  nadia:  { number: '0123 4567 8901', issued: '2024-12-03', expiry: '2027-12-03', safeTrained: true,  safeDate: '2025-01-20' },
+  luca:   { number: '0134 5678 9012', issued: '2024-08-22', expiry: '2027-08-22', safeTrained: true,  safeDate: '2025-07-09' },
+  chloe:  { number: null,             issued: null,         expiry: null,         safeTrained: false, safeDate: null },        // no DBS on file
+  ollie:  { number: '0156 7890 1234', issued: '2025-02-18', expiry: '2028-02-18', safeTrained: false, safeDate: null },        // safeguarding gap
+}
+const DAY = 86400000
+function dbsState(rec: DbsRecord | undefined): { label: string; colour: string; short: string } {
+  if (!rec || !rec.expiry) return { label: 'No DBS on file', colour: '#EF4444', short: 'Missing' }
+  const days = Math.floor((new Date(rec.expiry).getTime() - Date.now()) / DAY)
+  if (days < 0) return { label: 'Expired', colour: '#EF4444', short: 'Expired' }
+  if (days <= 90) return { label: `Expires in ${days}d`, colour: '#F59E0B', short: 'Due soon' }
+  return { label: 'Valid', colour: '#22C55E', short: 'Valid' }
+}
+function dbsFor(coachId: string): DbsRecord | undefined { return DEMO_DBS[coachId] }
+function DbsBadge({ rec }: { rec: DbsRecord | undefined }) {
+  const st = dbsState(rec)
+  return <span style={{ fontSize: 9, fontWeight: 700, color: st.colour, background: `${st.colour}1a`, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>DBS {st.short}</span>
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 export function StaffView({ T, accent, density, onNavigate }: Common & { onNavigate?: (s: string) => void }) {
   const [added, setAdded] = useState<TodaySession[]>([])
@@ -112,6 +148,54 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
           </div>
         </Card>
 
+        {/* DBS & safeguarding */}
+        {(() => {
+          const rec = dbsFor(sel.id)
+          const st = dbsState(rec)
+          return (
+            <>
+              <SectionHead T={T} title="DBS & safeguarding" right={<span style={{ color: st.colour, fontWeight: 700, fontFamily: FONT_MONO }}>{st.label}</span>} />
+              <Card T={T} density={density} style={{ marginBottom: density.gap }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 18 }}>
+                  <div style={{ minWidth: 130 }}>
+                    <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>DBS status</div>
+                    <div style={{ marginTop: 4 }}><span style={{ fontSize: 12, fontWeight: 700, color: st.colour, background: `${st.colour}1a`, padding: '3px 9px', borderRadius: 5 }}>{st.label}</span></div>
+                  </div>
+                  <div style={{ minWidth: 130 }}>
+                    <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>DBS number</div>
+                    <div className="tnum" style={{ fontSize: 13, color: T.text, marginTop: 5, fontFamily: FONT_MONO }}>{rec?.number ?? '—'}</div>
+                  </div>
+                  <div style={{ minWidth: 110 }}>
+                    <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Issued</div>
+                    <div style={{ fontSize: 13, color: T.text, marginTop: 5 }}>{rec?.issued ? new Date(rec.issued).toLocaleDateString('en-GB') : '—'}</div>
+                  </div>
+                  <div style={{ minWidth: 110 }}>
+                    <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Expiry</div>
+                    <div style={{ fontSize: 13, color: T.text, marginTop: 5 }}>{rec?.expiry ? new Date(rec.expiry).toLocaleDateString('en-GB') : '—'}</div>
+                  </div>
+                  <div style={{ minWidth: 150 }}>
+                    <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Safeguarding training</div>
+                    <div style={{ fontSize: 13, marginTop: 5, color: rec?.safeTrained ? T.good : T.warn, fontWeight: 600 }}>
+                      {rec?.safeTrained ? `✓ ${rec.safeDate ? new Date(rec.safeDate).toLocaleDateString('en-GB') : 'Trained'}` : 'Not recorded'}
+                    </div>
+                  </div>
+                </div>
+                {(st.short !== 'Valid' || !rec?.safeTrained) && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 11.5, color: T.warn }}>
+                      {st.short === 'Missing' ? 'No DBS on file — request a check before this coach works unsupervised.'
+                        : st.short === 'Expired' ? 'DBS has expired — renew before this coach works unsupervised.'
+                        : st.short === 'Due soon' ? 'DBS expires soon — start the renewal now.'
+                        : 'Safeguarding training not recorded.'}
+                    </span>
+                    <button style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${accent.hex}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '6px 12px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>Record update</button>
+                  </div>
+                )}
+              </Card>
+            </>
+          )
+        })()}
+
         {/* their week */}
         <SectionHead T={T} title="This week" right="Mon 8 – Sun 14 Jun" />
         <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto', marginBottom: density.gap }}>
@@ -147,11 +231,14 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
 
   const sumHours = coaches.reduce((a, c) => a + stats[c.id].hoursBooked, 0)
   const sumCap = coaches.reduce((a, c) => a + c.hoursPerWeek, 0)
+  const dbsValid = coaches.filter(c => dbsState(dbsFor(c.id)).short === 'Valid').length
+  const dbsFlagged = coaches.filter(c => { const s = dbsState(dbsFor(c.id)).short; return s !== 'Valid' })
   const summary = [
     { l: 'Coaches', v: coaches.length, c: T.text },
     { l: 'On leave', v: coaches.filter(c => c.status === 'leave').length, c: T.warn },
     { l: 'Players', v: ALL_PLAYERS.length, c: accent.hex },
     { l: 'Sessions this week', v: ALL_BOOKINGS.filter(b => b.status !== 'cancelled').length, c: T.text },
+    { l: 'DBS valid', v: `${dbsValid}/${coaches.length}`, c: dbsValid === coaches.length ? T.good : T.warn },
     { l: 'Club utilisation', v: `${sumCap ? Math.round((sumHours / sumCap) * 100) : 0}%`, c: T.good },
   ]
 
@@ -177,6 +264,16 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
         ))}
       </div>
 
+      {/* DBS / safeguarding attention */}
+      {dbsFlagged.length > 0 && (
+        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 12, padding: '12px 16px', marginBottom: density.gap }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#F59E0B', marginBottom: 4 }}>⚠ DBS &amp; safeguarding attention needed</div>
+          <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.5 }}>
+            {dbsFlagged.map(c => `${c.name} (${dbsState(dbsFor(c.id)).label})`).join(', ')}
+          </div>
+        </div>
+      )}
+
       {/* role filter tabs */}
       <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 8, marginBottom: density.gap, width: 'fit-content', flexWrap: 'wrap' }}>
         {roles.map(r => (
@@ -198,7 +295,10 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
                 </div>
                 <div title={c.status === 'active' ? 'Active' : 'On leave'} style={{ width: 9, height: 9, borderRadius: '50%', background: statusColour(T, c.status), flexShrink: 0 }} />
               </div>
-              <div style={{ fontSize: 10.5, color: T.text3, marginTop: 10 }}>{c.accreditation}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+                <span style={{ fontSize: 10.5, color: T.text3, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.accreditation}</span>
+                <DbsBadge rec={dbsFor(c.id)} />
+              </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
                 {c.specialisms.map(sp => <Chip key={sp} T={T}>{sp}</Chip>)}
               </div>

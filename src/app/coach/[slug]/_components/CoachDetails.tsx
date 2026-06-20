@@ -16,6 +16,7 @@ import {
 import { addPlan, hasPlan } from '../_lib/session-plan'
 import { getSettings } from '../_lib/settings-store'
 import { requestOpenLesson } from '../_lib/lessons-store'
+import { WatchConnectPanel } from './WatchConnectPanel'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -146,7 +147,7 @@ export function PlayerDetailModal({ T, accent, density, player, onClose, onNavig
   const totalSkills = ALL_SKILLS.length
   const earned = ALL_SKILLS.filter(s => s.beltIndex < player.beltIndex).length
     + belt.skills.filter((_s, si) => skillScore(player.seed, player.beltIndex, si, player.beltIndex) >= 3).length
-  const [tab, setTab] = useState<'dev' | 'contact' | 'lessons'>('dev')
+  const [tab, setTab] = useState<'dev' | 'contact' | 'lessons' | 'consent'>('dev')
   const history = playerLessons(player)
 
   return (
@@ -194,12 +195,14 @@ export function PlayerDetailModal({ T, accent, density, player, onClose, onNavig
 
           {/* tabs */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 14, padding: 2, background: T.hover, borderRadius: 9, width: 'fit-content' }}>
-            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${history.length}`]] as const).map(([id, lbl]) => (
+            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${history.length}`], ['consent', 'Consent']] as const).map(([id, lbl]) => (
               <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === id ? T.panel : 'transparent', color: tab === id ? T.text : T.text2, fontWeight: tab === id ? 600 : 400, boxShadow: tab === id ? `0 0 0 1px ${T.border}` : 'none' }}>{lbl}</button>
             ))}
           </div>
 
           {tab === 'contact' && <ContactPanel T={T} accent={accent} player={player} />}
+
+          {tab === 'consent' && <ConsentPanel T={T} accent={accent} player={player} />}
 
           {tab === 'dev' && (
           <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -314,6 +317,87 @@ function ContactPanel({ T, accent, player }: { T: ThemeTokens; accent: AccentTok
       <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
         {primaryEmail && <a href={`mailto:${primaryEmail}`} style={{ appearance: 'none', textDecoration: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 7 }}><Icon name="megaphone" size={13} stroke={1.9} /> Email {c.parentName ? 'parent' : 'player'}</a>}
         {primaryPhone && <a href={`tel:${primaryPhone.replace(/\s/g, '')}`} style={{ appearance: 'none', textDecoration: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 7 }}>Call</a>}
+      </div>
+    </div>
+  )
+}
+
+// ─── Consent tab (GDPR) ──────────────────────────────────────────────────────
+// Per-player consent record (data / photo-video / medical), mirroring the live
+// portal's consent capture. Demo values are derived from the player's seed so
+// each player shows a consistent, varied picture (some without photo or medical
+// consent, so the gating story is visible).
+function ConsentPanel({ T, accent, player }: { T: ThemeTokens; accent: AccentTokens; player: Player }) {
+  const dc = {
+    data: true,
+    photo: player.seed % 4 !== 0,
+    medical: player.seed % 3 !== 0,
+    wearable: player.seed % 5 !== 0,
+  }
+  const by = player.parent || `${player.name}'s parent/guardian`
+  const dateNum = 1 + (player.seed % 27)
+  const consentDate = `${String(dateNum).padStart(2, '0')}/03/2026`
+  const medicalNotes = dc.medical
+    ? (player.seed % 2 === 0 ? 'Mild asthma — inhaler in kit bag.' : 'No known medical conditions or allergies.')
+    : null
+
+  const Row = ({ label, desc, given }: { label: string; desc: string; given: boolean }) => (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '11px 0', borderTop: `1px solid ${T.border}` }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{label}</div>
+        <div style={{ fontSize: 11, color: T.text3, marginTop: 2, lineHeight: 1.45 }}>{desc}</div>
+      </div>
+      <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 700, color: given ? T.good : T.warn, background: given ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.12)', padding: '4px 10px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+        {given ? '✓ Given' : 'Not given'}
+      </span>
+    </div>
+  )
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>Consent &amp; data permissions</span>
+        <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>Recorded by {by} · {consentDate}</span>
+      </div>
+
+      <Row label="Data processing" desc="Store and process this player's details to coach them, run sessions and manage payments." given={dc.data} />
+      <Row label="Photo & video" desc="Capture photos and video (incl. GPS/match footage) for coaching and progress reviews." given={dc.photo} />
+      <Row label="Medical & emergency" desc="Hold medical and emergency information to keep this player safe on court." given={dc.medical} />
+      <Row label="Wearable / heart-rate" desc="Process smartwatch heart-rate and effort data to award XP through the Racket Progression rewards." given={dc.wearable} />
+
+      {!dc.wearable && (
+        <div style={{ marginTop: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10, padding: '10px 13px', fontSize: 11.5, color: T.text2, lineHeight: 1.5 }}>
+          ⚠ No wearable/heart-rate consent — smartwatch effort tracking is blocked for this player until a parent records consent.
+        </div>
+      )}
+
+      {!dc.photo && (
+        <div style={{ marginTop: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 10, padding: '10px 13px', fontSize: 11.5, color: T.text2, lineHeight: 1.5 }}>
+          ⚠ No photo/video consent — this player is excluded from GPS and video capture until consent is recorded.
+        </div>
+      )}
+
+      {medicalNotes && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Medical notes</div>
+          <div style={{ fontSize: 12, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '9px 11px', lineHeight: 1.5 }}>{medicalNotes}</div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+        <button style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
+          <Icon name="check" size={13} stroke={1.9} /> Update consent
+        </button>
+        <button style={{ appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Send consent form to parent</button>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <WatchConnectPanel
+          T={T} accent={accent}
+          token={`demo-${player.seed}-lumio-watch-sample-token`}
+          playerName={player.name.split(' ')[0]}
+          consentOk={dc.wearable}
+        />
       </div>
     </div>
   )
