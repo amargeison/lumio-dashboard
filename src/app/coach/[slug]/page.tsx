@@ -44,6 +44,7 @@ import { EmptyModule } from './_components/EmptyCoachDashboard'
 import { LiveCoachDashboard } from './_components/LiveCoachDashboard'
 import { LiveMessages } from './_components/LiveMessages'
 import { CoachOnboardingWizard } from './_components/CoachOnboardingWizard'
+import { CoachContactSettings } from './_components/CoachContactSettings'
 import {
   LiveModule, RacketProgressionView,
   PLAYERS_CONFIG, STAFF_CONFIG, BOOKINGS_CONFIG, LESSONS_CONFIG, CAMPS_CONFIG, PAYMENTS_CONFIG, GPS_CONFIG,
@@ -227,8 +228,20 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const switcherSession = session ? { ...session, role } : null
   const impersonatedCoach = role === 'coach' ? (coachById(coachIdForRole(role) ?? '')?.name ?? null) : null
   const roleLabel = COACH_ROLES.find(r => r.id === role)?.label ?? 'Head Coach'
+  // Real coach portal: Head Coach is the only view until data unlocks the others —
+  // adding a staff member unlocks Coach; adding a player unlocks Student. The demo
+  // keeps all three.
+  const availableRoles = isEmpty
+    ? COACH_ROLES.filter(r => r.id === 'head' || (r.id === 'coach' && liveStats.staff > 0) || (r.id === 'student' && liveStats.players > 0))
+    : COACH_ROLES
+  // If the active role is no longer available (data removed), drop back to Head.
+  useEffect(() => {
+    if (!isEmpty || liveStats.loading) return
+    if (role === 'coach' && liveStats.staff === 0) setRole('head')
+    if (role === 'student' && liveStats.players === 0) setRole('head')
+  }, [isEmpty, role, liveStats.loading, liveStats.staff, liveStats.players])
   const roleSwitcher = switcherSession ? (
-    <RoleSwitcher session={switcherSession} roles={COACH_ROLES} accentColor={accent.hex} onRoleChange={r => setRole(normalizeRole(r))} />
+    <RoleSwitcher session={switcherSession} roles={availableRoles} accentColor={accent.hex} onRoleChange={r => setRole(normalizeRole(r))} />
   ) : null
   const ViewingAsBanner = role === 'head' ? null : (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 24px', fontSize: 12, fontWeight: 600, background: 'rgba(245,158,11,0.14)', color: '#B45309', borderBottom: '1px solid rgba(245,158,11,0.3)', flexShrink: 0 }}>
@@ -263,8 +276,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'development': return <LiveModule config={DEVELOPMENT_CONFIG} T={T} accent={accent} />
         case 'equipment':   return <LiveModule config={EQUIPMENT_CONFIG} T={T} accent={accent} />
         case 'resources':   return <LiveModule config={RESOURCES_CONFIG} T={T} accent={accent} />
-        case 'messages':    return <LiveMessages T={T} accent={accent} />
-        case 'settings':    return <SettingsView T={T} accent={accent} density={density} />
+        case 'messages':    return <LiveMessages T={T} accent={accent} onConfigure={() => setActive('settings')} />
+        case 'settings':    return <><CoachContactSettings T={T} accent={accent} /><SettingsView T={T} accent={accent} density={density} /></>
         case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)} />
       }
       const title = COACH_SIDEBAR.find(i => i.id === active)?.label ?? 'This section'
@@ -324,7 +337,21 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         {ViewingAsBanner}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ maxWidth: 1080, margin: '0 auto', padding: isMobile ? '14px 12px 36px' : '24px 24px 44px' }}>
-            <StudentView T={T} accent={accent} density={density} playerId="p1" />
+            {isEmpty ? (
+              // Real portal — never show demo student data. The live player/parent
+              // view ships with the Player Roster module.
+              <div style={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
+                <div style={{ textAlign: 'center', maxWidth: 440, background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 16, padding: '36px 28px' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>Student view</div>
+                  <p style={{ fontSize: 13, color: T.text3, lineHeight: 1.6, marginTop: 8 }}>
+                    This is the player &amp; parent view of your academy. Add players in the Player Roster, then open a player to preview their portal. The full live student view is on the way.
+                  </p>
+                  <button onClick={() => { setRole('head'); setActive('roster') }} style={{ marginTop: 16, padding: '10px 16px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Go to Player Roster</button>
+                </div>
+              </div>
+            ) : (
+              <StudentView T={T} accent={accent} density={density} playerId="p1" />
+            )}
           </div>
         </div>
       </div>
