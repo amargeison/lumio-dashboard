@@ -16,6 +16,7 @@ import {
 import { addPlan, hasPlan } from '../_lib/session-plan'
 import { getSettings } from '../_lib/settings-store'
 import { requestOpenLesson } from '../_lib/lessons-store'
+import { currentBeltOf, skillScoreFor, beltProgressFor, skillsEarnedFor, setGrade, setBelt, subscribe as subscribeGrades } from '../_lib/racket-grade-store'
 import { WatchConnectPanel } from './WatchConnectPanel'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -42,7 +43,7 @@ const masteryColor = (T: ThemeTokens, accent: AccentTokens, score: number) => [T
 function beltProgress(p: Player, beltIndex: number) {
   const threshold = getSettings().awardThreshold
   const belt = BELTS[beltIndex]
-  const done = belt.skills.filter((_s, si) => skillScore(p.seed, beltIndex, si, p.beltIndex) >= threshold).length
+  const done = belt.skills.filter((_s, si) => skillScoreFor(p, beltIndex, si) >= threshold).length
   return Math.round((done / belt.skills.length) * 100)
 }
 
@@ -142,11 +143,13 @@ export function PlayerDetailModal({ T, accent, density, player, onClose, onNavig
     onNavigate?.('lessons')
     onClose()
   }
-  const belt = BELTS[player.beltIndex]
-  const prog = beltProgress(player, player.beltIndex)
+  const [, forceGrade] = useState(0)
+  useEffect(() => subscribeGrades(() => forceGrade(x => x + 1)), [])
+  const cb = currentBeltOf(player)
+  const belt = BELTS[cb]
+  const prog = beltProgressFor(player, cb)
   const totalSkills = ALL_SKILLS.length
-  const earned = ALL_SKILLS.filter(s => s.beltIndex < player.beltIndex).length
-    + belt.skills.filter((_s, si) => skillScore(player.seed, player.beltIndex, si, player.beltIndex) >= 3).length
+  const earned = skillsEarnedFor(player)
   const [tab, setTab] = useState<'dev' | 'contact' | 'lessons' | 'consent'>('dev')
   const history = playerLessons(player)
 
@@ -173,7 +176,7 @@ export function PlayerDetailModal({ T, accent, density, player, onClose, onNavig
           {/* stat row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 14 }}>
             {[
-              { l: 'Current racket', v: <BeltChip beltIndex={player.beltIndex} />, raw: true },
+              { l: 'Current racket', v: <BeltChip beltIndex={cb} />, raw: true },
               { l: 'Racket progress', v: `${prog}%`, c: accent.hex },
               { l: 'Attendance', v: `${player.attendance}%`, c: player.attendance >= 90 ? T.good : player.attendance >= 80 ? T.warn : T.bad },
               { l: 'Skills earned', v: `${earned}/${totalSkills}` },
@@ -210,7 +213,7 @@ export function PlayerDetailModal({ T, accent, density, player, onClose, onNavig
             <div>
               <SectionHead T={T} title={`Working racket · ${belt.name}`} right={<span style={{ fontFamily: FONT_MONO }}>{prog}%</span>} />
               {belt.skills.map((s, si) => {
-                const score = skillScore(player.seed, player.beltIndex, si, player.beltIndex)
+                const score = skillScoreFor(player, cb, si)
                 return (
                   <div key={s.id} style={{ marginBottom: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
@@ -218,7 +221,10 @@ export function PlayerDetailModal({ T, accent, density, player, onClose, onNavig
                       <span style={{ marginLeft: 'auto', fontSize: 10, color: masteryColor(T, accent, score), fontFamily: FONT_MONO, fontWeight: 600 }}>{MASTERY_LABELS[score]}</span>
                     </div>
                     <div style={{ display: 'flex', gap: 4 }}>
-                      {[1, 2, 3, 4].map(lv => <div key={lv} style={{ flex: 1, height: 5, borderRadius: 3, background: lv <= score ? masteryColor(T, accent, score) : T.hover }} />)}
+                      {[1, 2, 3, 4].map(lv => (
+                        <button key={lv} onClick={() => setGrade(player, cb, si, lv === score ? lv - 1 : lv)} title={`Mark ${MASTERY_LABELS[lv]}`}
+                          style={{ flex: 1, height: 9, borderRadius: 3, border: 0, padding: 0, cursor: 'pointer', background: lv <= score ? masteryColor(T, accent, score) : T.hover }} />
+                      ))}
                     </div>
                   </div>
                 )
@@ -229,14 +235,15 @@ export function PlayerDetailModal({ T, accent, density, player, onClose, onNavig
               <SectionHead T={T} title="Racket journey" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
                 {BELTS.map((b, bi) => {
-                  const state = bi < player.beltIndex ? 'done' : bi === player.beltIndex ? 'current' : 'locked'
+                  const state = bi < cb ? 'done' : bi === cb ? 'current' : 'locked'
                   return (
-                    <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 9, opacity: state === 'locked' ? 0.4 : 1 }}>
+                    <button key={b.id} onClick={() => setBelt(player, bi)} title={`Set working racket to ${b.name}`}
+                      style={{ appearance: 'none', border: 0, background: 'transparent', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 9, padding: '2px 0', opacity: state === 'locked' ? 0.5 : 1 }}>
                       <span style={{ width: 20, height: 12, borderRadius: 3, background: b.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
                       <span style={{ fontSize: 11.5, color: T.text, fontWeight: state === 'current' ? 700 : 500, flex: 1 }}>{b.name}</span>
                       {state === 'done' && <Icon name="check" size={12} stroke={2.2} style={{ color: T.good }} />}
                       {state === 'current' && <Pill T={T} color={accent.hex} bg={accent.dim}>now</Pill>}
-                    </div>
+                    </button>
                   )
                 })}
               </div>

@@ -6,6 +6,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import type { Venue } from '../_lib/coach-data'
 import { addVenue } from '../_lib/venues-store'
+import { setSettings, getSettings } from '../_lib/settings-store'
 
 export function AddVenueModal({ T, accent, onClose }: { T: ThemeTokens; accent: AccentTokens; density: Density; onClose: () => void }) {
   const [name, setName] = useState('')
@@ -17,6 +18,8 @@ export function AddVenueModal({ T, accent, onClose }: { T: ThemeTokens; accent: 
   const [email, setEmail] = useState('')
   const [access, setAccess] = useState('')
   const [facilities, setFacilities] = useState('')
+  const [homeBase, setHomeBase] = useState(false)
+  const [calSync, setCalSync] = useState(false)
 
   const input: CSSProperties = { width: '100%', appearance: 'none', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, fontSize: 13, padding: '9px 11px', fontFamily: FONT, outline: 'none' }
   const label: CSSProperties = { fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4, display: 'block' }
@@ -38,6 +41,9 @@ export function AddVenueModal({ T, accent, onClose }: { T: ThemeTokens; accent: 
       courts: [],
     }
     addVenue(venue)
+    const cur = getSettings()
+    if (homeBase) setSettings({ primaryVenueId: venue.id })
+    if (calSync) setSettings({ syncedVenues: [...new Set([...(cur.syncedVenues || []), venue.id])] })
     onClose()
   }
 
@@ -91,6 +97,14 @@ export function AddVenueModal({ T, accent, onClose }: { T: ThemeTokens; accent: 
           <div>
             <label style={label}>Facilities (comma-separated)</label>
             <input value={facilities} onChange={e => setFacilities(e.target.value)} placeholder="Café, Parking, Floodlights" style={input} />
+          </div>
+          <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, color: T.text, cursor: 'pointer' }}>
+              <input type="checkbox" checked={homeBase} onChange={e => setHomeBase(e.target.checked)} /> Make this my home / main site
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, color: T.text, cursor: 'pointer' }}>
+              <input type="checkbox" checked={calSync} onChange={e => setCalSync(e.target.checked)} /> Connect this site&apos;s calendar <span style={{ color: T.text3, fontSize: 11 }}>(shows which courts are free)</span>
+            </label>
           </div>
           <div style={{ fontSize: 10.5, color: T.text3 }}>Courts can be added on the venue once it&apos;s saved.</div>
 

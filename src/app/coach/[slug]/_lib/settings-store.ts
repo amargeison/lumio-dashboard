@@ -36,6 +36,8 @@ export type CoachSettings = {
   staff: { dsl: string; reminderDays: number; policyOn: boolean }
   messaging: { senderEmail: string; senderPhone: string; email: boolean; text: boolean; inapp: boolean }
   rewards: { leaderboard: boolean; levelsVisible: boolean; watchConsentDefault: boolean }
+  primaryVenueId: string         // home / main site (overrides the data default)
+  syncedVenues: string[]         // venue ids with calendar sync connected
 }
 
 export const DEFAULT_SETTINGS: CoachSettings = {
@@ -59,6 +61,8 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   staff: { dsl: COACH_ORG.coach, reminderDays: 90, policyOn: true },
   messaging: { senderEmail: 'hello@riversidetennis.example', senderPhone: '+44 7863 765950', email: true, text: true, inapp: true },
   rewards: { leaderboard: true, levelsVisible: true, watchConsentDefault: false },
+  primaryVenueId: '',
+  syncedVenues: ['riverside'],
 }
 
 const KEY = 'lumio_coach_settings'

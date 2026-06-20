@@ -6,7 +6,8 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
 import { setSettings, resetSettings, ACCENT_PRESETS, DEFAULT_SETTINGS, type AccentKey } from '../_lib/settings-store'
-import { COACH_SIDEBAR, COACH_GROUPS } from '../_lib/coach-data'
+import { COACH_SIDEBAR, COACH_GROUPS, VENUES } from '../_lib/coach-data'
+import { getAddedVenues } from '../_lib/venues-store'
 import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -191,6 +192,26 @@ export function SettingsPanel({ T, accent, density }: Common) {
               })}
             </div>
           </Field>
+          {(() => {
+            const venues = [...VENUES, ...getAddedVenues()]
+            const homeId = s.primaryVenueId || (venues.find(v => v.primary)?.id ?? venues[0]?.id ?? '')
+            return (
+              <>
+                <Field T={T} label="Home / main site" hint="Shown as your home base in the Court Planner.">
+                  <select style={input(T)} value={homeId} onChange={e => setSettings({ primaryVenueId: e.target.value })}>
+                    {venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                  </select>
+                </Field>
+                <Field T={T} label="Calendar sync per site" hint="Connected sites show live court availability.">
+                  {venues.map(v => {
+                    const on = (s.syncedVenues || []).includes(v.id)
+                    return <Toggle key={v.id} T={T} accent={accent} on={on} label={v.name} desc={on ? 'Calendar connected' : 'Not connected'}
+                      onChange={() => setSettings({ syncedVenues: on ? (s.syncedVenues || []).filter(x => x !== v.id) : [...new Set([...(s.syncedVenues || []), v.id])] })} />
+                  })}
+                </Field>
+              </>
+            )
+          })()}
         </Modal>
       )}
 
