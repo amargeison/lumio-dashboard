@@ -23,6 +23,8 @@ export type CoachTable =
   | 'coach_development'
   | 'coach_equipment'
   | 'coach_resources'
+  | 'coach_attendance'
+  | 'coach_player_skills'
 
 let _sb: ReturnType<typeof createBrowserClient> | null = null
 export function sb() {
@@ -185,12 +187,43 @@ export async function saveCoachProfile(updates: Record<string, any>) {
 // Racket progression stages (ordered). Mirrors the demo BELTS palette.
 export const RACKET_STAGES: { id: string; name: string; colour: string }[] = [
   { id: 'white',  name: 'White',  colour: '#E5E7EB' },
-  { id: 'red',    name: 'Red',    colour: '#EF4444' },
-  { id: 'orange', name: 'Orange', colour: '#F97316' },
   { id: 'yellow', name: 'Yellow', colour: '#EAB308' },
+  { id: 'orange', name: 'Orange', colour: '#F97316' },
   { id: 'green',  name: 'Green',  colour: '#22C55E' },
   { id: 'blue',   name: 'Blue',   colour: '#3B82F6' },
   { id: 'purple', name: 'Purple', colour: '#A855F7' },
   { id: 'brown',  name: 'Brown',  colour: '#92400E' },
+  { id: 'red',    name: 'Red',    colour: '#EF4444' },
   { id: 'black',  name: 'Black',  colour: '#111827' },
 ]
+
+// Skills worked at each racket stage (4 per stage). Coaches mark a player's
+// mastery 1–4 against these in the player detail Development tab.
+export const SKILLS_BY_STAGE: Record<string, string[]> = {
+  white:  ['Ready position', 'Forehand contact', 'Backhand contact', 'Rally to 4'],
+  yellow: ['First serve', 'Second serve', 'Return depth', 'Baseline rally'],
+  orange: ['Forehand volley', 'Backhand volley', 'Backhand slice', 'Net positioning'],
+  green:  ['Flat first serve', 'Toss & rhythm', 'Return of serve', 'Serve placement'],
+  blue:   ['Topspin forehand', 'Topspin backhand', 'Approach shot', 'Court movement'],
+  purple: ['Kick serve', 'Slice serve', 'Drop shot', 'Transition game'],
+  brown:  ['Serve +1 pattern', 'Defensive lob', 'Counterpunch', 'Point construction'],
+  red:    ['Inside-out forehand', 'Backhand down the line', 'Second-serve attack', 'Pattern play'],
+  black:  ['Match tactics', 'Pressure serving', 'Net + baseline blend', 'Opponent reading'],
+}
+
+export const SKILL_LEVELS = ['—', 'Learning', 'Developing', 'Consolidating', 'Consistent']
+export function skillLevelColour(score: number): string {
+  if (score >= 4) return '#22C55E'
+  if (score === 3) return '#3A8EE0'
+  if (score >= 1) return '#F59E0B'
+  return '#6B7280'
+}
+
+// Upsert a single player's skill score (1–4). Requires the unique (player_id,skill).
+export async function setSkillScore(playerId: string, skill: string, score: number) {
+  const coach_id = await currentCoachId()
+  if (!coach_id) throw new Error('Not signed in')
+  const { error } = await sb().from('coach_player_skills')
+    .upsert({ coach_id, player_id: playerId, skill, score, updated_at: new Date().toISOString() }, { onConflict: 'player_id,skill' })
+  if (error) { console.error('[coach-db] setSkillScore', error.message); throw new Error(error.message) }
+}

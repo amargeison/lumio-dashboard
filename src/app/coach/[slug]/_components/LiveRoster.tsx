@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { useCoachTable, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore } from '../_lib/coach-db'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 const CATEGORIES = ['Junior', 'Performance', 'Adult'] as const
@@ -38,12 +38,27 @@ function RacketChip({ stage, T }: { stage: { name: string; colour: string } | nu
 
 export function LiveRoster({ T, accent, density }: Common) {
   const players = useCoachTable<any>('coach_players')
+  const skills = useCoachTable<any>('coach_player_skills')
+  const attendance = useCoachTable<any>('coach_attendance')
   const [group, setGroup] = useState<'All' | typeof CATEGORIES[number]>('All')
   const [sel, setSel] = useState<any | null>(null)
   const [editing, setEditing] = useState<any | null | undefined>(undefined) // undefined = closed
 
   const list = group === 'All' ? players.rows : players.rows.filter(p => p.category === group)
   const tabs = ['All', ...CATEGORIES] as const
+
+  const skillMapFor = (pid: string) => Object.fromEntries(skills.rows.filter(s => s.player_id === pid).map(s => [s.skill, s.score])) as Record<string, number>
+  const progressFor = (p: any) => {
+    const st = stageOf(p.racket_stage); if (st.idx < 0) return 0
+    const list = SKILLS_BY_STAGE[st.stage!.id] || []; if (!list.length) return 0
+    const m = skillMapFor(p.id)
+    return Math.round(list.filter(s => (m[s] || 0) >= 4).length / list.length * 100)
+  }
+  const attendanceFor = (pid: string): number | null => {
+    const recs = attendance.rows.filter(a => a.player_id === pid)
+    if (!recs.length) return null
+    return Math.round(recs.filter(a => a.present).length / recs.length * 100)
+  }
 
   return (
     <div>
@@ -76,6 +91,8 @@ export function LiveRoster({ T, accent, density }: Common) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: density.gap }}>
           {list.map(p => {
             const s = stageOf(p.racket_stage)
+            const prog = progressFor(p)
+            const att = attendanceFor(p.id)
             return (
               <div key={p.id} onClick={() => setSel(p)} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad, cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -88,14 +105,14 @@ export function LiveRoster({ T, accent, density }: Common) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
                   <RacketChip stage={s.stage} T={T} />
-                  <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>{s.idx >= 0 ? `Stage ${s.idx + 1}/${RACKET_STAGES.length}` : '—'}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>{prog}% to next</span>
                 </div>
                 <div style={{ height: 5, borderRadius: 3, background: T.hover, marginTop: 6, overflow: 'hidden' }}>
-                  <div style={{ width: `${s.pct}%`, height: '100%', background: accent.hex }} />
+                  <div style={{ width: `${prog}%`, height: '100%', background: accent.hex }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 11, color: T.text2 }}>
-                  <span><span style={{ color: T.text3 }}>Email</span> {p.email ? '✓' : '—'}</span>
-                  <span><span style={{ color: T.text3 }}>Phone</span> {p.phone ? '✓' : '—'}</span>
+                  <span><span style={{ color: T.text3 }}>Attendance</span> {att !== null ? `${att}%` : '—'}</span>
+                  <span><span style={{ color: T.text3 }}>Stage</span> {s.idx >= 0 ? `${s.idx + 1}/${RACKET_STAGES.length}` : '—'}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.text3, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${T.border}` }}>
                   <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎯 {p.goal || 'No goal set'}</span>
@@ -112,6 +129,11 @@ export function LiveRoster({ T, accent, density }: Common) {
 
       {sel && (
         <PlayerDetail T={T} accent={accent} density={density} player={sel}
+          skillMap={skillMapFor(sel.id)}
+          attendanceRows={attendance.rows.filter(a => a.player_id === sel.id)}
+          onSkillChange={async (skill, score) => { await setSkillScore(sel.id, skill, score); skills.reload() }}
+          onAttendanceAdd={async (date, present) => { await dbInsert('coach_attendance', { player_id: sel.id, session_date: date || null, present }); attendance.reload() }}
+          onAttendanceRemove={async (id) => { await dbRemove('coach_attendance', id); attendance.reload() }}
           onClose={() => setSel(null)}
           onEdit={() => { setEditing(sel); setSel(null) }}
           onDelete={async () => { if (confirm(`Delete ${sel.name}?`)) { await dbRemove('coach_players', sel.id); setSel(null); players.reload() } }} />
@@ -175,22 +197,29 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
 }
 
 // ── Player detail modal ──────────────────────────────────────────────────────
-function PlayerDetail({ T, accent, density, player, onClose, onEdit, onDelete }: Common & { player: any; onClose: () => void; onEdit: () => void; onDelete: () => void }) {
-  const [tab, setTab] = useState<'dev' | 'contact' | 'lessons'>('dev')
+function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, onSkillChange, onAttendanceAdd, onAttendanceRemove, onClose, onEdit, onDelete }: Common & {
+  player: any; skillMap: Record<string, number>; attendanceRows: any[]
+  onSkillChange: (skill: string, score: number) => Promise<void>
+  onAttendanceAdd: (date: string, present: boolean) => Promise<void>
+  onAttendanceRemove: (id: string) => Promise<void>
+  onClose: () => void; onEdit: () => void; onDelete: () => void
+}) {
+  const [tab, setTab] = useState<'dev' | 'contact' | 'lessons' | 'attendance'>('dev')
   const [lessons, setLessons] = useState<any[]>([])
-  const [development, setDevelopment] = useState<any[]>([])
   const [nextSession, setNextSession] = useState<string>('—')
+  const [attDate, setAttDate] = useState('')
   const s = stageOf(player.racket_stage)
+  const stageSkills = s.stage ? (SKILLS_BY_STAGE[s.stage.id] || []) : []
+  const racketProgress = stageSkills.length ? Math.round(stageSkills.filter(sk => (skillMap[sk] || 0) >= 4).length / stageSkills.length * 100) : 0
+  const attPct = attendanceRows.length ? Math.round(attendanceRows.filter(a => a.present).length / attendanceRows.length * 100) : null
 
   const load = useCallback(async () => {
-    const [sess, dev, books] = await Promise.all([dbList('coach_sessions'), dbList('coach_development'), dbList('coach_bookings')])
+    const [sess, books] = await Promise.all([dbList('coach_sessions'), dbList('coach_bookings')])
     const mine = (rows: any[]) => rows.filter(r => (r.player_name || '').trim().toLowerCase() === (player.name || '').trim().toLowerCase())
-    const ls = mine(sess).sort((a, b) => String(b.session_date ?? '').localeCompare(String(a.session_date ?? '')))
-    setLessons(ls)
-    setDevelopment(mine(dev))
+    setLessons(mine(sess).sort((a, b) => String(b.session_date ?? '').localeCompare(String(a.session_date ?? ''))))
     const today = new Date().toISOString().slice(0, 10)
-    const upcoming = mine(books).filter(b => (b.booking_date ?? '') >= today).sort((a, b) => String(a.booking_date).localeCompare(String(b.booking_date)))[0]
-    setNextSession(upcoming ? `${new Date(upcoming.booking_date).toLocaleDateString('en-GB')}${upcoming.start_time ? ' ' + upcoming.start_time : ''}` : '—')
+    const up = mine(books).filter(b => (b.booking_date ?? '') >= today).sort((a, b) => String(a.booking_date).localeCompare(String(b.booking_date)))[0]
+    setNextSession(up ? `${new Date(up.booking_date).toLocaleDateString('en-GB')}${up.start_time ? ' ' + up.start_time : ''}` : '—')
   }, [player.name])
   useEffect(() => { load() }, [load])
 
@@ -221,8 +250,8 @@ function PlayerDetail({ T, accent, density, player, onClose, onEdit, onDelete }:
           {/* stat tiles */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 14 }}>
             {tile('Current racket', <RacketChip stage={s.stage} T={T} />)}
-            {tile('Racket stage', s.idx >= 0 ? `${s.idx + 1} of ${RACKET_STAGES.length}` : '—', accent.hex)}
-            {tile('Attendance', '—', T.text3, true)}
+            {tile('Racket progress', `${racketProgress}%`, accent.hex)}
+            {tile('Attendance', attPct !== null ? `${attPct}%` : '—', attPct === null ? T.text3 : attPct >= 90 ? T.good : attPct >= 80 ? T.warn : T.bad, attPct === null)}
             {tile('Lessons', String(lessons.length))}
             {tile('Next session', nextSession, undefined, true)}
           </div>
@@ -236,7 +265,7 @@ function PlayerDetail({ T, accent, density, player, onClose, onEdit, onDelete }:
 
           {/* tabs */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 14, padding: 2, background: T.hover, borderRadius: 9, width: 'fit-content' }}>
-            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${lessons.length}`]] as const).map(([id, l]) => (
+            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${lessons.length}`], ['attendance', `Attendance · ${attendanceRows.length}`]] as const).map(([id, l]) => (
               <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === id ? T.panel : 'transparent', color: tab === id ? T.text : T.text2, fontWeight: tab === id ? 600 : 400 }}>{l}</button>
             ))}
           </div>
@@ -244,20 +273,30 @@ function PlayerDetail({ T, accent, density, player, onClose, onEdit, onDelete }:
           {tab === 'dev' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Development notes</div>
-                {development.length === 0 ? (
-                  <p style={{ fontSize: 12, color: T.text3 }}>No development notes yet. Add them in the Player Development module.</p>
-                ) : development.map((dv, i) => (
-                  <div key={i} style={{ marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
-                      <span style={{ fontSize: 12, color: T.text, textTransform: 'capitalize' }}>{dv.area || 'Note'}</span>
-                      {dv.target && <span style={{ fontSize: 10.5, color: T.text3 }}>· {dv.target}</span>}
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Working racket · {s.stage ? s.stage.name : '—'}</span>
+                  <span style={{ fontSize: 11, color: accent.hex, fontWeight: 600 }}>{racketProgress}%</span>
+                </div>
+                {stageSkills.length === 0 ? (
+                  <p style={{ fontSize: 12, color: T.text3 }}>Set a racket stage for this player to track skills.</p>
+                ) : stageSkills.map(skill => {
+                  const score = skillMap[skill] || 0
+                  return (
+                    <div key={skill} style={{ marginBottom: 11 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: T.text }}>{skill}</span>
+                        <span style={{ marginLeft: 'auto', fontSize: 10, color: skillLevelColour(score), fontWeight: 600 }}>{SKILL_LEVELS[score]}</span>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {[1, 2, 3, 4].map(lv => (
+                          <button key={lv} title={SKILL_LEVELS[lv]} onClick={() => onSkillChange(skill, score === lv ? lv - 1 : lv)}
+                            style={{ flex: 1, height: 9, borderRadius: 3, border: 0, padding: 0, cursor: 'pointer', background: lv <= score ? skillLevelColour(score) : T.hover }} />
+                        ))}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      {[1, 2, 3, 4, 5].map(lv => <div key={lv} style={{ flex: 1, height: 5, borderRadius: 3, background: lv <= (dv.rating || 0) ? accent.hex : T.hover }} />)}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
+                <p style={{ fontSize: 10.5, color: T.text3, marginTop: 4 }}>Tap a bar to mark mastery. Four bars (Consistent) = mastered.</p>
               </div>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Racket journey</div>
@@ -304,6 +343,26 @@ function PlayerDetail({ T, accent, density, player, onClose, onEdit, onDelete }:
                     <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{l.focus || 'Session'}{l.rating ? ` · ${l.rating}/5` : ''}</div>
                     {l.summary && <div style={{ fontSize: 11.5, color: T.text2, marginTop: 3 }}>{l.summary}</div>}
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {tab === 'attendance' && (
+            <div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
+                <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 10px', color: T.text, fontSize: 12.5 }} />
+                <button onClick={() => onAttendanceAdd(attDate, true)} style={{ border: '1px solid rgba(34,197,94,0.4)', background: 'rgba(34,197,94,0.1)', color: '#22C55E', borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>+ Present</button>
+                <button onClick={() => onAttendanceAdd(attDate, false)} style={{ border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.1)', color: '#EF4444', borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>+ Absent</button>
+                <span style={{ marginLeft: 'auto', fontSize: 12, color: T.text3 }}>{attPct !== null ? `${attPct}% present (${attendanceRows.filter(a => a.present).length}/${attendanceRows.length})` : 'No records yet'}</span>
+              </div>
+              {attendanceRows.length === 0 ? (
+                <p style={{ fontSize: 12.5, color: T.text3 }}>No attendance logged yet. Pick a date and mark the player present or absent.</p>
+              ) : [...attendanceRows].sort((a, b) => String(b.session_date ?? '').localeCompare(String(a.session_date ?? ''))).map(a => (
+                <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderTop: `1px solid ${T.border}` }}>
+                  <span style={{ fontSize: 12, color: T.text2, width: 100 }}>{a.session_date ? new Date(a.session_date).toLocaleDateString('en-GB') : '—'}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: a.present ? '#22C55E' : '#EF4444' }}>{a.present ? 'Present' : 'Absent'}</span>
+                  <button onClick={() => onAttendanceRemove(a.id)} style={{ marginLeft: 'auto', background: 'transparent', border: 'none', color: T.text3, cursor: 'pointer', fontSize: 16 }}>×</button>
                 </div>
               ))}
             </div>
