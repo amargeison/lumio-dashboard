@@ -15,6 +15,7 @@ import {
   type CoachStatTile, type CoachScheduleItem,
 } from '../_lib/coach-data'
 import { ALL_PLAYERS, bookingsForCoach, coachStats, coachById } from '../_lib/coaches-data'
+import { currentBeltOf, skillScoreFor, beltProgressFor, skillsEarnedFor, setGrade, setBelt, subscribe as subscribeGrades } from '../_lib/racket-grade-store'
 import { useScopeCoachId } from '../_lib/role-scope'
 import { WeekCalendarGrid, bookingTypeColour, MonthAgenda, agendaDayLabel } from './WeekCalendar'
 import { bookingCalItems } from '../_lib/schedule'
@@ -114,11 +115,12 @@ function Avatar({ accent, initials, size = 32 }: { accent: AccentTokens; initial
   return <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: size * 0.34, fontWeight: 700, fontFamily: FONT_MONO, flexShrink: 0 }}>{initials}</div>
 }
 
-// Belt completion: % of skills at Consistent (3) or higher for a player at beltIndex.
+// Belt completion: % of skills at the award threshold or higher for a player at
+// beltIndex. Reads live coach grades (racket-grade-store) so it reflects grading.
 function beltProgress(player: Player, beltIndex: number): number {
   const threshold = getSettings().awardThreshold
   const belt = BELTS[beltIndex]
-  const scores = belt.skills.map((_s, si) => skillScore(player.seed, beltIndex, si, player.beltIndex))
+  const scores = belt.skills.map((_s, si) => skillScoreFor(player, beltIndex, si))
   const done = scores.filter(v => v >= threshold).length
   return Math.round((done / belt.skills.length) * 100)
 }
@@ -523,18 +525,21 @@ export function DevelopmentView({ T, accent, density }: Common) {
   const [selId, setSelId] = useState(PLAYERS[0].id)
   // Open the player the dashboard "Needs attention" panel asked for, if any.
   useEffect(() => { const id = consumeDevPlayer(); if (id) setSelId(id) }, [])
+  // Re-render when any grade / working-racket changes (live grading).
+  const [, forceGrade] = useState(0)
+  useEffect(() => subscribeGrades(() => forceGrade(x => x + 1)), [])
   const p = players.find(x => x.id === selId) ?? players[0]
-  const belt = BELTS[p.beltIndex]
-  const prog = beltProgress(p, p.beltIndex)
+  const cb = currentBeltOf(p)
+  const belt = BELTS[cb]
+  const prog = beltProgressFor(p, cb)
   const playerLessons = LESSONS.filter(l => l.playerId === p.id)
   // overall mastery across all earned + current skills
   const totalSkills = ALL_SKILLS.length
-  const earned = ALL_SKILLS.filter(s => s.beltIndex < p.beltIndex).length
-    + belt.skills.filter((_s, si) => skillScore(p.seed, p.beltIndex, si, p.beltIndex) >= 3).length
+  const earned = skillsEarnedFor(p)
   const stats = playerDevStats(p)
   const devBoxes: { l: string; v: ReactNode; sub?: string; c?: string }[] = [
-    { l: 'Current racket',  v: <BeltChip beltIndex={p.beltIndex} size={16} /> },
-    { l: 'Racket progress', v: `${prog}%`, c: accent.hex, sub: `to ${BELTS[Math.min(p.beltIndex + 1, BELTS.length - 1)].name}` },
+    { l: 'Current racket',  v: <BeltChip beltIndex={cb} size={16} /> },
+    { l: 'Racket progress', v: `${prog}%`, c: accent.hex, sub: `to ${BELTS[Math.min(cb + 1, BELTS.length - 1)].name}` },
     { l: 'Attendance',    v: `${p.attendance}%`, c: p.attendance >= 90 ? T.good : p.attendance >= 80 ? T.warn : T.bad, sub: 'last 8 weeks' },
     { l: 'Skills earned', v: `${earned}/${totalSkills}`, sub: 'all rackets' },
     { l: 'Court hours',   v: stats.hoursTerm, sub: 'this term' },
@@ -559,8 +564,8 @@ export function DevelopmentView({ T, accent, density }: Common) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{pl.name}</div>
                   <div style={{ fontSize: 10.5, color: T.text3, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <span style={{ width: 11, height: 7, borderRadius: 2, background: BELTS[pl.beltIndex].colour, border: '1px solid rgba(128,128,128,0.4)', display: 'inline-block' }} />
-                    {BELTS[pl.beltIndex].name} · {pl.group}
+                    <span style={{ width: 11, height: 7, borderRadius: 2, background: BELTS[currentBeltOf(pl)].colour, border: '1px solid rgba(128,128,128,0.4)', display: 'inline-block' }} />
+                    {BELTS[currentBeltOf(pl)].name} · {pl.group}
                   </div>
                 </div>
                 <span style={{ fontSize: 12 }}>{pl.trend === 'up' ? '↑' : pl.trend === 'down' ? '↓' : '→'}</span>
@@ -579,7 +584,7 @@ export function DevelopmentView({ T, accent, density }: Common) {
                 <div style={{ fontSize: 18, fontWeight: 600, color: T.text }}>{p.name}</div>
                 <div style={{ fontSize: 12, color: T.text3 }}>{p.group} · Age {p.age}{p.parent ? ` · Parent: ${p.parent}` : ''}</div>
               </div>
-              <button onClick={() => printBeltCertificate(p, p.beltIndex)} title={`Print ${belt.name} racket certificate`}
+              <button onClick={() => printBeltCertificate(p, cb)} title={`Print ${belt.name} racket certificate`}
                 style={{ marginLeft: 'auto', appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
                 <Icon name="trophy" size={14} stroke={2} /> Racket certificate
               </button>
@@ -606,7 +611,7 @@ export function DevelopmentView({ T, accent, density }: Common) {
             <SectionHead T={T} title={<>Working racket · {belt.name} — {belt.theme}</>} right={<span style={{ fontFamily: FONT_MONO }}>{prog}% to award</span>} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {belt.skills.map((s, si) => {
-                const score = skillScore(p.seed, p.beltIndex, si, p.beltIndex)
+                const score = skillScoreFor(p, cb, si)
                 return (
                   <div key={s.id}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
@@ -615,7 +620,10 @@ export function DevelopmentView({ T, accent, density }: Common) {
                       <div style={{ fontSize: 10.5, color: masteryColor(T, accent, score), fontFamily: FONT_MONO, fontWeight: 600 }}>{MASTERY_LABELS[score]}</div>
                     </div>
                     <div style={{ display: 'flex', gap: 4 }}>
-                      {[1, 2, 3, 4].map(lv => <div key={lv} style={{ flex: 1, height: 6, borderRadius: 3, background: lv <= score ? masteryColor(T, accent, score) : T.hover }} />)}
+                      {[1, 2, 3, 4].map(lv => (
+                        <button key={lv} onClick={() => setGrade(p, cb, si, lv === score ? lv - 1 : lv)} title={`Mark ${MASTERY_LABELS[lv]}`}
+                          style={{ flex: 1, height: 10, borderRadius: 3, border: 0, padding: 0, cursor: 'pointer', background: lv <= score ? masteryColor(T, accent, score) : T.hover }} />
+                      ))}
                     </div>
                   </div>
                 )
@@ -629,14 +637,15 @@ export function DevelopmentView({ T, accent, density }: Common) {
               <SectionHead T={T} title="Racket journey" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {BELTS.map((b, bi) => {
-                  const state = bi < p.beltIndex ? 'done' : bi === p.beltIndex ? 'current' : 'locked'
+                  const state = bi < cb ? 'done' : bi === cb ? 'current' : 'locked'
                   return (
-                    <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: state === 'locked' ? 0.4 : 1 }}>
+                    <button key={b.id} onClick={() => setBelt(p, bi)} title={`Set working racket to ${b.name}`}
+                      style={{ appearance: 'none', border: 0, background: 'transparent', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 10, padding: '3px 0', opacity: state === 'locked' ? 0.5 : 1 }}>
                       <span style={{ width: 22, height: 14, borderRadius: 3, background: b.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
                       <span style={{ fontSize: 12, color: T.text, fontWeight: state === 'current' ? 700 : 500, flex: 1 }}>{b.name} <span style={{ color: T.text3, fontWeight: 400 }}>· {b.theme}</span></span>
                       {state === 'done' && <Icon name="check" size={13} stroke={2} style={{ color: T.good }} />}
                       {state === 'current' && <Pill T={T} color={accent.hex} bg={accent.dim}>now</Pill>}
-                    </div>
+                    </button>
                   )
                 })}
               </div>
@@ -677,6 +686,8 @@ export function BeltsView({ T, accent, density }: Common) {
   // only, persisted so the matrix keeps its "Awarded ✓" state across reloads.
   const [awards, setAwards] = useState<string[]>([])
   useEffect(() => { const r = () => setAwards(getAwards()); r(); return subscribeAwards(r) }, [])
+  const [, forceGradeB] = useState(0)
+  useEffect(() => subscribeGrades(() => forceGradeB(x => x + 1)), [])
   return (
     <div>
       <PageHead T={T} accent={accent} density={density} title="Racket Progression System" sub="A Kyu-Dan style ranking adapted for tennis. Nine rackets, each unlocking a cluster of skills — earn a racket when every skill is Consistent or better." />
@@ -805,8 +816,9 @@ export function BeltsView({ T, accent, density }: Common) {
             </thead>
             <tbody>
               {players.map(p => {
-                const curProg = beltProgress(p, p.beltIndex)
-                const awarded = awards.includes(awardKey(p.id, p.beltIndex))
+                const cur = currentBeltOf(p)
+                const curProg = beltProgress(p, cur)
+                const awarded = awards.includes(awardKey(p.id, cur))
                 const ready = curProg >= 100
                 return (
                 <tr key={p.id} style={{ borderTop: `1px solid ${T.border}` }}>
@@ -815,23 +827,23 @@ export function BeltsView({ T, accent, density }: Common) {
                   </td>
                   {BELTS.map((b, bi) => {
                     let cell: ReactNode = null
-                    if (bi < p.beltIndex) cell = <Icon name="check" size={12} stroke={2.4} style={{ color: T.good }} />
-                    else if (bi === p.beltIndex) {
+                    if (bi < cur) cell = <Icon name="check" size={12} stroke={2.4} style={{ color: T.good }} />
+                    else if (bi === cur) {
                       const prog = beltProgress(p, bi)
                       cell = <span style={{ fontSize: 9.5, fontFamily: FONT_MONO, color: accent.hex, fontWeight: 700 }}>{prog}%</span>
                     }
                     return <td key={b.id} style={{ textAlign: 'center', padding: '8px 4px' }}>{cell}</td>
                   })}
-                  <td style={{ padding: '8px 10px' }}><BeltChip beltIndex={p.beltIndex} size={16} /></td>
+                  <td style={{ padding: '8px 10px' }}><BeltChip beltIndex={cur} size={16} /></td>
                   <td style={{ padding: '8px 8px', textAlign: 'right' }}>
                     {awarded ? (
-                      <button onClick={() => printBeltCertificate(p, p.beltIndex)} title="Reward awarded — click to reprint the certificate"
+                      <button onClick={() => printBeltCertificate(p, cur)} title="Reward awarded — click to reprint the certificate"
                         style={{ appearance: 'none', border: `1px solid ${T.good}`, background: 'rgba(111,168,138,0.14)', color: T.good, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                         <Icon name="check" size={12} stroke={2.4} /> Awarded ✓
                       </button>
                     ) : (
-                      <button onClick={() => { awardRacket(p.id, p.beltIndex); printBeltCertificate(p, p.beltIndex) }}
-                        title={ready ? `Award the ${BELTS[p.beltIndex].name} keyring + dampener + certificate` : `${p.name} is ${curProg}% through this racket — awarding gives the keyring + dampener + certificate`}
+                      <button onClick={() => { awardRacket(p.id, cur); printBeltCertificate(p, cur) }}
+                        title={ready ? `Award the ${BELTS[cur].name} keyring + dampener + certificate` : `${p.name} is ${curProg}% through this racket — awarding gives the keyring + dampener + certificate`}
                         style={{ appearance: 'none', border: `1px solid ${ready ? accent.hex : T.border}`, background: ready ? accent.hex : 'transparent', color: ready ? T.btnText : accent.hex, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                         <Icon name="trophy" size={12} stroke={1.9} /> Award reward
                       </button>
@@ -913,6 +925,8 @@ export function RosterView({ T, accent, density, onNavigate }: Common & { onNavi
   const [addOpen, setAddOpen] = useState(false)
   const [added, setAdded] = useState<Player[]>([])
   useEffect(() => { const r = () => setAdded(getAddedPlayers()); r(); return subscribeRoster(r) }, [])
+  const [, forceGradeR] = useState(0)
+  useEffect(() => subscribeGrades(() => forceGradeR(x => x + 1)), [])
   // Coach role: only that coach's players; head keeps its squad + added players.
   const allPlayers = scope ? ALL_PLAYERS.filter(p => p.coachId === scope) : [...PLAYERS, ...added]
   const list = group === 'All' ? allPlayers : allPlayers.filter(p => p.group === group)
@@ -940,11 +954,11 @@ export function RosterView({ T, accent, density, onNavigate }: Common & { onNavi
               <div style={{ width: 9, height: 9, borderRadius: '50%', background: statusDot(T, p.status) }} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-              <BeltChip beltIndex={p.beltIndex} size={18} />
-              <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO }}>{beltProgress(p, p.beltIndex)}% to next</span>
+              <BeltChip beltIndex={currentBeltOf(p)} size={18} />
+              <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: FONT_MONO }}>{beltProgress(p, currentBeltOf(p))}% to next</span>
             </div>
             <div style={{ height: 5, borderRadius: 3, background: T.hover, marginTop: 6, overflow: 'hidden' }}>
-              <div style={{ width: `${beltProgress(p, p.beltIndex)}%`, height: '100%', background: accent.hex }} />
+              <div style={{ width: `${beltProgress(p, currentBeltOf(p))}%`, height: '100%', background: accent.hex }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 11, color: T.text2 }}>
               <span><span style={{ color: T.text3 }}>Attendance</span> {p.attendance}%</span>

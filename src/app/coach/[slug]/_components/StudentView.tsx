@@ -283,8 +283,8 @@ export function StudentView({ T, accent, density, playerId }: Props) {
       </PCard>
       )}
 
-      {feat.gps && (<>
-      {/* 2 · GPS REPORT — full coach-grade detail, tabbed so it's not endless scroll */}
+      {feat.effort && (<>
+      {/* 2 · EFFORT REPORT — session effort detail, tabbed so it's not endless scroll */}
       <PCard T={T} density={density}>
         <PSection T={T} accent={accent} icon="flame" title={`${first}'s session report`} sub={gpsSession ? `Latest session · ${gpsSession.date} · ${gpsSession.surface} court · ${gpsSession.duration} min` : 'Movement & effort from Lumio GPS'} lead />
         {gpsSession ? (

@@ -28,6 +28,14 @@ export type CoachSettings = {
   privateRate: number            // £/hour for a private lesson
   lessonTypes: string[]
   bookableHours: string
+  // ── Per-area settings (the expanded Settings cards) ──
+  profile: { role: string; email: string; phone: string; dbsNumber: string; dbsExpiry: string; safeguardingDate: string }
+  conn: { emailProvider: string; calendarSync: boolean }
+  booking: { google: boolean; outlook: boolean; ical: string; defaultDuration: number; buffer: number; autoConfirm: boolean }
+  gdpr: { data: boolean; photo: boolean; medical: boolean; wearable: boolean; retentionYears: number; dpaAccepted: boolean }
+  staff: { dsl: string; reminderDays: number; policyOn: boolean }
+  messaging: { senderEmail: string; senderPhone: string; email: boolean; text: boolean; inapp: boolean }
+  rewards: { leaderboard: boolean; levelsVisible: boolean; watchConsentDefault: boolean }
 }
 
 export const DEFAULT_SETTINGS: CoachSettings = {
@@ -44,6 +52,13 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   privateRate: 38,
   lessonTypes: ['Private', 'Group', 'Cardio', 'Match play'],
   bookableHours: '08:00 – 20:00',
+  profile: { role: 'Head Coach', email: 'hello@riversidetennis.example', phone: '+44 7700 900123', dbsNumber: '0012 3456 7890', dbsExpiry: '2027-09-02', safeguardingDate: '2025-10-14' },
+  conn: { emailProvider: 'google', calendarSync: true },
+  booking: { google: true, outlook: false, ical: '', defaultDuration: 60, buffer: 10, autoConfirm: true },
+  gdpr: { data: true, photo: false, medical: false, wearable: false, retentionYears: 3, dpaAccepted: true },
+  staff: { dsl: COACH_ORG.coach, reminderDays: 90, policyOn: true },
+  messaging: { senderEmail: 'hello@riversidetennis.example', senderPhone: '+44 7863 765950', email: true, text: true, inapp: true },
+  rewards: { leaderboard: true, levelsVisible: true, watchConsentDefault: false },
 }
 
 const KEY = 'lumio_coach_settings'
