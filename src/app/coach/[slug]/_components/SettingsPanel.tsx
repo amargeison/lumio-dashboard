@@ -5,7 +5,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
-import { setSettings, resetSettings, ACCENT_PRESETS, type AccentKey } from '../_lib/settings-store'
+import { setSettings, resetSettings, ACCENT_PRESETS, DEFAULT_SETTINGS, type AccentKey } from '../_lib/settings-store'
 import { COACH_SIDEBAR, COACH_GROUPS } from '../_lib/coach-data'
 import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
 
@@ -70,9 +70,10 @@ function Modal({ T, accent, title, sub, onClose, children }: { T: ThemeTokens; a
 }
 
 // Lumio Coach Kit & Racket Progression rewards the coach can order (demo only —
-// no real checkout/fulfilment). Kit pricing is indicative → "£125".
+// no real checkout/fulfilment). Effort tracking uses the player's own watch, so
+// there's no GPS tracker — the kit is the capture stand, mic and rewards. £85.
 const KIT_OFFERS = [
-  { id: 'kit',     name: 'Lumio Coach Kit',     price: '£125', desc: 'GPS tracker, stand, mic, your first set of 9 reward keyrings & dampeners and the Black-stage trophy — everything to start capturing.', cta: 'Order kit' },
+  { id: 'kit',     name: 'Lumio Coach Kit',     price: '£85', desc: 'Capture stand, mic, your first set of 9 reward keyrings & dampeners and the Black-stage trophy — everything to start. No GPS tracker: effort uses the player’s own smartwatch.', cta: 'Order kit' },
   { id: 'rackets', name: 'Reward set (×9)',     price: '£50 / set', desc: 'The Racket Progression rewards — a coloured keyring + matching dampener per level. Reorder as you award them.', cta: 'Reorder set' },
 ]
 
@@ -83,21 +84,46 @@ export function SettingsPanel({ T, accent, density }: Common) {
   // Demo "order" state — which kit items the coach has added to their order.
   const [ordered, setOrdered] = useState<string[]>([])
 
+  // Per-area settings — persisted via the same localStorage store as the rest of
+  // Settings (survives reload, applies across the portal). Each value reads from
+  // the store (merged over defaults) and writes the full object back on change.
+  const profile = { ...DEFAULT_SETTINGS.profile, ...(s.profile || {}) }
+  const setProfile = (n: typeof profile) => setSettings({ profile: n })
+  const conn = { ...DEFAULT_SETTINGS.conn, ...(s.conn || {}) }
+  const setConn = (n: typeof conn) => setSettings({ conn: n })
+  const booking = { ...DEFAULT_SETTINGS.booking, ...(s.booking || {}) }
+  const setBooking = (n: typeof booking) => setSettings({ booking: n })
+  const gdpr = { ...DEFAULT_SETTINGS.gdpr, ...(s.gdpr || {}) }
+  const setGdpr = (n: typeof gdpr) => setSettings({ gdpr: n })
+  const staffCfg = { ...DEFAULT_SETTINGS.staff, ...(s.staff || {}) }
+  const setStaffCfg = (n: typeof staffCfg) => setSettings({ staff: n })
+  const msg = { ...DEFAULT_SETTINGS.messaging, ...(s.messaging || {}) }
+  const setMsg = (n: typeof msg) => setSettings({ messaging: n })
+  const rewards = { ...DEFAULT_SETTINGS.rewards, ...(s.rewards || {}) }
+  const setRewards = (n: typeof rewards) => setSettings({ rewards: n })
+
   const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
   useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
   const shownCount = COACH_SIDEBAR.filter(i => !hiddenMenu.includes(i.id)).length
 
   const sharingList = [s.shareHomework && 'homework', s.shareNextFocus && 'next focus', s.shareCoachNote && 'coach note'].filter(Boolean).join(', ') || 'nothing'
 
+  const GROUPS = ['You', 'Academy', 'Coaching', 'People & compliance', 'Rewards & system']
   const cards = [
-    { id: 'academy',     icon: 'shield',    t: 'Academy profile',     d: `${s.academy} · ${s.cert}` },
-    { id: 'belts',       icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
-    { id: 'availability',icon: 'calendar',  t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
-    { id: 'pricing',     icon: 'pound',     t: 'Pricing & packages',  d: `Private £${s.privateRate}/hr · packs & renewals` },
-    { id: 'kit',         icon: 'wrench',    t: 'Lumio Coach Kit & rewards', d: 'Your plan: Coach £39/mo · order kit & rewards' },
-    { id: 'sharing',     icon: 'megaphone', t: 'Parent sharing',      d: `Shares include: ${sharingList}` },
-    { id: 'appearance',  icon: 'settings',  t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
-    { id: 'menu',        icon: 'eye',       t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
+    { id: 'profile',     g: 'You',        icon: 'people',    t: 'Head coach profile',  d: `${s.coach} · ${profile.role} · email & calendar ${conn.calendarSync ? 'synced' : 'off'}` },
+    { id: 'academy',     g: 'Academy',    icon: 'home',      t: 'Academy profile',     d: `${s.academy} · ${s.cert}` },
+    { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${[booking.google && 'Google', booking.outlook && 'Outlook'].filter(Boolean).join(' + ') || 'No'} sync · ${booking.defaultDuration}m default` },
+    { id: 'availability',g: 'Academy',    icon: 'grid',      t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
+    { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: `Private £${s.privateRate}/hr · packs & renewals` },
+    { id: 'belts',       g: 'Coaching',   icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
+    { id: 'rewards',     g: 'Coaching',   icon: 'flag',      t: 'Effort & Rewards',    d: `Leaderboard ${rewards.leaderboard ? 'on' : 'off'} · watch consent default ${rewards.watchConsentDefault ? 'on' : 'off'}` },
+    { id: 'sharing',     g: 'Coaching',   icon: 'megaphone', t: 'Parent sharing',      d: `Shares include: ${sharingList}` },
+    { id: 'gdpr',        g: 'People & compliance', icon: 'shield', t: 'Players & data (GDPR)', d: `Retention ${gdpr.retentionYears}y · DPA ${gdpr.dpaAccepted ? 'accepted' : 'pending'}` },
+    { id: 'staff',       g: 'People & compliance', icon: 'people', t: 'Staff & safeguarding',  d: `DSL ${staffCfg.dsl} · DBS reminders ${staffCfg.reminderDays}d` },
+    { id: 'messaging',   g: 'People & compliance', icon: 'note',   t: 'Messaging',             d: `${[msg.email && 'Email', msg.text && 'Text', msg.inapp && 'In-app'].filter(Boolean).join(' · ') || 'No channels'}` },
+    { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: 'Your plan: Coach £39/mo · order kit & rewards' },
+    { id: 'appearance',  g: 'Rewards & system', icon: 'settings', t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
+    { id: 'menu',        g: 'Rewards & system', icon: 'eye',      t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
   ]
 
   return (
@@ -110,19 +136,28 @@ export function SettingsPanel({ T, accent, density }: Common) {
         <button onClick={() => resetSettings()} style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 9, padding: '7px 12px', fontSize: 11.5, cursor: 'pointer' }}>Reset to defaults</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: density.gap }}>
-        {cards.map(c => (
-          <div key={c.id} onClick={() => setOpen(c.id)}
-            style={{ position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad, boxShadow: T.cardShadow, cursor: 'pointer' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 8, display: 'grid', placeItems: 'center', background: accent.dim }}><Icon name={c.icon} size={16} stroke={1.7} style={{ color: accent.hex }} /></div>
-              <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text, flex: 1 }}>{c.t}</div>
-              <span style={{ fontSize: 11, color: accent.hex, fontWeight: 600 }}>Edit →</span>
+      {GROUPS.map(group => {
+        const gc = cards.filter(c => c.g === group)
+        if (!gc.length) return null
+        return (
+          <div key={group} style={{ marginBottom: density.gap + 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{group}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: density.gap }}>
+              {gc.map(c => (
+                <div key={c.id} onClick={() => setOpen(c.id)}
+                  style={{ position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad, boxShadow: T.cardShadow, cursor: 'pointer' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, display: 'grid', placeItems: 'center', background: accent.dim }}><Icon name={c.icon} size={16} stroke={1.7} style={{ color: accent.hex }} /></div>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text, flex: 1 }}>{c.t}</div>
+                    <span style={{ fontSize: 11, color: accent.hex, fontWeight: 600 }}>Edit →</span>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8, lineHeight: 1.45 }}>{c.d}</div>
+                </div>
+              ))}
             </div>
-            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8, lineHeight: 1.45 }}>{c.d}</div>
           </div>
-        ))}
-      </div>
+        )
+      })}
 
       {/* ── Editors ── */}
       {open === 'academy' && (
@@ -260,6 +295,96 @@ export function SettingsPanel({ T, accent, density }: Common) {
               </div>
             )
           })}
+        </Modal>
+      )}
+
+      {open === 'profile' && (
+        <Modal T={T} accent={accent} title="Head coach profile" sub="Your details, calendar sync and safeguarding documents" onClose={() => setOpen(null)}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>Contact details</div>
+          <Field T={T} label="Name"><input style={input(T)} value={s.coach} onChange={e => setSettings({ coach: e.target.value })} /></Field>
+          <Field T={T} label="Role"><input style={input(T)} value={profile.role} onChange={e => setProfile({ ...profile, role: e.target.value })} /></Field>
+          <Field T={T} label="Email"><input style={input(T)} value={profile.email} onChange={e => setProfile({ ...profile, email: e.target.value })} /></Field>
+          <Field T={T} label="Phone"><input style={input(T)} value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} /></Field>
+
+          <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Email &amp; calendar sync</div>
+          <Field T={T} label="Connected account" hint="Sessions and bookings sync both ways.">
+            <Seg T={T} accent={accent} value={conn.emailProvider} options={[{ v: 'google', label: 'Google' }, { v: 'outlook', label: 'Outlook' }, { v: 'none', label: 'None' }]} onChange={v => setConn({ ...conn, emailProvider: v })} />
+          </Field>
+          <Toggle T={T} accent={accent} on={conn.calendarSync} onChange={v => setConn({ ...conn, calendarSync: v })} label="Two-way calendar sync" desc="Bookings appear in your calendar; your busy times block new bookings." />
+
+          <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>DBS &amp; safeguarding documents</div>
+          <Field T={T} label="DBS certificate number"><input style={input(T)} value={profile.dbsNumber} onChange={e => setProfile({ ...profile, dbsNumber: e.target.value })} /></Field>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field T={T} label="DBS expiry"><input type="date" style={input(T)} value={profile.dbsExpiry} onChange={e => setProfile({ ...profile, dbsExpiry: e.target.value })} /></Field>
+            <Field T={T} label="Safeguarding training"><input type="date" style={input(T)} value={profile.safeguardingDate} onChange={e => setProfile({ ...profile, safeguardingDate: e.target.value })} /></Field>
+          </div>
+          <button style={{ width: '100%', appearance: 'none', border: `1px dashed ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '10px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>⬆ Upload DBS certificate (PDF)</button>
+          <div style={{ fontSize: 11, color: T.good, marginTop: 6 }}>✓ riverside-dbs-2024.pdf · uploaded · demo only</div>
+        </Modal>
+      )}
+
+      {open === 'booking' && (
+        <Modal T={T} accent={accent} title="Booking calendar" sub="Sync external calendars and set booking defaults" onClose={() => setOpen(null)}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>External calendar sync</div>
+          <Toggle T={T} accent={accent} on={booking.google} onChange={v => setBooking({ ...booking, google: v })} label="Google Calendar" desc="Two-way sync of bookings and busy times." />
+          <Toggle T={T} accent={accent} on={booking.outlook} onChange={v => setBooking({ ...booking, outlook: v })} label="Outlook / Microsoft 365" desc="Two-way sync with your work calendar." />
+          <Field T={T} label="iCal subscribe URL" hint="Paste a read-only feed to overlay external commitments.">
+            <input style={input(T)} value={booking.ical} onChange={e => setBooking({ ...booking, ical: e.target.value })} placeholder="webcal://…" />
+          </Field>
+          <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Booking defaults</div>
+          <Field T={T} label="Default lesson length">
+            <Seg T={T} accent={accent} value={booking.defaultDuration} options={[{ v: 30, label: '30 min' }, { v: 45, label: '45 min' }, { v: 60, label: '60 min' }]} onChange={v => setBooking({ ...booking, defaultDuration: v })} />
+          </Field>
+          <Field T={T} label="Buffer between bookings (min)"><input style={input(T)} inputMode="numeric" value={String(booking.buffer)} onChange={e => setBooking({ ...booking, buffer: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></Field>
+          <Toggle T={T} accent={accent} on={booking.autoConfirm} onChange={v => setBooking({ ...booking, autoConfirm: v })} label="Auto-confirm bookings" desc="Off = you approve each request before it's booked." />
+        </Modal>
+      )}
+
+      {open === 'rewards' && (
+        <Modal T={T} accent={accent} title="Effort & Rewards" sub="The smartwatch reward system — separate from Racket Progression" onClose={() => setOpen(null)}>
+          <Toggle T={T} accent={accent} on={rewards.leaderboard} onChange={v => setRewards({ ...rewards, leaderboard: v })} label="Show squad leaderboard" desc="Rank players by XP across the academy." />
+          <Toggle T={T} accent={accent} on={rewards.levelsVisible} onChange={v => setRewards({ ...rewards, levelsVisible: v })} label="Show effort levels to players" desc="Rookie → Elite progression in the student view." />
+          <Toggle T={T} accent={accent} on={rewards.watchConsentDefault} onChange={v => setRewards({ ...rewards, watchConsentDefault: v })} label="Default new players to wearable consent" desc="Off is safer — capture effort only with explicit parent consent." />
+          <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>Effort &amp; Rewards uses the player&apos;s own smartwatch and never advances a racket — <strong style={{ color: T.text2 }}>Racket Progression stays coach-assessed</strong> against the LTA Youth pathway.</div>
+        </Modal>
+      )}
+
+      {open === 'gdpr' && (
+        <Modal T={T} accent={accent} title="Players & data (GDPR)" sub="Default consent, retention and data rights" onClose={() => setOpen(null)}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>Default consent for new players</div>
+          <Toggle T={T} accent={accent} on={gdpr.data} onChange={v => setGdpr({ ...gdpr, data: v })} label="Data processing" desc="Coach the player and manage their record." />
+          <Toggle T={T} accent={accent} on={gdpr.photo} onChange={v => setGdpr({ ...gdpr, photo: v })} label="Photo & video" desc="Capture footage for coaching." />
+          <Toggle T={T} accent={accent} on={gdpr.medical} onChange={v => setGdpr({ ...gdpr, medical: v })} label="Medical & emergency" />
+          <Toggle T={T} accent={accent} on={gdpr.wearable} onChange={v => setGdpr({ ...gdpr, wearable: v })} label="Wearable / heart-rate" desc="Smartwatch effort data for the reward system." />
+          <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Retention &amp; rights</div>
+          <Field T={T} label="Keep player records for">
+            <Seg T={T} accent={accent} value={gdpr.retentionYears} options={[{ v: 1, label: '1 year' }, { v: 3, label: '3 years' }, { v: 7, label: '7 years' }]} onChange={v => setGdpr({ ...gdpr, retentionYears: v })} />
+          </Field>
+          <Toggle T={T} accent={accent} on={gdpr.dpaAccepted} onChange={v => setGdpr({ ...gdpr, dpaAccepted: v })} label="Data Processing Agreement accepted" desc="Lumio processes this data on your behalf." />
+          <button style={{ width: '100%', appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 9, padding: '9px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>⬇ Export all academy data</button>
+          <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 8 }}>Per-player consent is recorded on each player; parents can also submit it via your public consent form.</div>
+        </Modal>
+      )}
+
+      {open === 'staff' && (
+        <Modal T={T} accent={accent} title="Staff & safeguarding" sub="Designated lead, DBS reminders and policy" onClose={() => setOpen(null)}>
+          <Field T={T} label="Designated Safeguarding Lead"><input style={input(T)} value={staffCfg.dsl} onChange={e => setStaffCfg({ ...staffCfg, dsl: e.target.value })} /></Field>
+          <Field T={T} label="DBS renewal reminder">
+            <Seg T={T} accent={accent} value={staffCfg.reminderDays} options={[{ v: 30, label: '30 days' }, { v: 60, label: '60 days' }, { v: 90, label: '90 days' }]} onChange={v => setStaffCfg({ ...staffCfg, reminderDays: v })} />
+          </Field>
+          <Toggle T={T} accent={accent} on={staffCfg.policyOn} onChange={v => setStaffCfg({ ...staffCfg, policyOn: v })} label="Require safeguarding training for all staff" desc="Flags any coach without recorded training." />
+          <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>Manage individual DBS certificates and dates on the <strong style={{ color: T.text2 }}>Staff</strong> page.</div>
+        </Modal>
+      )}
+
+      {open === 'messaging' && (
+        <Modal T={T} accent={accent} title="Messaging" sub="How you reach parents and players" onClose={() => setOpen(null)}>
+          <Field T={T} label="Sender email"><input style={input(T)} value={msg.senderEmail} onChange={e => setMsg({ ...msg, senderEmail: e.target.value })} /></Field>
+          <Field T={T} label="Sender phone (SMS)"><input style={input(T)} value={msg.senderPhone} onChange={e => setMsg({ ...msg, senderPhone: e.target.value })} /></Field>
+          <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Channels</div>
+          <Toggle T={T} accent={accent} on={msg.email} onChange={v => setMsg({ ...msg, email: v })} label="Email" desc="Uses the sender email above." />
+          <Toggle T={T} accent={accent} on={msg.text} onChange={v => setMsg({ ...msg, text: v })} label="Text (SMS)" desc="Uses the sender phone above." />
+          <Toggle T={T} accent={accent} on={msg.inapp} onChange={v => setMsg({ ...msg, inapp: v })} label="In-app (Lumio message)" desc="Always available to players in the app." />
         </Modal>
       )}
     </div>

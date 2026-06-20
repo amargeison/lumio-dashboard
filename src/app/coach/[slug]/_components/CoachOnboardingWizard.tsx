@@ -35,6 +35,9 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [calendar, setCalendar] = useState('')
+  const [dbsNumber, setDbsNumber] = useState('')
+  const [dbsExpiry, setDbsExpiry] = useState('')
+  const [safeguarding, setSafeguarding] = useState('')
   const [setupType, setSetupType] = useState<'lumio' | 'self' | null>(null)
   const [dpa, setDpa] = useState(false)
   const [players, setPlayers] = useState<Player[]>([])
@@ -70,6 +73,9 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
       if (email.trim()) update.contact_email = email.trim()
       if (phone.trim()) update.contact_phone = phone.trim()
       if (calendar) update.calendar_provider = calendar
+      if (dbsNumber.trim()) update.head_coach_dbs_number = dbsNumber.trim()
+      if (dbsExpiry) update.head_coach_dbs_expiry = dbsExpiry
+      if (safeguarding) update.head_coach_safeguarding_date = safeguarding
       if (dpa) update.dpa_accepted_at = new Date().toISOString()
       const { error } = await sb().from('sports_profiles').update(update).eq('id', uid)
       if (error) throw new Error(error.message)
@@ -166,6 +172,21 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
                   <option value="outlook">Outlook / Microsoft</option>
                   <option value="apple">Apple Calendar</option>
                 </select>
+              </div>
+              <div style={{ borderTop: '1px solid #1F2937', paddingTop: 16, marginTop: 2 }}>
+                <label style={lbl}>Safeguarding &amp; DBS <span style={{ color: '#4B5563', fontWeight: 400 }}>(optional — add now or later in Settings)</span></label>
+                <input value={dbsNumber} onChange={e => setDbsNumber(e.target.value)} placeholder="DBS certificate number" style={input} />
+                <div style={{ display: 'flex', gap: 12, marginTop: 10 }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ ...lbl, fontSize: 10 }}>DBS expiry</label>
+                    <input type="date" value={dbsExpiry} onChange={e => setDbsExpiry(e.target.value)} style={input} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ ...lbl, fontSize: 10 }}>Safeguarding training</label>
+                    <input type="date" value={safeguarding} onChange={e => setSafeguarding(e.target.value)} style={input} />
+                  </div>
+                </div>
+                <p style={{ color: '#6B7280', fontSize: 11.5, margin: '8px 0 0', lineHeight: 1.5 }}>You can upload the certificate PDF and manage your team&apos;s DBS records once you&apos;re in — Settings → Head coach profile and the Staff page.</p>
               </div>
             </div>
           </div>
