@@ -9,6 +9,13 @@ import { useState, useEffect, useCallback } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore } from '../_lib/coach-db'
+import { WatchConnectPanel } from './WatchConnectPanel'
+
+// Generate a fresh opaque watch token client-side (matches the DB default shape).
+function newWatchToken() {
+  const r = () => (crypto.randomUUID?.() || Math.random().toString(36).slice(2)).replace(/-/g, '')
+  return (r() + r()).slice(0, 64)
+}
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 const CATEGORIES = ['Junior', 'Performance', 'Adult'] as const
@@ -161,7 +168,7 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
     try {
       const row = {
         name: d.name, category: d.category || null, age: d.age || null, parent_name: d.parent_name || null, racket_stage: d.racket_stage || null, goal: d.goal || null, level: d.level || null, email: d.email || null, phone: d.phone || null, notes: d.notes || null,
-        consent_data: !!d.consent_data, consent_photo: !!d.consent_photo, consent_medical: !!d.consent_medical, consent_by: d.consent_by || null, consent_date: d.consent_date || null, medical_notes: d.medical_notes || null,
+        consent_data: !!d.consent_data, consent_photo: !!d.consent_photo, consent_medical: !!d.consent_medical, consent_wearable: !!d.consent_wearable, consent_by: d.consent_by || null, consent_date: d.consent_date || null, medical_notes: d.medical_notes || null,
       }
       if (initial?.id) await dbUpdate('coach_players', initial.id, row); else await dbInsert('coach_players', row)
       onSaved()
@@ -195,7 +202,7 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>Consent &amp; medical</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 10 }}>
-            {([['consent_data', 'Data processing'], ['consent_photo', 'Photo / video'], ['consent_medical', 'Hold medical info']] as const).map(([k, label]) => (
+            {([['consent_data', 'Data processing'], ['consent_photo', 'Photo / video'], ['consent_medical', 'Hold medical info'], ['consent_wearable', 'Wearable / heart-rate']] as const).map(([k, label]) => (
               <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: T.text, cursor: 'pointer' }}>
                 <input type="checkbox" checked={!!d[k]} onChange={e => set(k, e.target.checked)} /> {label}
               </label>
@@ -392,7 +399,7 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
           {tab === 'consent' && (
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 14 }}>
-                {([['Data processing', player.consent_data], ['Photo / video', player.consent_photo], ['Medical info', player.consent_medical]] as const).map(([l, ok]) => (
+                {([['Data processing', player.consent_data], ['Photo / video', player.consent_photo], ['Medical info', player.consent_medical], ['Wearable / heart-rate', player.consent_wearable]] as const).map(([l, ok]) => (
                   <div key={l} style={{ background: T.panel2, border: `1px solid ${ok ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.35)'}`, borderRadius: 8, padding: '10px 12px' }}>
                     <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{l}</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: ok ? '#22C55E' : '#EF4444', marginTop: 3 }}>{ok ? '✓ Given' : '✗ Not given'}</div>
@@ -404,8 +411,19 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
               </div>
               {player.medical_notes && <div style={{ fontSize: 12.5, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}><b style={{ color: T.text }}>Medical / emergency:</b> {player.medical_notes}</div>}
               {!player.consent_photo && <div style={{ fontSize: 12, color: '#EF4444', marginBottom: 12 }}>⚠ No photo/video consent — do not capture footage of this player.</div>}
+              {!player.consent_wearable && <div style={{ fontSize: 12, color: '#F59E0B', marginBottom: 12 }}>⚠ No wearable/heart-rate consent — smartwatch effort tracking is blocked for this player.</div>}
               <p style={{ fontSize: 11.5, color: T.text3, margin: '0 0 12px' }}>Record or change consent using <b style={{ color: T.text2 }}>Edit</b>. Use Export to fulfil a data-access request, or Delete (Contact tab) for a right-to-erasure request.</p>
               <button onClick={() => exportPlayerData(player, lessons, attendanceRows)} style={{ background: 'transparent', border: `1px solid ${T.border}`, color: T.text2, borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>⬇ Export this player&apos;s data</button>
+
+              <div style={{ marginTop: 16 }}>
+                <WatchConnectPanel
+                  T={T} accent={accent}
+                  token={player.watch_token || ''}
+                  playerName={(player.name || '').split(' ')[0]}
+                  consentOk={!!player.consent_wearable}
+                  onReset={async () => { const nt = newWatchToken(); await dbUpdate('coach_players', player.id, { watch_token: nt }); return nt }}
+                />
+              </div>
             </div>
           )}
         </div>

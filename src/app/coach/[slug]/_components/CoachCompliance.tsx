@@ -23,14 +23,24 @@ Retention: we keep records only as long as your child trains with us, plus the p
 
 Your rights: you can ask to see, correct, export or delete your child's data at any time — just contact us.`
 
-export function CoachCompliance({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+// Sample parent-consent submissions for the demo so the "pending submissions →
+// apply to roster" flow is visible without a database.
+const DEMO_SUBMISSIONS = [
+  { id: 'd1', child_name: 'Sofia Marchetti', child_age: 9, parent_name: 'Elena Marchetti', parent_email: 'elena.m@example.com', consent_data: true, consent_photo: true, consent_medical: false, medical_notes: null, status: 'new' },
+  { id: 'd2', child_name: 'Tom Bradley', child_age: 12, parent_name: 'James Bradley', parent_email: 'j.bradley@example.com', consent_data: true, consent_photo: false, consent_medical: true, medical_notes: 'Hay fever in summer.', status: 'new' },
+]
+
+export function CoachCompliance({ T, accent, demo }: { T: ThemeTokens; accent: AccentTokens; demo?: boolean }) {
   const profile = useCoachProfile()
   const submissions = useCoachTable<any>('coach_consent_submissions')
   const [saving, setSaving] = useState(false)
   const [copied, setCopied] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
   const [applying, setApplying] = useState<string | null>(null)
-  const accepted = !!profile.dpa_accepted_at
+  const [demoAccepted, setDemoAccepted] = useState(true)
+  const [demoPending, setDemoPending] = useState(DEMO_SUBMISSIONS)
+  const accepted = demo ? demoAccepted : !!profile.dpa_accepted_at
+  const acceptedDate = demo ? '2026-06-01T00:00:00Z' : profile.dpa_accepted_at
 
   // The shareable parent-consent link is /tennis/coach/{slug}/consent — derive
   // the slug + origin from the current URL.
@@ -43,8 +53,9 @@ export function CoachCompliance({ T, accent }: { T: ThemeTokens; accent: AccentT
   })()
   const copyLink = () => { navigator.clipboard.writeText(consentLink).then(() => { setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2500) }).catch(() => {}) }
 
-  const pending = submissions.rows.filter(s => s.status !== 'applied')
+  const pending = demo ? demoPending : submissions.rows.filter(s => s.status !== 'applied')
   const applySubmission = async (sub: any) => {
+    if (demo) { setDemoPending(prev => prev.filter(x => x.id !== sub.id)); return }
     setApplying(sub.id)
     try {
       const players = await dbList<any>('coach_players')
@@ -59,10 +70,11 @@ export function CoachCompliance({ T, accent }: { T: ThemeTokens; accent: AccentT
   }
 
   const accept = async () => {
+    if (demo) { setDemoAccepted(true); return }
     setSaving(true)
     try { await saveCoachProfile({ dpa_accepted_at: new Date().toISOString() }); profile.reload() } finally { setSaving(false) }
   }
-  const notice = PRIVACY_TEMPLATE(profile.brand_name || '')
+  const notice = PRIVACY_TEMPLATE(demo ? 'Riverside Tennis Academy' : (profile.brand_name || ''))
   const copy = () => { navigator.clipboard.writeText(notice).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500) }).catch(() => {}) }
 
   return (
@@ -101,7 +113,7 @@ export function CoachCompliance({ T, accent }: { T: ThemeTokens; accent: AccentT
           You are the data controller; Lumio is your data processor and only processes this data to run your portal. Accepting confirms you agree to those terms.
         </p>
         {accepted ? (
-          <div style={{ fontSize: 12.5, color: '#22C55E', fontWeight: 600 }}>✓ Accepted {new Date(profile.dpa_accepted_at!).toLocaleDateString('en-GB')}</div>
+          <div style={{ fontSize: 12.5, color: '#22C55E', fontWeight: 600 }}>✓ Accepted {new Date(acceptedDate!).toLocaleDateString('en-GB')}</div>
         ) : (
           <button onClick={accept} disabled={saving} style={{ padding: '9px 16px', borderRadius: 9, border: 'none', background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>{saving ? 'Saving…' : 'Accept agreement'}</button>
         )}
