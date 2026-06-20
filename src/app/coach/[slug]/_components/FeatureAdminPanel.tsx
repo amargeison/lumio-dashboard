@@ -15,10 +15,10 @@ import {
 } from '../_lib/feature-flags'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
-const FEATURE_ORDER: FeatureKey[] = ['gps', 'video', 'audio', 'racket']
+const FEATURE_ORDER: FeatureKey[] = ['effort', 'video', 'audio', 'racket']
 
 export function FeatureAdminPanel({ T, accent, density }: Common) {
-  const [flags, setFlags] = useState<FeatureFlags>({ gps: true, video: true, audio: true, racket: true })
+  const [flags, setFlags] = useState<FeatureFlags>({ effort: true, video: true, audio: true, racket: true })
   useEffect(() => { const r = () => setFlags(getFlags()); r(); return subscribe(r) }, [])
   const activeTier = tierForFlags(flags)
 

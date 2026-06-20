@@ -22,7 +22,7 @@ const STATUSES: KitStatus[] = ['good', 'low', 'order', 'repair']
 // kits when that feature is turned off (e.g. cameras when Video is off).
 function itemFeature(name: string): FeatureKey | null {
   const n = name.toLowerCase()
-  if (/gps|tracker|vest|beacon/.test(n)) return 'gps'
+  if (/gps|tracker|vest|beacon/.test(n)) return 'effort'
   if (/camera|tripod|tablet|sd card|vision|\bvideo\b/.test(n)) return 'video'
   if (/\bmic\b|microphone|\baudio\b/.test(n)) return 'audio'
   return null

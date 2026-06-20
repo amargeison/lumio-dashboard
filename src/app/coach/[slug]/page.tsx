@@ -211,7 +211,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags())
   useEffect(() => { const r = () => setFeat(getFeatureFlags()); r(); return subscribeFeatures(r) }, [])
   const featureHidden = (id: string) =>
-    (id === 'gpsheatmaps' && !feat.gps) ||
+    (id === 'gpsheatmaps' && !feat.effort) ||
     (id === 'belts' && !feat.racket) ||
     (id === 'videoaudio' && !feat.video && !feat.audio)
   const planTier = TIERS.find(t => t.key === tierForFlags(feat))

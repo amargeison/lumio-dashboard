@@ -11,6 +11,7 @@ import {
   COACH_ORG, BOOKINGS, PLAYERS, TODAY, dateForDay,
   type Booking, type Player,
 } from './coach-data'
+import { getAssignments } from './player-assign-store'
 
 export type CoachRole = 'Head' | 'Senior' | 'Coach' | 'Assistant' | 'Apprentice'
 
@@ -26,6 +27,16 @@ export type Coach = {
   status: 'active' | 'leave'
   homeVenue: string
   photo?: string
+  // DBS & safeguarding (optional — set when a coach is added with these details).
+  dbsNumber?: string
+  dbsIssued?: string
+  dbsExpiry?: string
+  safeguardingTrained?: boolean
+  safeguardingDate?: string
+  // Contact & calendar (optional — captured on add).
+  email?: string
+  phone?: string
+  calendarProvider?: string
 }
 
 const HOME = COACH_ORG.venue.split(' · ')[0]   // 'Riverside Tennis Centre'
@@ -146,7 +157,9 @@ export function bookingsForCoach(coachId: string): Booking[] {
   return ALL_BOOKINGS.filter(b => b.coachId === coachId)
 }
 export function playersForCoach(coachId: string): Player[] {
-  return ALL_PLAYERS.filter(p => p.coachId === coachId)
+  // An assignment override (head coach reassigning) wins over the static link.
+  const overrides = getAssignments()
+  return ALL_PLAYERS.filter(p => (overrides[p.id] ?? p.coachId) === coachId)
 }
 
 export function coachStats(coachId: string): CoachStats {

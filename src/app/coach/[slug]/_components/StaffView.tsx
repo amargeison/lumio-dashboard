@@ -19,6 +19,7 @@ import { getCalendarItems } from '../_lib/schedule'
 import { WeekCalendarGrid } from './WeekCalendar'
 import { getAddedSessions, subscribe as subscribeSessions } from '../_lib/sessions-store'
 import { getAddedCoaches, subscribe as subscribeCoaches } from '../_lib/coaches-store'
+import { assignPlayer, subscribe as subscribeAssign } from '../_lib/player-assign-store'
 import { AddCoachModal } from './AddCoachModal'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -86,7 +87,14 @@ function dbsState(rec: DbsRecord | undefined): { label: string; colour: string; 
   if (days <= 90) return { label: `Expires in ${days}d`, colour: '#F59E0B', short: 'Due soon' }
   return { label: 'Valid', colour: '#22C55E', short: 'Valid' }
 }
-function dbsFor(coachId: string): DbsRecord | undefined { return DEMO_DBS[coachId] }
+function dbsFor(c: Coach): DbsRecord | undefined {
+  // A coach added with their own DBS details carries them on the record; static
+  // demo coaches fall back to the sample DEMO_DBS map.
+  if (c.dbsNumber || c.dbsExpiry || c.safeguardingTrained || c.safeguardingDate) {
+    return { number: c.dbsNumber ?? null, issued: c.dbsIssued ?? null, expiry: c.dbsExpiry ?? null, safeTrained: !!c.safeguardingTrained, safeDate: c.safeguardingDate ?? null }
+  }
+  return DEMO_DBS[c.id]
+}
 function DbsBadge({ rec }: { rec: DbsRecord | undefined }) {
   const st = dbsState(rec)
   return <span style={{ fontSize: 9, fontWeight: 700, color: st.colour, background: `${st.colour}1a`, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>DBS {st.short}</span>
@@ -99,6 +107,8 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
   const [addedCoaches, setAddedCoaches] = useState<Coach[]>([])
   const [addOpen, setAddOpen] = useState(false)
   useEffect(() => { const r = () => setAddedCoaches(getAddedCoaches()); r(); return subscribeCoaches(r) }, [])
+  const [, setAssignTick] = useState(0)
+  useEffect(() => subscribeAssign(() => setAssignTick(t => t + 1)), [])
 
   const [selId, setSelId] = useState<string | null>(null)
   const [role, setRole] = useState<'All' | CoachRole>('All')
@@ -150,7 +160,7 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
 
         {/* DBS & safeguarding */}
         {(() => {
-          const rec = dbsFor(sel.id)
+          const rec = dbsFor(sel)
           const st = dbsState(rec)
           return (
             <>
@@ -217,6 +227,14 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
                   <span style={{ width: 16, height: 10, borderRadius: 2, background: BELTS[p.beltIndex]?.colour ?? T.border, border: '1px solid rgba(128,128,128,0.4)', flexShrink: 0 }} />
                 </div>
                 <div style={{ fontSize: 11, color: T.text3, marginTop: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎯 {p.goal}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 8, borderTop: `1px solid ${T.border}` }}>
+                  <span style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Reassign</span>
+                  <select value="" onChange={e => { if (e.target.value) assignPlayer(p.id, e.target.value) }}
+                    style={{ flex: 1, minWidth: 0, appearance: 'none', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 7, color: T.text2, fontSize: 11.5, padding: '5px 8px', cursor: 'pointer' }}>
+                    <option value="">Move to coach…</option>
+                    {coaches.filter(c => c.id !== sel.id).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </div>
               </Card>
             ))}
           </div>
@@ -231,8 +249,8 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
 
   const sumHours = coaches.reduce((a, c) => a + stats[c.id].hoursBooked, 0)
   const sumCap = coaches.reduce((a, c) => a + c.hoursPerWeek, 0)
-  const dbsValid = coaches.filter(c => dbsState(dbsFor(c.id)).short === 'Valid').length
-  const dbsFlagged = coaches.filter(c => { const s = dbsState(dbsFor(c.id)).short; return s !== 'Valid' })
+  const dbsValid = coaches.filter(c => dbsState(dbsFor(c)).short === 'Valid').length
+  const dbsFlagged = coaches.filter(c => { const s = dbsState(dbsFor(c)).short; return s !== 'Valid' })
   const summary = [
     { l: 'Coaches', v: coaches.length, c: T.text },
     { l: 'On leave', v: coaches.filter(c => c.status === 'leave').length, c: T.warn },
@@ -269,7 +287,7 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
         <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 12, padding: '12px 16px', marginBottom: density.gap }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: '#F59E0B', marginBottom: 4 }}>⚠ DBS &amp; safeguarding attention needed</div>
           <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.5 }}>
-            {dbsFlagged.map(c => `${c.name} (${dbsState(dbsFor(c.id)).label})`).join(', ')}
+            {dbsFlagged.map(c => `${c.name} (${dbsState(dbsFor(c)).label})`).join(', ')}
           </div>
         </div>
       )}
@@ -297,7 +315,7 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
                 <span style={{ fontSize: 10.5, color: T.text3, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.accreditation}</span>
-                <DbsBadge rec={dbsFor(c.id)} />
+                <DbsBadge rec={dbsFor(c)} />
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
                 {c.specialisms.map(sp => <Chip key={sp} T={T}>{sp}</Chip>)}
