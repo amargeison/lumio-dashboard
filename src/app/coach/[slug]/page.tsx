@@ -45,9 +45,10 @@ import { LiveCoachDashboard } from './_components/LiveCoachDashboard'
 import { LiveMessages } from './_components/LiveMessages'
 import { CoachOnboardingWizard } from './_components/CoachOnboardingWizard'
 import { CoachContactSettings } from './_components/CoachContactSettings'
+import { LiveRoster } from './_components/LiveRoster'
 import {
   LiveModule, RacketProgressionView,
-  PLAYERS_CONFIG, STAFF_CONFIG, BOOKINGS_CONFIG, LESSONS_CONFIG, CAMPS_CONFIG, PAYMENTS_CONFIG, GPS_CONFIG,
+  STAFF_CONFIG, BOOKINGS_CONFIG, LESSONS_CONFIG, CAMPS_CONFIG, PAYMENTS_CONFIG, GPS_CONFIG,
   SESSION_PLANS_CONFIG, COURTS_CONFIG, DEVELOPMENT_CONFIG, EQUIPMENT_CONFIG, RESOURCES_CONFIG,
 } from './_components/LiveModules'
 import { useCoachStats } from './_lib/coach-db'
@@ -262,7 +263,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
     if (isEmpty) {
       // Live, persisted data modules for a real coach's portal (Supabase-backed).
       switch (active) {
-        case 'roster':   return <LiveModule config={PLAYERS_CONFIG} T={T} accent={accent} />
+        case 'roster':   return <LiveRoster T={T} accent={accent} density={density} />
         case 'staff':    return <LiveModule config={STAFF_CONFIG} T={T} accent={accent} />
         case 'calendar': return <LiveModule config={BOOKINGS_CONFIG} T={T} accent={accent} />
         case 'belts':       return <RacketProgressionView T={T} accent={accent} />
