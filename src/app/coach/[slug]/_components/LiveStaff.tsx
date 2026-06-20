@@ -1,0 +1,142 @@
+'use client'
+
+// Coaching staff with a DBS / safeguarding register. Shows DBS status (valid /
+// expiring / expired / missing) per staff member, warns about anything lapsed
+// or due within 90 days, and captures DBS + safeguarding-training details.
+
+import { useState } from 'react'
+import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
+import { useCoachTable, dbInsert, dbUpdate, dbRemove } from '../_lib/coach-db'
+
+type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
+const DAY = 86400000
+
+function dbsState(expiry?: string | null): { label: string; colour: string } {
+  if (!expiry) return { label: 'No DBS on file', colour: '#EF4444' }
+  const days = Math.floor((new Date(expiry).getTime() - Date.now()) / DAY)
+  if (days < 0) return { label: 'Expired', colour: '#EF4444' }
+  if (days <= 90) return { label: `Expires in ${days}d`, colour: '#F59E0B' }
+  return { label: 'Valid', colour: '#22C55E' }
+}
+
+export function LiveStaff({ T, accent }: Common) {
+  const staff = useCoachTable<any>('coach_staff')
+  const [editing, setEditing] = useState<any | null | undefined>(undefined)
+
+  const flagged = staff.rows.filter(s => { const st = dbsState(s.dbs_expiry); return st.label === 'Expired' || st.label.startsWith('Expires') || st.label.startsWith('No DBS') })
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+        <div>
+          <h2 style={{ color: T.text, fontSize: 22, fontWeight: 700, margin: 0 }}>Coaches &amp; staff</h2>
+          <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>Your team and their DBS &amp; safeguarding status.</p>
+        </div>
+        <button onClick={() => setEditing(null)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+          <Icon name="plus" size={14} /> Add staff
+        </button>
+      </div>
+
+      {flagged.length > 0 && (
+        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: '#F59E0B', marginBottom: 4 }}>⚠ DBS attention needed</div>
+          <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.5 }}>{flagged.map(s => `${s.name} (${dbsState(s.dbs_expiry).label})`).join(', ')}</div>
+        </div>
+      )}
+
+      {staff.loading ? <p style={{ color: T.text3, fontSize: 13, padding: '40px 0', textAlign: 'center' }}>Loading…</p>
+      : staff.rows.length === 0 ? (
+        <div style={{ border: `1px dashed ${T.border}`, borderRadius: 14, padding: 40, textAlign: 'center' }}>
+          <p style={{ color: T.text2, fontSize: 14, fontWeight: 600, margin: '0 0 4px' }}>No staff added yet</p>
+          <p style={{ color: T.text3, fontSize: 13, margin: '0 0 16px' }}>Add your coaching team and record their DBS checks.</p>
+          <button onClick={() => setEditing(null)} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Add your first staff member</button>
+        </div>
+      ) : (
+        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+                  {['Name', 'Role', 'DBS status', 'DBS expiry', 'Safeguarding', ''].map(h => <th key={h} style={{ textAlign: 'left', padding: '11px 16px', color: T.text3, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {staff.rows.map(s => {
+                  const st = dbsState(s.dbs_expiry)
+                  return (
+                    <tr key={s.id} style={{ borderBottom: `1px solid ${T.border}` }}>
+                      <td style={{ padding: '11px 16px', color: T.text, fontWeight: 600 }}>{s.name}{s.qualifications && <span style={{ display: 'block', fontSize: 11, color: T.text3, fontWeight: 400 }}>{s.qualifications}</span>}</td>
+                      <td style={{ padding: '11px 16px', color: T.text2 }}>{s.role || '—'}</td>
+                      <td style={{ padding: '11px 16px' }}><span style={{ fontSize: 11, fontWeight: 700, color: st.colour, background: `${st.colour}1a`, padding: '3px 8px', borderRadius: 5 }}>{st.label}</span></td>
+                      <td style={{ padding: '11px 16px', color: T.text2 }}>{s.dbs_expiry ? new Date(s.dbs_expiry).toLocaleDateString('en-GB') : '—'}</td>
+                      <td style={{ padding: '11px 16px', color: s.safeguarding_trained ? '#22C55E' : T.text3, fontWeight: 600 }}>{s.safeguarding_trained ? `✓${s.safeguarding_date ? ' ' + new Date(s.safeguarding_date).toLocaleDateString('en-GB') : ''}` : '—'}</td>
+                      <td style={{ padding: '8px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <button onClick={() => setEditing(s)} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: T.text3, cursor: 'pointer', marginRight: 6, fontSize: 12, fontWeight: 600 }}>Edit</button>
+                        <button onClick={() => { if (confirm(`Delete ${s.name}?`)) { dbRemove('coach_staff', s.id).then(() => staff.reload()) } }} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Delete</button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {editing !== undefined && <StaffForm T={T} accent={accent} initial={editing} onClose={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); staff.reload() }} />}
+    </div>
+  )
+}
+
+function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; accent: AccentTokens; initial: any | null; onClose: () => void; onSaved: () => void }) {
+  const [d, setD] = useState<Record<string, any>>(initial ?? {})
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
+  const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
+  const input: React.CSSProperties = { width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none', marginTop: 5 }
+  const lbl: React.CSSProperties = { display: 'block', color: T.text3, fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }
+  const fld = (k: string, label: string, type = 'text', ph?: string) => <div><label style={lbl}>{label}</label><input type={type} value={d[k] ?? ''} onChange={e => set(k, e.target.value)} placeholder={ph} style={input} /></div>
+
+  const save = async () => {
+    if (!String(d.name ?? '').trim()) { setErr('Name is required'); return }
+    setSaving(true); setErr('')
+    try {
+      const row = { name: d.name, role: d.role || null, email: d.email || null, phone: d.phone || null, qualifications: d.qualifications || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }
+      if (initial?.id) await dbUpdate('coach_staff', initial.id, row); else await dbInsert('coach_staff', row)
+      onSaved()
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Save failed'); setSaving(false) }
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>
+        <h3 style={{ color: T.text, fontSize: 18, fontWeight: 700, margin: '0 0 16px' }}>{initial?.id ? 'Edit staff member' : 'Add staff member'}</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {fld('name', 'Name')}
+          {fld('role', 'Role', 'text', 'e.g. Assistant Coach')}
+          {fld('qualifications', 'Qualifications', 'text', 'e.g. LTA Level 3')}
+          {fld('email', 'Email')}
+          {fld('phone', 'Phone')}
+        </div>
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>DBS &amp; safeguarding</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            {fld('dbs_number', 'DBS number')}
+            {fld('dbs_issued', 'Issued', 'date')}
+            {fld('dbs_expiry', 'Expiry', 'date')}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 12, flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: T.text, cursor: 'pointer' }}><input type="checkbox" checked={!!d.safeguarding_trained} onChange={e => set('safeguarding_trained', e.target.checked)} /> Safeguarding trained</label>
+            <div style={{ flex: 1, minWidth: 160 }}>{fld('safeguarding_date', 'Training date', 'date')}</div>
+          </div>
+        </div>
+        {err && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 10 }}>{err}</p>}
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
+          <button onClick={onClose} style={{ padding: '10px 16px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+          <button onClick={save} disabled={saving} style={{ padding: '10px 18px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>{saving ? 'Saving…' : 'Save'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}

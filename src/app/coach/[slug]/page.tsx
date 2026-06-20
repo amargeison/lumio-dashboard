@@ -46,11 +46,14 @@ import { LiveMessages } from './_components/LiveMessages'
 import { CoachOnboardingWizard } from './_components/CoachOnboardingWizard'
 import { CoachContactSettings } from './_components/CoachContactSettings'
 import { CoachImport } from './_components/CoachImport'
+import { CoachCompliance } from './_components/CoachCompliance'
 import { LiveRoster } from './_components/LiveRoster'
 import { LiveSessionPlanner } from './_components/LiveSessionPlanner'
+import { CoachGpsVideo } from './_components/CoachGpsVideo'
+import { LiveStaff } from './_components/LiveStaff'
 import {
   LiveModule, RacketProgressionView,
-  STAFF_CONFIG, BOOKINGS_CONFIG, LESSONS_CONFIG, CAMPS_CONFIG, PAYMENTS_CONFIG, GPS_CONFIG,
+  BOOKINGS_CONFIG, LESSONS_CONFIG, CAMPS_CONFIG, PAYMENTS_CONFIG,
   COURTS_CONFIG, DEVELOPMENT_CONFIG, EQUIPMENT_CONFIG, RESOURCES_CONFIG,
 } from './_components/LiveModules'
 import { useCoachStats } from './_lib/coach-db'
@@ -266,21 +269,21 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       // Live, persisted data modules for a real coach's portal (Supabase-backed).
       switch (active) {
         case 'roster':   return <LiveRoster T={T} accent={accent} density={density} />
-        case 'staff':    return <LiveModule config={STAFF_CONFIG} T={T} accent={accent} />
+        case 'staff':    return <LiveStaff T={T} accent={accent} density={density} />
         case 'calendar': return <LiveModule config={BOOKINGS_CONFIG} T={T} accent={accent} />
         case 'belts':       return <RacketProgressionView T={T} accent={accent} />
         case 'lessons':     return <LiveModule config={LESSONS_CONFIG} T={T} accent={accent} />
         case 'camps':       return <LiveModule config={CAMPS_CONFIG} T={T} accent={accent} />
         case 'payments':    return <LiveModule config={PAYMENTS_CONFIG} T={T} accent={accent} />
-        case 'gpsheatmaps': return <LiveModule config={GPS_CONFIG} T={T} accent={accent} />
-        case 'videoaudio':  return <LiveModule config={GPS_CONFIG} T={T} accent={accent} />
+        case 'gpsheatmaps': return <CoachGpsVideo T={T} accent={accent} />
+        case 'videoaudio':  return <CoachGpsVideo T={T} accent={accent} />
         case 'planner':     return <LiveSessionPlanner T={T} accent={accent} density={density} />
         case 'venues':      return <LiveModule config={COURTS_CONFIG} T={T} accent={accent} />
         case 'development': return <LiveModule config={DEVELOPMENT_CONFIG} T={T} accent={accent} />
         case 'equipment':   return <LiveModule config={EQUIPMENT_CONFIG} T={T} accent={accent} />
         case 'resources':   return <LiveModule config={RESOURCES_CONFIG} T={T} accent={accent} />
         case 'messages':    return <LiveMessages T={T} accent={accent} onConfigure={() => setActive('settings')} />
-        case 'settings':    return <><CoachContactSettings T={T} accent={accent} /><div style={{ marginBottom: 16 }}><CoachImport T={T} accent={accent} /></div><SettingsView T={T} accent={accent} density={density} /></>
+        case 'settings':    return <><CoachContactSettings T={T} accent={accent} /><CoachCompliance T={T} accent={accent} /><div style={{ marginBottom: 16 }}><CoachImport T={T} accent={accent} /></div><SettingsView T={T} accent={accent} density={density} /></>
         case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)} />
       }
       const title = COACH_SIDEBAR.find(i => i.id === active)?.label ?? 'This section'

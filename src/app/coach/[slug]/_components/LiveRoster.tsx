@@ -118,6 +118,7 @@ export function LiveRoster({ T, accent, density }: Common) {
                   <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎯 {p.goal || 'No goal set'}</span>
                   <span style={{ color: accent.hex, fontWeight: 600, whiteSpace: 'nowrap' }}>View →</span>
                 </div>
+                {!p.consent_photo && <div style={{ fontSize: 10.5, color: '#EF4444', marginTop: 6 }}>⚠ No photo/video consent</div>}
                 <button onClick={e => { e.stopPropagation(); printWelcomePack(p) }} style={{ width: '100%', marginTop: 8, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '7px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <Icon name="note" size={13} stroke={1.8} style={{ color: accent.hex }} /> Welcome pack
                 </button>
@@ -158,7 +159,10 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
     if (!String(d.name ?? '').trim()) { setErr('Name is required'); return }
     setSaving(true); setErr('')
     try {
-      const row = { name: d.name, category: d.category || null, age: d.age || null, parent_name: d.parent_name || null, racket_stage: d.racket_stage || null, goal: d.goal || null, level: d.level || null, email: d.email || null, phone: d.phone || null, notes: d.notes || null }
+      const row = {
+        name: d.name, category: d.category || null, age: d.age || null, parent_name: d.parent_name || null, racket_stage: d.racket_stage || null, goal: d.goal || null, level: d.level || null, email: d.email || null, phone: d.phone || null, notes: d.notes || null,
+        consent_data: !!d.consent_data, consent_photo: !!d.consent_photo, consent_medical: !!d.consent_medical, consent_by: d.consent_by || null, consent_date: d.consent_date || null, medical_notes: d.medical_notes || null,
+      }
       if (initial?.id) await dbUpdate('coach_players', initial.id, row); else await dbInsert('coach_players', row)
       onSaved()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Save failed'); setSaving(false) }
@@ -185,7 +189,24 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
           {field('phone', 'Phone')}
         </div>
         <div style={{ marginTop: 12 }}>{field('goal', 'Goal', 'text', 'e.g. First serve over the net consistently')}</div>
-        <div style={{ marginTop: 12 }}><label style={lbl}>Notes</label><textarea value={d.notes ?? ''} onChange={e => set('notes', e.target.value)} rows={3} style={{ ...input, resize: 'vertical' }} /></div>
+        <div style={{ marginTop: 12 }}><label style={lbl}>Notes</label><textarea value={d.notes ?? ''} onChange={e => set('notes', e.target.value)} rows={2} style={{ ...input, resize: 'vertical' }} /></div>
+
+        {/* Consent & medical (GDPR) */}
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>Consent &amp; medical</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, marginBottom: 10 }}>
+            {([['consent_data', 'Data processing'], ['consent_photo', 'Photo / video'], ['consent_medical', 'Hold medical info']] as const).map(([k, label]) => (
+              <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: T.text, cursor: 'pointer' }}>
+                <input type="checkbox" checked={!!d[k]} onChange={e => set(k, e.target.checked)} /> {label}
+              </label>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {field('consent_by', 'Consent given by', 'text', 'Parent / guardian name')}
+            {field('consent_date', 'Consent date', 'date')}
+          </div>
+          <div style={{ marginTop: 12 }}><label style={lbl}>Medical / emergency notes</label><textarea value={d.medical_notes ?? ''} onChange={e => set('medical_notes', e.target.value)} rows={2} placeholder="Allergies, conditions, emergency contact…" style={{ ...input, resize: 'vertical' }} /></div>
+        </div>
         {err && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 10 }}>{err}</p>}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
           <button onClick={onClose} style={{ padding: '10px 16px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
@@ -204,7 +225,7 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
   onAttendanceRemove: (id: string) => Promise<void>
   onClose: () => void; onEdit: () => void; onDelete: () => void
 }) {
-  const [tab, setTab] = useState<'dev' | 'contact' | 'lessons' | 'attendance'>('dev')
+  const [tab, setTab] = useState<'dev' | 'contact' | 'lessons' | 'attendance' | 'consent'>('dev')
   const [lessons, setLessons] = useState<any[]>([])
   const [nextSession, setNextSession] = useState<string>('—')
   const [attDate, setAttDate] = useState('')
@@ -265,7 +286,7 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
 
           {/* tabs */}
           <div style={{ display: 'flex', gap: 4, marginBottom: 14, padding: 2, background: T.hover, borderRadius: 9, width: 'fit-content' }}>
-            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${lessons.length}`], ['attendance', `Attendance · ${attendanceRows.length}`]] as const).map(([id, l]) => (
+            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${lessons.length}`], ['attendance', `Attendance · ${attendanceRows.length}`], ['consent', 'Consent']] as const).map(([id, l]) => (
               <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === id ? T.panel : 'transparent', color: tab === id ? T.text : T.text2, fontWeight: tab === id ? 600 : 400 }}>{l}</button>
             ))}
           </div>
@@ -367,10 +388,38 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
               ))}
             </div>
           )}
+
+          {tab === 'consent' && (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 14 }}>
+                {([['Data processing', player.consent_data], ['Photo / video', player.consent_photo], ['Medical info', player.consent_medical]] as const).map(([l, ok]) => (
+                  <div key={l} style={{ background: T.panel2, border: `1px solid ${ok ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.35)'}`, borderRadius: 8, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{l}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: ok ? '#22C55E' : '#EF4444', marginTop: 3 }}>{ok ? '✓ Given' : '✗ Not given'}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 12.5, color: T.text2, marginBottom: 6 }}>
+                {player.consent_by ? `Consent given by ${player.consent_by}` : 'No consent giver recorded'}{player.consent_date ? ` · ${new Date(player.consent_date).toLocaleDateString('en-GB')}` : ''}
+              </div>
+              {player.medical_notes && <div style={{ fontSize: 12.5, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}><b style={{ color: T.text }}>Medical / emergency:</b> {player.medical_notes}</div>}
+              {!player.consent_photo && <div style={{ fontSize: 12, color: '#EF4444', marginBottom: 12 }}>⚠ No photo/video consent — do not capture footage of this player.</div>}
+              <p style={{ fontSize: 11.5, color: T.text3, margin: '0 0 12px' }}>Record or change consent using <b style={{ color: T.text2 }}>Edit</b>. Use Export to fulfil a data-access request, or Delete (Contact tab) for a right-to-erasure request.</p>
+              <button onClick={() => exportPlayerData(player, lessons, attendanceRows)} style={{ background: 'transparent', border: `1px solid ${T.border}`, color: T.text2, borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>⬇ Export this player&apos;s data</button>
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
+}
+
+function exportPlayerData(player: any, lessons: any[], attendance: any[]) {
+  const data = { player, lessons, attendance, exported_at: new Date().toISOString() }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a'); a.href = url; a.download = `${(player.name || 'player').replace(/\s+/g, '-').toLowerCase()}-data.json`; a.click()
+  URL.revokeObjectURL(url)
 }
 
 // ── Welcome pack (printable) ─────────────────────────────────────────────────
