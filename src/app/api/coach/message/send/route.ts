@@ -37,6 +37,12 @@ export async function POST(req: NextRequest) {
   const results: Result[] = []
   const replyTo = user.email || undefined
 
+  // ── In-app (Lumio message) ───────────────────────────────────────────────
+  // Always available — recorded to the message log; no external send.
+  if (channels.includes('inapp')) {
+    recipients.forEach(r => results.push({ name: r.name || r.email || r.phone || '—', channel: 'inapp', ok: true, detail: 'Sent in-app' }))
+  }
+
   // ── Email (Resend) ─────────────────────────────────────────────────────────
   if (channels.includes('email')) {
     if (!process.env.RESEND_API_KEY) {

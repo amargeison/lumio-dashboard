@@ -29,6 +29,9 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
   const [slugTouched, setSlugTouched] = useState(false)
   const [logo, setLogo] = useState<string | null>(null)
   const [photo, setPhoto] = useState<string | null>(null)
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [calendar, setCalendar] = useState('')
   const [setupType, setSetupType] = useState<'lumio' | 'self' | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [pName, setPName] = useState('')
@@ -60,6 +63,9 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
       }
       if (photo) update.avatar_url = photo
       if (logo) update.brand_logo_url = logo
+      if (email.trim()) update.contact_email = email.trim()
+      if (phone.trim()) update.contact_phone = phone.trim()
+      if (calendar) update.calendar_provider = calendar
       const { error } = await sb().from('sports_profiles').update(update).eq('id', uid)
       if (error) throw new Error(error.message)
 
@@ -136,6 +142,25 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
                   <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && compress(e.target.files[0], 400).then(setPhoto)} />
                   <button onClick={() => photoRef.current?.click()} style={{ ...input, cursor: 'pointer', textAlign: 'left', color: photo ? ACCENT : '#6B7280', border: `1px solid ${photo ? ACCENT : '#374151'}` }}>{photo ? '✓ Photo added' : '⬆ Upload photo'}</button>
                 </div>
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={lbl}>Email <span style={{ color: '#4B5563', fontWeight: 400 }}>(for sending messages)</span></label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@academy.com" style={input} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={lbl}>Phone <span style={{ color: '#4B5563', fontWeight: 400 }}>(for texts)</span></label>
+                  <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+44 7…" style={input} />
+                </div>
+              </div>
+              <div>
+                <label style={lbl}>Calendar sync <span style={{ color: '#4B5563', fontWeight: 400 }}>(sync coming soon)</span></label>
+                <select value={calendar} onChange={e => setCalendar(e.target.value)} style={input}>
+                  <option value="">Not connected</option>
+                  <option value="google">Google Calendar</option>
+                  <option value="outlook">Outlook / Microsoft</option>
+                  <option value="apple">Apple Calendar</option>
+                </select>
               </div>
             </div>
           </div>

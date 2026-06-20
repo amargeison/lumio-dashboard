@@ -5,7 +5,7 @@
 // coming soon. Every send is logged to coach_messages and shown in history.
 
 import { useState } from 'react'
-import { useCoachTable } from '../_lib/coach-db'
+import { useCoachTable, useCoachProfile } from '../_lib/coach-db'
 
 type ThemeTokens = {
   text: string; text2: string; text3: string; panel: string; panel2: string
@@ -13,18 +13,24 @@ type ThemeTokens = {
 }
 type AccentTokens = { hex: string; dim: string }
 
-const CHANNELS = [
-  { id: 'email', label: 'Email', tag: 'Live', enabled: true },
-  { id: 'sms', label: 'Text', tag: 'Live', enabled: true },
-  { id: 'whatsapp', label: 'WhatsApp', tag: 'Soon', enabled: false },
-]
-
-export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accent: AccentTokens; onConfigure?: () => void }) {
   const players = useCoachTable<any>('coach_players')
   const history = useCoachTable<any>('coach_messages')
+  const profile = useCoachProfile()
+
+  const hasEmail = !!profile.contact_email
+  const hasPhone = !!profile.contact_phone
+  // In-app message is always available. Email/Text only go "Live" once the coach
+  // has set their sending email / phone in Settings.
+  const CHANNELS = [
+    { id: 'inapp', label: 'Lumio message', tag: 'Live', enabled: true },
+    { id: 'email', label: 'Email', tag: hasEmail ? 'Live' : 'Set up', enabled: hasEmail },
+    { id: 'sms', label: 'Text', tag: hasPhone ? 'Live' : 'Set up', enabled: hasPhone },
+    { id: 'whatsapp', label: 'WhatsApp', tag: 'Soon', enabled: false },
+  ]
 
   const [selected, setSelected] = useState<string[]>([])   // player ids
-  const [channels, setChannels] = useState<string[]>(['email'])
+  const [channels, setChannels] = useState<string[]>(['inapp'])
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
@@ -105,6 +111,15 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
             )
           })}
         </div>
+
+        {(!hasEmail || !hasPhone) && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
+            <span style={{ fontSize: 12.5, color: T.text2 }}>
+              Lumio messages work now. Add your {[!hasEmail && 'email', !hasPhone && 'phone'].filter(Boolean).join(' and ')} in Settings to send by {[!hasEmail && 'email', !hasPhone && 'text'].filter(Boolean).join(' and ')}.
+            </span>
+            <button onClick={() => onConfigure?.()} style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 8, border: 'none', background: accent.hex, color: T.btnText, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Set up →</button>
+          </div>
+        )}
 
         {/* Subject (email only) */}
         {channels.includes('email') && (

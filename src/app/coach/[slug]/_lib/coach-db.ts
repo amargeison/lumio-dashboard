@@ -142,6 +142,46 @@ export function useCoachStats(enabled = true): CoachStats {
   return s
 }
 
+// ── Coach profile / contact config ─────────────────────────────────────────
+export interface CoachProfile {
+  display_name: string | null
+  brand_name: string | null
+  contact_email: string | null
+  contact_phone: string | null
+  calendar_provider: string | null
+  loading: boolean
+}
+
+export function useCoachProfile(): CoachProfile & { reload: () => void } {
+  const [p, setP] = useState<CoachProfile>({ display_name: null, brand_name: null, contact_email: null, contact_phone: null, calendar_provider: null, loading: true })
+
+  const reload = useCallback(async () => {
+    const uid = await currentCoachId()
+    if (!uid) { setP(v => ({ ...v, loading: false })); return }
+    const { data } = await sb().from('sports_profiles')
+      .select('display_name, brand_name, contact_email, contact_phone, calendar_provider')
+      .eq('id', uid).maybeSingle()
+    setP({
+      display_name: (data as any)?.display_name ?? null,
+      brand_name: (data as any)?.brand_name ?? null,
+      contact_email: (data as any)?.contact_email ?? null,
+      contact_phone: (data as any)?.contact_phone ?? null,
+      calendar_provider: (data as any)?.calendar_provider ?? null,
+      loading: false,
+    })
+  }, [])
+
+  useEffect(() => { reload() }, [reload])
+  return { ...p, reload }
+}
+
+export async function saveCoachProfile(updates: Record<string, any>) {
+  const uid = await currentCoachId()
+  if (!uid) throw new Error('Not signed in')
+  const { error } = await sb().from('sports_profiles').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', uid)
+  if (error) throw new Error(error.message)
+}
+
 // Racket progression stages (ordered). Mirrors the demo BELTS palette.
 export const RACKET_STAGES: { id: string; name: string; colour: string }[] = [
   { id: 'white',  name: 'White',  colour: '#E5E7EB' },
