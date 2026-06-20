@@ -85,7 +85,7 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
       <h3 style={{ color: T.text, fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>Import from a file ✨</h3>
       <p style={{ color: T.text3, fontSize: 13, margin: '0 0 16px' }}>Upload a spreadsheet, PDF or photo of your players, coaches, camps, courts, equipment or payments — the AI sorts and adds them for you. CSV, Excel, PDF and images all work.</p>
 
-      <input ref={fileRef} type="file" accept=".csv,.tsv,.txt,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.webp" style={{ display: 'none' }}
+      <input ref={fileRef} type="file" accept=".csv,.tsv,.txt,.xlsx,.xls,.docx,.pdf,.png,.jpg,.jpeg,.webp" style={{ display: 'none' }}
         onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f) }} />
 
       {(status === 'idle' || status === 'reading') && (

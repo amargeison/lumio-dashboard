@@ -47,10 +47,11 @@ import { CoachOnboardingWizard } from './_components/CoachOnboardingWizard'
 import { CoachContactSettings } from './_components/CoachContactSettings'
 import { CoachImport } from './_components/CoachImport'
 import { LiveRoster } from './_components/LiveRoster'
+import { LiveSessionPlanner } from './_components/LiveSessionPlanner'
 import {
   LiveModule, RacketProgressionView,
   STAFF_CONFIG, BOOKINGS_CONFIG, LESSONS_CONFIG, CAMPS_CONFIG, PAYMENTS_CONFIG, GPS_CONFIG,
-  SESSION_PLANS_CONFIG, COURTS_CONFIG, DEVELOPMENT_CONFIG, EQUIPMENT_CONFIG, RESOURCES_CONFIG,
+  COURTS_CONFIG, DEVELOPMENT_CONFIG, EQUIPMENT_CONFIG, RESOURCES_CONFIG,
 } from './_components/LiveModules'
 import { useCoachStats } from './_lib/coach-db'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, tierForFlags, TIERS, type FeatureFlags } from './_lib/feature-flags'
@@ -273,7 +274,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'payments':    return <LiveModule config={PAYMENTS_CONFIG} T={T} accent={accent} />
         case 'gpsheatmaps': return <LiveModule config={GPS_CONFIG} T={T} accent={accent} />
         case 'videoaudio':  return <LiveModule config={GPS_CONFIG} T={T} accent={accent} />
-        case 'planner':     return <LiveModule config={SESSION_PLANS_CONFIG} T={T} accent={accent} />
+        case 'planner':     return <LiveSessionPlanner T={T} accent={accent} density={density} />
         case 'venues':      return <LiveModule config={COURTS_CONFIG} T={T} accent={accent} />
         case 'development': return <LiveModule config={DEVELOPMENT_CONFIG} T={T} accent={accent} />
         case 'equipment':   return <LiveModule config={EQUIPMENT_CONFIG} T={T} accent={accent} />

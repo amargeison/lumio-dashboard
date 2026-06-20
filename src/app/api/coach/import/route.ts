@@ -60,6 +60,14 @@ export async function POST(req: NextRequest) {
       const wb = XLSX.read(buf, { type: 'buffer' })
       const text = wb.SheetNames.map(sn => `# Sheet: ${sn}\n${XLSX.utils.sheet_to_csv(wb.Sheets[sn])}`).join('\n\n').slice(0, 120000)
       content.push({ type: 'text', text: `${SCHEMA_PROMPT}\n\n--- FILE: ${file.name} ---\n${text}` })
+    } else if (name.endsWith('.docx')) {
+      try {
+        const mammoth: any = await import('mammoth')
+        const { value } = await mammoth.extractRawText({ buffer: buf })
+        content.push({ type: 'text', text: `${SCHEMA_PROMPT}\n\n--- FILE: ${file.name} ---\n${String(value).slice(0, 120000)}` })
+      } catch {
+        return NextResponse.json({ error: 'Word (.docx) import needs the "mammoth" package — run: npm install mammoth. Or export the document as PDF or CSV.' }, { status: 400 })
+      }
     } else if (name.endsWith('.pdf')) {
       content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: buf.toString('base64') } })
       content.push({ type: 'text', text: SCHEMA_PROMPT })
