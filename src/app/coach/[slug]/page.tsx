@@ -45,6 +45,7 @@ import { LiveCoachDashboard } from './_components/LiveCoachDashboard'
 import { LiveMessages } from './_components/LiveMessages'
 import { CoachOnboardingWizard } from './_components/CoachOnboardingWizard'
 import { CoachContactSettings } from './_components/CoachContactSettings'
+import { CoachImport } from './_components/CoachImport'
 import { LiveRoster } from './_components/LiveRoster'
 import {
   LiveModule, RacketProgressionView,
@@ -278,7 +279,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'equipment':   return <LiveModule config={EQUIPMENT_CONFIG} T={T} accent={accent} />
         case 'resources':   return <LiveModule config={RESOURCES_CONFIG} T={T} accent={accent} />
         case 'messages':    return <LiveMessages T={T} accent={accent} onConfigure={() => setActive('settings')} />
-        case 'settings':    return <><CoachContactSettings T={T} accent={accent} /><SettingsView T={T} accent={accent} density={density} /></>
+        case 'settings':    return <><CoachContactSettings T={T} accent={accent} /><div style={{ marginBottom: 16 }}><CoachImport T={T} accent={accent} /></div><SettingsView T={T} accent={accent} density={density} /></>
         case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)} />
       }
       const title = COACH_SIDEBAR.find(i => i.id === active)?.label ?? 'This section'

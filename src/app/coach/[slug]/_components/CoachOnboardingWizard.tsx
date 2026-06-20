@@ -6,8 +6,11 @@
 
 import { useState, useRef } from 'react'
 import { sb, currentCoachId } from '../_lib/coach-db'
+import { CoachImport } from './CoachImport'
 
 const ACCENT = '#3A8EE0'
+const IMPORT_THEME = { text: '#fff', text2: '#D1D5DB', text3: '#9CA3AF', panel: '#0d1117', panel2: '#111318', border: '#1F2937', btnText: '#fff', isDark: true }
+const IMPORT_ACCENT = { hex: ACCENT, dim: ACCENT + '22' }
 const slugify = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 function compress(file: File, size: number): Promise<string> {
@@ -189,8 +192,12 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
         {/* STEP 3 — First players (self only) */}
         {step === 3 && (
           <div>
-            <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Add your first players</h2>
-            <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 20 }}>Optional — add a few now, or skip and add them later in the Players module.</p>
+            <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Add your players</h2>
+            <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 16 }}>Have a spreadsheet? Upload it and we&apos;ll add everyone for you — or add a few by hand below. All optional.</p>
+            <div style={{ marginBottom: 18 }}>
+              <CoachImport T={IMPORT_THEME} accent={IMPORT_ACCENT} />
+            </div>
+            <div style={{ fontSize: 12, color: '#4B5563', textAlign: 'center', margin: '0 0 14px' }}>— or add manually —</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12, maxHeight: 200, overflowY: 'auto' }}>
               {players.length === 0 ? <p style={{ color: '#4B5563', fontSize: 13 }}>No players added yet.</p> : players.map((p, i) => (
                 <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#111318', border: '1px solid #1F2937', borderRadius: 8, padding: '8px 12px' }}>
