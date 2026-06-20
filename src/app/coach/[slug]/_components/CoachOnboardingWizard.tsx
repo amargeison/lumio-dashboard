@@ -36,6 +36,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
   const [phone, setPhone] = useState('')
   const [calendar, setCalendar] = useState('')
   const [setupType, setSetupType] = useState<'lumio' | 'self' | null>(null)
+  const [dpa, setDpa] = useState(false)
   const [players, setPlayers] = useState<Player[]>([])
   const [pName, setPName] = useState('')
   const [pLevel, setPLevel] = useState('')
@@ -69,6 +70,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
       if (email.trim()) update.contact_email = email.trim()
       if (phone.trim()) update.contact_phone = phone.trim()
       if (calendar) update.calendar_provider = calendar
+      if (dpa) update.dpa_accepted_at = new Date().toISOString()
       const { error } = await sb().from('sports_profiles').update(update).eq('id', uid)
       if (error) throw new Error(error.message)
 
@@ -215,6 +217,13 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
           </div>
         )}
 
+        {step >= 2 && (
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 18, fontSize: 12.5, color: '#9CA3AF', cursor: 'pointer' }}>
+            <input type="checkbox" checked={dpa} onChange={e => setDpa(e.target.checked)} style={{ marginTop: 2 }} />
+            <span>I accept Lumio&apos;s Data Processing Agreement — I&apos;m the data controller for my players&apos; data and Lumio processes it on my behalf to run my portal. <span style={{ color: '#EF4444' }}>(required)</span></span>
+          </label>
+        )}
+
         {err && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 14 }}>{err}</p>}
 
         {/* Nav */}
@@ -225,11 +234,11 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
           )}
           {step === 2 && (
             setupType === 'self'
-              ? <button onClick={() => setStep(3)} style={primary(true)}>Continue →</button>
-              : <button onClick={finish} disabled={!setupType || saving} style={primary(!!setupType && !saving)}>{saving ? 'Saving…' : 'Finish →'}</button>
+              ? <button onClick={() => { if (!dpa) { setErr('Please accept the Data Processing Agreement to continue.'); return } setErr(''); setStep(3) }} style={primary(true)}>Continue →</button>
+              : <button onClick={finish} disabled={!setupType || saving || !dpa} style={primary(!!setupType && !saving && dpa)}>{saving ? 'Saving…' : 'Finish →'}</button>
           )}
           {step === 3 && (
-            <button onClick={finish} disabled={saving} style={primary(!saving)}>{saving ? 'Saving…' : 'Go to my portal →'}</button>
+            <button onClick={finish} disabled={saving || !dpa} style={primary(!saving && dpa)}>{saving ? 'Saving…' : 'Go to my portal →'}</button>
           )}
         </div>
       </div>

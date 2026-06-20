@@ -25,6 +25,7 @@ export type CoachTable =
   | 'coach_resources'
   | 'coach_attendance'
   | 'coach_player_skills'
+  | 'coach_consent_submissions'
 
 let _sb: ReturnType<typeof createBrowserClient> | null = null
 export function sb() {
@@ -151,17 +152,18 @@ export interface CoachProfile {
   contact_email: string | null
   contact_phone: string | null
   calendar_provider: string | null
+  dpa_accepted_at: string | null
   loading: boolean
 }
 
 export function useCoachProfile(): CoachProfile & { reload: () => void } {
-  const [p, setP] = useState<CoachProfile>({ display_name: null, brand_name: null, contact_email: null, contact_phone: null, calendar_provider: null, loading: true })
+  const [p, setP] = useState<CoachProfile>({ display_name: null, brand_name: null, contact_email: null, contact_phone: null, calendar_provider: null, dpa_accepted_at: null, loading: true })
 
   const reload = useCallback(async () => {
     const uid = await currentCoachId()
     if (!uid) { setP(v => ({ ...v, loading: false })); return }
     const { data } = await sb().from('sports_profiles')
-      .select('display_name, brand_name, contact_email, contact_phone, calendar_provider')
+      .select('display_name, brand_name, contact_email, contact_phone, calendar_provider, dpa_accepted_at')
       .eq('id', uid).maybeSingle()
     setP({
       display_name: (data as any)?.display_name ?? null,
@@ -169,6 +171,7 @@ export function useCoachProfile(): CoachProfile & { reload: () => void } {
       contact_email: (data as any)?.contact_email ?? null,
       contact_phone: (data as any)?.contact_phone ?? null,
       calendar_provider: (data as any)?.calendar_provider ?? null,
+      dpa_accepted_at: (data as any)?.dpa_accepted_at ?? null,
       loading: false,
     })
   }, [])
