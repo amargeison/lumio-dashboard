@@ -13,14 +13,14 @@ const BORDER_ALT = '#1F2937'
 const TEXT = '#F9FAFB'
 const MUTED = '#9CA3AF'
 
-const STAT_PILLS = ['9 coach modules', 'AI powered', 'GPS + Vision', 'LTA racket pathway', 'Mobile app']
+const STAT_PILLS = ['9 coach modules', 'AI powered', 'Effort & rewards', 'LTA racket pathway', 'Mobile app']
 
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '📋', title: 'Session Planner', desc: 'Plan every session in minutes. Overview, Today, This week and This month views over one dated schedule synced from your booking calendar — a confirmed booking becomes a ready-to-build session in two clicks, with a timed run-sheet and kit list generated for you.' },
   { icon: '🤖', title: 'AI Session Review', desc: 'Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player’s plan so the next session writes itself.' },
   { icon: '🎾', title: 'Racket Progression reward system', desc: 'The reward system at the heart of Lumio Coach. A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds. At every level players earn a coloured racket keyring, a matching dampener and a certificate — with a full trophy at Black — and parents fund the journey: your second revenue stream, built in.' },
-  { icon: '🛰️', title: 'GPS & Video', desc: 'Player movement and match or training footage in one place. Lumio GPS Tracker and Lumio Vision give you load, court coverage and clips with coach annotations — no third-party analysis stack to wire up.' },
-  { icon: '🔥', title: 'Heatmaps', desc: 'Court coverage, serve placement, returns and rally, winners and errors, sprint and speed, and weekly load — paginated into clean tabs per player, by session and by surface.' },
+  { icon: '⌚', title: 'Effort & Rewards', desc: 'Players track sessions on the smartwatch they already own — no hardware to buy. Effort, movement and consistency scores become XP and effort levels: a motivation layer that keeps them training, kept separate from the technical racket pathway.' },
+  { icon: '🎬', title: 'Video & clips', desc: 'Match and training footage with coach annotations via Lumio Vision — saved to each player, by session, so you can review technique together without a third-party analysis stack.' },
   { icon: '👥', title: 'Staff / Coaches', desc: 'Run a club of coaches, not just yourself. A directory with each coach’s calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team’s week.' },
   { icon: '🏕️', title: 'Training Camps', desc: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft and a per-player camp log that captures progress day by day.' },
   { icon: '🗓️', title: 'Booking Calendar', desc: 'Your whole week across every court — private, group, cardio and match play. The single source of truth that feeds the Session Planner, so the schedule and the plans never drift apart.' },
@@ -28,7 +28,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
 ]
 
 const INTEGRATIONS = [
-  { icon: '🛰️', name: 'Lumio GPS Tracker', desc: 'Court coverage and load' },
+  { icon: '⌚', name: 'Apple Watch & Wear OS', desc: 'Effort & XP from the player’s own watch' },
   { icon: '🎬', name: 'Lumio Vision', desc: 'Video clips and annotations' },
   { icon: '🤖', name: 'Claude AI', desc: 'Session reviews and camp drafts' },
   { icon: '🏛️', name: 'LTA Youth Pathway', desc: 'Racket stage mapping' },
@@ -41,13 +41,13 @@ const INTEGRATIONS = [
 
 const TIERS = [
   { name: 'Head Coach', desc: 'Your whole week and your whole team in one place — Session Planner, the coaches directory, the booking calendar and racket pathways across every player you oversee. The view that runs the club.' },
-  { name: 'Coach', desc: 'Plan, run and review your sessions — AI session reviews, GPS & video, heatmaps and racket progression for the players you coach. Everything you need on court, on your phone.' },
+  { name: 'Coach', desc: 'Plan, run and review your sessions — AI session reviews, video, effort rewards and racket progression for the players you coach. Everything you need on court, on your phone.' },
   { name: 'Academy Manager', desc: 'Run the academy end-to-end — staff, camps, bookings and player development across the club, with utilisation, accreditations and progress at a glance.' },
 ]
 
 const COACH_PLAN_FEATURES = [
   'Session Planner & AI session reviews',
-  'GPS, Vision & heatmaps',
+  'Effort & Rewards + video',
   'Racket Progression pathway',
   'Staff directory & training camps',
   'Booking calendar & payments',
@@ -55,15 +55,14 @@ const COACH_PLAN_FEATURES = [
 ]
 const PARENT_FEATURES = [
   'Player highlights & clips',
-  'GPS & heatmaps',
+  'Effort rewards & XP',
   'Progress & racket journey',
   'Homework & lesson summaries',
 ]
-// Hardware pack. Listed as a single bundle (no per-item prices) — the GPS
-// tracker + mic specs are still under field test, so the £125 total is framed
-// as the one-off bundle price.
+// Reward + capture kit. Tracking now uses the player's own smartwatch, so there
+// is no GPS hardware — the bundle is the reward keyrings/dampeners/trophy plus
+// the video capture stand and mic, framed as a one-off £85 bundle.
 const KIT_PARTS = [
-  { name: 'Lumio GPS Tracker', note: 'Clip-on court tracker — load, coverage & heatmaps' },
   { name: 'Capture stand', note: 'Court stand for phone or tablet' },
   { name: 'Microphone', note: 'Spec under field test' },
   { name: 'Reward keyrings & dampeners — set of 9', note: 'A coloured keyring + matching dampener per level' },
@@ -227,48 +226,37 @@ function RacketProgressionMockup() {
   )
 }
 
-function HeatmapMockup() {
+function EffortRewardsMockup() {
+  const scores = [{ l: 'Effort', v: 82, c: '#10B981' }, { l: 'Movement', v: 64, c: '#F59E0B' }, { l: 'Consistency', v: 91, c: PURPLE }]
   return (
     <MockupFrame>
-      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>🔥 GPS &amp; Court Heatmaps</div>
-      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Mia Chen · last session · Lumio GPS Tracker</div>
-      <div style={{ display: 'flex', gap: 5, marginBottom: 10, flexWrap: 'wrap' }}>
-        {['Coverage', 'Serve', 'Rally', 'Load'].map((t, i) => (
-          <span key={t} style={{ fontSize: 8.5, fontWeight: 800, padding: '4px 9px', borderRadius: 999, backgroundColor: i === 0 ? PURPLE : '#0A0B10', color: i === 0 ? '#fff' : MUTED, border: `1px solid ${i === 0 ? PURPLE : BORDER_ALT}` }}>{t}</span>
-        ))}
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <svg width="120" height="180" viewBox="0 0 120 180">
-            <rect x="0" y="0" width="120" height="180" fill="#0c2a1a" />
-            <rect x="10" y="8" width="100" height="164" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="1" />
-            <line x1="10" y1="90" x2="110" y2="90" stroke="#fff" strokeWidth="1.5" opacity="0.7" />
-            <line x1="30" y1="50" x2="90" y2="50" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-            <line x1="30" y1="130" x2="90" y2="130" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-            <line x1="60" y1="50" x2="60" y2="130" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-            <circle cx="60" cy="162" r="22" fill={PURPLE} opacity="0.7" style={{ filter: 'blur(6px)' }} />
-            <circle cx="42" cy="158" r="13" fill={PURPLE_LIGHT} opacity="0.55" style={{ filter: 'blur(5px)' }} />
-            <circle cx="84" cy="156" r="12" fill={PURPLE} opacity="0.5" style={{ filter: 'blur(5px)' }} />
-            <circle cx="60" cy="100" r="9" fill="#F59E0B" opacity="0.35" style={{ filter: 'blur(4px)' }} />
-            <text x="60" y="176" textAnchor="middle" fill="rgba(255,255,255,0.35)" fontSize="6">BASELINE 71%</text>
-          </svg>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>⌚ Effort &amp; Rewards</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Mia Chen · last session · Apple Watch</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, background: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: '9px 11px' }}>
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ fontSize: 8, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total XP</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: PURPLE_LIGHT, lineHeight: 1 }}>1,840</div>
         </div>
-        <div>
-          {[{ l: 'Baseline', v: 71, c: PURPLE }, { l: 'Mid-court', v: 19, c: '#F59E0B' }, { l: 'Net', v: 10, c: '#10B981' }].map(z => (
-            <div key={z.l} style={{ marginBottom: 8 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8.5, color: MUTED }}>
-                <span>{z.l}</span><span style={{ color: z.c, fontWeight: 800 }}>{z.v}%</span>
-              </div>
-              <div style={{ height: 5, borderRadius: 3, backgroundColor: '#1F2937', marginTop: 2 }}>
-                <div style={{ width: `${z.v}%`, height: '100%', borderRadius: 3, backgroundColor: z.c }} />
-              </div>
-            </div>
-          ))}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginTop: 6 }}>
-            <KPI value="3.1km" label="Distance" color={PURPLE} />
-            <KPI value="0.96" label="Load AU" color={PURPLE_LIGHT} />
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8.5, color: MUTED, marginBottom: 3 }}>
+            <span style={{ color: TEXT, fontWeight: 800 }}>🏅 Competitor</span><span>Next: Athlete</span>
+          </div>
+          <div style={{ height: 6, borderRadius: 3, background: '#1F2937' }}><div style={{ width: '68%', height: '100%', borderRadius: 3, background: PURPLE }} /></div>
+        </div>
+      </div>
+      {scores.map(s => (
+        <div key={s.l} style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8.5, color: MUTED }}>
+            <span>{s.l}</span><span style={{ color: s.c, fontWeight: 800 }}>{s.v}/100</span>
+          </div>
+          <div style={{ height: 5, borderRadius: 3, backgroundColor: '#1F2937', marginTop: 2 }}>
+            <div style={{ width: `${s.v}%`, height: '100%', borderRadius: 3, backgroundColor: s.c }} />
           </div>
         </div>
+      ))}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5, marginTop: 6 }}>
+        <KPI value="52 min" label="Duration" color={PURPLE} />
+        <KPI value="+72" label="XP earned" color={PURPLE_LIGHT} />
       </div>
     </MockupFrame>
   )
@@ -374,12 +362,12 @@ export default function TennisCoachPage() {
             <span style={{ color: PURPLE_LIGHT }}>Two revenue streams.</span>
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 840, margin: '0 auto 32px' }}>
-            The all-in-one platform that runs your whole tennis academy — session planning, AI reviews, GPS &amp; video — and pays you back through <strong style={{ color: TEXT }}>the Racket Progression reward system</strong>: a nine-stage pathway where players collect a coloured racket keyring and dampener at each level — a full trophy at Black — and parents fund the journey.
+            The all-in-one platform that runs your whole tennis academy — session planning, AI reviews, video and smartwatch effort rewards — and pays you back through <strong style={{ color: TEXT }}>the Racket Progression reward system</strong>: a nine-stage pathway where players collect a coloured racket keyring and dampener at each level — a full trophy at Black — and parents fund the journey.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', margin: '16px 0 32px' }}>
             <span style={{ background: '#1f6fcc18', border: `1px solid ${PURPLE}`, color: PURPLE_LIGHT, padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎾🏆 Racket Progression reward system</span>
             <span style={{ background: '#06b6d418', border: '1px solid #06b6d4', color: '#06b6d4', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🤖 AI Session Review</span>
-            <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🛰️ GPS + Vision</span>
+            <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>⌚ Effort &amp; Rewards</span>
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
             <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
@@ -412,7 +400,7 @@ export default function TennisCoachPage() {
                 {[
                   { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured racket keyring + matching dampener + certificate at each of the 9 stages — and a full trophy at Black. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £50 (~£5.50 each)' },
                   { icon: '📱', title: 'Stream 2 — Student app resale', color: '#06b6d4', desc: 'Give families the player & parent view of everything you capture. Resell it or bundle it into a package — you keep the margin, not Lumio.', price: 'Suggested £9.99/family · you set it' },
-                  { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Pick the tier that fits — Essential to Elite — adding GPS, video, audio and rewards as you grow. The platform that makes both revenue streams possible.', price: 'From £19/month · 4 tiers' },
+                  { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Pick the tier that fits — Essential to Elite — adding video, audio, effort rewards and the racket pathway as you grow. The platform that makes both revenue streams possible.', price: 'From £19/month · 4 tiers' },
                 ].map((f, i) => (
                   <div key={i} style={{ background: `${f.color}10`, border: `1px solid ${f.color}30`, borderRadius: 16, padding: 28 }}>
                     <div style={{ fontSize: 30, marginBottom: 12 }}>{f.icon}</div>
@@ -483,11 +471,11 @@ export default function TennisCoachPage() {
 
       <Spotlight
         altBg reverse
-        eyebrow="SPOTLIGHT · GPS & HEATMAPS"
-        title="See where every player wins and loses."
-        body="Player movement and footage in one place. Lumio GPS Tracker and Lumio Vision give you court coverage, serve placement, rally patterns and weekly load — paginated into clean tabs per player, by session and by surface. No third-party analysis stack to wire up."
-        bullets={['Court coverage, serve placement, rally and load', 'Per player, by session and by surface', 'Video clips with coach annotations via Lumio Vision', 'Load tracking to manage fatigue across the squad']}
-        mockup={<HeatmapMockup />}
+        eyebrow="SPOTLIGHT · EFFORT & REWARDS"
+        title="Turn every session into XP — no hardware to buy."
+        body="Players track sessions on the smartwatch they already own. Effort, movement and consistency become scores, XP and effort levels, with a squad leaderboard to keep them coming back. It's estimated effort — a motivation layer that sits alongside the technical racket pathway, never replacing it, and it never tracks a player's position on court."
+        bullets={['Effort, movement & consistency scores from the player’s own watch', 'XP, effort levels and a squad leaderboard', 'No GPS units or hardware — uses Apple Watch or Wear OS', 'Kept separate from the LTA-mapped Racket Progression pathway']}
+        mockup={<EffortRewardsMockup />}
       />
 
       <Spotlight
@@ -562,10 +550,10 @@ export default function TennisCoachPage() {
           {/* Plan tiers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16, marginBottom: 20 }}>
             {[
-              { name: 'Essential', price: 19, popular: false, available: true, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Staff & training camps', 'Mobile coach app'], off: ['No GPS, video or audio', 'No Racket Progression'] },
-              { name: 'Pro Lite', price: 29, popular: false, available: false, tag: 'Adds the reward system', feats: ['Everything in Essential', 'Racket Progression reward system', 'Trophy keyrings, dampeners & certificates'], off: ['No GPS, video or audio'] },
-              { name: 'Pro', price: 39, popular: true, available: false, tag: 'Most popular', feats: ['Everything in Pro Lite', 'Video & audio + AI session reviews', 'Clip library & coach voice notes'], off: ['No GPS', 'No GPS heatmaps'] },
-              { name: 'Elite', price: 59, popular: false, available: false, tag: 'The full system', feats: ['Everything in Pro', 'Lumio GPS Tracker', 'GPS load, court coverage & heatmaps'], off: [] },
+              { name: 'Essential', price: 19, popular: false, available: true, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Staff & training camps', 'Mobile coach app'], off: ['No video, audio or effort rewards', 'No Racket Progression'] },
+              { name: 'Pro Lite', price: 29, popular: false, available: false, tag: 'Adds the reward system', feats: ['Everything in Essential', 'Racket Progression reward system', 'Trophy keyrings, dampeners & certificates'], off: ['No video, audio or effort rewards'] },
+              { name: 'Pro', price: 39, popular: true, available: false, tag: 'Most popular', feats: ['Everything in Pro Lite', 'Video & audio + AI session reviews', 'Effort & Rewards (smartwatch, no hardware)'], off: [] },
+              { name: 'Elite', price: 59, popular: false, available: false, tag: 'The full system', feats: ['Everything in Pro', 'Squad effort leaderboard & XP analytics', 'Priority onboarding & support'], off: [] },
             ].map(t => (
               <div key={t.name} style={{ backgroundColor: CARD, border: `${t.popular ? 2 : 1}px solid ${t.popular ? PURPLE : BORDER}`, borderRadius: 16, padding: 24, position: 'relative', display: 'flex', flexDirection: 'column' }}>
                 {t.popular && <div style={{ position: 'absolute', top: -11, left: 24, background: PURPLE, color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most popular</div>}
@@ -623,11 +611,11 @@ export default function TennisCoachPage() {
               <div style={{ maxWidth: 560 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 10 }}>Lumio Coach Kit</div>
                 <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 8, lineHeight: 1.15 }}>Everything you need to start capturing.</h3>
-                <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>The GPS tracker, capture stand, microphone, your first set of reward keyrings &amp; dampeners and the Black-stage trophy — one bundle, out of the box and onto the court.</p>
+                <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>The capture stand, microphone, your first set of reward keyrings &amp; dampeners and the Black-stage trophy — one bundle, out of the box and onto the court. Effort tracking uses the player’s own smartwatch, so there’s no tracker to buy.</p>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, justifyContent: 'flex-end' }}>
-                  <span style={{ fontSize: 48, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£125</span>
+                  <span style={{ fontSize: 48, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£85</span>
                 </div>
                 <div style={{ fontSize: 12.5, color: MUTED }}>full kit · one-off</div>
               </div>
@@ -642,11 +630,11 @@ export default function TennisCoachPage() {
               ))}
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '12px 0 4px' }}>
                 <span style={{ fontSize: 13, fontWeight: 800, color: TEXT, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Full kit total</span>
-                <span style={{ fontSize: 22, fontWeight: 900, color: PURPLE_LIGHT }}>£125</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: PURPLE_LIGHT }}>£85</span>
               </div>
             </div>
             <div style={{ fontSize: 12.5, color: MUTED, fontStyle: 'italic' }}>
-              Kit pricing is indicative while we field-test the GPS tracker and microphone — final spec and price may change.
+              Kit pricing is indicative while we field-test the capture stand and microphone — final spec and price may change.
             </div>
           </div>
 
@@ -701,7 +689,7 @@ export default function TennisCoachPage() {
               Try the demo →
             </Link>
           </div>
-          <p style={{ fontSize: 12, color: MUTED, opacity: 0.7 }}>Demo academy · All player data is illustrative · GPS &amp; video integration via Lumio GPS Tracker + Lumio Vision</p>
+          <p style={{ fontSize: 12, color: MUTED, opacity: 0.7 }}>Demo academy · All player data is illustrative · Effort rewards via the player’s own smartwatch · video via Lumio Vision</p>
         </div>
       </section>
     </div>
