@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: spec.maxTokens,
         system: spec.system,
         messages: [{ role: 'user', content: spec.user(ctx) }],
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       response,
-      modelUsed: data?.model ?? 'claude-sonnet-4-20250514',
+      modelUsed: data?.model ?? 'claude-sonnet-4-6',
       latencyMs,
       tokens,
     })

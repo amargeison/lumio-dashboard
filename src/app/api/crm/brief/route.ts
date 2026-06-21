@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     const totalValue = deals.reduce((sum, d) => sum + (d.value || 0), 0)
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       system: `You are ARIA, the AI briefing engine for Lumio CRM. Write a concise morning brief (3-5 sentences) summarising the user's pipeline health, top deals to focus on, and any contacts that need attention. Be specific — mention deal names, values, and contact names. Use a professional but energising tone.`,
       messages: [

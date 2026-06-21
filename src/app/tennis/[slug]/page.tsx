@@ -558,7 +558,7 @@ function TennisAISection({ context, player, session }: TennisAISectionProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           messages: [{
             role: 'user',
@@ -2238,7 +2238,7 @@ function MorningBriefingView({ player, session }: { player: TennisPlayer; sessio
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 800,
           messages: [{
             role: 'user',
@@ -2435,7 +2435,7 @@ function RankingsView({ player, session }: { player: TennisPlayer; session: Spor
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 400,
           messages: [{ role: 'user', content: `ATP ranking scenario for Alex Rivera. Current: #${player.ranking} with ${player.ranking_points} pts. Upcoming results scenario: ${rankScenarios.map(s=>`${s.event}: ${s.result} (+${s.pts}pts)`).join(', ')}. Total new points: ${totalNewPts}. Projected total: ${projectedPts} pts. Estimate: projected ATP ranking, Race to Turin position, and whether this secures top-50 / top-30 / top-20. Respond ONLY in JSON: {"projected_ranking":"e.g. #52","projected_points":"${projectedPts}","race_projection":"e.g. #38 Race","analysis":"2 sentences on what this means for season goals and which result matters most"}` }]
         })
@@ -3611,7 +3611,7 @@ function PracticeLogView({ player, session }: { player: TennisPlayer; session: S
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 500,
           messages: [{
             role: 'user',
@@ -5514,7 +5514,7 @@ function MediaView({ player, session }: { player: TennisPlayer; session: SportsD
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 500,
+          model: 'claude-sonnet-4-6', max_tokens: 500,
           messages: [{ role: 'user', content: `Generate post-match quotes for Alex Rivera, British ATP tennis player ranked #67. Result: ${matchResult}. Key moments: 1) ${moment1} 2) ${moment2} 3) ${moment3}. Alex is professional, humble, determined, with dry British wit. Generate platform-specific content. Respond ONLY in JSON: {"press_quote":"150 word formal press conference quote, 3rd person refs acceptable","social_instagram":"engaging 80-word instagram caption with 3 hashtags","social_x":"punchy 240-character max X/Twitter post"}` }]
         })
       });
@@ -5689,7 +5689,7 @@ function TravelView({ player, session }: { player: TennisPlayer; session: Sports
         setSearchPhase('✈️ Searching flights from '+trOrigin+' to '+trDest+'...')
         await new Promise(r=>setTimeout(r,800))
         setSearchPhase('💰 Comparing fares...')
-        const fr=await fetch('/api/ai/tennis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic. Sort by score desc.`}]})})
+        const fr=await fetch('/api/ai/tennis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic. Sort by score desc.`}]})})
         const fd=await fr.json();const ft=fd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
         try{setFlightResults(JSON.parse(ft.replace(/```json|```/g,'').trim()))}
         catch{setFlightResults(FLIGHT_FALLBACK)}
@@ -5702,7 +5702,7 @@ function TravelView({ player, session }: { player: TennisPlayer; session: Sports
           // Budget = hostels/Airbnb, Mid = standard, Luxe = flagship hotels.
           setHotelResults(HOTEL_FALLBACKS[trBudgetTier])
         } else {
-          const hr=await fetch('/api/ai/tennis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value.'} Need: ${[trGym&&'Gym',trCourts&&'Courts',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
+          const hr=await fetch('/api/ai/tennis',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value.'} Need: ${[trGym&&'Gym',trCourts&&'Courts',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
           const hd=await hr.json();const ht=hd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
           try{setHotelResults(JSON.parse(ht.replace(/```json|```/g,'').trim()))}
           catch{setHotelResults(HOTEL_FALLBACKS.mid)}
@@ -10038,7 +10038,7 @@ function TennisSendMessage({ onClose, session, player }: { onClose: () => void; 
       const usedChannels = urgent ? CHANNELS.map(c => c.label) : channels.map(id => CHANNELS.find(c => c.id === id)?.label || id)
       const res = await fetch('/api/ai/tennis', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user',
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user',
           content: `Draft a professional but direct message on behalf of ${session.userName || player.name}, a professional tennis player (ATP #${player.ranking ?? 67}). Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message: ${messageText}. ${urgent ? 'This is marked URGENT — prepend with [URGENT] and make the tone immediate.' : ''} Return only the final message text, no preamble. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
         }] })
       })
@@ -10251,7 +10251,7 @@ function TennisSocialMedia({ onClose, session, player }: { onClose: () => void; 
       const platNames = platforms.map(p => PLATFORMS.find(pl => pl.id === p)?.label || p).join(', ')
       const toneLabel = TONES.find(t => t.id === tone)?.label || tone
       const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', max_tokens: 800,
+        model: 'claude-sonnet-4-6', max_tokens: 800,
         messages: [{ role: 'user', content: `You are a social media manager for ${session.userName || 'Alex Rivera'}, a professional ATP tennis player ranked #${player.ranking ?? 67}. Create social media posts about: ${topic} — ${details}. Tone: ${toneLabel}. Generate a tailored version for each selected platform: ${platNames}. Label each platform's post with the platform name in capitals followed by a colon, then the caption on the next line. ${platforms.includes('twitter') ? 'Twitter: max 280 chars, include relevant hashtags. ' : ''}${platforms.includes('instagram') ? 'Instagram: engaging caption with 3-5 hashtags at the end. ' : ''}${platforms.includes('linkedin') ? 'LinkedIn: professional, 2-3 short paragraphs. ' : ''}${platforms.includes('facebook') ? 'Facebook: conversational, shareable. ' : ''}${platforms.includes('tiktok') ? 'TikTok: punchy caption, trending hashtag style. ' : ''}Only include platforms that were selected. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
       }) })
       const data = await res.json()
@@ -10463,7 +10463,7 @@ function TennisFlightFinder({ onClose, session, player }: { onClose: () => void;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `Find 4 ${cabinClass} class flights from ${from} to ${to} departing ${depart || 'next week'} for ${passengers} passengers. Return ONLY a JSON array: [{"airline":"","flightNo":"","departs":"","arrives":"","duration":"","stops":"","price":0,"currency":"GBP","score":0,"badge":""}]. Score 0-100 for value. Badge: "Best value", "Cheapest", "Fastest", or null. Realistic prices.` }]
         })
       })
@@ -10582,7 +10582,7 @@ function TennisMatchPrepAI({ onClose, session, player }: { onClose: () => void; 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `You are a top tennis analyst. Generate a tactical match prep brief for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) vs ${opponent} at ${tournament} on ${surface}. Cover opponent profile, serve patterns, return game, three to four specific tactical recommendations, head-to-head context, and mental edge. Max 400 words. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
         })
       })
@@ -10631,7 +10631,7 @@ function TennisSponsorPost({ onClose, session, player }: { onClose: () => void; 
       const res = await fetch('/api/ai/tennis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a ${platform} sponsor post for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) featuring ${sponsor}. Context: ${context}. Tone: ${tone}. Natural, not salesy. Include hashtags at the end. Write ONLY the caption. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: `Write a ${platform} sponsor post for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) featuring ${sponsor}. Context: ${context}. Tone: ${tone}. Natural, not salesy. Include hashtags at the end. Write ONLY the caption. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
       setPost(cleanResponse(data.content?.[0]?.text || 'Unable to generate.'))
@@ -10674,7 +10674,7 @@ function TennisPressStatement({ onClose, session, player }: { onClose: () => voi
       const res = await fetch('/api/ai/tennis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a press statement for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) after a ${result} against ${opponent} (${score}) at ${ctx}. Cover four to five talking points woven naturally into the statement. Genuine, not corporate. Around 150 words. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: `Write a press statement for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) after a ${result} against ${opponent} (${score}) at ${ctx}. Cover four to five talking points woven naturally into the statement. Genuine, not corporate. Around 150 words. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
       })
       const data = await res.json()
       setStatement(cleanResponse(data.content?.[0]?.text || 'Unable to generate.'))
@@ -10894,7 +10894,7 @@ function TennisHotelFinder({ onClose, session }: { onClose: () => void; session:
       const res = await fetch('/api/ai/tennis', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          model: 'claude-sonnet-4-6', max_tokens: 800,
           messages: [{ role: 'user', content: `Search for the best hotels near ${destination} for a professional tennis player checking in ${checkIn || 'next week'} checking out ${checkOut || '5 days later'}. Room type: ${roomType}. Prioritise proximity to the tournament venue, player-friendly amenities (gym, pool, physio services), and value. Return exactly 4 hotel options as a JSON array: [{"name":"","stars":4,"price":200,"distance":"0.5km from venue","feature":"key amenity","badge":"Best overall or Best value or null"}]. Realistic prices in GBP.` }]
         })
       })
@@ -11302,7 +11302,7 @@ function TennisWildcardRequest({ onClose, session, player }: { onClose: () => vo
   const generate = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Write a professional wildcard request letter for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) to the tournament director of ${tournament}.\n\nReason for request: ${reason}\nPlayer nationality: British\nCurrent ranking: #${player.ranking ?? 67}\nCareer high: #${player.career_high ?? 44}\nRecent results: Monte-Carlo QF (this week), solid clay season\n\nWrite a concise, professional letter (150-200 words) that opens addressing the tournament director, clearly states the wildcard request, gives 2-3 compelling reasons woven into the prose, mentions British market appeal if relevant, and closes professionally.\n\nWrite ONLY the letter, no commentary.\n\nRespond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] }) })
+      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, messages: [{ role: 'user', content: `Write a professional wildcard request letter for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}) to the tournament director of ${tournament}.\n\nReason for request: ${reason}\nPlayer nationality: British\nCurrent ranking: #${player.ranking ?? 67}\nCareer high: #${player.career_high ?? 44}\nRecent results: Monte-Carlo QF (this week), solid clay season\n\nWrite a concise, professional letter (150-200 words) that opens addressing the tournament director, clearly states the wildcard request, gives 2-3 compelling reasons woven into the prose, mentions British market appeal if relevant, and closes professionally.\n\nWrite ONLY the letter, no commentary.\n\nRespond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] }) })
       const data = await res.json(); setLetter(cleanResponse(data.content?.[0]?.text || 'Unable to generate letter.'))
     } catch { setLetter('Unable to generate letter.') }
     setLoading(false)
@@ -11336,7 +11336,7 @@ function TennisAgentBrief({ onClose, session, player }: { onClose: () => void; s
   const generate = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 700, messages: [{ role: 'user', content: `Generate a weekly agent briefing for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}).\n\nWrite a concise weekly brief covering ranking update (current position, points at risk, trajectory), this week (tournament result/status, prize money earned), upcoming (next 3 tournaments, entry status, travel confirmed), sponsor status (obligations due, any outstanding content), financial (prize money YTD, expenses flag if any), and action items (three things agent needs to action this week).\n\nTone: professional, direct, information-dense. Max 300 words.\nWrite ONLY the brief, addressed to "James" (agent name).\n\nRespond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] }) })
+      const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 700, messages: [{ role: 'user', content: `Generate a weekly agent briefing for ${session.userName || 'Alex Rivera'} (ATP #${player.ranking ?? 67}).\n\nWrite a concise weekly brief covering ranking update (current position, points at risk, trajectory), this week (tournament result/status, prize money earned), upcoming (next 3 tournaments, entry status, travel confirmed), sponsor status (obligations due, any outstanding content), financial (prize money YTD, expenses flag if any), and action items (three things agent needs to action this week).\n\nTone: professional, direct, information-dense. Max 300 words.\nWrite ONLY the brief, addressed to "James" (agent name).\n\nRespond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] }) })
       const data = await res.json(); setBrief(cleanResponse(data.content?.[0]?.text || 'Unable to generate brief.'))
     } catch { setBrief('Unable to generate brief.') }
     setLoading(false)
@@ -11764,7 +11764,7 @@ function CoachFinderView({ player, session }: { player: TennisPlayer; session: S
       setDeepSearch({ coach, data: null, loading: true })
       try {
         const res = await fetch('/api/ai/tennis', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800,
             tools: [{ type: 'web_search_20250305', name: 'web_search' }],
             messages: [{ role: 'user', content: `Search for detailed information about tennis coach ${coach.name} (${coach.speciality}, based ${coach.location}). Cover coaching history, philosophy, current availability, fee structure, and contact methods. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }] })
         })
@@ -12120,7 +12120,7 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 700,
+          model: 'claude-sonnet-4-6', max_tokens: 700,
           messages: [{ role: 'user', content: `Post-match debrief for Alex Rivera (ATP #67, clay specialist, right-handed, two-handed backhand). Match: ${selectedMatch}. GPS: 11.2km / 142min / ACWR 1.17. Serve: 62% 1st serve, 6 aces, 3 DFs. Court heatmap shows heavy baseline positioning (65%), limited net approaches. Analyse the match from data perspective. Respond ONLY in JSON: {"headline":"one sentence performance summary","serve_analysis":"2 sentences","return_analysis":"2 sentences","gps_fatigue":"1 sentence on what GPS load tells us about performance in 3rd set","pattern_insight":"1 sentence on tactical pattern from court positioning data","next_week":"1 sentence on what to prioritise in practice"}` }]
         })
       });
@@ -12155,7 +12155,7 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           messages: [{
             role: 'user',

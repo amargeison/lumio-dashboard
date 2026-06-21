@@ -462,8 +462,8 @@ function CricketPreSeasonView({ session }: { session?: SportsDemoSession }) {
     setAiLoading(true);
     const tourNote = camp.isAway ? `, away tour to ${camp.destination}` : '';
     Promise.all([
-      fetch('/api/ai/cricket',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,messages:[{role:'user',content:`Cricket pre-season AI summary for director/head coach. Opening fixture vs ${camp.opposition} (${camp.format}), ${daysTo} days remaining, ${phase} phase, squad of ${camp.squad}${tourNote}. 6 bullet points: squad fitness, batting readiness, bowling workload, fielding sharpness, injury concerns, one watch-out. No intro.`}]})}).then(r=>r.json()).then(d=>setAiSummary(d.content?.[0]?.text||null)).catch(()=>{}),
-      fetch('/api/ai/cricket',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,messages:[{role:'user',content:`5 urgent pre-season action items for cricket director, ${daysTo} days from opener vs ${camp.opposition} in ${phase} phase${tourNote}. Cover: fitness gaps, batting concerns, bowling load, fielding issues, conditions prep. No intro.`}]})}).then(r=>r.json()).then(d=>setAiHighlights(d.content?.[0]?.text||null)).catch(()=>{})
+      fetch('/api/ai/cricket',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,messages:[{role:'user',content:`Cricket pre-season AI summary for director/head coach. Opening fixture vs ${camp.opposition} (${camp.format}), ${daysTo} days remaining, ${phase} phase, squad of ${camp.squad}${tourNote}. 6 bullet points: squad fitness, batting readiness, bowling workload, fielding sharpness, injury concerns, one watch-out. No intro.`}]})}).then(r=>r.json()).then(d=>setAiSummary(d.content?.[0]?.text||null)).catch(()=>{}),
+      fetch('/api/ai/cricket',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,messages:[{role:'user',content:`5 urgent pre-season action items for cricket director, ${daysTo} days from opener vs ${camp.opposition} in ${phase} phase${tourNote}. Cover: fitness gaps, batting concerns, bowling load, fielding issues, conditions prep. No intro.`}]})}).then(r=>r.json()).then(d=>setAiHighlights(d.content?.[0]?.text||null)).catch(()=>{})
     ]).finally(()=>setAiLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camp?.opener])
@@ -479,7 +479,7 @@ function CricketPreSeasonView({ session }: { session?: SportsDemoSession }) {
   const [venueQuery, setVenueQuery] = useState({ destination: '', squad: camp?.squad?.toString() || '18', requirements: 'Cricket nets (6 lanes minimum), gym, outdoor practice area, video room' })
   const [venueResults, setVenueResults] = useState<string | null>(null)
   const [venueLoading, setVenueLoading] = useState(false)
-  const searchVenues = async () => { setVenueLoading(true); try { const res = await fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: `You are a cricket pre-season training camp venue finder. Find 3 ideal training camp venues near/in "${venueQuery.destination}" for a squad of ${venueQuery.squad}. Requirements: ${venueQuery.requirements}. For each venue give: name, location, facilities, approximate cost per day, pros/cons. Format as a clear numbered list.` }] }) }); const data = await res.json(); setVenueResults(data.content?.[0]?.text || 'No results returned') } catch { setVenueResults('Failed to search venues') } setVenueLoading(false) }
+  const searchVenues = async () => { setVenueLoading(true); try { const res = await fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages: [{ role: 'user', content: `You are a cricket pre-season training camp venue finder. Find 3 ideal training camp venues near/in "${venueQuery.destination}" for a squad of ${venueQuery.squad}. Requirements: ${venueQuery.requirements}. For each venue give: name, location, facilities, approximate cost per day, pros/cons. Format as a clear numbered list.` }] }) }); const data = await res.json(); setVenueResults(data.content?.[0]?.text || 'No results returned') } catch { setVenueResults('Failed to search venues') } setVenueLoading(false) }
   // Schedule
   const CAMP_DAYS = ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7']
   const AM_DEFAULTS = ['Batting nets', 'Bowling workload', 'Fielding drills', 'Double session', 'Match simulation', 'Batting nets', 'Bowling workload']
@@ -510,7 +510,7 @@ function CricketPreSeasonView({ session }: { session?: SportsDemoSession }) {
       return;
     }
     try {
-      const res = await fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Generate 8 creative content ideas for a county cricket club's pre-season training camp. Mix of video, social, behind-the-scenes, player-led, and sponsor-friendly content. Brief description for each. Numbered list, no intro.` }] }) });
+      const res = await fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: `Generate 8 creative content ideas for a county cricket club's pre-season training camp. Mix of video, social, behind-the-scenes, player-led, and sponsor-friendly content. Brief description for each. Numbered list, no intro.` }] }) });
       const data = await res.json();
       setContentIdeas(data.content?.[0]?.text || null);
     } catch { setContentIdeas('Failed to generate ideas'); }
@@ -787,7 +787,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `Oakridge CC squad for this week. Available players (fit only): ${JSON.stringify(fit)}. This week: Championship vs Calderbrook CCC (4-day, Fri), plus T20 Blast planning. Suggest the optimal XI for each format, considering format eligibility and player roles. Chris Dawson should have capped overs in Championship. Rajan Steenkamp available Championship + OD only. Respond ONLY in JSON (no markdown): { "championship": { "xi": ["player1", ...11 players], "reasoning": "2 sentences" }, "t20": { "xi": ["player1", ...11 players], "reasoning": "2 sentences" } }` }],
         }),
       });
@@ -849,7 +849,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 600,
           messages: [{ role: 'user', content: `You are a county cricket analyst. Toss situation: Ground: ${tossGround}. Weather: ${tossWeather}. Pitch: ${tossPitch}. Opposition batting: ${tossBatting}. Should Oakridge bat or field first in a 4-day County Championship match? Give a clear recommendation with reasoning. Respond ONLY in JSON (no markdown): { "decision": "BAT" or "FIELD", "confidence": "High/Medium/Low", "reasoning": "2-3 sentences", "key_factor": "one sentence on the single most important factor" }` }],
         }),
@@ -888,7 +888,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 800,
           messages: [{ role: 'user', content: `You are a cricket club's commercial director. Here are the contracts expiring this season: ${JSON.stringify(expiring2026)}. Also note: Adam Kingsley is 37 and considering retirement. Shan Abbas is Pakistan captain with international commitments. Ben Ridley is the leading Championship bowler. Write a renewal priority memo for the Board. Respond ONLY in JSON (no markdown): { "urgent": [{ "player": "name", "recommendation": "action", "reason": "1 sentence" }], "strategy_note": "2-3 sentence overall strategic note for the board" }` }],
         }),
@@ -920,7 +920,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 600,
+          model: 'claude-sonnet-4-6', max_tokens: 600,
           system: 'You are an ECB compliance expert helping a County Championship club. Be direct and specific. The club is Oakridge CC, CPA completion 73%, 3 DBS issues, safeguarding incidents pending. Answer questions about County Partnership Agreement requirements, ECB standards, and deadlines.',
           messages: [{ role: 'user', content: question }],
         }),
@@ -942,7 +942,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 400,
+          model: 'claude-sonnet-4-6', max_tokens: 400,
           messages: [{ role: 'user', content: `County Championship 4-day match. Current score: ${declState.currentScore}/${declState.wickets}. Planning to declare at ${declState.targetScore}. ${declState.overs} overs left in the match. Should we declare now or bat on? Give a direct 2-3 sentence recommendation.` }],
         }),
       });
@@ -963,7 +963,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `Generate a cricket opposition dossier for Oakridge CC vs ${oppTarget} in the ${oppFormat === 'Championship' ? 'County Championship 2026' : oppFormat === 'T20' ? 'T20 Blast 2026' : 'One Day Cup 2026'}. Include realistic insights. Respond ONLY in JSON (no markdown): { "batting_threats": "2-3 sentence analysis", "bowling_threats": "2-3 sentence analysis", "weaknesses": "2-3 sentence analysis", "game_plan": "3-4 sentence tactical recommendation", "key_matchup": "one specific player vs player matchup to target" }` }],
         }),
       });
@@ -987,7 +987,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `You are a cricket media officer preparing a Oakridge CC head coach for a press conference. Based on: Recent result: ${pcRecent}. Upcoming: ${pcUpcoming}. Team news: ${pcNews}. Generate 5 likely journalist questions with suggested answers. Respond ONLY in JSON (no markdown): { "questions": [ { "q": "question text", "a": "suggested answer 2-3 sentences" }, ... ] }` }],
         }),
       });
@@ -3829,7 +3829,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
       return
     }
     setAiLoading(true)
-    fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: 'Morning briefing for Oakridge CC director. Division One position: 2nd. Next fixture: vs Calderbrook CCC. Squad: 16/18 available. Cover: match preparation, pitch/weather, one opportunity.' }] }) })
+    fetch('/api/ai/cricket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 300, messages: [{ role: 'user', content: 'Morning briefing for Oakridge CC director. Division One position: 2nd. Next fixture: vs Calderbrook CCC. Squad: 16/18 available. Cover: match preparation, pitch/weather, one opportunity.' }] }) })
       .then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || null)).catch(() => {}).finally(() => setAiLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -6338,7 +6338,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
+            model: 'claude-sonnet-4-6',
             max_tokens: 400,
             messages: [{ role: 'user', content: 'Oakridge CC net session review. Bowlers: Reed (72 del planned, limit 96, ACWR 0.94), Dawson (48 del planned, limit 36, ACWR 1.62), Harrison (12 del, return-to-play). Championship vs Calderbrook CCC in 2 days. Is this week\u2019s load appropriate? Give 2-3 sentence recommendation.' }],
           }),
@@ -6456,7 +6456,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
+            model: 'claude-sonnet-4-6',
             max_tokens: 600,
             system: 'You are the media officer for Oakridge CC. Write match reports in a professional but warm style for club communications.',
             messages: [{ role: 'user', content: `Write a 150-word match report for: ${selected.opponent} (${selected.homeAway}), ${selected.competition}, ${selected.date}. Score: ${selected.score} vs ${selected.oppScore}. Result: ${selected.result}. Man of match: ${reportMom}. Notes: ${reportNotes}. Format for club website and social media use.` }],

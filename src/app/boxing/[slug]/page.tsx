@@ -568,7 +568,7 @@ function BoxingAISection({ context, fighter, session }: BoxingAISectionProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           messages: [{
             role: 'user',
@@ -721,7 +721,7 @@ function BoxingSendMessage({ onClose, fighter, session }: { onClose: () => void;
       const rankInfo = [fighter.rankings.wbc && `WBC #${fighter.rankings.wbc}`, fighter.rankings.wba && `WBA #${fighter.rankings.wba}`, fighter.rankings.wbo && `WBO #${fighter.rankings.wbo}`, fighter.rankings.ibf && `IBF #${fighter.rankings.ibf}`].filter(Boolean).join(', ')
       const res = await fetch('/api/ai/boxing', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user',
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user',
           content: `Draft a professional but direct message on behalf of ${session.userName || fighter.name}, a professional boxer (${fighter.weight_class}, ${rankInfo}). Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message: ${messageText}. ${urgent ? 'This is marked URGENT — prepend with [URGENT] and make the tone immediate.' : ''} Return only the final message text, no preamble. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
         }] })
       })
@@ -2268,7 +2268,7 @@ function CutPlannerView({ fighter, session }: { fighter: BoxingFighter; session:
         method: 'POST',
         headers: {'Content-Type':'application/json'},
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 500,
           messages: [{
             role: 'user',
@@ -4558,7 +4558,7 @@ function FightRecordView({ fighter, session }: { fighter: BoxingFighter; session
       const response = await fetch('/api/ai/boxing', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:600,
+          model:'claude-sonnet-4-6', max_tokens:600,
           messages:[{role:'user',content:`Post-fight debrief for Marcus Cole (22-1 Heavyweight). Fight: ${selectedFight}. Punch stats: 224/498 (45%) jabs 82/188 power 142/310. Notes: Strong body work, managed southpaw, slight wobble R6. Camp GPS data showed 40% centre ring time (target 45%), ACWR peaked 1.31. Generate analytical debrief. Respond ONLY in JSON: {"performance_rating":"X/10 — brief label","strengths":"2 sentences","weaknesses":"2 sentences","gps_insight":"1 sentence on what GPS ring data suggests about the performance","next_camp_focus":"1 sentence priority for next camp"}`}]
         })
       });
@@ -4875,7 +4875,7 @@ function AIMorningBriefingView({ fighter, session }: { fighter: BoxingFighter; s
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 800,
           messages: [{
             role: 'user',
@@ -4983,7 +4983,7 @@ function OppositionScoutView({ fighter, session }: { fighter: BoxingFighter; ses
       const response = await fetch('/api/ai/boxing', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:500,
+          model:'claude-sonnet-4-6', max_tokens:500,
           messages:[{role:'user',content:`Generate a boxing scout report on ${scoutTarget} for Marcus Cole (22-1 HW, Orthodox, 6'4" 82" reach, strong jab and body work). Marcus's GPS ring data shows he averages 40% centre, 35% ropes, 25% corners. Include GPS ring zone strategy specifically. Respond ONLY in JSON: {"style_analysis":"2 sentences on opponent style and tendencies","key_threat":"biggest danger to Marcus in 1 sentence","weakness":"main exploitable weakness in 1 sentence","ring_strategy":"2 sentence tactical plan","gps_target_zones":"where Marcus should target positioning based on his GPS profile vs this opponent's style"}`}]
         })
       });
@@ -5209,7 +5209,7 @@ function GPSLoadMonitorView({ fighter, session }: { fighter: BoxingFighter; sess
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 600,
           messages: [{
             role: 'user',
@@ -6149,7 +6149,7 @@ function BoxingFlightFinder({ onClose, session, fighter }: { onClose: () => void
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `Find 4 ${cabinClass} class flights from ${from} to ${to} departing ${depart || 'next week'} for ${passengers} passengers. Return ONLY a JSON array: [{"airline":"","flightNo":"","departs":"","arrives":"","duration":"","stops":"","price":0,"currency":"GBP","score":0,"badge":""}]. Score 0-100 for value. Badge: "Best value", "Cheapest", "Best schedule", or null. Realistic prices.` }]
         })
       })
@@ -6272,7 +6272,7 @@ function BoxingMatchPrepAI({ onClose, session, fighter }: { onClose: () => void;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `You are an elite boxing analyst. Generate a tactical fight prep brief for ${session.userName || fighter.name} "${fighter.nickname}" (${fighter.record.wins}-${fighter.record.losses}, ${fighter.record.ko} KO, ${fighter.stance}, WBC #${fighter.rankings.wbc}) vs ${opponent} (${fighter.next_fight.opponent_record}, ${fighter.next_fight.opponent_ranking}) at ${venue}. Cover: OPPONENT PROFILE, OFFENSIVE THREATS, DEFENSIVE WEAKNESSES, TACTICAL GAME PLAN (4-5 specific round-by-round strategies), CLINCH & INSIDE WORK, CONDITIONING TARGET, MENTAL EDGE. Use emoji headers. Max 400 words.` }]
         })
       })
@@ -6318,7 +6318,7 @@ function BoxingSponsorPost({ onClose, session, fighter }: { onClose: () => void;
       const res = await fetch('/api/ai/boxing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Write a ${platform} sponsor post for ${session.userName || fighter.name} "${fighter.nickname}" (${fighter.weight_class} boxer, ${fighter.record.wins}-${fighter.record.losses}) featuring ${sponsor}. Context: ${context}. Next fight: vs ${fighter.next_fight.opponent} in ${fighter.next_fight.days_away} days. Tone: ${tone}. Natural, not salesy. Include hashtags. Write ONLY the caption.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: `Write a ${platform} sponsor post for ${session.userName || fighter.name} "${fighter.nickname}" (${fighter.weight_class} boxer, ${fighter.record.wins}-${fighter.record.losses}) featuring ${sponsor}. Context: ${context}. Next fight: vs ${fighter.next_fight.opponent} in ${fighter.next_fight.days_away} days. Tone: ${tone}. Natural, not salesy. Include hashtags. Write ONLY the caption.` }] })
       })
       const data = await res.json()
       setPost(data.content?.[0]?.text || 'Unable to generate.')
@@ -6684,7 +6684,7 @@ function BoxingSocialMediaAI({ onClose, fighter, isDemoShell }: { onClose: () =>
       const selectedPlatforms = Object.entries(platforms).filter(([,v]) => v).map(([k]) => k).join(', ')
       const res = await fetch('/api/ai/boxing', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: `You are a social media manager for ${fighter.name}, professional boxer (${fighter.weight_class}, WBC #${fighter.rankings.wbc}), nicknamed "${fighter.nickname}". Next fight: vs ${fighter.next_fight.opponent} in ${fighter.next_fight.days_away} days at ${fighter.next_fight.venue}. Generate social media posts for: ${selectedPlatforms}. Topic: ${topic || 'fight camp update'}. Tone: ${tone}. Write one post per platform, labelled. Include relevant hashtags. Keep each post under 280 chars for Twitter, slightly longer for others. Plain text only. No markdown. No bullet points.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages: [{ role: 'user', content: `You are a social media manager for ${fighter.name}, professional boxer (${fighter.weight_class}, WBC #${fighter.rankings.wbc}), nicknamed "${fighter.nickname}". Next fight: vs ${fighter.next_fight.opponent} in ${fighter.next_fight.days_away} days at ${fighter.next_fight.venue}. Generate social media posts for: ${selectedPlatforms}. Topic: ${topic || 'fight camp update'}. Tone: ${tone}. Write one post per platform, labelled. Include relevant hashtags. Keep each post under 280 chars for Twitter, slightly longer for others. Plain text only. No markdown. No bullet points.` }] })
       })
       const data = await res.json()
       const raw = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || 'Unable to generate.'
@@ -6734,7 +6734,7 @@ function BoxingHotelFinder({ onClose, fighter }: { onClose: () => void; fighter:
     try {
       const res = await fetch('/api/ai/boxing', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 4 hotels in ${destination} for a professional boxer on fight week. Budget: ${budget}. Preferences: ${selectedPrefs.join(', ')}. Return JSON array: name, price (per night GBP), rating (stars), distance (to venue). No explanation. Plain text only. No markdown.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 4 hotels in ${destination} for a professional boxer on fight week. Budget: ${budget}. Preferences: ${selectedPrefs.join(', ')}. Return JSON array: name, price (per night GBP), rating (stars), distance (to venue). No explanation. Plain text only. No markdown.` }] })
       })
       const data = await res.json()
       const text = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''
@@ -6871,7 +6871,7 @@ function BoxingTravelView({ fighter, session }: { fighter: BoxingFighter; sessio
           setFlightResults(FLIGHT_FALLBACK)
         } else {
           try{
-            const fr=await fetch('/api/ai/boxing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only matching: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic for boxer fight-week travel. Sort by score desc.`}]})})
+            const fr=await fetch('/api/ai/boxing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only matching: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic for boxer fight-week travel. Sort by score desc.`}]})})
             const fd=await fr.json();const ft=fd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
             setFlightResults(JSON.parse(ft.replace(/```json|```/g,'').trim()))
           }catch{setFlightResults(FLIGHT_FALLBACK)}
@@ -6886,7 +6886,7 @@ function BoxingTravelView({ fighter, session }: { fighter: BoxingFighter; sessio
           setHotelResults(HOTEL_FALLBACKS.mid)
         } else {
           try{
-            const hr=await fetch('/api/ai/boxing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value, near venue.'} Need: ${[trGym&&'Gym',trVenue&&'Venue-adjacent',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
+            const hr=await fetch('/api/ai/boxing',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value, near venue.'} Need: ${[trGym&&'Gym',trVenue&&'Venue-adjacent',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
             const hd=await hr.json();const ht=hd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
             setHotelResults(JSON.parse(ht.replace(/```json|```/g,'').trim()))
           }catch{setHotelResults(HOTEL_FALLBACKS.mid)}
@@ -7253,10 +7253,10 @@ function FightCampView({ fighter, session }: { fighter: BoxingFighter; session: 
     }
     setAiLoading(true)
     fetch('/api/ai/boxing', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Generate a fight camp AI summary for a boxer. Camp details: vs ${campConfig.opponent}, ${daysToFight} days remaining, currently in ${phase} phase at ${campConfig.location}. Format as 6 numbered bullet points covering: overall readiness, strongest areas, areas needing work, weight cut status, sparring progress, one watch-out. Be specific and motivating. Max 200 words.` }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, messages: [{ role: 'user', content: `Generate a fight camp AI summary for a boxer. Camp details: vs ${campConfig.opponent}, ${daysToFight} days remaining, currently in ${phase} phase at ${campConfig.location}. Format as 6 numbered bullet points covering: overall readiness, strongest areas, areas needing work, weight cut status, sparring progress, one watch-out. Be specific and motivating. Max 200 words.` }] })
     }).then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setAiSummary(t ? cleanResponse(t) : 'Unable to generate.') }).catch(() => setAiSummary('Unable to generate.')).finally(() => setAiLoading(false))
     fetch('/api/ai/boxing', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 urgent fight camp action items for a boxer preparing to fight ${campConfig.opponent} in ${daysToFight} days during ${phase} phase. Each item should be one line, specific and actionable. Cover: weight trajectory, sparring gaps, conditioning flags, opponent patterns to drill, recovery priority. Start each with an emoji. Plain text only. No markdown. No bullet points.` }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 urgent fight camp action items for a boxer preparing to fight ${campConfig.opponent} in ${daysToFight} days during ${phase} phase. Each item should be one line, specific and actionable. Cover: weight trajectory, sparring gaps, conditioning flags, opponent patterns to drill, recovery priority. Start each with an emoji. Plain text only. No markdown. No bullet points.` }] })
     }).then(r => r.json()).then(d => { const t = d.content?.[0]?.text; setAiHighlights(t ? cleanResponse(t) : 'Unable to generate.') }).catch(() => setAiHighlights('Unable to generate.'))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campActive])
@@ -7580,7 +7580,7 @@ function BoxingWeightCutAI({ onClose, fighter }: { onClose: () => void; fighter:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 900,
+          model: 'claude-sonnet-4-6', max_tokens: 900,
           messages: [{ role: 'user', content: `Professional boxer. Current weight: ${curr}kg. Fight limit: ${target}kg. Days to weigh-in: ${daysN}. Total cut required: ${totalCut.toFixed(1)}kg. Daily deficit needed: ${dailyCut.toFixed(2)}kg/day (${pctOfBody.toFixed(1)}% of body mass over ${daysN} days).
 
 Create a safe weight cut protocol covering: daily weight targets from today to weigh-in, water and sodium manipulation timeline, when to start sweat sessions (sauna / bath), final 24-hour water cut, and rehydration plan for the 24 hours after weigh-in before the fight. ${dangerous ? 'FLAG CLEARLY that this cut is medically dangerous — over 5% body weight in under 7 days carries real risk of kidney damage, seizures and impaired fight-night performance. Strongly recommend consultation with a sports medicine doctor.' : ''}
@@ -7650,7 +7650,7 @@ function BoxingOpponentScout({ onClose, fighter }: { onClose: () => void; fighte
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1200,
+          model: 'claude-sonnet-4-6', max_tokens: 1200,
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
           messages: [{ role: 'user', content: `Search for professional boxer ${opponent} in the ${weightClass} division. Provide a scouting report covering professional record (wins-losses-KO), fighting style (orthodox or southpaw), dominant hand, KO ratio, average rounds per fight, recent form over the last three fights, known weaknesses based on their fight history, and three specific tactical recommendations for beating them. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
         })
@@ -7703,7 +7703,7 @@ function BoxingVADACheck({ onClose }: { onClose: () => void }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 900,
+          model: 'claude-sonnet-4-6', max_tokens: 900,
           messages: [{ role: 'user', content: `Anti-doping compliance check for a professional boxer registered with VADA, UKAD and WADA. Check the following supplement or ingredient list: ${supplement}.
 
 State clearly whether it is on the WADA 2024 or 2025 prohibited list, either in-competition or out-of-competition. Note any known contamination risk from this supplement category (for example pre-workouts historically contaminated with higenamine or 1,3-DMAA). Give a clear recommendation: safe, use with caution, or avoid entirely.
@@ -7825,7 +7825,7 @@ function BoxingRankingsTracker({ onClose, session, fighter }: { onClose: () => v
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1200,
+          model: 'claude-sonnet-4-6', max_tokens: 1200,
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
           messages: [{ role: 'user', content: `Search for the current WBO, WBC, IBF and WBA rankings for the ${weightClass} division in professional boxing as of today. Find the position of ${fighterName} if they are listed. Report their position in each of the four major sanctioning bodies, how many wins or positions away from mandatory challenger status they are in any of the belts, the current champions in that division, and the next logical fight that would improve their ranking position most efficiently. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.` }]
         })
@@ -7883,7 +7883,7 @@ function BoxingCampContent({ onClose, session, fighter }: { onClose: () => void;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          model: 'claude-sonnet-4-6', max_tokens: 800,
           messages: [{ role: 'user', content: `Generate authentic social media content for a professional boxer named ${boxerName} who is ${weeksOut} weeks away from their next fight against ${fighter.next_fight.opponent}. Today's training: ${training}. Platform: ${platform}. Tone: ${toneLine}.
 
 Generate a post caption with relevant hashtags at the end, a story or reel hook line where the first three words have to grab attention, and one engagement question to ask followers. Keep it authentic — boxers don't talk like corporations.

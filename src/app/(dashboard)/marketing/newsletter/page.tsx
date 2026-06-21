@@ -174,7 +174,7 @@ export default function NewsletterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 4000,
           messages: [{ role: 'user', content: `Write a complete newsletter called "${name}" for ${audience} subscribers.
 Theme: ${theme}

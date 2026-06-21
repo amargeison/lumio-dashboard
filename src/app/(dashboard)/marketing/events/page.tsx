@@ -208,7 +208,7 @@ export default function MarketingEventsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 4000,
           messages: [{ role: 'user', content: `Plan a ${selectedEventType?.label ?? eventType} event (${format}) for ${attendees} attendees in ${resolvedLocation} with budget of £${budget || 'flexible'} per head on ${eventDate}. Target audience: ${audienceList}. Provide:
 1. Top 3 venue recommendations with: name, capacity, estimated cost, pros/cons, contact approach

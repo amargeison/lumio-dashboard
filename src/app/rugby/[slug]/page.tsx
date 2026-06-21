@@ -2428,7 +2428,7 @@ function DoRBriefingView({club}:{club:RugbyClub}) {
   const generate = async () => {
     setLoading(true);setBrief(null);
     try {
-      const res = await fetch('/api/ai/rugby',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are the Club Intelligence AI for ${club.name}. Generate a 400-word DoR morning briefing for ${club.dor}. Today: ${CONTEXT.date} — ${CONTEXT.matchWeek}. Cap: ceiling £${(CONTEXT.cap.ceiling/1e6).toFixed(2)}M, spend £${(CONTEXT.cap.spend/1e6).toFixed(2)}M, headroom £${(CONTEXT.cap.headroom/1000).toFixed(0)}k. Franchise: ${CONTEXT.franchise.score}% (target 85%), gaps: ${CONTEXT.franchise.criticalGaps.join(', ')}. GPS: avg ACWR ${CONTEXT.gps.avgACWR}, overload: ${CONTEXT.gps.overloaded.join(', ')}, manage: ${CONTEXT.gps.managing.join(', ')}. Welfare: HIA ${CONTEXT.welfare.hiaActive}, doubtful: ${CONTEXT.welfare.doubtful.join(', ')}. Recruitment: ${CONTEXT.recruitment.targets} targets, priority: ${CONTEXT.recruitment.priorityAction}. Commercial: next event ${CONTEXT.commercial.nextMeeting}, renewal ${CONTEXT.commercial.renewalDue}. Format: ## Good morning, ${club.dor} | ## 🏟️ MATCH WEEK | ## 📡 SQUAD HEALTH | ## ⚖️ CAP | ## 🏆 FRANCHISE | ## 💼 COMMERCIAL | ## ✅ YOUR 3 PRIORITIES TODAY. Under 400 words.`}]})});
+      const res = await fetch('/api/ai/rugby',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`You are the Club Intelligence AI for ${club.name}. Generate a 400-word DoR morning briefing for ${club.dor}. Today: ${CONTEXT.date} — ${CONTEXT.matchWeek}. Cap: ceiling £${(CONTEXT.cap.ceiling/1e6).toFixed(2)}M, spend £${(CONTEXT.cap.spend/1e6).toFixed(2)}M, headroom £${(CONTEXT.cap.headroom/1000).toFixed(0)}k. Franchise: ${CONTEXT.franchise.score}% (target 85%), gaps: ${CONTEXT.franchise.criticalGaps.join(', ')}. GPS: avg ACWR ${CONTEXT.gps.avgACWR}, overload: ${CONTEXT.gps.overloaded.join(', ')}, manage: ${CONTEXT.gps.managing.join(', ')}. Welfare: HIA ${CONTEXT.welfare.hiaActive}, doubtful: ${CONTEXT.welfare.doubtful.join(', ')}. Recruitment: ${CONTEXT.recruitment.targets} targets, priority: ${CONTEXT.recruitment.priorityAction}. Commercial: next event ${CONTEXT.commercial.nextMeeting}, renewal ${CONTEXT.commercial.renewalDue}. Format: ## Good morning, ${club.dor} | ## 🏟️ MATCH WEEK | ## 📡 SQUAD HEALTH | ## ⚖️ CAP | ## 🏆 FRANCHISE | ## 💼 COMMERCIAL | ## ✅ YOUR 3 PRIORITIES TODAY. Under 400 words.`}]})});
       const data=await res.json();setBrief(data.content?.map((b:{type:string;text?:string})=>b.type==='text'?b.text:'').join('')||'Error.');
     } catch { setBrief('Connection error.'); }
     setLoading(false);
@@ -3923,7 +3923,7 @@ function AIBriefingView({club}:{club:RugbyClub}) {
       const res = await fetch('/api/ai/rugby',{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:`Generate a ${rolePrompts[role]} for ${club.name} (${club.league}). Squad: 31/38 available, 1 HIA active, next match vs Jersey Reds Saturday. Cap: £2.34M of £2.8M. Franchise: 71%. Be concise and professional.`}]}),
+        body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:`Generate a ${rolePrompts[role]} for ${club.name} (${club.league}). Squad: 31/38 available, 1 HIA active, next match vs Jersey Reds Saturday. Cap: £2.34M of £2.8M. Franchise: 71%. Be concise and professional.`}]}),
       });
       const data = await res.json();
       setBriefing(data.content?.[0]?.text||'Generation failed.');
@@ -4106,7 +4106,7 @@ function PeriodisationView() {
   const generateRotation = async () => {
     setPerLoading(true);setRotation(null);
     try {
-      const res=await fetch('/api/ai/rugby',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`You are S&C coordinator for Hartfield RFC (Championship Rugby). Generate a 6-week squad rotation plan. Fixtures: ${DEMO_CLUB_FIXTURES.map(f=>`${f.date} vs ${f.opponent} (${f.venue}) — ${f.importance}`).join('; ')}. GPS flags: Barnes ACWR 1.52 (overload), Foster 1.38, K.Foster 1.44. Injured: Briggs (shoulder, returns ~2 May), Patel (hamstring, ~18 Apr), D.Foster (HIA clears ~19 Apr). Westmoor Lions (18 Apr) and Northbridge Saxons (9 May) are priority matches. Format: ## 6-WEEK ROTATION PLAN (per fixture: selection note, load mgmt, target ACWR, academy opportunity) | ## PEAK WEEK MANAGEMENT | ## ACWR TARGETS — 6-WEEK. Under 500 words.`}]})});
+      const res=await fetch('/api/ai/rugby',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`You are S&C coordinator for Hartfield RFC (Championship Rugby). Generate a 6-week squad rotation plan. Fixtures: ${DEMO_CLUB_FIXTURES.map(f=>`${f.date} vs ${f.opponent} (${f.venue}) — ${f.importance}`).join('; ')}. GPS flags: Barnes ACWR 1.52 (overload), Foster 1.38, K.Foster 1.44. Injured: Briggs (shoulder, returns ~2 May), Patel (hamstring, ~18 Apr), D.Foster (HIA clears ~19 Apr). Westmoor Lions (18 Apr) and Northbridge Saxons (9 May) are priority matches. Format: ## 6-WEEK ROTATION PLAN (per fixture: selection note, load mgmt, target ACWR, academy opportunity) | ## PEAK WEEK MANAGEMENT | ## ACWR TARGETS — 6-WEEK. Under 500 words.`}]})});
       const data=await res.json();setRotation(data.content?.map((b:{type:string;text?:string})=>b.type==='text'?b.text:'').join('')||'Error.');
     } catch { setRotation('Connection error.'); }
     setPerLoading(false);
@@ -6195,7 +6195,7 @@ function AIHalftimeBriefView({ club }: { club: RugbyClub }) {
       const res = await fetch('/api/ai/rugby', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `You are the AI performance analyst for ${club.name}, a Championship Rugby club.
 Generate a structured AI Halftime Brief for the Head Coach's iPad. Match: ${club.name} ${MATCH.score} ${MATCH.opponent} (HT).
 
@@ -6385,7 +6385,7 @@ function RugbyAISection({ context, club, session, rugbyCode }: RugbyAISectionPro
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           messages: [{
             role: 'user',
@@ -6695,7 +6695,7 @@ function RugbyFlightFinder({ onClose, session, club }: { onClose: () => void; se
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `Find 4 ${cabinClass} class flights from ${from} to ${to} departing ${depart || 'next week'} for ${passengers} passengers (rugby squad). Return ONLY a JSON array: [{"airline":"","flightNo":"","departs":"","arrives":"","duration":"","stops":"","price":0,"currency":"GBP","score":0,"badge":""}]. Score 0-100 for value. Badge: "Best value", "Cheapest", "Recommended", or null. Realistic prices for group booking.` }]
         })
       })
@@ -6784,7 +6784,7 @@ function RugbyMatchPrepAI({ onClose, club }: { onClose: () => void; club: RugbyC
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          model: 'claude-sonnet-4-6', max_tokens: 800,
           messages: [{ role: 'user', content: `Generate a 250-word opposition analysis brief for ${club.name} vs Jersey Reds (${club.nextFixtureDate}). Include: set piece stats, key threats, tactical recommendations. Be specific and data-driven.` }]
         })
       })
@@ -6819,7 +6819,7 @@ function RugbySponsorPost({ onClose, session, club }: { onClose: () => void; ses
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 500,
+          model: 'claude-sonnet-4-6', max_tokens: 500,
           messages: [{ role: 'user', content: `Write a social media sponsor post for ${session.clubName || club.name} featuring ${sponsor}. Make it authentic, professional, and suitable for Instagram/Twitter. Include relevant hashtags. Max 150 words.` }]
         })
       })
@@ -7129,7 +7129,7 @@ function PreSeasonView({ club, session }: { club: RugbyClub; session?: SportsDem
     if (!trainingCamp) return
     setVenueLoading(true)
     fetch('/api/ai/rugby', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 3 rugby training camp venues near ${trainingCamp.destination} for a squad of ${trainingCamp.squadSize}. Requirements: Full size grass pitch, gym, pool, video analysis room, medical room. For each venue give: name, location, facilities, estimated cost per night, and a one-line verdict. Format as numbered list.` }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 3 rugby training camp venues near ${trainingCamp.destination} for a squad of ${trainingCamp.squadSize}. Requirements: Full size grass pitch, gym, pool, video analysis room, medical room. For each venue give: name, location, facilities, estimated cost per night, and a one-line verdict. Format as numbered list.` }] })
     }).then(r => r.json()).then(d => setVenueResults(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setVenueResults('Unable to generate.')).finally(() => setVenueLoading(false))
   }
 
@@ -7137,7 +7137,7 @@ function PreSeasonView({ club, session }: { club: RugbyClub; session?: SportsDem
     if (!trainingCamp) return
     setContentLoading(true)
     fetch('/api/ai/rugby', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 social media content ideas for a rugby team's training camp in ${trainingCamp.destination}. Include: behind-the-scenes, player challenges, sponsor integration opportunities, fan engagement, and match-day build-up. One line each with emoji.` }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 social media content ideas for a rugby team's training camp in ${trainingCamp.destination}. Include: behind-the-scenes, player challenges, sponsor integration opportunities, fan engagement, and match-day build-up. One line each with emoji.` }] })
     }).then(r => r.json()).then(d => setContentIdeas(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setContentIdeas('Unable to generate.')).finally(() => setContentLoading(false))
   }
 
@@ -7178,10 +7178,10 @@ function PreSeasonView({ club, session }: { club: RugbyClub; session?: SportsDem
       return
     }
     fetch('/api/ai/rugby', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Generate a rugby pre-season AI summary for a coach. Camp details: opening fixture vs ${campConfig.opposition}, ${daysToOpener} days remaining, ${phase} phase, squad of ${campConfig.squadSize}. 6 bullet points covering: squad fitness, contact readiness, scrum/lineout progress, injury concerns, key players, one watch-out. Be specific. Max 200 words.` }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, messages: [{ role: 'user', content: `Generate a rugby pre-season AI summary for a coach. Camp details: opening fixture vs ${campConfig.opposition}, ${daysToOpener} days remaining, ${phase} phase, squad of ${campConfig.squadSize}. 6 bullet points covering: squad fitness, contact readiness, scrum/lineout progress, injury concerns, key players, one watch-out. Be specific. Max 200 words.` }] })
     }).then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setAiSummary('Unable to generate.'))
     fetch('/api/ai/rugby', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 urgent pre-season action items for a rugby coach, ${daysToOpener} days from opener vs ${campConfig.opposition} in ${phase} phase. Cover: fitness gaps, contact load, set piece issues, squad balance, recovery. Start each with an emoji.` }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 urgent pre-season action items for a rugby coach, ${daysToOpener} days from opener vs ${campConfig.opposition} in ${phase} phase. Cover: fitness gaps, contact load, set piece issues, squad balance, recovery. Start each with an emoji.` }] })
     }).then(r => r.json()).then(d => setAiHighlights(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setAiHighlights('Unable to generate.'))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campActive])

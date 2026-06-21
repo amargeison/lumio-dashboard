@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
   try {
     const client = new Anthropic({ apiKey })
     const res = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 8000,
       messages: [{ role: 'user', content: content as any }],
     })
@@ -97,8 +97,11 @@ export async function POST(req: NextRequest) {
     if (!match) return NextResponse.json({ error: 'Could not extract any records from that file.' }, { status: 422 })
     const extracted = JSON.parse(match[0])
     return NextResponse.json({ extracted })
-  } catch (err) {
+  } catch (err: any) {
     console.error('[coach/import]', err)
-    return NextResponse.json({ error: 'Import failed — the file may be too large or unsupported.' }, { status: 500 })
+    // Surface the real reason so failures are diagnosable (model, key, network…).
+    const detail = err?.error?.error?.message || err?.message || String(err)
+    const status = typeof err?.status === 'number' ? err.status : 500
+    return NextResponse.json({ error: `Import failed: ${detail}` }, { status })
   }
 }

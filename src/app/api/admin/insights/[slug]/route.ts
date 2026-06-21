@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     const companyName = account.company_name || account.name || slug
 
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       messages: [{
         role: 'user',

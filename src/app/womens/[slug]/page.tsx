@@ -2812,7 +2812,7 @@ const AIPerformanceBriefView = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1200,
           messages: [{ role: 'user', content: prompt }],
         }),
@@ -5043,7 +5043,7 @@ function PreSeasonCampView({ storageKey, accent, aiRoute }: { storageKey: string
     if (!trainingCamp) return
     setVenueLoading(true)
     fetch(aiRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 3 football training camp venues near ${trainingCamp.destination} for a squad of ${trainingCamp.squadSize}. Requirements: Full size grass pitch, gym, pool, 2 meeting rooms. For each venue give: name, location, facilities, estimated cost per night, and a one-line verdict. Format as numbered list.` }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 3 football training camp venues near ${trainingCamp.destination} for a squad of ${trainingCamp.squadSize}. Requirements: Full size grass pitch, gym, pool, 2 meeting rooms. For each venue give: name, location, facilities, estimated cost per night, and a one-line verdict. Format as numbered list.` }] })
     }).then(r => r.json()).then(d => setVenueResults(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setVenueResults('Unable to generate.')).finally(() => setVenueLoading(false))
   }
 
@@ -5051,7 +5051,7 @@ function PreSeasonCampView({ storageKey, accent, aiRoute }: { storageKey: string
     if (!trainingCamp) return
     setContentLoading(true)
     fetch(aiRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 social media content ideas for a women's football team's training camp in ${trainingCamp.destination}. Include: behind-the-scenes, player challenges, sponsor integration opportunities, fan engagement, and match-day build-up. One line each with emoji.` }] })
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user', content: `Generate 5 social media content ideas for a women's football team's training camp in ${trainingCamp.destination}. Include: behind-the-scenes, player challenges, sponsor integration opportunities, fan engagement, and match-day build-up. One line each with emoji.` }] })
     }).then(r => r.json()).then(d => setContentIdeas(d.content?.[0]?.text || 'Unable to generate.')).catch(() => setContentIdeas('Unable to generate.')).finally(() => setContentLoading(false))
   }
 
@@ -5082,8 +5082,8 @@ function PreSeasonCampView({ storageKey, accent, aiRoute }: { storageKey: string
     if (!camp) return
     setAiLoading(true)
     Promise.all([
-      fetch(aiRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Generate a football pre-season AI summary. Opening fixture vs ${camp.opposition}, ${daysTo} days remaining, currently in ${phase} phase, squad of ${camp.squad}, target formation ${camp.formation}. 6 numbered bullet points: overall squad readiness, fitness levels, tactical shape progress, key players to watch, injury concerns, one watch-out for the opener. Be specific and coaching-focused. No intro, just the 6 points.` }] }) }).then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || null)).catch(() => {}),
-      fetch(aiRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 300, messages: [{ role: 'user', content: `Generate 5 urgent pre-season action items for opening fixture vs ${camp.opposition} in ${daysTo} days, ${phase} phase. Each item one line, specific and actionable. Cover: fitness test gaps, tactical shape issues, set piece readiness, player form concerns, squad balance. No intro.` }] }) }).then(r => r.json()).then(d => setAiHighlights(d.content?.[0]?.text || null)).catch(() => {}),
+      fetch(aiRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: `Generate a football pre-season AI summary. Opening fixture vs ${camp.opposition}, ${daysTo} days remaining, currently in ${phase} phase, squad of ${camp.squad}, target formation ${camp.formation}. 6 numbered bullet points: overall squad readiness, fitness levels, tactical shape progress, key players to watch, injury concerns, one watch-out for the opener. Be specific and coaching-focused. No intro, just the 6 points.` }] }) }).then(r => r.json()).then(d => setAiSummary(d.content?.[0]?.text || null)).catch(() => {}),
+      fetch(aiRoute, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 300, messages: [{ role: 'user', content: `Generate 5 urgent pre-season action items for opening fixture vs ${camp.opposition} in ${daysTo} days, ${phase} phase. Each item one line, specific and actionable. Cover: fitness test gaps, tactical shape issues, set piece readiness, player form concerns, squad balance. No intro.` }] }) }).then(r => r.json()).then(d => setAiHighlights(d.content?.[0]?.text || null)).catch(() => {}),
     ]).finally(() => setAiLoading(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [camp?.opener])
