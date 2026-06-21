@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     const anthropic = new Anthropic()
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1000,
       system: 'You are ARIA, Lumio CRM\'s AI enrichment engine. Generate a realistic enriched contact profile as JSON with exactly these fields: {"bio","location","companySize","companyRevenue","linkedinUrl","twitterHandle","emailStatus","companyStatus","enrichmentScore","buyingSignals"}. Return ONLY valid JSON. No markdown. No explanation.',
       messages: [

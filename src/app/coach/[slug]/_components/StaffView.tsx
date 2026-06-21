@@ -21,6 +21,21 @@ import { getAddedSessions, subscribe as subscribeSessions } from '../_lib/sessio
 import { getAddedCoaches, subscribe as subscribeCoaches } from '../_lib/coaches-store'
 import { assignPlayer, subscribe as subscribeAssign } from '../_lib/player-assign-store'
 import { AddCoachModal } from './AddCoachModal'
+import { CoachSendMessage, type PresetRecipient } from './SendMessage'
+
+// Build a Send-Message preset for a coach. Static demo coaches carry no contact
+// details, so synthesise fictional ones (example mailbox + Ofcom drama number)
+// that the head coach can "message" without reaching a real person.
+function contactPreset(c: Coach): PresetRecipient {
+  const first = c.name.split(' ')[0].toLowerCase()
+  const n = (c.id.split('').reduce((a, ch) => a + ch.charCodeAt(0), 0) % 900) + 100
+  return {
+    name: c.name,
+    role: `${c.role} Coach`,
+    email: c.email || `${first}@riversidetennis.example`,
+    phone: c.phone || `+44 7700 900${n}`,
+  }
+}
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -106,6 +121,7 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
   useEffect(() => { const r = () => setAdded(getAddedSessions()); r(); return subscribeSessions(r) }, [])
   const [addedCoaches, setAddedCoaches] = useState<Coach[]>([])
   const [addOpen, setAddOpen] = useState(false)
+  const [contact, setContact] = useState<PresetRecipient | null>(null)
   useEffect(() => { const r = () => setAddedCoaches(getAddedCoaches()); r(); return subscribeCoaches(r) }, [])
   const [, setAssignTick] = useState(0)
   useEffect(() => subscribeAssign(() => setAssignTick(t => t + 1)), [])
@@ -144,9 +160,23 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
                 </span>
               </div>
               <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>{sel.accreditation} · {sel.availability} · {sel.hoursPerWeek}h/wk · {sel.homeVenue}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 4, fontSize: 11.5, color: T.text2 }}>
+                <span>📞 {contactPreset(sel).phone}</span>
+                <span>✉ {contactPreset(sel).email}</span>
+              </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
                 {sel.specialisms.map(sp => <Chip key={sp} T={T}>{sp}</Chip>)}
               </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignSelf: 'flex-start', flexShrink: 0 }}>
+              <button onClick={() => { window.location.href = `tel:${contactPreset(sel).phone?.replace(/\s+/g, '')}` }} title={`Call ${sel.name}`}
+                style={{ appearance: 'none', border: `1px solid ${T.border}`, background: T.panel2, color: T.text, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontWeight: 700, fontFamily: FONT, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 13 }}>📞</span> Call
+              </button>
+              <button onClick={() => setContact(contactPreset(sel))} title={`Message ${sel.name}`}
+                style={{ appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontWeight: 700, fontFamily: FONT, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 13 }}>✉</span> Contact
+              </button>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
@@ -239,6 +269,7 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
             ))}
           </div>
         ) : <div style={{ fontSize: 12, color: T.text3 }}>No players currently assigned.</div>}
+        {contact && <CoachSendMessage T={T} accent={accent} preset={contact} onClose={() => setContact(null)} />}
       </div>
     )
   }
@@ -311,6 +342,12 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
                   <div style={{ fontSize: 14, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
                   <div style={{ marginTop: 3 }}><RoleBadge T={T} accent={accent} role={c.role} /></div>
                 </div>
+                <button onClick={e => { e.stopPropagation(); window.location.href = `tel:${contactPreset(c).phone?.replace(/\s+/g, '')}` }} title={`Call ${c.name} · ${contactPreset(c).phone}`}
+                  style={{ appearance: 'none', border: `1px solid ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 8, padding: '5px 8px', fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}>📞</button>
+                <button onClick={e => { e.stopPropagation(); setContact(contactPreset(c)) }} title={`Message ${c.name}`}
+                  style={{ appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '5px 9px', fontSize: 11, fontWeight: 700, fontFamily: FONT, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                  <span style={{ fontSize: 12 }}>✉</span> Contact
+                </button>
                 <div title={c.status === 'active' ? 'Active' : 'On leave'} style={{ width: 9, height: 9, borderRadius: '50%', background: statusColour(T, c.status), flexShrink: 0 }} />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
@@ -336,6 +373,7 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
       </div>
 
       {addOpen && <AddCoachModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
+      {contact && <CoachSendMessage T={T} accent={accent} preset={contact} onClose={() => setContact(null)} />}
     </div>
   )
 }

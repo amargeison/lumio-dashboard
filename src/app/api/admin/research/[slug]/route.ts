@@ -45,7 +45,7 @@ Also include:
 - performance_data: { attendance_rate, progress_scores, any_notable_metrics }` : ''
 
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       tools: [{ type: 'web_search' as any, name: 'web_search' }] as any,
       messages: [{

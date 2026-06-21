@@ -507,7 +507,7 @@ function GolfAISection({ context, player, session }: GolfAISectionProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           messages: [{
             role: 'user',
@@ -736,7 +736,7 @@ function GolfSendMessage({ onClose, player, session }: { onClose: () => void; pl
       const usedChannels = urgent ? CHANNELS.map(c => c.label) : channels.map(id => CHANNELS.find(c => c.id === id)?.label || id)
       const res = await fetch('/api/ai/golf', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user',
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user',
           content: `Draft a professional but direct message on behalf of ${session.userName || player.name}, a professional golfer (OWGR #${player.owgr}). Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message: ${messageText}. ${urgent ? 'This is marked URGENT — prepend with [URGENT] and make the tone immediate.' : ''} Return only the final message text, no preamble. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
         }] })
       })
@@ -1942,7 +1942,7 @@ function RoundPrepView({ player, session }: { player: GolfPlayer; session: Sport
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 800,
           system: 'You are Lumio AI, golf performance analyst for James Halton (#87 OWGR, DP World Tour). Be direct, data-driven, and specific. 2-3 sentences per section.',
           messages: [{
@@ -2398,7 +2398,7 @@ function MorningBriefingView({ player, session }: { player: GolfPlayer; session:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           messages: [{ role: 'user', content: prompt }],
         }),
@@ -2765,7 +2765,7 @@ function _ScheduleOptimiserLiveUnused() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           system: 'You are Lumio AI, strategic golf career analyst. Be direct and specific — this player takes your recommendations seriously.',
           messages: [{
@@ -4523,7 +4523,7 @@ function GolfTravelView({ player, session }: { player: GolfPlayer; session: Spor
           setFlightResults(FLIGHT_FALLBACK)
         } else {
           try{
-            const fr=await fetch('/api/ai/golf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only matching: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic for a DP World Tour event. Sort by score desc.`}]})})
+            const fr=await fetch('/api/ai/golf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only matching: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic for a DP World Tour event. Sort by score desc.`}]})})
             const fd=await fr.json();const ft=fd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
             setFlightResults(JSON.parse(ft.replace(/```json|```/g,'').trim()))
           }catch{setFlightResults(FLIGHT_FALLBACK)}
@@ -4538,7 +4538,7 @@ function GolfTravelView({ player, session }: { player: GolfPlayer; session: Spor
           setHotelResults(HOTEL_FALLBACKS.mid)
         } else {
           try{
-            const hr=await fetch('/api/ai/golf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value, course-adjacent.'} Need: ${[trGym&&'Gym',trCourse&&'Course-adjacent',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
+            const hr=await fetch('/api/ai/golf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value, course-adjacent.'} Need: ${[trGym&&'Gym',trCourse&&'Course-adjacent',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
             const hd=await hr.json();const ht=hd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
             setHotelResults(JSON.parse(ht.replace(/```json|```/g,'').trim()))
           }catch{setHotelResults(HOTEL_FALLBACKS.mid)}
@@ -5796,7 +5796,7 @@ function AgentPipelineView({ player, session }: { player: GolfPlayer; session: S
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           system: 'You are Sarah Mitchell, ISM sports agent, writing a sponsorship pitch on behalf of your client. Write in professional but warm agent voice. Be specific with stats.',
           messages: [{ role: 'user', content: userPrompt }],
@@ -6012,7 +6012,7 @@ function GolfFlightFinder({ onClose, session, player }: { onClose: () => void; s
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `Find 4 ${cabinClass} class flights from ${from} to ${to} departing ${depart || 'next week'} for ${passengers} passengers. Return ONLY a JSON array: [{"airline":"","flightNo":"","departs":"","arrives":"","duration":"","stops":"","price":0,"currency":"GBP","score":0,"badge":""}]. Score 0-100 for value. Badge: "Best value", "Cheapest", "Fastest", or null. Realistic prices.` }]
         })
       })
@@ -6127,7 +6127,7 @@ function GolfMatchPrepAI({ onClose, session, player }: { onClose: () => void; se
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `You are a tour caddie and performance analyst. Generate a round prep brief for ${session.userName || player.name} (OWGR #${player.owgr}, SG Putting -1.18, SG OTT +0.41) playing ${round} at ${course}. Conditions: ${conditions}. Cover: COURSE OVERVIEW, KEY HOLES (3-4 specific), SCORING STRATEGY, WEATHER ADJUSTMENTS, PUTTING FOCUS, MENTAL NOTE. Use emoji headers. Max 400 words.` }]
         })
       })
@@ -6177,7 +6177,7 @@ function GolfSponsorPost({ onClose, session, player }: { onClose: () => void; se
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 500,
+          model: 'claude-sonnet-4-6', max_tokens: 500,
           messages: [{ role: 'user', content: `Generate a social media post for James Halton (#87 OWGR, DP World Tour, English) for ${sponsor} on ${platform}. Type: ${postType}. Currently at Halden Motors International Open${scorePos ? `, ${scorePos}` : ''}. Tone: professional golfer, authentic, not corporate. Include relevant hashtags and golf emoji. Max 200 words.` }]
         })
       })
@@ -6242,7 +6242,7 @@ function GolfRankingSimulator({ onClose, player }: { onClose: () => void; player
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 600,
+          model: 'claude-sonnet-4-6', max_tokens: 600,
           messages: [{ role: 'user', content: `Simulate the OWGR and Race to Dubai ranking impact for James Halton (OWGR #${player.owgr}, Race to Dubai #${player.race_to_dubai_pos} with ${player.race_to_dubai_points}pts) if he ${result} at the ${event} (DP World Tour event). Explain: new projected OWGR, new Race to Dubai position and points, prize money earned, impact on season target (£450k), Ryder Cup points implications if relevant. Max 200 words. Be specific with numbers.` }]
         })
       })
@@ -6390,7 +6390,7 @@ function GolfSocialMediaAI({ onClose, session, player }: { onClose: () => void; 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          model: 'claude-sonnet-4-6', max_tokens: 800,
           messages: [{ role: 'user', content: `You are the social media manager for ${session.userName || player.name}, a professional golfer on the ${player.tour} (OWGR #${player.owgr}). Current event: Halden Motors International Open, Munich. Generate social media content about: "${topic || 'tournament prep day'}". Platforms: ${platforms.join(', ')}. Tone: ${tone}. Include hashtags, emojis, and platform-specific formatting. For Instagram include a caption. For Twitter/X keep under 280 chars. For LinkedIn be more professional. Respond in plain text only — no markdown formatting.` }]
         })
       })
@@ -6486,7 +6486,7 @@ function GolfHotelFinder({ onClose, session }: { onClose: () => void; session: S
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          model: 'claude-sonnet-4-6', max_tokens: 800,
           tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
           messages: [{ role: 'user', content: `Find best hotels near ${destination} for a touring golf professional, ${checkIn || 'next week'} to ${checkOut || 'next week + 3 days'}. Priority: ${prefs.length ? prefs.join(', ') : 'proximity to course, quality gym'}. Top 3 with name, distance to course, price, facilities, booking URL. Return ONLY JSON array: [{"name":"","stars":5,"price":0,"distance":"","score":0,"badge":""}]. Score 0-100. Badge: "Best overall", "Best value", or null. Respond in plain text only — no markdown.` }]
         })
@@ -6594,7 +6594,7 @@ function GolfCourseStrategyAI({ onClose, session }: { onClose: () => void; sessi
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1200,
+          model: 'claude-sonnet-4-6', max_tokens: 1200,
           tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }],
           messages: [{ role: 'user', content: `Search for course information about ${course} and generate a hole-by-hole strategy guide for a touring professional golfer (OWGR #87, scoring average 70.2). Round: ${round}. Conditions: ${weather}. Yardage: ${yardage}. Cover: tee shot strategy, approach play, scoring holes, danger holes, putting notes, caddie briefing points. Format with hole numbers as headers.` }]
         })
@@ -6709,7 +6709,7 @@ function GolfLaunchMonitorAnalysis({ onClose, session, player }: { onClose: () =
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          model: 'claude-sonnet-4-6', max_tokens: 800,
           messages: [{ role: 'user', content: `Analyse these Lumio Range numbers for a touring professional golfer: Club ${club}, Ball speed ${ballSpeed}mph, Launch ${launchAngle}°, Spin ${spinRate}rpm, Carry ${carry}yds. Compare to PGA Tour averages for this club. Identify: what's working, what needs adjustment, specific drill or setup change to improve. Technical, coaching tone. Max 300 words.` }]
         })
       })
@@ -6770,7 +6770,7 @@ function GolfCaddieBriefAI({ onClose, session, player }: { onClose: () => void; 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 1000,
+          model: 'claude-sonnet-4-6', max_tokens: 1000,
           messages: [{ role: 'user', content: `Generate a pre-round caddie briefing for James Halton (#87 OWGR, scoring avg 70.2) for ${tournament} Round ${round}, tee time ${teeTime}, playing with ${partners}. Weather: ${weather}. Cover: course management priorities for today, club selection notes, pin positions to target/avoid, playing partner awareness, focus cues, one key stat to beat today. Max 400 words. Use emoji headers.` }]
         })
       })
@@ -6887,7 +6887,7 @@ function GolfMentalPrepAI({ onClose, session, player }: { onClose: () => void; s
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514', max_tokens: 800,
+          model: 'claude-sonnet-4-6', max_tokens: 800,
           messages: [{ role: 'user', content: `Generate a pre-round mental preparation routine for James Halton, DP World Tour professional golfer. Round ${round} of ${tournament}, tee time ${teeTime}, currently ${position || 'T12'} on leaderboard. Feeling: ${feeling}/10. Main concern: ${concern}. Include: warm-up range routine, putting green focus, first tee ritual, between-shot process, bogey recovery mindset. Practical, 4-5 minutes to read. Max 400 words. Use emoji headers.` }]
         })
       })

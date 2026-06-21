@@ -7,6 +7,9 @@
 import { useState, useRef } from 'react'
 import { sb, currentCoachId } from '../_lib/coach-db'
 import { CoachImport } from './CoachImport'
+import { addVenue } from '../_lib/venues-store'
+import { setSettings, getSettings } from '../_lib/settings-store'
+import { setHidden as setMenuHidden } from '../_lib/menu-visibility'
 
 const ACCENT = '#3A8EE0'
 const IMPORT_THEME = { text: '#fff', text2: '#D1D5DB', text3: '#9CA3AF', panel: '#0d1117', panel2: '#111318', border: '#1F2937', btnText: '#fff', isDark: true }
@@ -38,6 +41,8 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
   const [dbsNumber, setDbsNumber] = useState('')
   const [dbsExpiry, setDbsExpiry] = useState('')
   const [safeguarding, setSafeguarding] = useState('')
+  const [wantStaff, setWantStaff] = useState<boolean | null>(null)
+  const [homeCourt, setHomeCourt] = useState('')
   const [setupType, setSetupType] = useState<'lumio' | 'self' | null>(null)
   const [dpa, setDpa] = useState(false)
   const [players, setPlayers] = useState<Player[]>([])
@@ -84,6 +89,19 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
       const toAdd = players.filter(p => p.name.trim())
       if (toAdd.length) {
         await sb().from('coach_players').insert(toAdd.map(p => ({ coach_id: uid, name: p.name.trim(), level: p.level.trim() || null })))
+      }
+
+      // Solo vs staffed: hide the Coaches menu for a solo coach (they can re-enable
+      // it any time in Settings → Menu visibility once they hire staff).
+      if (wantStaff === false) setMenuHidden('staff', true)
+      if (wantStaff === true) setMenuHidden('staff', false)
+
+      // Home court → seed it into the Court Planner as the home/main site.
+      if (homeCourt.trim()) {
+        const venueId = `venue-home-${Date.now()}`
+        addVenue({ id: venueId, name: homeCourt.trim(), type: 'Home court', address: '', distance: 'Home base', manager: name.trim() || 'You', managerPhone: phone.trim() || '', managerEmail: email.trim() || '', access: '', facilities: [], courts: [] })
+        const cur = getSettings()
+        setSettings({ primaryVenueId: venueId, syncedVenues: [...new Set([...(cur.syncedVenues || []), venueId])] })
       }
 
       // "Set it up for me" — notify the Lumio team (fire and forget).
@@ -187,6 +205,19 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
                   </div>
                 </div>
                 <p style={{ color: '#6B7280', fontSize: 11.5, margin: '8px 0 0', lineHeight: 1.5 }}>You can upload the certificate PDF and manage your team&apos;s DBS records once you&apos;re in — Settings → Head coach profile and the Staff page.</p>
+              </div>
+              <div style={{ borderTop: '1px solid #1F2937', paddingTop: 16, marginTop: 2 }}>
+                <label style={lbl}>Do you want to add coaching staff?</label>
+                <p style={{ color: '#6B7280', fontSize: 11.5, margin: '4px 0 8px' }}>Solo for now? You can switch the Coaches menu on any time in Settings → Menu visibility.</p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" onClick={() => setWantStaff(true)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', padding: '11px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `2px solid ${wantStaff === true ? ACCENT : '#1F2937'}`, background: wantStaff === true ? ACCENT + '18' : '#111318', color: wantStaff === true ? '#fff' : '#9CA3AF' }}>Yes — I have a team</button>
+                  <button type="button" onClick={() => setWantStaff(false)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', padding: '11px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `2px solid ${wantStaff === false ? ACCENT : '#1F2937'}`, background: wantStaff === false ? ACCENT + '18' : '#111318', color: wantStaff === false ? '#fff' : '#9CA3AF' }}>No — solo coach</button>
+                </div>
+              </div>
+              <div>
+                <label style={lbl}>Home court <span style={{ color: '#4B5563', fontWeight: 400 }}>(where you do most of your coaching)</span></label>
+                <input value={homeCourt} onChange={e => setHomeCourt(e.target.value)} placeholder="e.g. Riverside Tennis Centre" style={input} />
+                <p style={{ color: '#6B7280', fontSize: 11.5, margin: '6px 0 0' }}>We&apos;ll set this as your home site in the Court Planner.</p>
               </div>
             </div>
           </div>

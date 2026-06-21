@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
 Return ONLY valid JSON, no markdown.`
 
       const message = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         system: insightsPrompt,
         messages: [{ role: 'user', content: `Department: ${dept}. Period: ${period}. Context: ${context || 'General department data.'}. Generate the insights report.` }],
@@ -157,7 +157,7 @@ Return ONLY valid JSON, no markdown.`
 
     // Default: summary mode
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 500,
       system: systemPrompt,
       messages: [{ role: 'user', content: context || 'Generate the summary based on typical department data.' }],

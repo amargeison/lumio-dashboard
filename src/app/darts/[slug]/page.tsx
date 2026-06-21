@@ -426,7 +426,7 @@ function DartsAISection({ context, player, session }: DartsAISectionProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1000,
           messages: [{
             role: 'user',
@@ -570,7 +570,7 @@ function DartsSendMessage({ onClose, player, session }: { onClose: () => void; p
     try {
       const usedChannels = urgent ? CHANNELS.map(c => c.label) : channels.map(id => CHANNELS.find(c => c.id === id)?.label || id)
       const res = await fetch('/api/ai/darts', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user',
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user',
           content: `Draft a professional but direct message on behalf of ${displayName}, a professional darts player (PDC #${player.pdcRank}). Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message: ${messageText}. ${urgent ? 'This is marked URGENT — prepend with [URGENT] and make the tone immediate.' : ''} Return only the final message text, no preamble. Respond in plain prose paragraphs only. Do not use bullet points, dashes, dots, numbered lists, emoji at the start of lines, bold, headers, or any markdown formatting whatsoever.`
         }] }) })
       const data = await res.json()
@@ -2357,7 +2357,7 @@ function PracticeLogView({ onNavigate, player, session }: { onNavigate: (id: str
       const res = await fetch('/api/ai/darts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 500, messages: [{ role: 'user', content: `Analyse this darts practice session for ${session.userName || player.name}${session.nickname || player.nickname ? ` "${session.nickname || player.nickname}"` : ''} (PDC #${player.pdcRank}, ${player.threeDartAverage} avg). Session: ${s.date}, Type: ${s.type}, Duration: ${s.duration}, Avg: ${s.avg}, Doubles hit: ${s.doubles}, 180s: ${s.e180}. Notes: ${s.notes}. Give 3 technical observations, 2 focus areas for next session, 1 tactical pattern to develop. Be concise.` }] }),
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 500, messages: [{ role: 'user', content: `Analyse this darts practice session for ${session.userName || player.name}${session.nickname || player.nickname ? ` "${session.nickname || player.nickname}"` : ''} (PDC #${player.pdcRank}, ${player.threeDartAverage} avg). Session: ${s.date}, Type: ${s.type}, Duration: ${s.duration}, Avg: ${s.avg}, Doubles hit: ${s.doubles}, 180s: ${s.e180}. Notes: ${s.notes}. Give 3 technical observations, 2 focus areas for next session, 1 tactical pattern to develop. Be concise.` }] }),
       });
       const data = await res.json();
       setAiAnalysis(prev => ({ ...prev, [idx]: { loading: false, result: data.content?.[0]?.text || 'No response.' } }));
@@ -2472,7 +2472,7 @@ function MatchReportsView({ onNavigate, player, session }: { onNavigate: (id: st
       const res = await fetch('/api/ai/darts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: `Write a post-match analysis for ${session.userName || player.name}${session.nickname || player.nickname ? ` "${session.nickname || player.nickname}"` : ''} (PDC #${player.pdcRank}) who ${m.result === 'W' ? 'won' : 'lost'} against ${m.opp} (#${m.rank}) at the ${m.event}, score ${m.score}, 3-dart average ${m.avg}. Include: 1) Match summary (2 sentences), 2) Key moments (3 bullet points), 3) What worked (2 bullet points), 4) Areas to improve (2 bullet points), 5) One tactical note for the rematch. Write in a professional darts analyst voice.` }] }),
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: `Write a post-match analysis for ${session.userName || player.name}${session.nickname || player.nickname ? ` "${session.nickname || player.nickname}"` : ''} (PDC #${player.pdcRank}) who ${m.result === 'W' ? 'won' : 'lost'} against ${m.opp} (#${m.rank}) at the ${m.event}, score ${m.score}, 3-dart average ${m.avg}. Include: 1) Match summary (2 sentences), 2) Key moments (3 bullet points), 3) What worked (2 bullet points), 4) Areas to improve (2 bullet points), 5) One tactical note for the rematch. Write in a professional darts analyst voice.` }] }),
       });
       const data = await res.json();
       setReportContent(prev => ({ ...prev, [m.id]: data.content?.[0]?.text ?? 'No response' }));
@@ -3456,7 +3456,7 @@ function TravelLogisticsView({ onNavigate, player, session }: { onNavigate: (id:
           setFlightResults(FLIGHT_FALLBACK)
         } else {
           try{
-            const fr=await fetch('/api/ai/darts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only matching: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic for a PDC tournament. Sort by score desc.`}]})})
+            const fr=await fetch('/api/ai/darts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Find 5 flights ${trOrigin} to ${trDest}, depart ${trDepart}, return ${trReturn}, ${trCabin}${trMaxFlight?' max £'+trMaxFlight:''}. JSON array only matching: [{"airline":"","flightNo":"","departure":"","arrival":"","duration":"","stops":"","price":0,"class":"${trCabin}","bookingUrl":"https://www.skyscanner.net","score":0}]. Realistic for a PDC tournament. Sort by score desc.`}]})})
             const fd=await fr.json();const ft=fd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
             setFlightResults(JSON.parse(ft.replace(/```json|```/g,'').trim()))
           }catch{setFlightResults(FLIGHT_FALLBACK)}
@@ -3471,7 +3471,7 @@ function TravelLogisticsView({ onNavigate, player, session }: { onNavigate: (id:
           setHotelResults(HOTEL_FALLBACKS.mid)
         } else {
           try{
-            const hr=await fetch('/api/ai/darts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value, near venue.'} Need: ${[trGym&&'Gym',trVenue&&'Venue-adjacent',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
+            const hr=await fetch('/api/ai/darts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:`Find 4 hotels near ${trTourney||trDest}, ${trNights} nights from ${trDepart}. ${trHotelBudget?'Max £'+trHotelBudget+'/night.':'Best value, near venue.'} Need: ${[trGym&&'Gym',trVenue&&'Venue-adjacent',trEarly&&'Early check-in'].filter(Boolean).join(', ')||'Standard'}. JSON array: [{"name":"","stars":4,"area":"","distanceToVenue":"","pricePerNight":0,"totalPrice":0,"rating":8.5,"amenities":[],"bookingUrl":"https://www.booking.com","score":0}]. Sort by score.`}]})})
             const hd=await hr.json();const ht=hd.content?.filter((b:{type:string})=>b.type==='text')?.map((b:{text:string})=>b.text)?.join('')||''
             setHotelResults(JSON.parse(ht.replace(/```json|```/g,'').trim()))
           }catch{setHotelResults(HOTEL_FALLBACKS.mid)}
@@ -4940,7 +4940,7 @@ function MatchPrepView({ player, session }: { player: DartsPlayer; session: Spor
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: `You are the AI tactical analyst for ${session.userName || player.name} "${session.nickname || player.nickname}", PDC #${player.pdcRank} professional darts player.
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: `You are the AI tactical analyst for ${session.userName || player.name} "${session.nickname || player.nickname}", PDC #${player.pdcRank} professional darts player.
 
 Generate a detailed match preparation game plan.
 
@@ -9125,7 +9125,7 @@ function DartsFlightFinder({ onClose, player, session }: { onClose: () => void; 
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Find 3 flight options from London to the ${selectedTournament} darts tournament. For each give airline, price (GBP), departure time, and duration. Return JSON array with keys: airline, price, time, duration. No explanation.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, messages: [{ role: 'user', content: `Find 3 flight options from London to the ${selectedTournament} darts tournament. For each give airline, price (GBP), departure time, and duration. Return JSON array with keys: airline, price, time, duration. No explanation.` }] })
       })
       const data = await res.json()
       const text = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''
@@ -9202,7 +9202,7 @@ function DartsHotelFinder({ onClose }: { onClose: () => void }) {
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 4 hotels in ${destination} for a professional darts player. Budget: ${budget}. Preferences: ${selectedPrefs.join(', ')}. Return JSON array: name, price (per night GBP), rating (stars), distance (to venue). No explanation. Plain text only. No markdown. No bullet points.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, messages: [{ role: 'user', content: `Suggest 4 hotels in ${destination} for a professional darts player. Budget: ${budget}. Preferences: ${selectedPrefs.join(', ')}. Return JSON array: name, price (per night GBP), rating (stars), distance (to venue). No explanation. Plain text only. No markdown. No bullet points.` }] })
       })
       const data = await res.json()
       const text = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || ''
@@ -9306,7 +9306,7 @@ function DartsMatchReport({ onClose, player, isDemoShell }: { onClose: () => voi
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: `Write a professional darts match report for ${player.name} (#${player.pdcRank}). Opponent: ${form.opponent}. Tournament: ${form.tournament}. My average: ${form.myAvg}. Opponent average: ${form.oppAvg}. Result: ${form.won ? 'Won' : 'Lost'} ${form.score}. Write 150 words, professional style, suitable for social media.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages: [{ role: 'user', content: `Write a professional darts match report for ${player.name} (#${player.pdcRank}). Opponent: ${form.opponent}. Tournament: ${form.tournament}. My average: ${form.myAvg}. Opponent average: ${form.oppAvg}. Result: ${form.won ? 'Won' : 'Lost'} ${form.score}. Write 150 words, professional style, suitable for social media.` }] })
       })
       const data = await res.json()
       setReport(data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || 'Unable to generate report.')
@@ -9435,7 +9435,7 @@ function DartsSponsorPost({ onClose, player }: { onClose: () => void; player: Da
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 600, messages: [{ role: 'user', content: `Write a ${platform} post for professional darts player ${player.name} (#${player.pdcRank} PDC) promoting ${sponsor}. Post type: ${postType}. ${includeStats ? `Include stats: ${player.threeDartAverage} avg, ${player.checkoutPercent}% checkout.` : ''} Keep it authentic, under 200 words. Include relevant hashtags.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 600, messages: [{ role: 'user', content: `Write a ${platform} post for professional darts player ${player.name} (#${player.pdcRank} PDC) promoting ${sponsor}. Post type: ${postType}. ${includeStats ? `Include stats: ${player.threeDartAverage} avg, ${player.checkoutPercent}% checkout.` : ''} Keep it authentic, under 200 words. Include relevant hashtags.` }] })
       })
       const data = await res.json()
       setPost(data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || 'Unable to generate post.')
@@ -9509,7 +9509,7 @@ function DartsMentalPrep({ onClose, player }: { onClose: () => void; player: Dar
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: `Generate a pre-match mental preparation plan for ${player.name} (#${player.pdcRank} PDC, avg ${player.threeDartAverage}). Opponent: ${opponent}. Venue: ${venue}. Current feeling: ${feeling}/10. Main concern: ${concern}. Include breathing exercises, visualization, and key mental cues. 200 words max.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages: [{ role: 'user', content: `Generate a pre-match mental preparation plan for ${player.name} (#${player.pdcRank} PDC, avg ${player.threeDartAverage}). Opponent: ${opponent}. Venue: ${venue}. Current feeling: ${feeling}/10. Main concern: ${concern}. Include breathing exercises, visualization, and key mental cues. 200 words max.` }] })
       })
       const data = await res.json()
       setPrep(data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || 'Unable to generate prep.')
@@ -9626,7 +9626,7 @@ function DartsSocialMediaAI({ onClose, player, isDemoShell }: { onClose: () => v
       const selectedPlatforms = Object.entries(platforms).filter(([,v]) => v).map(([k]) => k).join(', ')
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: `You are a social media manager for ${player.name}, professional darts player ranked #${player.pdcRank} on the PDC tour, nicknamed "${player.nickname}". Generate social media posts for: ${selectedPlatforms}. Topic: ${topic || 'match day hype'}. Tone: ${tone}. Write one post per platform, labelled. Include relevant hashtags. Keep each post under 280 chars for Twitter, slightly longer for others. Plain text only. No markdown. No bullet points.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 800, messages: [{ role: 'user', content: `You are a social media manager for ${player.name}, professional darts player ranked #${player.pdcRank} on the PDC tour, nicknamed "${player.nickname}". Generate social media posts for: ${selectedPlatforms}. Topic: ${topic || 'match day hype'}. Tone: ${tone}. Write one post per platform, labelled. Include relevant hashtags. Keep each post under 280 chars for Twitter, slightly longer for others. Plain text only. No markdown. No bullet points.` }] })
       })
       const data = await res.json()
       const raw = data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || 'Unable to generate.'
@@ -9674,7 +9674,7 @@ function DartsExhibitionBooker({ onClose }: { onClose: () => void }) {
     try {
       const res = await fetch('/api/ai/darts', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 400, messages: [{ role: 'user', content: `Write a professional response email for a darts exhibition booking enquiry at ${venue}. From Jake Morrison's management team. Confirm interest, ask for venue capacity, date flexibility, and fee. 100 words max, professional tone.` }] })
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user', content: `Write a professional response email for a darts exhibition booking enquiry at ${venue}. From Jake Morrison's management team. Confirm interest, ask for venue capacity, date flexibility, and fee. 100 words max, professional tone.` }] })
       })
       const data = await res.json()
       setAiEmail(data.content?.map((b:{type:string;text?:string}) => b.type === 'text' ? b.text : '').join('') || '')

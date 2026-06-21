@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4096,
         system: `You are a B2B research assistant. Find 15-20 real UK companies matching the given criteria. For each company find: company name, website, industry, size estimate, location, main product/service, why they might need this solution, key decision maker title (not name), Companies House number if UK registered. Return ONLY a JSON array, no markdown: [{ "company_name": "string", "website": "string", "industry": "string", "size": "string", "location": "string", "description": "string", "why_target": "string", "decision_maker_title": "string", "companies_house_number": "string or null", "confidence_score": number (0-100) }]`,
         messages: [{ role: 'user', content: `Find target companies.\nIndustries: ${(industries || []).join(', ') || 'Any'}\nCompany size: ${companySize || 'Any'}\nLocations: ${(locations || []).join(', ') || 'UK'}\n\nReturn JSON now.` }],

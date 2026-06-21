@@ -22,7 +22,7 @@ Return ONLY a JSON object with these fields:
 {"name":"","age":"","nationality":"","position":"","currentClub":"","league":"","contractUntil":"","marketValue":"","agent":"","agencyName":"","goals":"","assists":"","apps":"","rating":"","strengths":["","",""],"weaknesses":["",""],"previousClubs":["","",""],"internationalCaps":"","transferStatus":"","askingPrice":"","fitForWimbledon":"","approachRoute":"","psrImpact":"","summary":""}`
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: type === 'squad' ? 2000 : 1000,
       messages: [{ role: 'user', content: prompt }],
     })

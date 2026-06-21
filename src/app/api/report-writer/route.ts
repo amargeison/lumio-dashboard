@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   try {
     const client = new Anthropic({ apiKey })
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{ role: 'user', content: `Write ${SAMPLE_PUPILS.length} UK school pupil reports for ${yearGroup} ${subject || 'all subjects'}. Report type: ${reportType}. Tone: ${tone}. Max ${wordLimit} words per pupil. Themes: ${(themes || []).join(', ')}. Pupils: ${SAMPLE_PUPILS.map(p => `${p.name} (${p.attainment}, effort: ${p.effort})`).join('; ')}. Return JSON array with keys: pupil, attainment, effort, comment.` }],
     })

@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   try {
     const client = new Anthropic({ apiKey })
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{ role: 'user', content: `Generate a detailed lesson plan for a UK ${yearGroup} ${subject} lesson on "${topic}". Duration: ${duration}. Learning objective: ${objective}. ${priorKnowledge ? `Prior knowledge: ${priorKnowledge}` : ''} ${sendConsiderations ? `SEND considerations: ${sendConsiderations}` : ''} Available resources: ${(resources || []).join(', ')}. Format as JSON with keys: starter, main, plenary, differentiation, assessment, resources. Each should be a detailed paragraph.` }],
     })
