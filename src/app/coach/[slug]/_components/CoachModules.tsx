@@ -44,7 +44,7 @@ import { CoachSendMessage } from './SendMessage'
 import { useAllPlayers } from '../_lib/use-roster'
 import { SettingsPanel } from './SettingsPanel'
 import { FeatureAdminPanel } from './FeatureAdminPanel'
-import { getSettings } from '../_lib/settings-store'
+import { getSettings, subscribe as subscribeSettings } from '../_lib/settings-store'
 import { useCoachSettings } from '../_lib/use-settings'
 import { getCamps, subscribe as subscribeCamps } from '../_lib/camps-store'
 import { NewCampModal } from './NewCamp'
@@ -392,10 +392,25 @@ export function LessonsView({ T, accent, density }: Common) {
   useEffect(() => { const id = consumeOpenLesson(); if (id) setSelId(id) }, [])
   const [shareOpen, setShareOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
+  // Time-range filter — keeps summaries findable as they pile up over a season.
+  const [range, setRange] = useState<'week' | 'lastweek' | 'month' | 'all'>('all')
   // Coach role: only lessons for that coach's players (lessons key by playerId).
   const playerIds = new Set(players.map(p => p.id))
   const visibleLessons = scope ? allLessons.filter(l => playerIds.has(l.playerId)) : allLessons
   const sel = visibleLessons.find(l => l.id === selId) ?? visibleLessons[0]
+  // Bucket each lesson by how long ago it was (parsed from its 'DD Mon YYYY'
+  // label). Ranges are cumulative windows from today, newest summaries first.
+  const DAY_MS = 86400000
+  const daysAgo = (d: string) => { const t = new Date(d).getTime(); return isNaN(t) ? Infinity : (Date.now() - t) / DAY_MS }
+  const inRange = (l: Lesson) => range === 'all' ? true
+    : range === 'week' ? daysAgo(l.date) <= 7
+    : range === 'lastweek' ? (daysAgo(l.date) > 7 && daysAgo(l.date) <= 14)
+    : daysAgo(l.date) <= 31
+  const RANGE_TABS: { id: typeof range; label: string }[] = [
+    { id: 'week', label: 'This week' }, { id: 'lastweek', label: 'Last week' },
+    { id: 'month', label: 'This month' }, { id: 'all', label: 'All' },
+  ]
+  const listLessons = [...visibleLessons].filter(inRange).sort((a, b) => daysAgo(a.date) - daysAgo(b.date))
   const skillNames = (ids: string[]) => ids.map(id => ALL_SKILLS.find(s => s.id === id)?.name ?? id)
   const newBtn = (
     <button onClick={() => setNewOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New summary</button>
@@ -422,7 +437,14 @@ export function LessonsView({ T, accent, density }: Common) {
       <div className="cm-md" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: density.gap }}>
         {/* List */}
         <Card T={T} density={density} style={{ padding: 8, alignSelf: 'start' }}>
-          {visibleLessons.map(l => {
+          <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 8, marginBottom: 8 }}>
+            {RANGE_TABS.map(rt => (
+              <button key={rt.id} onClick={() => setRange(rt.id)} style={{ flex: 1, appearance: 'none', border: 0, padding: '5px 6px', borderRadius: 6, fontSize: 10.5, cursor: 'pointer', background: range === rt.id ? T.panel : 'transparent', color: range === rt.id ? T.text : T.text2, fontWeight: range === rt.id ? 600 : 400, boxShadow: range === rt.id ? `0 0 0 1px ${T.border}` : 'none' }}>{rt.label}</button>
+            ))}
+          </div>
+          {listLessons.length === 0 ? (
+            <div style={{ fontSize: 11.5, color: T.text3, padding: '14px 8px', textAlign: 'center' }}>No summaries in this period.</div>
+          ) : listLessons.map(l => {
             const active = l.id === selId
             return (
               <div key={l.id} onClick={() => setSelId(l.id)} style={{ padding: '10px 10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 4 }}>
@@ -842,8 +864,8 @@ export function BeltsView({ T, accent, density }: Common) {
                         <Icon name="check" size={12} stroke={2.4} /> Awarded ✓
                       </button>
                     ) : (
-                      <button onClick={() => { awardRacket(p.id, cur); printBeltCertificate(p, cur) }}
-                        title={ready ? `Award the ${BELTS[cur].name} keyring + dampener + certificate` : `${p.name} is ${curProg}% through this racket — awarding gives the keyring + dampener + certificate`}
+                      <button onClick={() => { awardRacket(p.id, cur); setBelt(p, cur + 1); printBeltCertificate(p, cur) }}
+                        title={ready ? `Award the ${BELTS[cur].name} keyring + dampener + certificate, and advance ${p.name} to the next racket` : `${p.name} is ${curProg}% through this racket — awarding gives the keyring + dampener + certificate and moves them up`}
                         style={{ appearance: 'none', border: `1px solid ${ready ? accent.hex : T.border}`, background: ready ? accent.hex : 'transparent', color: ready ? T.btnText : accent.hex, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                         <Icon name="trophy" size={12} stroke={1.9} /> Award reward
                       </button>
@@ -1144,7 +1166,11 @@ export function ResourcesView({ T, accent, density }: Common) {
   const [addedResources, setAddedResources] = useState<Resource[]>([])
   const [addOpen, setAddOpen] = useState(false)
   useEffect(() => { const r = () => setAddedResources(getAddedResources()); r(); return subscribeResources(r) }, [])
-  const allResources = [...RESOURCES, ...addedResources]
+  // Onboarding choice: preload Lumio's library, or start empty so the coach adds
+  // their own. When not preloaded, only the coach's own resources show.
+  const [preloaded, setPreloaded] = useState(true)
+  useEffect(() => { const r = () => setPreloaded(getSettings().resourcesPreloaded !== false); r(); return subscribeSettings(r) }, [])
+  const allResources = preloaded ? [...RESOURCES, ...addedResources] : [...addedResources]
   const fullList = cat === 'All' || cat === 'Books' || cat === 'Drill Library'
   const hideGrid = cat === 'Books' || cat === 'Drill Library'
   const list = fullList ? allResources : allResources.filter(r => r.category === cat)
@@ -1158,7 +1184,13 @@ export function ResourcesView({ T, accent, density }: Common) {
       </div>
       {cat === 'Drill Library' && <DrillLibrary T={T} accent={accent} density={density} />}
       {cat === 'Books' && <BooksPanel T={T} accent={accent} density={density} />}
-      {!hideGrid && (
+      {!hideGrid && (list.length === 0 ? (
+        <Card T={T} density={density} style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Icon name="note" size={26} stroke={1.4} style={{ color: T.text3 }} />
+          <div style={{ fontSize: 14, fontWeight: 600, color: T.text, marginTop: 10 }}>{preloaded ? 'Nothing in this category' : 'Your resource library is empty'}</div>
+          <div style={{ fontSize: 12, color: T.text3, marginTop: 4 }}>{preloaded ? 'Try another category.' : 'Add your own with “Add resource”, top right.'}</div>
+        </Card>
+      ) : (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: density.gap }}>
         {list.map(r => {
           const isVideo = r.format === 'Video'
@@ -1187,7 +1219,7 @@ export function ResourcesView({ T, accent, density }: Common) {
           )
         })}
       </div>
-      )}
+      ))}
       {video && <VideoModal T={T} accent={accent} resource={video} onClose={() => setVideo(null)} />}
       {addOpen && <AddResourceModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
     </div>

@@ -33,17 +33,22 @@ const KEY = 'lumio_coach_features'
 const EVT = 'lumio-coach-features-changed'
 const DEFAULT: FeatureFlags = { ...TIERS[3].features } // Elite
 
-function read(): FeatureFlags {
-  if (typeof window === 'undefined') return { ...DEFAULT }
+function read(fallback: TierKey = 'elite'): FeatureFlags {
+  // `fallback` is the tier to assume when NOTHING is stored yet. The demo passes
+  // 'elite' (show everything); live/founder portals pass 'prolite' so a new
+  // founder starts on Pro Lite (Racket Progression only — Video/Audio and
+  // Effort & Rewards stay off until those features are tested and signed off).
+  const fb = TIERS.find(t => t.key === fallback)?.features ?? DEFAULT
+  if (typeof window === 'undefined') return { ...fb }
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return { ...DEFAULT }
+    if (!raw) return { ...fb }
     const v = JSON.parse(raw) as Partial<FeatureFlags>
     // `gps` was renamed to `effort`. Effort & Rewards is a NEW feature, so anyone
     // without an explicit effort flag defaults to ON — we don't inherit the old
     // GPS on/off state (a coach who had GPS off shouldn't lose Effort & Rewards).
     return { effort: v.effort ?? true, video: !!v.video, audio: !!v.audio, racket: !!v.racket }
-  } catch { return { ...DEFAULT } }
+  } catch { return { ...fb } }
 }
 function write(flags: FeatureFlags) {
   if (typeof window === 'undefined') return
@@ -51,7 +56,7 @@ function write(flags: FeatureFlags) {
   window.dispatchEvent(new CustomEvent(EVT))
 }
 
-export function getFlags(): FeatureFlags { return read() }
+export function getFlags(fallback: TierKey = 'elite'): FeatureFlags { return read(fallback) }
 export function setFlag(key: FeatureKey, on: boolean) { write({ ...read(), [key]: on }) }
 export function applyTier(key: TierKey) {
   const tier = TIERS.find(t => t.key === key)

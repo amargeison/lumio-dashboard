@@ -38,6 +38,7 @@ export type CoachSettings = {
   rewards: { leaderboard: boolean; levelsVisible: boolean; watchConsentDefault: boolean }
   primaryVenueId: string         // home / main site (overrides the data default)
   syncedVenues: string[]         // venue ids with calendar sync connected
+  resourcesPreloaded: boolean    // Resource Centre starts with Lumio's library (true) or empty so the coach adds their own (false)
 }
 
 export const DEFAULT_SETTINGS: CoachSettings = {
@@ -63,6 +64,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   rewards: { leaderboard: true, levelsVisible: true, watchConsentDefault: false },
   primaryVenueId: '',
   syncedVenues: ['riverside'],
+  resourcesPreloaded: true,
 }
 
 const KEY = 'lumio_coach_settings'

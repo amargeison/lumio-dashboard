@@ -208,8 +208,11 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   // Feature flags (admin/plan) — a disabled feature removes its whole module.
-  const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags())
-  useEffect(() => { const r = () => setFeat(getFeatureFlags()); r(); return subscribeFeatures(r) }, [])
+  // New founder (live) portals default to Pro Lite (Racket Progression only);
+  // the demo defaults to Elite so it keeps showing Video/Audio + Effort & Rewards.
+  const featFallback = isEmpty ? 'prolite' : 'elite'
+  const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags(featFallback))
+  useEffect(() => { const r = () => setFeat(getFeatureFlags(featFallback)); r(); return subscribeFeatures(r) }, [featFallback])
   const featureHidden = (id: string) =>
     (id === 'gpsheatmaps' && !feat.effort) ||
     (id === 'belts' && !feat.racket) ||
