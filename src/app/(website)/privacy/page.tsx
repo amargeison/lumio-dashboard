@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <div className="mb-10">
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Legal</p>
           <h1 className="text-4xl font-black mb-4">Privacy Policy</h1>
-          <p className="text-gray-400">Last updated: 1 May 2026 · Lumio Ltd</p>
+          <p className="text-gray-400">Last updated: June 2026 · Lumio Ltd</p>
         </div>
 
         <div className="prose prose-invert max-w-none space-y-8 text-gray-300 text-sm leading-relaxed">
@@ -74,7 +74,33 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3">5. Data storage and retention</h2>
+            <h2 className="text-lg font-bold text-white mb-3">5. Connected accounts (Google, Microsoft &amp; Apple)</h2>
+            <p>
+              If you connect a Google, Microsoft or Apple account, we access your calendar and the ability to send email
+              on your behalf solely to provide the features you switch on — two-way calendar sync and sending messages
+              from your own address. We do not read the contents of your inbox.
+            </p>
+            <div className="bg-blue-600/5 border border-blue-500/15 rounded-xl p-4 mt-3">
+              <p>
+                Lumio&apos;s use and transfer of information received from Google APIs adheres to the{' '}
+                <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">
+                  Google API Services User Data Policy
+                </a>, including the Limited Use requirements. Specifically: we use Google user data only to provide and
+                improve the user-facing features you have enabled; we do not sell it; we do not use it for advertising or
+                ad personalisation; we do not transfer it to others except as necessary to provide those features, for
+                security, or to comply with law; and we do not allow humans to read it except with your consent, for
+                security or abuse investigations, to comply with law, or where the data has been aggregated and anonymised.
+              </p>
+            </div>
+            <p className="mt-3">
+              You can disconnect a connected account at any time from your portal settings, which revokes Lumio&apos;s
+              stored access. Connection tokens are held securely on our UK infrastructure, restricted to server-side
+              processing, and are never exposed to your browser.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-bold text-white mb-3">6. Data storage and retention</h2>
             <ul className="list-disc list-inside space-y-2 text-gray-400">
               <li>Database, file storage, and authentication data are stored in the UK (Supabase, eu-west-2, London)</li>
               <li>Application servers and request logs are hosted in Germany (Hetzner, Nuremberg)</li>
@@ -85,7 +111,7 @@ export default function PrivacyPage() {
           </section>
 
           <section id="sub-processors">
-            <h2 className="text-lg font-bold text-white mb-3">6. Sub-processors</h2>
+            <h2 className="text-lg font-bold text-white mb-3">7. Sub-processors</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
@@ -118,7 +144,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3">7. Your rights</h2>
+            <h2 className="text-lg font-bold text-white mb-3">8. Your rights</h2>
             <p className="mb-3">Under UK GDPR, you have the right to:</p>
             <ul className="list-disc list-inside space-y-1.5 text-gray-400">
               <li>Access the personal data we hold about you (Article 15)</li>
@@ -142,7 +168,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3">8. Cookies</h2>
+            <h2 className="text-lg font-bold text-white mb-3">9. Cookies</h2>
             <p>
               We use essential cookies for authentication and security, and optional analytics cookies.
               See our <Link href="/cookies" className="text-purple-400 hover:text-purple-300 underline">Cookie Policy</Link> for full details.
@@ -150,7 +176,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-lg font-bold text-white mb-3">9. Changes to this policy</h2>
+            <h2 className="text-lg font-bold text-white mb-3">10. Changes to this policy</h2>
             <p>
               We may update this policy from time to time. We will notify you of significant changes by email.
               The &ldquo;last updated&rdquo; date at the top of this page always shows when it was last revised.
