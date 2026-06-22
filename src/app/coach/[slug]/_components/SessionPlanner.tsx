@@ -18,6 +18,7 @@ import { getSettings } from '../_lib/settings-store'
 import { getPlans, removePlan, toggleDone, subscribe, type PlannedSession } from '../_lib/session-plan'
 import { getReviews, getReview, subscribe as subscribeReviews } from '../_lib/session-review'
 import { upsertLesson, removeLesson, lessonFromSession, sessionLessonId } from '../_lib/lessons-store'
+import { recordSessionForPlayer } from '../_lib/packages-store'
 import { SessionReviewPanel } from './SessionReviewPanel'
 import { MediaFieldRecorder } from './MediaFieldRecorder'
 import { getAddedSessions, getStatusOverrides, getHiddenSessions, setStatus, clearStatus, deleteSession, subscribe as subscribeSessions } from '../_lib/sessions-store'
@@ -175,6 +176,13 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
     } else {
       setStatus(sel.id, 'done')
       upsertLesson(lessonFromSession(sel, getReview(sel.id)?.review))  // auto-populate from the AI review if present
+      // If this player is on a lesson package, tick off the delivered session and
+      // log the focus as its note — keeps Payments & Packages in sync automatically.
+      recordSessionForPlayer(sel.player, sel.focus)
+      // Completed sessions leave the planner (they now live in Lesson Summaries),
+      // so move the selection on to the next still-open session.
+      const next = allSessions.find(s => s.id !== sel.id && s.status !== 'done')
+      if (next) setSelId(next.id)
     }
   }
   const onDelete = () => {
@@ -209,7 +217,8 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
 
   // ─── multi-view data — all derived from the one dated dataset ──────────────
   const allBookings = [...BOOKINGS, ...addedBookings]
-  const todaySessions = allSessions.filter(s => s.date === TODAY)
+  // Completed sessions drop out of the planner — they move to Lesson Summaries.
+  const todaySessions = allSessions.filter(s => s.date === TODAY && s.status !== 'done')
   const calItems = getCalendarItems(added, scope ?? undefined, addedBookings)
   const needsPlan = getNeedsPlan(added, scope ?? undefined, addedBookings)
   const nextUp = allSessions.filter(s => s.status !== 'done')

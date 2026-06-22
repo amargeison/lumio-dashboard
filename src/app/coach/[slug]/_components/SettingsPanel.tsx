@@ -9,6 +9,7 @@ import { setSettings, resetSettings, ACCENT_PRESETS, DEFAULT_SETTINGS, type Acce
 import { COACH_SIDEBAR, COACH_GROUPS, VENUES } from '../_lib/coach-data'
 import { getAddedVenues } from '../_lib/venues-store'
 import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
+import { IntegrationsPanel } from './IntegrationsPanel'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -112,6 +113,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
   const GROUPS = ['You', 'Academy', 'Coaching', 'People & compliance', 'Rewards & system']
   const cards = [
     { id: 'profile',     g: 'You',        icon: 'people',    t: 'Head coach profile',  d: `${s.coach} · ${profile.role} · email & calendar ${conn.calendarSync ? 'synced' : 'off'}` },
+    { id: 'integrations',g: 'You',        icon: 'calendar',  t: 'Connected accounts',  d: 'Email & calendar sync — Google, Outlook, iCloud' },
     { id: 'academy',     g: 'Academy',    icon: 'home',      t: 'Academy profile',     d: `${s.academy} · ${s.cert}` },
     { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${[booking.google && 'Google', booking.outlook && 'Outlook'].filter(Boolean).join(' + ') || 'No'} sync · ${booking.defaultDuration}m default` },
     { id: 'availability',g: 'Academy',    icon: 'grid',      t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
@@ -161,6 +163,11 @@ export function SettingsPanel({ T, accent, density }: Common) {
       })}
 
       {/* ── Editors ── */}
+      {open === 'integrations' && (
+        <Modal T={T} accent={accent} title="Connected accounts" sub="Connect your mailbox & calendar for two-way sync and send-as-you email" onClose={() => setOpen(null)}>
+          <IntegrationsPanel T={T} accent={accent} />
+        </Modal>
+      )}
       {open === 'academy' && (
         <Modal T={T} accent={accent} title="Academy profile" sub="Shown across the portal — sidebar, dashboard, packs and certificates" onClose={() => setOpen(null)}>
           <Field T={T} label="Academy name"><input style={input(T)} value={s.academy} onChange={e => setSettings({ academy: e.target.value })} /></Field>

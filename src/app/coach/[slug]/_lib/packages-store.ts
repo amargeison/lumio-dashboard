@@ -3,7 +3,7 @@
 //  • progress — per-package session completion (tick boxes), persisted
 // Notifies subscribers via a CustomEvent so views re-read on change.
 
-import { PACKAGE_OFFERS, type PackageOffer } from './coach-data'
+import { PACKAGE_OFFERS, PACKAGES, type PackageOffer } from './coach-data'
 
 const OFFERS_KEY = 'lumio_coach_pkg_offers'    // added offers
 const HIDDEN_KEY = 'lumio_coach_pkg_hidden'    // removed default/added ids
@@ -61,6 +61,30 @@ export function setNotes(id: string, arr: string[]) {
   const all = readJSON<Record<string, string[]>>(NOTES_KEY, {})
   all[id] = arr
   writeJSON(NOTES_KEY, all)
+}
+
+// Record one delivered session against a player's active package: ticks the next
+// open slot and stores an optional note (the session focus). Returns the package
+// id + slot, or null if the player has no open package. Called when a session is
+// marked complete in the Session Planner so packages stay in sync without the
+// coach having to tick boxes by hand.
+export function recordSessionForPlayer(playerName: string, note?: string): { pkgId: string; slot: number } | null {
+  if (!playerName) return null
+  const name = playerName.trim().toLowerCase()
+  for (const pk of PACKAGES.filter(p => p.player.trim().toLowerCase() === name)) {
+    const arr = (getProgress(pk.id) ?? Array.from({ length: pk.total }, (_, i) => i < pk.used)).slice()
+    const slot = arr.findIndex(v => !v)
+    if (slot === -1) continue   // this package is full — try the next one
+    arr[slot] = true
+    setProgress(pk.id, arr)
+    if (note && note.trim()) {
+      const notes = (getNotes(pk.id) ?? Array.from({ length: pk.total }, () => '')).slice()
+      notes[slot] = note.trim()
+      setNotes(pk.id, notes)
+    }
+    return { pkgId: pk.id, slot }
+  }
+  return null
 }
 
 export function subscribe(cb: () => void): () => void {
