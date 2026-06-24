@@ -58,18 +58,21 @@ export async function dbInsert(table: CoachTable, row: Record<string, any>) {
   if (!coach_id) throw new Error('Not signed in')
   const { data, error } = await sb().from(table).insert({ ...clean(row), coach_id }).select().single()
   if (error) { console.error('[coach-db] insert', table, error.message); throw new Error(error.message) }
+  if (table === 'coach_bookings') syncBookingCalendar(data)
   return data
 }
 
 export async function dbUpdate(table: CoachTable, id: string, row: Record<string, any>) {
   const { data, error } = await sb().from(table).update({ ...clean(row), updated_at: new Date().toISOString() }).eq('id', id).select().single()
   if (error) { console.error('[coach-db] update', table, error.message); throw new Error(error.message) }
+  if (table === 'coach_bookings') syncBookingCalendar(data)
   return data
 }
 
 export async function dbRemove(table: CoachTable, id: string) {
   const { error } = await sb().from(table).delete().eq('id', id)
   if (error) { console.error('[coach-db] remove', table, error.message); throw new Error(error.message) }
+  if (table === 'coach_bookings') removeBookingCalendar(id)
 }
 
 // Drop empty strings → null and strip internal fields before writing.
@@ -80,6 +83,39 @@ function clean(row: Record<string, any>) {
     out[k] = v === '' ? null : v
   }
   return out
+}
+
+// ── Calendar sync (Phase 2) ─────────────────────────────────────────────────
+// When a booking is written, push it to the coach's connected calendars via the
+// server route. Best-effort and fire-and-forget: it never blocks or fails the DB
+// write, and quietly no-ops if no calendar is connected. A cancelled booking is
+// removed from the calendar instead of pushed.
+function syncBookingCalendar(row: any) {
+  try {
+    if (!row?.id) return
+    if (row.status === 'cancelled') { removeBookingCalendar(row.id); return }
+    if (!row.booking_date || !row.start_time) return
+    const [h, m] = String(row.start_time).split(':').map(Number)
+    if (Number.isNaN(h) || Number.isNaN(m)) return
+    const dur = Number(row.duration_min) || 60
+    const total = h * 60 + m + dur
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const start = `${row.booking_date}T${pad(h)}:${pad(m)}:00`
+    const end = `${row.booking_date}T${pad(Math.floor(total / 60) % 24)}:${pad(total % 60)}:00`
+    fetch('/api/coach/calendar/event', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bookingId: row.id,
+        title: row.title || row.player_name || 'Lesson',
+        start, end,
+        location: row.court || undefined,
+        description: row.notes || undefined,
+      }),
+    }).catch(() => {})
+  } catch { /* never block the write */ }
+}
+function removeBookingCalendar(id: string) {
+  try { fetch(`/api/coach/calendar/event?bookingId=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {}) } catch { /* ignore */ }
 }
 
 // ── React hook: rows + CRUD for one table ──────────────────────────────────

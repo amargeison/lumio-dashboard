@@ -77,12 +77,20 @@ export function MonthAgenda({ T, accent, groups, onItemClick, itemBadge, empty }
 // The inner grid (header + hour rows). Callers wrap it in a Card. When
 // onItemClick is provided, blocks become clickable (cursor + handler); when it
 // is omitted the render is byte-identical to the static Booking Calendar.
-export function WeekCalendarGrid({ T, accent, items, onItemClick }: {
+export function WeekCalendarGrid({ T, accent, items, onItemClick, busy }: {
   T: ThemeTokens; accent: AccentTokens; density?: Density
   items: CalItem[]; onItemClick?: (it: CalItem) => void
+  // Busy intervals from the coach's connected calendar, in grid coords (per day).
+  busy?: { date: string; start: string; end: string }[]
 }) {
   const hourIdx = (hhmm: string) => CAL_HOURS.indexOf(hhmm.slice(0, 2) + ':00')
   const rowH = 46
+  // Clamped y-offset (px) for a HH:MM within the visible grid hours.
+  const startHour = parseInt(CAL_HOURS[0].slice(0, 2), 10)
+  const yFor = (hhmm: string) => {
+    const h = parseInt(hhmm.slice(0, 2), 10), m = parseInt(hhmm.slice(3), 10)
+    return Math.max(0, Math.min((h - startHour) * rowH + (m / 60) * rowH, CAL_HOURS.length * rowH))
+  }
   return (
     <div style={{ minWidth: 680 }}>
       {/* header */}
@@ -104,6 +112,12 @@ export function WeekCalendarGrid({ T, accent, items, onItemClick }: {
         {WEEK_DAYS.map((_d, di) => (
           <div key={di} style={{ position: 'relative', borderLeft: `1px solid ${T.border}` }}>
             {CAL_HOURS.map(h => <div key={h} style={{ height: rowH, borderTop: `1px solid ${T.border}` }} />)}
+            {(busy ?? []).filter(b => dayIndexForDate(b.date) === di).map((b, bi) => {
+              const bTop = yFor(b.start); const bH = yFor(b.end) - bTop
+              if (bH <= 0) return null
+              return <div key={`busy-${bi}`} title="Busy in your connected calendar"
+                style={{ position: 'absolute', left: 0, right: 0, top: bTop, height: bH, background: `repeating-linear-gradient(45deg, ${T.text3}1f, ${T.text3}1f 5px, transparent 5px, transparent 10px)`, borderTop: `1px solid ${T.text3}33`, borderBottom: `1px solid ${T.text3}33`, pointerEvents: 'none', zIndex: 0 }} />
+            })}
             {items.filter(it => dayIndexForDate(it.date) === di).map(it => {
               const top = hourIdx(it.start) * rowH + (parseInt(it.start.slice(3)) / 60) * rowH
               const endTop = hourIdx(it.end) * rowH + (parseInt(it.end.slice(3)) / 60) * rowH
