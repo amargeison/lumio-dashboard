@@ -93,9 +93,13 @@ export async function POST(req: NextRequest) {
     })
     let txt = ''
     for (const b of res.content) if (b.type === 'text') txt += b.text
-    const match = txt.match(/\{[\s\S]*\}/)
-    if (!match) return NextResponse.json({ error: 'Could not extract any records from that file.' }, { status: 422 })
-    const extracted = JSON.parse(match[0])
+    // Strip any ```json fences, then grab the JSON object.
+    const cleaned = txt.replace(/```json\s*/gi, '').replace(/```/g, '').trim()
+    const match = cleaned.match(/\{[\s\S]*\}/)
+    if (!match) return NextResponse.json({ error: 'Could not find any records in that file. Try a CSV or a clearer document.' }, { status: 422 })
+    let extracted: any
+    try { extracted = JSON.parse(match[0]) }
+    catch { return NextResponse.json({ error: 'The AI response could not be read — try a smaller or simpler file.' }, { status: 422 }) }
     return NextResponse.json({ extracted })
   } catch (err: any) {
     console.error('[coach/import]', err)

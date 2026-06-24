@@ -371,57 +371,6 @@ function PerformanceMockup() {
   )
 }
 
-function GPSCourtMockup() {
-  return (
-    <MockupFrame>
-      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>📡 GPS &amp; Court Heatmap</div>
-      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Monte-Carlo 2026 · Johan Sports Vest · Clay</div>
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-        <svg width="220" height="150" viewBox="0 0 220 150">
-          <rect x="0" y="0" width="220" height="150" fill="#1a0a00" />
-          <rect x="18" y="8" width="184" height="134" fill="#8B4513" opacity="0.3" />
-          {/* outer & net */}
-          <rect x="18" y="8" width="184" height="134" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1" />
-          <line x1="18" y1="75" x2="202" y2="75" stroke="white" strokeWidth="2" opacity="0.75" />
-          <line x1="110" y1="8" x2="110" y2="142" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-          {/* service box */}
-          <line x1="60" y1="50" x2="160" y2="50" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-          <line x1="60" y1="100" x2="160" y2="100" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-          <line x1="60" y1="50" x2="60" y2="100" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-          <line x1="160" y1="50" x2="160" y2="100" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-          {/* heat zones - baseline heavy */}
-          <circle cx="110" cy="135" r="26" fill={PURPLE} opacity="0.72" style={{ filter: 'blur(7px)' }} />
-          <circle cx="100" cy="133" r="18" fill={PURPLE_LIGHT} opacity="0.6" style={{ filter: 'blur(5px)' }} />
-          <circle cx="78" cy="128" r="14" fill={PURPLE} opacity="0.5" style={{ filter: 'blur(6px)' }} />
-          <circle cx="142" cy="130" r="13" fill={PURPLE} opacity="0.48" style={{ filter: 'blur(6px)' }} />
-          <circle cx="110" cy="85" r="12" fill="#F59E0B" opacity="0.35" style={{ filter: 'blur(5px)' }} />
-          <circle cx="110" cy="22" r="9" fill="#10B981" opacity="0.3" style={{ filter: 'blur(5px)' }} />
-          <text x="110" y="146" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="7">BASELINE (68%)</text>
-        </svg>
-      </div>
-      <div style={{ marginBottom: 10 }}>
-        {[{ l: 'Baseline', v: 68, c: PURPLE }, { l: 'Mid-court', v: 22, c: '#F59E0B' }, { l: 'Net', v: 10, c: '#10B981' }].map(z => (
-          <div key={z.l} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <div style={{ fontSize: 9, color: MUTED, width: 60 }}>{z.l}</div>
-            <div style={{ flex: 1, height: 5, backgroundColor: '#1F2937', borderRadius: 3 }}>
-              <div style={{ width: `${z.v}%`, height: '100%', backgroundColor: z.c, borderRadius: 3 }} />
-            </div>
-            <div style={{ fontSize: 9, color: TEXT, width: 30, textAlign: 'right', fontWeight: 700 }}>{z.v}%</div>
-          </div>
-        ))}
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 10 }}>
-        <KPI value="1.17" label="ACWR" color="#F59E0B" />
-        <KPI value="8.8km" label="Distance" color={PURPLE} />
-        <KPI value="394" label="Load AU" color={PURPLE_LIGHT} />
-      </div>
-      <div style={{ backgroundColor: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.45)', borderRadius: 8, padding: 8 }}>
-        <div style={{ fontSize: 9, color: '#F59E0B', fontWeight: 800 }}>● Sarah Okafor alert threshold: 1.15 — monitor tomorrow</div>
-      </div>
-    </MockupFrame>
-  )
-}
-
 // ── Spotlight wrapper ────────────────────────────────────────────────────────
 function Spotlight({ eyebrow, title, body, bullets, mockup, reverse, altBg }: {
   eyebrow: string; title: string; body: string; bullets: string[]; mockup: React.ReactNode; reverse?: boolean; altBg?: boolean
@@ -464,10 +413,10 @@ export default function TennisLandingPage() {
             <span style={{ color: '#06b6d4' }}>like a business.</span>
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 780, margin: '0 auto 20px' }}>
-            The world&apos;s first tennis management platform with built-in GPS tracking, AI video analysis and coaching briefs — all in one portal.
+            The world&apos;s first tennis management platform with AI video analysis, performance insights and coaching briefs — all in one portal.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', margin: '16px 0 32px' }}>
-            <span style={{ background: '#06b6d418', border: '1px solid #06b6d4', color: '#06b6d4', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🛰️ World First — Johan Sports for Tennis</span>
+            <span style={{ background: '#06b6d418', border: '1px solid #06b6d4', color: '#06b6d4', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🏆 ATP &amp; WTA Intelligence</span>
             <span style={{ background: '#a855f718', border: '1px solid #a855f7', color: '#a855f7', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎬 Lumio Vision</span>
             <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🤖 AI Coaching Briefs</span>
           </div>
@@ -483,45 +432,6 @@ export default function TennisLandingPage() {
             {STAT_PILLS.map(p => (
               <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(124,58,237,0.1)', border: `1px solid ${PURPLE}66`, color: PURPLE_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── WORLD FIRST — GPS INTELLIGENCE ── */}
-      <section style={{ padding: '0 24px 48px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #0a1628 50%, #061020 100%)', border: '1px solid #06b6d430', borderRadius: 24, padding: '64px 48px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: 'radial-gradient(circle, #06b6d420 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'relative' }}>
-              <div style={{ marginBottom: 24 }}>
-                <span style={{ background: '#06b6d4', color: '#000', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>⚡ World First in Tennis</span>
-              </div>
-              <h2 style={{ fontSize: 42, fontWeight: 800, color: '#fff', marginBottom: 16, maxWidth: 700, lineHeight: 1.2 }}>GPS Intelligence built<br /><span style={{ color: '#06b6d4' }}>specifically for tennis players.</span></h2>
-              <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 600, lineHeight: 1.7, marginBottom: 48 }}>Every other GPS tracker is built for team sports. Johan Sports for Tennis is the first wearable built for the individual tennis player — tracking court coverage, sprint load and recovery between points, feeding directly into your portal and combining with shot and load data for an AI coaching brief after every session and set.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
-                {[
-                  { icon: '🛰️', title: 'Johan Sports for Tennis', color: '#06b6d4', desc: 'Lightweight clip-on device. Auto-syncs to your portal after every session. Court heatmaps, sprint zones and load scores — all in real time.', price: '£299 one-off · Included in Pro plan' },
-                  { icon: '🎬', title: 'Lumio Vision', color: '#a855f7', desc: 'Upload your match video. Lumio Vision timestamps it against your GPS session so you can review any moment in one click. Shot detection and serve analytics rolling out through 2026.', price: 'Coming Soon · Rolling out through 2026' },
-                  { icon: '🤖', title: 'AI Coaching Briefs', color: '#10b981', desc: 'At the end of every set or session, get an AI-generated coaching brief combining movement, shot and load data — all from your Lumio portal.', price: 'Auto-generated · ATP coaching tone' },
-                ].map((f, i) => (
-                  <div key={i} style={{ background: `${f.color}10`, border: `1px solid ${f.color}30`, borderRadius: 16, padding: 28 }}>
-                    <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
-                    <h3 style={{ color: f.color, fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{f.title}</h3>
-                    <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6 }}>{f.desc}</p>
-                    <div style={{ marginTop: 16, color: f.color, fontSize: 13, fontWeight: 600 }}>{f.price}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 48, padding: '24px 32px', background: '#ffffff08', borderRadius: 12, flexWrap: 'wrap', marginBottom: 40 }}>
-                {[{ stat: '4.2km', label: 'Avg court coverage tracked per session' }, { stat: '127', label: 'Shots logged per match' }, { stat: '<2min', label: 'AI brief generated after final point' }, { stat: '0', label: 'Other platforms doing this for tennis' }].map(s => (
-                  <div key={s.stat}><div style={{ color: '#06b6d4', fontSize: 28, fontWeight: 800 }}>{s.stat}</div><div style={{ color: '#64748b', fontSize: 13, maxWidth: 160 }}>{s.label}</div></div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 16 }}>
-                <a href="mailto:hello@lumiosports.com?subject=Johan%20Sports%20for%20Tennis%20Order" style={{ background: '#06b6d4', color: '#000', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer', textDecoration: 'none' }}>Order Johan Sports for Tennis →</a>
-                <Link href="/tennis/demo" style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', color: '#06b6d4', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: '1px solid #06b6d4', textDecoration: 'none' }}>See it in the portal</Link>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -566,14 +476,6 @@ export default function TennisLandingPage() {
         body="Lumio reads your ranking data, match schedule, opponent report, stringing notes and sponsor obligations — then delivers a personalised briefing to your player, coach, agent and physio. Voice-powered by ElevenLabs."
         bullets={['Separate briefing per team role', 'Voice delivery via ElevenLabs TTS (Rachel voice)', 'Auto-sent daily at configured times', '2m 14s average briefing — faster than a coffee']}
         mockup={<BriefingMockup />}
-      />
-
-      <Spotlight
-        eyebrow="SPOTLIGHT · GPS & COURT HEATMAP"
-        title="Every step. Quantified."
-        body="Johan Sports Vest + UWB court beacons track your movement at 10Hz. Court heatmaps show where you spend time during matches — baseline vs mid-court vs net. ACWR load monitoring flags fatigue risk before it becomes injury."
-        bullets={["Court heatmap: baseline / mid-court / net zone breakdown per session", 'ACWR 28-day rolling load vs 7-day acute — green/amber/red risk zones', 'Sarah Okafor receives automated alert when ACWR enters amber zone', 'Double fault heatmap: where you miss serves under pressure (30-40)']}
-        mockup={<GPSCourtMockup />}
       />
 
       <Spotlight
@@ -644,49 +546,6 @@ export default function TennisLandingPage() {
                 <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{t.desc}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── GPS INTELLIGENCE — WORLD FIRST ── */}
-      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 48 }}>
-            <span style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.2em', color: PURPLE_LIGHT, textTransform: 'uppercase', display: 'inline-block', padding: '6px 16px', borderRadius: 999, backgroundColor: `${PURPLE}22`, border: `1px solid ${PURPLE}44`, marginBottom: 16 }}>WORLD FIRST</span>
-            <h2 style={{ fontSize: 42, fontWeight: 900, color: TEXT, lineHeight: 1.15, marginBottom: 16 }}>
-              GPS Intelligence built for tennis — and powered by Lumio
-            </h2>
-            <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.7, maxWidth: 700, margin: '0 auto' }}>
-              Most GPS trackers are built for team sports. Johan Sports for Tennis is the first wearable built specifically for tennis players — tracking court coverage, sprint load, and recovery between points, all feeding directly into your Lumio portal.
-            </p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 40 }}>
-            {([
-              { icon: '📡', title: 'Johan Sports for Tennis', desc: 'Lightweight clip-on device. Automatic sync. Court heatmaps after every session.' },
-              { icon: '🎬', title: 'Lumio Vision', desc: 'Upload your match video. Lumio Vision timestamps it against your GPS session so you can review any moment in one click. Shot detection and serve analytics rolling out through 2026.', comingSoon: true },
-              { icon: '🤖', title: 'AI Coaching Briefs', desc: 'At the end of every set or session, get an AI-generated coaching brief combining movement, shot and load data — all from your Lumio portal.' },
-            ] as Array<{icon:string; title:string; desc:string; comingSoon?:boolean}>).map((f, i) => (
-              <div key={i} style={{ backgroundColor: CARD, border: `1px solid ${BORDER_ALT}`, borderRadius: 16, padding: 28 }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>{f.icon}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-                  <h3 style={{ fontSize: 17, fontWeight: 800, color: TEXT, margin: 0 }}>{f.title}</h3>
-                  {f.comingSoon && (
-                    <span style={{ fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 999, color: MUTED, backgroundColor: `${MUTED}15`, border: `1px solid ${MUTED}44`, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Coming Soon</span>
-                  )}
-                </div>
-                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
-            {['🛰️ Lumio Hardware', '🎬 Lumio Vision', '🤖 AI Powered'].map(badge => (
-              <span key={badge} style={{ padding: '8px 16px', borderRadius: 999, backgroundColor: `${PURPLE}15`, border: `1px solid ${PURPLE}40`, color: PURPLE_LIGHT, fontSize: 12, fontWeight: 700 }}>{badge}</span>
-            ))}
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <a href="mailto:hello@lumiosports.com?subject=Johan%20Sports%20for%20Tennis%20Order" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 28px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
-              Order Your Johan Sports for Tennis →
-            </a>
           </div>
         </div>
       </section>

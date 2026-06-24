@@ -60,8 +60,8 @@ const PARENT_FEATURES = [
   'Homework & lesson summaries',
 ]
 // Reward + capture kit. Tracking now uses the player's own smartwatch, so there
-// is no GPS hardware — the bundle is the reward keyrings/dampeners/trophy plus
-// the video capture stand and mic, framed as a one-off £85 bundle.
+// is no extra tracking hardware — the bundle is the reward keyrings/dampeners/trophy
+// plus the video capture stand and mic, framed as a one-off £85 bundle.
 const KIT_PARTS = [
   { name: 'Capture stand', note: 'Court stand for phone or tablet' },
   { name: 'Microphone', note: 'Spec under field test' },
@@ -474,7 +474,7 @@ export default function TennisCoachPage() {
         eyebrow="SPOTLIGHT · EFFORT & REWARDS"
         title="Turn every session into XP — no hardware to buy."
         body="Players track sessions on the smartwatch they already own. Effort, movement and consistency become scores, XP and effort levels, with a squad leaderboard to keep them coming back. It's estimated effort — a motivation layer that sits alongside the technical racket pathway, never replacing it, and it never tracks a player's position on court."
-        bullets={['Effort, movement & consistency scores from the player’s own watch', 'XP, effort levels and a squad leaderboard', 'No GPS units or hardware — uses Apple Watch or Wear OS', 'Kept separate from the LTA-mapped Racket Progression pathway']}
+        bullets={['Effort, movement & consistency scores from the player’s own watch', 'XP, effort levels and a squad leaderboard', 'No tracking units or hardware to buy — uses Apple Watch or Wear OS', 'Kept separate from the LTA-mapped Racket Progression pathway']}
         mockup={<EffortRewardsMockup />}
       />
 

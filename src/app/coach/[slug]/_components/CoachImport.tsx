@@ -45,8 +45,12 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
     try {
       const fd = new FormData(); fd.append('file', f)
       const res = await fetch('/api/coach/import', { method: 'POST', body: fd })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Import failed')
+      // Read as text first so a non-JSON response (timeout / proxy error page)
+      // surfaces a real message instead of a cryptic "Unexpected token <".
+      const raw = await res.text()
+      let data: any = {}
+      try { data = raw ? JSON.parse(raw) : {} } catch { /* non-JSON response */ }
+      if (!res.ok) throw new Error(data.error || (raw ? raw.slice(0, 200) : `Import failed (HTTP ${res.status})`))
       const ex = data.extracted || {}
       setExtracted(ex)
       setPicked(Object.fromEntries(CATEGORIES.map(c => [c.key, (ex[c.key]?.length ?? 0) > 0])))
