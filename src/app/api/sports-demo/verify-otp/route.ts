@@ -252,6 +252,38 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Internal signup notification to support — fires for EVERY demo and founding
+    // signup (both come through this route) so the team sees who's coming in.
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
+        const kind = isFounder ? 'Founding access' : 'Demo'
+        const sportLabel = sportNames[sport] ?? sport
+        const { Resend } = await import('resend')
+        const resend = new Resend(process.env.RESEND_API_KEY)
+        const r = (label: string, value: string) => `<tr><td style="padding:6px 14px 6px 0;color:#6B7280;font-size:13px">${label}</td><td style="padding:6px 0;color:#111;font-size:13px">${value || '—'}</td></tr>`
+        await resend.emails.send({
+          from: 'Lumio Sports <hello@lumiocms.com>',
+          to: 'support@lumiosports.com',
+          subject: `New ${kind} signup — ${sportLabel} — ${userName || normalisedEmail}`,
+          html: `<div style="font-family:Arial,sans-serif;max-width:560px">
+            <h2 style="font-size:18px;margin:0 0 12px">New ${esc(kind)} signup</h2>
+            <table style="border-collapse:collapse">
+              ${r('Type', esc(kind))}
+              ${r('Sport', esc(sportLabel))}
+              ${r('Name', esc(userName))}
+              ${r('Email', esc(normalisedEmail))}
+              ${r('Club / academy', esc(clubName))}
+              ${r('Role', esc(role))}
+              ${r('When', esc(new Date().toLocaleString('en-GB')))}
+            </table>
+          </div>`,
+        })
+      } catch (notifyErr) {
+        console.error('[sports-demo/verify-otp] support notify failed (non-fatal):', notifyErr)
+      }
+    }
+
     // Mint a PWA install_token for the URL-bar handoff path. The token
     // travels back to the gate in the response body so the client can
     // append ?pwa_install=<JWT> to the page URL — that bakes the token

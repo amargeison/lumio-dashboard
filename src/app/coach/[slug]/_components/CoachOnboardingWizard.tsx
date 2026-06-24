@@ -193,7 +193,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
                 </div>
               </div>
               <div>
-                <label style={lbl}>Calendar sync <span style={{ color: '#4B5563', fontWeight: 400 }}>(sync coming soon)</span></label>
+                <label style={lbl}>Calendar sync <span style={{ color: '#4B5563', fontWeight: 400 }}>(connect Google/Outlook in Settings after setup)</span></label>
                 <select value={calendar} onChange={e => setCalendar(e.target.value)} style={input}>
                   <option value="">Not connected</option>
                   <option value="google">Google Calendar</option>
