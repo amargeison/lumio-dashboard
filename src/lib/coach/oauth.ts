@@ -53,7 +53,9 @@ export function providerConfig(provider: Provider): ProviderConfig | null {
       authUrl: `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`,
       tokenUrl: `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
       scopes: ['openid', 'email', 'profile', 'offline_access', 'Calendars.ReadWrite', 'Mail.Send', 'User.Read'].join(' '),
-      clientId: process.env.MICROSOFT_OAUTH_CLIENT_ID,
+      // Defaults to the dedicated "Lumio Tennis Coach" Azure app registration.
+      // The client secret must still be supplied via env (secrets never live in code).
+      clientId: process.env.MICROSOFT_OAUTH_CLIENT_ID || '60f7ad0b-978c-4bde-9ae5-36b88f7134a8',
       clientSecret: process.env.MICROSOFT_OAUTH_CLIENT_SECRET,
     }
   }
@@ -101,6 +103,49 @@ export async function upsertConnection(coachId: string, row: Record<string, unkn
 
 export async function deleteConnection(coachId: string, provider: Provider) {
   return serviceClient().from('coach_oauth_connections').delete().eq('coach_id', coachId).eq('provider', provider)
+}
+
+// Full connection row including secrets — server-side use only (calendar sync etc.).
+export type FullConnection = {
+  provider: Provider
+  email_address: string | null
+  access_token: string | null
+  refresh_token: string | null
+  token_expiry: string | null
+  app_password: string | null
+  caldav_url: string | null
+  capabilities: string[]
+}
+export async function getConnection(coachId: string, provider: Provider): Promise<FullConnection | null> {
+  const { data } = await serviceClient()
+    .from('coach_oauth_connections').select('*')
+    .eq('coach_id', coachId).eq('provider', provider).maybeSingle()
+  return (data as FullConnection | null) ?? null
+}
+
+// A valid access token for google/microsoft, refreshed via the refresh_token when the
+// stored one is within 60s of expiry. Returns null if the coach hasn't connected.
+export async function getFreshAccessToken(coachId: string, provider: Provider): Promise<string | null> {
+  const conn = await getConnection(coachId, provider)
+  if (!conn?.access_token) return null
+  const expMs = conn.token_expiry ? new Date(conn.token_expiry).getTime() : 0
+  if (expMs - Date.now() > 60_000) return conn.access_token
+  const cfg = providerConfig(provider)
+  if (!conn.refresh_token || !cfg?.clientId || !cfg.clientSecret) return conn.access_token
+  const body = new URLSearchParams({
+    client_id: cfg.clientId, client_secret: cfg.clientSecret,
+    refresh_token: conn.refresh_token, grant_type: 'refresh_token',
+  })
+  const res = await fetch(cfg.tokenUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok || !json.access_token) return conn.access_token
+  await upsertConnection(coachId, {
+    provider,
+    access_token: json.access_token,
+    token_expiry: json.expires_in ? new Date(Date.now() + json.expires_in * 1000).toISOString() : null,
+    ...(json.refresh_token ? { refresh_token: json.refresh_token } : {}),
+  })
+  return json.access_token
 }
 
 // Exchange an authorization code for tokens (google / microsoft).

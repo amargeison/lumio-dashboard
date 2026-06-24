@@ -19,7 +19,7 @@ import { currentBeltOf, skillScoreFor, beltProgressFor, skillsEarnedFor, setGrad
 import { useScopeCoachId } from '../_lib/role-scope'
 import { WeekCalendarGrid, bookingTypeColour, MonthAgenda, agendaDayLabel } from './WeekCalendar'
 import { bookingCalItems } from '../_lib/schedule'
-import { getAddedBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
+import { getAddedBookings, getBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
 import { AddBookingModal } from './AddBookingModal'
 import { printBeltCertificate } from './BeltCertificate'
 import { getAwards, award as awardRacket, awardKey, subscribe as subscribeAwards } from '../_lib/awards-store'
@@ -900,8 +900,34 @@ export function CalendarView({ T, accent, density }: Common) {
   // BOTH views read this same source, so a new booking shows in week and month.
   const [addedBookings, setAddedBookings] = useState<Booking[]>([])
   useEffect(() => { const r = () => setAddedBookings(getAddedBookings()); r(); return subscribeBookings(r) }, [])
+  // Click a booking on the calendar to open it for editing.
+  const [editBooking, setEditBooking] = useState<Booking | null>(null)
+  const openEdit = (it: { bookingId?: string }) => { if (it.bookingId) { const b = getBookings().find(x => x.id === it.bookingId); if (b) setEditBooking(b) } }
   // Coach role: only that coach's bookings (bookingCalItems filters by coachId).
   const items = bookingCalItems(scope ?? undefined, addedBookings)
+  // Busy times pulled from the coach's connected Google/Outlook calendar (Phase 2),
+  // so they can see true free slots. Empty (and silent) if no calendar is connected.
+  const [busy, setBusy] = useState<{ start: string; end: string }[]>([])
+  useEffect(() => {
+    const from = `${WEEK_START}T00:00:00Z`
+    const d = new Date(`${WEEK_START}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 7)
+    fetch(`/api/coach/calendar/availability?from=${encodeURIComponent(from)}&to=${encodeURIComponent(d.toISOString())}`)
+      .then(r => (r.ok ? r.json() : { busy: [] })).then(j => setBusy(Array.isArray(j.busy) ? j.busy : [])).catch(() => {})
+  }, [])
+  const fmtBusy = (iv: { start: string; end: string }) => {
+    const o = { timeZone: 'Europe/London' as const, hour: '2-digit' as const, minute: '2-digit' as const, hour12: false }
+    const day = new Date(iv.start).toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' })
+    return `${day} ${new Date(iv.start).toLocaleTimeString('en-GB', o)}–${new Date(iv.end).toLocaleTimeString('en-GB', o)}`
+  }
+  // ISO busy intervals → grid coords (London date + HH:MM) for the week grid overlay.
+  const busyBlocks = busy.map(iv => {
+    const toGrid = (iso: string) => ({
+      date: new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Europe/London' }),
+      time: new Date(iso).toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false }),
+    })
+    const s = toGrid(iv.start), e = toGrid(iv.end)
+    return { date: s.date, start: s.time, end: e.date === s.date ? e.time : '23:59' }
+  })
   // Month view = 30 days from the start of the current week, grouped into the
   // shared MonthAgenda (the same component the Session Planner's month tab uses).
   const rangeEnd = (() => { const d = new Date(WEEK_START + 'T00:00:00'); d.setDate(d.getDate() + 30); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
@@ -919,12 +945,18 @@ export function CalendarView({ T, accent, density }: Common) {
           <button key={v.id} onClick={() => setView(v.id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: view === v.id ? T.panel : 'transparent', color: view === v.id ? T.text : T.text2, fontWeight: view === v.id ? 600 : 400, boxShadow: view === v.id ? `0 0 0 1px ${T.border}` : 'none' }}>{v.label}</button>
         ))}
       </div>
+      {busy.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12, padding: '9px 13px', borderRadius: 10, background: 'rgba(58,142,224,0.08)', border: '1px solid rgba(58,142,224,0.25)', fontSize: 11.5, color: T.text2 }}>
+          <span style={{ fontWeight: 700, color: '#3A8EE0' }}>📅 Your calendar:</span>
+          <span>{busy.length} busy {busy.length === 1 ? 'block' : 'blocks'} this week{view === 'week' ? ' — shown striped on the grid below' : `: ${busy.slice(0, 6).map(fmtBusy).join(' · ')}${busy.length > 6 ? ` +${busy.length - 6} more` : ''}`}. Keep them free when booking.</span>
+        </div>
+      )}
       {view === 'week' ? (
         <Card T={T} density={density} style={{ padding: 0, overflowX: 'auto' }}>
-          <WeekCalendarGrid T={T} accent={accent} density={density} items={items} />
+          <WeekCalendarGrid T={T} accent={accent} density={density} items={items} onItemClick={openEdit} busy={busyBlocks} />
         </Card>
       ) : (
-        <MonthAgenda T={T} accent={accent} groups={monthGroups} empty="No bookings in the next 30 days — add one to get started." />
+        <MonthAgenda T={T} accent={accent} groups={monthGroups} onItemClick={openEdit} empty="No bookings in the next 30 days — add one to get started." />
       )}
       <div style={{ display: 'flex', gap: 14, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
         {['Private', 'Group', 'Cardio', 'Match play', 'Block'].map(t => (
@@ -932,7 +964,7 @@ export function CalendarView({ T, accent, density }: Common) {
         ))}
         <span style={{ marginLeft: 'auto' }}>{view === 'week' ? 'Faint fill = pending confirmation' : `Next 30 days · ${monthItems.length} bookings`}</span>
       </div>
-      {addOpen && <AddBookingModal T={T} accent={accent} density={density} onClose={() => setAddOpen(false)} />}
+      {(addOpen || editBooking) && <AddBookingModal T={T} accent={accent} density={density} editBooking={editBooking ?? undefined} onClose={() => { setAddOpen(false); setEditBooking(null) }} />}
     </div>
   )
 }

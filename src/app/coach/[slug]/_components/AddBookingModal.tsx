@@ -12,7 +12,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { PLAYERS, WEEK_START, TODAY, dateForDay, type Booking } from '../_lib/coach-data'
 import { dayIndexForDate } from '../_lib/schedule'
-import { addBooking } from '../_lib/bookings-store'
+import { addBooking, updateBooking, removeBooking } from '../_lib/bookings-store'
 
 const TYPES: Booking['type'][] = ['Private', 'Group', 'Cardio', 'Match play', 'Block']
 const COURTS = ['Court 1', 'Court 2', 'Court 3', 'Court 4', '—']
@@ -28,14 +28,15 @@ const TIMES = (() => {
 // Types that aren't tied to a single roster player — a free-text label fits better.
 const LABEL_TYPES: Booking['type'][] = ['Group', 'Cardio', 'Block']
 
-export function AddBookingModal({ T, accent, onClose }: { T: ThemeTokens; accent: AccentTokens; density: Density; onClose: () => void }) {
-  const [type, setType] = useState<Booking['type']>('Private')
-  const [player, setPlayer] = useState('')
-  const [court, setCourt] = useState('Court 1')
-  const [date, setDate] = useState(TODAY)
-  const [start, setStart] = useState('09:00')
-  const [end, setEnd] = useState('10:00')
-  const [status, setStatus] = useState<Booking['status']>('confirmed')
+export function AddBookingModal({ T, accent, onClose, editBooking }: { T: ThemeTokens; accent: AccentTokens; density: Density; onClose: () => void; editBooking?: Booking }) {
+  const isEdit = !!editBooking
+  const [type, setType] = useState<Booking['type']>(editBooking?.type ?? 'Private')
+  const [player, setPlayer] = useState(editBooking?.player ?? '')
+  const [court, setCourt] = useState(editBooking?.court ?? 'Court 1')
+  const [date, setDate] = useState(editBooking?.date ?? TODAY)
+  const [start, setStart] = useState(editBooking?.start ?? '09:00')
+  const [end, setEnd] = useState(editBooking?.end ?? '10:00')
+  const [status, setStatus] = useState<Booking['status']>(editBooking?.status ?? 'confirmed')
 
   const inputStyle: CSSProperties = { width: '100%', appearance: 'none', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, color: T.text, fontSize: 13, padding: '9px 11px', fontFamily: FONT, outline: 'none' }
   const labelStyle: CSSProperties = { fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4, display: 'block' }
@@ -45,8 +46,7 @@ export function AddBookingModal({ T, accent, onClose }: { T: ThemeTokens; accent
 
   const save = () => {
     if (!canSave) return
-    const booking: Booking = {
-      id: `book-${Date.now()}`,
+    const fields = {
       day: dayIndexForDate(date),     // 0–6 within the demo week, -1 if outside it
       date,                           // already 'YYYY-MM-DD' from the date input
       start, end,
@@ -54,11 +54,15 @@ export function AddBookingModal({ T, accent, onClose }: { T: ThemeTokens; accent
       type,
       court: type === 'Block' ? (court || '—') : court,
       status,
-      coachId: 'pete',                // the logged-in head coach (id in the data model)
     }
-    addBooking(booking)
+    if (isEdit) {
+      updateBooking(editBooking!.id, fields)
+    } else {
+      addBooking({ id: `book-${Date.now()}`, coachId: 'pete', ...fields })
+    }
     onClose()
   }
+  const del = () => { if (isEdit) { removeBooking(editBooking!.id); onClose() } }
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
@@ -66,7 +70,7 @@ export function AddBookingModal({ T, accent, onClose }: { T: ThemeTokens; accent
       <div style={{ width: '100%', maxWidth: 480, background: T.panel, border: `1px solid ${T.borderHi}`, borderRadius: 14, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', borderBottom: `1px solid ${T.border}` }}>
           <div style={{ width: 32, height: 32, borderRadius: 8, display: 'grid', placeItems: 'center', background: accent.dim }}><Icon name="calendar" size={15} stroke={1.7} style={{ color: accent.hex }} /></div>
-          <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: T.text }}>Add booking</div>
+          <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: T.text }}>{isEdit ? 'Edit booking' : 'Add booking'}</div>
           <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 18, lineHeight: 1 }}>×</button>
         </div>
 
@@ -130,8 +134,11 @@ export function AddBookingModal({ T, accent, onClose }: { T: ThemeTokens; accent
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button onClick={save} disabled={!canSave}
               style={{ flex: 1, appearance: 'none', border: 0, padding: '10px 14px', borderRadius: 9, background: canSave ? accent.hex : T.hover, color: canSave ? T.btnText : T.text3, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: canSave ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-              <Icon name="plus" size={14} stroke={2} /> Add to calendar
+              <Icon name={isEdit ? 'check' : 'plus'} size={14} stroke={2} /> {isEdit ? 'Save changes' : 'Add to calendar'}
             </button>
+            {isEdit && (
+              <button onClick={del} title="Delete booking" style={{ appearance: 'none', padding: '10px 14px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.bad}55`, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Delete</button>
+            )}
             <button onClick={onClose} style={{ appearance: 'none', padding: '10px 16px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
           </div>
         </div>

@@ -43,22 +43,38 @@ export async function POST(req: NextRequest) {
     recipients.forEach(r => results.push({ name: r.name || r.email || r.phone || '—', channel: 'inapp', ok: true, detail: 'Sent in-app' }))
   }
 
-  // ── Email (Resend) ─────────────────────────────────────────────────────────
+  // ── Email ──────────────────────────────────────────────────────────────────
+  // Send as the coach's own address via their connected Gmail/Outlook mailbox when
+  // available; otherwise fall back to Resend (Lumio's transactional sender).
   if (channels.includes('email')) {
-    if (!process.env.RESEND_API_KEY) {
+    const { sendAsCoach, hasConnectedMailbox } = await import('@/lib/coach/mail')
+    const subj = subject.trim() || 'A message from your coach'
+    const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#111;white-space:pre-wrap;">${escapeHtml(body)}</div>`
+    const mailboxConnected = await hasConnectedMailbox(user.id)
+    const resend = process.env.RESEND_API_KEY ? new (await import('resend')).Resend(process.env.RESEND_API_KEY) : null
+
+    if (!mailboxConnected && !resend) {
       recipients.forEach(r => results.push({ name: r.name || r.email || '—', channel: 'email', ok: false, detail: 'Email not configured' }))
     } else {
-      const { Resend } = await import('resend')
-      const resend = new Resend(process.env.RESEND_API_KEY)
-      const subj = subject.trim() || 'A message from your coach'
-      const html = `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#111;white-space:pre-wrap;">${escapeHtml(body)}</div>`
       for (const r of recipients) {
         if (!r.email) { results.push({ name: r.name || '—', channel: 'email', ok: false, detail: 'No email on file' }); continue }
-        try {
-          const { error } = await resend.emails.send({ from: EMAIL_FROM, to: r.email, subject: subj, html, replyTo })
-          results.push({ name: r.name || r.email, channel: 'email', ok: !error, detail: error ? error.message : 'Sent' })
-        } catch (e) {
-          results.push({ name: r.name || r.email, channel: 'email', ok: false, detail: e instanceof Error ? e.message : 'Send failed' })
+        // 1) Connected mailbox (send-as the coach)
+        if (mailboxConnected) {
+          try {
+            const sent = await sendAsCoach(user.id, { to: r.email, subject: subj, html })
+            if (sent.ok) { results.push({ name: r.name || r.email, channel: 'email', ok: true, detail: `Sent from ${sent.from || sent.provider}` }); continue }
+          } catch { /* fall through to Resend */ }
+        }
+        // 2) Resend fallback
+        if (resend) {
+          try {
+            const { error } = await resend.emails.send({ from: EMAIL_FROM, to: r.email, subject: subj, html, replyTo })
+            results.push({ name: r.name || r.email, channel: 'email', ok: !error, detail: error ? error.message : 'Sent' })
+          } catch (e) {
+            results.push({ name: r.name || r.email, channel: 'email', ok: false, detail: e instanceof Error ? e.message : 'Send failed' })
+          }
+        } else {
+          results.push({ name: r.name || r.email, channel: 'email', ok: false, detail: 'Mailbox send failed and no fallback configured' })
         }
       }
     }
