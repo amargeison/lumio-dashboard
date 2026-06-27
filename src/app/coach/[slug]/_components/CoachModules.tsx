@@ -552,6 +552,7 @@ export function LessonsView({ T, accent, density }: Common) {
       </div>
       {shareOpen && <LessonShareMenu T={T} accent={accent} lesson={sel} onClose={() => setShareOpen(false)} />}
       {newOpen && <NewSummaryModal T={T} accent={accent} density={density} players={players} onClose={() => setNewOpen(false)} onCreated={id => setSelId(id)} />}
+      {mediaModal}
     </div>
   )
 }
