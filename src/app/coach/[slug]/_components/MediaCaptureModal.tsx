@@ -150,7 +150,7 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
   const mm = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
 
   return (
-    <div onClick={e => { if (e.target === e.currentTarget && phase !== 'processing' && phase !== 'uploading') onClose() }}
+    <div onClick={e => { if (e.target === e.currentTarget && phase !== 'uploading') onClose() }}
       style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(0,0,0,0.84)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '7vh 16px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 540, background: T.panel, border: `1px solid ${T.borderHi}`, borderRadius: 16, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: `1px solid ${T.border}` }}>
@@ -159,7 +159,7 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
             <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Add {kind} → AI lesson summary</div>
             <div style={{ fontSize: 11.5, color: T.text3 }}>Record now or upload a recording — we transcribe it and write the summary.</div>
           </div>
-          <button onClick={onClose} disabled={phase === 'processing' || phase === 'uploading'} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 16, opacity: phase === 'processing' || phase === 'uploading' ? 0.4 : 1 }}>✕</button>
+          <button onClick={onClose} disabled={phase === 'uploading'} title={phase === 'processing' ? 'Close — the summary keeps building in the background' : 'Close'} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, cursor: phase === 'uploading' ? 'default' : 'pointer', fontSize: 16, opacity: phase === 'uploading' ? 0.4 : 1 }}>✕</button>
         </div>
 
         <div style={{ padding: 20 }}>
@@ -220,6 +220,9 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
               <div style={{ fontSize: 30, marginBottom: 10 }}>{phase === 'uploading' ? '⬆' : '✨'}</div>
               <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{phase === 'uploading' ? (uploadInfo || 'Uploading…') : 'Transcribing & writing the summary…'}</div>
               <div style={{ fontSize: 12, color: T.text3, marginTop: 6 }}>{phase === 'processing' ? 'A long lesson can take a couple of minutes. You can keep working — it’ll appear in Lesson Summaries when ready.' : 'Sending your recording securely.'}</div>
+              {phase === 'processing' && (
+                <button onClick={onClose} style={{ ...btn('transparent', T.text2), border: `1px solid ${T.border}`, marginTop: 16, padding: '9px 16px' }}>Close &amp; keep working</button>
+              )}
             </div>
           )}
 
