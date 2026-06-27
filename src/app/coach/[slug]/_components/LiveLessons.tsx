@@ -15,12 +15,14 @@ import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { MediaCaptureModal } from './MediaCaptureModal'
-import { useCoachTable, dbInsert } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, SKILLS_BY_STAGE } from '../_lib/coach-db'
 
 type Review = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
   homework?: string; nextFocus?: string; coachNote?: string; rating?: number
+  skillsWorked?: string[]; time?: string; court?: string; type?: string; duration?: number
 }
+type PlayerLite = { id: string; name: string; racket_stage?: string | null }
 type Session = {
   id: string; player_name: string | null; session_date: string | null
   focus: string | null; rating: number | null; summary: string | null
@@ -34,8 +36,8 @@ const initials = (name: string | null) => (name || 'Recorded session').split(/\s
 
 export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const { rows, add, edit, remove, reload } = useCoachTable<Session>('coach_sessions')
-  const { rows: playerRows } = useCoachTable<{ id: string; name: string }>('coach_players')
-  const players = playerRows.map(p => ({ id: p.id, name: p.name }))
+  const { rows: playerRows } = useCoachTable<PlayerLite>('coach_players')
+  const players: PlayerLite[] = playerRows.map(p => ({ id: p.id, name: p.name, racket_stage: p.racket_stage }))
 
   const [selId, setSelId] = useState<string | null>(null)
   const [range, setRange] = useState<'week' | 'lastweek' | 'month' | 'all'>('all')
@@ -57,6 +59,10 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
     { id: 'week', label: 'This week' }, { id: 'lastweek', label: 'Last week' },
     { id: 'month', label: 'This month' }, { id: 'all', label: 'All' },
   ]
+
+  // Closing the recording modal mid-processing leaves the summary building
+  // server-side; poll-reload over the next few minutes so it appears when ready.
+  const bgReload = () => [4, 10, 20, 40, 70, 110, 160].forEach(secs => setTimeout(() => reload(), secs * 1000))
 
   const onShare = (s: Session) => {
     const txt = shareText(s)
@@ -92,7 +98,7 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
     <>
       {mediaKind && (
         <MediaCaptureModal T={T} accent={accent} defaultKind={mediaKind} players={players}
-          onClose={() => setMediaKind(false)}
+          onClose={() => { setMediaKind(false); bgReload() }}
           onSummary={() => { setMediaKind(false); setSelId(null); reload() }} />
       )}
       {editing && (
@@ -151,9 +157,9 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
 
         {/* Detail */}
         {sel && <DetailPane T={T} accent={accent} s={sel}
-          onShare={() => onShare(sel)} copied={copied}
           onExport={() => printSession(sel)}
           onEdit={() => setEditing(sel)}
+          onDuplicate={async () => { await add({ player_name: sel.player_name, session_date: new Date().toISOString().slice(0, 10), focus: sel.focus, rating: sel.rating, summary: sel.summary, ai_review: sel.ai_review, review_json: sel.review_json }); setSelId(null) }}
           onDelete={async () => { if (confirm('Delete this lesson summary?')) { await remove(sel.id); setSelId(null) } }} />}
       </div>
       {modals}
@@ -162,14 +168,16 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
 }
 
 // ── Detail pane ───────────────────────────────────────────────────────────────
-function DetailPane({ T, accent, s, onShare, copied, onExport, onEdit, onDelete }: {
+function DetailPane({ T, accent, s, onExport, onEdit, onDuplicate, onDelete }: {
   T: ThemeTokens; accent: AccentTokens; s: Session
-  onShare: () => void; copied: boolean; onExport: () => void; onEdit: () => void; onDelete: () => void
+  onExport: () => void; onEdit: () => void; onDuplicate: () => void; onDelete: () => void
 }) {
+  const [shareOpen, setShareOpen] = useState(false)
   const r = s.review_json || {}
   const rating = s.rating ?? r.rating ?? 0
-  const hasStructured = !!(r.covered?.length || r.takeaways?.length || r.drills?.length || r.homework || r.nextFocus)
+  const hasStructured = !!(r.covered?.length || r.takeaways?.length || r.drills?.length || r.skillsWorked?.length || r.homework || r.nextFocus)
   const card: CSSProperties = { background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' }
+  const meta = [r.time, r.duration ? `${r.duration} min` : '', r.court, r.type].filter(Boolean).join(' · ')
 
   return (
     <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18 }}>
@@ -178,7 +186,7 @@ function DetailPane({ T, accent, s, onShare, copied, onExport, onEdit, onDelete 
           <Avatar T={T} accent={accent} text={initials(s.player_name)} size={36} />
           <div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.text }}>{s.player_name || 'Recorded session'}</div>
-            <div style={{ fontSize: 11.5, color: T.text3 }}>{fmtDate(s.session_date)}</div>
+            <div style={{ fontSize: 11.5, color: T.text3 }}>{fmtDate(s.session_date)}{meta ? ` · ${meta}` : ''}</div>
           </div>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -208,6 +216,10 @@ function DetailPane({ T, accent, s, onShare, copied, onExport, onEdit, onDelete 
               {!!r.drills?.length && <>
                 <SubHead T={T} accent={accent}>⚑ Drills used</SubHead>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{r.drills.map((d, i) => <span key={i} style={{ fontSize: 11.5, color: T.text2, padding: '4px 8px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}` }}>{d}</span>)}</div>
+              </>}
+              {!!r.skillsWorked?.length && <>
+                <SubHead T={T} accent={accent} mt>🏆 Skills worked</SubHead>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{r.skillsWorked.map((sk, i) => <span key={i} style={{ fontSize: 11, color: accent.hex, padding: '3px 9px', borderRadius: 999, background: accent.dim, border: `1px solid ${accent.border}` }}>{sk}</span>)}</div>
               </>}
               {!!r.homework && <>
                 <SubHead T={T} accent={accent} mt>⌂ Homework</SubHead>
@@ -245,10 +257,132 @@ function DetailPane({ T, accent, s, onShare, copied, onExport, onEdit, onDelete 
       )}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-        <button onClick={onShare} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>📣 {copied ? 'Copied to clipboard' : 'Share with parent'}</button>
+        <button onClick={() => setShareOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>📣 Share with parent</button>
+        <button onClick={onDuplicate} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Duplicate</button>
         <button onClick={onExport} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Export PDF</button>
         <button onClick={onEdit} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Edit</button>
         <button onClick={onDelete} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Delete</button>
+      </div>
+
+      {hasStructured && <CoachAiBrief T={T} accent={accent} s={s} />}
+      {shareOpen && <ShareMenu T={T} accent={accent} s={s} onClose={() => setShareOpen(false)} />}
+    </div>
+  )
+}
+
+// ── Coach AI brief — what to work on next + a suggested next-session plan,
+// derived from this lesson (mirrors the demo). "Add to next session plan"
+// writes a real coach_session_plans row, so it shows up in the Session Planner.
+function buildBrief(s: Session) {
+  const r = s.review_json || {}
+  const focus = (s.focus || r.focus || 'the focus').trim()
+  const fl = focus.toLowerCase()
+  const next = (r.nextFocus || 'take it into live points').trim()
+  const drills = r.drills || []
+  const issue = r.takeaways?.length ? r.takeaways[r.takeaways.length - 1] : focus
+  const workOn = [
+    `Lock in the next step — ${next}`,
+    `Tidy the loose end from today: ${issue.toLowerCase()}`,
+    r.skillsWorked?.length ? `Keep reinforcing ${r.skillsWorked.join(', ').toLowerCase()}` : `Keep grooving ${fl}`,
+  ]
+  const plan = [
+    { phase: 'Warm-up & movement', mins: 8, detail: 'Dynamic prep, split-step reactions, easy mini-tennis to find the timing.' },
+    { phase: 'Technical', mins: 15, detail: `Re-groove ${fl}${drills[0] ? ` — ${drills[0]}` : ' with controlled feeds and a clear cue'}.` },
+    { phase: 'Constraint drill', mins: 12, detail: `${drills[1] ?? 'Target drill'} with a success target before progressing.` },
+    { phase: 'Tactical / live', mins: 15, detail: `Carry "${next.toLowerCase()}" into live points and patterns.` },
+    { phase: 'Match-play & review', mins: 10, detail: 'Score-based games, then a short video review and set the next homework.' },
+  ]
+  const planDrills = [...drills.slice(0, 2), `Pressure rep: ${next.toLowerCase()} on every 3rd ball`]
+  const parentTip = r.homework ? `Encourage 10 minutes a day at home: ${r.homework}` : `Encourage a little daily practice on ${fl}.`
+  return { workOn, plan, planDrills, parentTip }
+}
+
+function CoachAiBrief({ T, accent, s }: { T: ThemeTokens; accent: AccentTokens; s: Session }) {
+  const brief = buildBrief(s)
+  const totalMins = brief.plan.reduce((sum, p) => sum + p.mins, 0)
+  const [added, setAdded] = useState<'idle' | 'saving' | 'done'>('idle')
+  const addToPlanner = async () => {
+    if (added !== 'idle') return
+    setAdded('saving')
+    try {
+      await dbInsert('coach_session_plans', {
+        title: `Next session — ${s.player_name || 'player'}`,
+        session_date: null,
+        group_name: s.player_name || null,
+        focus: s.review_json?.nextFocus || s.focus || 'Follow-up session',
+        duration_min: totalMins,
+        drills: brief.planDrills.join('\n'),
+        notes: brief.plan.map(p => `${p.mins}m · ${p.phase}: ${p.detail}`).join('\n'),
+      })
+      setAdded('done')
+    } catch { setAdded('idle') }
+  }
+  return (
+    <div style={{ marginTop: 16, border: `1px solid ${accent.border}`, borderRadius: 12, padding: 16, background: `linear-gradient(180deg, ${accent.dim}, transparent 60%)` }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+        <span style={{ color: accent.hex }}>✦</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Coach AI brief</span>
+        <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>from this session</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>What to work on next</div>
+          {brief.workOn.map((w, i) => (
+            <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '5px 0', fontSize: 12.5, color: T.text, lineHeight: 1.45 }}><span style={{ color: accent.hex, fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>{w}</div>
+          ))}
+          <div style={{ marginTop: 12, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '9px 11px' }}>
+            <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Parent tip</div>
+            <div style={{ fontSize: 12, color: T.text2, marginTop: 3 }}>{brief.parentTip}</div>
+          </div>
+        </div>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Suggested next session</div>
+            <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>{totalMins} min</span>
+          </div>
+          {brief.plan.map((p, i) => (
+            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '6px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+              <span style={{ fontSize: 10.5, color: accent.hex, fontWeight: 700, width: 34, flexShrink: 0, paddingTop: 1 }}>{p.mins}m</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{p.phase}</div>
+                <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.4 }}>{p.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 14, alignItems: 'center' }}>
+        <span style={{ fontSize: 10.5, color: T.text3, marginRight: 4 }}>Suggested drills:</span>
+        {brief.planDrills.map((d, i) => <span key={i} style={{ fontSize: 11, color: T.text2, padding: '4px 8px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}` }}>{d}</span>)}
+        <button onClick={addToPlanner} disabled={added !== 'idle'} style={{ marginLeft: 'auto', appearance: 'none', border: added === 'done' ? `1px solid ${T.good}` : 0, padding: '8px 14px', borderRadius: 9, background: added === 'done' ? 'transparent' : accent.hex, color: added === 'done' ? T.good : T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: added === 'idle' ? 'pointer' : 'default' }}>
+          {added === 'done' ? '✓ Added to planner' : added === 'saving' ? 'Adding…' : '📅 Add to next session plan'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Share menu — copy / email / WhatsApp the summary to a parent.
+function ShareMenu({ T, accent, s, onClose }: { T: ThemeTokens; accent: AccentTokens; s: Session; onClose: () => void }) {
+  const text = shareText(s)
+  const subject = `Lesson summary — ${s.player_name || 'your player'}`
+  const [copied, setCopied] = useState(false)
+  const opts: { label: string; icon: string; run: () => void }[] = [
+    { label: copied ? 'Copied to clipboard ✓' : 'Copy summary', icon: '📋', run: () => navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600) }).catch(() => {}) },
+    { label: 'Email to parent', icon: '✉️', run: () => { window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`); onClose() } },
+    { label: 'Share on WhatsApp', icon: '🟢', run: () => { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); onClose() } },
+  ]
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, fontFamily: FONT, padding: 16 }}>
+      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16, width: 340, maxWidth: '100%' }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 4 }}>Share with parent</div>
+        <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 12 }}>The coach note stays private — only the lesson detail is shared.</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {opts.map(o => (
+            <button key={o.label} onClick={o.run} style={{ appearance: 'none', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', borderRadius: 10, background: T.panel2, border: `1px solid ${T.border}`, color: T.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, textAlign: 'left' }}><span style={{ fontSize: 16 }}>{o.icon}</span>{o.label}</button>
+          ))}
+        </div>
+        <button onClick={onClose} style={{ marginTop: 12, width: '100%', appearance: 'none', padding: '9px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer', fontFamily: FONT }}>Close</button>
       </div>
     </div>
   )
@@ -263,56 +397,179 @@ function Avatar({ T, accent, text, size }: { T: ThemeTokens; accent: AccentToken
 }
 
 // ── New / Edit summary modal ──────────────────────────────────────────────────
+const splitLines = (s: string) => s.split('\n').map(x => x.trim()).filter(Boolean)
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+// AI assist — turn the coach's quick note + focus into structured sections.
+// Local heuristic (mirrors the demo): instant, offline, fully editable after.
+function draftSections(focus: string, note: string) {
+  const fl = (focus.trim() || 'the focus').toLowerCase()
+  const ls = note.split(/[\n.;]+/).map(s => s.trim()).filter(Boolean)
+  const covered = (ls.length ? ls.slice(0, 3) : [`Technical work on ${fl}`, 'Controlled feeds, then progressing to live']).concat([`Live points starting from ${fl}`]).slice(0, 4)
+  const takeaways = [`Clear progress on ${fl} — more consistent and confident`, ls.length > 1 ? `Watch: ${ls[ls.length - 1].toLowerCase()}` : 'Reverts to the old habit when rushed']
+  const drills = [`${cap(fl)} ladder — 10 in a row`, 'Target cones with a success rate before progressing', `Pressure points from ${fl}`]
+  return { covered, takeaways, drills, homework: `10 minutes a day on ${fl}; film one set to review.`, nextFocus: `Take ${fl} into match-play patterns and live points.` }
+}
+
+// Flatten a structured review to the shareable ai_review text (matches the
+// recording flow's formatter, so manual and AI-built summaries read alike).
+function formatReviewText(r: Review): string {
+  const out: string[] = []
+  if (r.focus) out.push(`Focus: ${r.focus}`)
+  if (r.covered?.length) out.push('\nWhat we covered:\n' + r.covered.map(x => `• ${x}`).join('\n'))
+  if (r.takeaways?.length) out.push('\nKey takeaways:\n' + r.takeaways.map(x => `• ${x}`).join('\n'))
+  if (r.drills?.length) out.push('\nDrills: ' + r.drills.join(', '))
+  if (r.homework) out.push('\nHomework: ' + r.homework)
+  if (r.nextFocus) out.push('\nNext session focus: ' + r.nextFocus)
+  if (r.coachNote) out.push('\n' + r.coachNote)
+  return out.join('\n')
+}
+
+// Rich New / Edit lesson summary — matches the demo form: who & when, AI assist,
+// the structured sections, racket-system skill tags and a star rating. Saves the
+// full structured review_json (so the detail view + player card render in full),
+// plus the flat columns the rest of the app reads.
 function SummaryFormModal({ T, accent, players, session, onClose, onSave }: {
-  T: ThemeTokens; accent: AccentTokens; players: { id: string; name: string }[]
+  T: ThemeTokens; accent: AccentTokens; players: PlayerLite[]
   session: Session | null
   onClose: () => void
   onSave: (vals: Record<string, any>, newPlayer: string | null) => Promise<void>
 }) {
+  const r0 = session?.review_json || {}
   const known = players.some(p => p.name === session?.player_name)
   const [playerSel, setPlayerSel] = useState(session ? (known ? session.player_name || '' : '__new__') : '')
   const [newPlayer, setNewPlayer] = useState(session && !known ? session.player_name || '' : '')
+  const [type, setType] = useState(r0.type || 'Private')
   const [date, setDate] = useState(session?.session_date || new Date().toISOString().slice(0, 10))
-  const [focus, setFocus] = useState(session?.focus || '')
-  const [rating, setRating] = useState(String(session?.rating ?? 4))
-  const [summary, setSummary] = useState(session?.summary || '')
+  const [time, setTime] = useState(r0.time || '12:00')
+  const [court, setCourt] = useState(r0.court || '')
+  const [dur, setDur] = useState(String(r0.duration ?? 60))
+  const [focus, setFocus] = useState(session?.focus || r0.focus || '')
+  const [note, setNote] = useState('')
+  const [covered, setCovered] = useState((r0.covered || []).join('\n'))
+  const [takeaways, setTakeaways] = useState((r0.takeaways || []).join('\n'))
+  const [drills, setDrills] = useState((r0.drills || []).join('\n'))
+  const [skills, setSkills] = useState<Set<string>>(new Set(r0.skillsWorked || []))
+  const [homework, setHomework] = useState(r0.homework || '')
+  const [nextFocus, setNextFocus] = useState(r0.nextFocus || '')
+  const [coachNote, setCoachNote] = useState(r0.coachNote || (session?.summary && !r0.coachNote ? session.summary : '') || '')
+  const [rating, setRating] = useState(session?.rating ?? r0.rating ?? 4)
+  const [drafted, setDrafted] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const who = (playerSel === '__new__' ? newPlayer : playerSel).trim()
-  const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box' }
-  const lbl: CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 6px' }
+  const selPlayer = players.find(p => p.name === playerSel)
+  const stageSkills = selPlayer?.racket_stage ? (SKILLS_BY_STAGE[selPlayer.racket_stage] || []) : []
+  const canSave = !!who && focus.trim().length > 0 && !saving
+
+  const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box', outline: 'none' }
+  const lbl: CSSProperties = { display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 5px' }
+  const Field = ({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) => (
+    <div style={{ marginBottom: 12 }}><label style={lbl}>{label}</label>{children}{hint && <div style={{ fontSize: 10, color: T.text3, marginTop: 3 }}>{hint}</div>}</div>
+  )
+
+  const runDraft = () => {
+    const d = draftSections(focus, note)
+    setCovered(d.covered.join('\n')); setTakeaways(d.takeaways.join('\n')); setDrills(d.drills.join('\n'))
+    setHomework(d.homework); setNextFocus(d.nextFocus); setDrafted(true)
+  }
 
   const save = async () => {
-    if (!who || saving) return
+    if (!canSave) return
     setSaving(true)
     const isNew = playerSel === '__new__' && !players.some(p => p.name.toLowerCase() === who.toLowerCase())
+    const review: Review = {
+      focus: focus.trim(), covered: splitLines(covered), takeaways: splitLines(takeaways), drills: splitLines(drills),
+      skillsWorked: [...skills], homework: homework.trim(), nextFocus: nextFocus.trim(), coachNote: coachNote.trim(),
+      rating, time, court: court.trim(), type, duration: Number(dur) || 60,
+    }
+    const publicSummary = coachNote.trim() || review.takeaways?.[0] || focus.trim()
     try {
-      await onSave({ player_name: who, session_date: date, focus, rating: Number(rating) || null, summary }, isNew ? who : null)
+      await onSave({
+        player_name: who, session_date: date, focus: focus.trim(), rating,
+        summary: publicSummary, ai_review: formatReviewText(review), review_json: review,
+      }, isNew ? who : null)
     } finally { setSaving(false) }
   }
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, width: 440, maxWidth: '100%', maxHeight: '90vh', overflow: 'auto' }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>{session ? 'Edit lesson summary' : 'New lesson summary'}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <label style={lbl}>Player *</label>
-            <select value={playerSel} onChange={e => setPlayerSel(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
-              <option value="">Choose a player…</option>
-              {players.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-              <option value="__new__">+ New player…</option>
-            </select>
-            {playerSel === '__new__' && <input value={newPlayer} onChange={e => setNewPlayer(e.target.value)} placeholder="New player's name" style={{ ...field, marginTop: 8 }} />}
-          </div>
-          <div><label style={lbl}>Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} style={field} /></div>
-          <div><label style={lbl}>Focus</label><input value={focus} onChange={e => setFocus(e.target.value)} placeholder="e.g. Second serve — kick & reliability" style={field} /></div>
-          <div><label style={lbl}>Rating (1–5)</label><input type="number" min={1} max={5} value={rating} onChange={e => setRating(e.target.value)} style={field} /></div>
-          <div><label style={lbl}>Coach notes</label><textarea value={summary} onChange={e => setSummary(e.target.value)} rows={4} style={{ ...field, resize: 'vertical' }} /></div>
+    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '4vh 16px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 620, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '15px 20px', borderBottom: `1px solid ${T.border}`, position: 'sticky', top: 0, background: T.panel, borderRadius: '16px 16px 0 0', zIndex: 1 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 8, display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex }}>📝</div>
+          <div style={{ flex: 1, fontSize: 15, fontWeight: 700, color: T.text }}>{session ? 'Edit lesson summary' : 'New lesson summary'}</div>
+          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 15 }}>✕</button>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18 }}>
-          <button onClick={onClose} style={{ appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
-          <button onClick={save} disabled={!who || saving} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: who && !saving ? 'pointer' : 'not-allowed', opacity: who && !saving ? 1 : 0.5, fontFamily: FONT }}>{saving ? 'Saving…' : 'Save'}</button>
+
+        <div style={{ padding: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Player *">
+              <select value={playerSel} onChange={e => setPlayerSel(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
+                <option value="">Choose a player…</option>
+                {players.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                <option value="__new__">+ New player…</option>
+              </select>
+              {playerSel === '__new__' && <input value={newPlayer} onChange={e => setNewPlayer(e.target.value)} placeholder="New player's name" style={{ ...field, marginTop: 8 }} />}
+            </Field>
+            <Field label="Type">
+              <select value={type} onChange={e => setType(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
+                {['Private', 'Group', 'Cardio', 'Match play'].map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </Field>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 0.8fr', gap: 12 }}>
+            <Field label="Date"><input type="date" value={date} onChange={e => setDate(e.target.value)} style={field} /></Field>
+            <Field label="Time"><input type="time" value={time} onChange={e => setTime(e.target.value)} style={field} /></Field>
+            <Field label="Court"><input value={court} onChange={e => setCourt(e.target.value)} placeholder="Court 1" style={field} /></Field>
+            <Field label="Mins"><input inputMode="numeric" value={dur} onChange={e => setDur(e.target.value.replace(/\D/g, ''))} style={field} /></Field>
+          </div>
+
+          <Field label="Session focus *"><input value={focus} onChange={e => setFocus(e.target.value)} placeholder="e.g. Second serve — kick & reliability" style={field} /></Field>
+
+          {/* AI assist */}
+          <div style={{ background: `linear-gradient(120deg, ${accent.dim}, transparent)`, border: `1px solid ${accent.border}`, borderRadius: 11, padding: 14, marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+              <span style={{ color: accent.hex }}>✦</span>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>AI assist</span>
+              <span style={{ fontSize: 10.5, color: T.text3 }}>jot a quick note, draft the sections</span>
+            </div>
+            <textarea rows={2} value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Worked the kick serve, better net margin, toss drifts forward when rushed" style={{ ...field, resize: 'none', lineHeight: 1.5 }} />
+            <button onClick={runDraft} disabled={!focus.trim()} style={{ marginTop: 8, appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: focus.trim() ? accent.hex : T.hover, color: focus.trim() ? T.btnText : T.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: focus.trim() ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: 7 }}>✦ {drafted ? 'Re-draft sections' : 'Draft sections with AI'}</button>
+            {drafted && <span style={{ fontSize: 10.5, color: accent.hex, marginLeft: 10 }}>✓ drafted below — edit anything</span>}
+          </div>
+
+          <Field label="What we covered" hint="One point per line"><textarea rows={4} value={covered} onChange={e => setCovered(e.target.value)} style={{ ...field, resize: 'vertical', lineHeight: 1.5 }} /></Field>
+          <Field label="Key takeaways" hint="One per line"><textarea rows={3} value={takeaways} onChange={e => setTakeaways(e.target.value)} style={{ ...field, resize: 'vertical', lineHeight: 1.5 }} /></Field>
+          <Field label="Drills used" hint="One per line"><textarea rows={3} value={drills} onChange={e => setDrills(e.target.value)} style={{ ...field, resize: 'vertical', lineHeight: 1.5 }} /></Field>
+
+          {stageSkills.length > 0 && (
+            <Field label="Skills worked (racket system)" hint="Tap to tag">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {stageSkills.map(s => {
+                  const on = skills.has(s)
+                  return <button key={s} onClick={() => setSkills(prev => { const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n })}
+                    style={{ appearance: 'none', border: `1px solid ${on ? accent.border : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text2, borderRadius: 8, padding: '5px 10px', fontSize: 11, cursor: 'pointer', fontWeight: on ? 600 : 400 }}>{on ? '✓ ' : ''}{s}</button>
+                })}
+              </div>
+            </Field>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <Field label="Homework"><input value={homework} onChange={e => setHomework(e.target.value)} style={field} /></Field>
+            <Field label="Next session focus"><input value={nextFocus} onChange={e => setNextFocus(e.target.value)} style={field} /></Field>
+          </div>
+          <Field label="Coach note (private)"><textarea rows={2} value={coachNote} onChange={e => setCoachNote(e.target.value)} placeholder="For your eyes only — not shared" style={{ ...field, resize: 'vertical', lineHeight: 1.5 }} /></Field>
+
+          <Field label="Session rating">
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[1, 2, 3, 4, 5].map(n => <button key={n} onClick={() => setRating(n)} style={{ appearance: 'none', border: 0, background: 'transparent', cursor: 'pointer', fontSize: 20, color: n <= rating ? accent.hex : T.text4, padding: 0 }}>★</button>)}
+            </div>
+          </Field>
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <button onClick={save} disabled={!canSave} style={{ flex: 1, appearance: 'none', border: 0, padding: '11px 14px', borderRadius: 9, background: canSave ? accent.hex : T.hover, color: canSave ? T.btnText : T.text3, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: canSave ? 'pointer' : 'not-allowed' }}>{saving ? 'Saving…' : '✓ Save summary'}</button>
+            <button onClick={onClose} style={{ appearance: 'none', padding: '11px 16px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+          </div>
         </div>
       </div>
     </div>
