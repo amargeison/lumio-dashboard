@@ -67,6 +67,7 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
       if (playerName) fd.append('playerName', playerName)
       const up = await fetch('/api/coach/media/upload', { method: 'POST', body: fd })
       const upJson = await up.json().catch(() => ({}))
+      if (up.status === 401) throw new Error('Uploading recordings needs a signed-in coach account. The demo runs on sample data — sign up for founder access to add your own audio/video.')
       if (!up.ok) throw new Error(upJson.error || `Upload failed (${up.status})`)
       const id = upJson.id as string
       await fetch('/api/coach/media/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
