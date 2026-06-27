@@ -26,6 +26,7 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
   const [secs, setSecs] = useState(0)
   const [review, setReview] = useState<LessonReview | null>(null)
   const [transcript, setTranscript] = useState('')
+  const [uploadInfo, setUploadInfo] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const recRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<BlobPart[]>([])
@@ -46,7 +47,7 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
       chunksRef.current = []
       const rec = new MediaRecorder(stream)
       rec.ondataavailable = e => { if (e.data.size) chunksRef.current.push(e.data) }
-      rec.onstop = () => { const blob = new Blob(chunksRef.current, { type: rec.mimeType || (kind === 'video' ? 'video/webm' : 'audio/webm') }); stopTracks(); upload(blob, `recording.${(rec.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}`) }
+      rec.onstop = () => { const blob = new Blob(chunksRef.current, { type: rec.mimeType || (kind === 'video' ? 'video/webm' : 'audio/webm') }); stopTracks(); uploadAll([{ blob, name: `recording.${(rec.mimeType || '').includes('mp4') ? 'mp4' : 'webm'}` }]) }
       recRef.current = rec
       rec.start()
       setPhase('recording'); setSecs(0)
@@ -55,24 +56,38 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
   }
   const stopRecording = () => { if (timerRef.current) clearInterval(timerRef.current); recRef.current?.state !== 'inactive' && recRef.current?.stop() }
 
-  // ── Upload (recorded blob or picked file) ─────────────────────────────────────
-  const onPick = (f: File) => { setKind(f.type.startsWith('video') ? 'video' : 'audio'); upload(f, f.name) }
+  // ── Upload (recorded blob or one-or-more picked files) ────────────────────────
+  // A coach can pick several files for one lesson (recorded in sections); they're
+  // uploaded, then transcribed + summarised together into a single summary.
+  const onPickFiles = (files: File[]) => {
+    if (!files.length) return
+    setKind(files.some(f => f.type.startsWith('video')) ? 'video' : 'audio')
+    uploadAll(files.map(f => ({ blob: f as Blob, name: f.name })))
+  }
 
-  const upload = async (blob: Blob, name: string) => {
+  const uploadOne = async (blob: Blob, name: string): Promise<string> => {
+    const fd = new FormData()
+    fd.append('file', blob, name)
+    fd.append('kind', blob.type.startsWith('video') ? 'video' : kind)
+    if (playerName) fd.append('playerName', playerName)
+    const up = await fetch('/api/coach/media/upload', { method: 'POST', body: fd })
+    const upJson = await up.json().catch(() => ({}))
+    if (up.status === 401) throw new Error('Uploading recordings needs a signed-in coach account. The demo runs on sample data — sign up for founder access to add your own audio/video.')
+    if (!up.ok) throw new Error(upJson.error || `Upload failed (${up.status})`)
+    return upJson.id as string
+  }
+
+  const uploadAll = async (items: { blob: Blob; name: string }[]) => {
     setPhase('uploading'); setErr('')
     try {
-      const fd = new FormData()
-      fd.append('file', blob, name)
-      fd.append('kind', blob.type.startsWith('video') ? 'video' : kind)
-      if (playerName) fd.append('playerName', playerName)
-      const up = await fetch('/api/coach/media/upload', { method: 'POST', body: fd })
-      const upJson = await up.json().catch(() => ({}))
-      if (up.status === 401) throw new Error('Uploading recordings needs a signed-in coach account. The demo runs on sample data — sign up for founder access to add your own audio/video.')
-      if (!up.ok) throw new Error(upJson.error || `Upload failed (${up.status})`)
-      const id = upJson.id as string
-      await fetch('/api/coach/media/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+      const ids: string[] = []
+      for (let i = 0; i < items.length; i++) {
+        setUploadInfo(items.length > 1 ? `Uploading ${i + 1} of ${items.length}…` : '')
+        ids.push(await uploadOne(items[i].blob, items[i].name))
+      }
+      await fetch('/api/coach/media/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) })
       setPhase('processing')
-      poll(id)
+      poll(ids[0])
     } catch (e) { setErr(e instanceof Error ? e.message : 'Upload failed'); setPhase('error') }
   }
 
@@ -122,11 +137,11 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
                   <span style={{ fontSize: 26 }}>⏺</span> Record now
                 </button>
                 <button onClick={() => fileRef.current?.click()} style={{ ...btn(T.panel2, accent.hex), border: `1px dashed ${accent.border}`, padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 26 }}>⬆</span> Upload a file
+                  <span style={{ fontSize: 26 }}>⬆</span> Upload file(s)
                 </button>
               </div>
-              <input ref={fileRef} type="file" accept="audio/*,video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) onPick(f) }} />
-              <p style={{ fontSize: 11, color: T.text3, margin: 0 }}>Recorded externally (e.g. a clip-on mic)? Upload it here — long files are compressed automatically.</p>
+              <input ref={fileRef} type="file" accept="audio/*,video/*" multiple style={{ display: 'none' }} onChange={e => onPickFiles(Array.from(e.target.files || []))} />
+              <p style={{ fontSize: 11, color: T.text3, margin: 0 }}>Recorded the lesson in sections, or on a clip-on mic? Select <b>multiple files</b> — they’re combined into one summary. Long files are compressed automatically.</p>
             </div>
           )}
 
@@ -141,7 +156,7 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
           {(phase === 'uploading' || phase === 'processing') && (
             <div style={{ textAlign: 'center', padding: '28px 0' }}>
               <div style={{ fontSize: 30, marginBottom: 10 }}>{phase === 'uploading' ? '⬆' : '✨'}</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{phase === 'uploading' ? 'Uploading…' : 'Transcribing & writing the summary…'}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{phase === 'uploading' ? (uploadInfo || 'Uploading…') : 'Transcribing & writing the summary…'}</div>
               <div style={{ fontSize: 12, color: T.text3, marginTop: 6 }}>{phase === 'processing' ? 'A long lesson can take a couple of minutes. You can keep working — it’ll appear in Lesson Summaries when ready.' : 'Sending your recording securely.'}</div>
             </div>
           )}
