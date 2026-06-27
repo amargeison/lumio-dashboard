@@ -15,6 +15,7 @@ export type CoachTable =
   | 'coach_bookings'
   | 'coach_sessions'
   | 'coach_camps'
+  | 'coach_camp_attendees'
   | 'coach_payments'
   | 'coach_gps_sessions'
   | 'coach_messages'
