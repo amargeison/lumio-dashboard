@@ -7,9 +7,11 @@
 // Coaches see exactly what's tracked; bespoke ladders/skills/branding are
 // available on request rather than self-serve editing.
 
+import { useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
+import { seedLumioResources } from '../_lib/lumio-resources'
 
 export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18, marginBottom: 16, fontFamily: FONT }
@@ -119,6 +121,33 @@ export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent
           <a href="mailto:hello@lumiosports.com?subject=Custom%20camp%20packs" style={{ appearance: 'none', textDecoration: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Request customisation</a>
         </div>
       </div>
+
+      {/* Resource Centre */}
+      <div style={card}>
+        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: T.text }}>Resource Centre</h3>
+        <p style={{ margin: '0 0 12px', fontSize: 12.5, color: T.text3, lineHeight: 1.5 }}>
+          Load Lumio’s starter library — curated drills, technique videos, training plans and worksheets, all tagged to the racket system. You can add, edit or remove resources any time; this just gives you a head start.
+        </p>
+        <LoadLibraryButton T={T} accent={accent} />
+      </div>
+    </div>
+  )
+}
+
+function LoadLibraryButton({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+  const [state, setState] = useState<'idle' | 'loading' | { added: number } | 'error'>('idle')
+  const load = async () => {
+    if (state === 'loading') return
+    setState('loading')
+    try { const added = await seedLumioResources(); setState({ added }) } catch { setState('error') }
+  }
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+      <button onClick={load} disabled={state === 'loading'} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+        {state === 'loading' ? 'Loading…' : '📚 Load Lumio resource library'}
+      </button>
+      {typeof state === 'object' && <span style={{ fontSize: 12, color: T.good }}>✓ Added {state.added} resource{state.added === 1 ? '' : 's'} {state.added === 0 ? '(already loaded)' : ''}</span>}
+      {state === 'error' && <span style={{ fontSize: 12, color: T.bad }}>Couldn’t load — try again.</span>}
     </div>
   )
 }
