@@ -112,6 +112,11 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
         addVenue({ id: venueId, name: homeCourt.trim(), type: 'Home court', address: '', distance: 'Home base', manager: name.trim() || 'You', managerPhone: phone.trim() || '', managerEmail: email.trim() || '', access: '', facilities: [], courts: [] })
         const cur = getSettings()
         setSettings({ primaryVenueId: venueId, syncedVenues: [...new Set([...(cur.syncedVenues || []), venueId])] })
+        // Seed the live Court Planner venue too, so it's selectable for staff home venue etc.
+        try {
+          const uid = await currentCoachId()
+          if (uid) await sb().from('coach_venues').insert({ coach_id: uid, name: homeCourt.trim(), contact_name: name.trim() || null, contact_phone: phone.trim() || null, contact_email: email.trim() || null, is_home: true })
+        } catch { /* non-blocking */ }
       }
 
       // "Set it up for me" — notify the Lumio team (fire and forget).
