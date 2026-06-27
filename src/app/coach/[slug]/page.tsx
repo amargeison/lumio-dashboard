@@ -49,6 +49,7 @@ import { CoachImport } from './_components/CoachImport'
 import { CoachCompliance } from './_components/CoachCompliance'
 import { LiveRoster } from './_components/LiveRoster'
 import { LiveSessionPlanner } from './_components/LiveSessionPlanner'
+import { LiveLessons } from './_components/LiveLessons'
 import { CoachGpsVideo } from './_components/CoachGpsVideo'
 import { LiveEffortRewards } from './_components/LiveEffortRewards'
 import { LiveStaff } from './_components/LiveStaff'
@@ -276,7 +277,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'staff':    return <LiveStaff T={T} accent={accent} density={density} />
         case 'calendar': return <LiveModule config={BOOKINGS_CONFIG} T={T} accent={accent} />
         case 'belts':       return <RacketProgressionView T={T} accent={accent} />
-        case 'lessons':     return <LiveModule config={LESSONS_CONFIG} T={T} accent={accent} />
+        case 'lessons':     return <LiveLessons T={T} accent={accent} />
         case 'camps':       return <LiveModule config={CAMPS_CONFIG} T={T} accent={accent} />
         case 'payments':    return <LiveModule config={PAYMENTS_CONFIG} T={T} accent={accent} />
         case 'gpsheatmaps': return <LiveEffortRewards T={T} accent={accent} density={density} />

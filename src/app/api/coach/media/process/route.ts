@@ -57,6 +57,31 @@ async function processMedia(id: string, coachId: string, media: any) {
     title: media.title || review.focus || 'Lesson summary',
     updated_at: new Date().toISOString(),
   }).eq('id', id)
+
+  // Also create the Lesson Summary itself (a coach_sessions row) so it shows up in
+  // Lesson Summaries with nothing for the coach to type.
+  const { error: lessonErr } = await sb.from('coach_sessions').insert({
+    coach_id: coachId,
+    player_name: media.player_name || 'Recorded session',
+    session_date: new Date().toISOString().slice(0, 10),
+    focus: review.focus || 'Lesson summary',
+    rating: typeof review.rating === 'number' ? review.rating : 3,
+    summary: review.coachNote || '',
+    ai_review: formatReview(review),
+  })
+  if (lessonErr) console.error('[coach/media/process] lesson row insert', lessonErr)
+}
+
+function formatReview(r: { focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]; homework?: string; nextFocus?: string; coachNote?: string }): string {
+  const out: string[] = []
+  if (r.focus) out.push(`Focus: ${r.focus}`)
+  if (r.covered?.length) out.push('\nWhat we covered:\n' + r.covered.map(x => `• ${x}`).join('\n'))
+  if (r.takeaways?.length) out.push('\nKey takeaways:\n' + r.takeaways.map(x => `• ${x}`).join('\n'))
+  if (r.drills?.length) out.push('\nDrills: ' + r.drills.join(', '))
+  if (r.homework) out.push('\nHomework: ' + r.homework)
+  if (r.nextFocus) out.push('\nNext session focus: ' + r.nextFocus)
+  if (r.coachNote) out.push('\n' + r.coachNote)
+  return out.join('\n')
 }
 
 // Turn a session transcript into the same shape the Lesson Summaries use, so the
