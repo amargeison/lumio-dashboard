@@ -16,7 +16,7 @@ export const COACH_ORG = {
   coach:      'Vincent Jones',
   coachShort: 'Vincent',
   academy:    'Lumio Tennis Academy',
-  cert:       'LTA Accredited+ Coach · Performance',
+  cert:       'Performance Coach',
   date:       'Thu, 11 Jun 2026',
   venue:      'Riverside Tennis Centre · Courts 1–6',
   season:     { activePlayers: 34, lessonsThisWeek: 41, retention: 92, beltsAwarded: 7 },

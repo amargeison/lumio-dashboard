@@ -286,7 +286,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'payments':    return <LiveModule config={PAYMENTS_CONFIG} T={T} accent={accent} />
         case 'gpsheatmaps': return <LiveEffortRewards T={T} accent={accent} density={density} />
         case 'videoaudio':  return <CoachGpsVideo T={T} accent={accent} />
-        case 'planner':     return <LiveSessionPlanner T={T} accent={accent} density={density} />
+        case 'planner':     return <LiveSessionPlanner T={T} accent={accent} density={density} onNavigate={setActive} />
         case 'venues':      return <LiveModule config={COURTS_CONFIG} T={T} accent={accent} />
         case 'development': return <LiveDevelopment T={T} accent={accent} />
         case 'equipment':   return <LiveModule config={EQUIPMENT_CONFIG} T={T} accent={accent} />

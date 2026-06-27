@@ -78,6 +78,29 @@ export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent
           <a href="mailto:hello@lumiosports.com?subject=Custom%20racket%20pathway" style={{ appearance: 'none', textDecoration: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Request customisation</a>
         </div>
       </div>
+
+      {/* Session Planner */}
+      <div style={card}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: T.text }}>Session Planner</h3>
+          <span style={{ marginLeft: 'auto' }}>{lock}</span>
+        </div>
+        <p style={{ margin: '0 0 12px', fontSize: 12.5, color: T.text3, lineHeight: 1.5 }}>
+          New sessions auto-build a timed run-sheet and kit list from the session type, and the planner mirrors your Booking Calendar for the week. The run-sheet templates and kit lists are Lumio’s standard set.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {['Private', 'Group', 'Cardio', 'Match play', 'Mini / red ball'].map(t => (
+            <span key={t} style={{ fontSize: 11.5, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '4px 11px' }}>{t} · timed run-sheet + kit</span>
+          ))}
+        </div>
+        <div style={{ marginTop: 14, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>Custom run-sheets &amp; kit?</div>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 2, lineHeight: 1.45 }}>Your own session structures, phase timings or academy kit lists — set up for you as an add-on.</div>
+          </div>
+          <a href="mailto:hello@lumiosports.com?subject=Custom%20run-sheets" style={{ appearance: 'none', textDecoration: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Request customisation</a>
+        </div>
+      </div>
     </div>
   )
 }

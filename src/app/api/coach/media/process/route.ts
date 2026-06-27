@@ -80,43 +80,89 @@ async function processGroup(coachId: string, rows: any[]) {
   }
 }
 
-// Turn a session transcript into the same shape the Lesson Summaries use.
-async function buildLessonSummary(transcript: string, playerName: string | null) {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('AI not configured (ANTHROPIC_API_KEY missing).')
-  const client = new Anthropic({ apiKey })
-  const res = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 1500,
-    messages: [{
-      role: 'user',
-      content: `You are an experienced LTA tennis coach. Below is the transcript of a coaching session${playerName ? ` with ${playerName}` : ''} (it may be in several parts that together cover the whole lesson). Write the single lesson summary that would be shared with the player/parent.
+// ── Lumio Master Coach — the consistent expert reviewer that turns a session
+// transcript into the shared lesson summary. Two passes: a world-class coach
+// drafts it, then a head-coach QA pass checks every claim against the transcript
+// and tightens it. A fixed persona + hard anti-hallucination rule + gold examples
+// keep the output consistent across coaches and sessions.
 
-Return ONLY valid JSON (no markdown) in this exact shape:
+const MASTER_COACH_SYSTEM = `You are Lumio's Master Coach — a world-class, LTA-qualified tennis coach writing the lesson summary that is shared with the player and their parent. Your summaries are known for being specific, encouraging and genuinely useful.
+
+Non-negotiable rules:
+1. ONLY use what is actually in the transcript. Never invent drills, scores, numbers, shots, or outcomes that were not mentioned. If something wasn't covered, leave it out — a shorter honest summary always beats an embellished one.
+2. Be specific to THIS session: reference the actual cues, drills and moments from the transcript, not generic tennis advice.
+3. Warm, plain English a parent understands; gloss any jargon in a few words.
+4. "coachNote" is a personal 2–3 sentence note to the player — encouraging, honest and specific.
+5. Before finalising, silently re-check every field against the transcript and remove anything not clearly supported.
+
+Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:
 {
   "focus": "the main theme of the session, one short line",
   "covered": ["3-6 concrete things worked on across the whole lesson"],
   "takeaways": ["2-4 key coaching points / what to remember"],
-  "drills": ["named drills or exercises used, if any"],
+  "drills": ["named drills or exercises actually used (omit if none mentioned)"],
   "homework": "what to practise before next time (or 'Not set')",
   "nextFocus": "what to work on next session",
   "coachNote": "2-3 sentence warm, specific note to the player",
   "rating": 4
 }
-- Infer everything from the transcript; be specific to what was actually said.
-- "rating" is the session quality/effort 1-5 (integer).
-- If the transcript is unclear or off-topic, still return the JSON with best-effort values.
+"rating" is the session quality/effort, an integer 1-5.`
 
-TRANSCRIPT:
-${transcript.slice(0, 180000)}`,
+// One compact gold example anchors tone, length and structure (consistency lever).
+const GOLD_EXAMPLE = `EXAMPLE (style reference only — never copy its content):
+Transcript snippet: "...right, big focus today on the second serve, we want that kick. Toss a little more over your head... good, brushing up 7 to 1 o'clock... when you rushed there the toss drifted forward and it went flat. Let's do the spin-only ladder, ten in a row... then second-serve-only points to eleven. Homework, shadow serve, thirty a day, film a set..."
+Good JSON:
+{"focus":"Second serve — kick & reliability","covered":["Toss height — slightly more over the head for the kick","Brushing up the back of the ball 7→1 o'clock","Live points starting from second serve only"],"takeaways":["Kick gives a much safer margin over the net","When rushed the toss drifts forward and the serve goes flat"],"drills":["Spin-only serve ladder (10 in a row)","Second-serve-only points to 11"],"homework":"Shadow-serve 30 reps a day; film one set.","nextFocus":"Carry the kick serve into serve+1 patterns","coachNote":"Really good progress on the second serve today — when you trust the higher toss it's a different shot. Keep the daily shadow serves going.","rating":4}`
+
+async function buildLessonSummary(transcript: string, playerName: string | null) {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('AI not configured (ANTHROPIC_API_KEY missing).')
+  const client = new Anthropic({ apiKey })
+  const clipped = transcript.slice(0, 180000)
+
+  // Pass 1 — draft.
+  const draftRes = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1500,
+    temperature: 0.2,
+    system: MASTER_COACH_SYSTEM,
+    messages: [{
+      role: 'user',
+      content: `${GOLD_EXAMPLE}\n\nNow write the summary for this real session${playerName ? ` with ${playerName}` : ''} (it may be in several parts that together cover one lesson).\n\nTRANSCRIPT:\n${clipped}`,
     }],
   })
-  let txt = ''
-  for (const b of res.content) if (b.type === 'text') txt += b.text
+  const draft = extractReview(textOf(draftRes))
+  if (!draft) throw new Error('The AI could not summarise this transcript.')
+
+  // Pass 2 — head-coach QA: verify every claim against the transcript, tighten,
+  // keep the schema. Best-effort: if it fails, ship the (already good) draft.
+  try {
+    const qaRes = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1500,
+      temperature: 0.1,
+      system: `You are Lumio's Head Coach doing a final QA on a lesson summary a coach has drafted. Check EVERY claim against the transcript and remove or correct anything not clearly supported by it (no invented drills, numbers or outcomes). Tighten the wording, keep it specific and warm, and keep EXACTLY the same JSON schema and field names. Return ONLY the improved JSON.`,
+      messages: [{
+        role: 'user',
+        content: `TRANSCRIPT:\n${clipped}\n\nDRAFT SUMMARY:\n${JSON.stringify(draft)}`,
+      }],
+    })
+    const refined = extractReview(textOf(qaRes))
+    if (refined) return refined
+  } catch (e) { console.warn('[coach/media/process] QA pass skipped', e) }
+  return draft
+}
+
+function textOf(res: { content: Array<{ type: string; text?: string }> }): string {
+  let t = ''
+  for (const b of res.content) if (b.type === 'text' && b.text) t += b.text
+  return t
+}
+function extractReview(txt: string): any | null {
   const cleaned = txt.replace(/```json\s*/gi, '').replace(/```/g, '').trim()
   const m = cleaned.match(/\{[\s\S]*\}/)
-  if (!m) throw new Error('The AI could not summarise this transcript.')
-  try { return JSON.parse(m[0]) } catch { throw new Error('The AI summary could not be parsed.') }
+  if (!m) return null
+  try { return JSON.parse(m[0]) } catch { return null }
 }
 
 function formatReview(r: { focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]; homework?: string; nextFocus?: string; coachNote?: string }): string {
