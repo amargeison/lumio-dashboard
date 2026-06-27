@@ -69,6 +69,7 @@ async function processGroup(coachId: string, rows: any[]) {
     rating: typeof review.rating === 'number' ? review.rating : 3,
     summary: review.coachNote || '',
     ai_review: formatReview(review),
+    review_json: review,
   })
   if (lessonErr) console.error('[coach/media/process] lesson row insert', lessonErr)
 

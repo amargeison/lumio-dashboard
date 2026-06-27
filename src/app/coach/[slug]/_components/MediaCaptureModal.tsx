@@ -8,7 +8,7 @@
 import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { sb } from '../_lib/coach-db'
+import { sb, dbInsert } from '../_lib/coach-db'
 
 export type LessonReview = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
@@ -34,12 +34,19 @@ const DEMO_REVIEW: LessonReview = {
   rating: 5,
 }
 
-export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind = 'audio', playerName, demo = false }: {
+export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind = 'audio', playerName, demo = false, players = [] }: {
   T: ThemeTokens; accent: AccentTokens; onClose: () => void
   onSummary?: (review: LessonReview, transcript: string) => void
   defaultKind?: 'audio' | 'video'; playerName?: string; demo?: boolean
+  players?: { id: string; name: string }[]
 }) {
   const [kind, setKind] = useState<'audio' | 'video'>(defaultKind)
+  // Which player this recording belongs to. '__new__' reveals a free-text field;
+  // a brand-new name is added to the roster (coach_players) before processing so
+  // the summary lands on that player's profile.
+  const [playerSel, setPlayerSel] = useState(playerName ?? '')
+  const [newPlayer, setNewPlayer] = useState('')
+  const resolvePlayer = () => (playerSel === '__new__' ? newPlayer : playerSel).trim()
   const [phase, setPhase] = useState<Phase>('choose')
   const [err, setErr] = useState('')
   const [secs, setSecs] = useState(0)
@@ -84,12 +91,12 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
     uploadAll(files.map(f => ({ blob: f as Blob, name: f.name })))
   }
 
-  const uploadOne = async (blob: Blob, name: string): Promise<string> => {
+  const uploadOne = async (blob: Blob, name: string, who: string): Promise<string> => {
     const isVideo = blob.type.startsWith('video')
     // 1. Get a one-time signed upload URL (server also creates the media row).
     const signRes = await fetch('/api/coach/media/sign', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind: isVideo ? 'video' : kind, playerName, fileName: name }),
+      body: JSON.stringify({ kind: isVideo ? 'video' : kind, playerName: who || playerName, fileName: name }),
     })
     if (signRes.status === 401) throw new Error('Uploading recordings needs a signed-in coach account. The demo runs on sample data — sign up for founder access to add your own audio/video.')
     const sign = await signRes.json().catch(() => ({}))
@@ -103,10 +110,15 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
   const uploadAll = async (items: { blob: Blob; name: string }[]) => {
     setPhase('uploading'); setErr('')
     try {
+      const who = resolvePlayer()
+      // New player typed → add to the roster first so the summary lands on a profile.
+      if (!demo && who && !players.some(p => p.name.toLowerCase() === who.toLowerCase())) {
+        await dbInsert('coach_players', { name: who }).catch(() => {})
+      }
       const ids: string[] = []
       for (let i = 0; i < items.length; i++) {
         setUploadInfo(items.length > 1 ? `Uploading ${i + 1} of ${items.length}…` : '')
-        ids.push(await uploadOne(items[i].blob, items[i].name))
+        ids.push(await uploadOne(items[i].blob, items[i].name, who))
       }
       await fetch('/api/coach/media/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) })
       setPhase('processing')
@@ -160,25 +172,40 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
               <p style={{ fontSize: 11, color: T.text3, margin: 0 }}>Want to summarise your own lessons? Sign up for founder access.</p>
             </div>
           )}
-          {phase === 'choose' && !demo && (
+          {phase === 'choose' && !demo && (() => {
+            const who = resolvePlayer()
+            const fieldStyle: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box' }
+            return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, marginBottom: 6 }}>Player</label>
+                <select value={playerSel} onChange={e => setPlayerSel(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
+                  <option value="">Choose a player…</option>
+                  {players.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  <option value="__new__">+ New player…</option>
+                </select>
+                {playerSel === '__new__' && (
+                  <input value={newPlayer} onChange={e => setNewPlayer(e.target.value)} placeholder="New player's name" autoFocus style={{ ...fieldStyle, marginTop: 8 }} />
+                )}
+              </div>
               <div style={{ display: 'flex', gap: 8, background: T.hover, borderRadius: 9, padding: 3, width: 'fit-content' }}>
                 {(['audio', 'video'] as const).map(k => (
                   <button key={k} onClick={() => setKind(k)} style={{ ...btn(kind === k ? T.panel : 'transparent', kind === k ? T.text : T.text2), padding: '6px 14px', boxShadow: kind === k ? `0 0 0 1px ${T.border}` : 'none' }}>{k === 'audio' ? '🎙️ Audio' : '🎬 Video'}</button>
                 ))}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <button onClick={startRecording} style={{ ...btn(accent.hex, T.btnText), padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <button onClick={startRecording} disabled={!who} style={{ ...btn(accent.hex, T.btnText), padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: who ? 1 : 0.45, cursor: who ? 'pointer' : 'not-allowed' }}>
                   <span style={{ fontSize: 26 }}>⏺</span> Record now
                 </button>
-                <button onClick={() => fileRef.current?.click()} style={{ ...btn(T.panel2, accent.hex), border: `1px dashed ${accent.border}`, padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <button onClick={() => who && fileRef.current?.click()} disabled={!who} style={{ ...btn(T.panel2, accent.hex), border: `1px dashed ${accent.border}`, padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: who ? 1 : 0.45, cursor: who ? 'pointer' : 'not-allowed' }}>
                   <span style={{ fontSize: 26 }}>⬆</span> Upload file(s)
                 </button>
               </div>
               <input ref={fileRef} type="file" accept="audio/*,video/*" multiple style={{ display: 'none' }} onChange={e => onPickFiles(Array.from(e.target.files || []))} />
-              <p style={{ fontSize: 11, color: T.text3, margin: 0 }}>Recorded the lesson in sections, or on a clip-on mic? Select <b>multiple files</b> — they’re combined into one summary. Long files are compressed automatically.</p>
+              <p style={{ fontSize: 11, color: T.text3, margin: 0 }}>{who ? <>Recorded the lesson in sections, or on a clip-on mic? Select <b>multiple files</b> — they’re combined into one summary. Long files are compressed automatically.</> : <>Choose a player first — the AI summary is saved to their profile.</>}</p>
             </div>
-          )}
+            )
+          })()}
 
           {phase === 'recording' && (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
