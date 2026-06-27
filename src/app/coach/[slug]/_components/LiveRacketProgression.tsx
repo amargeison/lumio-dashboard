@@ -11,7 +11,7 @@
 import { useState, useMemo, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, RACKET_STAGES, SKILLS_BY_STAGE } from '../_lib/coach-db'
+import { useCoachTable, RACKET_STAGES, SKILLS_BY_STAGE, RACKET_SKILLS } from '../_lib/coach-db'
 
 type Player = { id: string; name: string; level?: string | null; racket_stage?: string | null }
 type SkillRow = { player_id: string; skill: string; score: number }
@@ -177,8 +177,11 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
           </div>
         )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {(SKILLS_BY_STAGE[openStage.id] || []).map(sk => (
-            <div key={sk} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px', fontSize: 13, fontWeight: 600, color: T.text }}>{sk}</div>
+          {(RACKET_SKILLS[openStage.id] || []).map(sk => (
+            <div key={sk.name} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{sk.name}</div>
+              <div style={{ fontSize: 11.5, color: T.text2, marginTop: 3, lineHeight: 1.45 }}>{sk.note}</div>
+            </div>
           ))}
         </div>
       </div>
@@ -253,7 +256,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
 }
 
 // Printable racket-award certificate (live equivalent of the demo's).
-function printRacketCertificate(playerName: string, stage: { name: string; colour: string }, skills: string[]) {
+export function printRacketCertificate(playerName: string, stage: { name: string; colour: string }, skills: string[]) {
   if (typeof window === 'undefined') return
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const chips = skills.map(s => `<span class="chip">${esc(s)}</span>`).join('')
