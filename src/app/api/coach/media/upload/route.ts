@@ -11,7 +11,15 @@ export async function POST(req: NextRequest) {
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
 
   let form: FormData
-  try { form = await req.formData() } catch { return NextResponse.json({ error: 'Invalid upload' }, { status: 400 }) }
+  try {
+    form = await req.formData()
+  } catch (e) {
+    console.error('[coach/media/upload] formData failed', e)
+    const mb = Number(req.headers.get('content-length') || 0) / 1048576
+    return NextResponse.json({
+      error: `Couldn't read the upload${mb ? ` (~${mb.toFixed(0)}MB)` : ''} — the file likely exceeds the server's request-size limit. ${e instanceof Error ? e.message : ''}`.trim(),
+    }, { status: 413 })
+  }
 
   const file = form.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })

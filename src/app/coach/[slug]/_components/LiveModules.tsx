@@ -4,7 +4,7 @@
 // drives every data module (players, staff, bookings, lessons, camps,
 // payments) against the RLS-protected coach tables via coach-db.
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, RACKET_STAGES, type CoachTable } from '../_lib/coach-db'
 
@@ -130,7 +130,7 @@ function FormModal({ config, initial, onClose, onSave, T, accent }: {
 }
 
 // ── Generic live module ─────────────────────────────────────────────────────
-export function LiveModule({ config, T, accent }: { config: ModuleConfig; T: ThemeTokens; accent: AccentTokens }) {
+export function LiveModule({ config, T, accent, headerExtra, tabs }: { config: ModuleConfig; T: ThemeTokens; accent: AccentTokens; headerExtra?: ReactNode; tabs?: ReactNode }) {
   const { rows, loading, add, edit, remove } = useCoachTable(config.table)
   const [editing, setEditing] = useState<Record<string, any> | null | undefined>(undefined) // undefined = closed
 
@@ -143,10 +143,14 @@ export function LiveModule({ config, T, accent }: { config: ModuleConfig; T: The
           <h2 style={{ color: T.text, fontSize: 22, fontWeight: 700, margin: 0 }}>{config.title}</h2>
           <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>{config.blurb}</p>
         </div>
-        <button onClick={() => setEditing(null)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-          <Icon name="plus" size={14} /> Add {config.singular}
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {headerExtra}
+          <button onClick={() => setEditing(null)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+            <Icon name="plus" size={14} /> Add {config.singular}
+          </button>
+        </div>
       </div>
+      {tabs}
 
       {loading ? (
         <p style={{ color: T.text3, fontSize: 13, padding: '40px 0', textAlign: 'center' }}>Loading…</p>
@@ -261,8 +265,8 @@ export const BOOKINGS_CONFIG: ModuleConfig = {
 }
 
 export const LESSONS_CONFIG: ModuleConfig = {
-  table: 'coach_sessions', title: 'Lesson summaries', singular: 'Lesson summary',
-  blurb: 'Log sessions and generate AI reviews.',
+  table: 'coach_sessions', title: 'Lesson Summaries', singular: 'Lesson summary',
+  blurb: 'What you covered, the key takeaways and the homework — ready to share with players and parents.',
   fields: [
     { key: 'player_name', label: 'Player', type: 'text', required: true },
     { key: 'session_date', label: 'Date', type: 'date' },
