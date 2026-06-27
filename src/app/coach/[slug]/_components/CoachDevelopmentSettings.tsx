@@ -101,6 +101,24 @@ export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent
           <a href="mailto:hello@lumiosports.com?subject=Custom%20run-sheets" style={{ appearance: 'none', textDecoration: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Request customisation</a>
         </div>
       </div>
+
+      {/* Training Camps */}
+      <div style={card}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: T.text }}>Training Camps</h3>
+          <span style={{ marginLeft: 'auto' }}>{lock}</span>
+        </div>
+        <p style={{ margin: '0 0 6px', fontSize: 12.5, color: T.text3, lineHeight: 1.5 }}>
+          Camps run end-to-end — bookings, itinerary, kit, targets and finance. The <strong style={{ color: T.text }}>Lumio Master Coach AI</strong> designs the day-by-day itinerary, equipment list and objectives from your camp setup; attendees link to the Player Roster so each camp pack pulls their real racket, attendance and skills. Create and manage camps in the <strong style={{ color: T.text }}>Training Camps</strong> module.
+        </p>
+        <div style={{ marginTop: 12, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>Branded camp packs &amp; certificates?</div>
+            <div style={{ fontSize: 11.5, color: T.text2, marginTop: 2, lineHeight: 1.45 }}>Your academy branding on player packs, certificates and itineraries — available as an add-on.</div>
+          </div>
+          <a href="mailto:hello@lumiosports.com?subject=Custom%20camp%20packs" style={{ appearance: 'none', textDecoration: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Request customisation</a>
+        </div>
+      </div>
     </div>
   )
 }

@@ -7,8 +7,9 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import type { Venue } from '../_lib/coach-data'
 import { addVenue } from '../_lib/venues-store'
 import { setSettings, getSettings } from '../_lib/settings-store'
+import { dbInsert } from '../_lib/coach-db'
 
-export function AddVenueModal({ T, accent, onClose }: { T: ThemeTokens; accent: AccentTokens; density: Density; onClose: () => void }) {
+export function AddVenueModal({ T, accent, onClose }: { T: ThemeTokens; accent: AccentTokens; density?: Density; onClose: () => void }) {
   const [name, setName] = useState('')
   const [type, setType] = useState('LTA-registered tennis centre')
   const [address, setAddress] = useState('')
@@ -44,6 +45,13 @@ export function AddVenueModal({ T, accent, onClose }: { T: ThemeTokens; accent: 
     const cur = getSettings()
     if (homeBase) setSettings({ primaryVenueId: venue.id })
     if (calSync) setSettings({ syncedVenues: [...new Set([...(cur.syncedVenues || []), venue.id])] })
+    // Also write to the live Court Planner (coach_venues), best-effort.
+    dbInsert('coach_venues', {
+      name: name.trim(), address: address.trim() || null, contact_name: manager.trim() || null,
+      contact_phone: phone.trim() || null, contact_email: email.trim() || null,
+      facilities: facilities.split(',').map(s => s.trim()).filter(Boolean).join(', ') || null,
+      access_note: access.trim() || null, is_home: homeBase,
+    }).catch(() => {})
     onClose()
   }
 

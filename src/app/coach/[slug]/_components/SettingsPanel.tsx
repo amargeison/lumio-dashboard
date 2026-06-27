@@ -8,6 +8,7 @@ import { useCoachSettings } from '../_lib/use-settings'
 import { setSettings, resetSettings, ACCENT_PRESETS, DEFAULT_SETTINGS, type AccentKey } from '../_lib/settings-store'
 import { COACH_SIDEBAR, COACH_GROUPS, VENUES } from '../_lib/coach-data'
 import { getAddedVenues } from '../_lib/venues-store'
+import { AddVenueModal } from './AddVenueModal'
 import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
 import { IntegrationsPanel } from './IntegrationsPanel'
 
@@ -83,6 +84,7 @@ const KIT_OFFERS = [
 export function SettingsPanel({ T, accent, density }: Common) {
   const s = useCoachSettings()
   const [open, setOpen] = useState<string | null>(null)
+  const [addVenueOpen, setAddVenueOpen] = useState(false)
   // Demo "order" state — which kit items the coach has added to their order.
   const [ordered, setOrdered] = useState<string[]>([])
 
@@ -216,11 +218,14 @@ export function SettingsPanel({ T, accent, density }: Common) {
                       onChange={() => setSettings({ syncedVenues: on ? (s.syncedVenues || []).filter(x => x !== v.id) : [...new Set([...(s.syncedVenues || []), v.id])] })} />
                   })}
                 </Field>
+                <button onClick={() => { setOpen(null); setAddVenueOpen(true) }} style={{ appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, marginTop: 4 }}>+ Add venue</button>
               </>
             )
           })()}
         </Modal>
       )}
+
+      {addVenueOpen && <AddVenueModal T={T} accent={accent} onClose={() => setAddVenueOpen(false)} />}
 
       {open === 'pricing' && (
         <Modal T={T} accent={accent} title="Pricing & packages" sub="Reflected on the Payments page" onClose={() => setOpen(null)}>
