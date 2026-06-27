@@ -93,6 +93,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
   const [d, setD] = useState<Record<string, any>>(initial ?? {})
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
+  const { rows: venues } = useCoachTable<{ id: string; name: string }>('coach_venues')
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
   const input: React.CSSProperties = { width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none', marginTop: 5 }
   const lbl: React.CSSProperties = { display: 'block', color: T.text3, fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }
@@ -102,7 +103,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
     if (!String(d.name ?? '').trim()) { setErr('Name is required'); return }
     setSaving(true); setErr('')
     try {
-      const row = { name: d.name, role: d.role || null, email: d.email || null, phone: d.phone || null, qualifications: d.qualifications || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }
+      const row = { name: d.name, role: d.role || null, email: d.email || null, phone: d.phone || null, qualifications: d.qualifications || null, home_venue: d.home_venue || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }
       if (initial?.id) await dbUpdate('coach_staff', initial.id, row); else await dbInsert('coach_staff', row)
       onSaved()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Save failed'); setSaving(false) }
@@ -115,7 +116,13 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {fld('name', 'Name')}
           {fld('role', 'Role', 'text', 'e.g. Assistant Coach')}
-          {fld('qualifications', 'Qualifications', 'text', 'e.g. LTA Level 3')}
+          {fld('qualifications', 'Qualifications', 'text', 'e.g. Level 3')}
+          <div><label style={lbl}>Home venue</label>
+            <select value={d.home_venue ?? ''} onChange={e => set('home_venue', e.target.value)} style={input}>
+              <option value="">{venues.length ? '— Select venue —' : 'Add venues in Settings → Venues'}</option>
+              {venues.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
+            </select>
+          </div>
           {fld('email', 'Email')}
           {fld('phone', 'Phone')}
         </div>

@@ -20,6 +20,7 @@ export type CoachTable =
   | 'coach_messages'
   | 'coach_session_plans'
   | 'coach_courts'
+  | 'coach_venues'
   | 'coach_development'
   | 'coach_equipment'
   | 'coach_resources'
