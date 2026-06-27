@@ -15,10 +15,28 @@ export type LessonReview = {
 }
 type Phase = 'choose' | 'recording' | 'uploading' | 'processing' | 'done' | 'error'
 
-export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind = 'audio', playerName }: {
+// Canned result for the demo simulation (no real upload/transcription). Mirrors
+// the demo's Tom Okafor second-serve lesson so the flow feels real to prospects.
+const DEMO_REVIEW: LessonReview = {
+  focus: 'Second serve — kick & reliability',
+  covered: [
+    'Service toss height & consistency — slightly more over the head for kick',
+    'Brushing up the back of the ball 7→1 o’clock for topspin',
+    'Targeting the backhand side of the ad court',
+    'Live points starting from second serve only',
+  ],
+  takeaways: ['Kick serve clearing the net by 1m+ — much safer margin', 'When rushed, the toss drifts forward → flatter, riskier serve'],
+  drills: ['Spin-only serve ladder (10 in a row)', 'Target cones — ad-court backhand', 'Second-serve-only points to 11'],
+  homework: 'Shadow-serve 30 reps/day focusing on the up-and-over brush; film one set.',
+  nextFocus: 'Carry the kick serve into serve+1 forehand patterns.',
+  coachNote: 'Real progress today — confidence on the second ball is the difference-maker at his level. Hold him to the higher toss.',
+  rating: 5,
+}
+
+export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind = 'audio', playerName, demo = false }: {
   T: ThemeTokens; accent: AccentTokens; onClose: () => void
   onSummary?: (review: LessonReview, transcript: string) => void
-  defaultKind?: 'audio' | 'video'; playerName?: string
+  defaultKind?: 'audio' | 'video'; playerName?: string; demo?: boolean
 }) {
   const [kind, setKind] = useState<'audio' | 'video'>(defaultKind)
   const [phase, setPhase] = useState<Phase>('choose')
@@ -107,6 +125,9 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
 
   const save = () => { if (review) onSummary?.(review, transcript); onClose() }
 
+  // Demo simulation: no real upload — show the flow then a canned summary.
+  const runDemo = () => { setPhase('processing'); setErr(''); setTimeout(() => { setReview(DEMO_REVIEW); setTranscript(''); setPhase('done') }, 1800) }
+
   // ── UI ───────────────────────────────────────────────────────────────────────
   const btn = (bg: string, color: string): CSSProperties => ({ appearance: 'none', border: 0, borderRadius: 10, padding: '11px 16px', fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: 'pointer', background: bg, color })
   const mm = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
@@ -125,7 +146,16 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
         </div>
 
         <div style={{ padding: 20 }}>
-          {phase === 'choose' && (
+          {phase === 'choose' && demo && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.55 }}>See the full flow — a recording becomes a shareable AI lesson summary in seconds. <b style={{ color: T.text }}>This is a demo.</b> Founder accounts can upload their own audio/video (single or multiple files per lesson).</div>
+              <button onClick={runDemo} style={{ ...btn(accent.hex, T.btnText), padding: '22px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 26 }}>▶</span> Upload a demo clip &amp; see the AI summary
+              </button>
+              <p style={{ fontSize: 11, color: T.text3, margin: 0 }}>Want to summarise your own lessons? Sign up for founder access.</p>
+            </div>
+          )}
+          {phase === 'choose' && !demo && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', gap: 8, background: T.hover, borderRadius: 9, padding: 3, width: 'fit-content' }}>
                 {(['audio', 'video'] as const).map(k => (
