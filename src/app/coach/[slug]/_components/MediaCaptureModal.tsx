@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { sb } from '../_lib/coach-db'
 
 export type LessonReview = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
@@ -84,15 +85,19 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
   }
 
   const uploadOne = async (blob: Blob, name: string): Promise<string> => {
-    const fd = new FormData()
-    fd.append('file', blob, name)
-    fd.append('kind', blob.type.startsWith('video') ? 'video' : kind)
-    if (playerName) fd.append('playerName', playerName)
-    const up = await fetch('/api/coach/media/upload', { method: 'POST', body: fd })
-    const upJson = await up.json().catch(() => ({}))
-    if (up.status === 401) throw new Error('Uploading recordings needs a signed-in coach account. The demo runs on sample data — sign up for founder access to add your own audio/video.')
-    if (!up.ok) throw new Error(upJson.error || `Upload failed (${up.status})`)
-    return upJson.id as string
+    const isVideo = blob.type.startsWith('video')
+    // 1. Get a one-time signed upload URL (server also creates the media row).
+    const signRes = await fetch('/api/coach/media/sign', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind: isVideo ? 'video' : kind, playerName, fileName: name }),
+    })
+    if (signRes.status === 401) throw new Error('Uploading recordings needs a signed-in coach account. The demo runs on sample data — sign up for founder access to add your own audio/video.')
+    const sign = await signRes.json().catch(() => ({}))
+    if (!signRes.ok) throw new Error(sign.error || `Could not start upload (${signRes.status})`)
+    // 2. Upload the bytes straight to Supabase Storage — no Next/proxy size limit.
+    const { error } = await sb().storage.from('coach-media').uploadToSignedUrl(sign.path, sign.token, blob, { contentType: blob.type || undefined })
+    if (error) throw new Error('Upload to storage failed: ' + error.message)
+    return sign.id as string
   }
 
   const uploadAll = async (items: { blob: Blob; name: string }[]) => {
