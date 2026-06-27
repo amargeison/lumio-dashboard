@@ -50,12 +50,13 @@ import { CoachCompliance } from './_components/CoachCompliance'
 import { LiveRoster } from './_components/LiveRoster'
 import { LiveSessionPlanner } from './_components/LiveSessionPlanner'
 import { LiveLessons } from './_components/LiveLessons'
+import { LiveBookingCalendar } from './_components/LiveBookingCalendar'
 import { CoachGpsVideo } from './_components/CoachGpsVideo'
 import { LiveEffortRewards } from './_components/LiveEffortRewards'
 import { LiveStaff } from './_components/LiveStaff'
 import {
   LiveModule, RacketProgressionView,
-  BOOKINGS_CONFIG, LESSONS_CONFIG, CAMPS_CONFIG, PAYMENTS_CONFIG,
+  CAMPS_CONFIG, PAYMENTS_CONFIG,
   COURTS_CONFIG, DEVELOPMENT_CONFIG, EQUIPMENT_CONFIG, RESOURCES_CONFIG,
 } from './_components/LiveModules'
 import { useCoachStats } from './_lib/coach-db'
@@ -275,7 +276,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       switch (active) {
         case 'roster':   return <LiveRoster T={T} accent={accent} density={density} />
         case 'staff':    return <LiveStaff T={T} accent={accent} density={density} />
-        case 'calendar': return <LiveModule config={BOOKINGS_CONFIG} T={T} accent={accent} />
+        case 'calendar': return <LiveBookingCalendar T={T} accent={accent} onNavigate={setActive} />
         case 'belts':       return <RacketProgressionView T={T} accent={accent} />
         case 'lessons':     return <LiveLessons T={T} accent={accent} />
         case 'camps':       return <LiveModule config={CAMPS_CONFIG} T={T} accent={accent} />
