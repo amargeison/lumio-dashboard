@@ -17,7 +17,7 @@ const HOME = COACH_ORG.venue.split(' · ')[0]
 export function AddCoachModal({ T, accent, onClose }: { T: ThemeTokens; accent: AccentTokens; density: Density; onClose: () => void }) {
   const [name, setName] = useState('')
   const [role, setRole] = useState<CoachRole>('Coach')
-  const [accreditation, setAccreditation] = useState('LTA Accredited Coach')
+  const [accreditation, setAccreditation] = useState('')
   const [specialisms, setSpecialisms] = useState('')
   const [availability, setAvailability] = useState('Mon–Fri · days')
   const [hours, setHours] = useState('24')
@@ -50,7 +50,7 @@ export function AddCoachModal({ T, accent, onClose }: { T: ThemeTokens; accent: 
       name: name.trim(),
       initials,
       role,
-      accreditation: accreditation.trim() || 'LTA Accredited Coach',
+      accreditation: accreditation.trim() || 'Coach',
       specialisms: specialisms.split(',').map(s => s.trim()).filter(Boolean),
       availability: availability.trim() || 'By arrangement',
       hoursPerWeek: Number(hours) || 0,
@@ -96,7 +96,7 @@ export function AddCoachModal({ T, accent, onClose }: { T: ThemeTokens; accent: 
           </div>
           <div>
             <label style={label}>Accreditation</label>
-            <input value={accreditation} onChange={e => setAccreditation(e.target.value)} placeholder="LTA Accredited Coach" style={input} />
+            <input value={accreditation} onChange={e => setAccreditation(e.target.value)} placeholder="e.g. Qualified Coach, Level 3, LTA Accredited" style={input} />
           </div>
           <div>
             <label style={label}>Specialisms (comma-separated)</label>

@@ -8,9 +8,21 @@
 import { useState } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { useCoachTable, dbInsert, dbRemove, RACKET_STAGES } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbRemove, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
+import { MediaCaptureModal } from './MediaCaptureModal'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
+
+// ── Date helpers for the overview + week calendar ───────────────────────────
+const pad2 = (n: number) => String(n).padStart(2, '0')
+const isoD = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+const addD = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x }
+const mondayOfD = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); const wd = (x.getDay() + 6) % 7; x.setDate(x.getDate() - wd); return x }
+const toMins = (t: string | null) => { if (!t) return null; const m = t.match(/(\d{1,2})\s*:\s*(\d{2})/) || t.match(/^(\d{1,2})(\d{2})$/); if (m) return Math.min(23, +m[1]) * 60 + Math.min(59, +m[2]); const h = t.match(/^(\d{1,2})$/); return h ? +h[1] * 60 : null }
+const hhmm = (m: number) => `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`
+const WD3 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const typeCol = (T: ThemeTokens, accent: AccentTokens, t: string | null) => t === 'Group' ? '#3A8EE0' : t === 'Cardio' ? T.warn : t === 'Match play' ? T.good : t === 'Block' ? T.text3 : accent.hex
+const HRS = Array.from({ length: 14 }, (_, i) => 7 + i) // 07:00–20:00
 const TYPES = ['Private', 'Group', 'Cardio', 'Match play', 'Mini / red ball'] as const
 type SType = typeof TYPES[number]
 
@@ -63,62 +75,270 @@ function runSheet(type: SType, focus: string, mins: number) {
   return tpl.map((p, i) => { const m = i === tpl.length - 1 ? mins - used : Math.round(mins * p.pct); used += m; return { phase: p.phase, mins: m, detail: p.d(f) } })
 }
 
-export function LiveSessionPlanner({ T, accent, density }: Common) {
+export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & { onNavigate?: (s: string) => void }) {
   const plans = useCoachTable<any>('coach_session_plans')
   const players = useCoachTable<any>('coach_players')
+  const bookings = useCoachTable<any>('coach_bookings')
+  const skills = useCoachTable<any>('coach_player_skills')
+  const [tab, setTab] = useState<'overview' | 'today' | 'week' | 'month'>('overview')
   const [open, setOpen] = useState(false)
+  const [prefill, setPrefill] = useState<any | null>(null)
   const [sel, setSel] = useState<any | null>(null)
+
+  const today = new Date()
+  const todayISO = isoD(today)
+  const weekStart = mondayOfD(today)
+  const weekDays = Array.from({ length: 7 }, (_, i) => addD(weekStart, i))
+  const weekEndISO = isoD(addD(weekStart, 7))
+
+  // A booking "has a plan" if a session plan matches its player + date.
+  const planFor = (b: any) => plans.rows.find(pl => (pl.group_name || '').trim().toLowerCase() === (b.player_name || '').trim().toLowerCase() && pl.session_date === b.booking_date)
+  const sortByTime = (a: any, b: any) => (toMins(a.start_time) ?? 9999) - (toMins(b.start_time) ?? 9999)
+  const upcoming = bookings.rows.filter(b => (b.booking_date || '') >= todayISO && b.status !== 'cancelled')
+    .sort((a, b) => (a.booking_date || '').localeCompare(b.booking_date || '') || sortByTime(a, b))
+  const nextUp = upcoming[0] || null
+  const needsPlan = upcoming.filter(b => !planFor(b)).slice(0, 8)
+  const todays = bookings.rows.filter(b => b.booking_date === todayISO && b.status !== 'cancelled').sort(sortByTime)
+  const weekStartISO = isoD(weekStart)
+  const weekCount = bookings.rows.filter(b => (b.booking_date || '') >= weekStartISO && (b.booking_date || '') < weekEndISO && b.status !== 'cancelled').length
+  const pending = bookings.rows.filter(b => b.status === 'pending').length
+
+  // Rackets due = players sitting at 100% on their current racket (ready to award).
+  const skillMap: Record<string, Record<string, number>> = {}
+  for (const r of skills.rows) { (skillMap[r.player_id] ||= {})[r.skill] = r.score }
+  const racketsDue = players.rows.filter(p => {
+    const st = RACKET_STAGES.find(s => s.id === p.racket_stage); if (!st) return false
+    const sk = RACKET_SKILLS[st.id] || []; if (!sk.length) return false
+    const sm = skillMap[p.id] || {}
+    return sk.every(s => (sm[s.name] || 0) >= 4)
+  }).length
+
+  const buildFrom = (b: any) => { setPrefill(b); setOpen(true) }
+  const openBooking = (b: any) => { const pl = planFor(b); if (pl) setSel(pl); else buildFrom(b) }
+
+  const stat = (label: string, value: number, colour: string) => (
+    <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: '14px 16px' }}>
+      <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{label}</div>
+      <div style={{ fontSize: 26, fontWeight: 700, color: colour, marginTop: 4 }}>{value}</div>
+    </div>
+  )
+  const TABS: { id: typeof tab; label: string }[] = [{ id: 'overview', label: 'Overview' }, { id: 'today', label: 'Today' }, { id: 'week', label: 'This week' }, { id: 'month', label: 'This month' }]
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
         <div>
           <h2 style={{ color: T.text, fontSize: 22, fontWeight: 700, margin: 0 }}>Session Planner</h2>
-          <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>Plan a session and get a timed run-sheet and kit list automatically.</p>
+          <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>Everything you need for the session you’re about to run — tap a session to load its plan.</p>
         </div>
-        <button onClick={() => setOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-          <Icon name="plus" size={14} /> New session
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => { setPrefill(null); setOpen(true) }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Icon name="plus" size={14} /> New session</button>
+          <button onClick={() => printRunSheets(plans.rows.filter(p => p.session_date === todayISO))} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>🖨️ Print run-sheet</button>
+        </div>
       </div>
 
-      {plans.loading ? <p style={{ color: T.text3, fontSize: 13, padding: '40px 0', textAlign: 'center' }}>Loading…</p>
-      : plans.rows.length === 0 ? (
-        <div style={{ border: `1px dashed ${T.border}`, borderRadius: 14, padding: 40, textAlign: 'center' }}>
-          <p style={{ color: T.text2, fontSize: 14, fontWeight: 600, margin: '0 0 4px' }}>No sessions planned yet</p>
-          <p style={{ color: T.text3, fontSize: 13, margin: '0 0 16px' }}>Create a session and we&apos;ll build the run-sheet for you.</p>
-          <button onClick={() => setOpen(true)} style={{ padding: '9px 18px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Plan your first session</button>
-        </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: density.gap }}>
-          {plans.rows.map(p => (
-            <button key={p.id} onClick={() => setSel(p)} style={{ textAlign: 'left', appearance: 'none', cursor: 'pointer', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: T.text, flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</span>
-                {p.session_type && <span style={{ fontSize: 9.5, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 7px', borderRadius: 5 }}>{p.session_type}</span>}
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginBottom: 16, width: 'fit-content' }}>
+        {TABS.map(t => <button key={t.id} onClick={() => setTab(t.id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === t.id ? T.panel : 'transparent', color: tab === t.id ? T.text : T.text2, fontWeight: tab === t.id ? 600 : 400, boxShadow: tab === t.id ? `0 0 0 1px ${T.border}` : 'none' }}>{t.label}</button>)}
+      </div>
+
+      {tab === 'overview' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16 }}>
+            {/* Next up */}
+            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18 }}>
+              <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 10 }}>Next up</div>
+              {nextUp ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: T.text }}>{nextUp.title || nextUp.player_name || 'Session'}</div>
+                    <div style={{ fontSize: 12, color: T.text3, marginTop: 3 }}>{[nextUp.booking_date && new Date(nextUp.booking_date).toLocaleDateString('en-GB'), nextUp.start_time, nextUp.type, nextUp.court].filter(Boolean).join(' · ')}</div>
+                    {planFor(nextUp)?.focus && <div style={{ fontSize: 12.5, color: T.text2, marginTop: 8 }}>🎯 {planFor(nextUp)?.focus}</div>}
+                  </div>
+                  <button onClick={() => openBooking(nextUp)} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{planFor(nextUp) ? 'Open' : 'Build session'}</button>
+                </div>
+              ) : <div style={{ fontSize: 13, color: T.text3 }}>No upcoming bookings. Add bookings in the Booking Calendar and they’ll appear here.</div>}
+            </div>
+            {/* Stats */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {stat('Sessions today', todays.length, accent.hex)}
+              {stat('This week', weekCount, accent.hex)}
+              {stat('Rackets due', racketsDue, T.warn)}
+              {stat('Pending bookings', pending, '#3A8EE0')}
+            </div>
+          </div>
+
+          {/* Needs a plan */}
+          <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Needs a plan</div>
+              <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{needsPlan.length}</div>
+            </div>
+            {needsPlan.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>Every upcoming session has a plan. 🎾</div> : needsPlan.map(b => (
+              <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: `1px solid ${T.border}` }}>
+                <span style={{ width: 8, height: 8, borderRadius: 2, background: typeCol(T, accent, b.type), flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{b.title || b.player_name || 'Session'}</div>
+                  <div style={{ fontSize: 11, color: T.text3 }}>{[b.booking_date && new Date(b.booking_date).toLocaleDateString('en-GB'), b.start_time, b.type, b.court].filter(Boolean).join(' · ')}</div>
+                </div>
+                <button onClick={() => buildFrom(b)} style={{ appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Build session</button>
               </div>
-              <div style={{ fontSize: 11.5, color: T.text3, marginTop: 4 }}>{[p.session_date && new Date(p.session_date).toLocaleDateString('en-GB'), p.start_time, p.court, p.group_name].filter(Boolean).join(' · ')}</div>
-              {p.focus && <div style={{ fontSize: 12, color: T.text2, marginTop: 8 }}>🎯 {p.focus}</div>}
-            </button>
-          ))}
+            ))}
+          </div>
+
+          {/* This week's calendar (synced from bookings) */}
+          <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 0, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', padding: '14px 16px 0' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>This week’s calendar</div>
+              <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>synced from Booking Calendar</div>
+            </div>
+            <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={bookings.rows} onOpen={openBooking} />
+          </div>
         </div>
       )}
 
-      {open && <NewSession T={T} accent={accent} density={density} players={players.rows} onClose={() => setOpen(false)} onSaved={() => { setOpen(false); plans.reload() }} />}
-      {sel && <SessionRunSheet T={T} accent={accent} density={density} plan={sel} onClose={() => setSel(null)} onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />}
+      {tab === 'today' && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Today · {todays.length} session{todays.length === 1 ? '' : 's'}</div>
+          {todays.length === 0 ? <div style={{ fontSize: 13, color: T.text3, padding: '20px 0' }}>No sessions today.</div> : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+              {todays.map(b => {
+                const pl = planFor(b)
+                return (
+                  <button key={b.id} onClick={() => openBooking(b)} style={{ textAlign: 'left', appearance: 'none', cursor: 'pointer', background: T.panel, border: `1px solid ${pl ? T.border : accent.border}`, borderLeft: `3px solid ${typeCol(T, accent, b.type)}`, borderRadius: 10, padding: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{b.start_time || '—'} · {b.title || b.player_name || 'Session'}</div>
+                    <div style={{ fontSize: 11, color: T.text3, marginTop: 3 }}>{[b.type, b.court, b.duration_min ? `${b.duration_min}m` : ''].filter(Boolean).join(' · ')}</div>
+                    <div style={{ fontSize: 11, color: pl ? T.good : accent.hex, fontWeight: 600, marginTop: 8 }}>{pl ? '✓ Plan ready — open' : '+ Build session'}</div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'week' && (
+        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
+          <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={bookings.rows} onOpen={openBooking} />
+        </div>
+      )}
+
+      {tab === 'month' && (
+        <MonthAgenda T={T} accent={accent} bookings={bookings.rows} fromISO={todayISO} onOpen={openBooking} />
+      )}
+
+      {open && <NewSession T={T} accent={accent} density={density} players={players.rows} prefill={prefill}
+        onClose={() => { setOpen(false); setPrefill(null) }} onSaved={() => { setOpen(false); setPrefill(null); plans.reload() }} />}
+      {sel && <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} onNavigate={onNavigate}
+        onCompleted={() => { setSel(null); plans.reload() }}
+        onClose={() => setSel(null)}
+        onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />}
     </div>
   )
 }
 
+// ── This-week grid (read-only mirror of the Booking Calendar) ───────────────
+function WeekGrid({ T, accent, days, today, bookings, onOpen }: { T: ThemeTokens; accent: AccentTokens; days: Date[]; today: Date; bookings: any[]; onOpen: (b: any) => void }) {
+  const ROW = 42, START = HRS[0]
+  const yFor = (mins: number) => Math.max(0, Math.min((mins / 60 - START) * ROW, HRS.length * ROW))
+  return (
+    <div style={{ overflowX: 'auto', padding: 12 }}>
+      <div style={{ minWidth: 700 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}` }}>
+          <div />
+          {days.map((d, i) => {
+            const isToday = isoD(d) === isoD(today)
+            return <div key={i} style={{ padding: '8px 4px', textAlign: 'center', borderLeft: `1px solid ${T.border}`, background: isToday ? accent.dim : 'transparent' }}>
+              <div style={{ fontSize: 10.5, color: isToday ? accent.hex : T.text2, fontWeight: 600 }}>{WD3[i]}</div>
+              <div style={{ fontSize: 15, color: isToday ? accent.hex : T.text, fontWeight: 600 }}>{d.getDate()}</div>
+            </div>
+          })}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, 1fr)` }}>
+          <div>{HRS.map(h => <div key={h} style={{ height: ROW, fontSize: 9.5, color: T.text3, padding: '2px 5px', textAlign: 'right' }}>{pad2(h)}:00</div>)}</div>
+          {days.map((d, di) => {
+            const dayB = bookings.filter(b => b.booking_date === isoD(d) && b.status !== 'cancelled')
+            return (
+              <div key={di} style={{ position: 'relative', borderLeft: `1px solid ${T.border}` }}>
+                {HRS.map(h => <div key={h} style={{ height: ROW, borderTop: `1px solid ${T.border}` }} />)}
+                {dayB.map(b => {
+                  const s = toMins(b.start_time); if (s == null) return null
+                  const dur = b.duration_min || 60
+                  const top = yFor(s), h = Math.max(yFor(s + dur) - top - 2, 18)
+                  const c = typeCol(T, accent, b.type)
+                  return (
+                    <div key={b.id} onClick={() => onOpen(b)} title={b.title || b.player_name || ''} style={{ position: 'absolute', left: 3, right: 3, top: top + 1, height: h, background: `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '2px 5px', overflow: 'hidden', cursor: 'pointer' }}>
+                      <div style={{ fontSize: 10, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</div>
+                      <div style={{ fontSize: 8.5, color: T.text2 }}>{hhmm(s)}{b.court ? ` · ${b.court}` : ''}</div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MonthAgenda({ T, accent, bookings, fromISO, onOpen }: { T: ThemeTokens; accent: AccentTokens; bookings: any[]; fromISO: string; onOpen: (b: any) => void }) {
+  const end = isoD(addD(new Date(fromISO + 'T00:00:00'), 31))
+  const inRange = bookings.filter(b => (b.booking_date || '') >= fromISO && (b.booking_date || '') < end && b.status !== 'cancelled')
+  const dates = Array.from(new Set(inRange.map(b => b.booking_date))).sort()
+  if (!dates.length) return <div style={{ fontSize: 12.5, color: T.text3, fontStyle: 'italic', padding: '18px 4px' }}>No bookings in the next 30 days.</div>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {dates.map(dt => {
+        const items = inRange.filter(b => b.booking_date === dt).sort((a, b) => (toMins(a.start_time) ?? 0) - (toMins(b.start_time) ?? 0))
+        return (
+          <div key={dt} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text3, marginBottom: 10 }}>{new Date(dt + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {items.map(b => (
+                <button key={b.id} onClick={() => onOpen(b)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, textAlign: 'left', width: '100%', cursor: 'pointer' }}>
+                  <span style={{ fontSize: 11.5, color: T.text2, width: 50, flexShrink: 0 }}>{b.start_time || '—'}</span>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: typeCol(T, accent, b.type), flexShrink: 0 }} />
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</span>
+                  <span style={{ fontSize: 11, color: T.text3 }}>{[b.type, b.court].filter(Boolean).join(' · ')}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// Print today's run-sheets (one page) — the demo's "Print run-sheet".
+function printRunSheets(todayPlans: any[]) {
+  if (typeof window === 'undefined') return
+  const esc = (s: string) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!))
+  if (!todayPlans.length) { alert('No planned sessions for today to print.'); return }
+  const blocks = todayPlans.map(p => {
+    const sheet = runSheet((p.session_type as SType) || 'Private', p.focus || '', p.duration_min || 60)
+    const rows = sheet.map(ph => `<tr><td style="width:50px;color:#1f6fd6;font-weight:700">${ph.mins}m</td><td><b>${esc(ph.phase)}</b><div style="color:#555;font-size:12px">${esc(ph.detail)}</div></td></tr>`).join('')
+    const kit = (KIT_BY_TYPE[(p.session_type as SType) || 'Private'] || []).map(k => `<span style="display:inline-block;border:1px solid #ccc;border-radius:20px;padding:2px 10px;margin:0 4px 6px;font-size:12px">${esc(k)}</span>`).join('')
+    return `<div style="page-break-inside:avoid;margin-bottom:28px"><h2 style="margin:0">${esc(p.title || 'Session')}</h2><div style="color:#555;font-size:13px;margin:2px 0 6px">${esc([p.session_type, p.start_time, p.court, (p.duration_min || 60) + ' mins'].filter(Boolean).join(' · '))}</div>${p.focus ? `<div style="background:#eef3fb;border-radius:6px;padding:8px 10px;font-weight:600;margin-bottom:8px">${esc(p.focus)}</div>` : ''}<table style="width:100%;border-collapse:collapse">${rows}</table><div style="margin-top:10px"><b style="font-size:12px;color:#555">Kit:</b><br/>${kit}</div></div>`
+  }).join('')
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Run-sheet — ${new Date().toLocaleDateString('en-GB')}</title><style>body{font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:720px;margin:32px auto;color:#111;padding:0 20px}td{padding:6px 4px;vertical-align:top;border-top:1px solid #eee}</style></head><body><h1>Today’s run-sheet · ${new Date().toLocaleDateString('en-GB')}</h1>${blocks}</body></html>`
+  const w = window.open('', '_blank'); if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 300) }
+}
+
 // ── New Session modal ────────────────────────────────────────────────────────
-function NewSession({ T, accent, density, players, onClose, onSaved }: Common & { players: any[]; onClose: () => void; onSaved: () => void }) {
-  const [mode, setMode] = useState<'roster' | 'new'>('roster')
-  const [player, setPlayer] = useState('')
-  const [type, setType] = useState<SType>('Private')
-  const [court, setCourt] = useState('')
-  const [date, setDate] = useState('')
-  const [time, setTime] = useState('')
-  const [duration, setDuration] = useState(60)
-  const [racket, setRacket] = useState('')
+function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: Common & { players: any[]; prefill?: any; onClose: () => void; onSaved: () => void }) {
+  const pfType = (TYPES as readonly string[]).includes(prefill?.type) ? prefill.type as SType : 'Private'
+  const pfPlayer = prefill?.player_name || ''
+  const pfKnown = players.some(p => p.name === pfPlayer)
+  const [mode, setMode] = useState<'roster' | 'new'>(pfPlayer && !pfKnown ? 'new' : 'roster')
+  const [player, setPlayer] = useState(pfPlayer)
+  const [type, setType] = useState<SType>(pfType)
+  const [court, setCourt] = useState(prefill?.court || '')
+  const [date, setDate] = useState(prefill?.booking_date || '')
+  const [time, setTime] = useState(prefill?.start_time || '')
+  const [duration, setDuration] = useState(Number(prefill?.duration_min) || 60)
+  const [racket, setRacket] = useState(players.find(p => p.name === pfPlayer)?.racket_stage || '')
   const [standard, setStandard] = useState('')
   const [focus, setFocus] = useState('')
   const [note, setNote] = useState('')
@@ -242,10 +462,23 @@ function NewSession({ T, accent, density, players, onClose, onSaved }: Common & 
 }
 
 // ── Saved session run-sheet ──────────────────────────────────────────────────
-function SessionRunSheet({ T, accent, density, plan, onClose, onDelete }: Common & { plan: any; onClose: () => void; onDelete: () => void }) {
+function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onCompleted, onClose, onDelete }: Common & { plan: any; players: any[]; onNavigate?: (s: string) => void; onCompleted: () => void; onClose: () => void; onDelete: () => void }) {
   const sheet = runSheet((plan.session_type as SType) || 'Private', plan.focus || '', plan.duration_min || 60)
   const fp = (plan.focus_points || '').split('\n').filter(Boolean)
   const dr = (plan.drills || '').split('\n').filter(Boolean)
+  const [mediaOpen, setMediaOpen] = useState(false)
+  const [completing, setCompleting] = useState(false)
+  // "Session completed" → logs a Lesson Summary stub (coach_sessions) the coach can
+  // enrich or record audio into — the same flow as the demo.
+  const complete = async () => {
+    if (completing) return
+    setCompleting(true)
+    try {
+      await dbInsert('coach_sessions', { player_name: plan.group_name || plan.title, session_date: new Date().toISOString().slice(0, 10), focus: plan.focus || plan.title || 'Session', rating: null, summary: plan.notes || '', ai_review: '' })
+      onCompleted(); onNavigate?.('lessons')
+    } catch { setCompleting(false) }
+  }
+  const act = (bg: string, color: string, border?: string): React.CSSProperties => ({ appearance: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, border: border || 'none', background: bg, color, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' })
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 620, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>
@@ -256,6 +489,17 @@ function SessionRunSheet({ T, accent, density, plan, onClose, onDelete }: Common
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 17 }}>×</button>
         </div>
+
+        {/* Session actions */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+          <button onClick={complete} disabled={completing} style={act(`${T.good}22`, T.good, `1px solid ${T.good}55`)}>✓ {completing ? 'Saving…' : 'Session completed'}</button>
+          <button onClick={() => { onNavigate?.('lessons'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>📝 Review session</button>
+          <button onClick={() => setMediaOpen(true)} style={act('transparent', T.text2, `1px solid ${T.border}`)}>🎙️ Record audio</button>
+          <button onClick={() => { onNavigate?.('messages'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>📣 Message</button>
+          <button onClick={() => { onNavigate?.('development'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>↗ Player</button>
+          <button onClick={onDelete} style={act('transparent', T.bad, `1px solid ${T.border}`)}>✕ Delete</button>
+        </div>
+
         {plan.focus && <div style={{ background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 8, padding: '8px 12px', marginTop: 14, fontSize: 12.5, color: T.text }}>🎯 {plan.focus}</div>}
 
         <div style={{ display: 'grid', gridTemplateColumns: fp.length || dr.length ? '1fr 1fr' : '1fr', gap: 16, marginTop: 16 }}>
@@ -278,9 +522,8 @@ function SessionRunSheet({ T, accent, density, plan, onClose, onDelete }: Common
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 16 }}>
           {KIT_BY_TYPE[(plan.session_type as SType) || 'Private'].map(k => <span key={k} style={{ fontSize: 11, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '3px 10px' }}>{k}</span>)}
         </div>
-        <div style={{ marginTop: 18 }}>
-          <button onClick={onDelete} style={{ background: 'transparent', border: '1px solid rgba(239,68,68,0.4)', color: '#EF4444', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Delete session</button>
-        </div>
+        {mediaOpen && <MediaCaptureModal T={T} accent={accent} defaultKind="audio" players={players} playerName={plan.group_name || undefined}
+          onClose={() => setMediaOpen(false)} onSummary={() => { setMediaOpen(false); onCompleted() }} />}
       </div>
     </div>
   )
