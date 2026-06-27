@@ -25,6 +25,7 @@ export type CoachTable =
   | 'coach_venues'
   | 'coach_development'
   | 'coach_equipment'
+  | 'coach_kit_items'
   | 'coach_resources'
   | 'coach_attendance'
   | 'coach_player_skills'
