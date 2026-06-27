@@ -741,7 +741,8 @@ export function BeltsView({ T, accent, density }: Common) {
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <Icon name="shield" size={16} stroke={1.7} style={{ color: accent.hex, flexShrink: 0, marginTop: 1 }} />
           <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5 }}>
-            <strong>Aligned to the LTA Youth pathway.</strong> Each racket maps to a stage of the LTA Youth programme — the five official ball-colour stages <span style={{ color: T.text2 }}>Blue → Red → Orange → Green → Yellow</span>, then the LTA Youth Compete grades and the performance pathway. The racket is your academy ladder; the LTA stage is the national-framework equivalent shown on every racket below.
+            <strong>Mapped to the LTA Youth pathway.</strong> Each racket maps to a stage of the LTA Youth programme — the five official ball-colour stages <span style={{ color: T.text2 }}>Blue → Red → Orange → Green → Yellow</span>, then the LTA Youth Compete grades and the performance pathway. The racket is your academy ladder; the LTA stage shown on each racket is the national-framework equivalent.
+            <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8, fontStyle: 'italic' }}>Lumio is independent and is not affiliated with, endorsed by, or approved by the LTA. “LTA Youth” is a trademark of the Lawn Tennis Association, used here only to describe the equivalent national stage.</div>
           </div>
         </div>
       </Card>
@@ -828,7 +829,7 @@ export function BeltsView({ T, accent, density }: Common) {
           </div>
           {LTA_MAP[b.id] && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.panel2, border: `1px solid ${T.border}`, borderLeft: `3px solid ${LTA_MAP[b.id].colour}`, borderRadius: 8, padding: '9px 12px', marginBottom: 12, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 9.5, fontWeight: 700, color: LTA_MAP[b.id].colour, textTransform: 'uppercase', letterSpacing: '0.06em' }}>LTA alignment</span>
+              <span style={{ fontSize: 9.5, fontWeight: 700, color: LTA_MAP[b.id].colour, textTransform: 'uppercase', letterSpacing: '0.06em' }}>LTA equivalent</span>
               <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{LTA_MAP[b.id].stage}</span>
               <span style={{ fontSize: 11, color: T.text3 }}>· ages {LTA_MAP[b.id].ages}</span>
               <span style={{ fontSize: 11.5, color: T.text2, flexBasis: '100%' }}>{LTA_MAP[b.id].focus}</span>
