@@ -188,7 +188,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
                   <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@academy.com" style={input} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={lbl}>Phone <span style={{ color: '#4B5563', fontWeight: 400 }}>(for texts)</span></label>
+                  <label style={lbl}>Your mobile <span style={{ color: '#4B5563', fontWeight: 400 }}>(contact number)</span></label>
                   <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+44 7…" style={input} />
                 </div>
               </div>

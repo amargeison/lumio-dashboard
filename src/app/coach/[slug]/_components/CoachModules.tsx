@@ -27,7 +27,8 @@ import { LessonShareMenu } from './ShareMenu'
 import { CampEquipment, CampPlayerPacks } from './CampPacks'
 import { LessonAiBrief, PlayerDetailModal, printLessonReport } from './CoachDetails'
 import { NewSummaryModal } from './NewSummary'
-import { getAllLessons, subscribe as subscribeLessons, consumeOpenLesson } from '../_lib/lessons-store'
+import { MediaCaptureModal, type LessonReview } from './MediaCaptureModal'
+import { getAllLessons, addLesson, subscribe as subscribeLessons, consumeOpenLesson } from '../_lib/lessons-store'
 import { BooksPanel } from './BooksPanel'
 import { openResource } from './ResourceDocs'
 import { DrillLibrary } from './DrillLibrary'
@@ -392,6 +393,21 @@ export function LessonsView({ T, accent, density }: Common) {
   useEffect(() => { const id = consumeOpenLesson(); if (id) setSelId(id) }, [])
   const [shareOpen, setShareOpen] = useState(false)
   const [newOpen, setNewOpen] = useState(false)
+  // Add audio/video → AI-built summary (record or upload, coach types nothing).
+  const [mediaKind, setMediaKind] = useState<false | 'audio' | 'video'>(false)
+  const onMediaSummary = (review: LessonReview) => {
+    const id = `media-${Date.now()}`
+    addLesson({
+      id, playerId: '', player: 'Recorded session',
+      date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      time: '', duration: 0, type: 'Private', court: '',
+      focus: review.focus || 'Lesson summary',
+      covered: review.covered || [], takeaways: review.takeaways || [], drills: review.drills || [], skillsWorked: [],
+      homework: review.homework || 'Not set', nextFocus: review.nextFocus || '',
+      coachNote: review.coachNote || '', rating: review.rating || 3,
+    })
+    setSelId(id); setRange('all')
+  }
   // Time-range filter — keeps summaries findable as they pile up over a season.
   const [range, setRange] = useState<'week' | 'lastweek' | 'month' | 'all'>('all')
   // Coach role: only lessons for that coach's players (lessons key by playerId).
@@ -413,8 +429,12 @@ export function LessonsView({ T, accent, density }: Common) {
   const listLessons = [...visibleLessons].filter(inRange).sort((a, b) => daysAgo(a.date) - daysAgo(b.date))
   const skillNames = (ids: string[]) => ids.map(id => ALL_SKILLS.find(s => s.id === id)?.name ?? id)
   const newBtn = (
-    <button onClick={() => setNewOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New summary</button>
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <button onClick={() => setMediaKind('audio')} title="Record or upload a session — the AI writes the summary" style={{ appearance: 'none', border: `1px solid ${accent.border}`, padding: '8px 14px', borderRadius: 9, background: accent.dim, color: accent.hex, fontSize: 13, fontWeight: 700, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>🎙️ Add audio/video</button>
+      <button onClick={() => setNewOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New summary</button>
+    </div>
   )
+  const mediaModal = mediaKind ? <MediaCaptureModal T={T} accent={accent} defaultKind={mediaKind} onClose={() => setMediaKind(false)} onSummary={onMediaSummary} /> : null
   // Scoped coach with no logged lessons yet — empty state (avoids a crash on the
   // master–detail layout, which assumes at least one lesson).
   if (!sel) {
@@ -427,6 +447,7 @@ export function LessonsView({ T, accent, density }: Common) {
           <div style={{ fontSize: 12, color: T.text3, marginTop: 4 }}>Mark a session done in the Planner, or add one with “New summary”.</div>
         </Card>
         {newOpen && <NewSummaryModal T={T} accent={accent} density={density} players={players} onClose={() => setNewOpen(false)} onCreated={id => setSelId(id)} />}
+        {mediaModal}
       </div>
     )
   }
