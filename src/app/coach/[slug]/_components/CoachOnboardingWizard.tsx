@@ -9,6 +9,7 @@ import { sb, currentCoachId } from '../_lib/coach-db'
 import { CoachImport } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
 import { setSettings, getSettings } from '../_lib/settings-store'
+import { seedLumioResources } from '../_lib/lumio-resources'
 import { setHidden as setMenuHidden } from '../_lib/menu-visibility'
 import { applyTier } from '../_lib/feature-flags'
 
@@ -103,8 +104,9 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
       // tested and signed off; they can be re-enabled later in Settings.
       applyTier('prolite')
 
-      // Resource Centre: preload Lumio's library, or start empty for own content.
+      // Resource Centre: preload Lumio's library (live), or start empty for own content.
       setSettings({ resourcesPreloaded })
+      if (resourcesPreloaded) seedLumioResources().catch(() => {})
 
       // Home court → seed it into the Court Planner as the home/main site.
       if (homeCourt.trim()) {
