@@ -57,12 +57,12 @@ import { CoachDevelopmentSettings } from './_components/CoachDevelopmentSettings
 import { LiveCourtPlanner } from './_components/LiveCourtPlanner'
 import { CoachVenuesSettings } from './_components/CoachVenuesSettings'
 import { LiveCamps } from './_components/LiveCamps'
+import { LivePayments } from './_components/LivePayments'
 import { CoachGpsVideo } from './_components/CoachGpsVideo'
 import { LiveEffortRewards } from './_components/LiveEffortRewards'
 import { LiveStaff } from './_components/LiveStaff'
 import {
   LiveModule,
-  PAYMENTS_CONFIG,
   EQUIPMENT_CONFIG, RESOURCES_CONFIG,
 } from './_components/LiveModules'
 import { useCoachStats } from './_lib/coach-db'
@@ -286,7 +286,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'belts':       return <LiveRacketProgression T={T} accent={accent} />
         case 'lessons':     return <LiveLessons T={T} accent={accent} />
         case 'camps':       return <LiveCamps T={T} accent={accent} />
-        case 'payments':    return <LiveModule config={PAYMENTS_CONFIG} T={T} accent={accent} />
+        case 'payments':    return <LivePayments T={T} accent={accent} />
         case 'gpsheatmaps': return <LiveEffortRewards T={T} accent={accent} density={density} />
         case 'videoaudio':  return <CoachGpsVideo T={T} accent={accent} />
         case 'planner':     return <LiveSessionPlanner T={T} accent={accent} density={density} onNavigate={setActive} />
