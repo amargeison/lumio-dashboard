@@ -130,6 +130,15 @@ export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent
         </p>
         <LoadLibraryButton T={T} accent={accent} />
       </div>
+
+      {/* Coaches */}
+      <div style={card}>
+        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: T.text }}>Coaches</h3>
+        <p style={{ margin: '0 0 4px', fontSize: 12.5, color: T.text3, lineHeight: 1.5 }}>
+          Your coaching team is managed in the <strong style={{ color: T.text }}>Coaches</strong> module — add coaches, record their role, accreditations, home venue and DBS / safeguarding status. A solo coach simply sees themselves. DBS and safeguarding expiry is flagged automatically on the Coaches page and the dashboard.
+        </p>
+        <p style={{ margin: '6px 0 0', fontSize: 11.5, color: T.text3 }}>Edit your own (head coach) name and contact details under <strong style={{ color: T.text2 }}>Head coach profile</strong> above.</p>
+      </div>
     </div>
   )
 }
