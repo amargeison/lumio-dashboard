@@ -291,7 +291,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'venues':      return <LiveCourtPlanner T={T} accent={accent} onNavigate={setActive} />
         case 'development': return <LiveDevelopment T={T} accent={accent} />
         case 'equipment':   return <LiveEquipment T={T} accent={accent} />
-        case 'resources':   return <LiveResources T={T} accent={accent} />
+        case 'resources':   return <LiveResources T={T} accent={accent} density={density} />
         case 'messages':    return <LiveMessages T={T} accent={accent} onConfigure={() => setActive('settings')} />
         case 'settings':    return <><CoachContactSettings T={T} accent={accent} /><CoachVenuesSettings T={T} accent={accent} /><CoachDevelopmentSettings T={T} accent={accent} /><CoachCompliance T={T} accent={accent} /><div style={{ marginBottom: 16 }}><CoachImport T={T} accent={accent} /></div><SettingsView T={T} accent={accent} density={density} /></>
         case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)} />
