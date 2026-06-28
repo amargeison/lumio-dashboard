@@ -11,7 +11,7 @@
 import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, dbInsert, dbUpdate, dbRemove } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile } from '../_lib/coach-db'
 
 type Booking = {
   id: string; title: string | null; player_name: string | null; court: string | null
@@ -46,6 +46,9 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   const { rows, add, edit, remove, reload } = useCoachTable<Booking>('coach_bookings')
   const { rows: playerRows } = useCoachTable<{ id: string; name: string }>('coach_players')
   const players = playerRows.map(p => ({ id: p.id, name: p.name }))
+  const { rows: staffRows } = useCoachTable<{ id: string; name: string }>('coach_staff')
+  const profile = useCoachProfile()
+  const coaches = [profile.display_name || 'Head Coach', ...staffRows.map(s => s.name)]
 
   const [view, setView] = useState<'week' | 'month'>('week')
   const [cursor, setCursor] = useState(() => new Date())
@@ -102,7 +105,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   const provLabel = (p: string) => p === 'google' ? 'Google Calendar' : p === 'microsoft' ? 'Microsoft / Outlook' : p === 'icloud' ? 'iCloud' : p
 
   const modals = editing && (
-    <BookingFormModal T={T} accent={accent} players={players} typeColour={TYPE_COLOUR}
+    <BookingFormModal T={T} accent={accent} players={players} coaches={coaches} typeColour={TYPE_COLOUR}
       booking={editing === 'new' ? null : editing}
       defaultDate={iso(cursor)}
       onClose={() => setEditing(null)}
@@ -281,8 +284,8 @@ function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, onOpen, o
 }
 
 // ── Add / Edit booking modal ──────────────────────────────────────────────────
-function BookingFormModal({ T, accent, players, typeColour, booking, defaultDate, onClose, onSave, onDelete }: {
-  T: ThemeTokens; accent: AccentTokens; players: { id: string; name: string }[]
+function BookingFormModal({ T, accent, players, coaches, typeColour, booking, defaultDate, onClose, onSave, onDelete }: {
+  T: ThemeTokens; accent: AccentTokens; players: { id: string; name: string }[]; coaches: string[]
   typeColour: (t: string | null) => string
   booking: Booking | null; defaultDate: string
   onClose: () => void
@@ -299,6 +302,7 @@ function BookingFormModal({ T, accent, players, typeColour, booking, defaultDate
   const [dur, setDur] = useState(String(booking?.duration_min ?? 60))
   const [type, setType] = useState(booking?.type || 'Private')
   const [status, setStatus] = useState(booking?.status || 'confirmed')
+  const [coach, setCoach] = useState((booking as any)?.assigned_coach || '')
   const [notes, setNotes] = useState(booking?.notes || '')
   const [saving, setSaving] = useState(false)
 
@@ -315,7 +319,7 @@ function BookingFormModal({ T, accent, players, typeColour, booking, defaultDate
       await onSave({
         title: title.trim() || who, player_name: who || null, court: court.trim() || null,
         booking_date: date, start_time: start, duration_min: Number(dur) || 60,
-        type, status, notes: notes.trim() || null,
+        type, status, assigned_coach: coach || null, notes: notes.trim() || null,
       }, isNewPlayer ? who : null)
     } finally { setSaving(false) }
   }
@@ -348,10 +352,18 @@ function BookingFormModal({ T, accent, players, typeColour, booking, defaultDate
             <div><label style={lbl}>Start</label><input type="time" value={start} onChange={e => setStart(e.target.value)} style={field} /></div>
             <div><label style={lbl}>Mins</label><input type="number" min={15} step={15} value={dur} onChange={e => setDur(e.target.value)} style={field} /></div>
           </div>
-          <div><label style={lbl}>Status</label>
-            <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
-              <option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option>
-            </select>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div><label style={lbl}>Status</label>
+              <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
+                <option value="confirmed">Confirmed</option><option value="pending">Pending</option><option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div><label style={lbl}>Coach</label>
+              <select value={coach} onChange={e => setCoach(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
+                <option value="">Head coach (you)</option>
+                {coaches.slice(1).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
           </div>
           <div><label style={lbl}>Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} style={{ ...field, resize: 'vertical' }} /></div>
         </div>

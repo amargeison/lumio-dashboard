@@ -20,12 +20,39 @@ function dbsState(expiry?: string | null): { label: string; colour: string } {
   return { label: 'Valid', colour: '#22C55E' }
 }
 
+// ── Date / calendar helpers ─────────────────────────────────────────────────
+const pad2 = (n: number) => String(n).padStart(2, '0')
+const isoD = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+const addD = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x }
+const mondayOf = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); const wd = (x.getDay() + 6) % 7; x.setDate(x.getDate() - wd); return x }
+const toMins = (t?: string | null) => { if (!t) return null; const m = t.match(/(\d{1,2})\s*:\s*(\d{2})/) || t.match(/^(\d{1,2})(\d{2})$/); return m ? Math.min(23, +m[1]) * 60 + Math.min(59, +m[2]) : null }
+const hhmm = (m: number) => `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`
+const WD3 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const HRS = Array.from({ length: 14 }, (_, i) => 7 + i)
+const initialsOf = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
+
 export function LiveStaff({ T, accent }: Common) {
   const staff = useCoachTable<any>('coach_staff')
   const profile = useCoachProfile()
   const players = useCoachTable<any>('coach_players')
+  const bookings = useCoachTable<any>('coach_bookings')
   const [editing, setEditing] = useState<any | null | undefined>(undefined)
   const [role, setRole] = useState('All')
+  const [sel, setSel] = useState<any | null>(null)
+
+  // Per-coach work: bookings/players assigned to this coach (head coach also owns
+  // anything unassigned), and the live stats derived from them.
+  const todayISO = isoD(new Date())
+  const weekStart = mondayOf(new Date()), weekStartISO = isoD(weekStart), weekEndISO = isoD(addD(weekStart, 7))
+  const weekDays = Array.from({ length: 7 }, (_, i) => addD(weekStart, i))
+  const coachBookings = (c: any) => bookings.rows.filter((b: any) => b.status !== 'cancelled' && (b.assigned_coach === c.name || (c.isHead && !b.assigned_coach)))
+  const coachPlayers = (c: any) => players.rows.filter((p: any) => p.assigned_coach === c.name || (c.isHead && !p.assigned_coach))
+  const statsFor = (c: any) => {
+    const bk = coachBookings(c)
+    const weekBk = bk.filter((b: any) => (b.booking_date || '') >= weekStartISO && (b.booking_date || '') < weekEndISO)
+    const hours = Math.round(weekBk.reduce((s: number, b: any) => s + (b.duration_min || 60), 0) / 60)
+    return { today: bk.filter((b: any) => b.booking_date === todayISO).length, week: weekBk.length, players: coachPlayers(c).length, hours, util: c.contracted_hours ? Math.round(hours / c.contracted_hours * 100) : null }
+  }
 
   const flagged = staff.rows.filter(s => { const st = dbsState(s.dbs_expiry); return st.label === 'Expired' || st.label.startsWith('Expires') || st.label.startsWith('No DBS') })
   // The head coach (the signed-in account) is always shown — so a solo coach
@@ -37,6 +64,123 @@ export function LiveStaff({ T, accent }: Common) {
   const shown = everyone.filter(inRole)
   const dbsValid = staff.rows.filter(s => dbsState(s.dbs_expiry).label === 'Valid').length
   const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join('') || '?'
+
+  // ── Coach detail ──────────────────────────────────────────────────────────
+  if (sel) {
+    const st = sel.isHead ? null : dbsState(sel.dbs_expiry)
+    const s2 = statsFor(sel)
+    const myBookings = coachBookings(sel)
+    const myPlayers = coachPlayers(sel)
+    const specialisms = (sel.qualifications || '').split(',').map((x: string) => x.trim()).filter(Boolean)
+    const reassign = async (playerId: string, name: string) => { await dbUpdate('coach_players', playerId, { assigned_coach: name }); players.reload() }
+    const ROW = 40, yFor = (m: number) => Math.max(0, Math.min((m / 60 - HRS[0]) * ROW, HRS.length * ROW))
+    const box: React.CSSProperties = { background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' }
+    const statTiles: [string, string | number][] = [['Today', s2.today], ['This week', s2.week], ['Players', s2.players], ['Hours booked', `${s2.hours}h`], ['Utilisation', s2.util == null ? '—' : `${s2.util}%`]]
+    return (
+      <div>
+        <button onClick={() => setSel(null)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '6px 12px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', marginBottom: 14 }}>← All coaches</button>
+
+        {/* Header */}
+        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18, marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
+            <span style={{ width: 44, height: 44, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 15, fontWeight: 700 }}>{initialsOf(sel.name)}</span>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 19, fontWeight: 700, color: T.text }}>{sel.name}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase' }}>{sel.role || 'Coach'}</span>
+                <span style={{ fontSize: 11, color: T.good }}>● Active</span>
+              </div>
+              <div style={{ fontSize: 12, color: T.text3, marginTop: 3 }}>{[sel.qualifications, sel.contracted_hours ? `${sel.contracted_hours}h/wk` : null, sel.home_venue].filter(Boolean).join(' · ') || 'Coach'}</div>
+              <div style={{ fontSize: 12, color: T.text2, marginTop: 6, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                {sel.phone && <span>📞 {sel.phone}</span>}{sel.email && <span>✉️ {sel.email}</span>}
+              </div>
+              {specialisms.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>{specialisms.map((sp: string) => <span key={sp} style={{ fontSize: 10.5, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '2px 8px' }}>{sp}</span>)}</div>}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {sel.phone && <a href={`tel:${sel.phone}`} style={{ textDecoration: 'none', border: `1px solid ${accent.border}`, background: 'transparent', color: accent.hex, borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 600 }}>📞 Call</a>}
+              {sel.email && <a href={`mailto:${sel.email}`} style={{ textDecoration: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 700 }}>✉️ Contact</a>}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', marginTop: 14 }}>
+            {statTiles.map(([l, v]) => <div key={l}><div style={{ fontSize: 19, fontWeight: 700, color: T.text }}>{v}</div><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{l}</div></div>)}
+          </div>
+        </div>
+
+        {/* DBS & safeguarding */}
+        {!sel.isHead && st && (
+          <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>DBS &amp; safeguarding</div>
+              <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: st.colour }}>{st.label}</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10 }}>
+              <div style={box}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>DBS status</div><div style={{ fontSize: 12.5, fontWeight: 700, color: st.colour, marginTop: 3 }}>{st.label}</div></div>
+              <div style={box}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>DBS number</div><div style={{ fontSize: 12.5, color: T.text, marginTop: 3 }}>{sel.dbs_number || '—'}</div></div>
+              <div style={box}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>Issued</div><div style={{ fontSize: 12.5, color: T.text, marginTop: 3 }}>{sel.dbs_issued ? new Date(sel.dbs_issued).toLocaleDateString('en-GB') : '—'}</div></div>
+              <div style={box}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>Expiry</div><div style={{ fontSize: 12.5, color: T.text, marginTop: 3 }}>{sel.dbs_expiry ? new Date(sel.dbs_expiry).toLocaleDateString('en-GB') : '—'}</div></div>
+              <div style={box}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>Safeguarding</div><div style={{ fontSize: 12.5, color: sel.safeguarding_trained ? T.good : T.warn, marginTop: 3 }}>{sel.safeguarding_trained ? `✓ ${sel.safeguarding_date ? new Date(sel.safeguarding_date).toLocaleDateString('en-GB') : 'Trained'}` : 'Not recorded'}</div></div>
+            </div>
+            <button onClick={() => setEditing(sel)} style={{ marginTop: 12, appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Record update</button>
+          </div>
+        )}
+
+        {/* This week */}
+        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
+          <div style={{ padding: '14px 16px 0', fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>This week</div>
+          <div style={{ overflowX: 'auto', padding: 12 }}>
+            <div style={{ minWidth: 680 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}` }}>
+                <div />{weekDays.map((d, i) => { const isT = isoD(d) === todayISO; return <div key={i} style={{ padding: '8px 4px', textAlign: 'center', borderLeft: `1px solid ${T.border}`, background: isT ? accent.dim : 'transparent' }}><div style={{ fontSize: 10.5, color: isT ? accent.hex : T.text2, fontWeight: 600 }}>{WD3[i]}</div><div style={{ fontSize: 15, color: isT ? accent.hex : T.text, fontWeight: 600 }}>{d.getDate()}</div></div> })}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, 1fr)` }}>
+                <div>{HRS.map(h => <div key={h} style={{ height: ROW, fontSize: 9.5, color: T.text3, padding: '2px 5px', textAlign: 'right' }}>{pad2(h)}:00</div>)}</div>
+                {weekDays.map((d, di) => {
+                  const dayB = myBookings.filter((b: any) => b.booking_date === isoD(d))
+                  return (
+                    <div key={di} style={{ position: 'relative', borderLeft: `1px solid ${T.border}` }}>
+                      {HRS.map(h => <div key={h} style={{ height: ROW, borderTop: `1px solid ${T.border}` }} />)}
+                      {dayB.map((b: any) => { const sm = toMins(b.start_time); if (sm == null) return null; const top = yFor(sm), h = Math.max(yFor(sm + (b.duration_min || 60)) - top - 2, 18); return (
+                        <div key={b.id} title={b.title || b.player_name || ''} style={{ position: 'absolute', left: 3, right: 3, top: top + 1, height: h, background: `${accent.hex}26`, border: `1px solid ${accent.hex}`, borderLeft: `3px solid ${accent.hex}`, borderRadius: 6, padding: '2px 5px', overflow: 'hidden' }}>
+                          <div style={{ fontSize: 10, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</div>
+                          <div style={{ fontSize: 8.5, color: T.text2 }}>{hhmm(sm)}{b.court ? ` · ${b.court}` : ''}</div>
+                        </div>) })}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Assigned players */}
+        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Assigned players · {myPlayers.length}</div>
+          {myPlayers.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No players assigned to this coach yet. Use “Move to coach…” on another coach, or set a player’s coach in the Roster.</div> : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+              {myPlayers.map((p: any) => (
+                <div key={p.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 28, height: 28, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700 }}>{initialsOf(p.name)}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>{p.name}</div><div style={{ fontSize: 10.5, color: T.text3 }}>{[p.category || p.level, p.age ? `Age ${p.age}` : ''].filter(Boolean).join(' · ')}</div></div>
+                  </div>
+                  {p.goal && <div style={{ fontSize: 11, color: T.text2, marginTop: 8 }}>⚑ {p.goal}</div>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
+                    <span style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>Reassign</span>
+                    <select value="" onChange={e => { if (e.target.value) reassign(p.id, e.target.value) }} style={{ flex: 1, background: T.panel, color: T.text2, border: `1px solid ${T.border}`, borderRadius: 7, padding: '5px 8px', fontSize: 11.5, cursor: 'pointer' }}>
+                      <option value="">Move to coach…</option>
+                      {everyone.filter(c => c.name !== sel.name).map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {editing !== undefined && <StaffForm T={T} accent={accent} initial={editing} onClose={() => setEditing(undefined)} onSaved={() => { setEditing(undefined); staff.reload() }} />}
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -92,11 +236,16 @@ export function LiveStaff({ T, accent }: Common) {
               </div>
               {specialisms.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 10 }}>{specialisms.map((sp: string) => <span key={sp} style={{ fontSize: 10.5, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '2px 8px' }}>{sp}</span>)}</div>}
               {s.home_venue && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8 }}>📍 {s.home_venue}</div>}
-              {!s.isHead && <div style={{ display: 'flex', gap: 6, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
-                <button onClick={() => setEditing(s)} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: T.text2, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Edit</button>
-                <button onClick={() => { if (confirm(`Delete ${s.name}?`)) { dbRemove('coach_staff', s.id).then(() => staff.reload()) } }} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Delete</button>
-              </div>}
-              {s.isHead && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>That’s you — edit your profile in Settings → Head coach profile.</div>}
+              {(() => { const cs = statsFor(s); return (
+                <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+                  {(([['Today', cs.today], ['Week', cs.week], ['Players', cs.players], ['Util', cs.util == null ? '—' : `${cs.util}%`]]) as [string, string | number][]).map(([l, v]) => <div key={l}><div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{v}</div><div style={{ fontSize: 9, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{l}</div></div>)}
+                </div>
+              ) })()}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
+                {!s.isHead && <button onClick={() => setEditing(s)} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: T.text2, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Edit</button>}
+                {!s.isHead && <button onClick={() => { if (confirm(`Delete ${s.name}?`)) { dbRemove('coach_staff', s.id).then(() => staff.reload()) } }} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Delete</button>}
+                <button onClick={() => setSel(s)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>View →</button>
+              </div>
             </div>
           )
         })}
@@ -121,7 +270,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
     if (!String(d.name ?? '').trim()) { setErr('Name is required'); return }
     setSaving(true); setErr('')
     try {
-      const row = { name: d.name, role: d.role || null, email: d.email || null, phone: d.phone || null, qualifications: d.qualifications || null, home_venue: d.home_venue || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }
+      const row = { name: d.name, role: d.role || null, email: d.email || null, phone: d.phone || null, qualifications: d.qualifications || null, home_venue: d.home_venue || null, contracted_hours: Number(d.contracted_hours) || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }
       if (initial?.id) await dbUpdate('coach_staff', initial.id, row); else await dbInsert('coach_staff', row)
       onSaved()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Save failed'); setSaving(false) }
@@ -141,6 +290,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
               {venues.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
             </select>
           </div>
+          {fld('contracted_hours', 'Contracted h/wk', 'number', 'e.g. 24')}
           {fld('email', 'Email')}
           {fld('phone', 'Phone')}
         </div>
