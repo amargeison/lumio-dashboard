@@ -111,6 +111,16 @@ function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onReques
             {venue.is_home && <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 7px', borderRadius: 5, textTransform: 'uppercase' }}>Home base</span>}
           </div>
           {venue.address && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>{venue.address}</div>}
+          {(() => {
+            const q = encodeURIComponent(venue.address || venue.name)
+            const mapUrl = `https://www.google.com/maps/search/?api=1&query=${q}`
+            return (
+              <div style={{ display: 'flex', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
+                <a href={mapUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, fontWeight: 600, color: accent.hex, textDecoration: 'none' }}>🗺️ Directions ↗</a>
+                <button onClick={() => { navigator.clipboard?.writeText(mapUrl).then(() => alert('Map link copied — paste it to players or parents.')).catch(() => {}) }} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>🔗 Copy link to share</button>
+              </div>
+            )
+          })()}
         </div>
       </div>
 
