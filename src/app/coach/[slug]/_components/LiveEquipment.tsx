@@ -5,10 +5,12 @@
 // (coach_equipment) with inline quantity/status editing. (The Restock list is
 // intentionally left out of v1.)
 
-import { useState, type CSSProperties } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert } from '../_lib/coach-db'
+import { seedLumioEquipment } from '../_lib/lumio-equipment'
+import { getSettings, setSettings } from '../_lib/settings-store'
 
 type Item = { id: string; item: string; category?: string | null; quantity?: number | null; status?: string | null; notes?: string | null }
 type Kit = { id: string; session_type: string; label: string }
@@ -22,6 +24,15 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
   const kits = useCoachTable<Kit>('coach_kit_items')
   const [edit, setEdit] = useState<Item | 'new' | null>(null)
   const [filter, setFilter] = useState<'all' | 'attention'>('all')
+
+  // First visit: load the Lumio default kit + inventory as a starting point
+  // (once — the coach can then edit or remove anything they don't want).
+  useEffect(() => {
+    if (items.loading || kits.loading || getSettings().equipmentSeeded) return
+    if (items.rows.length || kits.rows.length) { setSettings({ equipmentSeeded: true }); return }
+    seedLumioEquipment().then(() => { setSettings({ equipmentSeeded: true }); items.reload(); kits.reload() }).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.loading, kits.loading])
 
   const statusColour = (s?: string | null) => s === 'in_stock' ? T.good : s === 'order' ? '#3A8EE0' : s === 'repair' ? T.bad : T.warn
   const tiles: [string, number, string][] = [
