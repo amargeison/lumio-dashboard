@@ -6,9 +6,9 @@
 const KEY = 'lumio_coach_menu_hidden'
 const EVT = 'lumio-coach-menu-changed'
 
-// Never hideable — a coach must always be able to reach the Dashboard and
-// Settings, so they can never lock themselves out of the menu.
-export const ALWAYS_VISIBLE = ['dashboard', 'settings']
+// Never hideable — Dashboard and Settings (so a coach can never lock themselves
+// out) plus Coaches (always shown; a solo coach just sees themselves).
+export const ALWAYS_VISIBLE = ['dashboard', 'settings', 'staff']
 
 function read(): string[] {
   if (typeof window === 'undefined') return []

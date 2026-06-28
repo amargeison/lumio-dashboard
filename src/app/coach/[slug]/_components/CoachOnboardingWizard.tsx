@@ -10,7 +10,6 @@ import { CoachImport } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
 import { setSettings, getSettings } from '../_lib/settings-store'
 import { seedLumioResources } from '../_lib/lumio-resources'
-import { setHidden as setMenuHidden } from '../_lib/menu-visibility'
 import { applyTier } from '../_lib/feature-flags'
 
 const ACCENT = '#3A8EE0'
@@ -94,10 +93,8 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
         await sb().from('coach_players').insert(toAdd.map(p => ({ coach_id: uid, name: p.name.trim(), level: p.level.trim() || null })))
       }
 
-      // Solo vs staffed: hide the Coaches menu for a solo coach (they can re-enable
-      // it any time in Settings → Menu visibility once they hire staff).
-      if (wantStaff === false) setMenuHidden('staff', true)
-      if (wantStaff === true) setMenuHidden('staff', false)
+      // Coaches is always visible now (a solo coach simply sees themselves), so we
+      // no longer hide it during onboarding.
 
       // New founders start on Pro Lite — Racket Progression only. Video & Audio
       // and Effort & Rewards (smartwatch GPS) stay off until those features are
