@@ -302,21 +302,32 @@ function buildBrief(s: Session) {
 function CoachAiBrief({ T, accent, s }: { T: ThemeTokens; accent: AccentTokens; s: Session }) {
   const brief = buildBrief(s)
   const totalMins = brief.plan.reduce((sum, p) => sum + p.mins, 0)
-  const [added, setAdded] = useState<'idle' | 'saving' | 'done'>('idle')
+  const bookings = useCoachTable<any>('coach_bookings')
+  const [added, setAdded] = useState<'idle' | 'saving' | 'done' | 'unbooked'>('idle')
   const addToPlanner = async () => {
-    if (added !== 'idle') return
+    if (added === 'saving' || added === 'done' || added === 'unbooked') return
     setAdded('saving')
     try {
+      const name = (s.player_name || '').trim()
+      const today = new Date().toISOString().slice(0, 10)
+      // Find this player's next upcoming booking → link the plan to it; else leave
+      // it unbooked so it shows under "Needs a booking" in the Session Planner.
+      const bk = bookings.rows
+        .filter((b: any) => (b.player_name || '').trim().toLowerCase() === name.toLowerCase() && (b.booking_date || '') >= today && b.status !== 'cancelled')
+        .sort((a: any, b: any) => (a.booking_date || '').localeCompare(b.booking_date || ''))[0]
       await dbInsert('coach_session_plans', {
-        title: `Next session — ${s.player_name || 'player'}`,
-        session_date: null,
-        group_name: s.player_name || null,
+        title: bk ? `${name || 'Player'} — ${new Date(bk.booking_date).toLocaleDateString('en-GB')}` : `Next session — ${name || 'player'}`,
+        session_date: bk?.booking_date || null,
+        start_time: bk?.start_time || null,
+        court: bk?.court || null,
+        session_type: bk?.type || 'Private',
+        group_name: name || null,
         focus: s.review_json?.nextFocus || s.focus || 'Follow-up session',
         duration_min: totalMins,
         drills: brief.planDrills.join('\n'),
         notes: brief.plan.map(p => `${p.mins}m · ${p.phase}: ${p.detail}`).join('\n'),
       })
-      setAdded('done')
+      setAdded(bk ? 'done' : 'unbooked')
     } catch { setAdded('idle') }
   }
   return (
@@ -356,8 +367,8 @@ function CoachAiBrief({ T, accent, s }: { T: ThemeTokens; accent: AccentTokens; 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 14, alignItems: 'center' }}>
         <span style={{ fontSize: 10.5, color: T.text3, marginRight: 4 }}>Suggested drills:</span>
         {brief.planDrills.map((d, i) => <span key={i} style={{ fontSize: 11, color: T.text2, padding: '4px 8px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}` }}>{d}</span>)}
-        <button onClick={addToPlanner} disabled={added !== 'idle'} style={{ marginLeft: 'auto', appearance: 'none', border: added === 'done' ? `1px solid ${T.good}` : 0, padding: '8px 14px', borderRadius: 9, background: added === 'done' ? 'transparent' : accent.hex, color: added === 'done' ? T.good : T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: added === 'idle' ? 'pointer' : 'default' }}>
-          {added === 'done' ? '✓ Added to planner' : added === 'saving' ? 'Adding…' : '📅 Add to next session plan'}
+        <button onClick={addToPlanner} disabled={added !== 'idle'} title={added === 'unbooked' ? 'Saved to the planner — book a session and assign it under “Needs a booking”.' : ''} style={{ marginLeft: 'auto', appearance: 'none', border: (added === 'done' || added === 'unbooked') ? `1px solid ${T.good}` : 0, padding: '8px 14px', borderRadius: 9, background: (added === 'done' || added === 'unbooked') ? 'transparent' : accent.hex, color: (added === 'done' || added === 'unbooked') ? T.good : T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: added === 'idle' ? 'pointer' : 'default' }}>
+          {added === 'done' ? '✓ Added to their booking' : added === 'unbooked' ? '✓ Saved — needs a booking' : added === 'saving' ? 'Adding…' : '📅 Add to next session plan'}
         </button>
       </div>
     </div>

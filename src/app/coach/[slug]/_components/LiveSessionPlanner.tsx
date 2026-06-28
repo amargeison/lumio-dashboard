@@ -7,6 +7,7 @@
 
 import { useState } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbRemove, RACKET_STAGES, RACKET_SKILLS, logSessionAttendance } from '../_lib/coach-db'
 import { MediaCaptureModal } from './MediaCaptureModal'
@@ -98,6 +99,12 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
     .sort((a, b) => (a.booking_date || '').localeCompare(b.booking_date || '') || sortByTime(a, b))
   const nextUp = upcoming[0] || null
   const needsPlan = upcoming.filter(b => !planFor(b)).slice(0, 8)
+  // Plans created (e.g. from a lesson's "Add to next session plan") that aren't
+  // tied to a booking yet — they wait here until the session is booked.
+  const unbookedPlans = plans.rows.filter((pl: any) => !pl.session_date)
+  const assignPlanToBooking = async (planId: string, b: any) => {
+    await plans.edit(planId, { session_date: b.booking_date, start_time: b.start_time || null, court: b.court || null, session_type: b.type || 'Private', group_name: b.player_name || null })
+  }
   const todays = bookings.rows.filter(b => b.booking_date === todayISO && b.status !== 'cancelled').sort(sortByTime)
   const weekStartISO = isoD(weekStart)
   const weekCount = bookings.rows.filter(b => (b.booking_date || '') >= weekStartISO && (b.booking_date || '') < weekEndISO && b.status !== 'cancelled').length
@@ -185,6 +192,32 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
               </div>
             ))}
           </div>
+
+          {/* Needs a booking — plans waiting for a session to be booked */}
+          {unbookedPlans.length > 0 && (
+            <div style={{ background: T.panel, border: `1px solid ${accent.border}`, borderRadius: 12, padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 6 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Needs a booking</div>
+                <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{unbookedPlans.length}</div>
+              </div>
+              <div style={{ fontSize: 11, color: T.text3, marginBottom: 8 }}>Plans ready to go — book the session, then assign the plan to it.</div>
+              {unbookedPlans.map((pl: any) => (
+                <div key={pl.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: `1px solid ${T.border}`, flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: 140 }}>
+                    <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{pl.group_name || pl.title || 'Session plan'}</div>
+                    {pl.focus && <div style={{ fontSize: 11, color: T.text3 }}>🎯 {pl.focus}</div>}
+                  </div>
+                  <button onClick={() => setSel(pl)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '6px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}>View plan</button>
+                  {upcoming.length > 0 ? (
+                    <select defaultValue="" onChange={e => { const b = upcoming.find(x => x.id === e.target.value); if (b) assignPlanToBooking(pl.id, b) }} style={{ background: T.panel2, color: T.text2, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '6px 9px', fontSize: 11.5, cursor: 'pointer', fontFamily: FONT }}>
+                      <option value="">Assign to booking…</option>
+                      {upcoming.map(b => <option key={b.id} value={b.id}>{[b.player_name || b.title, b.booking_date && new Date(b.booking_date).toLocaleDateString('en-GB'), b.start_time].filter(Boolean).join(' · ')}</option>)}
+                    </select>
+                  ) : <span style={{ fontSize: 11, color: T.text3 }}>No bookings yet — add one in the Booking Calendar</span>}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* This week's calendar (synced from bookings) */}
           <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 0, overflow: 'hidden' }}>
