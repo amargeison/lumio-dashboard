@@ -6,22 +6,46 @@
 // Settings; an empty library still shows the tabs.
 
 import { useState, type CSSProperties } from 'react'
-import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
+import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, RACKET_STAGES } from '../_lib/coach-db'
+import { DrillLibrary } from './DrillLibrary'
 
 type Res = { id: string; title: string; category?: string | null; format?: string | null; level?: string | null; duration?: string | null; racket?: string | null; tags?: string | null; url?: string | null; notes?: string | null }
 const TABS: [string, string][] = [['all', 'All'], ['Drill Library', 'Drill Library'], ['Drill', 'Drill'], ['Technique', 'Technique'], ['Training plan', 'Training plan'], ['Fitness', 'Fitness'], ['Mental', 'Mental'], ['Books', 'Books']]
 const fmtIcon = (f?: string | null) => f === 'Video' ? '▶' : f === 'Plan' ? '📅' : f === 'Worksheet' ? '📝' : '📄'
 const actionLabel = (f?: string | null) => f === 'Video' ? 'Watch video' : f === 'Plan' ? 'Open plan' : f === 'Worksheet' ? 'Open worksheet' : 'Open pdf'
 
-export function LiveResources({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+export function LiveResources({ T, accent, density }: { T: ThemeTokens; accent: AccentTokens; density: Density }) {
   const resources = useCoachTable<Res>('coach_resources')
   const [tab, setTab] = useState('all')
   const [edit, setEdit] = useState<Res | 'new' | null>(null)
+  const [q, setQ] = useState('')
+  const [racket, setRacket] = useState('all')
 
   const levelColour = (l?: string | null) => l === 'Beginner' ? T.good : l === 'Intermediate' ? '#3A8EE0' : l === 'Advanced' ? T.bad : T.text3
-  const filtered = resources.rows.filter(r => tab === 'all' ? true : tab === 'Drill Library' ? r.category === 'Drill' : r.category === tab)
+  const needle = q.trim().toLowerCase()
+  const filtered = resources.rows.filter(r => {
+    if (!(tab === 'all' ? true : r.category === tab)) return false
+    if (racket !== 'all' && r.racket !== racket) return false
+    if (needle) {
+      const hay = [r.title, r.category, r.format, r.level, r.tags, r.notes, RACKET_STAGES.find(s => s.id === r.racket)?.name].filter(Boolean).join(' ').toLowerCase()
+      if (!hay.includes(needle)) return false
+    }
+    return true
+  })
+
+  const input: CSSProperties = { appearance: 'none', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, color: T.text, fontSize: 13, padding: '9px 12px 9px 34px', fontFamily: FONT, outline: 'none', width: '100%' }
+  const Chip = ({ id, label, colour }: { id: string; label: string; colour?: string }) => {
+    const on = racket === id
+    return (
+      <button onClick={() => setRacket(id)} style={{ appearance: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, border: `1px solid ${on ? accent.border : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text2, borderRadius: 999, padding: '5px 11px', fontSize: 11.5, fontWeight: on ? 600 : 400, cursor: 'pointer', fontFamily: FONT }}>
+        {colour && <span style={{ width: 11, height: 8, borderRadius: 2, background: colour, border: '1px solid rgba(128,128,128,0.4)' }} />}
+        {label}
+      </button>
+    )
+  }
 
   return (
     <div style={{ fontFamily: FONT }}>
@@ -36,6 +60,24 @@ export function LiveResources({ T, accent }: { T: ThemeTokens; accent: AccentTok
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
         {TABS.map(([id, label]) => <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: `1px solid ${tab === id ? accent.border : T.border}`, padding: '6px 13px', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontFamily: FONT, background: tab === id ? accent.dim : 'transparent', color: tab === id ? accent.hex : T.text2, fontWeight: tab === id ? 600 : 400 }}>{id === 'Drill Library' ? '🎾 ' : ''}{label}</button>)}
+      </div>
+
+      {tab === 'Drill Library' ? (
+        // The flagship Lumio drill library — search, racket filter, grouped sections, printable drill sheets.
+        <DrillLibrary T={T} accent={accent} density={density} />
+      ) : (
+      <>
+      {/* Search + racket filter */}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+        <div style={{ position: 'relative', flex: 1, minWidth: 220, maxWidth: 360 }}>
+          <Icon name="search" size={15} stroke={1.7} style={{ position: 'absolute', left: 11, top: 10, color: T.text3 }} />
+          <input style={input} value={q} onChange={e => setQ(e.target.value)} placeholder="Search resources — title, tag or racket…" />
+        </div>
+        {filtered.length > 0 && <div style={{ fontSize: 11.5, color: T.text3 }}>{filtered.length} {filtered.length === 1 ? 'resource' : 'resources'}</div>}
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+        <Chip id="all" label="All rackets" />
+        {RACKET_STAGES.map(s => <Chip key={s.id} id={s.id} label={s.name} colour={s.colour} />)}
       </div>
 
       {filtered.length === 0 ? (
@@ -71,6 +113,8 @@ export function LiveResources({ T, accent }: { T: ThemeTokens; accent: AccentTok
             )
           })}
         </div>
+      )}
+      </>
       )}
 
       {edit && <ResourceForm T={T} accent={accent} res={edit === 'new' ? null : edit}

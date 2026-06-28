@@ -39,6 +39,9 @@ export type CoachSettings = {
   primaryVenueId: string         // home / main site (overrides the data default)
   syncedVenues: string[]         // venue ids with calendar sync connected
   resourcesPreloaded: boolean    // Resource Centre starts with Lumio's library (true) or empty so the coach adds their own (false)
+  // The head coach's own contact + DBS / safeguarding record (the account owner).
+  // Empty by default so a new head is correctly flagged until they record it.
+  head: { phone: string; email: string; contractedHours: number | null; dbsNumber: string; dbsIssued: string; dbsExpiry: string; safeguardingTrained: boolean; safeguardingDate: string }
 }
 
 export const DEFAULT_SETTINGS: CoachSettings = {
@@ -65,6 +68,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   primaryVenueId: '',
   syncedVenues: ['riverside'],
   resourcesPreloaded: true,
+  head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '' },
 }
 
 const KEY = 'lumio_coach_settings'

@@ -23,6 +23,34 @@ export const LUMIO_RESOURCES: Record<string, any>[] = [
   { title: 'Parent guide: ball stages', category: 'Training plan', level: 'Beginner', format: 'PDF', duration: null, racket: null, tags: 'parents, red-orange-green', notes: 'Explains the red/orange/green/yellow ball pathway for parents.', url: null },
   { title: 'Drop shot & touch session', category: 'Technique', level: 'Intermediate', format: 'Video', duration: '5 min', racket: 'purple', tags: 'touch, specialty', notes: 'Disguised drop shot mechanics and feel drills.', url: null },
   { title: 'Match-play tactics worksheet', category: 'Mental', level: 'Advanced', format: 'Worksheet', duration: null, racket: 'red', tags: 'tactics, scouting', notes: 'Pre-match plan and opponent-read worksheet.', url: null },
+
+  // — Technique —
+  { title: 'Two-handed backhand fundamentals', category: 'Technique', level: 'Beginner', format: 'Video', duration: '6 min', racket: 'yellow', tags: 'backhand, technique', notes: 'Grip, unit turn and contact point for a reliable two-hander.', url: null },
+  { title: 'Slice backhand: stay low & carve', category: 'Technique', level: 'Intermediate', format: 'Video', duration: '5 min', racket: 'blue', tags: 'backhand, slice', notes: 'Knife-edge slice for defence, approach and variety.', url: null },
+  { title: 'Flat serve mechanics & toss', category: 'Technique', level: 'Intermediate', format: 'Video', duration: '8 min', racket: 'green', tags: 'serve, technique', notes: 'Trophy position, toss consistency and racket-drop timing.', url: null },
+  { title: 'Open-stance forehand recovery', category: 'Technique', level: 'Advanced', format: 'Video', duration: '6 min', racket: 'red', tags: 'forehand, footwork', notes: 'Load, explode and recover from the open stance.', url: null },
+
+  // — Training plan —
+  { title: '6-week Orange-racket block', category: 'Training plan', level: 'Beginner', format: 'Plan', duration: '6 weeks', racket: 'orange', tags: 'periodisation, beginner', notes: 'Structured block to earn the Orange racket criteria.', url: null },
+  { title: 'Pre-tournament 2-week taper', category: 'Training plan', level: 'Advanced', format: 'Plan', duration: '2 weeks', racket: 'red', tags: 'periodisation, competition', notes: 'Sharpen and taper into a target tournament week.', url: null },
+  { title: 'Adult improver — 8-session plan', category: 'Training plan', level: 'Intermediate', format: 'Plan', duration: '8 weeks', racket: 'yellow', tags: 'adults, technique', notes: 'Eight-session pathway for returning adult players.', url: null },
+
+  // — Fitness —
+  { title: 'Dynamic warm-up routine', category: 'Fitness', level: 'All levels', format: 'PDF', duration: '10 min', racket: null, tags: 'warm-up, mobility', notes: 'On-court dynamic warm-up to prep for any session.', url: null },
+  { title: 'Court sprints & recovery intervals', category: 'Fitness', level: 'Intermediate', format: 'PDF', duration: '20 min', racket: null, tags: 'conditioning, speed', notes: 'Tennis-specific interval set for match endurance.', url: null },
+  { title: 'Core & rotational power circuit', category: 'Fitness', level: 'Advanced', format: 'PDF', duration: '25 min', racket: null, tags: 'strength, power', notes: 'Med-ball and core circuit for racket-head speed.', url: null },
+  { title: 'Cool-down & mobility flow', category: 'Fitness', level: 'All levels', format: 'PDF', duration: '8 min', racket: null, tags: 'recovery, mobility', notes: 'Post-session stretch and mobility sequence.', url: null },
+
+  // — Mental —
+  { title: 'Pre-match focus routine', category: 'Mental', level: 'Intermediate', format: 'Worksheet', duration: null, racket: null, tags: 'routines, focus', notes: 'A simple pre-match routine to arrive ready to compete.', url: null },
+  { title: 'Goal-setting & review sheet', category: 'Mental', level: 'All levels', format: 'Worksheet', duration: null, racket: null, tags: 'goals, review', notes: 'Termly goal-setting and self-review for players.', url: null },
+  { title: 'Dealing with nerves & tight points', category: 'Mental', level: 'Advanced', format: 'Worksheet', duration: null, racket: 'black', tags: 'mental, pressure', notes: 'Tools for playing the big points freely.', url: null },
+
+  // — Books / reading —
+  { title: 'Winning Ugly — Brad Gilbert', category: 'Books', level: 'All levels', format: 'PDF', duration: null, racket: null, tags: 'tactics, reading', notes: 'Classic on match-craft and outthinking opponents.', url: null },
+  { title: 'The Inner Game of Tennis — Gallwey', category: 'Books', level: 'All levels', format: 'PDF', duration: null, racket: null, tags: 'mental, reading', notes: 'The foundational text on the mental side of the game.', url: null },
+  { title: 'Coaching reading list (junior pathway)', category: 'Books', level: 'Beginner', format: 'PDF', duration: null, racket: null, tags: 'coaching, parents', notes: 'Curated reading for coaches and parents of juniors.', url: null },
+  { title: 'Periodisation for tennis — primer', category: 'Books', level: 'Advanced', format: 'PDF', duration: null, racket: null, tags: 'planning, reading', notes: 'A short primer on planning a player’s training year.', url: null },
 ]
 
 // Insert the library for the current coach (skips if they already have these titles).
