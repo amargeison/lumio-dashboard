@@ -60,7 +60,7 @@ import { LiveCamps } from './_components/LiveCamps'
 import { LivePayments } from './_components/LivePayments'
 import { LiveEquipment } from './_components/LiveEquipment'
 import { LiveResources } from './_components/LiveResources'
-import { CoachGpsVideo } from './_components/CoachGpsVideo'
+import { LiveVideoAudio } from './_components/LiveVideoAudio'
 import { LiveEffortRewards } from './_components/LiveEffortRewards'
 import { LiveStaff } from './_components/LiveStaff'
 import { useCoachStats } from './_lib/coach-db'
@@ -286,7 +286,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'camps':       return <LiveCamps T={T} accent={accent} />
         case 'payments':    return <LivePayments T={T} accent={accent} />
         case 'gpsheatmaps': return <LiveEffortRewards T={T} accent={accent} density={density} />
-        case 'videoaudio':  return <CoachGpsVideo T={T} accent={accent} />
+        case 'videoaudio':  return <LiveVideoAudio T={T} accent={accent} />
         case 'planner':     return <LiveSessionPlanner T={T} accent={accent} density={density} onNavigate={setActive} />
         case 'venues':      return <LiveCourtPlanner T={T} accent={accent} onNavigate={setActive} />
         case 'development': return <LiveDevelopment T={T} accent={accent} />
