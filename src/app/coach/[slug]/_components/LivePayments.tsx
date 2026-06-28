@@ -27,7 +27,7 @@ async function pushEquipmentToKit(kind: string, equipment: string) {
 }
 
 type Pkg = { id: string; name: string; kind?: string | null; price?: number | null; sessions?: number | null; period?: string | null; description?: string | null; features?: string | null }
-type Pay = { id: string; player_name?: string | null; item?: string | null; amount?: number | null; status?: string | null; sessions_used?: number | null; sessions_total?: number | null; renews_date?: string | null }
+type Pay = { id: string; player_name?: string | null; item?: string | null; amount?: number | null; status?: string | null; sessions_used?: number | null; sessions_total?: number | null; renews_date?: string | null; paid?: boolean | null; paid_at?: string | null }
 type Player = { id: string; name: string }
 type Sess = { id: string; player_name?: string | null; session_date?: string | null; focus?: string | null; rating?: number | null }
 type RosterRow = { name: string; assign: Pay | null; used: number; sessions: Sess[] }
@@ -80,10 +80,12 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const lessonRows = [...rosterRows, ...extraRows]
 
   const statusColour = (s: string) => s === 'overdue' ? T.bad : s === 'expiring' ? T.warn : T.good
-  const earned = payments.rows.filter(p => statusOf(p) !== 'overdue').reduce((s, p) => s + (p.amount || 0), 0)
-  const outstanding = payments.rows.filter(p => statusOf(p) === 'overdue').reduce((s, p) => s + (p.amount || 0), 0)
+  // Earned = payments collected (paid); Outstanding = priced packages not yet paid.
+  const earned = payments.rows.filter(p => p.paid).reduce((s, p) => s + (p.amount || 0), 0)
+  const outstanding = payments.rows.filter(p => !p.paid && (p.amount || 0) > 0).reduce((s, p) => s + (p.amount || 0), 0)
   const activeCount = payments.rows.filter(p => statusOf(p) === 'active').length
   const expiringCount = payments.rows.filter(p => statusOf(p) === 'expiring').length
+  const togglePaid = async (p: Pay) => { await payments.edit(p.id, { paid: !p.paid, paid_at: !p.paid ? new Date().toISOString() : null }) }
 
   const tiles: [string, string, string][] = [
     ['Earned this month', money(earned), accent.hex],
@@ -144,8 +146,8 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
         </div>
         {lessonRows.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No players on the roster yet — add players in Player Roster and they’ll appear here.</div> : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
-              <thead><tr>{['Player', 'Plan', 'Used', 'Status', 'Renews'].map(h => <th key={h} style={{ textAlign: 'left', fontSize: 10, color: T.text3, fontWeight: 600, padding: '6px 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>)}</tr></thead>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 780 }}>
+              <thead><tr>{['Player', 'Plan', 'Used', 'Cost', 'Status', 'Paid', 'Renews'].map(h => <th key={h} style={{ textAlign: 'left', fontSize: 10, color: T.text3, fontWeight: 600, padding: '6px 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>)}</tr></thead>
               <tbody>
                 {lessonRows.map(r => {
                   const a = r.assign
@@ -166,9 +168,13 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
                           </div>
                         ) : <span style={{ fontSize: 11, color: T.text3 }}>{r.used} logged · PAYG</span>}
                       </td>
+                      <td style={{ padding: '10px 10px', fontSize: 12, color: a && a.amount ? T.text : T.text3 }}>{a && a.amount ? money(a.amount) : '—'}</td>
                       <td style={{ padding: '10px 10px' }}>{a
                         ? <span style={{ fontSize: 9.5, fontWeight: 700, color: statusColour(s), background: `${statusColour(s)}22`, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase' }}>{s}</span>
                         : <span style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, background: T.hover, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase' }}>Pay as you go</span>}</td>
+                      <td style={{ padding: '10px 10px' }}>{a
+                        ? <button onClick={e => { e.stopPropagation(); togglePaid(a) }} title="Click to mark paid / unpaid" style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5, border: `1px solid ${a.paid ? T.good : T.warn}`, background: a.paid ? `${T.good}22` : 'transparent', color: a.paid ? T.good : T.warn }}>{a.paid ? '✓ Paid' : 'Mark paid'}</button>
+                        : <span style={{ fontSize: 12, color: T.text3 }}>—</span>}</td>
                       <td style={{ padding: '10px 10px', fontSize: 12, color: T.text2 }}>{a ? fmtD(a.renews_date) : '—'}</td>
                     </tr>
                   )

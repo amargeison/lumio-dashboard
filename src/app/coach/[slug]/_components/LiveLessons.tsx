@@ -303,11 +303,27 @@ function CoachAiBrief({ T, accent, s }: { T: ThemeTokens; accent: AccentTokens; 
   const brief = buildBrief(s)
   const totalMins = brief.plan.reduce((sum, p) => sum + p.mins, 0)
   const bookings = useCoachTable<any>('coach_bookings')
+  const plans = useCoachTable<any>('coach_session_plans')
   const [added, setAdded] = useState<'idle' | 'saving' | 'done' | 'unbooked'>('idle')
+  const planFocus = s.review_json?.nextFocus || s.focus || 'Follow-up session'
+  const nameKey = (s.player_name || '').trim().toLowerCase()
+  const matchPlan = (pl: any) => (pl.group_name || '').trim().toLowerCase() === nameKey && (pl.focus || '') === planFocus
+  // If this session's plan was already added, reflect that on the button (so it
+  // can't be added twice from a revisit).
+  useEffect(() => {
+    if (added === 'saving') return
+    const dupe = plans.rows.find(matchPlan)
+    setAdded(dupe ? (dupe.session_date ? 'done' : 'unbooked') : 'idle')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plans.rows])
   const addToPlanner = async () => {
     if (added === 'saving' || added === 'done' || added === 'unbooked') return
     setAdded('saving')
     try {
+      // Don't create a duplicate — if a plan for this player + focus already exists,
+      // just reflect its state.
+      const existing = plans.rows.find(matchPlan)
+      if (existing) { setAdded(existing.session_date ? 'done' : 'unbooked'); return }
       const name = (s.player_name || '').trim()
       const today = new Date().toISOString().slice(0, 10)
       // Find this player's next upcoming booking → link the plan to it; else leave
@@ -322,11 +338,12 @@ function CoachAiBrief({ T, accent, s }: { T: ThemeTokens; accent: AccentTokens; 
         court: bk?.court || null,
         session_type: bk?.type || 'Private',
         group_name: name || null,
-        focus: s.review_json?.nextFocus || s.focus || 'Follow-up session',
+        focus: planFocus,
         duration_min: totalMins,
         drills: brief.planDrills.join('\n'),
         notes: brief.plan.map(p => `${p.mins}m · ${p.phase}: ${p.detail}`).join('\n'),
       })
+      plans.reload()
       setAdded(bk ? 'done' : 'unbooked')
     } catch { setAdded('idle') }
   }

@@ -5,7 +5,7 @@
 // to draft focus points & drills) and the auto-generated timed run-sheet, wired
 // to coach_session_plans.
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
@@ -230,25 +230,35 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
         </div>
       )}
 
-      {tab === 'today' && (
+      {tab === 'today' && (() => {
+        // Show the selected session's full plan inline below the cards (like the demo);
+        // default to the first session today that has a plan.
+        const selPlan = (sel && todays.some(b => planFor(b)?.id === sel.id)) ? sel : (todays.map(planFor).find(Boolean) || null)
+        return (
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Today · {todays.length} session{todays.length === 1 ? '' : 's'}</div>
           {todays.length === 0 ? <div style={{ fontSize: 13, color: T.text3, padding: '20px 0' }}>No sessions today.</div> : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
               {todays.map(b => {
                 const pl = planFor(b)
+                const isSel = !!(pl && selPlan && pl.id === selPlan.id)
                 return (
-                  <button key={b.id} onClick={() => openBooking(b)} style={{ textAlign: 'left', appearance: 'none', cursor: 'pointer', background: T.panel, border: `1px solid ${pl ? T.border : accent.border}`, borderLeft: `3px solid ${typeCol(T, accent, b.type)}`, borderRadius: 10, padding: 14 }}>
+                  <button key={b.id} onClick={() => pl ? setSel(pl) : openBooking(b)} style={{ textAlign: 'left', appearance: 'none', cursor: 'pointer', background: isSel ? accent.dim : T.panel, border: `1px solid ${isSel ? accent.hex : (pl ? T.border : accent.border)}`, borderLeft: `3px solid ${typeCol(T, accent, b.type)}`, borderRadius: 10, padding: 14, boxShadow: isSel ? `0 0 0 1px ${accent.hex}` : 'none' }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{b.start_time || '—'} · {b.title || b.player_name || 'Session'}</div>
                     <div style={{ fontSize: 11, color: T.text3, marginTop: 3 }}>{[b.type, b.court, b.duration_min ? `${b.duration_min}m` : ''].filter(Boolean).join(' · ')}</div>
-                    <div style={{ fontSize: 11, color: pl ? T.good : accent.hex, fontWeight: 600, marginTop: 8 }}>{pl ? '✓ Plan ready — open' : '+ Build session'}</div>
+                    <div style={{ fontSize: 11, color: pl ? T.good : accent.hex, fontWeight: 600, marginTop: 8 }}>{pl ? (isSel ? '✓ Plan — shown below' : '✓ Plan ready — view') : '+ Build session'}</div>
                   </button>
                 )
               })}
             </div>
           )}
+          {selPlan && <SessionRunSheet T={T} accent={accent} density={density} plan={selPlan} players={players.rows} onNavigate={onNavigate} inline
+            onCompleted={() => { setSel(null); plans.reload() }}
+            onClose={() => setSel(null)}
+            onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', selPlan.id); setSel(null); plans.reload() } }} />}
         </div>
-      )}
+        )
+      })()}
 
       {tab === 'week' && (
         <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
@@ -262,7 +272,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
 
       {open && <NewSession T={T} accent={accent} density={density} players={players.rows} prefill={prefill}
         onClose={() => { setOpen(false); setPrefill(null) }} onSaved={() => { setOpen(false); setPrefill(null); plans.reload() }} />}
-      {sel && <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} onNavigate={onNavigate}
+      {sel && tab !== 'today' && <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} onNavigate={onNavigate}
         onCompleted={() => { setSel(null); plans.reload() }}
         onClose={() => setSel(null)}
         onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />}
@@ -381,14 +391,34 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
-  // Prefill racket from the chosen roster player.
-  const onPickPlayer = (name: string) => { setPlayer(name); const p = players.find(x => x.name === name); if (p?.racket_stage) setRacket(p.racket_stage) }
+  // The player's last lesson summary → its "next focus" is what this session should
+  // pick up from, so the coach doesn't retype it.
+  const sessions = useCoachTable<any>('coach_sessions')
+  const lastFocusFor = (name: string) => {
+    if (!name) return ''
+    const last = sessions.rows
+      .filter((s: any) => (s.player_name || '').trim().toLowerCase() === name.trim().toLowerCase())
+      .sort((a: any, b: any) => (b.session_date || '').localeCompare(a.session_date || ''))[0]
+    return last ? (last.review_json?.nextFocus || last.focus || '') : ''
+  }
+
+  // On open with a known player, seed the focus from their last summary (if blank).
+  useEffect(() => {
+    if (!focus.trim() && player) { const f = lastFocusFor(player); if (f) setFocus(f) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessions.rows])
+
+  // Prefill racket + last-session focus from the chosen roster player.
+  const onPickPlayer = (name: string) => { setPlayer(name); const p = players.find(x => x.name === name); if (p?.racket_stage) setRacket(p.racket_stage); const f = lastFocusFor(name); if (f) setFocus(f) }
 
   const draft = async () => {
-    if (!focus.trim()) { setErr('Add a session focus first'); return }
+    // Fall back to the player's last "next focus" if the coach hasn't typed one.
+    let useFocus = focus.trim()
+    if (!useFocus) { useFocus = lastFocusFor(player); if (useFocus) setFocus(useFocus) }
+    if (!useFocus) { setErr('Add a session focus first (or pick a player with a previous summary).'); return }
     setDrafting(true); setErr('')
     try {
-      const res = await fetch('/api/coach/session-draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, focus, racket: RACKET_STAGES.find(s => s.id === racket)?.name, standard, duration, note, player }) })
+      const res = await fetch('/api/coach/session-draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, focus: useFocus, racket: RACKET_STAGES.find(s => s.id === racket)?.name, standard, duration, note, player }) })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Draft failed')
       setFocusPoints((data.focus_points || []).join('\n'))
@@ -495,7 +525,7 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
 }
 
 // ── Saved session run-sheet ──────────────────────────────────────────────────
-function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onCompleted, onClose, onDelete }: Common & { plan: any; players: any[]; onNavigate?: (s: string) => void; onCompleted: () => void; onClose: () => void; onDelete: () => void }) {
+function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onCompleted, onClose, onDelete, inline }: Common & { plan: any; players: any[]; onNavigate?: (s: string) => void; onCompleted: () => void; onClose: () => void; onDelete: () => void; inline?: boolean }) {
   const sheet = runSheet((plan.session_type as SType) || 'Private', plan.focus || '', plan.duration_min || 60)
   const fp = (plan.focus_points || '').split('\n').filter(Boolean)
   const dr = (plan.drills || '').split('\n').filter(Boolean)
@@ -514,15 +544,14 @@ function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onComp
     } catch { setCompleting(false) }
   }
   const act = (bg: string, color: string, border?: string): React.CSSProperties => ({ appearance: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, border: border || 'none', background: bg, color, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' })
-  return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
-      <div style={{ width: '100%', maxWidth: 620, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>
+  const body = (
+      <>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <div style={{ flex: 1 }}>
             <h3 style={{ color: T.text, fontSize: 18, fontWeight: 700, margin: 0 }}>{plan.title}</h3>
             <div style={{ fontSize: 12, color: T.text3, marginTop: 3 }}>{[plan.session_type, plan.session_date && new Date(plan.session_date).toLocaleDateString('en-GB'), plan.start_time, plan.court, `${plan.duration_min || 60} mins`].filter(Boolean).join(' · ')}</div>
           </div>
-          <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 17 }}>×</button>
+          {!inline && <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 17 }}>×</button>}
         </div>
 
         {/* Session actions */}
@@ -559,7 +588,14 @@ function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onComp
         </div>
         {mediaOpen && <MediaCaptureModal T={T} accent={accent} defaultKind="audio" players={players} playerName={plan.group_name || undefined}
           onClose={() => setMediaOpen(false)} onSummary={() => { setMediaOpen(false); onCompleted() }} />}
-      </div>
+      </>
+  )
+  // Inline (Today view) — render as a panel under the session cards, like the demo.
+  if (inline) return <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18, marginTop: 14 }}>{body}</div>
+  // Default — modal.
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 620, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>{body}</div>
     </div>
   )
 }

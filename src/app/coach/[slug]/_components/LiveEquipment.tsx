@@ -135,9 +135,9 @@ function KitCard({ T, accent, type, items, reload, remove }: { T: ThemeTokens; a
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-        <input value={adding} onChange={e => setAdding(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') add() }} placeholder="Add item" style={{ flex: 1, background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 9px', fontSize: 12, fontFamily: FONT, outline: 'none' }} />
-        <button onClick={add} style={{ appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+</button>
+      <div style={{ display: 'flex', gap: 6, marginTop: 10, width: '100%' }}>
+        <input value={adding} onChange={e => setAdding(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') add() }} placeholder="Add item" style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 9px', fontSize: 12, fontFamily: FONT, outline: 'none' }} />
+        <button onClick={add} style={{ flexShrink: 0, appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '6px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+</button>
       </div>
     </div>
   )
