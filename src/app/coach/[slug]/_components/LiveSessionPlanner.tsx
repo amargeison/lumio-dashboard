@@ -8,7 +8,7 @@
 import { useState } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { useCoachTable, dbInsert, dbRemove, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbRemove, RACKET_STAGES, RACKET_SKILLS, logSessionAttendance } from '../_lib/coach-db'
 import { MediaCaptureModal } from './MediaCaptureModal'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -474,7 +474,9 @@ function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onComp
     if (completing) return
     setCompleting(true)
     try {
-      await dbInsert('coach_sessions', { player_name: plan.group_name || plan.title, session_date: new Date().toISOString().slice(0, 10), focus: plan.focus || plan.title || 'Session', rating: null, summary: plan.notes || '', ai_review: '' })
+      const when = new Date().toISOString().slice(0, 10)
+      await dbInsert('coach_sessions', { player_name: plan.group_name || plan.title, session_date: when, focus: plan.focus || plan.title || 'Session', rating: null, summary: plan.notes || '', ai_review: '' })
+      logSessionAttendance(plan.group_name, when)
       onCompleted(); onNavigate?.('lessons')
     } catch { setCompleting(false) }
   }

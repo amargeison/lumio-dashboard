@@ -1,181 +1,183 @@
 'use client'
 
-// Live Messages for the Tennis Coach portal. Compose to your players over
-// Email (live) and Text (live once Twilio is configured). WhatsApp is shown as
-// coming soon. Every send is logged to coach_messages and shown in history.
+// Live Messages — a demo-style inbox over the coach's message log
+// (coach_messages). Conversations are grouped by recipient; open one to see the
+// thread, react (👍 ❤️ 😄 ✅), Reply, Forward or Delete, and compose new
+// messages. Sending goes through /api/coach/message/send (Email live, Text live
+// once Twilio is set, in-app always on). Inbound replies arrive at the coach's
+// own email / phone — true two-way threading is a later add.
 
-import { useState } from 'react'
-import { useCoachTable, useCoachProfile } from '../_lib/coach-db'
+import { useState, type CSSProperties } from 'react'
+import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { useCoachTable, useCoachProfile, dbUpdate, dbRemove } from '../_lib/coach-db'
 
-type ThemeTokens = {
-  text: string; text2: string; text3: string; panel: string; panel2: string
-  border: string; btnText: string; isDark: boolean
-}
-type AccentTokens = { hex: string; dim: string }
+type Msg = { id: string; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string }
+type Player = { id: string; name: string; email?: string | null; phone?: string | null; parent_name?: string | null }
+const REACTIONS = ['👍', '❤️', '😄', '✅']
+const initials = (n: string) => n.split(/[\s,]+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
+const fmtTime = (d?: string) => { const t = d ? new Date(d) : null; if (!t || isNaN(t.getTime())) return ''; const today = new Date(); return t.toDateString() === today.toDateString() ? t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : t.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) }
 
 export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accent: AccentTokens; onConfigure?: () => void }) {
-  const players = useCoachTable<any>('coach_players')
-  const history = useCoachTable<any>('coach_messages')
+  const history = useCoachTable<Msg>('coach_messages')
+  const { rows: players } = useCoachTable<Player>('coach_players')
   const profile = useCoachProfile()
+  const [selKey, setSelKey] = useState<string | null>(null)
+  const [compose, setCompose] = useState<false | { recipients: string[]; body: string }>(false)
 
-  const hasEmail = !!profile.contact_email
-  const hasPhone = !!profile.contact_phone
-  // In-app message is always available. Email/Text only go "Live" once the coach
-  // has set their sending email / phone in Settings.
-  const CHANNELS = [
-    { id: 'inapp', label: 'Lumio message', tag: 'Live', enabled: true },
-    { id: 'email', label: 'Email', tag: hasEmail ? 'Live' : 'Set up', enabled: hasEmail },
-    { id: 'sms', label: 'Text', tag: hasPhone ? 'Live' : 'Set up', enabled: hasPhone },
-    { id: 'whatsapp', label: 'WhatsApp', tag: 'Soon', enabled: false },
-  ]
+  // Group the log into conversations keyed by recipient string.
+  const convMap = new Map<string, Msg[]>()
+  for (const m of history.rows) { const k = (m.recipients || 'Unknown').trim(); if (!convMap.has(k)) convMap.set(k, []); convMap.get(k)!.push(m) }
+  const conversations = Array.from(convMap.entries()).map(([key, msgs]) => ({ key, msgs: msgs.slice().sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')) }))
+    .sort((a, b) => (b.msgs[0]?.created_at || '').localeCompare(a.msgs[0]?.created_at || ''))
+  const sel = conversations.find(c => c.key === selKey) ?? conversations[0]
 
-  const [selected, setSelected] = useState<string[]>([])   // player ids
-  const [channels, setChannels] = useState<string[]>(['inapp'])
-  const [subject, setSubject] = useState('')
-  const [body, setBody] = useState('')
-  const [sending, setSending] = useState(false)
-  const [result, setResult] = useState<{ status: string; results: any[] } | null>(null)
-  const [err, setErr] = useState('')
-
-  const toggle = (id: string, list: string[], set: (v: string[]) => void) =>
-    set(list.includes(id) ? list.filter(x => x !== id) : [...list, id])
-
-  const recipients = players.rows.filter(p => selected.includes(p.id))
-
-  const send = async () => {
-    setErr(''); setResult(null)
-    if (!recipients.length) { setErr('Select at least one player'); return }
-    if (!channels.length) { setErr('Choose at least one channel'); return }
-    if (!body.trim()) { setErr('Write a message'); return }
-    setSending(true)
-    try {
-      const res = await fetch('/api/coach/message/send', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipients: recipients.map(r => ({ name: r.name, email: r.email, phone: r.phone })),
-          channels, subject, body,
-        }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || 'Send failed')
-      setResult(data)
-      setBody(''); setSubject(''); setSelected([])
-      history.reload()
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Send failed') }
-    setSending(false)
-  }
-
-  const inputStyle: React.CSSProperties = { width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none' }
-  const chip = (on: boolean): React.CSSProperties => ({ background: on ? accent.dim : T.panel2, border: `1px solid ${on ? accent.hex : T.border}`, color: on ? accent.hex : T.text2 })
+  const channelsAvailable = ['inapp', ...(profile.contact_email ? ['email'] : []), ...(profile.contact_phone ? ['sms'] : [])]
+  const startCompose = (recipients: string[] = [], body = '') => setCompose({ recipients, body })
 
   return (
-    <div>
-      <div style={{ marginBottom: 16 }}>
-        <h2 style={{ color: T.text, fontSize: 22, fontWeight: 700, margin: 0 }}>Messages</h2>
-        <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>Message your players by email and text.</p>
+    <div style={{ fontFamily: FONT }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Messages</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Parents, players, groups and the venue — one inbox. Open a message to read, reply, forward or react.</p>
+        </div>
+        <button onClick={() => startCompose()} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>✎ New message</button>
       </div>
 
-      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 18, marginBottom: 20 }}>
-        {/* Recipients */}
-        <label style={lbl(T)}>Players</label>
-        {players.loading ? (
-          <p style={{ color: T.text3, fontSize: 13 }}>Loading players…</p>
-        ) : players.rows.length === 0 ? (
-          <p style={{ color: T.text3, fontSize: 13, margin: '0 0 12px' }}>No players yet — add players first, then message them here.</p>
-        ) : (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 14 }}>
-            {players.rows.map(p => {
-              const on = selected.includes(p.id)
-              const has = [p.email && 'email', p.phone && 'text'].filter(Boolean).join(' · ')
+      {conversations.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 20px', background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>No messages yet</div>
+          <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Send your first message — it’ll appear here as a conversation.</div>
+          <button onClick={() => startCompose()} style={{ marginTop: 14, appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>✎ New message</button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 14, alignItems: 'start' }}>
+          {/* Inbox list */}
+          <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 8, alignSelf: 'start' }}>
+            {conversations.map(c => {
+              const last = c.msgs[0]; const active = c.key === sel?.key
               return (
-                <button key={p.id} onClick={() => toggle(p.id, selected, setSelected)} title={has || 'no contact details'}
-                  style={{ ...chip(on), borderRadius: 999, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                  {p.name}{has ? '' : ' ⚠'}
-                </button>
+                <div key={c.key} onClick={() => setSelKey(c.key)} style={{ display: 'flex', gap: 10, padding: '10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 3 }}>
+                  <span style={{ width: 30, height: 30, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{initials(c.key)}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.key}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 10, color: T.text3, flexShrink: 0 }}>{fmtTime(last?.created_at)}</span>
+                    </div>
+                    <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{last?.subject ? `${last.subject} — ` : ''}{last?.body}</div>
+                  </div>
+                </div>
               )
             })}
           </div>
-        )}
 
-        {/* Channels */}
-        <label style={lbl(T)}>Send via</label>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-          {CHANNELS.map(c => {
-            const on = channels.includes(c.id)
-            return (
-              <button key={c.id} disabled={!c.enabled} onClick={() => c.enabled && toggle(c.id, channels, setChannels)}
-                style={{ ...chip(on && c.enabled), borderRadius: 10, padding: '8px 13px', fontSize: 13, fontWeight: 600, cursor: c.enabled ? 'pointer' : 'not-allowed', opacity: c.enabled ? 1 : 0.5, display: 'flex', alignItems: 'center', gap: 7 }}>
-                {c.label}
-                <span style={{ fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '1px 5px', borderRadius: 4, color: c.enabled ? '#22C55E' : T.text3, background: c.enabled ? 'rgba(34,197,94,0.15)' : T.panel2 }}>{c.tag}</span>
-              </button>
-            )
-          })}
-        </div>
-
-        {(!hasEmail || !hasPhone) && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 10, padding: '10px 14px', marginBottom: 14 }}>
-            <span style={{ fontSize: 12.5, color: T.text2 }}>
-              Lumio messages work now. Add your {[!hasEmail && 'email', !hasPhone && 'phone'].filter(Boolean).join(' and ')} in Settings to send by {[!hasEmail && 'email', !hasPhone && 'text'].filter(Boolean).join(' and ')}.
-            </span>
-            <button onClick={() => onConfigure?.()} style={{ flexShrink: 0, padding: '7px 14px', borderRadius: 8, border: 'none', background: accent.hex, color: T.btnText, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Set up →</button>
-          </div>
-        )}
-
-        {/* Subject (email only) */}
-        {channels.includes('email') && (
-          <>
-            <label style={lbl(T)}>Subject (email)</label>
-            <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="A message from your coach" style={{ ...inputStyle, marginBottom: 14 }} />
-          </>
-        )}
-
-        {/* Body */}
-        <label style={lbl(T)}>Message</label>
-        <textarea value={body} onChange={e => setBody(e.target.value)} rows={5} placeholder="Type your message…" style={{ ...inputStyle, resize: 'vertical', marginBottom: 14 }} />
-
-        {err && <p style={{ color: '#EF4444', fontSize: 12, margin: '0 0 10px' }}>{err}</p>}
-
-        <button onClick={send} disabled={sending} style={{ padding: '11px 20px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: sending ? 0.6 : 1 }}>
-          {sending ? 'Sending…' : 'Send message'}
-        </button>
-
-        {result && (
-          <div style={{ marginTop: 14, padding: 12, borderRadius: 10, background: T.panel2, border: `1px solid ${T.border}` }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: result.status === 'sent' ? '#22C55E' : result.status === 'partial' ? '#F59E0B' : '#EF4444', marginBottom: 6 }}>
-              {result.status === 'sent' ? 'Sent ✓' : result.status === 'partial' ? 'Partially sent' : 'Failed'}
-            </div>
-            {result.results.map((r, i) => (
-              <div key={i} style={{ fontSize: 12, color: T.text2, display: 'flex', gap: 8, padding: '2px 0' }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: r.ok ? '#22C55E' : '#EF4444', marginTop: 6, flexShrink: 0 }} />
-                <span><b style={{ color: T.text }}>{r.name}</b> · {r.channel}: {r.detail}</span>
+          {/* Thread */}
+          {sel && (
+            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 12, borderBottom: `1px solid ${T.border}`, marginBottom: 12, flexWrap: 'wrap' }}>
+                <span style={{ width: 34, height: 34, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700 }}>{initials(sel.key)}</span>
+                <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{sel.key}</div>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                  <button onClick={() => startCompose(sel.key.split(',').map(s => s.trim()).filter(Boolean))} style={btn(T, accent, 'solid')}>↩ Reply</button>
+                  <button onClick={() => startCompose([], sel.msgs[0]?.body || '')} style={btn(T, accent, 'ghost')}>↪ Forward</button>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* History */}
-      <p style={lbl(T)}>Recent messages</p>
-      {history.loading ? null : history.rows.length === 0 ? (
-        <p style={{ color: T.text3, fontSize: 13 }}>No messages sent yet.</p>
-      ) : (
-        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden' }}>
-          {history.rows.map((m: any) => (
-            <div key={m.id} style={{ padding: '11px 16px', borderBottom: `1px solid ${T.border}` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ color: T.text, fontSize: 13, fontWeight: 600 }}>{m.recipients || '—'}</span>
-                <span style={{ color: T.text3, fontSize: 11 }}>{new Date(m.created_at).toLocaleString('en-GB')}</span>
-              </div>
-              <div style={{ color: T.text3, fontSize: 12, marginTop: 2 }}>{m.channels} · {m.status}</div>
-              {m.body && <div style={{ color: T.text2, fontSize: 12, marginTop: 4, whiteSpace: 'pre-wrap' }}>{m.body.length > 160 ? m.body.slice(0, 160) + '…' : m.body}</div>}
+              {sel.msgs.map(m => (
+                <div key={m.id} style={{ marginBottom: 14 }}>
+                  <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px' }}>
+                    {m.subject && <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, marginBottom: 4 }}>{m.subject}</div>}
+                    <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.body}</div>
+                    <div style={{ fontSize: 10, color: T.text3, marginTop: 6 }}>{[m.channels, m.status, fmtTime(m.created_at)].filter(Boolean).join(' · ')}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
+                    {REACTIONS.map(r => (
+                      <button key={r} onClick={() => { dbUpdate('coach_messages', m.id, { reaction: m.reaction === r ? null : r }).then(() => history.reload()) }} title="React"
+                        style={{ appearance: 'none', border: m.reaction === r ? `1px solid ${accent.hex}` : `1px solid transparent`, background: m.reaction === r ? accent.dim : 'transparent', borderRadius: 6, padding: '2px 5px', fontSize: 13, cursor: 'pointer', opacity: m.reaction && m.reaction !== r ? 0.4 : 1 }}>{r}</button>
+                    ))}
+                    <button onClick={() => { if (confirm('Delete this message?')) dbRemove('coach_messages', m.id).then(() => history.reload()) }} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 11, cursor: 'pointer' }}>Delete</button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
+
+      {compose && <ComposeModal T={T} accent={accent} players={players} profile={profile} channelsAvailable={channelsAvailable}
+        prefillRecipients={compose.recipients} prefillBody={compose.body} onConfigure={onConfigure}
+        onClose={() => setCompose(false)} onSent={() => { setCompose(false); history.reload() }} />}
     </div>
   )
 }
 
-function lbl(T: ThemeTokens): React.CSSProperties {
-  return { display: 'block', color: T.text3, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }
+function btn(T: ThemeTokens, accent: AccentTokens, kind: 'solid' | 'ghost'): CSSProperties {
+  return kind === 'solid'
+    ? { appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }
+    : { appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }
+}
+
+function ComposeModal({ T, accent, players, profile, channelsAvailable, prefillRecipients, prefillBody, onConfigure, onClose, onSent }: {
+  T: ThemeTokens; accent: AccentTokens; players: Player[]; profile: any; channelsAvailable: string[]
+  prefillRecipients: string[]; prefillBody: string; onConfigure?: () => void; onClose: () => void; onSent: () => void
+}) {
+  // Pre-select players whose names match the prefill recipients (reply).
+  const initSel = players.filter(p => prefillRecipients.some(r => r.toLowerCase() === p.name.toLowerCase())).map(p => p.id)
+  const [selected, setSelected] = useState<string[]>(initSel)
+  const [channels, setChannels] = useState<string[]>(['inapp'])
+  const [subject, setSubject] = useState('')
+  const [body, setBody] = useState(prefillBody ? `Forwarded:\n${prefillBody}` : '')
+  const [sending, setSending] = useState(false)
+  const [err, setErr] = useState('')
+  const toggle = (id: string, list: string[], set: (v: string[]) => void) => set(list.includes(id) ? list.filter(x => x !== id) : [...list, id])
+  const CH: { id: string; label: string }[] = [{ id: 'inapp', label: 'Lumio message' }, { id: 'email', label: 'Email' }, { id: 'sms', label: 'Text' }]
+
+  const recipients = players.filter(p => selected.includes(p.id))
+  const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box', outline: 'none' }
+
+  const send = async () => {
+    setErr('')
+    if (!recipients.length) { setErr('Choose at least one recipient'); return }
+    if (!body.trim()) { setErr('Write a message'); return }
+    setSending(true)
+    try {
+      const res = await fetch('/api/coach/message/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipients: recipients.map(r => ({ name: r.name, email: r.email, phone: r.phone })), channels, subject, body }) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Send failed')
+      onSent()
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Send failed'); setSending(false) }
+  }
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '4vh 16px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 480, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>New message</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', color: T.text3, marginBottom: 6 }}>To</div>
+            {players.length === 0 ? <div style={{ fontSize: 12, color: T.text3 }}>No players yet — add players first.</div> : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {players.map(p => { const on = selected.includes(p.id); return <button key={p.id} onClick={() => toggle(p.id, selected, setSelected)} style={{ appearance: 'none', border: `1px solid ${on ? accent.hex : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text2, borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{p.name}</button> })}
+              </div>
+            )}
+          </div>
+          <div>
+            <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', color: T.text3, marginBottom: 6 }}>Channels</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {CH.map(c => { const avail = channelsAvailable.includes(c.id); const on = channels.includes(c.id); return (
+                <button key={c.id} onClick={() => avail ? toggle(c.id, channels, setChannels) : onConfigure?.()} style={{ appearance: 'none', border: `1px solid ${on ? accent.hex : T.border}`, background: on ? accent.dim : 'transparent', color: avail ? (on ? accent.hex : T.text2) : T.text3, borderRadius: 8, padding: '5px 11px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{on ? '✓ ' : ''}{c.label}{!avail ? ' · set up' : ''}</button>
+              ) })}
+            </div>
+          </div>
+          <div><input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Subject (optional)" style={field} /></div>
+          <div><textarea value={body} onChange={e => setBody(e.target.value)} rows={5} placeholder="Write your message…" style={{ ...field, resize: 'vertical' }} /></div>
+          {err && <div style={{ fontSize: 12, color: T.bad }}>{err}</div>}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+          <button onClick={onClose} style={{ appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+          <button onClick={send} disabled={sending} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: sending ? 0.6 : 1, fontFamily: FONT }}>{sending ? 'Sending…' : 'Send'}</button>
+        </div>
+      </div>
+    </div>
+  )
 }

@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { useCoachTable, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, RACKET_SKILLS, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore, useCoachProfile } from '../_lib/coach-db'
 import { WatchConnectPanel } from './WatchConnectPanel'
 
 // Generate a fresh opaque watch token client-side (matches the DB default shape).
@@ -47,6 +47,8 @@ export function LiveRoster({ T, accent, density }: Common) {
   const players = useCoachTable<any>('coach_players')
   const skills = useCoachTable<any>('coach_player_skills')
   const attendance = useCoachTable<any>('coach_attendance')
+  const wpProfile = useCoachProfile()
+  const wpOrg = { academy: wpProfile.brand_name || 'Lumio Tennis Academy', coach: wpProfile.display_name || 'Your Coach' }
   const [group, setGroup] = useState<'All' | typeof CATEGORIES[number]>('All')
   const [sel, setSel] = useState<any | null>(null)
   const [editing, setEditing] = useState<any | null | undefined>(undefined) // undefined = closed
@@ -106,7 +108,7 @@ export function LiveRoster({ T, accent, density }: Common) {
                   <Avatar accent={accent} name={p.name} size={40} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: T.text3 }}>{p.category || p.level || 'Player'}{p.age ? ` · Age ${p.age}` : ''}</div>
+                    <div style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.category || p.level || 'Player'}{p.age ? ` · Age ${p.age}` : ''}{p.assigned_coach ? ` · 🧑‍🏫 ${p.assigned_coach}` : ''}</div>
                   </div>
                   <div style={{ width: 9, height: 9, borderRadius: '50%', background: accent.hex }} />
                 </div>
@@ -126,7 +128,7 @@ export function LiveRoster({ T, accent, density }: Common) {
                   <span style={{ color: accent.hex, fontWeight: 600, whiteSpace: 'nowrap' }}>View →</span>
                 </div>
                 {!p.consent_photo && <div style={{ fontSize: 10.5, color: '#EF4444', marginTop: 6 }}>⚠ No photo/video consent</div>}
-                <button onClick={e => { e.stopPropagation(); printWelcomePack(p) }} style={{ width: '100%', marginTop: 8, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '7px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <button onClick={e => { e.stopPropagation(); printWelcomePack(p, wpOrg) }} style={{ width: '100%', marginTop: 8, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '7px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                   <Icon name="note" size={13} stroke={1.8} style={{ color: accent.hex }} /> Welcome pack
                 </button>
               </div>
@@ -161,13 +163,16 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
+  const profile = useCoachProfile()
+  const { rows: staffRows } = useCoachTable<{ id: string; name: string }>('coach_staff')
+  const coaches = [profile.display_name || 'Head Coach', ...staffRows.map(s => s.name)]
 
   const save = async () => {
     if (!String(d.name ?? '').trim()) { setErr('Name is required'); return }
     setSaving(true); setErr('')
     try {
       const row = {
-        name: d.name, category: d.category || null, age: d.age || null, parent_name: d.parent_name || null, racket_stage: d.racket_stage || null, goal: d.goal || null, level: d.level || null, email: d.email || null, phone: d.phone || null, notes: d.notes || null,
+        name: d.name, category: d.category || null, age: d.age || null, parent_name: d.parent_name || null, racket_stage: d.racket_stage || null, assigned_coach: d.assigned_coach || null, goal: d.goal || null, level: d.level || null, email: d.email || null, phone: d.phone || null, notes: d.notes || null,
         consent_data: !!d.consent_data, consent_photo: !!d.consent_photo, consent_medical: !!d.consent_medical, consent_wearable: !!d.consent_wearable, consent_by: d.consent_by || null, consent_date: d.consent_date || null, medical_notes: d.medical_notes || null,
       }
       if (initial?.id) await dbUpdate('coach_players', initial.id, row); else await dbInsert('coach_players', row)
@@ -191,6 +196,7 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
           {field('age', 'Age', 'number')}
           {field('parent_name', 'Parent / guardian')}
           <div><label style={lbl}>Racket stage</label><select value={d.racket_stage ?? ''} onChange={e => set('racket_stage', e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+          <div><label style={lbl}>Coach</label><select value={d.assigned_coach ?? ''} onChange={e => set('assigned_coach', e.target.value)} style={input}><option value="">Head coach (you)</option>{coaches.slice(1).map(c => <option key={c} value={c}>{c}</option>)}</select></div>
           {field('level', 'Level', 'text', 'e.g. Red ball')}
           {field('email', 'Email')}
           {field('phone', 'Phone')}
@@ -441,19 +447,84 @@ function exportPlayerData(player: any, lessons: any[], attendance: any[]) {
 }
 
 // ── Welcome pack (printable) ─────────────────────────────────────────────────
-function printWelcomePack(p: any) {
+const WP_THEME: Record<string, string> = { white: 'Foundations', yellow: 'Rallying', orange: 'Net & Touch', green: 'The Serve', blue: 'Spin & Shape', purple: 'Specialty Shots', brown: 'Weapons', red: 'Tactics', black: 'Mastery' }
+
+// Rich 3-page printable welcome pack — welcome letter, starting action plan, and
+// an onboarding questionnaire (mirrors the demo, over live data).
+function printWelcomePack(p: any, org?: { academy: string; coach: string }) {
+  if (typeof window === 'undefined') return
+  const academy = org?.academy || 'Lumio Tennis Academy', coach = org?.coach || 'Your Coach'
+  const esc = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const fill = (w = '100%') => `<span style="display:inline-block;border-bottom:1px dashed #b9bdca;min-width:${w};height:15px"></span>`
+  const line = '<div style="border-bottom:1px dashed #b9bdca;height:22px;margin:6px 0"></div>'
   const s = stageOf(p.racket_stage)
-  const journey = RACKET_STAGES.map((b, bi) => `<li style="${s.idx >= 0 && bi <= s.idx ? '' : 'opacity:.4'}">${b.name}${s.idx === bi ? ' — current' : ''}</li>`).join('')
-  const w = window.open('', '_blank', 'width=720,height=900')
-  if (!w) return
-  w.document.write(`<!doctype html><html><head><title>Welcome pack — ${p.name}</title>
-    <style>body{font-family:Arial,sans-serif;max-width:640px;margin:40px auto;color:#111;line-height:1.6;padding:0 20px}h1{margin-bottom:4px}.muted{color:#666;font-size:14px}ul{padding-left:18px}</style></head>
-    <body><h1>Welcome, ${p.name}</h1><p class="muted">${[p.category, p.age ? 'Age ' + p.age : '', p.level].filter(Boolean).join(' · ')}</p>
-    ${p.goal ? `<p><strong>Goal:</strong> ${p.goal}</p>` : ''}
-    <p><strong>Current racket stage:</strong> ${s.stage ? s.stage.name : 'Not set'}</p>
-    <h3>Your racket journey</h3><ul>${journey}</ul>
-    ${p.parent_name ? `<p class="muted">Parent / guardian: ${p.parent_name}</p>` : ''}
-    <p class="muted">Welcome to the academy — we're glad to have you on court.</p>
-    </body></html>`)
-  w.document.close(); w.focus(); w.print()
+  const stage = s.stage || RACKET_STAGES[0]
+  const idx = s.idx >= 0 ? s.idx : 0
+  const theme = WP_THEME[stage.id] || 'Foundations'
+  const next = RACKET_STAGES[Math.min(idx + 1, RACKET_STAGES.length - 1)]
+  const skills = (RACKET_SKILLS[stage.id] || []).map(sk => `<li>${esc(sk.name)} — <span style="color:#6b7280">${esc(sk.note)}</span></li>`).join('')
+  const first = (p.name || 'there').split(' ')[0]
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Welcome Pack — ${esc(p.name)}</title>
+  <style>*{box-sizing:border-box}body{margin:0;font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1d29;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{width:210mm;min-height:296mm;padding:18mm 16mm;margin:0 auto;position:relative;page-break-after:always}.page:last-child{page-break-after:auto}
+  .band{background:linear-gradient(120deg,#1f6fd6,#3A8EE0);color:#fff;border-radius:14px;padding:22px 26px}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#1f6fd6;margin:22px 0 8px;border-bottom:2px solid #ecedf2;padding-bottom:5px}
+  p{font-size:12.5px;line-height:1.7;color:#374151}ul,ol{margin:0;padding-left:20px}li{font-size:12px;line-height:1.6;color:#374151;margin-bottom:4px}
+  .accentbox{border:1px solid #d6e6fb;border-left:4px solid #3A8EE0;border-radius:0 10px 10px 0;background:#f3f8ff;padding:12px 16px;margin-top:10px}
+  .q{margin:0 0 12px}.q .lbl{font-size:12px;font-weight:600;color:#1a1d29;margin-bottom:4px}
+  table{width:100%;border-collapse:collapse;margin-top:6px}td,th{font-size:12px;padding:6px 8px;border-bottom:1px solid #f0f1f6;text-align:left;vertical-align:top}th{color:#9099ad;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em}
+  .foot{position:absolute;bottom:12mm;left:16mm;right:16mm;display:flex;justify-content:space-between;font-size:9px;color:#aab;border-top:1px solid #eee;padding-top:8px}@page{size:A4;margin:0}</style></head><body>
+
+  <div class="page">
+    <div class="band"><div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;opacity:.85">Welcome Pack</div><div style="font-size:30px;font-weight:800;margin-top:6px">Welcome, ${esc(first)}! 🎾</div><div style="opacity:.9;margin-top:4px">${esc(academy)}</div></div>
+    <p style="margin-top:18px">Hi ${esc(first)},</p>
+    <p>A warm welcome to ${esc(academy)} — we're really pleased to have you on board. Whether you're brand new to tennis or coming back to it, our job is to help you improve, enjoy your tennis and hit some clear goals along the way.</p>
+    <p>We coach using a <strong>racket progression system</strong> (like martial arts) — you'll work through clear skills at each racket, earn certificates as you progress, and always know what you're working towards. It keeps things fun, structured and motivating.</p>
+    <h2>What happens next</h2>
+    <ol><li><strong>Complete the onboarding questions</strong> (page 3) and bring them to your first session — this helps us place you at exactly the right racket.</li><li><strong>First session = assessment &amp; a hit</strong> — relaxed, no pressure, just so we can see your game.</li><li><strong>We agree your goals</strong> and set your starting racket and a simple plan.</li></ol>
+    <h2>Handy to know</h2>
+    <ul><li>Bring: trainers/tennis shoes, water, and a racket if you have one (we can lend one).</li><li>Wear comfortable sports clothing for the weather.</li><li>Lessons, progress and homework are shared through the Lumio Coach app.</li></ul>
+    <p style="margin-top:14px">See you on court,<br/><strong style="font-family:Georgia,serif;font-style:italic;font-size:15px">${esc(coach)}</strong></p>
+    <div class="foot"><span>${esc(academy)}</span><span>Welcome pack for ${esc(p.name)}</span></div>
+  </div>
+
+  <div class="page">
+    <h2 style="margin-top:0">Your starting action plan</h2>
+    <div class="accentbox" style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:25px;border-radius:5px;background:${stage.colour};border:1px solid rgba(0,0,0,.25)"></span><div><div style="font-size:16px;font-weight:700">${esc(stage.name)} racket — ${esc(theme)}</div><div style="font-size:11px;color:#6b7280">Your suggested starting point — confirmed after your first session</div></div></div>
+    <h2>Skills you'll work on first</h2><ul>${skills}</ul>
+    ${p.goal ? `<h2>Your goal</h2><p>${esc(p.goal)}</p>` : ''}
+    <h2>First four weeks</h2>
+    <table><thead><tr><th style="width:70px">Week</th><th>Focus</th></tr></thead><tbody>
+      <tr><td>Week 1</td><td>Assessment &amp; getting to know your game — set your racket and goal</td></tr>
+      <tr><td>Week 2</td><td>Foundations of ${esc(theme.toLowerCase())}</td></tr>
+      <tr><td>Week 3</td><td>Build &amp; repeat — take the new skills into rallies and games</td></tr>
+      <tr><td>Week 4</td><td>First progress check — celebrate the wins and set the next target (${esc(next.name)})</td></tr>
+    </tbody></table>
+    <div class="foot"><span>${esc(academy)}</span><span>${esc(coach)}</span></div>
+  </div>
+
+  <div class="page">
+    <h2 style="margin-top:0">Onboarding — tell us about your tennis</h2>
+    <p style="margin-top:0">Please complete and bring to your first session. This helps us place you at the right racket from day one.</p>
+    <table><tbody><tr><td style="width:50%">Player name: ${fill('120px')}</td><td>Date of birth: ${fill('110px')}</td></tr><tr><td>Parent/guardian (if junior): ${fill('100px')}</td><td>Best contact number: ${fill('110px')}</td></tr></tbody></table>
+    <h2>Your tennis history</h2>
+    <div class="q"><div class="lbl">How long have you been playing tennis?</div>${fill('200px')} years / months</div>
+    <div class="q"><div class="lbl">Have you had coaching before? Where, and for how long?</div>${line}${line}</div>
+    <div class="q"><div class="lbl">What level have you played at? (club, school, county, ratings)</div>${line}${line}</div>
+    <div class="q"><div class="lbl">Do you compete, or would you like to?</div>${line}</div>
+    <h2>Your goals</h2>
+    <div class="q"><div class="lbl">What are you looking to achieve from these sessions?</div>${line}${line}${line}</div>
+    <div class="q"><div class="lbl">Which parts of your game do you most want to improve?</div>${line}${line}</div>
+    <h2>Practical</h2>
+    <div class="q"><div class="lbl">Which days / times generally suit you?</div>${line}</div>
+    <div class="q"><div class="lbl">Any injuries, medical conditions or things we should know?</div>${line}${line}</div>
+    <div class="accentbox" style="margin-top:14px"><strong>For the coach:</strong> suggested starting racket after review: ${fill('150px')} &nbsp; Date: ${fill('90px')}</div>
+    <div class="foot"><span>${esc(academy)}</span><span>Onboarding · ${esc(p.name)}</span></div>
+  </div>
+  </body></html>`
+  const w = window.open('', '_blank', 'width=920,height=1040')
+  if (!w) { alert('Please allow pop-ups to open the welcome pack.'); return }
+  w.document.write(html); w.document.close(); w.focus()
+  setTimeout(() => { try { w.print() } catch { /* manual */ } }, 350)
 }

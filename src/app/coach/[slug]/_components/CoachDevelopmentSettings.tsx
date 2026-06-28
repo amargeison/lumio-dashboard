@@ -139,6 +139,23 @@ export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent
         </p>
         <p style={{ margin: '6px 0 0', fontSize: 11.5, color: T.text3 }}>Edit your own (head coach) name and contact details under <strong style={{ color: T.text2 }}>Head coach profile</strong> above.</p>
       </div>
+
+      {/* Messages */}
+      <div style={card}>
+        <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: T.text }}>Messages</h3>
+        <p style={{ margin: '0 0 10px', fontSize: 12.5, color: T.text3, lineHeight: 1.5 }}>
+          Message parents and players from one inbox. Three channels:
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+          {[['Lumio message', 'In-app · always on'], ['Email', 'Sends from your contact email — set it under Head coach profile / Connected accounts'], ['Text (SMS)', 'Live once Twilio is configured for your account'], ['WhatsApp', 'Coming soon']].map(([t, d]) => (
+            <div key={t} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 11px' }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{t}</div>
+              <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2 }}>{d}</div>
+            </div>
+          ))}
+        </div>
+        <p style={{ margin: 0, fontSize: 11, color: T.text3, lineHeight: 1.5 }}>Replies come back to your own email / phone for now; in-portal two-way threads are on the roadmap.</p>
+      </div>
     </div>
   )
 }
