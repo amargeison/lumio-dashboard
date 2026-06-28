@@ -10,6 +10,7 @@ import { CoachImport } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
 import { setSettings, getSettings } from '../_lib/settings-store'
 import { seedLumioResources } from '../_lib/lumio-resources'
+import { seedLumioPackages } from '../_lib/lumio-packages'
 import { applyTier } from '../_lib/feature-flags'
 
 const ACCENT = '#3A8EE0'
@@ -104,6 +105,8 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
       // Resource Centre: preload Lumio's library (live), or start empty for own content.
       setSettings({ resourcesPreloaded })
       if (resourcesPreloaded) seedLumioResources().catch(() => {})
+      // Always preload the default package price list — the coach edits/prices it.
+      seedLumioPackages().catch(() => {})
 
       // Home court → seed it into the Court Planner as the home/main site.
       if (homeCourt.trim()) {

@@ -12,6 +12,8 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
 import { seedLumioResources } from '../_lib/lumio-resources'
+import { seedLumioPackages } from '../_lib/lumio-packages'
+import { getSettings, setSettings } from '../_lib/settings-store'
 
 export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18, marginBottom: 16, fontFamily: FONT }
@@ -155,6 +157,35 @@ export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent
           ))}
         </div>
         <p style={{ margin: 0, fontSize: 11, color: T.text3, lineHeight: 1.5 }}>Replies come back to your own email / phone for now; in-portal two-way threads are on the roadmap.</p>
+      </div>
+
+      {/* Payments & Packages */}
+      <PaymentsSettingsCard T={T} accent={accent} card={card} />
+    </div>
+  )
+}
+
+function PaymentsSettingsCard({ T, accent, card }: { T: ThemeTokens; accent: AccentTokens; card: React.CSSProperties }) {
+  const [rate, setRate] = useState<string>(String(getSettings().privateRate || ''))
+  const [pkgState, setPkgState] = useState<'idle' | 'loading' | { added: number } | 'error'>('idle')
+  const loadPkgs = async () => { if (pkgState === 'loading') return; setPkgState('loading'); try { const added = await seedLumioPackages(); setPkgState({ added }) } catch { setPkgState('error') } }
+  const field: React.CSSProperties = { background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, width: 120, boxSizing: 'border-box', outline: 'none' }
+  return (
+    <div style={card}>
+      <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: T.text }}>Payments &amp; Packages</h3>
+      <p style={{ margin: '0 0 12px', fontSize: 12.5, color: T.text3, lineHeight: 1.5 }}>
+        Your price list lives on the Payments &amp; Packages page — add, edit, price and remove packages there (price, sessions, billing, what’s included, equipment). This just sets the headline private rate and loads the Lumio starter list.
+      </p>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4, color: T.text3, marginBottom: 5 }}>Private lesson rate (£/hr)</label>
+          <input type="number" value={rate} onChange={e => { setRate(e.target.value); setSettings({ privateRate: Number(e.target.value) || 0 }) }} placeholder="e.g. 38" style={field} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={loadPkgs} disabled={pkgState === 'loading'} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>{pkgState === 'loading' ? 'Loading…' : '📦 Load default packages'}</button>
+          {typeof pkgState === 'object' && <span style={{ fontSize: 12, color: T.good }}>✓ Added {pkgState.added} {pkgState.added === 0 ? '(already loaded)' : pkgState.added === 1 ? 'package' : 'packages'}</span>}
+          {pkgState === 'error' && <span style={{ fontSize: 12, color: T.bad }}>Couldn’t load — try again.</span>}
+        </div>
       </div>
     </div>
   )

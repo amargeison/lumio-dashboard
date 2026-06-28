@@ -7,7 +7,23 @@
 import { useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable } from '../_lib/coach-db'
+import { useCoachTable, sb, currentCoachId } from '../_lib/coach-db'
+import { getSettings } from '../_lib/settings-store'
+
+// Package type → Equipment & Kit session-type checklist.
+const KIND_TO_SESSION: Record<string, string> = { Private: 'Private lesson', Performance: 'Private lesson', Adult: 'Private lesson', Group: 'Group / squad', Junior: 'Group / squad', Cardio: 'Cardio Tennis' }
+async function pushEquipmentToKit(kind: string, equipment: string) {
+  try {
+    const items = (equipment || '').split('\n').map(s => s.trim()).filter(Boolean)
+    if (!items.length) return
+    const uid = await currentCoachId(); if (!uid) return
+    const st = KIND_TO_SESSION[kind] || 'Private lesson'
+    const ex = await sb().from('coach_kit_items').select('label').eq('coach_id', uid).eq('session_type', st)
+    const have = new Set((ex.data ?? []).map((r: any) => (r.label || '').toLowerCase()))
+    const rows = items.filter(i => !have.has(i.toLowerCase())).map(label => ({ coach_id: uid, session_type: st, label }))
+    if (rows.length) await sb().from('coach_kit_items').insert(rows)
+  } catch (e) { console.warn('[payments] pushEquipmentToKit', e) }
+}
 
 type Pkg = { id: string; name: string; kind?: string | null; price?: number | null; sessions?: number | null; period?: string | null; description?: string | null; features?: string | null }
 type Pay = { id: string; player_name?: string | null; item?: string | null; amount?: number | null; status?: string | null; sessions_used?: number | null; sessions_total?: number | null; renews_date?: string | null }
@@ -50,7 +66,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
     <div style={{ fontFamily: FONT }}>
       <div style={{ marginBottom: 16 }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Payments &amp; Packages</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Lesson packs, credits used and what’s outstanding.</p>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Lesson packs, credits used and what’s outstanding.{(() => { const r = getSettings().privateRate; return r ? ` · Private £${r}/hr` : '' })()}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 16 }}>
@@ -150,27 +166,36 @@ function Shell({ T, title, onClose, children, footer }: { T: ThemeTokens; title:
 }
 
 function PackageForm({ T, accent, pkg, onClose, onSave }: { T: ThemeTokens; accent: AccentTokens; pkg: Pkg | null; onClose: () => void; onSave: (v: Record<string, any>) => Promise<void> }) {
-  const [d, setD] = useState<Record<string, any>>({ name: pkg?.name || '', kind: pkg?.kind || 'Private', price: pkg?.price ?? '', sessions: pkg?.sessions ?? '', period: pkg?.period || 'per pack', description: pkg?.description || '', features: pkg?.features || '' })
+  const [d, setD] = useState<Record<string, any>>({ name: pkg?.name || '', kind: pkg?.kind || 'Private', price: pkg?.price ?? '', sessions: pkg?.sessions ?? '', period: pkg?.period || 'per pack', description: pkg?.description || '', features: pkg?.features || '', equipment: (pkg as any)?.equipment || '' })
   const [saving, setSaving] = useState(false)
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
-  const save = async () => { if (!String(d.name).trim() || saving) return; setSaving(true); try { await onSave({ name: d.name, kind: d.kind, price: Number(d.price) || null, sessions: Number(d.sessions) || null, period: d.period, description: d.description, features: d.features }) } finally { setSaving(false) } }
+  const save = async () => {
+    if (!String(d.name).trim() || saving) return
+    setSaving(true)
+    try {
+      await onSave({ name: d.name, kind: d.kind, price: Number(d.price) || null, sessions: Number(d.sessions) || null, period: d.period, description: d.description, features: d.features, equipment: d.equipment })
+      await pushEquipmentToKit(d.kind, d.equipment)
+    } finally { setSaving(false) }
+  }
   return (
-    <Shell T={T} title={pkg ? 'Edit package' : 'Add package'} onClose={onClose}
+    <Shell T={T} title={pkg ? 'Edit package' : 'Add a package'} onClose={onClose}
       footer={<>
         <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
-        <button onClick={save} disabled={!String(d.name).trim() || saving} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: String(d.name).trim() && !saving ? 1 : 0.5, fontFamily: FONT }}>{saving ? 'Saving…' : 'Save'}</button>
+        <button onClick={save} disabled={!String(d.name).trim() || saving} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: String(d.name).trim() && !saving ? 1 : 0.5, fontFamily: FONT }}>{saving ? 'Saving…' : '+ Add package'}</button>
       </>}>
       <div><label style={lab(T)}>Package name *</label><input value={d.name} onChange={e => set('name', e.target.value)} placeholder="e.g. 10-lesson private pack" style={field(T)} /></div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div><label style={lab(T)}>Type</label><select value={d.kind} onChange={e => set('kind', e.target.value)} style={{ ...field(T), cursor: 'pointer' }}>{KINDS.map(k => <option key={k} value={k}>{k}</option>)}</select></div>
-        <div><label style={lab(T)}>Period</label><select value={d.period} onChange={e => set('period', e.target.value)} style={{ ...field(T), cursor: 'pointer' }}>{['per pack', 'per month', 'per term'].map(p => <option key={p} value={p}>{p}</option>)}</select></div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <div><label style={lab(T)}>Price £</label><input type="number" value={d.price} onChange={e => set('price', e.target.value)} style={field(T)} /></div>
         <div><label style={lab(T)}>Sessions</label><input type="number" value={d.sessions} onChange={e => set('sessions', e.target.value)} style={field(T)} /></div>
       </div>
-      <div><label style={lab(T)}>Description</label><input value={d.description} onChange={e => set('description', e.target.value)} style={field(T)} /></div>
-      <div><label style={lab(T)}>Features (one per line)</label><textarea value={d.features} onChange={e => set('features', e.target.value)} rows={4} style={{ ...field(T), resize: 'vertical' }} /></div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div><label style={lab(T)}>Price (£) *</label><input type="number" value={d.price} onChange={e => set('price', e.target.value)} style={field(T)} /></div>
+        <div><label style={lab(T)}>Billing</label><select value={d.period} onChange={e => set('period', e.target.value)} style={{ ...field(T), cursor: 'pointer' }}>{['per pack', 'per month', 'per term'].map(p => <option key={p} value={p}>{p.replace('per ', 'Per ')}</option>)}</select></div>
+      </div>
+      <div><label style={lab(T)}>Description</label><input value={d.description} onChange={e => set('description', e.target.value)} placeholder="One line about this package" style={field(T)} /></div>
+      <div><label style={lab(T)}>What’s included (one per line)</label><textarea value={d.features} onChange={e => set('features', e.target.value)} rows={4} style={{ ...field(T), resize: 'vertical' }} /></div>
+      <div><label style={lab(T)}>Equipment needed per session (one per line)</label><textarea value={d.equipment} onChange={e => set('equipment', e.target.value)} rows={3} placeholder="Ball basket (60+)&#10;Cones ×8&#10;Target hoops" style={{ ...field(T), resize: 'vertical' }} /></div>
+      <div style={{ fontSize: 11, color: T.text3 }}>Added to <strong style={{ color: T.text2 }}>Equipment &amp; Kit → {KIND_TO_SESSION[d.kind] || 'Private lesson'}</strong> so it’s on the grab-and-go checklist.</div>
     </Shell>
   )
 }
