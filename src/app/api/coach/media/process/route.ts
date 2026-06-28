@@ -73,6 +73,19 @@ async function processGroup(coachId: string, rows: any[]) {
   })
   if (lessonErr) console.error('[coach/media/process] lesson row insert', lessonErr)
 
+  // 3b. The session happened → auto-mark the player present today (idempotent).
+  if (playerName) {
+    try {
+      const today = new Date().toISOString().slice(0, 10)
+      const { data: pl } = await sb.from('coach_players').select('id').eq('coach_id', coachId).ilike('name', playerName.trim()).limit(1)
+      const pid = (pl as any)?.[0]?.id
+      if (pid) {
+        const { data: ex } = await sb.from('coach_attendance').select('id').eq('coach_id', coachId).eq('player_id', pid).eq('session_date', today).limit(1)
+        if (!(ex as any)?.length) await sb.from('coach_attendance').insert({ coach_id: coachId, player_id: pid, session_date: today, present: true })
+      }
+    } catch (e) { console.warn('[coach/media/process] attendance', e) }
+  }
+
   // 4. Mark all done; the combined review lives on the first row (which the UI polls).
   await sb.from('coach_media').update({ status: 'done', review, updated_at: new Date().toISOString() }).eq('id', rows[0].id)
   if (rows.length > 1) {

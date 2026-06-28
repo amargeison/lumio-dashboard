@@ -323,3 +323,21 @@ export async function setSkillScore(playerId: string, skill: string, score: numb
     .upsert({ coach_id, player_id: playerId, skill, score, updated_at: new Date().toISOString() }, { onConflict: 'player_id,skill' })
   if (error) { console.error('[coach-db] setSkillScore', error.message); throw new Error(error.message) }
 }
+
+// When a lesson summary is created, the session happened — auto-mark the player
+// present that day (no manual tagging). Idempotent: skips if already logged that
+// date. Best-effort and silent so it never blocks the summary save.
+export async function logSessionAttendance(playerName: string | null | undefined, sessionDate?: string | null) {
+  try {
+    if (!playerName) return
+    const coach_id = await currentCoachId()
+    if (!coach_id) return
+    const date = sessionDate || new Date().toISOString().slice(0, 10)
+    const p = await sb().from('coach_players').select('id').eq('coach_id', coach_id).ilike('name', playerName.trim()).limit(1)
+    const pid = (p.data as any)?.[0]?.id
+    if (!pid) return
+    const ex = await sb().from('coach_attendance').select('id').eq('coach_id', coach_id).eq('player_id', pid).eq('session_date', date).limit(1)
+    if ((ex.data as any)?.length) return
+    await sb().from('coach_attendance').insert({ coach_id, player_id: pid, session_date: date, present: true })
+  } catch (e) { console.warn('[coach-db] logSessionAttendance', e) }
+}

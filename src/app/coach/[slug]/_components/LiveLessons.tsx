@@ -15,7 +15,7 @@ import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { MediaCaptureModal } from './MediaCaptureModal'
-import { useCoachTable, dbInsert, SKILLS_BY_STAGE } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, SKILLS_BY_STAGE, logSessionAttendance } from '../_lib/coach-db'
 
 type Review = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
@@ -109,6 +109,8 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
             if (newPlayer) await dbInsert('coach_players', { name: newPlayer }).catch(() => {})
             if (editing === 'new') { await add(vals); setSelId(null) }  // null → effect selects the newest
             else await edit(editing.id, vals)
+            // Session happened → auto-log attendance (present) for that day.
+            logSessionAttendance(vals.player_name, vals.session_date)
             setEditing(null)
           }} />
       )}
