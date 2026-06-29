@@ -54,6 +54,9 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const [editPay, setEditPay] = useState<Pay | 'new' | null>(null)
   const [runSheet, setRunSheet] = useState<RosterRow | null>(null)
   const [assignPrefill, setAssignPrefill] = useState<string | null>(null)
+  const [pay, setPay] = useState<{ amount?: number; description?: string; player_name?: string } | null>(null)
+  const [payConnected, setPayConnected] = useState<boolean | null>(null)
+  useEffect(() => { fetch('/api/coach/pay/status').then(r => r.json()).then(d => setPayConnected(!!d.chargesEnabled)).catch(() => setPayConnected(false)) }, [])
 
   // First visit: load the Lumio default packages as a starting price list (once —
   // the coach can edit/remove anything they don't want).
@@ -96,9 +99,12 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
 
   return (
     <div style={{ fontFamily: FONT }}>
-      <div style={{ marginBottom: 16 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Payments &amp; Packages</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Lesson packs, credits used and what’s outstanding.{(() => { const r = getSettings().privateRate; return r ? ` · Private £${r}/hr` : '' })()}</p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Payments &amp; Packages</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Lesson packs, credits used and what’s outstanding.{(() => { const r = getSettings().privateRate; return r ? ` · Private £${r}/hr` : '' })()}</p>
+        </div>
+        <button onClick={() => setPay({})} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>💳 Take a payment</button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 16 }}>
@@ -187,7 +193,9 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
 
       {runSheet && <PackageRunSheet T={T} accent={accent} row={runSheet}
         onClose={() => setRunSheet(null)}
+        onTakePayment={() => { const r = runSheet; setRunSheet(null); setPay({ amount: r.assign?.amount || undefined, description: r.assign?.item ? `${r.assign.item} — ${r.name}` : `Tennis coaching — ${r.name}`, player_name: r.name }) }}
         onEditPlan={() => { const a = runSheet.assign; const nm = runSheet.name; setRunSheet(null); if (a) setEditPay(a); else { setAssignPrefill(nm); setEditPay('new') } }} />}
+      {pay && <PayModal T={T} accent={accent} connected={payConnected} init={pay} onClose={() => setPay(null)} />}
       {editPkg && <PackageForm T={T} accent={accent} pkg={editPkg === 'new' ? null : editPkg} onClose={() => setEditPkg(null)} onSave={async v => { if (editPkg === 'new') await packages.add(v); else await packages.edit(editPkg.id, v); setEditPkg(null) }} />}
       {editPay && <AssignForm T={T} accent={accent} players={players} packages={packages.rows} pay={editPay === 'new' ? null : editPay} prefillName={assignPrefill}
         onClose={() => { setEditPay(null); setAssignPrefill(null) }}
@@ -288,7 +296,7 @@ function AssignForm({ T, accent, players, packages, pay, prefillName, onClose, o
   )
 }
 
-function PackageRunSheet({ T, accent, row, onClose, onEditPlan }: { T: ThemeTokens; accent: AccentTokens; row: RosterRow; onClose: () => void; onEditPlan: () => void }) {
+function PackageRunSheet({ T, accent, row, onClose, onEditPlan, onTakePayment }: { T: ThemeTokens; accent: AccentTokens; row: RosterRow; onClose: () => void; onEditPlan: () => void; onTakePayment: () => void }) {
   const a = row.assign
   const total = a?.sessions_total || 0
   const slots = total || row.sessions.length || 0
@@ -326,9 +334,70 @@ function PackageRunSheet({ T, accent, row, onClose, onEditPlan }: { T: ThemeToke
         <div style={{ fontSize: 10.5, color: T.text3, marginTop: 12, lineHeight: 1.5 }}>Sessions tick automatically as you submit lesson summaries — you don’t mark these by hand.</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>
           <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Close</button>
+          <button onClick={onTakePayment} style={{ appearance: 'none', border: `1px solid ${accent.border}`, padding: '8px 14px', borderRadius: 9, background: accent.dim, color: accent.hex, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>💳 Take payment</button>
           <button onClick={onEditPlan} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{a ? 'Edit plan' : 'Assign a package'}</button>
         </div>
       </div>
     </div>
+  )
+}
+
+function PayModal({ T, accent, connected, init, onClose }: { T: ThemeTokens; accent: AccentTokens; connected: boolean | null; init: { amount?: number; description?: string; player_name?: string }; onClose: () => void }) {
+  const [amount, setAmount] = useState(init.amount ? String(init.amount) : '')
+  const [description, setDescription] = useState(init.description || '')
+  const [playerName, setPlayerName] = useState(init.player_name || '')
+  const [creating, setCreating] = useState(false)
+  const [err, setErr] = useState('')
+  const [url, setUrl] = useState<string | null>(null)
+  const create = async () => {
+    const amt = Number(amount)
+    if (!amt || amt < 0.5) { setErr('Enter an amount of at least £0.50'); return }
+    setCreating(true); setErr('')
+    try {
+      const r = await fetch('/api/coach/pay/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: amt, description: description || 'Tennis coaching', player_name: playerName || null, returnPath: window.location.pathname }) })
+      const d = await r.json()
+      if (d.url) { setUrl(d.url); window.open(d.url, '_blank') } else setErr(d.error || 'Could not start payment')
+    } catch { setErr('Could not start payment') } finally { setCreating(false) }
+  }
+
+  if (connected === false) {
+    return (
+      <Shell T={T} title="Take a payment" onClose={onClose} footer={<button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, border: 0, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Got it</button>}>
+        <div style={{ fontSize: 13, color: T.text2, lineHeight: 1.6 }}>Connect your bank first to take payments. Go to <strong style={{ color: T.text }}>Settings → Payments &amp; Packages → Take payments</strong> and connect with Stripe (a couple of minutes). Money then lands straight in your account.</div>
+      </Shell>
+    )
+  }
+
+  if (url) {
+    const qr = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`
+    return (
+      <Shell T={T} title="Payment ready" onClose={onClose} footer={<button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, border: 0, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Done</button>}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 12.5, color: T.text2, marginBottom: 10 }}>Scan to pay with Apple Pay, Google Pay or card — or send the link.</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qr} alt="Payment QR" width={200} height={200} style={{ borderRadius: 12, background: '#fff', padding: 8 }} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            <a href={url} target="_blank" rel="noopener noreferrer" style={{ flex: 1, textAlign: 'center', textDecoration: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '8px', fontSize: 12.5, fontWeight: 700 }}>Open checkout ↗</a>
+            <button onClick={() => { navigator.clipboard?.writeText(url).then(() => alert('Payment link copied — send it to the player or parent.')).catch(() => {}) }} style={{ flex: 1, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 9, padding: '8px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Copy link</button>
+          </div>
+        </div>
+      </Shell>
+    )
+  }
+
+  return (
+    <Shell T={T} title="Take a payment" onClose={onClose}
+      footer={<>
+        <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+        <button onClick={create} disabled={creating || !Number(amount)} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: creating || !Number(amount) ? 0.5 : 1, fontFamily: FONT }}>{creating ? 'Creating…' : 'Create payment'}</button>
+      </>}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div><label style={lab(T)}>Amount (£) *</label><input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="e.g. 36" style={field(T)} /></div>
+        <div><label style={lab(T)}>Player</label><input value={playerName} onChange={e => setPlayerName(e.target.value)} placeholder="Optional" style={field(T)} /></div>
+      </div>
+      <div><label style={lab(T)}>Description</label><input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. 10-lesson private pack" style={field(T)} /></div>
+      <div style={{ fontSize: 11, color: T.text3 }}>Creates a Stripe checkout (card · Apple Pay · Google Pay). You’ll get a link + QR to scan in person — money goes straight to your bank.</div>
+      {err && <div style={{ fontSize: 12, color: T.bad }}>{err}</div>}
+    </Shell>
   )
 }
