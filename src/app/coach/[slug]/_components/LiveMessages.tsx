@@ -15,7 +15,7 @@ import { useCoachTable, useCoachProfile, dbUpdate, dbRemove } from '../_lib/coac
 import { getSettings } from '../_lib/settings-store'
 
 type Msg = { id: string; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string; direction?: string | null; from_name?: string | null; thread_key?: string | null; external_id?: string | null; read?: boolean | null }
-type Player = { id: string; name: string; email?: string | null; phone?: string | null; parent_name?: string | null }
+type Player = { id: string; name: string; email?: string | null; phone?: string | null; parent_name?: string | null; avatar_url?: string | null }
 const REACTIONS = ['👍', '❤️', '😄', '✅']
 const initials = (n: string) => n.split(/[\s,]+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
 const fmtTime = (d?: string) => { const t = d ? new Date(d) : null; if (!t || isNaN(t.getTime())) return ''; const today = new Date(); return t.toDateString() === today.toDateString() ? t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : t.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) }
@@ -36,6 +36,13 @@ export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accen
     return 'Parent'
   }
   const tagColour = (t: string) => t === 'Venue' ? '#3A8EE0' : t === 'Coach' ? accent.hex : t === 'Player' ? T.good : T.text3
+  const avatarFor = (key?: string | null) => { const n = (key || '').split(',')[0].trim().toLowerCase(); return players.find(p => (p.name || '').trim().toLowerCase() === n)?.avatar_url as string | undefined }
+  const Av = ({ keyName, size }: { keyName: string; size: number }) => {
+    const url = avatarFor(keyName)
+    // eslint-disable-next-line @next/next/no-img-element
+    if (url) return <img src={url} alt={keyName} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+    return <span style={{ width: size, height: size, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: size * 0.37, fontWeight: 700, flexShrink: 0 }}>{initials(keyName)}</span>
+  }
   const [selKey, setSelKey] = useState<string | null>(null)
   const [compose, setCompose] = useState<false | { recipients: string[]; body: string }>(false)
 
@@ -88,7 +95,7 @@ export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accen
               const last = c.msgs[0]; const active = c.key === sel?.key
               return (
                 <div key={c.key} onClick={() => setSelKey(c.key)} style={{ display: 'flex', gap: 10, padding: '10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 3 }}>
-                  <span style={{ width: 30, height: 30, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{initials(c.key)}</span>
+                  <Av keyName={c.key} size={30} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                       <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.key}</span>
@@ -106,7 +113,7 @@ export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accen
           {sel && (
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 12, borderBottom: `1px solid ${T.border}`, marginBottom: 12, flexWrap: 'wrap' }}>
-                <span style={{ width: 34, height: 34, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700 }}>{initials(sel.key)}</span>
+                <Av keyName={sel.key} size={34} />
                 <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{sel.key}</div>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                   <button onClick={() => startCompose(sel.key.split(',').map(s => s.trim()).filter(Boolean))} style={btn(T, accent, 'solid')}>↩ Reply</button>

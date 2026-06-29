@@ -258,8 +258,12 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
             <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>Everyone&apos;s on track. 🎾</p>
           ) : needs.map(({ p, reason }) => (
             <button key={p.id} onClick={() => openPlayer(p)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: T.warn, flexShrink: 0 }} />
+              {p.avatar_url
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={p.avatar_url} alt={p.name} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                : <span style={{ width: 24, height: 24, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>{(p.name || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('')}</span>}
               <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{p.name}</span>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.warn, flexShrink: 0 }} />
               <span style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{reason}</span>
             </button>
           ))}
