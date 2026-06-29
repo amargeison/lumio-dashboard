@@ -250,7 +250,10 @@ function AssignForm({ T, accent, players, packages, pay, prefillName, onClose, o
   const [d, setD] = useState<Record<string, any>>({ player_name: pay?.player_name || prefillName || '', item: pay?.item || '', amount: pay?.amount ?? '', sessions_total: pay?.sessions_total ?? '', status: pay?.status || 'active', renews_date: pay?.renews_date || '' })
   const [saving, setSaving] = useState(false)
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
-  const pickPackage = (name: string) => { const pk = packages.find(p => p.name === name); set('item', name); if (pk) { set('amount', pk.price ?? ''); set('sessions_total', pk.sessions ?? '') } }
+  const pickPackage = (name: string) => {
+    if (name === 'Pay as you go') { set('item', 'Pay as you go'); set('sessions_total', ''); set('amount', ''); return }
+    const pk = packages.find(p => p.name === name); set('item', name); if (pk) { set('amount', pk.price ?? ''); set('sessions_total', pk.sessions ?? '') }
+  }
   const save = async () => { if (!String(d.player_name).trim() || saving) return; setSaving(true); try { await onSave({ player_name: d.player_name, item: d.item, amount: Number(d.amount) || null, sessions_total: Number(d.sessions_total) || null, status: d.status, renews_date: d.renews_date || null }) } finally { setSaving(false) } }
   return (
     <Shell T={T} title={pay ? 'Update package' : 'Assign package'} onClose={onClose}
@@ -266,8 +269,9 @@ function AssignForm({ T, accent, players, packages, pay, prefillName, onClose, o
         </select>
       </div>
       <div><label style={lab(T)}>Plan</label>
-        <select value={packages.some(p => p.name === d.item) ? d.item : ''} onChange={e => pickPackage(e.target.value)} style={{ ...field(T), cursor: 'pointer' }}>
+        <select value={packages.some(p => p.name === d.item) ? d.item : (d.item === 'Pay as you go' ? 'Pay as you go' : '')} onChange={e => pickPackage(e.target.value)} style={{ ...field(T), cursor: 'pointer' }}>
           <option value="">Choose a package…</option>
+          <option value="Pay as you go">Pay as you go (no package)</option>
           {packages.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
         </select>
       </div>

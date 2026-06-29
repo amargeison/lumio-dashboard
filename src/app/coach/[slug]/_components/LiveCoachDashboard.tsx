@@ -17,16 +17,16 @@ const fmtDate = (d?: string) => { if (!d) return ''; try { return new Date(d).to
 
 export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void }) {
   const profile = useCoachProfile()
-  const [d, setD] = useState<{ players: any[]; bookings: any[]; lessons: any[]; payments: any[]; attendance: any[]; skills: any[]; loading: boolean }>({ players: [], bookings: [], lessons: [], payments: [], attendance: [], skills: [], loading: true })
+  const [d, setD] = useState<{ players: any[]; bookings: any[]; lessons: any[]; payments: any[]; attendance: any[]; skills: any[]; messages: any[]; equipment: any[]; loading: boolean }>({ players: [], bookings: [], lessons: [], payments: [], attendance: [], skills: [], messages: [], equipment: [], loading: true })
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const [players, bookings, lessons, payments, attendance, skills] = await Promise.all([
-        dbList('coach_players'), dbList('coach_bookings'), dbList('coach_sessions'), dbList('coach_payments'), dbList('coach_attendance'), dbList('coach_player_skills'),
+      const [players, bookings, lessons, payments, attendance, skills, messages, equipment] = await Promise.all([
+        dbList('coach_players'), dbList('coach_bookings'), dbList('coach_sessions'), dbList('coach_payments'), dbList('coach_attendance'), dbList('coach_player_skills'), dbList('coach_messages'), dbList('coach_equipment'),
       ])
       if (cancelled) return
-      setD({ players, bookings, lessons, payments, attendance, skills, loading: false })
+      setD({ players, bookings, lessons, payments, attendance, skills, messages, equipment, loading: false })
     })()
     return () => { cancelled = true }
   }, [])
@@ -36,13 +36,15 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const total = d.players.length + d.bookings.length + d.lessons.length + d.payments.length
   if (total === 0) return <EmptyCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={onNavigate} onStartWizard={onStartWizard} />
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = new Date().toLocaleDateString('en-CA') // local YYYY-MM-DD
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
-  const todays = d.bookings.filter(b => b.booking_date === today).sort((a, b) => String(a.start_time ?? '').localeCompare(String(b.start_time ?? '')))
-  const upcoming = d.bookings.filter(b => (b.booking_date ?? '') >= today).sort((a, b) => (String(a.booking_date) + (a.start_time ?? '')).localeCompare(String(b.booking_date) + (b.start_time ?? '')))
+  const dk = (x?: string | null) => String(x ?? '').slice(0, 10) // tolerate timestamp-format dates
+  const active = (b: any) => b.status !== 'cancelled'
+  const todays = d.bookings.filter(b => dk(b.booking_date) === today && active(b)).sort((a, b) => String(a.start_time ?? '').localeCompare(String(b.start_time ?? '')))
+  const upcoming = d.bookings.filter(b => dk(b.booking_date) >= today && active(b)).sort((a, b) => (dk(a.booking_date) + (a.start_time ?? '')).localeCompare(dk(b.booking_date) + (b.start_time ?? '')))
   const next = upcoming[0]
-  const lessonsThisWeek = d.lessons.filter(l => (l.session_date ?? '') >= weekAgo).length
-  const due = d.payments.filter(p => p.status === 'due' || p.status === 'overdue')
+  const lessonsThisWeek = d.lessons.filter(l => dk(l.session_date) >= weekAgo).length
+  const due = d.payments.filter(p => !p.paid && (Number(p.amount) || 0) > 0)
   const dueTotal = due.reduce((s, p) => s + (Number(p.amount) || 0), 0)
 
   // Skill map per player → rackets ready to advance (all stage skills consistent).
@@ -64,6 +66,26 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
     if (!hasUpcoming(p.name)) return { p, reason: 'No upcoming session' }
     return null
   }).filter(Boolean).slice(0, 5) as { p: any; reason: string }[]
+
+  // Live inbox — the 5 most recent messages (mirrors the Messages section).
+  const inbox = [...d.messages].sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? ''))).slice(0, 5)
+
+  // Live Coach AI briefing — composed from real signals, refreshed every load.
+  const lowAtt = d.players.map(p => ({ p, a: attPct(p.id) })).filter(x => x.a !== null && (x.a as number) < 80).sort((a, b) => (a.a as number) - (b.a as number))
+  const briefing: { tag: string; text: string }[] = []
+  if (racketsReady.length) briefing.push({ tag: 'Rackets', text: `${racketsReady.length} player${racketsReady.length > 1 ? 's are' : ' is'} ready to move up a racket — book ${racketsReady.length > 1 ? 'assessments' : 'an assessment'}: ${racketsReady.slice(0, 3).map(p => p.name).join(', ')}.` })
+  if (lowAtt.length) briefing.push({ tag: 'Retention', text: `${lowAtt[0].p.name} is at ${lowAtt[0].a}% attendance — worth a check-in with the family.` })
+  briefing.push({ tag: 'Schedule', text: todays.length ? `${todays.length} session${todays.length > 1 ? 's' : ''} today${todays[0]?.start_time ? ` from ${todays[0].start_time}` : ''}.${next && dk(next.booking_date) > today ? ` Next after today: ${fmtDate(next.booking_date)} ${next.start_time || ''}.` : ''}` : (next ? `No sessions today — next is ${fmtDate(next.booking_date)} ${next.start_time || ''}.` : 'No upcoming sessions booked — add bookings in the calendar.') })
+  if (dueTotal > 0) briefing.push({ tag: 'Payments', text: `${due.length} player${due.length > 1 ? 's have' : ' has'} an outstanding balance — £${dueTotal.toLocaleString()} to collect.` })
+  briefing.push({ tag: 'Progress', text: lessonsThisWeek ? `${lessonsThisWeek} lesson summar${lessonsThisWeek > 1 ? 'ies' : 'y'} logged this week — keep sharing the wins with players.` : 'No lesson summaries yet this week — log one after your next session.' })
+
+  // Extra row cards.
+  const nextSessions = upcoming.slice(0, 3)
+  const recentSummaries = [...d.lessons].sort((a, b) => dk(b.session_date).localeCompare(dk(a.session_date))).slice(0, 3)
+  const kitAttention = d.equipment.filter(i => i.status === 'low' || i.status === 'order' || i.status === 'repair')
+
+  // Open a specific player's card on the roster (deep link).
+  const openPlayer = (p: any) => { try { sessionStorage.setItem('lumio_open_player', p.id) } catch { /* ignore */ } onNavigate('roster') }
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
@@ -117,46 +139,95 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
         ))}
       </div>
 
-      {/* Inbox / Summary / Needs attention */}
-      <div className="cm-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: density.gap }}>
-        {/* Inbox — set-up state until email/calendar connected */}
+      {/* Inbox / Coach AI briefing / Needs attention */}
+      <div className="cm-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', gap: density.gap }}>
+        {/* Inbox — live, last 5 messages, synced with the Messages section */}
         <div style={card}>
-          <p style={sectionTitle}>Inbox</p>
-          {!profile.contact_email ? (
-            <div style={{ textAlign: 'center', padding: '14px 0' }}>
-              <p style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.5, margin: '0 0 12px' }}>Connect your email to receive and reply to messages from parents and players here.</p>
-              <button onClick={() => onNavigate('settings')} style={btn(accent, T)}>Set up email →</button>
-            </div>
-          ) : (
-            <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>No new messages. <button onClick={() => onNavigate('messages')} style={linkBtn(accent)}>Send one →</button></p>
-          )}
+          <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12 }}>
+            <p style={{ ...sectionTitle, margin: 0 }}>Inbox</p>
+            <button onClick={() => onNavigate('messages')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>All →</button>
+          </div>
+          {inbox.length === 0 ? (
+            <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>No messages yet. <button onClick={() => onNavigate('messages')} style={linkBtn(accent)}>Send one →</button></p>
+          ) : inbox.map(m => (
+            <button key={m.id} onClick={() => onNavigate('messages')} style={{ display: 'block', width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <span style={{ fontSize: 12, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.recipients || 'Message'}</span>
+                <span style={{ marginLeft: 'auto', fontSize: 10, color: T.text3, flexShrink: 0 }}>{m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : ''}</span>
+              </div>
+              <div style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.subject ? `${m.subject} — ` : ''}{m.body}</div>
+            </button>
+          ))}
         </div>
 
-        {/* Today's summary (derived from live data) */}
+        {/* Coach AI briefing — live, derived from real signals */}
         <div style={card}>
-          <p style={sectionTitle}>Today&apos;s summary</p>
-          {[
-            ['Sessions today', `${todays.length}`],
-            ['Lessons this week', `${lessonsThisWeek}`],
-            ['Rackets ready to advance', `${racketsReady.length}`],
-            ['Outstanding payments', `£${dueTotal.toLocaleString()}`],
-          ].map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, padding: '4px 0' }}>
-              <span style={{ color: T.text3 }}>{k}</span><span style={{ color: T.text, fontWeight: 600 }}>{v}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+            <span style={{ color: accent.hex }}>✦</span>
+            <p style={{ ...sectionTitle, margin: 0 }}>Coach AI briefing</p>
+            <span style={{ marginLeft: 'auto', fontSize: 10, color: T.text3 }}>live</span>
+          </div>
+          {briefing.map((b, i) => (
+            <div key={i} style={{ display: 'flex', gap: 10, padding: '7px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+              <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.05em', width: 64, flexShrink: 0, paddingTop: 2 }}>{b.tag}</span>
+              <span style={{ fontSize: 12, color: T.text2, lineHeight: 1.45 }}>{b.text}</span>
             </div>
           ))}
         </div>
 
-        {/* Needs attention */}
+        {/* Needs attention — opens the player's card */}
         <div style={card}>
           <p style={sectionTitle}>Needs attention</p>
           {needs.length === 0 ? (
             <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>Everyone&apos;s on track. 🎾</p>
           ) : needs.map(({ p, reason }) => (
-            <button key={p.id} onClick={() => onNavigate('roster')} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
+            <button key={p.id} onClick={() => openPlayer(p)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: T.warn, flexShrink: 0 }} />
               <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{p.name}</span>
               <span style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{reason}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Extra row — upcoming sessions / recent summaries / kit needing attention */}
+      <div className="cm-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: density.gap }}>
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12 }}>
+            <p style={{ ...sectionTitle, margin: 0 }}>Upcoming sessions</p>
+            <button onClick={() => onNavigate('planner')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>Planner →</button>
+          </div>
+          {nextSessions.length === 0 ? <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>Nothing booked yet.</p> : nextSessions.map(b => (
+            <button key={b.id} onClick={() => onNavigate('planner')} style={{ display: 'flex', gap: 10, width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
+              <span style={{ fontSize: 11, color: accent.hex, fontWeight: 600, width: 96, flexShrink: 0 }}>{fmtDate(b.booking_date)}{b.start_time ? ` ${b.start_time}` : ''}</span>
+              <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</span>
+            </button>
+          ))}
+        </div>
+
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12 }}>
+            <p style={{ ...sectionTitle, margin: 0 }}>Recent summaries</p>
+            <button onClick={() => onNavigate('lessons')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>All →</button>
+          </div>
+          {recentSummaries.length === 0 ? <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>No summaries yet.</p> : recentSummaries.map(l => (
+            <button key={l.id} onClick={() => onNavigate('lessons')} style={{ display: 'block', width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
+              <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.player_name || 'Session'}</div>
+              <div style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{fmtDate(l.session_date)}{l.focus ? ` · ${l.focus}` : ''}</div>
+            </button>
+          ))}
+        </div>
+
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12 }}>
+            <p style={{ ...sectionTitle, margin: 0 }}>Kit needing attention</p>
+            <button onClick={() => onNavigate('equipment')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>Equipment →</button>
+          </div>
+          {kitAttention.length === 0 ? <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>All stocked up. ✅</p> : kitAttention.slice(0, 5).map(i => (
+            <button key={i.id} onClick={() => onNavigate('equipment')} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: i.status === 'repair' ? T.bad : i.status === 'order' ? '#3A8EE0' : T.warn, flexShrink: 0 }} />
+              <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{i.item}</span>
+              <span style={{ marginLeft: 'auto', fontSize: 10, color: T.text3, textTransform: 'uppercase' }}>{i.status === 'order' ? 'To order' : i.status === 'repair' ? 'Repair' : 'Low'}</span>
             </button>
           ))}
         </div>

@@ -155,29 +155,54 @@ export function useCoachTable<T = any>(table: CoachTable) {
 }
 
 // ── Dashboard / rail stats from live data ──────────────────────────────────
-export interface CoachStats { players: number; lessonsThisWeek: number; staff: number; upcomingBookings: number; loading: boolean }
+export interface CoachStats {
+  players: number; lessonsThisWeek: number; staff: number; upcomingBookings: number; loading: boolean
+  sessionsToday: number; racketsReady: number; outstandingPayments: number; newPlayers: number
+  racketCounts: number[]   // aligned to RACKET_STAGES order
+}
+
+const emptyStats: CoachStats = { players: 0, lessonsThisWeek: 0, staff: 0, upcomingBookings: 0, loading: true, sessionsToday: 0, racketsReady: 0, outstandingPayments: 0, newPlayers: 0, racketCounts: [] }
+const dayKey = (d?: string | null) => String(d ?? '').slice(0, 10)
 
 export function useCoachStats(enabled = true): CoachStats {
-  const [s, setS] = useState<CoachStats>({ players: 0, lessonsThisWeek: 0, staff: 0, upcomingBookings: 0, loading: true })
+  const [s, setS] = useState<CoachStats>(emptyStats)
 
   useEffect(() => {
     if (!enabled) { setS(v => ({ ...v, loading: false })); return }
     let cancelled = false
     ;(async () => {
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
-      const today = new Date().toISOString().slice(0, 10)
-      const [players, staff, sessions, bookings] = await Promise.all([
-        sb().from('coach_players').select('id', { count: 'exact', head: true }),
+      const today = new Date().toLocaleDateString('en-CA') // local YYYY-MM-DD
+      const [players, staff, sessions, bookings, skills, payments] = await Promise.all([
+        sb().from('coach_players').select('id, racket_stage, created_at'),
         sb().from('coach_staff').select('id', { count: 'exact', head: true }),
         sb().from('coach_sessions').select('id', { count: 'exact', head: true }).gte('session_date', weekAgo),
-        sb().from('coach_bookings').select('id', { count: 'exact', head: true }).gte('booking_date', today),
+        sb().from('coach_bookings').select('booking_date, status'),
+        sb().from('coach_player_skills').select('player_id, skill, score'),
+        sb().from('coach_payments').select('amount, paid'),
       ])
       if (cancelled) return
+      const prows: any[] = players.data ?? []
+      const brows: any[] = bookings.data ?? []
+      const srows: any[] = skills.data ?? []
+      const pays: any[] = payments.data ?? []
+      const skillFor = (pid: string) => Object.fromEntries(srows.filter(r => r.player_id === pid).map(r => [r.skill, r.score]))
+      const racketsReady = prows.filter(p => {
+        const list = SKILLS_BY_STAGE[p.racket_stage] || []
+        if (!list.length) return false
+        const m: any = skillFor(p.id)
+        return list.every(sk => (m[sk] || 0) >= 4)
+      }).length
       setS({
-        players: players.count ?? 0,
+        players: prows.length,
         staff: staff.count ?? 0,
         lessonsThisWeek: sessions.count ?? 0,
-        upcomingBookings: bookings.count ?? 0,
+        upcomingBookings: brows.filter(b => dayKey(b.booking_date) >= today && b.status !== 'cancelled').length,
+        sessionsToday: brows.filter(b => dayKey(b.booking_date) === today && b.status !== 'cancelled').length,
+        racketsReady,
+        outstandingPayments: pays.filter(p => !p.paid && (Number(p.amount) || 0) > 0).reduce((t, p) => t + (Number(p.amount) || 0), 0),
+        newPlayers: prows.filter(p => dayKey(p.created_at) >= weekAgo).length,
+        racketCounts: RACKET_STAGES.map(st => prows.filter(p => p.racket_stage === st.id).length),
         loading: false,
       })
     })()

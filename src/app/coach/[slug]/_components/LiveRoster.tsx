@@ -53,6 +53,19 @@ export function LiveRoster({ T, accent, density }: Common) {
   const [sel, setSel] = useState<any | null>(null)
   const [editing, setEditing] = useState<any | null | undefined>(undefined) // undefined = closed
 
+  // Deep-link: another screen (e.g. dashboard "Needs attention") can ask the roster
+  // to open straight onto a specific player's card.
+  useEffect(() => {
+    if (players.loading) return
+    let id: string | null = null
+    try { id = sessionStorage.getItem('lumio_open_player') } catch { /* ignore */ }
+    if (!id) return
+    try { sessionStorage.removeItem('lumio_open_player') } catch { /* ignore */ }
+    const p = players.rows.find(x => x.id === id)
+    if (p) setSel(p)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [players.loading])
+
   const list = group === 'All' ? players.rows : players.rows.filter(p => p.category === group)
   const tabs = ['All', ...CATEGORIES] as const
 

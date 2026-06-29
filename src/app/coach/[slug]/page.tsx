@@ -63,7 +63,7 @@ import { LiveResources } from './_components/LiveResources'
 import { LiveVideoAudio } from './_components/LiveVideoAudio'
 import { LiveEffortRewards } from './_components/LiveEffortRewards'
 import { LiveStaff } from './_components/LiveStaff'
-import { useCoachStats } from './_lib/coach-db'
+import { useCoachStats, RACKET_STAGES } from './_lib/coach-db'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, tierForFlags, TIERS, type FeatureFlags } from './_lib/feature-flags'
 
 // The three view roles for the role switcher. Head + Coach are the same portal
@@ -508,37 +508,39 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
               </div>
             </div>
 
-            {isEmpty ? (
-              <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
-                <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>Set up your academy</div>
-                <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5, margin: 0 }}>Add players, coaches and bookings from the dashboard and these stats fill in automatically.</p>
-                <button onClick={() => setShowWizard(true)} style={{ appearance: 'none', border: 0, cursor: 'pointer', marginTop: 10, width: '100%', padding: '9px 12px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12, fontWeight: 700 }}>Set up your academy</button>
-              </div>
-            ) : (
-              <>
-                {feat.racket && (
+            {/* Racket distribution — live counts for the real portal, demo counts otherwise */}
+            {feat.racket && (() => {
+              const dist = isEmpty
+                ? RACKET_STAGES.map((st, i) => ({ id: st.id, name: st.name, colour: st.colour, count: liveStats.racketCounts[i] || 0 }))
+                : BELTS.map((b, bi) => ({ id: b.id, name: b.name, colour: b.colour, count: beltCounts[bi] }))
+              const shown = dist.filter(r => r.count > 0)
+              if (!shown.length) return null
+              return (
                 <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
                   <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 10 }}>Racket distribution</div>
-                  {BELTS.map((b, bi) => beltCounts[bi] > 0 && (
-                    <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-                      <span style={{ width: 16, height: 10, borderRadius: 2, background: b.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
-                      <span style={{ fontSize: 11, color: T.text2, flex: 1 }}>{b.name}</span>
-                      <span className="tnum" style={{ fontSize: 11, color: T.text, fontWeight: 600 }}>{beltCounts[bi]}</span>
+                  {shown.map(r => (
+                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                      <span style={{ width: 16, height: 10, borderRadius: 2, background: r.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
+                      <span style={{ fontSize: 11, color: T.text2, flex: 1 }}>{r.name}</span>
+                      <span className="tnum" style={{ fontSize: 11, color: T.text, fontWeight: 600 }}>{r.count}</span>
                     </div>
                   ))}
                 </div>
-                )}
+              )
+            })()}
 
-                <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
-                  <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>This week</div>
-                  {[['Rackets awarded', COACH_ORG.season.beltsAwarded], ['Sessions', COACH_ORG.season.lessonsThisWeek], ['New players', '+3']].map(([k, v], i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, padding: '3px 0' }}>
-                      <span style={{ color: T.text3 }}>{k}</span><span style={{ color: T.text, fontWeight: 600 }}>{v}</span>
-                    </div>
-                  ))}
+            {/* This week — combines the demo's totals with the dashboard's summary items */}
+            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
+              <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>This week</div>
+              {(isEmpty
+                ? [['Sessions today', String(liveStats.sessionsToday)], ['Lessons this week', String(liveStats.lessonsThisWeek)], ['Rackets ready', String(liveStats.racketsReady)], ['New players', `+${liveStats.newPlayers}`], ['Outstanding', `£${liveStats.outstandingPayments.toLocaleString()}`]] as [string, string][]
+                : [['Rackets awarded', String(COACH_ORG.season.beltsAwarded)], ['Sessions', String(COACH_ORG.season.lessonsThisWeek)], ['New players', '+3']] as [string, string][]
+              ).map(([k, v], i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, padding: '3px 0' }}>
+                  <span style={{ color: T.text3 }}>{k}</span><span style={{ color: T.text, fontWeight: 600 }}>{v}</span>
                 </div>
-              </>
-            )}
+              ))}
+            </div>
           </div>
         </div>
       </div>
