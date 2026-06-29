@@ -384,7 +384,8 @@ export function HeatmapsView({ T, accent, density }: Common) {
               <button key={t.p.id} onClick={() => setSelId(t.p.id)}
                 style={{ appearance: 'none', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 10px', borderRadius: 10, border: `1px solid ${on ? accent.border : 'transparent'}`, background: on ? accent.dim : 'transparent', marginBottom: 2 }}>
                 <span className="tnum" style={{ width: 22, textAlign: 'center', fontSize: 13, fontWeight: 800, color: i === 0 ? '#F5C518' : i === 1 ? '#C0C5CE' : i === 2 ? '#CD7F32' : T.text3 }}>{i + 1}</span>
-                <span style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: 11, fontWeight: 800, fontFamily: FONT_MONO, flexShrink: 0 }}>{t.p.initials}</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`https://i.pravatar.cc/120?u=${encodeURIComponent(t.p.name)}`} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.p.name}</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11, color: T.text3 }}>

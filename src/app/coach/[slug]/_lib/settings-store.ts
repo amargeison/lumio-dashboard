@@ -44,7 +44,7 @@ export type CoachSettings = {
   ccCoachOnEmail: boolean         // CC the coach's own inbox on emails sent to players/parents
   // The head coach's own contact + DBS / safeguarding record (the account owner).
   // Empty by default so a new head is correctly flagged until they record it.
-  head: { phone: string; email: string; contractedHours: number | null; dbsNumber: string; dbsIssued: string; dbsExpiry: string; safeguardingTrained: boolean; safeguardingDate: string }
+  head: { phone: string; email: string; contractedHours: number | null; dbsNumber: string; dbsIssued: string; dbsExpiry: string; safeguardingTrained: boolean; safeguardingDate: string; avatarUrl: string }
 }
 
 export const DEFAULT_SETTINGS: CoachSettings = {
@@ -74,7 +74,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   packagesSeeded: false,
   equipmentSeeded: false,
   ccCoachOnEmail: true,
-  head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '' },
+  head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '', avatarUrl: '' },
 }
 
 const KEY = 'lumio_coach_settings'

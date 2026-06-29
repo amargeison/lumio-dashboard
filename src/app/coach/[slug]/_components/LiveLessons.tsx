@@ -38,6 +38,7 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
   const { rows, add, edit, remove, reload } = useCoachTable<Session>('coach_sessions')
   const { rows: playerRows, reload: reloadPlayers } = useCoachTable<PlayerLite>('coach_players')
   const players: PlayerLite[] = playerRows.map(p => ({ id: p.id, name: p.name, racket_stage: p.racket_stage }))
+  const picFor = (name?: string | null) => (playerRows as any[]).find(p => (p.name || '').trim().toLowerCase() === (name || '').trim().toLowerCase())?.avatar_url as string | undefined
 
   // Auto-set a development goal once a player has a summary, so the coach doesn't
   // have to: derive it from their latest summary (the AI brief's next-focus when it's
@@ -170,7 +171,7 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
             return (
               <div key={s.id} onClick={() => setSelId(s.id)} style={{ padding: '10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Avatar T={T} accent={accent} text={initials(s.player_name)} size={26} />
+                  <Avatar T={T} accent={accent} text={initials(s.player_name)} size={26} url={picFor(s.player_name)} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.player_name || 'Recorded session'}</div>
                     <div style={{ fontSize: 10.5, color: T.text3 }}>{fmtDate(s.session_date)}</div>
@@ -183,7 +184,7 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
         </div>
 
         {/* Detail */}
-        {sel && <DetailPane T={T} accent={accent} s={sel}
+        {sel && <DetailPane T={T} accent={accent} s={sel} avatarUrl={picFor(sel.player_name)}
           onExport={() => printSession(sel)}
           onEdit={() => setEditing(sel)}
           onDuplicate={async () => { await add({ player_name: sel.player_name, session_date: new Date().toISOString().slice(0, 10), focus: sel.focus, rating: sel.rating, summary: sel.summary, ai_review: sel.ai_review, review_json: sel.review_json }); setSelId(null) }}
@@ -195,8 +196,8 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
 }
 
 // ── Detail pane ───────────────────────────────────────────────────────────────
-function DetailPane({ T, accent, s, onExport, onEdit, onDuplicate, onDelete }: {
-  T: ThemeTokens; accent: AccentTokens; s: Session
+function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, onDelete }: {
+  T: ThemeTokens; accent: AccentTokens; s: Session; avatarUrl?: string | null
   onExport: () => void; onEdit: () => void; onDuplicate: () => void; onDelete: () => void
 }) {
   const [shareOpen, setShareOpen] = useState(false)
@@ -210,7 +211,7 @@ function DetailPane({ T, accent, s, onExport, onEdit, onDuplicate, onDelete }: {
     <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Avatar T={T} accent={accent} text={initials(s.player_name)} size={36} />
+          <Avatar T={T} accent={accent} text={initials(s.player_name)} size={36} url={avatarUrl} />
           <div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.text }}>{s.player_name || 'Recorded session'}</div>
             <div style={{ fontSize: 11.5, color: T.text3 }}>{fmtDate(s.session_date)}{meta ? ` · ${meta}` : ''}</div>
@@ -447,7 +448,11 @@ function SubHead({ T, accent, children, mt }: { T: ThemeTokens; accent: AccentTo
   return <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', margin: mt ? '16px 0 8px' : '0 0 8px' }}>{children}</div>
 }
 
-function Avatar({ T, accent, text, size }: { T: ThemeTokens; accent: AccentTokens; text: string; size: number }) {
+function Avatar({ T, accent, text, size, url }: { T: ThemeTokens; accent: AccentTokens; text: string; size: number; url?: string | null }) {
+  if (url) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={url} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  }
   return <div style={{ width: size, height: size, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.42, fontWeight: 700, border: `1px solid ${accent.border}`, flexShrink: 0 }}>{text}</div>
 }
 

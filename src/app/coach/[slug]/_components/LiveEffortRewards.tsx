@@ -97,7 +97,10 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
             <button key={r.p.id} onClick={() => setSelId(r.p.id)}
               style={{ appearance: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px', borderRadius: 10, border: `1px solid ${on ? accent.hex : 'transparent'}`, background: on ? accent.dim : 'transparent', marginBottom: 2 }}>
               <span className="tnum" style={{ width: 22, textAlign: 'center', fontSize: 13, fontWeight: 800, color: i === 0 ? '#F5C518' : i === 1 ? '#C0C5CE' : i === 2 ? '#CD7F32' : T.text3 }}>{i + 1}</span>
-              <span style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{initials(r.p.name)}</span>
+              {r.p.avatar_url
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={r.p.avatar_url} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                : <span style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{initials(r.p.name)}</span>}
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.p.name}</span>
                 <span style={{ fontSize: 11, color: T.text3 }}>🏅 {rl.cur.name} · {r.list.length} session{r.list.length === 1 ? '' : 's'}</span>

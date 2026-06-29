@@ -112,7 +112,12 @@ function statusDot(T: ThemeTokens, s: 'green' | 'amber' | 'red') { return s === 
 
 function pct(a: number, b: number) { return b ? Math.round((a / b) * 100) : 0 }
 
-function Avatar({ accent, initials, size = 32 }: { accent: AccentTokens; initials: string; size?: number }) {
+function Avatar({ accent, initials, size = 32, seed }: { accent: AccentTokens; initials: string; size?: number; seed?: string }) {
+  if (seed) {
+    // Demo profile photo — deterministic by name so it's stable across the demo.
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={`https://i.pravatar.cc/120?u=${encodeURIComponent(seed)}`} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  }
   return <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: size * 0.34, fontWeight: 700, fontFamily: FONT_MONO, flexShrink: 0 }}>{initials}</div>
 }
 
@@ -361,7 +366,7 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {naSource.filter(p => p.status !== 'green').map(p => (
               <div key={p.id} onClick={() => { openDevPlayer(p.id); onNavigate('development') }} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 6px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}`, cursor: 'pointer' }}>
-                <Avatar accent={accent} initials={p.initials} size={26} />
+                <Avatar accent={accent} initials={p.initials} size={26} seed={p.name} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 11.5, color: T.text, fontWeight: 600 }}>{p.name}</div>
                   <div style={{ fontSize: 10, color: T.text3 }}>{p.status === 'red' ? 'Attendance & form down' : 'Watch progress'}</div>
@@ -502,7 +507,7 @@ export function LessonsView({ T, accent, density }: Common) {
             return (
               <div key={l.id} onClick={() => setSelId(l.id)} style={{ padding: '10px 10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Avatar accent={accent} initials={l.player.split(' ').map(w => w[0]).join('')} size={26} />
+                  <Avatar accent={accent} initials={l.player.split(' ').map(w => w[0]).join('')} size={26} seed={l.player} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.player}</div>
                     <div style={{ fontSize: 10.5, color: T.text3 }}>{l.date} · {l.type}</div>
@@ -519,7 +524,7 @@ export function LessonsView({ T, accent, density }: Common) {
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Avatar accent={accent} initials={sel.player.split(' ').map(w => w[0]).join('')} size={36} />
+                <Avatar accent={accent} initials={sel.player.split(' ').map(w => w[0]).join('')} size={36} seed={sel.player} />
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 600, color: T.text }}>{sel.player}</div>
                   <div style={{ fontSize: 11.5, color: T.text3 }}>{sel.date} · {sel.time} · {sel.duration} min · {sel.court}</div>
@@ -636,7 +641,7 @@ export function DevelopmentView({ T, accent, density }: Common) {
             const active = pl.id === selId
             return (
               <div key={pl.id} onClick={() => setSelId(pl.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 2 }}>
-                <Avatar accent={accent} initials={pl.initials} size={30} />
+                <Avatar accent={accent} initials={pl.initials} size={30} seed={pl.name} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{pl.name}</div>
                   <div style={{ fontSize: 10.5, color: T.text3, display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -655,7 +660,7 @@ export function DevelopmentView({ T, accent, density }: Common) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
           <Card T={T} density={density}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-              <Avatar accent={accent} initials={p.initials} size={48} />
+              <Avatar accent={accent} initials={p.initials} size={48} seed={p.name} />
               <div>
                 <div style={{ fontSize: 18, fontWeight: 600, color: T.text }}>{p.name}</div>
                 <div style={{ fontSize: 12, color: T.text3 }}>{p.group} · Age {p.age}{p.parent ? ` · Parent: ${p.parent}` : ''}</div>
@@ -900,7 +905,7 @@ export function BeltsView({ T, accent, density }: Common) {
                 return (
                 <tr key={p.id} style={{ borderTop: `1px solid ${T.border}` }}>
                   <td style={{ padding: '8px 10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar accent={accent} initials={p.initials} size={24} /><span style={{ fontSize: 12, color: T.text, fontWeight: 500 }}>{p.name}</span></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar accent={accent} initials={p.initials} size={24} seed={p.name} /><span style={{ fontSize: 12, color: T.text, fontWeight: 500 }}>{p.name}</span></div>
                   </td>
                   {BELTS.map((b, bi) => {
                     let cell: ReactNode = null
@@ -1055,7 +1060,7 @@ export function RosterView({ T, accent, density, onNavigate }: Common & { onNavi
         {list.map(p => (
           <Card key={p.id} T={T} density={density} hover onClick={() => setSel(p)}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Avatar accent={accent} initials={p.initials} size={40} />
+              <Avatar accent={accent} initials={p.initials} size={40} seed={p.name} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{p.name}</div>
                 <div style={{ fontSize: 11, color: T.text3 }}>{p.group} · Age {p.age}</div>
@@ -1137,7 +1142,7 @@ export function MessagesView({ T, accent, density }: Common) {
               {/* Row header */}
               <div onClick={() => open(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 8px', cursor: 'pointer', borderRadius: 8, background: isOpen ? T.panel2 : 'transparent' }}>
                 <div style={{ position: 'relative' }}>
-                  <Avatar accent={accent} initials={m.from.split(' ').map(w => w[0]).join('').slice(0, 2)} size={36} />
+                  <Avatar accent={accent} initials={m.from.split(' ').map(w => w[0]).join('').slice(0, 2)} size={36} seed={m.from} />
                   {m.urgent && !m.read && <span style={{ position: 'absolute', top: -2, right: -2, width: 8, height: 8, borderRadius: '50%', background: T.bad, border: `2px solid ${T.panel}` }} />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1596,7 +1601,7 @@ function CampAttendees({ T, accent, density, camp, attendees }: CampSub & { atte
           <tbody>
             {attendees.map((a, i) => (
               <tr key={i} style={{ borderTop: `1px solid ${T.border}` }}>
-                <td style={{ padding: '8px' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar accent={accent} initials={a.initials} size={26} /><span style={{ fontSize: 12.5, color: T.text, fontWeight: 500, whiteSpace: 'nowrap' }}>{a.name}</span></div></td>
+                <td style={{ padding: '8px' }}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Avatar accent={accent} initials={a.initials} size={26} seed={a.name} /><span style={{ fontSize: 12.5, color: T.text, fontWeight: 500, whiteSpace: 'nowrap' }}>{a.name}</span></div></td>
                 <td style={{ padding: '8px', fontSize: 12, color: T.text2 }}>{a.age}</td>
                 <td style={{ padding: '8px' }}><BeltChip beltIndex={a.beltIndex} size={15} /></td>
                 <td style={{ padding: '8px' }}><Pill T={T} color={payTone(a.payment)} bg={`${payTone(a.payment)}1f`}>{a.payment}</Pill></td>
@@ -1642,7 +1647,7 @@ function CampTargets({ T, accent, density, targets, attendees }: Common & { targ
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {attendees.map((a, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8 }}>
-              <Avatar accent={accent} initials={a.initials} size={28} />
+              <Avatar accent={accent} initials={a.initials} size={28} seed={a.name} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{a.name}</div>
                 <div style={{ fontSize: 11, color: T.text2 }}>🎯 {a.goal}</div>
@@ -1688,7 +1693,7 @@ function CampFinance({ T, accent, density, camp, attendees }: CampSub & { attend
           <SectionHead T={T} title="Payment status" />
           {attendees.map((a, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
-              <Avatar accent={accent} initials={a.initials} size={26} />
+              <Avatar accent={accent} initials={a.initials} size={26} seed={a.name} />
               <span style={{ flex: 1, fontSize: 12, color: T.text }}>{a.name}</span>
               <span className="tnum" style={{ fontSize: 11.5, color: T.text2, fontFamily: FONT_MONO }}>£{(camp.pricePerHead - a.balance).toLocaleString()} / £{camp.pricePerHead.toLocaleString()}</span>
               <Pill T={T} color={a.payment === 'paid' ? T.good : a.payment === 'deposit' ? T.warn : T.bad} bg={`${a.payment === 'paid' ? T.good : a.payment === 'deposit' ? T.warn : T.bad}1f`}>{a.payment}</Pill>

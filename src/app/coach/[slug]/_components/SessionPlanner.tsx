@@ -38,7 +38,9 @@ function Card({ T, density, children, style }: { T: ThemeTokens; density: Densit
 function SectionHead({ T, title, right }: { T: ThemeTokens; title: ReactNode; right?: ReactNode }) {
   return <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10, gap: 8 }}><div style={{ fontSize: 12.5, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{title}</div><div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3, fontFamily: FONT_MONO }}>{right}</div></div>
 }
-function Avatar({ accent, initials, size = 38 }: { accent: AccentTokens; initials: string; size?: number }) {
+function Avatar({ accent, initials, size = 38, seed }: { accent: AccentTokens; initials: string; size?: number; seed?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  if (seed) return <img src={`https://i.pravatar.cc/120?u=${encodeURIComponent(seed)}`} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   return <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: size * 0.36, fontWeight: 700, fontFamily: FONT_MONO, flexShrink: 0 }}>{initials}</div>
 }
 const initialsOf = (name: string) => name.replace(/\(.*\)/, '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -277,7 +279,7 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
               <SectionHead T={T} title="Next up" right={nextUp ? dayLabel(nextUp.date) : ''} />
               {nextUp ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                  <Avatar accent={accent} initials={initialsOf(nextUp.player)} size={44} />
+                  <Avatar accent={accent} initials={initialsOf(nextUp.player)} size={44} seed={nextUp.player} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 16, fontWeight: 600, color: T.text }}>{nextUp.player}</div>
                     <div className="tnum" style={{ fontSize: 12, color: T.text3, fontFamily: FONT_MONO }}>{nextUp.time}–{nextUp.end} · {nextUp.type} · {nextUp.court}</div>
@@ -354,7 +356,7 @@ export function SessionPlannerView({ T, accent, density, onNavigate }: Common & 
       {/* selected session */}
       <Card T={T} density={density} style={{ marginBottom: density.gap, padding: density.pad + 4 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginBottom: 14 }}>
-          <Avatar accent={accent} initials={initialsOf(sel.player)} size={46} />
+          <Avatar accent={accent} initials={initialsOf(sel.player)} size={46} seed={sel.player} />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 18, fontWeight: 600, color: T.text }}>{sel.player}</span>

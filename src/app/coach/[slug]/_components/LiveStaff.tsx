@@ -9,6 +9,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile } from '../_lib/coach-db'
 import { getSettings, setSettings, subscribe } from '../_lib/settings-store'
+import { fileToAvatarDataUrl, uploadAvatar } from '@/lib/avatar'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 const DAY = 86400000
@@ -53,6 +54,16 @@ export function LiveStaff({ T, accent }: Common) {
       setInviteMsg(r.ok ? `✓ Portal invite sent to ${c.email}` : 'Could not send invite.')
     } catch { setInviteMsg('Could not send invite.') }
   }
+  // Coach profile photo upload (head → settings; sub-coach → coach_staff).
+  const onCoachPhoto = async (c: any, file?: File | null) => {
+    if (!file) return
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file)
+      const url = await uploadAvatar('/api/coach/staff-avatar', c.isHead ? { head: true, dataUrl } : { staffId: c.id, dataUrl })
+      if (!url) return
+      if (c.isHead) setSettings({ head: { ...getSettings().head, avatarUrl: url } }); else staff.reload()
+    } catch { /* ignore */ }
+  }
 
   // Per-coach work: bookings/players assigned to this coach (head coach also owns
   // anything unassigned), and the live stats derived from them.
@@ -71,7 +82,7 @@ export function LiveStaff({ T, accent }: Common) {
   // The head coach (the signed-in account) is a first-class coach: their own
   // contact + DBS / safeguarding record lives in settings (empty until recorded,
   // so they're correctly flagged like anyone else).
-  const head = { id: '__head__', name: profile.display_name || 'Head Coach', role: 'Head', email: headS.email || profile.contact_email, phone: headS.phone || profile.contact_phone, qualifications: 'Head Coach', home_venue: null, isHead: true, contracted_hours: headS.contractedHours, dbs_number: headS.dbsNumber, dbs_issued: headS.dbsIssued, dbs_expiry: headS.dbsExpiry, safeguarding_trained: headS.safeguardingTrained, safeguarding_date: headS.safeguardingDate }
+  const head = { id: '__head__', name: profile.display_name || 'Head Coach', role: 'Head', email: headS.email || profile.contact_email, phone: headS.phone || profile.contact_phone, qualifications: 'Head Coach', home_venue: null, isHead: true, avatar_url: headS.avatarUrl, contracted_hours: headS.contractedHours, dbs_number: headS.dbsNumber, dbs_issued: headS.dbsIssued, dbs_expiry: headS.dbsExpiry, safeguarding_trained: headS.safeguardingTrained, safeguarding_date: headS.safeguardingDate }
   const everyone = [head, ...staff.rows]
   const flagged = everyone.filter(s => { const st = dbsState(s.dbs_expiry); return st.label === 'Expired' || st.label.startsWith('Expires') || st.label.startsWith('No DBS') })
   const ROLES = ['All', 'Head', 'Senior', 'Coach', 'Assistant', 'Apprentice']
@@ -98,7 +109,14 @@ export function LiveStaff({ T, accent }: Common) {
         {/* Header */}
         <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18, marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
-            <span style={{ width: 44, height: 44, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 15, fontWeight: 700 }}>{initialsOf(sel.name)}</span>
+            <label title="Change photo" style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
+              {sel.avatar_url
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={sel.avatar_url} alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+                : <span style={{ width: 44, height: 44, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 15, fontWeight: 700 }}>{initialsOf(sel.name)}</span>}
+              <span style={{ position: 'absolute', right: -2, bottom: -2, width: 18, height: 18, borderRadius: '50%', background: accent.hex, color: T.btnText, fontSize: 10, display: 'grid', placeItems: 'center', border: `2px solid ${T.panel}` }}>✎</span>
+              <input type="file" accept="image/*" onChange={e => onCoachPhoto(sel, e.target.files?.[0])} style={{ display: 'none' }} />
+            </label>
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 19, fontWeight: 700, color: T.text }}>{sel.name}</span>
@@ -181,7 +199,10 @@ export function LiveStaff({ T, accent }: Common) {
               {myPlayers.map((p: any) => (
                 <div key={p.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 28, height: 28, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700 }}>{initialsOf(p.name)}</span>
+                    {p.avatar_url
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={p.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      : <span style={{ width: 28, height: 28, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700 }}>{initialsOf(p.name)}</span>}
                     <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>{p.name}</div><div style={{ fontSize: 10.5, color: T.text3 }}>{[p.category || p.level, p.age ? `Age ${p.age}` : ''].filter(Boolean).join(' · ')}</div></div>
                   </div>
                   {p.goal && <div style={{ fontSize: 11, color: T.text2, marginTop: 8 }}>⚑ {p.goal}</div>}
@@ -244,7 +265,10 @@ export function LiveStaff({ T, accent }: Common) {
           return (
             <div key={s.id} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ width: 34, height: 34, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700 }}>{initials(s.name)}</span>
+                {s.avatar_url
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={s.avatar_url} alt="" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                  : <span style={{ width: 34, height: 34, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700 }}>{initials(s.name)}</span>}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.role || 'Coach'}</div>
@@ -294,7 +318,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
     try {
       // The head coach (you) — store contact + DBS / safeguarding in settings.
       if (initial?.isHead) {
-        setSettings({ head: { phone: d.phone || '', email: d.email || '', contractedHours: Number(d.contracted_hours) || null, dbsNumber: d.dbs_number || '', dbsIssued: d.dbs_issued || '', dbsExpiry: d.dbs_expiry || '', safeguardingTrained: !!d.safeguarding_trained, safeguardingDate: d.safeguarding_date || '' } })
+        setSettings({ head: { phone: d.phone || '', email: d.email || '', contractedHours: Number(d.contracted_hours) || null, dbsNumber: d.dbs_number || '', dbsIssued: d.dbs_issued || '', dbsExpiry: d.dbs_expiry || '', safeguardingTrained: !!d.safeguarding_trained, safeguardingDate: d.safeguarding_date || '', avatarUrl: d.avatar_url || '' } })
         onSaved(); return
       }
       const row = { name: d.name, role: d.role || null, email: d.email || null, phone: d.phone || null, qualifications: d.qualifications || null, home_venue: d.home_venue || null, contracted_hours: Number(d.contracted_hours) || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }

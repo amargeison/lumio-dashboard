@@ -57,8 +57,14 @@ export function CoachPortal({ onSignOut }: { onSignOut: () => void }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
                 {(b.players || []).map((p: any) => (
                   <div key={p.id} style={{ background: PANEL2, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 12 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{p.name}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {p.avatar_url
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={p.avatar_url} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        : <span style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(58,142,224,0.2)', color: ACCENT, display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>{(p.name || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('')}</span>}
+                      <div style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{p.name}</div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
                       <span style={{ width: 12, height: 9, borderRadius: 2, background: stageColour(p.racket_stage), border: '1px solid rgba(128,128,128,0.4)' }} />
                       <span style={{ fontSize: 11, color: MUTED }}>{stageName(p.racket_stage)}{p.age ? ` · Age ${p.age}` : ''}</span>
                     </div>

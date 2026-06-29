@@ -48,7 +48,9 @@ function Card({ T, density, children, style, hover, onClick }: { T: ThemeTokens;
     </div>
   )
 }
-function Avatar({ accent, initials, size = 40 }: { accent: AccentTokens; initials: string; size?: number }) {
+function Avatar({ accent, initials, size = 40, seed }: { accent: AccentTokens; initials: string; size?: number; seed?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  if (seed) return <img src={`https://i.pravatar.cc/120?u=${encodeURIComponent(seed)}`} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   return <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: size * 0.36, fontWeight: 700, fontFamily: FONT_MONO, flexShrink: 0 }}>{initials}</div>
 }
 function SectionHead({ T, title, right }: { T: ThemeTokens; title: ReactNode; right?: ReactNode }) {
@@ -150,7 +152,7 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
         {/* header */}
         <Card T={T} density={density} style={{ marginBottom: density.gap }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-            <Avatar accent={accent} initials={sel.initials} size={50} />
+            <Avatar accent={accent} initials={sel.initials} size={50} seed={sel.name} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 19, fontWeight: 600, color: T.text }}>{sel.name}</span>
@@ -249,7 +251,7 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
             {players.map(p => (
               <Card key={p.id} T={T} density={density}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Avatar accent={accent} initials={p.initials} size={36} />
+                  <Avatar accent={accent} initials={p.initials} size={36} seed={p.name} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                     <div style={{ fontSize: 10.5, color: T.text3 }}>{p.group} · Age {p.age}</div>
@@ -337,7 +339,7 @@ export function StaffView({ T, accent, density, onNavigate }: Common & { onNavig
           return (
             <Card key={c.id} T={T} density={density} hover onClick={() => setSelId(c.id)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <Avatar accent={accent} initials={c.initials} size={40} />
+                <Avatar accent={accent} initials={c.initials} size={40} seed={c.name} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</div>
                   <div style={{ marginTop: 3 }}><RoleBadge T={T} accent={accent} role={c.role} /></div>

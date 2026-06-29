@@ -16,7 +16,7 @@ export async function GET() {
   const safe = async (q: any) => { try { const { data } = await q; return data || [] } catch { return [] } }
 
   // Only this coach's assigned players + bookings.
-  const players = await safe(db.from('coach_players').select('id, name, racket_stage, level, goal, category, age').eq('coach_id', m.academyId).ilike('assigned_coach', coach).order('name'))
+  const players = await safe(db.from('coach_players').select('id, name, racket_stage, level, goal, category, age, avatar_url').eq('coach_id', m.academyId).ilike('assigned_coach', coach).order('name'))
   const names = players.map((p: any) => p.name).filter(Boolean)
 
   const today = new Date().toLocaleDateString('en-CA')
