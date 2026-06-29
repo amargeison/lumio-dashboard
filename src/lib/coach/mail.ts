@@ -5,13 +5,15 @@
 
 import { getConnection, getFreshAccessToken, type Provider } from './oauth'
 
-export type OutboundMail = { to: string; subject: string; html: string }
+export type OutboundMail = { to: string; subject: string; html: string; replyTo?: string; bcc?: string }
 
 // Build a base64url-encoded RFC 822 message for the Gmail send API.
 function buildRawMessage(from: string | undefined, msg: OutboundMail): string {
   const headers = [
     from ? `From: ${from}` : '',
     `To: ${msg.to}`,
+    msg.bcc ? `Bcc: ${msg.bcc}` : '',
+    msg.replyTo ? `Reply-To: ${msg.replyTo}` : '',
     `Subject: ${msg.subject}`,
     'MIME-Version: 1.0',
     'Content-Type: text/html; charset="UTF-8"',

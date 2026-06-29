@@ -156,7 +156,8 @@ export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent
             </div>
           ))}
         </div>
-        <p style={{ margin: 0, fontSize: 11, color: T.text3, lineHeight: 1.5 }}>Replies come back to your own email / phone for now; in-portal two-way threads are on the roadmap.</p>
+        <p style={{ margin: '0 0 12px', fontSize: 11, color: T.text3, lineHeight: 1.5 }}>Replies thread back into your inbox automatically (email &amp; text), so you can reply, forward or react in-app.</p>
+        <CcToggle T={T} />
       </div>
 
       {/* Payments & Packages */}
@@ -214,6 +215,16 @@ function PaymentsSettingsCard({ T, accent, card }: { T: ThemeTokens; accent: Acc
         )}
       </div>
     </div>
+  )
+}
+
+function CcToggle({ T }: { T: ThemeTokens }) {
+  const [on, setOn] = useState(getSettings().ccCoachOnEmail !== false)
+  const toggle = () => { const v = !on; setOn(v); setSettings({ ccCoachOnEmail: v }) }
+  return (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12.5, color: T.text }}>
+      <input type="checkbox" checked={on} onChange={toggle} /> Send me a copy (BCC) of emails I send to players &amp; parents
+    </label>
   )
 }
 

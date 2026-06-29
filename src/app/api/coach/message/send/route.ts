@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { inboundReplyTo } from '@/lib/coach/inbound'
 
 // Sends a coach message over the chosen channels and logs it to coach_messages.
 //   • Email  → live now, via Resend (RESEND_API_KEY).
@@ -27,15 +28,20 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
 
-  const { recipients = [], channels = [], subject = '', body = '' } =
-    (await req.json().catch(() => ({}))) as { recipients: Recipient[]; channels: string[]; subject?: string; body?: string }
+  const { recipients = [], channels = [], subject = '', body = '', ccCoach = true } =
+    (await req.json().catch(() => ({}))) as { recipients: Recipient[]; channels: string[]; subject?: string; body?: string; ccCoach?: boolean }
+  // BCC the coach's own inbox on outbound email when enabled (Settings toggle) —
+  // a silent copy that doesn't expose their address or invite reply-all.
+  const bccAddress = ccCoach !== false && user.email ? user.email : undefined
 
   if (!body.trim()) return NextResponse.json({ error: 'Message body is required' }, { status: 400 })
   if (!recipients.length) return NextResponse.json({ error: 'Add at least one recipient' }, { status: 400 })
   if (!channels.length) return NextResponse.json({ error: 'Choose at least one channel' }, { status: 400 })
 
   const results: Result[] = []
-  const replyTo = user.email || undefined
+  // Replies route to the Lumio inbound address (carrying a coach+conversation
+  // token) so they thread back into the in-app inbox.
+  const replyToFor = (name?: string) => inboundReplyTo(user.id, name || '')
 
   // ── In-app (Lumio message) ───────────────────────────────────────────────
   // Always available — recorded to the message log; no external send.
@@ -61,14 +67,14 @@ export async function POST(req: NextRequest) {
         // 1) Connected mailbox (send-as the coach)
         if (mailboxConnected) {
           try {
-            const sent = await sendAsCoach(user.id, { to: r.email, subject: subj, html })
+            const sent = await sendAsCoach(user.id, { to: r.email, subject: subj, html, replyTo: replyToFor(r.name), bcc: bccAddress })
             if (sent.ok) { results.push({ name: r.name || r.email, channel: 'email', ok: true, detail: `Sent from ${sent.from || sent.provider}` }); continue }
           } catch { /* fall through to Resend */ }
         }
         // 2) Resend fallback
         if (resend) {
           try {
-            const { error } = await resend.emails.send({ from: EMAIL_FROM, to: r.email, subject: subj, html, replyTo })
+            const { error } = await resend.emails.send({ from: EMAIL_FROM, to: r.email, subject: subj, html, replyTo: replyToFor(r.name), bcc: bccAddress })
             results.push({ name: r.name || r.email, channel: 'email', ok: !error, detail: error ? error.message : 'Sent' })
           } catch (e) {
             results.push({ name: r.name || r.email, channel: 'email', ok: false, detail: e instanceof Error ? e.message : 'Send failed' })

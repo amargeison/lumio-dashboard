@@ -41,6 +41,7 @@ export type CoachSettings = {
   resourcesPreloaded: boolean    // Resource Centre starts with Lumio's library (true) or empty so the coach adds their own (false)
   packagesSeeded: boolean         // Payments price list auto-loaded the Lumio default packages once
   equipmentSeeded: boolean        // Equipment & Kit auto-loaded the Lumio default kit + inventory once
+  ccCoachOnEmail: boolean         // CC the coach's own inbox on emails sent to players/parents
   // The head coach's own contact + DBS / safeguarding record (the account owner).
   // Empty by default so a new head is correctly flagged until they record it.
   head: { phone: string; email: string; contractedHours: number | null; dbsNumber: string; dbsIssued: string; dbsExpiry: string; safeguardingTrained: boolean; safeguardingDate: string }
@@ -72,6 +73,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   resourcesPreloaded: true,
   packagesSeeded: false,
   equipmentSeeded: false,
+  ccCoachOnEmail: true,
   head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '' },
 }
 

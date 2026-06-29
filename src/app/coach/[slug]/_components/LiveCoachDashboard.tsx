@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { dbList, dbInsert, dbUpdate, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE } from '../_lib/coach-db'
+import { getSettings } from '../_lib/settings-store'
 import { EmptyCoachDashboard } from './EmptyCoachDashboard'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -53,10 +54,9 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
     return () => { cancelled = true }
   }, [])
 
-  // Poll for inbound replies (~2 min) so they surface on the dashboard inbox too.
+  // Inbound replies arrive via webhook; refresh the inbox every ~2 min so they show.
   useEffect(() => {
-    const sync = () => fetch('/api/coach/mail/sync').then(r => r.json()).then(d => { if (d.added) reloadMessages() }).catch(() => {})
-    sync(); const id = setInterval(sync, 120000); return () => clearInterval(id)
+    const id = setInterval(() => reloadMessages(), 120000); return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -334,7 +334,7 @@ function InboxComposer({ T, accent, players, init, onClose, onSent }: { T: Theme
     setSending(true); setErr('')
     try {
       const p = players.find(x => (x.name || '').toLowerCase() === recipient.trim().toLowerCase())
-      const r = await fetch('/api/coach/message/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipients: [{ name: recipient.trim(), email: p?.email || p?.contact_email || p?.parent_email || undefined, phone: p?.phone || p?.contact_phone || p?.parent_phone || undefined }], channels, subject, body }) })
+      const r = await fetch('/api/coach/message/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipients: [{ name: recipient.trim(), email: p?.email || p?.contact_email || p?.parent_email || undefined, phone: p?.phone || p?.contact_phone || p?.parent_phone || undefined }], channels, subject, body, ccCoach: getSettings().ccCoachOnEmail }) })
       const d = await r.json()
       if (r.ok && d.status !== 'failed') onSent(); else setErr('Couldn’t send — check channel setup in Settings.')
     } catch { setErr('Couldn’t send — try again.') } finally { setSending(false) }
