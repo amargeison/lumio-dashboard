@@ -43,6 +43,16 @@ export function LiveStaff({ T, accent }: Common) {
   // The head coach's own contact + DBS record (the account owner), kept live.
   const [headS, setHeadS] = useState(() => getSettings().head)
   useEffect(() => subscribe(() => setHeadS(getSettings().head)), [])
+  // Invite a coach to their own scoped portal login.
+  const [inviteMsg, setInviteMsg] = useState('')
+  const inviteToPortal = async (c: any) => {
+    if (!c.email) { setInviteMsg('Add an email for this coach first.'); return }
+    setInviteMsg('Sending…')
+    try {
+      const r = await fetch('/api/portal/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: c.email, role: 'coach', scopeCoachName: c.name, name: c.name }) })
+      setInviteMsg(r.ok ? `✓ Portal invite sent to ${c.email}` : 'Could not send invite.')
+    } catch { setInviteMsg('Could not send invite.') }
+  }
 
   // Per-coach work: bookings/players assigned to this coach (head coach also owns
   // anything unassigned), and the live stats derived from them.
@@ -101,10 +111,12 @@ export function LiveStaff({ T, accent }: Common) {
               </div>
               {specialisms.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>{specialisms.map((sp: string) => <span key={sp} style={{ fontSize: 10.5, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '2px 8px' }}>{sp}</span>)}</div>}
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               {sel.phone && <a href={`tel:${sel.phone}`} style={{ textDecoration: 'none', border: `1px solid ${accent.border}`, background: 'transparent', color: accent.hex, borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 600 }}>📞 Call</a>}
               {sel.email && <a href={`mailto:${sel.email}`} style={{ textDecoration: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 700 }}>✉️ Contact</a>}
+              {!sel.isHead && <button onClick={() => inviteToPortal(sel)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>🔑 Invite to portal</button>}
             </div>
+            {inviteMsg && <div style={{ flexBasis: '100%', width: '100%', fontSize: 11.5, color: inviteMsg.startsWith('✓') ? T.good : T.text3, marginTop: 6 }}>{inviteMsg}</div>}
           </div>
           <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', marginTop: 14 }}>
             {statTiles.map(([l, v]) => <div key={l}><div style={{ fontSize: 19, fontWeight: 700, color: T.text }}>{v}</div><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{l}</div></div>)}
