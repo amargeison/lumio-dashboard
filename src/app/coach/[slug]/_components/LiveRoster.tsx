@@ -10,6 +10,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, RACKET_SKILLS, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore, useCoachProfile } from '../_lib/coach-db'
 import { WatchConnectPanel } from './WatchConnectPanel'
+import { fileToAvatarDataUrl, uploadAvatar } from '@/lib/avatar'
 
 // Generate a fresh opaque watch token client-side (matches the DB default shape).
 function newWatchToken() {
@@ -26,7 +27,11 @@ function stageOf(id?: string | null) {
   return { idx, stage: idx >= 0 ? RACKET_STAGES[idx] : null, pct: idx >= 0 ? Math.round(((idx + 1) / RACKET_STAGES.length) * 100) : 0 }
 }
 
-function Avatar({ accent, name, size = 40 }: { accent: AccentTokens; name: string; size?: number }) {
+function Avatar({ accent, name, size = 40, url }: { accent: AccentTokens; name: string; size?: number; url?: string | null }) {
+  if (url) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={url} alt={name} style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, objectFit: 'cover', background: accent.dim }} />
+  }
   return (
     <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: size * 0.36, fontWeight: 700 }}>
       {initials(name)}
@@ -118,7 +123,7 @@ export function LiveRoster({ T, accent, density }: Common) {
             return (
               <div key={p.id} onClick={() => setSel(p)} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad, cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Avatar accent={accent} name={p.name} size={40} />
+                  <Avatar accent={accent} name={p.name} size={40} url={p.avatar_url} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                     <div style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.category || p.level || 'Player'}{p.age ? ` · Age ${p.age}` : ''}{p.assigned_coach ? ` · 🧑‍🏫 ${p.assigned_coach}` : ''}</div>
@@ -175,6 +180,9 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
   const [d, setD] = useState<Record<string, any>>(initial ?? {})
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
+  const [photo, setPhoto] = useState<string | null>(null) // newly-picked data URL (uploaded on save)
+  const preview = photo || initial?.avatar_url || null
+  const pickPhoto = async (file?: File | null) => { if (!file) return; try { setPhoto(await fileToAvatarDataUrl(file)) } catch { /* ignore */ } }
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
   const profile = useCoachProfile()
   const { rows: staffRows } = useCoachTable<{ id: string; name: string }>('coach_staff')
@@ -188,7 +196,10 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
         name: d.name, category: d.category || null, age: d.age || null, parent_name: d.parent_name || null, racket_stage: d.racket_stage || null, assigned_coach: d.assigned_coach || null, goal: d.goal || null, level: d.level || null, email: d.email || null, phone: d.phone || null, notes: d.notes || null,
         consent_data: !!d.consent_data, consent_photo: !!d.consent_photo, consent_medical: !!d.consent_medical, consent_wearable: !!d.consent_wearable, consent_by: d.consent_by || null, consent_date: d.consent_date || null, medical_notes: d.medical_notes || null,
       }
-      if (initial?.id) await dbUpdate('coach_players', initial.id, row); else await dbInsert('coach_players', row)
+      let playerId = initial?.id as string | undefined
+      if (initial?.id) await dbUpdate('coach_players', initial.id, row)
+      else { const created = await dbInsert('coach_players', row); playerId = created?.id }
+      if (photo && playerId) { try { await uploadAvatar('/api/coach/avatar', { playerId, dataUrl: photo }) } catch { /* ignore */ } }
       onSaved()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Save failed'); setSaving(false) }
   }
@@ -203,6 +214,17 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
       <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>
         <h3 style={{ color: T.text, fontSize: 18, fontWeight: 700, margin: '0 0 16px' }}>{initial?.id ? 'Edit player' : 'Add player'}</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <label title="Add a photo" style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
+            {preview
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={preview} alt="" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover' }} />
+              : <div style={{ width: 56, height: 56, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 20 }}>📷</div>}
+            <span style={{ position: 'absolute', right: -2, bottom: -2, width: 20, height: 20, borderRadius: '50%', background: accent.hex, color: T.btnText, fontSize: 11, display: 'grid', placeItems: 'center', border: `2px solid ${T.panel}` }}>✎</span>
+            <input type="file" accept="image/*" onChange={e => pickPhoto(e.target.files?.[0])} style={{ display: 'none' }} />
+          </label>
+          <div style={{ fontSize: 12, color: T.text3 }}>{preview ? 'Photo added — saved with the player.' : 'Add a profile photo (optional).'}</div>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {field('name', 'Name', 'text', 'Player name')}
           <div><label style={lbl}>Category</label><select value={d.category ?? ''} onChange={e => set('category', e.target.value)} style={input}><option value="">—</option>{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
@@ -256,6 +278,13 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
   const [nextSession, setNextSession] = useState<string>('—')
   const [attDate, setAttDate] = useState('')
   const [inviteMsg, setInviteMsg] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(player.avatar_url || null)
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const onPhoto = async (file?: File | null) => {
+    if (!file || photoBusy) return
+    setPhotoBusy(true)
+    try { const data = await fileToAvatarDataUrl(file); const url = await uploadAvatar('/api/coach/avatar', { playerId: player.id, dataUrl: data }); if (url) setAvatarUrl(url) } catch { /* ignore */ } finally { setPhotoBusy(false) }
+  }
   const inviteEmail = player.email || player.parent_email
   const invitePortal = async () => {
     if (!inviteEmail) { setInviteMsg('Add an email on the Contact tab first.'); return }
@@ -292,7 +321,11 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
       <div style={{ width: '100%', maxWidth: 780, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16 }}>
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: `${density.pad + 2}px ${density.pad + 4}px`, borderBottom: `1px solid ${T.border}` }}>
-          <Avatar accent={accent} name={player.name} size={50} />
+          <label title="Change photo" style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
+            <Avatar accent={accent} name={player.name} size={50} url={avatarUrl} />
+            <span style={{ position: 'absolute', right: -2, bottom: -2, width: 18, height: 18, borderRadius: '50%', background: accent.hex, color: T.btnText, fontSize: 10, display: 'grid', placeItems: 'center', border: `2px solid ${T.panel}` }}>{photoBusy ? '…' : '✎'}</span>
+            <input type="file" accept="image/*" onChange={e => onPhoto(e.target.files?.[0])} style={{ display: 'none' }} />
+          </label>
           <div>
             <div style={{ fontSize: 19, fontWeight: 600, color: T.text }}>{player.name}</div>
             <div style={{ fontSize: 12, color: T.text3 }}>{player.category || player.level || 'Player'}{player.age ? ` · Age ${player.age}` : ''}{player.parent_name ? ` · Parent: ${player.parent_name}` : ''}</div>

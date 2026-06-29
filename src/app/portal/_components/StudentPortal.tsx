@@ -7,16 +7,19 @@
 
 import { useEffect, useState } from 'react'
 import { RACKET_STAGES, SKILLS_BY_STAGE } from '../../coach/[slug]/_lib/coach-db'
+import { levelFor } from '../../coach/[slug]/_lib/effort-rewards'
+import { fileToAvatarDataUrl, uploadAvatar } from '@/lib/avatar'
 
 const BG = '#0B0F17', CARD = '#0F1623', PANEL2 = '#0B1220', BORDER = '#1E293B', TEXT = '#F4F7FB', MUTED = '#93A1B5', ACCENT = '#3A8EE0', GOOD = '#3FB37F'
 
 type Bundle = {
-  player: { id: string; name: string; racket_stage?: string; level?: string; goal?: string; category?: string; age?: number }
+  player: { id: string; name: string; racket_stage?: string; level?: string; goal?: string; category?: string; age?: number; avatar_url?: string; watch_token?: string }
   skills: { skill: string; score: number }[]
   lessons: any[]
   bookings: any[]
   media: any[]
   messages: any[]
+  watch: any[]
 }
 
 const card: React.CSSProperties = { background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 18, marginBottom: 14 }
@@ -27,6 +30,11 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
   const [loading, setLoading] = useState(true)
   const [msg, setMsg] = useState('')
   const [sent, setSent] = useState('')
+  const [avatar, setAvatar] = useState<string | null>(null)
+  const onPhoto = async (file?: File | null) => {
+    if (!file) return
+    try { const data = await fileToAvatarDataUrl(file); const url = await uploadAvatar('/api/portal/avatar', { dataUrl: data }); if (url) setAvatar(url) } catch { /* ignore */ }
+  }
 
   const load = () => fetch('/api/portal/player').then(r => r.ok ? r.json() : null).then(d => { setB(d); setLoading(false) }).catch(() => setLoading(false))
   useEffect(() => { load() }, [])
@@ -52,13 +60,35 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
   const rv = latest?.review_json || {}
   const fmt = (d?: string) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : ''
 
+  // Effort & rewards (smartwatch) + session report from the player's watch sessions.
+  const watch = b.watch || []
+  const totalXP = watch.reduce((s: number, w: any) => s + (w.xp_awarded || 0), 0)
+  const lvl = levelFor(totalXP)
+  const lw = watch[0] // latest session
+  // Racket-ready: every working skill consistent → ready for the next racket.
+  const ready = stageSkills.length > 0 && stageSkills.every(s => (skillMap[s] || 0) >= 4)
+  const nextStage = ready && stageIdx >= 0 && stageIdx < RACKET_STAGES.length - 1 ? RACKET_STAGES[stageIdx + 1] : null
+  const drills: string[] = Array.isArray(rv.drills) ? rv.drills : []
+  const Bar = ({ v, c = ACCENT }: { v: number; c?: string }) => <div style={{ height: 7, borderRadius: 4, background: PANEL2, overflow: 'hidden' }}><div style={{ width: `${Math.max(0, Math.min(100, v))}%`, height: '100%', background: c }} /></div>
+
   return (
     <Shell onSignOut={onSignOut}>
       {/* Header */}
       <div style={{ ...card, background: `linear-gradient(135deg, rgba(58,142,224,0.16), ${CARD})` }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{b.player.name}’s progress</div>
-        <h1 style={{ margin: '6px 0 0', fontSize: 22, fontWeight: 800, color: TEXT }}>{stage ? stage.name : 'Racket'} racket · {progress}% to next</h1>
-        {b.player.goal && <div style={{ fontSize: 13, color: MUTED, marginTop: 8 }}>🎯 {b.player.goal}</div>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <label title="Change photo" style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
+            {(avatar || (b.player as any).avatar_url)
+              ? <img src={avatar || (b.player as any).avatar_url} alt={b.player.name} style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover' }} />
+              : <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(58,142,224,0.2)', color: ACCENT, display: 'grid', placeItems: 'center', fontSize: 20, fontWeight: 700 }}>{b.player.name.split(' ').map(w => w[0]).slice(0, 2).join('')}</div>}
+            <span style={{ position: 'absolute', right: -2, bottom: -2, width: 20, height: 20, borderRadius: '50%', background: ACCENT, color: '#06223f', fontSize: 11, display: 'grid', placeItems: 'center', border: `2px solid ${CARD}` }}>✎</span>
+            <input type="file" accept="image/*" onChange={e => onPhoto(e.target.files?.[0])} style={{ display: 'none' }} />
+          </label>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{b.player.name}’s progress</div>
+            <h1 style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 800, color: TEXT }}>{stage ? stage.name : 'Racket'} racket · {progress}% to next</h1>
+          </div>
+        </div>
+        {b.player.goal && <div style={{ fontSize: 13, color: MUTED, marginTop: 10 }}>🎯 {b.player.goal}</div>}
         <div style={{ height: 8, borderRadius: 4, background: PANEL2, overflow: 'hidden', marginTop: 12 }}><div style={{ width: `${progress}%`, height: '100%', background: ACCENT }} /></div>
       </div>
 
@@ -87,6 +117,61 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
         </div>
       )}
 
+      {/* Ready for the next racket */}
+      {ready && (
+        <div style={{ ...card, background: 'rgba(63,179,127,0.10)', borderColor: 'rgba(63,179,127,0.4)' }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: GOOD }}>🎉 Ready for the {nextStage ? nextStage.name : 'next'} racket!</div>
+          <div style={{ fontSize: 12.5, color: MUTED, marginTop: 4 }}>Every {stage?.name} skill is consistent — ask your coach to book the assessment.</div>
+        </div>
+      )}
+
+      {/* Effort & rewards */}
+      {watch.length > 0 && (
+        <div style={card}>
+          <p style={h2}>Effort &amp; rewards</p>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+            <div style={{ fontSize: 28, fontWeight: 800, color: TEXT }}>{totalXP}</div>
+            <div style={{ fontSize: 12, color: MUTED }}>XP · Level {lvl.idx + 1} · {lvl.cur.name}</div>
+          </div>
+          <div style={{ marginTop: 8 }}><Bar v={lvl.pct} /></div>
+          <div style={{ fontSize: 10.5, color: MUTED, marginTop: 4 }}>{lvl.next ? `${lvl.next.min - totalXP} XP to ${lvl.next.name}` : 'Top level reached'}</div>
+          {lw && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 14 }}>
+              {([['Effort', lw.effort_score], ['Movement', lw.movement_score], ['Consistency', lw.consistency_score]] as [string, number][]).map(([l, v]) => (
+                <div key={l}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: MUTED, marginBottom: 4 }}><span>{l}</span><span style={{ color: TEXT, fontWeight: 700 }}>{v || 0}</span></div>
+                  <Bar v={v || 0} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Last session report (smartwatch) */}
+      {lw && (
+        <div style={card}>
+          <p style={h2}>Last session report · {fmt(lw.started_at)}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 10 }}>
+            {([['Distance', lw.distance_m ? `${(lw.distance_m / 1000).toFixed(1)} km` : '—'], ['Duration', lw.duration_min ? `${Math.round(lw.duration_min)} min` : '—'], ['Avg HR', lw.avg_hr ? `${lw.avg_hr} bpm` : '—'], ['Effort', lw.effort_score != null ? `${lw.effort_score}` : '—']] as [string, string][]).map(([l, v]) => (
+              <div key={l} style={{ background: PANEL2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 9.5, color: MUTED, textTransform: 'uppercase' }}>{l}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: TEXT, marginTop: 3 }}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Connect a watch */}
+      {b.player.watch_token && watch.length === 0 && (
+        <div style={card}>
+          <p style={h2}>Connect a watch</p>
+          <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.5 }}>Track {b.player.name.split(' ')[0]}’s effort, movement and XP from an Apple Watch or Wear OS watch. In the Lumio watch app, enter this pairing code:</div>
+          <div onClick={() => { navigator.clipboard?.writeText(b.player.watch_token || '').catch(() => {}) }} title="Tap to copy" style={{ marginTop: 10, fontFamily: 'monospace', fontSize: 12.5, color: TEXT, background: PANEL2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '9px 11px', wordBreak: 'break-all', cursor: 'pointer' }}>{b.player.watch_token}</div>
+        </div>
+      )}
+
       {/* Session videos */}
       {b.media.length > 0 && (
         <div style={card}>
@@ -103,21 +188,41 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
         </div>
       )}
 
-      {/* Latest session report */}
-      {latest && (
+      {/* Homework & what's next */}
+      {(rv.homework || rv.nextFocus) && (
         <div style={card}>
-          <p style={h2}>Latest session · {fmt(latest.session_date)}</p>
-          {latest.focus && <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 8 }}>{latest.focus}</div>}
-          {Array.isArray(rv.takeaways) && rv.takeaways.length > 0 && (
-            <ul style={{ margin: '0 0 10px', paddingLeft: 18 }}>{rv.takeaways.map((t: string, i: number) => <li key={i} style={{ fontSize: 12.5, color: TEXT, marginBottom: 4 }}>{t}</li>)}</ul>
-          )}
-          {(rv.homework || rv.nextFocus) && (
-            <div style={{ background: PANEL2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px' }}>
-              {rv.nextFocus && <div style={{ fontSize: 12.5, color: TEXT }}><strong style={{ color: ACCENT }}>Next:</strong> {rv.nextFocus}</div>}
-              {rv.homework && <div style={{ fontSize: 12.5, color: MUTED, marginTop: rv.nextFocus ? 6 : 0 }}><strong style={{ color: ACCENT }}>Homework:</strong> {rv.homework}</div>}
-            </div>
-          )}
-          {!rv.takeaways && (latest.summary || latest.ai_review) && <div style={{ fontSize: 12.5, color: TEXT, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{latest.summary || latest.ai_review}</div>}
+          <p style={h2}>Homework &amp; what’s next</p>
+          {rv.nextFocus && <div style={{ background: 'rgba(58,142,224,0.10)', border: `1px solid rgba(58,142,224,0.35)`, borderRadius: 8, padding: '10px 12px', marginBottom: rv.homework ? 8 : 0 }}><div style={{ fontSize: 10, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Next session focus</div><div style={{ fontSize: 12.5, color: TEXT, marginTop: 3 }}>{rv.nextFocus}</div></div>}
+          {rv.homework && <div style={{ background: PANEL2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '10px 12px' }}><div style={{ fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Practice at home</div><div style={{ fontSize: 12.5, color: TEXT, marginTop: 3 }}>{rv.homework}</div></div>}
+        </div>
+      )}
+
+      {/* Recent lessons */}
+      {b.lessons.length > 0 && (
+        <div style={card}>
+          <p style={h2}>Recent lessons</p>
+          {b.lessons.slice(0, 6).map((l: any, i: number) => {
+            const lr = l.review_json || {}
+            return (
+              <div key={l.id} style={{ padding: '10px 0', borderTop: i ? `1px solid ${BORDER}` : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ fontSize: 12.5, color: TEXT, fontWeight: 700 }}>{l.focus || 'Session'}</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 10.5, color: MUTED }}>{fmt(l.session_date)}{l.rating ? ` · ${'★'.repeat(l.rating)}` : ''}</span>
+                </div>
+                {Array.isArray(lr.takeaways) && lr.takeaways[0] && <div style={{ fontSize: 11.5, color: MUTED, marginTop: 3 }}>{lr.takeaways[0]}</div>}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Recommended drills */}
+      {drills.length > 0 && (
+        <div style={card}>
+          <p style={h2}>Recommended for {b.player.name.split(' ')[0]}</p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {drills.map((d, i) => <span key={i} style={{ fontSize: 11.5, color: TEXT, background: PANEL2, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '6px 10px' }}>{d}</span>)}
+          </div>
         </div>
       )}
 
