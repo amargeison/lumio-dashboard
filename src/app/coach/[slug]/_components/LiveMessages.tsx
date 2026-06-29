@@ -12,6 +12,7 @@ import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, useCoachProfile, dbUpdate, dbRemove } from '../_lib/coach-db'
+import { getSettings } from '../_lib/settings-store'
 
 type Msg = { id: string; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string; direction?: string | null; from_name?: string | null; thread_key?: string | null; external_id?: string | null; read?: boolean | null }
 type Player = { id: string; name: string; email?: string | null; phone?: string | null; parent_name?: string | null }
@@ -48,10 +49,10 @@ export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accen
   const channelsAvailable = ['inapp', ...(profile.contact_email ? ['email'] : []), ...(profile.contact_phone ? ['sms'] : [])]
   const startCompose = (recipients: string[] = [], body = '') => setCompose({ recipients, body })
 
-  // Poll for inbound replies (~2 min) while the inbox is open; reload on new ones.
+  // Inbound replies arrive via the inbound-email / SMS webhooks; refresh the log
+  // every ~2 min while the inbox is open so they surface without a manual reload.
   useEffect(() => {
-    const sync = () => fetch('/api/coach/mail/sync').then(r => r.json()).then(d => { if (d.added) history.reload() }).catch(() => {})
-    sync(); const id = setInterval(sync, 120000); return () => clearInterval(id)
+    const id = setInterval(() => history.reload(), 120000); return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   // Mark a conversation's inbound messages read when it's opened.
@@ -171,7 +172,7 @@ function ComposeModal({ T, accent, players, profile, channelsAvailable, prefillR
     if (!body.trim()) { setErr('Write a message'); return }
     setSending(true)
     try {
-      const res = await fetch('/api/coach/message/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipients: recipients.map(r => ({ name: r.name, email: r.email, phone: r.phone })), channels, subject, body }) })
+      const res = await fetch('/api/coach/message/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipients: recipients.map(r => ({ name: r.name, email: r.email, phone: r.phone })), channels, subject, body, ccCoach: getSettings().ccCoachOnEmail }) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Send failed')
       onSent()
