@@ -21,7 +21,19 @@ const fmtTime = (d?: string) => { const t = d ? new Date(d) : null; if (!t || is
 export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accent: AccentTokens; onConfigure?: () => void }) {
   const history = useCoachTable<Msg>('coach_messages')
   const { rows: players } = useCoachTable<Player>('coach_players')
+  const { rows: staff } = useCoachTable<{ id: string; name: string }>('coach_staff')
+  const { rows: venues } = useCoachTable<{ id: string; name: string }>('coach_venues')
   const profile = useCoachProfile()
+  // Tag a conversation by matching the recipient name against roster / staff / venues.
+  const tagFor = (raw?: string | null): string => {
+    const n = (raw || '').split(',')[0].trim().toLowerCase()
+    if (!n) return 'Contact'
+    if (venues.some(v => (v.name || '').trim().toLowerCase() === n)) return 'Venue'
+    if (staff.some(s => (s.name || '').trim().toLowerCase() === n)) return 'Coach'
+    if (players.some(p => (p.name || '').trim().toLowerCase() === n)) return 'Player'
+    return 'Parent'
+  }
+  const tagColour = (t: string) => t === 'Venue' ? '#3A8EE0' : t === 'Coach' ? accent.hex : t === 'Player' ? T.good : T.text3
   const [selKey, setSelKey] = useState<string | null>(null)
   const [compose, setCompose] = useState<false | { recipients: string[]; body: string }>(false)
 
@@ -63,6 +75,7 @@ export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accen
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                       <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.key}</span>
+                      {(() => { const t = tagFor(c.key); return <span style={{ fontSize: 8, fontWeight: 700, color: tagColour(t), background: `${tagColour(t)}22`, padding: '1px 5px', borderRadius: 4, textTransform: 'uppercase', flexShrink: 0 }}>{t}</span> })()}
                       <span style={{ marginLeft: 'auto', fontSize: 10, color: T.text3, flexShrink: 0 }}>{fmtTime(last?.created_at)}</span>
                     </div>
                     <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{last?.subject ? `${last.subject} — ` : ''}{last?.body}</div>
