@@ -4,15 +4,16 @@
 // (coach_messages). Conversations are grouped by recipient; open one to see the
 // thread, react (👍 ❤️ 😄 ✅), Reply, Forward or Delete, and compose new
 // messages. Sending goes through /api/coach/message/send (Email live, Text live
-// once Twilio is set, in-app always on). Inbound replies arrive at the coach's
-// own email / phone — true two-way threading is a later add.
+// once Twilio is set, in-app always on). Inbound replies (direction='in') thread
+// into the same conversation — SMS via the Twilio webhook now; email once an
+// inbound-email source is wired (Gmail read needs Google verification).
 
-import { useState, type CSSProperties } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, useCoachProfile, dbUpdate, dbRemove } from '../_lib/coach-db'
 
-type Msg = { id: string; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string }
+type Msg = { id: string; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string; direction?: string | null; from_name?: string | null; thread_key?: string | null; external_id?: string | null; read?: boolean | null }
 type Player = { id: string; name: string; email?: string | null; phone?: string | null; parent_name?: string | null }
 const REACTIONS = ['👍', '❤️', '😄', '✅']
 const initials = (n: string) => n.split(/[\s,]+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
@@ -46,6 +47,21 @@ export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accen
 
   const channelsAvailable = ['inapp', ...(profile.contact_email ? ['email'] : []), ...(profile.contact_phone ? ['sms'] : [])]
   const startCompose = (recipients: string[] = [], body = '') => setCompose({ recipients, body })
+
+  // Poll for inbound replies (~2 min) while the inbox is open; reload on new ones.
+  useEffect(() => {
+    const sync = () => fetch('/api/coach/mail/sync').then(r => r.json()).then(d => { if (d.added) history.reload() }).catch(() => {})
+    sync(); const id = setInterval(sync, 120000); return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  // Mark a conversation's inbound messages read when it's opened.
+  useEffect(() => {
+    if (!sel) return
+    const unread = sel.msgs.filter((m: any) => m.direction === 'in' && !m.read)
+    if (!unread.length) return
+    Promise.all(unread.map((m: any) => dbUpdate('coach_messages', m.id, { read: true }))).then(() => history.reload()).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sel?.key])
 
   return (
     <div style={{ fontFamily: FONT }}>
@@ -96,12 +112,13 @@ export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accen
                   <button onClick={() => startCompose([], sel.msgs[0]?.body || '')} style={btn(T, accent, 'ghost')}>↪ Forward</button>
                 </div>
               </div>
-              {sel.msgs.map(m => (
-                <div key={m.id} style={{ marginBottom: 14 }}>
-                  <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px' }}>
+              {[...sel.msgs].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')).map(m => (
+                <div key={m.id} style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', alignItems: m.direction === 'in' ? 'flex-start' : 'stretch' }}>
+                  <div style={{ maxWidth: m.direction === 'in' ? '88%' : '100%', background: m.direction === 'in' ? T.panel2 : accent.dim, border: `1px solid ${m.direction === 'in' ? T.border : accent.border}`, borderRadius: 10, padding: '10px 12px' }}>
+                    {m.direction === 'in' && <div style={{ fontSize: 10.5, fontWeight: 700, color: T.text2, marginBottom: 3 }}>{m.from_name || sel.key}</div>}
                     {m.subject && <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, marginBottom: 4 }}>{m.subject}</div>}
                     <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.body}</div>
-                    <div style={{ fontSize: 10, color: T.text3, marginTop: 6 }}>{[m.channels, m.status, fmtTime(m.created_at)].filter(Boolean).join(' · ')}</div>
+                    <div style={{ fontSize: 10, color: T.text3, marginTop: 6 }}>{[m.direction === 'in' ? 'Received' : m.channels, m.status, fmtTime(m.created_at)].filter(Boolean).join(' · ')}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
                     {REACTIONS.map(r => (

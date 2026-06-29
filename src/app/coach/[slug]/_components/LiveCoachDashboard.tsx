@@ -53,6 +53,13 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
     return () => { cancelled = true }
   }, [])
 
+  // Poll for inbound replies (~2 min) so they surface on the dashboard inbox too.
+  useEffect(() => {
+    const sync = () => fetch('/api/coach/mail/sync').then(r => r.json()).then(d => { if (d.added) reloadMessages() }).catch(() => {})
+    sync(); const id = setInterval(sync, 120000); return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   if (d.loading) return <div style={{ fontFamily: FONT, color: T.text3, fontSize: 13, padding: '60px 0', textAlign: 'center' }}>Loading your portal…</div>
 
   const total = d.players.length + d.bookings.length + d.lessons.length + d.payments.length
@@ -204,7 +211,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
                   <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: unread ? accent.hex : T.border }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 12, color: T.text, fontWeight: unread ? 700 : 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{who}</span>
+                      <span style={{ fontSize: 12, color: T.text, fontWeight: unread ? 700 : 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.direction === 'in' ? '↩ ' : ''}{who}</span>
                       <span style={{ fontSize: 8.5, fontWeight: 700, color: tagColour, background: `${tagColour}22`, padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase', flexShrink: 0 }}>{tag}</span>
                       {m.reaction && <span style={{ fontSize: 11 }}>{m.reaction}</span>}
                       <span style={{ marginLeft: 'auto', fontSize: 10, color: T.text3, flexShrink: 0 }}>{m.created_at ? new Date(m.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : ''}</span>
