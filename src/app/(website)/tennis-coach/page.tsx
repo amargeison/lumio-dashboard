@@ -24,6 +24,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '👥', title: 'Staff / Coaches', desc: 'Run a club of coaches, not just yourself. A directory with each coach’s calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team’s week.' },
   { icon: '🏕️', title: 'Training Camps', desc: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft and a per-player camp log that captures progress day by day.' },
   { icon: '🗓️', title: 'Booking Calendar', desc: 'Your whole week across every court — private, group, cardio and match play. The single source of truth that feeds the Session Planner, so the schedule and the plans never drift apart.' },
+  { icon: '💳', title: 'Payments — tap, scan, paid', desc: 'Take card, Apple Pay and Google Pay payments straight to your own bank — no card reader needed. Sell lesson packages or charge per session, and hand over a QR code or link a parent pays in seconds. Sessions tick off automatically from your lesson summaries, and Lumio never sees a card number. Powered by Stripe.' },
   { icon: '📱', title: 'Mobile App', desc: 'An app-like experience on the phone — a bottom tab bar, your day at a glance, and the tools you actually reach for on court — wherever you’re coaching that day.' },
 ]
 
@@ -32,7 +33,7 @@ const INTEGRATIONS = [
   { icon: '🎬', name: 'Lumio Vision', desc: 'Video clips and annotations' },
   { icon: '🤖', name: 'Claude AI', desc: 'Session reviews and camp drafts' },
   { icon: '🏛️', name: 'LTA Youth Pathway', desc: 'Racket stage mapping' },
-  { icon: '💳', name: 'Stripe', desc: 'Bookings and subscriptions' },
+  { icon: '💳', name: 'Stripe', desc: 'Card, Apple Pay & Google Pay to your bank' },
   { icon: '💰', name: 'Xero', desc: 'Academy finances' },
   { icon: '📧', name: 'Microsoft 365', desc: 'Email and calendar' },
   { icon: '🔔', name: 'Slack', desc: 'Team and parent updates' },
