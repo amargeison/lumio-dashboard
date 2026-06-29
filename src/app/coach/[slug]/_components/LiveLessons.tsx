@@ -11,11 +11,11 @@
 // "New summary" both create real rows; recordings are transcribed + summarised
 // server-side, then we reload.
 
-import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { MediaCaptureModal } from './MediaCaptureModal'
-import { useCoachTable, dbInsert, SKILLS_BY_STAGE, logSessionAttendance } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbUpdate, SKILLS_BY_STAGE, logSessionAttendance } from '../_lib/coach-db'
 
 type Review = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
@@ -36,8 +36,33 @@ const initials = (name: string | null) => (name || 'Recorded session').split(/\s
 
 export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const { rows, add, edit, remove, reload } = useCoachTable<Session>('coach_sessions')
-  const { rows: playerRows } = useCoachTable<PlayerLite>('coach_players')
+  const { rows: playerRows, reload: reloadPlayers } = useCoachTable<PlayerLite>('coach_players')
   const players: PlayerLite[] = playerRows.map(p => ({ id: p.id, name: p.name, racket_stage: p.racket_stage }))
+
+  // Auto-set a development goal once a player has a summary, so the coach doesn't
+  // have to: derive it from their latest summary (the AI brief's next-focus when it's
+  // an AI summary, otherwise the session focus). Only fills an EMPTY goal — never
+  // overwrites one the coach has set. Tracked per-player so it runs at most once each.
+  const goalAttempted = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    let changed = false
+    ;(async () => {
+      for (const p of playerRows as any[]) {
+        if ((p.goal || '').trim() || goalAttempted.current.has(p.id)) continue
+        const mine = rows
+          .filter(s => (s.player_name || '').trim().toLowerCase() === (p.name || '').trim().toLowerCase())
+          .sort((a, b) => String(b.session_date || '').localeCompare(String(a.session_date || '')))
+        const latest = mine[0]
+        if (!latest) continue
+        const goal = String(latest.review_json?.nextFocus || latest.focus || '').trim().slice(0, 160)
+        if (!goal) continue
+        goalAttempted.current.add(p.id)
+        try { await dbUpdate('coach_players', p.id, { goal }); changed = true } catch { /* ignore */ }
+      }
+      if (changed) reloadPlayers()
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, playerRows])
 
   const [selId, setSelId] = useState<string | null>(null)
   const [range, setRange] = useState<'week' | 'lastweek' | 'month' | 'all'>('all')
