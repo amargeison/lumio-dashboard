@@ -23,6 +23,7 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   PLAYERS, BELTS, LESSONS, RESOURCES, MASTERY_LABELS, skillScore,
   type Lesson, type Resource,
+  demoAvatarUrl,
 } from '../_lib/coach-data'
 import { RECORDINGS_SEED, type Recording } from '../_lib/recordings-data'
 import { GPS_VIDEO_DATA, type GpsSession } from '../_lib/gps-video-data'
@@ -66,7 +67,7 @@ function Tile({ T, label, value, sub, color }: { T: ThemeTokens; label: string; 
 function Avatar({ accent, initials, size = 44, seed }: { accent: AccentTokens; initials: string; size?: number; seed?: string }) {
   if (seed) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={`https://i.pravatar.cc/120?u=${encodeURIComponent(seed)}`} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+    return <img src={demoAvatarUrl(seed)} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   }
   return <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: size * 0.36, fontWeight: 800, fontFamily: FONT_MONO, flexShrink: 0 }}>{initials}</div>
 }

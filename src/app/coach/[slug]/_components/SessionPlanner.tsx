@@ -13,6 +13,7 @@ import {
   TODAY_SESSIONS, PLAYERS, LESSONS, BELTS, SESSION_KITS, skillScore, COACH_ORG,
   BOOKINGS, COACH_TOP_STATS, TODAY, WEEK_DAYS, DAY_DATES,
   type TodaySession, type Booking,
+  demoAvatarUrl,
 } from '../_lib/coach-data'
 import { getSettings } from '../_lib/settings-store'
 import { getPlans, removePlan, toggleDone, subscribe, type PlannedSession } from '../_lib/session-plan'
@@ -40,7 +41,7 @@ function SectionHead({ T, title, right }: { T: ThemeTokens; title: ReactNode; ri
 }
 function Avatar({ accent, initials, size = 38, seed }: { accent: AccentTokens; initials: string; size?: number; seed?: string }) {
   // eslint-disable-next-line @next/next/no-img-element
-  if (seed) return <img src={`https://i.pravatar.cc/120?u=${encodeURIComponent(seed)}`} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  if (seed) return <img src={demoAvatarUrl(seed)} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   return <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: size * 0.36, fontWeight: 700, fontFamily: FONT_MONO, flexShrink: 0 }}>{initials}</div>
 }
 const initialsOf = (name: string) => name.replace(/\(.*\)/, '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase()

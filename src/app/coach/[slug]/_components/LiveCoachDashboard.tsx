@@ -11,6 +11,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { dbList, dbInsert, dbUpdate, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 import { EmptyCoachDashboard } from './EmptyCoachDashboard'
+import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -150,6 +151,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           <h1 style={{ margin: '10px 0 0', fontSize: 24, fontWeight: 800, color: T.text }}>{todays.length} session{todays.length === 1 ? '' : 's'} today{racketsReady.length ? `, ${racketsReady.length} racket assessment${racketsReady.length === 1 ? '' : 's'} due` : ''}</h1>
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
             <button onClick={() => setBooking(true)} style={btn(accent, T)}>+ Add booking</button>
+            <button onClick={() => onNavigate('payments')} style={btnGhost(T)}>Take a payment</button>
             <button onClick={() => onNavigate('lessons')} style={btnGhost(T)}>Lesson Summaries</button>
             <button onClick={() => onNavigate('calendar')} style={btnGhost(T)}>Open calendar</button>
             <button onClick={() => setComposer({})} style={btnGhost(T)}>Send message</button>
@@ -314,66 +316,12 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
       </div>
 
       {booking && <QuickBookingModal T={T} accent={accent} players={d.players} onClose={() => setBooking(false)} onSaved={() => { setBooking(false); reloadBookings() }} />}
-      {composer && <InboxComposer T={T} accent={accent} players={d.players} init={composer} onClose={() => setComposer(null)} onSent={() => { setComposer(null); reloadMessages() }} />}
+      {composer && <LiveCoachSendMessage T={T} accent={accent} players={d.players} coachName={profile.display_name || clubName} clubName={clubName} init={composer} onClose={() => setComposer(null)} onSent={() => { setComposer(null); reloadMessages() }} />}
     </div>
   )
 }
 
 function msgAct(T: ThemeTokens): React.CSSProperties { return { appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '5px 11px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT } }
-
-function InboxComposer({ T, accent, players, init, onClose, onSent }: { T: ThemeTokens; accent: AccentTokens; players: any[]; init: { recipient?: string; body?: string }; onClose: () => void; onSent: () => void }) {
-  const [recipient, setRecipient] = useState(init.recipient || '')
-  const [channels, setChannels] = useState<string[]>(['inapp'])
-  const [subject, setSubject] = useState('')
-  const [body, setBody] = useState(init.body ? `Forwarded:\n${init.body}` : '')
-  const [sending, setSending] = useState(false)
-  const [err, setErr] = useState('')
-  const toggle = (c: string) => setChannels(s => s.includes(c) ? s.filter(x => x !== c) : [...s, c])
-  const field: React.CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box', outline: 'none' }
-  const lab: React.CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 5px' }
-  const send = async () => {
-    if (!recipient.trim()) { setErr('Choose a recipient'); return }
-    if (!body.trim()) { setErr('Add a message'); return }
-    if (!channels.length || sending) { setErr('Choose at least one channel'); return }
-    setSending(true); setErr('')
-    try {
-      const p = players.find(x => (x.name || '').toLowerCase() === recipient.trim().toLowerCase())
-      const r = await fetch('/api/coach/message/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipients: [{ name: recipient.trim(), email: p?.email || p?.contact_email || p?.parent_email || undefined, phone: p?.phone || p?.contact_phone || p?.parent_phone || undefined }], channels, subject, body, ccCoach: getSettings().ccCoachOnEmail }) })
-      const d = await r.json()
-      if (r.ok && d.status !== 'failed') onSent(); else setErr('Couldn’t send — check channel setup in Settings.')
-    } catch { setErr('Couldn’t send — try again.') } finally { setSending(false) }
-  }
-  const CH: [string, string][] = [['inapp', 'In-app'], ['email', 'Email'], ['sms', 'Text']]
-  return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '5vh 16px', overflowY: 'auto' }}>
-      <div style={{ width: '100%', maxWidth: 460, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>Send message</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div><label style={lab}>To</label>
-            <input list="lumio-recipients" value={recipient} onChange={e => setRecipient(e.target.value)} placeholder="Player, parent or contact name" style={field} />
-            <datalist id="lumio-recipients">{players.map(p => <option key={p.id} value={p.name} />)}</datalist>
-          </div>
-          <div>
-            <label style={lab}>Send via</label>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {CH.map(([id, l]) => { const on = channels.includes(id); return (
-                <button key={id} onClick={() => toggle(id)} style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, border: `1px solid ${on ? accent.border : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text2, borderRadius: 999, padding: '5px 12px', fontSize: 12, fontWeight: on ? 700 : 400 }}>{l}{id === 'inapp' ? ' · always on' : ''}</button>
-              ) })}
-            </div>
-          </div>
-          <div><label style={lab}>Subject (optional)</label><input value={subject} onChange={e => setSubject(e.target.value)} style={field} /></div>
-          <div><label style={lab}>Message *</label><textarea value={body} onChange={e => setBody(e.target.value)} rows={4} style={{ ...field, resize: 'vertical' }} /></div>
-          <div style={{ fontSize: 11, color: T.text3 }}>In-app messages appear in your inbox instantly. Email sends from your connected mailbox; Text needs a Lumio number (Settings).</div>
-          {err && <div style={{ fontSize: 12, color: T.bad }}>{err}</div>}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 18 }}>
-          <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
-          <button onClick={send} disabled={sending} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: sending ? 0.6 : 1, fontFamily: FONT }}>{sending ? 'Sending…' : 'Send'}</button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function QuickBookingModal({ T, accent, players, onClose, onSaved }: { T: ThemeTokens; accent: AccentTokens; players: any[]; onClose: () => void; onSaved: () => void }) {
   const today = new Date().toLocaleDateString('en-CA')

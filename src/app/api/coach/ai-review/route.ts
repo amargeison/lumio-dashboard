@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import Anthropic from '@anthropic-ai/sdk'
+import { runCoachAgent, buildPlayerContext } from '@/lib/coach/agent'
+import { lessonReviewTask } from '@/lib/coach/agent-persona'
 
-// Generates an AI lesson review for the Tennis Coach portal. Auth is the coach's
-// own Supabase session cookie — no admin token. The review text is returned to
-// the client, which saves it onto the coach_sessions row (RLS-protected).
+// Generates an AI lesson review for the Tennis Coach portal. Runs through the
+// shared Lumio Coach agent (persona + the player's real history) so the review
+// is consistent and builds on previous sessions. Auth is the coach's own
+// Supabase session cookie — no admin token. The review text is returned to the
+// client, which saves it onto the coach_sessions row (RLS-protected).
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -22,28 +25,10 @@ export async function POST(req: NextRequest) {
   const { player_name, session_date, focus, rating, summary } = await req.json().catch(() => ({}))
 
   try {
-    const client = new Anthropic({ apiKey })
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 900,
-      messages: [{
-        role: 'user',
-        content: `You are an experienced tennis coach writing a short session review that will be shared with the player and (for juniors) their parent.
-
-Session details:
-- Player: ${player_name || 'the player'}
-- Date: ${session_date || 'recent session'}
-- Focus: ${focus || 'general technical work'}
-- Coach rating (1-5): ${rating ?? 'n/a'}
-- Coach's notes: ${summary || '(none provided)'}
-
-Write a warm, specific review of 2-3 short paragraphs that covers: what went well, the main area to work on, and one clear focus for the next session. Be encouraging but honest. Return plain text only — no markdown headers.`,
-      }],
-    })
-
-    let review = ''
-    for (const block of response.content) if (block.type === 'text') review += block.text
-    return NextResponse.json({ review: review.trim() })
+    const context = await buildPlayerContext(supabase, player_name)
+    const task = lessonReviewTask({ player_name, session_date, focus, rating, summary, context })
+    const { text } = await runCoachAgent({ apiKey, task, maxTokens: 900 })
+    return NextResponse.json({ review: text })
   } catch (err) {
     console.error('[coach/ai-review]', err)
     return NextResponse.json({ error: 'Review generation failed' }, { status: 500 })
