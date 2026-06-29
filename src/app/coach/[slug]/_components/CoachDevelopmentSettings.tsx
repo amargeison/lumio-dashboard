@@ -7,7 +7,7 @@
 // Coaches see exactly what's tracked; bespoke ladders/skills/branding are
 // available on request rather than self-serve editing.
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
@@ -169,6 +169,19 @@ function PaymentsSettingsCard({ T, accent, card }: { T: ThemeTokens; accent: Acc
   const [rate, setRate] = useState<string>(String(getSettings().privateRate || ''))
   const [pkgState, setPkgState] = useState<'idle' | 'loading' | { added: number } | 'error'>('idle')
   const loadPkgs = async () => { if (pkgState === 'loading') return; setPkgState('loading'); try { const added = await seedLumioPackages(); setPkgState({ added }) } catch { setPkgState('error') } }
+  // Stripe Connect — take card / Apple Pay / Google Pay payments straight to your bank.
+  const [conn, setConn] = useState<'unknown' | 'no' | 'yes'>('unknown')
+  const [connecting, setConnecting] = useState(false)
+  useEffect(() => { fetch('/api/coach/pay/status').then(r => r.json()).then(d => setConn(d.chargesEnabled ? 'yes' : 'no')).catch(() => setConn('no')) }, [])
+  const connectPayouts = async () => {
+    if (connecting) return
+    setConnecting(true)
+    try {
+      const r = await fetch('/api/coach/pay/connect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ returnPath: window.location.pathname }) })
+      const d = await r.json()
+      if (d.url) window.location.href = d.url; else { setConnecting(false); alert(d.error || 'Could not start onboarding') }
+    } catch { setConnecting(false); alert('Could not start onboarding') }
+  }
   const field: React.CSSProperties = { background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, width: 120, boxSizing: 'border-box', outline: 'none' }
   return (
     <div style={card}>
@@ -186,6 +199,19 @@ function PaymentsSettingsCard({ T, accent, card }: { T: ThemeTokens; accent: Acc
           {typeof pkgState === 'object' && <span style={{ fontSize: 12, color: T.good }}>✓ Added {pkgState.added} {pkgState.added === 0 ? '(already loaded)' : pkgState.added === 1 ? 'package' : 'packages'}</span>}
           {pkgState === 'error' && <span style={{ fontSize: 12, color: T.bad }}>Couldn’t load — try again.</span>}
         </div>
+      </div>
+
+      {/* Take payments — Stripe Connect */}
+      <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, marginBottom: 4 }}>Take payments</div>
+        <p style={{ margin: '0 0 10px', fontSize: 12, color: T.text3, lineHeight: 1.5 }}>
+          Connect your bank to take card, Apple Pay &amp; Google Pay payments — money goes straight to your account. Powered by Stripe; no card details ever touch Lumio.
+        </p>
+        {conn === 'yes' ? (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: `${T.good}1a`, border: `1px solid ${T.good}55`, color: T.good, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontWeight: 700 }}>✓ Payouts connected — paid to your bank</div>
+        ) : (
+          <button onClick={connectPayouts} disabled={connecting || conn === 'unknown'} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, opacity: connecting || conn === 'unknown' ? 0.6 : 1 }}>{connecting ? 'Opening Stripe…' : '🔗 Connect your bank to take payments'}</button>
+        )}
       </div>
     </div>
   )
