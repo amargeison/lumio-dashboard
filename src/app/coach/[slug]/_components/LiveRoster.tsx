@@ -255,6 +255,16 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
   const [lessons, setLessons] = useState<any[]>([])
   const [nextSession, setNextSession] = useState<string>('—')
   const [attDate, setAttDate] = useState('')
+  const [inviteMsg, setInviteMsg] = useState('')
+  const inviteEmail = player.email || player.parent_email
+  const invitePortal = async () => {
+    if (!inviteEmail) { setInviteMsg('Add an email on the Contact tab first.'); return }
+    setInviteMsg('Sending…')
+    try {
+      const r = await fetch('/api/portal/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: inviteEmail, role: 'parent', scopePlayerId: player.id, name: player.parent_name || player.name }) })
+      setInviteMsg(r.ok ? `✓ Invite sent to ${inviteEmail}` : 'Could not send invite.')
+    } catch { setInviteMsg('Could not send invite.') }
+  }
   const s = stageOf(player.racket_stage)
   const stageSkills = s.stage ? (SKILLS_BY_STAGE[s.stage.id] || []) : []
   const racketProgress = stageSkills.length ? Math.round(stageSkills.filter(sk => (skillMap[sk] || 0) >= 4).length / stageSkills.length * 100) : 0
@@ -287,7 +297,9 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
             <div style={{ fontSize: 19, fontWeight: 600, color: T.text }}>{player.name}</div>
             <div style={{ fontSize: 12, color: T.text3 }}>{player.category || player.level || 'Player'}{player.age ? ` · Age ${player.age}` : ''}{player.parent_name ? ` · Parent: ${player.parent_name}` : ''}</div>
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+            {inviteMsg && <span style={{ fontSize: 11, color: inviteMsg.startsWith('✓') ? T.good : T.text3 }}>{inviteMsg}</span>}
+            <button onClick={invitePortal} title="Invite the parent to a read-only portal for this player" style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 12, fontWeight: 600 }}>🔑 Invite parent</button>
             <button onClick={onEdit} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 12, fontWeight: 600 }}>Edit</button>
             <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 32, height: 32, fontSize: 18, lineHeight: 1 }}>×</button>
           </div>
