@@ -7,7 +7,7 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   COACH_ORG, COACH_TOP_STATS, COACH_TODAY, COACH_AI_BRIEF,
   BELTS, ALL_SKILLS, MASTERY_LABELS, skillScore, LTA_MAP,
-  PLAYERS, LESSONS, RESOURCES, EQUIPMENT_INVENTORY,
+  PLAYERS, LESSONS, RESOURCES, EQUIPMENT_INVENTORY, demoAvatarUrl,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
   WEEK_START, TODAY,
@@ -116,7 +116,7 @@ function Avatar({ accent, initials, size = 32, seed }: { accent: AccentTokens; i
   if (seed) {
     // Demo profile photo — deterministic by name so it's stable across the demo.
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={`https://i.pravatar.cc/120?u=${encodeURIComponent(seed)}`} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+    return <img src={demoAvatarUrl(seed)} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   }
   return <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: size * 0.34, fontWeight: 700, fontFamily: FONT_MONO, flexShrink: 0 }}>{initials}</div>
 }
@@ -167,6 +167,8 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
     : COACH_TODAY
   const heroLine = scope && stats ? `${stats.week} sessions this week · ${stats.today} today` : '7 sessions, 4 racket assessments due'
   const [msgOpen, setMsgOpen] = useState(false)
+  const [bookingOpen, setBookingOpen] = useState(false)
+  const [payOpen, setPayOpen] = useState(false)
   // Inbox preview reads the shared messages store; actions route through the
   // same store so reply/dismiss here sync to the Messages page and survive
   // reload. Rows expand INLINE (football InteractiveFootballInbox pattern) so
@@ -184,6 +186,19 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
   return (
     <div>
       {msgOpen && <CoachSendMessage T={T} accent={accent} onClose={() => setMsgOpen(false)} />}
+      {bookingOpen && <AddBookingModal T={T} accent={accent} density={density} onClose={() => setBookingOpen(false)} />}
+      {payOpen && (
+        <div onClick={e => { if (e.target === e.currentTarget) setPayOpen(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '6vh 16px', overflowY: 'auto' }}>
+          <div style={{ width: '100%', maxWidth: 420, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 22, textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 6 }}>Take a payment</div>
+            <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6, marginBottom: 14 }}>Card, Apple Pay &amp; Google Pay — straight to your bank, no card reader. Scan the QR or send a link; the player pays in seconds.</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://lumiosports.com/tennis-coach" alt="Sample payment QR" width={180} height={180} style={{ borderRadius: 12, background: '#fff', padding: 8 }} />
+            <div style={{ fontSize: 11, color: T.text3, margin: '12px 0 16px' }}>Sample QR — live payments connect your bank via Stripe in the real portal.</div>
+            <button onClick={() => setPayOpen(false)} style={{ appearance: 'none', border: 0, padding: '9px 18px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Close</button>
+          </div>
+        </div>
+      )}
       {/* Hero row — 8/4 split: the hero banner (span 8) sits beside a Today
           timeline (span 4), mirroring football's hero ‖ TodaySchedule pair.
           Reuses the cm-12 grid class so it collapses to one column at ≤768px.
@@ -214,8 +229,14 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
           <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 23, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>{heroLine}</h1>
           <p style={{ marginTop: 5, marginBottom: 0, fontSize: 12.5, color: T.text2, maxWidth: 560 }}>{COACH_ORG.venue} · {settings.cert}</p>
           <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-            <button onClick={() => onNavigate('lessons')} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <Icon name="note" size={14} stroke={2} /> Lesson Summaries
+            <button onClick={() => setBookingOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <Icon name="plus" size={14} stroke={2} /> Add booking
+            </button>
+            <button onClick={() => setPayOpen(true)} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <Icon name="pound" size={14} stroke={1.6} /> Take a payment
+            </button>
+            <button onClick={() => onNavigate('lessons')} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              <Icon name="note" size={14} stroke={1.6} /> Lesson Summaries
             </button>
             <button onClick={() => onNavigate('calendar')} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               <Icon name="calendar" size={14} stroke={1.6} /> Open calendar

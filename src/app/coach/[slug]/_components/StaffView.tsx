@@ -10,7 +10,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { BELTS, type TodaySession } from '../_lib/coach-data'
+import { BELTS, demoAvatarUrl, type TodaySession } from '../_lib/coach-data'
 import {
   COACHES, coachStats, playersForCoach, ALL_PLAYERS, ALL_BOOKINGS,
   type Coach, type CoachRole, type CoachStats,
@@ -50,7 +50,7 @@ function Card({ T, density, children, style, hover, onClick }: { T: ThemeTokens;
 }
 function Avatar({ accent, initials, size = 40, seed }: { accent: AccentTokens; initials: string; size?: number; seed?: string }) {
   // eslint-disable-next-line @next/next/no-img-element
-  if (seed) return <img src={`https://i.pravatar.cc/120?u=${encodeURIComponent(seed)}`} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  if (seed) return <img src={demoAvatarUrl(seed)} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   return <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: size * 0.36, fontWeight: 700, fontFamily: FONT_MONO, flexShrink: 0 }}>{initials}</div>
 }
 function SectionHead({ T, title, right }: { T: ThemeTokens; title: ReactNode; right?: ReactNode }) {

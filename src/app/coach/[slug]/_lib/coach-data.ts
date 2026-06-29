@@ -11,6 +11,19 @@
 // if the image fails to load.
 export const COACH_PHOTO = '/James_Wright.jpg'
 
+// Demo profile photos — gender-appropriate realistic portraits, deterministic by
+// name (so they're stable). The head coach keeps the original headshot.
+const DEMO_FEMALE_FIRST = new Set(['mia', 'ava', 'hannah', 'priya', 'rachel', 'sofia', 'sophia', 'elena', 'aisling', 'grace', 'nadia', 'chloe', 'lily', 'olivia', 'amelia', 'ana', 'sara', 'sarah', 'emma', 'isla', 'maya'])
+const DEMO_MALE_FIRST = new Set(['tom', 'leo', 'daniel', 'james', 'vincent', 'marcus', 'david', 'theo', 'ben', 'lucas', 'ollie', 'oliver', 'noah', 'sven', 'jack', 'harry', 'sam', 'arron', 'arran'])
+function demoHash(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h }
+export function demoAvatarUrl(name: string): string {
+  const n = (name || '').trim().toLowerCase()
+  if (n === 'vincent jones') return COACH_PHOTO // head coach — original photo
+  const first = n.split(' ')[0]
+  const female = DEMO_FEMALE_FIRST.has(first) ? true : DEMO_MALE_FIRST.has(first) ? false : /(a|ia|ie|ah|elle|ette)$/.test(first)
+  return `https://randomuser.me/api/portraits/${female ? 'women' : 'men'}/${demoHash(n) % 99}.jpg`
+}
+
 export const COACH_ORG = {
   product:    'Lumio Coach',
   coach:      'Vincent Jones',

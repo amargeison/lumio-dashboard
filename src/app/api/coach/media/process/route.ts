@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { transcribeMedia } from '@/lib/coach/transcribe'
+import { COACH_AGENT_PERSONA } from '@/lib/coach/agent-persona'
 
 export const maxDuration = 300
 
@@ -99,7 +100,9 @@ async function processGroup(coachId: string, rows: any[]) {
 // and tightens it. A fixed persona + hard anti-hallucination rule + gold examples
 // keep the output consistent across coaches and sessions.
 
-const MASTER_COACH_SYSTEM = `You are Lumio's Master Coach — a world-class, LTA-qualified tennis coach writing the lesson summary that is shared with the player and their parent. Your summaries are known for being specific, encouraging and genuinely useful.
+const MASTER_COACH_SYSTEM = `${COACH_AGENT_PERSONA}
+
+For THIS task you are writing the lesson summary (shared with the player and their parent) from a session recording transcript. Your summaries are known for being specific, encouraging and genuinely useful.
 
 Non-negotiable rules:
 1. ONLY use what is actually in the transcript. Never invent drills, scores, numbers, shots, or outcomes that were not mentioned. If something wasn't covered, leave it out — a shorter honest summary always beats an embellished one.

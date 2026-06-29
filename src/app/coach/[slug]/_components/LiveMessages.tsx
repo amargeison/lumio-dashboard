@@ -12,7 +12,7 @@ import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, useCoachProfile, dbUpdate, dbRemove } from '../_lib/coach-db'
-import { getSettings } from '../_lib/settings-store'
+import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 
 type Msg = { id: string; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string; direction?: string | null; from_name?: string | null; thread_key?: string | null; external_id?: string | null; read?: boolean | null }
 type Player = { id: string; name: string; email?: string | null; phone?: string | null; parent_name?: string | null; avatar_url?: string | null }
@@ -20,7 +20,7 @@ const REACTIONS = ['👍', '❤️', '😄', '✅']
 const initials = (n: string) => n.split(/[\s,]+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
 const fmtTime = (d?: string) => { const t = d ? new Date(d) : null; if (!t || isNaN(t.getTime())) return ''; const today = new Date(); return t.toDateString() === today.toDateString() ? t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : t.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) }
 
-export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accent: AccentTokens; onConfigure?: () => void }) {
+export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentTokens; onConfigure?: () => void }) {
   const history = useCoachTable<Msg>('coach_messages')
   const { rows: players } = useCoachTable<Player>('coach_players')
   const { rows: staff } = useCoachTable<{ id: string; name: string }>('coach_staff')
@@ -53,7 +53,6 @@ export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accen
     .sort((a, b) => (b.msgs[0]?.created_at || '').localeCompare(a.msgs[0]?.created_at || ''))
   const sel = conversations.find(c => c.key === selKey) ?? conversations[0]
 
-  const channelsAvailable = ['inapp', ...(profile.contact_email ? ['email'] : []), ...(profile.contact_phone ? ['sms'] : [])]
   const startCompose = (recipients: string[] = [], body = '') => setCompose({ recipients, body })
 
   // Inbound replies arrive via the inbound-email / SMS webhooks; refresh the log
@@ -142,8 +141,9 @@ export function LiveMessages({ T, accent, onConfigure }: { T: ThemeTokens; accen
         </div>
       )}
 
-      {compose && <ComposeModal T={T} accent={accent} players={players} profile={profile} channelsAvailable={channelsAvailable}
-        prefillRecipients={compose.recipients} prefillBody={compose.body} onConfigure={onConfigure}
+      {compose && <LiveCoachSendMessage T={T} accent={accent} players={players}
+        coachName={profile.display_name || 'your coach'} clubName={(profile as any).club_name || (profile as any).academy_name || profile.display_name || 'your academy'}
+        init={{ recipient: compose.recipients[0], body: compose.body }}
         onClose={() => setCompose(false)} onSent={() => { setCompose(false); history.reload() }} />}
     </div>
   )
@@ -153,69 +153,4 @@ function btn(T: ThemeTokens, accent: AccentTokens, kind: 'solid' | 'ghost'): CSS
   return kind === 'solid'
     ? { appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }
     : { appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }
-}
-
-function ComposeModal({ T, accent, players, profile, channelsAvailable, prefillRecipients, prefillBody, onConfigure, onClose, onSent }: {
-  T: ThemeTokens; accent: AccentTokens; players: Player[]; profile: any; channelsAvailable: string[]
-  prefillRecipients: string[]; prefillBody: string; onConfigure?: () => void; onClose: () => void; onSent: () => void
-}) {
-  // Pre-select players whose names match the prefill recipients (reply).
-  const initSel = players.filter(p => prefillRecipients.some(r => r.toLowerCase() === p.name.toLowerCase())).map(p => p.id)
-  const [selected, setSelected] = useState<string[]>(initSel)
-  const [channels, setChannels] = useState<string[]>(['inapp'])
-  const [subject, setSubject] = useState('')
-  const [body, setBody] = useState(prefillBody ? `Forwarded:\n${prefillBody}` : '')
-  const [sending, setSending] = useState(false)
-  const [err, setErr] = useState('')
-  const toggle = (id: string, list: string[], set: (v: string[]) => void) => set(list.includes(id) ? list.filter(x => x !== id) : [...list, id])
-  const CH: { id: string; label: string }[] = [{ id: 'inapp', label: 'Lumio message' }, { id: 'email', label: 'Email' }, { id: 'sms', label: 'Text' }]
-
-  const recipients = players.filter(p => selected.includes(p.id))
-  const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box', outline: 'none' }
-
-  const send = async () => {
-    setErr('')
-    if (!recipients.length) { setErr('Choose at least one recipient'); return }
-    if (!body.trim()) { setErr('Write a message'); return }
-    setSending(true)
-    try {
-      const res = await fetch('/api/coach/message/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipients: recipients.map(r => ({ name: r.name, email: r.email, phone: r.phone })), channels, subject, body, ccCoach: getSettings().ccCoachOnEmail }) })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || 'Send failed')
-      onSent()
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Send failed'); setSending(false) }
-  }
-
-  return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '4vh 16px', overflowY: 'auto' }}>
-      <div style={{ width: '100%', maxWidth: 480, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>New message</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', color: T.text3, marginBottom: 6 }}>To</div>
-            {players.length === 0 ? <div style={{ fontSize: 12, color: T.text3 }}>No players yet — add players first.</div> : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {players.map(p => { const on = selected.includes(p.id); return <button key={p.id} onClick={() => toggle(p.id, selected, setSelected)} style={{ appearance: 'none', border: `1px solid ${on ? accent.hex : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text2, borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{p.name}</button> })}
-              </div>
-            )}
-          </div>
-          <div>
-            <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', color: T.text3, marginBottom: 6 }}>Channels</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {CH.map(c => { const avail = channelsAvailable.includes(c.id); const on = channels.includes(c.id); return (
-                <button key={c.id} onClick={() => avail ? toggle(c.id, channels, setChannels) : onConfigure?.()} style={{ appearance: 'none', border: `1px solid ${on ? accent.hex : T.border}`, background: on ? accent.dim : 'transparent', color: avail ? (on ? accent.hex : T.text2) : T.text3, borderRadius: 8, padding: '5px 11px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{on ? '✓ ' : ''}{c.label}{!avail ? ' · set up' : ''}</button>
-              ) })}
-            </div>
-          </div>
-          <div><input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Subject (optional)" style={field} /></div>
-          <div><textarea value={body} onChange={e => setBody(e.target.value)} rows={5} placeholder="Write your message…" style={{ ...field, resize: 'vertical' }} /></div>
-          {err && <div style={{ fontSize: 12, color: T.bad }}>{err}</div>}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-          <button onClick={onClose} style={{ appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
-          <button onClick={send} disabled={sending} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: sending ? 0.6 : 1, fontFamily: FONT }}>{sending ? 'Sending…' : 'Send'}</button>
-        </div>
-      </div>
-    </div>
-  )
 }

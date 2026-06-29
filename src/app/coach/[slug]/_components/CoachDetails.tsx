@@ -11,6 +11,7 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   BELTS, ALL_SKILLS, MASTERY_LABELS, skillScore, PLAYER_CONTACTS, COACH_ORG, playerLessons,
+  demoAvatarUrl,
   type Player, type Lesson,
 } from '../_lib/coach-data'
 import { addPlan, hasPlan } from '../_lib/session-plan'
@@ -33,7 +34,7 @@ function Pill({ T, children, color, bg }: { T: ThemeTokens; children: ReactNode;
 }
 function Avatar({ accent, initials, size = 30, seed }: { accent: AccentTokens; initials: string; size?: number; seed?: string }) {
   // eslint-disable-next-line @next/next/no-img-element
-  if (seed) return <img src={`https://i.pravatar.cc/120?u=${encodeURIComponent(seed)}`} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  if (seed) return <img src={demoAvatarUrl(seed)} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   return <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: size * 0.34, fontWeight: 700, fontFamily: FONT_MONO, flexShrink: 0 }}>{initials}</div>
 }
 function BeltChip({ beltIndex, size = 18 }: { beltIndex: number; size?: number }) {

@@ -16,6 +16,7 @@ const MUTED = '#9CA3AF'
 const STAT_PILLS = ['9 coach modules', 'AI powered', 'Effort & rewards', 'LTA racket pathway', 'Mobile app']
 
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
+  { icon: '🧠', title: 'Lumio Coach AI', desc: 'One coaching brain behind everything — a world-class coach with 30 years developing elite juniors and tour-winning adults. Every plan, review, summary and message runs through the same coach, so the voice and standards never drift. And it remembers each player: it reads their history and last session’s focus on every call, so the guidance builds session to session instead of starting from scratch each time.' },
   { icon: '📋', title: 'Session Planner', desc: 'Plan every session in minutes. Overview, Today, This week and This month views over one dated schedule synced from your booking calendar — a confirmed booking becomes a ready-to-build session in two clicks, with a timed run-sheet and kit list generated for you.' },
   { icon: '🤖', title: 'AI Session Review', desc: 'Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player’s plan so the next session writes itself.' },
   { icon: '🎙️', title: 'AI Lesson Transcriber', desc: 'Just talk. Record the lesson on your phone — or upload a clip — and the AI transcribes it and writes the full summary for you: what you covered, the key takeaways, the drills used and the homework. No typing after a long day on court; every player gets a proper write-up in seconds.' },
@@ -428,7 +429,7 @@ export default function TennisCoachPage() {
             Built for tennis coaches and academies.
           </h2>
           <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 56, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
-            Nine modules that take you from the booking to the lesson to the review — and from a single coach to a whole academy. One platform, two revenue streams, with the Racket Progression reward system at its heart.
+            Twelve modules that take you from the booking to the lesson to the review — and from a single coach to a whole academy. One platform, two revenue streams, with the Racket Progression reward system at its heart.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {FEATURES.map(f => {
