@@ -7,7 +7,7 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
   COACH_ORG, COACH_TOP_STATS, COACH_TODAY, COACH_AI_BRIEF,
   BELTS, ALL_SKILLS, MASTERY_LABELS, skillScore, LTA_MAP,
-  PLAYERS, LESSONS, RESOURCES,
+  PLAYERS, LESSONS, RESOURCES, EQUIPMENT_INVENTORY,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
   WEEK_START, TODAY,
@@ -374,6 +374,38 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
               <div style={{ fontSize: 11.5, color: T.text, fontWeight: 600 }}>4 racket assessments due</div>
             </div>
           </div>
+        </Card>
+      </div>
+
+      {/* Extra row — upcoming sessions / recent summaries / kit needing attention */}
+      <div className="cm-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: density.gap, marginTop: density.gap }}>
+        <Card T={T} density={density}>
+          <SectionHead T={T} title="Upcoming sessions" right={<button onClick={() => onNavigate('planner')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, cursor: 'pointer', fontSize: 11, fontFamily: FONT, padding: 0 }}>Planner →</button>} />
+          {todayItems.slice(0, 3).map((b, i) => (
+            <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+              <span className="tnum" style={{ fontSize: 11, color: accent.hex, fontWeight: 600, width: 50, flexShrink: 0, fontFamily: FONT_MONO }}>{b.t}</span>
+              <span style={{ fontSize: 12.5, color: T.text, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.what}{b.where ? <span style={{ color: T.text3, fontWeight: 400 }}> · {b.where}</span> : null}</span>
+            </div>
+          ))}
+        </Card>
+        <Card T={T} density={density}>
+          <SectionHead T={T} title="Recent summaries" right={<button onClick={() => onNavigate('lessons')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, cursor: 'pointer', fontSize: 11, fontFamily: FONT, padding: 0 }}>All →</button>} />
+          {LESSONS.slice(0, 3).map((l, i) => (
+            <div key={l.id} onClick={() => onNavigate('lessons')} style={{ padding: '8px 0', borderTop: i ? `1px solid ${T.border}` : 'none', cursor: 'pointer' }}>
+              <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.player}</div>
+              <div style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.date}{l.focus ? ` · ${l.focus}` : ''}</div>
+            </div>
+          ))}
+        </Card>
+        <Card T={T} density={density}>
+          <SectionHead T={T} title="Kit needing attention" right={<button onClick={() => onNavigate('equipment')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, cursor: 'pointer', fontSize: 11, fontFamily: FONT, padding: 0 }}>Equipment →</button>} />
+          {EQUIPMENT_INVENTORY.flatMap(c => c.items).filter(it => it.status !== 'good').slice(0, 5).map((it, i) => (
+            <div key={i} onClick={() => onNavigate('equipment')} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderTop: i ? `1px solid ${T.border}` : 'none', cursor: 'pointer' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: it.status === 'repair' ? T.bad : it.status === 'order' ? accent.hex : T.warn }} />
+              <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: T.text, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{it.name}</span>
+              <span style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, textTransform: 'uppercase' }}>{it.status === 'order' ? 'To order' : it.status === 'repair' ? 'Repair' : 'Low'}</span>
+            </div>
+          ))}
         </Card>
       </div>
     </div>
@@ -1290,11 +1322,14 @@ export function PaymentsView({ T, accent, density }: Common) {
   const cfg = useCoachSettings()
   const statusTone = (s: string) => s === 'active' ? T.good : s === 'expiring' ? T.warn : T.bad
   const [selected, setSelected] = useState<Package | null>(null)
+  const [payOpen, setPayOpen] = useState(false)
   const [, setTick] = useState(0)
   useEffect(() => subscribePackages(() => setTick(t => t + 1)), [])
+  const PRICE_BY_PLAN: Record<string, number> = { '10-lesson private pack': 360, '5-lesson private pack': 185, 'Performance monthly': 240, 'Adult 8-lesson block': 280, 'Junior group — term': 150, 'Cardio tennis — 6 pack': 60 }
   return (
     <div>
-      <PageHead T={T} accent={accent} density={density} title="Payments & Packages" sub={`Lesson packs, credits used and what's outstanding · Private £${cfg.privateRate}/hr`} />
+      <PageHead T={T} accent={accent} density={density} title="Payments & Packages" sub={`Lesson packs, credits used and what's outstanding · Private £${cfg.privateRate}/hr`}
+        action={<button onClick={() => setPayOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' }}>💳 Take a payment</button>} />
       <div style={{ display: 'flex', gap: density.gap, marginBottom: density.gap, flexWrap: 'wrap' }}>
         {[
           { label: 'Earned this month', value: `£${PAY_SUMMARY.mtd.toLocaleString()}`, tone: accent.hex },
@@ -1316,7 +1351,7 @@ export function PaymentsView({ T, accent, density }: Common) {
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
             <thead>
               <tr style={{ textAlign: 'left' }}>
-                {['Player', 'Plan', 'Used', 'Status', 'Renews'].map(h => <th key={h} style={{ fontSize: 10.5, color: T.text3, fontWeight: 600, padding: '6px 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>)}
+                {['Player', 'Plan', 'Used', 'Cost', 'Status', 'Paid', 'Renews'].map(h => <th key={h} style={{ fontSize: 10.5, color: T.text3, fontWeight: 600, padding: '6px 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -1337,7 +1372,11 @@ export function PaymentsView({ T, accent, density }: Common) {
                       <span className="tnum" style={{ fontSize: 11, color: T.text2, fontFamily: FONT_MONO }}>{used}/{p.total}</span>
                     </div>
                   </td>
+                  <td style={{ padding: '10px', fontSize: 12, color: T.text, fontFamily: FONT_MONO }}>{PRICE_BY_PLAN[p.plan] ? `£${PRICE_BY_PLAN[p.plan]}` : '—'}</td>
                   <td style={{ padding: '10px' }}><Pill T={T} color={statusTone(p.status)} bg={`${statusTone(p.status)}1f`}>{p.status}</Pill></td>
+                  <td style={{ padding: '10px' }}>{p.status === 'overdue'
+                    ? <Pill T={T} color={T.warn} bg="transparent">Mark paid</Pill>
+                    : <Pill T={T} color={T.good} bg={`${T.good}1f`}>✓ Paid</Pill>}</td>
                   <td style={{ padding: '10px', fontSize: 12, color: T.text2, fontFamily: FONT_MONO }}>{p.renews}</td>
                 </tr>
                 )
@@ -1348,6 +1387,18 @@ export function PaymentsView({ T, accent, density }: Common) {
       </Card>
 
       {selected && <PackageProgressModal T={T} accent={accent} density={density} pkg={selected} onClose={() => setSelected(null)} />}
+      {payOpen && (
+        <div onClick={e => { if (e.target === e.currentTarget) setPayOpen(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '6vh 16px', overflowY: 'auto' }}>
+          <div style={{ width: '100%', maxWidth: 420, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 22, textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 6 }}>Take a payment</div>
+            <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6, marginBottom: 14 }}>Card, Apple Pay &amp; Google Pay — straight to your bank, no card reader. Scan the QR or send a link; the player pays in seconds.</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://lumiosports.com/tennis-coach" alt="Sample payment QR" width={180} height={180} style={{ borderRadius: 12, background: '#fff', padding: 8 }} />
+            <div style={{ fontSize: 11, color: T.text3, margin: '12px 0 16px' }}>Sample QR — live payments connect your bank via Stripe in the real portal.</div>
+            <button onClick={() => setPayOpen(false)} style={{ appearance: 'none', border: 0, padding: '9px 18px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

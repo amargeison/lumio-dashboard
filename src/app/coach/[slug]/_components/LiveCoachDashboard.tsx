@@ -8,16 +8,34 @@
 import { useEffect, useState } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { dbList, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE } from '../_lib/coach-db'
+import { dbList, dbInsert, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE } from '../_lib/coach-db'
 import { EmptyCoachDashboard } from './EmptyCoachDashboard'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
 const fmtDate = (d?: string) => { if (!d) return ''; try { return new Date(d).toLocaleDateString('en-GB') } catch { return d } }
+// WMO weather code → short label (Open-Meteo current weather).
+const wmo = (c: number): string => c === 0 ? 'clear' : c <= 3 ? 'cloudy' : c <= 48 ? 'fog' : c <= 67 ? 'rain' : c <= 77 ? 'snow' : c <= 82 ? 'showers' : c <= 86 ? 'snow' : 'storms'
 
 export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void }) {
   const profile = useCoachProfile()
   const [d, setD] = useState<{ players: any[]; bookings: any[]; lessons: any[]; payments: any[]; attendance: any[]; skills: any[]; messages: any[]; equipment: any[]; loading: boolean }>({ players: [], bookings: [], lessons: [], payments: [], attendance: [], skills: [], messages: [], equipment: [], loading: true })
+  const [weather, setWeather] = useState<{ temp: number; desc: string; wind: number } | null>(null)
+  const [booking, setBooking] = useState(false)
+  const reloadBookings = async () => { const bookings = await dbList('coach_bookings'); setD(v => ({ ...v, bookings })) }
+
+  // Live local weather for the banner (device location → Open-Meteo, keyless).
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(async pos => {
+      try {
+        const { latitude, longitude } = pos.coords
+        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,wind_speed_10m`)
+        const j = await r.json()
+        if (j.current) setWeather({ temp: Math.round(j.current.temperature_2m), desc: wmo(j.current.weather_code), wind: Math.round(j.current.wind_speed_10m) })
+      } catch { /* ignore */ }
+    }, () => { /* denied — no weather */ }, { timeout: 8000, maximumAge: 1800000 })
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -98,11 +116,20 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
       {/* Hero + Today */}
       <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: density.gap }}>
         <div style={{ ...card, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${accent.dim}, ${T.panel})` }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+            <div style={{ fontSize: 12, color: T.text3 }}>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+            {weather && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: T.text2, flexWrap: 'wrap' }}>
+                <span>🌤️ {weather.temp}° · {weather.desc} · {weather.wind} km/h</span>
+                <span style={{ fontSize: 10.5, color: T.text3 }}>{/rain|snow|storm|shower/.test(weather.desc) ? 'Check court conditions' : 'Outdoor courts playable'}</span>
+              </div>
+            )}
+          </div>
           <div style={{ fontSize: 11, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{greeting}, {firstName} · {clubName}</div>
-          <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
           <h1 style={{ margin: '10px 0 0', fontSize: 24, fontWeight: 800, color: T.text }}>{todays.length} session{todays.length === 1 ? '' : 's'} today{racketsReady.length ? `, ${racketsReady.length} racket assessment${racketsReady.length === 1 ? '' : 's'} due` : ''}</h1>
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-            <button onClick={() => onNavigate('lessons')} style={btn(accent, T)}>Lesson Summaries</button>
+            <button onClick={() => setBooking(true)} style={btn(accent, T)}>+ Add booking</button>
+            <button onClick={() => onNavigate('lessons')} style={btnGhost(T)}>Lesson Summaries</button>
             <button onClick={() => onNavigate('calendar')} style={btnGhost(T)}>Open calendar</button>
             <button onClick={() => onNavigate('messages')} style={btnGhost(T)}>Send message</button>
           </div>
@@ -230,6 +257,53 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
               <span style={{ marginLeft: 'auto', fontSize: 10, color: T.text3, textTransform: 'uppercase' }}>{i.status === 'order' ? 'To order' : i.status === 'repair' ? 'Repair' : 'Low'}</span>
             </button>
           ))}
+        </div>
+      </div>
+
+      {booking && <QuickBookingModal T={T} accent={accent} players={d.players} onClose={() => setBooking(false)} onSaved={() => { setBooking(false); reloadBookings() }} />}
+    </div>
+  )
+}
+
+function QuickBookingModal({ T, accent, players, onClose, onSaved }: { T: ThemeTokens; accent: AccentTokens; players: any[]; onClose: () => void; onSaved: () => void }) {
+  const today = new Date().toLocaleDateString('en-CA')
+  const [v, setV] = useState<Record<string, any>>({ player_name: '', booking_date: today, start_time: '', court: '', type: 'Private', duration_min: 60 })
+  const [saving, setSaving] = useState(false)
+  const set = (k: string, val: any) => setV(p => ({ ...p, [k]: val }))
+  const field: React.CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box', outline: 'none' }
+  const lab: React.CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 5px' }
+  const save = async () => {
+    if (!v.booking_date || saving) return
+    setSaving(true)
+    try {
+      await dbInsert('coach_bookings', { player_name: v.player_name || null, booking_date: v.booking_date, start_time: v.start_time || null, court: v.court || null, type: v.type, status: 'confirmed', duration_min: Number(v.duration_min) || 60 })
+      onSaved()
+    } catch { setSaving(false) }
+  }
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '6vh 16px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 440, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>Add a booking</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div><label style={lab}>Player</label>
+            <select value={v.player_name} onChange={e => set('player_name', e.target.value)} style={{ ...field, cursor: 'pointer' }}>
+              <option value="">— Select player (optional) —</option>
+              {players.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div><label style={lab}>Date</label><input type="date" value={v.booking_date} onChange={e => set('booking_date', e.target.value)} style={field} /></div>
+            <div><label style={lab}>Start time</label><input type="time" value={v.start_time} onChange={e => set('start_time', e.target.value)} style={field} /></div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div><label style={lab}>Type</label><select value={v.type} onChange={e => set('type', e.target.value)} style={{ ...field, cursor: 'pointer' }}>{['Private', 'Group', 'Cardio', 'Match play', 'Mini / red ball'].map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+            <div><label style={lab}>Court</label><input value={v.court} onChange={e => set('court', e.target.value)} placeholder="e.g. Court 1" style={field} /></div>
+          </div>
+          <div><label style={lab}>Duration (mins)</label><input type="number" value={v.duration_min} onChange={e => set('duration_min', e.target.value)} style={field} /></div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 18 }}>
+          <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+          <button onClick={save} disabled={!v.booking_date || saving} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: !v.booking_date || saving ? 0.5 : 1, fontFamily: FONT }}>{saving ? 'Saving…' : 'Add booking'}</button>
         </div>
       </div>
     </div>
