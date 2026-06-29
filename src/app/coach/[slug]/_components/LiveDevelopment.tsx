@@ -16,7 +16,7 @@ import {
 } from '../_lib/coach-db'
 import { printRacketCertificate } from './LiveRacketProgression'
 
-type Player = { id: string; name: string; age?: number | null; level?: string | null; category?: string | null; parent_name?: string | null; goal?: string | null; racket_stage?: string | null }
+type Player = { id: string; name: string; age?: number | null; level?: string | null; category?: string | null; parent_name?: string | null; goal?: string | null; racket_stage?: string | null; avatar_url?: string | null }
 const THEME: Record<string, string> = { white: 'Foundations', yellow: 'Rallying', orange: 'Net & Touch', green: 'The Serve', blue: 'Spin & Shape', purple: 'Specialty Shots', brown: 'Weapons', red: 'Tactics', black: 'Mastery' }
 const TOTAL_SKILLS = RACKET_STAGES.reduce((n, s) => n + (RACKET_SKILLS[s.id]?.length || 0), 0)
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
@@ -64,7 +64,10 @@ export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentT
             const st = RACKET_STAGES.find(s => s.id === p.racket_stage)
             return (
               <div key={p.id} onClick={() => setSelId(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 4 }}>
-                <span style={{ width: 28, height: 28, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 700, border: `1px solid ${accent.border}`, flexShrink: 0 }}>{initials(p.name)}</span>
+                {p.avatar_url
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={p.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                  : <span style={{ width: 28, height: 28, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10.5, fontWeight: 700, border: `1px solid ${accent.border}`, flexShrink: 0 }}>{initials(p.name)}</span>}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
@@ -138,7 +141,10 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
       {/* Header */}
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span style={{ width: 44, height: 44, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 15, fontWeight: 700, border: `1px solid ${accent.border}` }}>{initials(p.name)}</span>
+          {p.avatar_url
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={p.avatar_url} alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            : <span style={{ width: 44, height: 44, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 15, fontWeight: 700, border: `1px solid ${accent.border}` }}>{initials(p.name)}</span>}
           <div>
             <div style={{ fontSize: 19, fontWeight: 600, color: T.text }}>{p.name}</div>
             <div style={{ fontSize: 12, color: T.text3 }}>{p.category || p.level || 'Player'}{p.age ? ` · Age ${p.age}` : ''}{p.parent_name ? ` · Parent: ${p.parent_name}` : ''}</div>

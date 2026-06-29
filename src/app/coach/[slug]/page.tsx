@@ -18,7 +18,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { THEMES, DENSITY } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
-  COACH_ORG, COACH_SIDEBAR, COACH_GROUPS, PLAYERS, BELTS, COACH_PHOTO,
+  COACH_ORG, COACH_SIDEBAR, COACH_GROUPS, PLAYERS, BELTS,
 } from './_lib/coach-data'
 import { useCoachSettings } from './_lib/use-settings'
 import { ACCENT_PRESETS } from './_lib/settings-store'
@@ -169,7 +169,9 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // until they connect their data.
   const coachName = session?.userName || (isEmpty ? (slugClubName || '') : settings.coach)
   const coachInitials = coachName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-  const coachPhoto = session?.photoDataUrl || (isEmpty ? null : COACH_PHOTO)
+  // Live: the head coach's uploaded photo (settings). Demo: a name-seeded avatar
+  // so the top-right rail matches the coach cards in the grid.
+  const coachPhoto = session?.photoDataUrl || (isEmpty ? (settings.head?.avatarUrl || null) : `https://i.pravatar.cc/160?u=${encodeURIComponent(coachName)}`)
   const clubName = session?.clubName || slugClubName || (isEmpty ? '' : settings.academy)
   const showDemoBanner = !isEmpty && session?.isDemoShell !== false
 

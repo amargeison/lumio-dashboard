@@ -26,7 +26,9 @@ function SectionHead({ T, title, right }: { T: ThemeTokens; title: ReactNode; ri
 function Pill({ T, children, color, bg }: { T: ThemeTokens; children: ReactNode; color?: string; bg?: string }) {
   return <span style={{ fontSize: 9.5, fontFamily: FONT_MONO, padding: '2px 6px', borderRadius: 4, background: bg ?? T.hover, color: color ?? T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{children}</span>
 }
-function Avatar({ accent, initials, size = 30 }: { accent: AccentTokens; initials: string; size?: number }) {
+function Avatar({ accent, initials, size = 30, seed }: { accent: AccentTokens; initials: string; size?: number; seed?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  if (seed) return <img src={`https://i.pravatar.cc/120?u=${encodeURIComponent(seed)}`} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   return <div style={{ width: size, height: size, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: size * 0.34, fontWeight: 700, fontFamily: FONT_MONO, flexShrink: 0 }}>{initials}</div>
 }
 function BeltChip({ beltIndex, size = 16 }: { beltIndex: number; size?: number }) {
@@ -92,7 +94,7 @@ export function CampPlayerPacks({ T, accent, density, camp, attendees }: Common 
           const on = p.name === a.name
           return (
             <div key={p.name} onClick={() => setSelName(p.name)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', background: on ? accent.dim : 'transparent', border: `1px solid ${on ? accent.border : 'transparent'}`, marginBottom: 2 }}>
-              <Avatar accent={accent} initials={p.initials} size={28} />
+              <Avatar accent={accent} initials={p.initials} size={28} seed={p.name} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{p.name}</div>
                 <div style={{ fontSize: 10.5, color: T.text3 }}>{BELTS[p.beltIndex].name} · age {p.age}</div>
@@ -106,7 +108,7 @@ export function CampPlayerPacks({ T, accent, density, camp, attendees }: Common 
       <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
         <Card T={T} density={density}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-            <Avatar accent={accent} initials={a.initials} size={44} />
+            <Avatar accent={accent} initials={a.initials} size={44} seed={a.name} />
             <div>
               <div style={{ fontSize: 17, fontWeight: 600, color: T.text }}>{a.name}</div>
               <div style={{ fontSize: 12, color: T.text3 }}>{camp.name} · {camp.start}–{camp.end}</div>

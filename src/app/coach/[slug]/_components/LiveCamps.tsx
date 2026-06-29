@@ -20,7 +20,7 @@ type Camp = {
   equipment?: string[] | null; objectives?: string[] | null
 }
 type Attendee = { id: string; camp_id: string; player_id?: string | null; player_name: string; paid?: boolean | null }
-type Player = { id: string; name: string; age?: number | null; racket_stage?: string | null }
+type Player = { id: string; name: string; age?: number | null; racket_stage?: string | null; avatar_url?: string | null }
 
 const DAY = 86400000
 const fmtD = (d?: string | null) => { const t = d ? new Date(d) : null; return t && !isNaN(t.getTime()) ? t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—' }
@@ -245,7 +245,10 @@ function Attendees({ T, accent, camp, attendees, players, reload, remove }: { T:
         const st = p ? RACKET_STAGES.find(s => s.id === p.racket_stage) : null
         return (
           <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: `1px solid ${T.border}` }}>
-            <span style={{ width: 26, height: 26, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700 }}>{initials(a.player_name)}</span>
+            {p?.avatar_url
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={p.avatar_url} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+              : <span style={{ width: 26, height: 26, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700 }}>{initials(a.player_name)}</span>}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{a.player_name}</div>
               <div style={{ fontSize: 10.5, color: T.text3 }}>{st ? st.name : (p?.age ? `Age ${p.age}` : 'Guest')}</div>
@@ -277,7 +280,10 @@ function Packs({ T, accent, camp, attendees, players, skillMap, attRows }: { T: 
         {attendees.map(a => {
           const active = a.id === sel.id
           return <div key={a.id} onClick={() => setSelId(a.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 3 }}>
-            <span style={{ width: 24, height: 24, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700 }}>{initials(a.player_name)}</span>
+            {players.find(x => x.id === a.player_id)?.avatar_url
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={(players.find(x => x.id === a.player_id) as any).avatar_url} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+              : <span style={{ width: 24, height: 24, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700 }}>{initials(a.player_name)}</span>}
             <span style={{ fontSize: 12, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.player_name}</span>
           </div>
         })}
