@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
-import { transcribeMedia } from '@/lib/coach/transcribe'
+import { transcribeMediaTimed, type TranscriptSegment } from '@/lib/coach/transcribe'
 import { COACH_AGENT_PERSONA } from '@/lib/coach/agent-persona'
+import { parseShotMentions, planClips, cutClips, fuseWithNarration, SHOT_LABEL, type Mention } from '@/lib/coach/highlights'
+import { getVisualShots, visualShotsConfigured } from '@/lib/coach/visual-shots'
 
 export const maxDuration = 300
 
@@ -43,16 +45,24 @@ async function processGroup(coachId: string, rows: any[]) {
   const sb = serviceClient()
   const multi = rows.length > 1
 
-  // 1. Transcribe each file, in order, storing each part's transcript.
+  // 1. Transcribe each file, in order, storing each part's transcript. We keep
+  // the first video file's buffer + timestamped segments so we can cut per-shot
+  // highlight clips from a single-video upload (the common case).
   const parts: string[] = []
+  let clipSource: { buf: Buffer; ext: string; segments: TranscriptSegment[] } | null = null
   for (let i = 0; i < rows.length; i++) {
     const m = rows[i]
     const dl = await sb.storage.from('coach-media').download(m.storage_path)
     if (dl.error || !dl.data) throw new Error('Could not read an uploaded file: ' + (dl.error?.message || 'unknown'))
     const buf = Buffer.from(await dl.data.arrayBuffer())
-    const t = await transcribeMedia(buf, m.mime_type || '', m.storage_path)
+    const { text: t, segments } = await transcribeMediaTimed(buf, m.mime_type || '', m.storage_path)
     parts.push(multi ? `--- Part ${i + 1} ---\n${t}` : t)
     await sb.from('coach_media').update({ transcript: t, updated_at: new Date().toISOString() }).eq('id', m.id)
+    const isVideo = String(m.kind) === 'video' || String(m.mime_type || '').includes('video')
+    if (!multi && isVideo) {
+      const ext = (m.storage_path.match(/\.([a-z0-9]+)$/i)?.[1] || 'mp4').toLowerCase()
+      clipSource = { buf, ext, segments }
+    }
   }
   const transcript = parts.join('\n\n')
   if (!transcript.trim()) throw new Error('The recording(s) produced no speech to transcribe.')
@@ -87,10 +97,72 @@ async function processGroup(coachId: string, rows: any[]) {
     } catch (e) { console.warn('[coach/media/process] attendance', e) }
   }
 
+  // 3c. Video highlights (V1) — cut per-shot clips from what the coach said.
+  // Best-effort: never let a clip failure fail the whole summary.
+  if (clipSource) {
+    try {
+      await buildHighlights(sb, coachId, rows[0], clipSource)
+    } catch (e) { console.warn('[coach/media/process] highlights', e) }
+  }
+
   // 4. Mark all done; the combined review lives on the first row (which the UI polls).
   await sb.from('coach_media').update({ status: 'done', review, updated_at: new Date().toISOString() }).eq('id', rows[0].id)
   if (rows.length > 1) {
     await sb.from('coach_media').update({ status: 'done', updated_at: new Date().toISOString() }).in('id', rows.slice(1).map(r => r.id))
+  }
+}
+
+// Cut per-shot highlight clips from the source video and store each as its own
+// coach_media row (clip_of = source), so they reuse storage, RLS and playback.
+async function buildHighlights(
+  sb: ReturnType<typeof serviceClient>,
+  coachId: string,
+  source: any,
+  clipSource: { buf: Buffer; ext: string; segments: TranscriptSegment[] },
+) {
+  // Phase 1b + audio cross-check: visual detection finds the timing; when the
+  // visual label is low-confidence or conflicts with what the coach said, the
+  // narration at that moment corrects it. With no visual model configured, we
+  // use narration alone (V1).
+  const narration: Mention[] = parseShotMentions(clipSource.segments)
+  let mentions: Mention[] = []
+  if (visualShotsConfigured()) {
+    try {
+      const signed = await sb.storage.from('coach-media').createSignedUrl(source.storage_path, 1800)
+      if (signed.data?.signedUrl) {
+        const visual = await getVisualShots(signed.data.signedUrl)
+        mentions = fuseWithNarration(visual, narration)
+      }
+    } catch (e) { console.warn('[highlights] visual detect', e) }
+  }
+  if (!mentions.length) mentions = narration
+  if (!mentions.length) return
+  const plan = planClips(mentions, Number(source.duration_seconds) || undefined)
+  if (!plan.length) return
+  const clips = await cutClips(clipSource.buf, clipSource.ext, plan)
+  if (!clips.length) return
+
+  const now = Date.now()
+  for (let i = 0; i < clips.length; i++) {
+    const c = clips[i]
+    const storagePath = `${coachId}/clips/${source.id}/${c.shot}-${i}-${now}.mp4`
+    const up = await sb.storage.from('coach-media').upload(storagePath, c.buffer, { contentType: 'video/mp4', upsert: true })
+    if (up.error) { console.warn('[highlights] upload failed', up.error.message); continue }
+    await sb.from('coach_media').insert({
+      coach_id: coachId,
+      player_id: source.player_id ?? null,
+      player_name: source.player_name ?? null,
+      kind: 'video',
+      title: `${SHOT_LABEL[c.shot]} · highlight`,
+      storage_path: storagePath,
+      mime_type: 'video/mp4',
+      duration_seconds: Math.round(c.end - c.start),
+      status: 'done',
+      clip_of: source.id,
+      shot_type: c.shot,
+      clip_start: c.start,
+      clip_end: c.end,
+    })
   }
 }
 

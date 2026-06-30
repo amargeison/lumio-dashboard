@@ -1,8 +1,11 @@
-// Server-only transcription via OpenAI Whisper (whisper-1).
+// Server-only transcription via OpenAI Whisper (whisper-1) or Groq Whisper.
 // Whisper's API caps uploads at 25MB, and lesson recordings are long (a 48-min
 // session is ~39MB). So we always transcode to mono 16kHz MP3 (also extracts the
 // audio track from a video), and if it's still too big we split into time chunks
 // and stitch the transcripts. Requires `ffmpeg` on the server.
+//
+// We request verbose JSON so each call returns timestamped segments — used by
+// the video-highlights feature to cut per-shot clips from what the coach said.
 
 import { execFile } from 'child_process'
 import { promisify } from 'util'
@@ -13,6 +16,9 @@ import path from 'path'
 const execFileP = promisify(execFile)
 const MAX_BYTES = 24 * 1024 * 1024 // stay safely under OpenAI's 25MB limit
 const CHUNK_SECONDS = 20 * 60      // 20-minute chunks when a compressed file is still too large
+
+export type TranscriptSegment = { start: number; end: number; text: string }
+export type TimedTranscript = { text: string; segments: TranscriptSegment[] }
 
 // Which speech-to-text backend to use. Both expose the same OpenAI-shaped
 // /audio/transcriptions endpoint, so the request code below is identical.
@@ -25,7 +31,9 @@ function resolveProvider(): AsrProvider {
   throw new Error('Transcription is not configured (set GROQ_API_KEY or OPENAI_API_KEY).')
 }
 
-export async function transcribeMedia(input: Buffer, mime: string, originalName: string): Promise<string> {
+// Full transcription with timestamped segments (timestamps are relative to the
+// start of THIS media file, with chunk offsets already applied).
+export async function transcribeMediaTimed(input: Buffer, mime: string, originalName: string): Promise<TimedTranscript> {
   const provider = resolveProvider()
 
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'lumio-media-'))
@@ -39,30 +47,38 @@ export async function transcribeMedia(input: Buffer, mime: string, originalName:
     await ffmpeg(['-i', srcPath, '-vn', '-ac', '1', '-ar', '16000', '-b:a', '48k', '-y', audioPath])
 
     const { size } = await fs.stat(audioPath)
-    let parts: string[]
+    const segments: TranscriptSegment[] = []
     if (size <= MAX_BYTES) {
-      parts = [audioPath]
+      const r = await whisper(await fs.readFile(audioPath), provider)
+      segments.push(...r.segments)
     } else {
       const pattern = path.join(dir, 'chunk-%03d.mp3')
       await ffmpeg(['-i', audioPath, '-f', 'segment', '-segment_time', String(CHUNK_SECONDS), '-c', 'copy', '-y', pattern])
-      parts = (await fs.readdir(dir)).filter(f => /^chunk-\d+\.mp3$/.test(f)).sort().map(f => path.join(dir, f))
+      const parts = (await fs.readdir(dir)).filter(f => /^chunk-\d+\.mp3$/.test(f)).sort()
+      for (let i = 0; i < parts.length; i++) {
+        const r = await whisper(await fs.readFile(path.join(dir, parts[i])), provider)
+        const offset = i * CHUNK_SECONDS
+        for (const s of r.segments) segments.push({ start: s.start + offset, end: s.end + offset, text: s.text })
+      }
     }
-
-    const pieces: string[] = []
-    for (const p of parts) {
-      pieces.push(await whisper(await fs.readFile(p), provider))
-    }
-    return pieces.join('\n').trim()
+    const text = segments.map(s => s.text).join(' ').replace(/\s+/g, ' ').trim()
+    return { text, segments }
   } finally {
     await fs.rm(dir, { recursive: true, force: true }).catch(() => {})
   }
 }
 
-async function whisper(buf: Buffer, provider: AsrProvider): Promise<string> {
+// Text-only convenience (unchanged contract for existing callers).
+export async function transcribeMedia(input: Buffer, mime: string, originalName: string): Promise<string> {
+  return (await transcribeMediaTimed(input, mime, originalName)).text
+}
+
+async function whisper(buf: Buffer, provider: AsrProvider): Promise<TimedTranscript> {
   const form = new FormData()
   form.append('file', new Blob([new Uint8Array(buf)], { type: 'audio/mpeg' }), 'audio.mp3')
   form.append('model', provider.model)
   form.append('language', 'en')
+  form.append('response_format', 'verbose_json')
   const res = await fetch(provider.url, {
     method: 'POST',
     headers: { Authorization: `Bearer ${provider.key}` },
@@ -72,8 +88,13 @@ async function whisper(buf: Buffer, provider: AsrProvider): Promise<string> {
     const t = await res.text().catch(() => '')
     throw new Error(`${provider.name} transcription error ${res.status}: ${t.slice(0, 300)}`)
   }
-  const json = await res.json().catch(() => ({})) as { text?: string }
-  return (json.text || '').trim()
+  const json = await res.json().catch(() => ({})) as { text?: string; segments?: Array<{ start?: number; end?: number; text?: string }> }
+  const segments: TranscriptSegment[] = Array.isArray(json.segments)
+    ? json.segments.map(s => ({ start: Number(s.start) || 0, end: Number(s.end) || 0, text: (s.text || '').trim() })).filter(s => s.text)
+    : []
+  // Fall back to a single pseudo-segment if the provider didn't return segments.
+  if (!segments.length && json.text) segments.push({ start: 0, end: 0, text: json.text.trim() })
+  return { text: (json.text || segments.map(s => s.text).join(' ')).trim(), segments }
 }
 
 // Use a system ffmpeg by default, or a binary at FFMPEG_PATH (lets us install a
