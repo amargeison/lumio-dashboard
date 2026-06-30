@@ -125,18 +125,52 @@ function removeBookingCalendar(id: string) {
   try { fetch(`/api/coach/calendar/event?bookingId=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {}) } catch { /* ignore */ }
 }
 
+// ── Per-table cache (stale-while-revalidate) ────────────────────────────────
+// Navigating between modules used to re-query Supabase from scratch on every
+// mount. We now cache each table's rows in memory: a re-visit shows cached rows
+// INSTANTLY and refreshes in the background. Concurrent reads for the same table
+// are de-duped into a single request.
+const _tableCache = new Map<CoachTable, any[]>()
+const _inflight = new Map<CoachTable, Promise<any[]>>()
+
+function _fetchList<T>(table: CoachTable, force = false): Promise<T[]> {
+  if (!force && _inflight.has(table)) return _inflight.get(table) as Promise<T[]>
+  const p = dbList<T>(table)
+    .then(rows => { _tableCache.set(table, rows); if (_inflight.get(table) === (p as Promise<any[]>)) _inflight.delete(table); return rows })
+    .catch(err => { if (_inflight.get(table) === (p as Promise<any[]>)) _inflight.delete(table); throw err })
+  _inflight.set(table, p as Promise<any[]>)
+  return p
+}
+
+// Clear cached rows (e.g. after sign-out or a bulk import) so the next read is fresh.
+export function invalidateCoachTable(table?: CoachTable) {
+  if (table) { _tableCache.delete(table); _inflight.delete(table) }
+  else { _tableCache.clear(); _inflight.clear() }
+}
+
 // ── React hook: rows + CRUD for one table ──────────────────────────────────
 export function useCoachTable<T = any>(table: CoachTable) {
-  const [rows, setRows] = useState<T[]>([])
-  const [loading, setLoading] = useState(true)
+  const cached = _tableCache.get(table) as T[] | undefined
+  const [rows, setRows] = useState<T[]>(cached ?? [])
+  const [loading, setLoading] = useState(cached === undefined)
   const [error, setError] = useState<string | null>(null)
 
+  // Force-fresh reload (after a mutation or an explicit refresh).
   const reload = useCallback(async () => {
-    setLoading(true)
-    try { setRows(await dbList<T>(table)) } finally { setLoading(false) }
+    if (_tableCache.get(table) === undefined) setLoading(true)
+    try { setRows(await _fetchList<T>(table, true)) } finally { setLoading(false) }
   }, [table])
 
-  useEffect(() => { reload() }, [reload])
+  // On mount: show cache instantly, then revalidate in the background (de-duped).
+  useEffect(() => {
+    let alive = true
+    const c = _tableCache.get(table) as T[] | undefined
+    if (c !== undefined) { setRows(c); setLoading(false) }
+    _fetchList<T>(table, false)
+      .then(d => { if (alive) { setRows(d); setLoading(false) } })
+      .catch(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+  }, [table])
 
   const add = useCallback(async (row: Record<string, any>) => {
     try { await dbInsert(table, row); await reload() }
