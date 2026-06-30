@@ -39,6 +39,33 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
   const load = () => fetch('/api/portal/player').then(r => r.ok ? r.json() : null).then(d => { setB(d); setLoading(false) }).catch(() => setLoading(false))
   useEffect(() => { load() }, [])
 
+  // Manual session log (no watch needed — works on any device, any age).
+  const [logOpen, setLogOpen] = useState(false)
+  const [logDur, setLogDur] = useState('45')
+  const [logRpe, setLogRpe] = useState(6)
+  const [logDist, setLogDist] = useState('')
+  const [logNote, setLogNote] = useState('')
+  const [logBusy, setLogBusy] = useState(false)
+  const [logErr, setLogErr] = useState('')
+  const [logXp, setLogXp] = useState<number | null>(null)
+  const submitLog = async () => {
+    setLogErr(''); setLogBusy(true)
+    try {
+      const r = await fetch('/api/portal/watch/log', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          duration_min: Number(logDur),
+          perceived_effort: logRpe,
+          distance_m: logDist ? Math.round(Number(logDist) * 1000) : undefined,
+          note: logNote.trim() || undefined,
+        }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && d.ok) { setLogXp(d.xp_awarded ?? null); setLogNote(''); load(); setTimeout(() => { setLogOpen(false); setLogXp(null) }, 1400) }
+      else setLogErr(d.error || 'Could not save')
+    } catch { setLogErr('Could not save') } finally { setLogBusy(false) }
+  }
+
   const send = async () => {
     if (!msg.trim()) return
     setSent('Sending…')
@@ -122,6 +149,59 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
         <div style={{ ...card, background: 'rgba(63,179,127,0.10)', borderColor: 'rgba(63,179,127,0.4)' }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: GOOD }}>🎉 Ready for the {nextStage ? nextStage.name : 'next'} racket!</div>
           <div style={{ fontSize: 12.5, color: MUTED, marginTop: 4 }}>Every {stage?.name} skill is consistent — ask your coach to book the assessment.</div>
+        </div>
+      )}
+
+      {/* Log a session (manual — any device, any age) */}
+      <div style={card}>
+        <p style={h2}>Log a session</p>
+        <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.5 }}>Played without a watch? Log it here — how long and how hard it felt — and earn XP towards the next racket.</div>
+        <button onClick={() => { setLogErr(''); setLogXp(null); setLogOpen(true) }} style={{ marginTop: 12, appearance: 'none', border: 0, background: ACCENT, color: '#06223f', borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>+ Log a session</button>
+      </div>
+
+      {logOpen && (
+        <div onClick={e => { if (e.target === e.currentTarget && !logBusy) setLogOpen(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.74)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '8vh 16px', overflowY: 'auto' }}>
+          <div style={{ width: '100%', maxWidth: 420, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <span style={{ fontSize: 20 }}>🎾</span>
+              <div style={{ fontSize: 16, fontWeight: 800, color: TEXT, flex: 1 }}>Log a session</div>
+              <button onClick={() => !logBusy && setLogOpen(false)} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${BORDER}`, background: 'transparent', color: MUTED, cursor: 'pointer', fontSize: 15 }}>✕</button>
+            </div>
+
+            {logXp != null ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: GOOD }}>+{logXp} XP earned!</div>
+                <div style={{ fontSize: 12.5, color: MUTED, marginTop: 4 }}>Nice work — keep it up.</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>How long? (minutes)</label>
+                  <input type="number" inputMode="numeric" value={logDur} onChange={e => setLogDur(e.target.value)} min={10} style={{ width: '100%', background: PANEL2, color: TEXT, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, boxSizing: 'border-box', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>How hard did it feel?</label>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                      <button key={n} onClick={() => setLogRpe(n)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', border: `1px solid ${logRpe === n ? ACCENT : BORDER}`, background: logRpe === n ? 'rgba(58,142,224,0.2)' : 'transparent', color: logRpe === n ? TEXT : MUTED, borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 700 }}>{n}</button>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: MUTED, marginTop: 5 }}><span>Easy</span><span>Flat out</span></div>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Distance (km) — optional</label>
+                  <input type="number" inputMode="decimal" value={logDist} onChange={e => setLogDist(e.target.value)} placeholder="e.g. 3.2" style={{ width: '100%', background: PANEL2, color: TEXT, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, boxSizing: 'border-box', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Note — optional</label>
+                  <input value={logNote} onChange={e => setLogNote(e.target.value)} placeholder="What did you work on?" style={{ width: '100%', background: PANEL2, color: TEXT, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, boxSizing: 'border-box', outline: 'none' }} />
+                </div>
+                {logErr && <div style={{ fontSize: 12.5, color: '#E06A6A' }}>{logErr}</div>}
+                <button onClick={submitLog} disabled={logBusy} style={{ appearance: 'none', border: 0, background: ACCENT, color: '#06223f', borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 800, cursor: logBusy ? 'default' : 'pointer', opacity: logBusy ? 0.6 : 1 }}>{logBusy ? 'Saving…' : 'Save & earn XP'}</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
