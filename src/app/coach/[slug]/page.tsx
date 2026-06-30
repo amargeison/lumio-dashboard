@@ -12,6 +12,7 @@
 // Centre, Payments.
 
 import { useState, useRef, useEffect, use } from 'react'
+import dynamic from 'next/dynamic'
 import { createBrowserClient } from '@supabase/ssr'
 import { SportsDemoGate, type SportsDemoSession } from '@/components/sports-demo'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -28,43 +29,64 @@ import {
   normalizeRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole,
 } from './_lib/role-scope'
 import { coachById } from './_lib/coaches-data'
-import { StudentView } from './_components/StudentView'
-import {
-  DashboardView, LessonsView, DevelopmentView, BeltsView, CalendarView,
-  RosterView, MessagesView, ResourcesView, PaymentsView, SettingsView, CampsView,
-} from './_components/CoachModules'
-import { SessionPlannerView } from './_components/SessionPlanner'
-import { CourtPlannerView } from './_components/CourtPlanner'
-import { EquipmentView } from './_components/Equipment'
-import { VideoAudioView } from './_components/CoachVideoAudio'
-import { HeatmapsView } from './_components/CoachHeatmaps'
-import { StaffView } from './_components/StaffView'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
-import { LiveCoachDashboard } from './_components/LiveCoachDashboard'
-import { LiveMessages } from './_components/LiveMessages'
-import { CoachOnboardingWizard } from './_components/CoachOnboardingWizard'
-import { CoachContactSettings } from './_components/CoachContactSettings'
-import { CoachImport } from './_components/CoachImport'
-import { CoachCompliance } from './_components/CoachCompliance'
-import { LiveRoster } from './_components/LiveRoster'
-import { LiveSessionPlanner } from './_components/LiveSessionPlanner'
-import { LiveLessons } from './_components/LiveLessons'
-import { LiveBookingCalendar } from './_components/LiveBookingCalendar'
-import { LiveRacketProgression } from './_components/LiveRacketProgression'
-import { LiveDevelopment } from './_components/LiveDevelopment'
-import { CoachDevelopmentSettings } from './_components/CoachDevelopmentSettings'
-import { LiveCourtPlanner } from './_components/LiveCourtPlanner'
-import { CoachVenuesSettings } from './_components/CoachVenuesSettings'
-import { LiveCamps } from './_components/LiveCamps'
-import { LivePayments } from './_components/LivePayments'
-import { LiveEquipment } from './_components/LiveEquipment'
-import { LiveResources } from './_components/LiveResources'
-import { LiveVideoAudio } from './_components/LiveVideoAudio'
-import { LiveEffortRewards } from './_components/LiveEffortRewards'
-import { LiveStaff } from './_components/LiveStaff'
 import { useCoachStats, RACKET_STAGES } from './_lib/coach-db'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, tierForFlags, TIERS, type FeatureFlags } from './_lib/feature-flags'
+
+// ── Lazy-loaded modules ─────────────────────────────────────────────────────
+// Each module is code-split so only the one you're viewing is downloaded — the
+// portal no longer ships every module's JS up front. Re-visits are instant
+// (the chunk is cached). A light placeholder shows on first open of each.
+const ModuleLoading = () => <div style={{ padding: 48, textAlign: 'center', color: 'rgba(160,170,190,0.7)', fontSize: 13 }}>Loading…</div>
+function lazyNamed<M, K extends keyof M>(loader: () => Promise<M>, key: K): M[K] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return dynamic(() => loader().then(m => ({ default: (m as any)[key] })), { ssr: false, loading: ModuleLoading }) as unknown as M[K]
+}
+
+// Demo views
+const StudentView = lazyNamed(() => import('./_components/StudentView'), 'StudentView')
+const DashboardView = lazyNamed(() => import('./_components/CoachModules'), 'DashboardView')
+const LessonsView = lazyNamed(() => import('./_components/CoachModules'), 'LessonsView')
+const DevelopmentView = lazyNamed(() => import('./_components/CoachModules'), 'DevelopmentView')
+const BeltsView = lazyNamed(() => import('./_components/CoachModules'), 'BeltsView')
+const CalendarView = lazyNamed(() => import('./_components/CoachModules'), 'CalendarView')
+const RosterView = lazyNamed(() => import('./_components/CoachModules'), 'RosterView')
+const MessagesView = lazyNamed(() => import('./_components/CoachModules'), 'MessagesView')
+const ResourcesView = lazyNamed(() => import('./_components/CoachModules'), 'ResourcesView')
+const PaymentsView = lazyNamed(() => import('./_components/CoachModules'), 'PaymentsView')
+const SettingsView = lazyNamed(() => import('./_components/CoachModules'), 'SettingsView')
+const CampsView = lazyNamed(() => import('./_components/CoachModules'), 'CampsView')
+const SessionPlannerView = lazyNamed(() => import('./_components/SessionPlanner'), 'SessionPlannerView')
+const CourtPlannerView = lazyNamed(() => import('./_components/CourtPlanner'), 'CourtPlannerView')
+const EquipmentView = lazyNamed(() => import('./_components/Equipment'), 'EquipmentView')
+const VideoAudioView = lazyNamed(() => import('./_components/CoachVideoAudio'), 'VideoAudioView')
+const HeatmapsView = lazyNamed(() => import('./_components/CoachHeatmaps'), 'HeatmapsView')
+const StaffView = lazyNamed(() => import('./_components/StaffView'), 'StaffView')
+// Live (real-coach) views
+const LiveCoachDashboard = lazyNamed(() => import('./_components/LiveCoachDashboard'), 'LiveCoachDashboard')
+const LiveMessages = lazyNamed(() => import('./_components/LiveMessages'), 'LiveMessages')
+const LiveRoster = lazyNamed(() => import('./_components/LiveRoster'), 'LiveRoster')
+const LiveSessionPlanner = lazyNamed(() => import('./_components/LiveSessionPlanner'), 'LiveSessionPlanner')
+const LiveLessons = lazyNamed(() => import('./_components/LiveLessons'), 'LiveLessons')
+const LiveBookingCalendar = lazyNamed(() => import('./_components/LiveBookingCalendar'), 'LiveBookingCalendar')
+const LiveRacketProgression = lazyNamed(() => import('./_components/LiveRacketProgression'), 'LiveRacketProgression')
+const LiveDevelopment = lazyNamed(() => import('./_components/LiveDevelopment'), 'LiveDevelopment')
+const LiveCourtPlanner = lazyNamed(() => import('./_components/LiveCourtPlanner'), 'LiveCourtPlanner')
+const LiveCamps = lazyNamed(() => import('./_components/LiveCamps'), 'LiveCamps')
+const LivePayments = lazyNamed(() => import('./_components/LivePayments'), 'LivePayments')
+const LiveEquipment = lazyNamed(() => import('./_components/LiveEquipment'), 'LiveEquipment')
+const LiveResources = lazyNamed(() => import('./_components/LiveResources'), 'LiveResources')
+const LiveVideoAudio = lazyNamed(() => import('./_components/LiveVideoAudio'), 'LiveVideoAudio')
+const LiveEffortRewards = lazyNamed(() => import('./_components/LiveEffortRewards'), 'LiveEffortRewards')
+const LiveStaff = lazyNamed(() => import('./_components/LiveStaff'), 'LiveStaff')
+// Settings sub-panels + wizard (heavy, conditionally shown)
+const CoachOnboardingWizard = lazyNamed(() => import('./_components/CoachOnboardingWizard'), 'CoachOnboardingWizard')
+const CoachContactSettings = lazyNamed(() => import('./_components/CoachContactSettings'), 'CoachContactSettings')
+const CoachImport = lazyNamed(() => import('./_components/CoachImport'), 'CoachImport')
+const CoachCompliance = lazyNamed(() => import('./_components/CoachCompliance'), 'CoachCompliance')
+const CoachDevelopmentSettings = lazyNamed(() => import('./_components/CoachDevelopmentSettings'), 'CoachDevelopmentSettings')
+const CoachVenuesSettings = lazyNamed(() => import('./_components/CoachVenuesSettings'), 'CoachVenuesSettings')
 
 // The three view roles for the role switcher. Head + Coach are the same portal
 // filtered by permission; Student is a purpose-built player/parent view (a
