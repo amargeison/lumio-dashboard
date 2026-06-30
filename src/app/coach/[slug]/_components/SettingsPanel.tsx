@@ -5,8 +5,9 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
+import { useCoachProfile } from '../_lib/coach-db'
 import { setSettings, resetSettings, ACCENT_PRESETS, DEFAULT_SETTINGS, type AccentKey } from '../_lib/settings-store'
-import { COACH_SIDEBAR, COACH_GROUPS, VENUES } from '../_lib/coach-data'
+import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-data'
 import { getAddedVenues } from '../_lib/venues-store'
 import { AddVenueModal } from './AddVenueModal'
 import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
@@ -93,6 +94,29 @@ export function SettingsPanel({ T, accent, density }: Common) {
   // the store (merged over defaults) and writes the full object back on change.
   const profile = { ...DEFAULT_SETTINGS.profile, ...(s.profile || {}) }
   const setProfile = (n: typeof profile) => setSettings({ profile: n })
+
+  // Seed the Head coach profile from the SIGNED-IN coach's real profile (from
+  // onboarding) the first time, so a real coach sees their own name/email/phone
+  // instead of the demo persona. Only fills values still at their demo default,
+  // so it never clobbers the coach's own edits — and does nothing in the demo
+  // (no real profile → no display_name).
+  const realProfile = useCoachProfile()
+  useEffect(() => {
+    if (realProfile.loading || !realProfile.display_name) return
+    const patch: Record<string, any> = {}
+    if (!s.coach || s.coach === COACH_ORG.coach) patch.coach = realProfile.display_name
+    const needEmail = !profile.email || profile.email === DEFAULT_SETTINGS.profile.email
+    const needPhone = !profile.phone || profile.phone === DEFAULT_SETTINGS.profile.phone
+    if ((needEmail && realProfile.contact_email) || (needPhone && realProfile.contact_phone)) {
+      patch.profile = {
+        ...profile,
+        email: needEmail && realProfile.contact_email ? realProfile.contact_email : profile.email,
+        phone: needPhone && realProfile.contact_phone ? realProfile.contact_phone : profile.phone,
+      }
+    }
+    if (Object.keys(patch).length) setSettings(patch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [realProfile.loading, realProfile.display_name, realProfile.contact_email, realProfile.contact_phone])
   const conn = { ...DEFAULT_SETTINGS.conn, ...(s.conn || {}) }
   const setConn = (n: typeof conn) => setSettings({ conn: n })
   const booking = { ...DEFAULT_SETTINGS.booking, ...(s.booking || {}) }

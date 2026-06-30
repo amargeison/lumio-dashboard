@@ -48,7 +48,7 @@ export function CoachContactSettings({ T, accent }: { T: ThemeTokens; accent: Ac
   return (
     <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, marginBottom: 16 }}>
       <h3 style={{ color: T.text, fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>Contact &amp; calendar</h3>
-      <p style={{ color: T.text3, fontSize: 13, margin: '0 0 16px' }}>Your sending email and phone enable the Email and Text message channels. Calendar sync is coming soon.</p>
+      <p style={{ color: T.text3, fontSize: 13, margin: '0 0 16px' }}>Your sending email and phone enable the Email and Text message channels. Your bookings two-way sync with your connected calendar.</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div>
@@ -67,7 +67,9 @@ export function CoachContactSettings({ T, accent }: { T: ThemeTokens; accent: Ac
           <select value={calendar} onChange={e => setCalendar(e.target.value)} style={{ ...input, marginTop: 0, flex: 1 }}>
             {CAL_PROVIDERS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
           </select>
-          <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: T.text3, background: T.panel2, border: `1px solid ${T.border}`, padding: '4px 10px', borderRadius: 999 }}>Sync coming soon</span>
+          {calendar && calendar !== 'none'
+            ? <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#22C55E', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.35)', padding: '4px 10px', borderRadius: 999 }}>✓ Two-way sync on</span>
+            : null}
         </div>
       </div>
 
