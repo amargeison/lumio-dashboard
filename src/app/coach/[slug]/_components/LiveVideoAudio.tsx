@@ -10,7 +10,8 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, sb, dbUpdate } from '../_lib/coach-db'
 
-type Media = { id: string; kind?: string | null; title?: string | null; player_name?: string | null; duration_seconds?: number | null; created_at?: string }
+type Media = { id: string; kind?: string | null; title?: string | null; player_name?: string | null; duration_seconds?: number | null; created_at?: string; clip_of?: string | null; shot_type?: string | null; shot_confirmed?: boolean | null }
+const SHOT_OPTIONS = ['serve', 'forehand', 'backhand', 'volley', 'smash'] as const
 const mmss = (s?: number | null) => { if (!s && s !== 0) return ''; const m = Math.floor((s || 0) / 60); return `${m}:${String(Math.round((s || 0) % 60)).padStart(2, '0')}` }
 const fmtDate = (d?: string) => { const t = d ? new Date(d) : null; return t && !isNaN(t.getTime()) ? t.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '' }
 
@@ -33,7 +34,10 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
   useEffect(() => () => { stopTracks(); if (timerRef.current) clearInterval(timerRef.current) }, [])
   const stopTracks = () => { streamRef.current?.getTracks().forEach(t => t.stop()); streamRef.current = null }
 
-  const clips = media.rows.filter(m => (m.kind || 'video') === tab && (!playerFilter || (m.player_name || '') === playerFilter))
+  const inFilter = (m: Media) => (!playerFilter || (m.player_name || '') === playerFilter)
+  // AI highlight clips (clip_of set, shot_type tag) live in the SAME library,
+  // tagged — newest first so a session's clips sit near its recording.
+  const clips = media.rows.filter(m => (m.kind || 'video') === tab && inFilter(m))
   const videoCount = media.rows.filter(m => (m.kind || 'video') === 'video').length
   const audioCount = media.rows.filter(m => m.kind === 'audio').length
 
@@ -82,6 +86,12 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
 
   const openPlay = async (m: Media) => {
     try { const r = await fetch(`/api/coach/media/${m.id}`); const j = await r.json(); if (j.url) setPlay({ url: j.url, kind: m.kind || 'video', title: m.title || 'Clip' }) } catch { /* ignore */ }
+  }
+
+  // Confirm/correct an AI clip's shot tag. Marks it confirmed (so it stops being
+  // overwritten) — these confirmed clips are the private training set.
+  const confirmShot = async (m: Media, shot: string) => {
+    try { await dbUpdate('coach_media', m.id, { shot_type: shot, shot_confirmed: true, title: `${shot.charAt(0).toUpperCase() + shot.slice(1)} · highlight` }); media.reload() } catch { /* ignore */ }
   }
 
   const recMm = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
@@ -141,7 +151,7 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
         )}
       </div>
 
-      {/* Clips grid */}
+      {/* Clips grid — recordings + tagged AI highlight clips together */}
       {clips.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 20px', background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 12, fontSize: 12.5, color: T.text3 }}>No {tab} clips yet — record or upload one above.</div>
       ) : (
@@ -151,9 +161,21 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
               <div onClick={() => openPlay(m)} style={{ position: 'relative', height: 124, background: `linear-gradient(135deg, ${accent.dim}, ${T.panel2})`, display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
                 <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 16 }}>▷</span>
                 {m.duration_seconds != null && <span style={{ position: 'absolute', bottom: 6, left: 8, fontSize: 10, color: '#fff', background: 'rgba(0,0,0,0.5)', borderRadius: 4, padding: '1px 5px' }}>{mmss(m.duration_seconds)}</span>}
+                {m.shot_type && <span style={{ position: 'absolute', bottom: 6, right: 8, fontSize: 9.5, fontWeight: 700, color: m.shot_confirmed ? T.good : accent.hex, background: m.shot_confirmed ? `${T.good}1f` : accent.dim, border: `1px solid ${(m.shot_confirmed ? T.good : accent.hex)}55`, borderRadius: 5, padding: '2px 7px', textTransform: 'capitalize' }}>{m.shot_confirmed ? '✓ ' : ''}{m.shot_type}</span>}
               </div>
               <div style={{ padding: '8px 10px' }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title || 'Clip'}</div>
+                {m.clip_of && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                    <select value={m.shot_type || ''} onChange={e => confirmShot(m, e.target.value)} title="Correct the shot — your fix trains the model and publishes the clip" style={{ flex: 1, appearance: 'none', cursor: 'pointer', background: T.panel2, color: T.text, border: `1px solid ${m.shot_confirmed ? T.good : T.border}`, borderRadius: 7, padding: '4px 8px', fontSize: 11.5, fontFamily: FONT }}>
+                      {!m.shot_type && <option value="">—</option>}
+                      {SHOT_OPTIONS.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                    </select>
+                    {m.shot_confirmed
+                      ? <span style={{ fontSize: 10.5, color: T.good, fontWeight: 700, whiteSpace: 'nowrap' }} title="Shared with the player/parent">✓ Shared</span>
+                      : <button onClick={() => m.shot_type && confirmShot(m, m.shot_type)} disabled={!m.shot_type} title="Publish this clip to the player/parent app" style={{ appearance: 'none', border: 0, cursor: m.shot_type ? 'pointer' : 'not-allowed', background: accent.hex, color: T.btnText, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 700, fontFamily: FONT, opacity: m.shot_type ? 1 : 0.5, whiteSpace: 'nowrap' }}>Publish ✓</button>}
+                  </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <span style={{ fontSize: 10, color: T.text3, flex: 1 }}>{[m.player_name, fmtDate(m.created_at)].filter(Boolean).join(' · ')}</span>
                   <button onClick={() => { if (confirm('Delete this clip?')) fetch(`/api/coach/media/${m.id}`, { method: 'DELETE' }).then(() => media.reload()) }} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 13 }}>🗑</button>

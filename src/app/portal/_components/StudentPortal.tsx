@@ -20,6 +20,7 @@ type Bundle = {
   media: any[]
   messages: any[]
   watch: any[]
+  highlights?: any[]
 }
 
 const card: React.CSSProperties = { background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 18, marginBottom: 14 }
@@ -31,6 +32,7 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
   const [msg, setMsg] = useState('')
   const [sent, setSent] = useState('')
   const [avatar, setAvatar] = useState<string | null>(null)
+  const [clip, setClip] = useState<{ url: string; title: string } | null>(null)
   const onPhoto = async (file?: File | null) => {
     if (!file) return
     try { const data = await fileToAvatarDataUrl(file); const url = await uploadAvatar('/api/portal/avatar', { dataUrl: data }); if (url) setAvatar(url) } catch { /* ignore */ }
@@ -252,6 +254,34 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
         </div>
       )}
 
+      {/* Session highlights — AI-cut per-shot clips, demo-style card */}
+      {(b.highlights || []).filter((h: any) => h.url).length > 0 && (
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <span style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(58,142,224,0.18)', color: ACCENT, display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>▷</span>
+            <div style={{ fontSize: 15, fontWeight: 800, color: TEXT }}>{b.player.name.split(' ')[0]}’s session highlights</div>
+            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.06em', color: ACCENT, background: 'rgba(58,142,224,0.16)', borderRadius: 5, padding: '2px 7px', textTransform: 'uppercase' }}>Highlight</span>
+          </div>
+          <div style={{ fontSize: 12, color: MUTED, marginBottom: 12 }}>Clips your coach saved from recent sessions</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+            {(b.highlights || []).filter((h: any) => h.url).map((c: any) => {
+              const label = c.shot_type ? c.shot_type.charAt(0).toUpperCase() + c.shot_type.slice(1) : 'Highlight'
+              const dur = c.duration_seconds != null ? `${Math.floor((c.duration_seconds || 0) / 60)}:${String(Math.round((c.duration_seconds || 0) % 60)).padStart(2, '0')}` : ''
+              return (
+                <button key={c.id} onClick={() => setClip({ url: c.url, title: `${label} highlight` })} style={{ appearance: 'none', textAlign: 'left', cursor: 'pointer', background: 'transparent', border: 0, padding: 0 }}>
+                  <div style={{ position: 'relative', aspectRatio: '16 / 10', borderRadius: 10, overflow: 'hidden', background: `linear-gradient(135deg, rgba(58,142,224,0.25), ${PANEL2})`, display: 'grid', placeItems: 'center' }}>
+                    <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 16 }}>▷</span>
+                    {dur && <span style={{ position: 'absolute', bottom: 6, left: 8, fontSize: 10, color: '#fff', background: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: '1px 6px' }}>{dur}</span>}
+                  </div>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: TEXT, marginTop: 6 }}>{label}</div>
+                  <div style={{ fontSize: 10.5, color: MUTED }}>{fmt(c.created_at)}</div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Session videos */}
       {b.media.length > 0 && (
         <div style={card}>
@@ -325,6 +355,18 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
           </div>
         )}
       </div>
+
+      {clip && (
+        <div onClick={() => setClip(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 16 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 640, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: TEXT }}>{clip.title}</div>
+              <button onClick={() => setClip(null)} style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${BORDER}`, background: 'transparent', color: MUTED, borderRadius: 8, width: 30, height: 30, fontSize: 15, cursor: 'pointer' }}>✕</button>
+            </div>
+            <video src={clip.url} controls autoPlay playsInline style={{ width: '100%', maxHeight: '70vh', borderRadius: 8, background: '#000' }} />
+          </div>
+        </div>
+      )}
     </Shell>
   )
 }
