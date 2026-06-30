@@ -30,13 +30,14 @@ app = modal.App("lumio-tennis-shots")
 image = (
     modal.Image.debian_slim(python_version="3.11")
     .apt_install("ffmpeg", "libgl1", "libglib2.0-0")
-    .pip_install("ultralytics==8.3.39", "opencv-python-headless==4.10.0.84", "numpy<2", "requests")
+    .pip_install("ultralytics==8.3.39", "opencv-python-headless==4.10.0.84", "numpy<2", "requests", "fastapi[standard]")
 )
 
 with image.imports():
     import cv2
     import numpy as np
     import requests
+    from ultralytics import YOLO
     import tempfile
     import torch                       # already present via ultralytics
     import torch.nn as nn
