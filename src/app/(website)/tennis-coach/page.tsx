@@ -22,7 +22,8 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🎙️', title: 'AI Lesson Transcriber', desc: 'Just talk. Record the lesson on your phone — or upload a clip — and the AI transcribes it and writes the full summary for you: what you covered, the key takeaways, the drills used and the homework. No typing after a long day on court; every player gets a proper write-up in seconds.' },
   { icon: '🎾', title: 'Racket Progression reward system', desc: 'The reward system at the heart of Lumio Coach. A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds. At every level players earn a coloured racket keyring, a matching dampener and a certificate — with a full trophy at Black — and parents fund the journey: your second revenue stream, built in.' },
   { icon: '⌚', title: 'Effort & Rewards', desc: 'Players track sessions on the smartwatch they already own — no hardware to buy. Effort, movement and consistency scores become XP and effort levels: a motivation layer that keeps them training, kept separate from the technical racket pathway.' },
-  { icon: '🎬', title: 'Video & clips', desc: 'Match and training footage with coach annotations via Lumio Vision — saved to each player, by session, so you can review technique together without a third-party analysis stack.' },
+  { icon: '🎬', title: 'Video & clips', desc: 'Your recordings library — match and training footage saved to each player, by session, so you can review technique together. The raw room behind the AI highlights, with no third-party analysis stack.' },
+  { icon: '🎞️', title: 'AI Shot Highlights', desc: 'Record the session and the AI turns it into a highlights reel — automatically clipping the best serves, forehands, backhands, volleys and smashes, each tagged by shot, straight into the player’s app for parents to watch. It reads both the video and what you say on court to get the shot right, and you approve each clip before it’s shared — so what families see is always spot on.' },
   { icon: '👥', title: 'Staff / Coaches', desc: 'Run a club of coaches, not just yourself. A directory with each coach’s calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team’s week.' },
   { icon: '🏕️', title: 'Training Camps', desc: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft and a per-player camp log that captures progress day by day.' },
   { icon: '🗓️', title: 'Booking Calendar', desc: 'Your whole week across every court — private, group, cardio and match play. The single source of truth that feeds the Session Planner, so the schedule and the plans never drift apart.' },
@@ -429,7 +430,7 @@ export default function TennisCoachPage() {
             Built for tennis coaches and academies.
           </h2>
           <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 56, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto' }}>
-            Twelve modules that take you from the booking to the lesson to the review — and from a single coach to a whole academy. One platform, two revenue streams, with the Racket Progression reward system at its heart.
+            Thirteen modules that take you from the booking to the lesson to the review — and from a single coach to a whole academy. One platform, two revenue streams, with the Racket Progression reward system at its heart.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
             {FEATURES.map(f => {
