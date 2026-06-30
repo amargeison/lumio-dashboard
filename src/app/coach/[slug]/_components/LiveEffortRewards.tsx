@@ -20,6 +20,87 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
   const sessions = useCoachTable<any>('coach_watch_sessions')
   const [selId, setSelId] = useState('')
 
+  // Coach-side manual session log — record effort for a player with no watch.
+  const [logOpen, setLogOpen] = useState(false)
+  const [logPlayer, setLogPlayer] = useState('')
+  const [logDur, setLogDur] = useState('45')
+  const [logRpe, setLogRpe] = useState(6)
+  const [logDist, setLogDist] = useState('')
+  const [logNote, setLogNote] = useState('')
+  const [logBusy, setLogBusy] = useState(false)
+  const [logErr, setLogErr] = useState('')
+  const [logXp, setLogXp] = useState<number | null>(null)
+  const openLog = (pid?: string) => { setLogErr(''); setLogXp(null); setLogPlayer(pid || players.rows[0]?.id || ''); setLogOpen(true) }
+  const submitLog = async () => {
+    if (!logPlayer) { setLogErr('Pick a player'); return }
+    setLogErr(''); setLogBusy(true)
+    try {
+      const r = await fetch('/api/coach/watch/log', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: logPlayer, duration_min: Number(logDur), perceived_effort: logRpe, distance_m: logDist ? Math.round(Number(logDist) * 1000) : undefined, note: logNote.trim() || undefined }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (r.ok && d.ok) { setLogXp(d.xp_awarded ?? null); setLogNote(''); sessions.reload(); players.reload(); setTimeout(() => { setLogOpen(false); setLogXp(null) }, 1400) }
+      else setLogErr(d.error || 'Could not save')
+    } catch { setLogErr('Could not save') } finally { setLogBusy(false) }
+  }
+  const field: React.CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, boxSizing: 'border-box', outline: 'none' }
+  const lab: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }
+  const logBtn = (
+    <button onClick={() => openLog()} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>+ Log a session</button>
+  )
+  const logModal = logOpen ? (
+    <div onClick={e => { if (e.target === e.currentTarget && !logBusy) setLogOpen(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.74)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '8vh 16px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 440, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <span style={{ fontSize: 20 }}>🎾</span>
+          <div style={{ fontSize: 16, fontWeight: 800, color: T.text, flex: 1 }}>Log a session</div>
+          <button onClick={() => !logBusy && setLogOpen(false)} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15 }}>✕</button>
+        </div>
+        {logXp != null ? (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.good }}>+{logXp} XP added</div>
+            <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Saved to the player’s record.</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={lab}>Player</label>
+              <select value={logPlayer} onChange={e => setLogPlayer(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
+                {players.rows.length === 0 && <option value="">No players yet</option>}
+                {players.rows.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={lab}>How long? (minutes)</label>
+              <input type="number" value={logDur} onChange={e => setLogDur(e.target.value)} min={10} style={field} />
+            </div>
+            <div>
+              <label style={lab}>How hard did it feel?</label>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                  <button key={n} onClick={() => setLogRpe(n)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', border: `1px solid ${logRpe === n ? accent.hex : T.border}`, background: logRpe === n ? accent.dim : 'transparent', color: logRpe === n ? T.text : T.text3, borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 700 }}>{n}</button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: T.text3, marginTop: 5 }}><span>Easy</span><span>Flat out</span></div>
+            </div>
+            <div>
+              <label style={lab}>Distance (km) — optional</label>
+              <input type="number" value={logDist} onChange={e => setLogDist(e.target.value)} placeholder="e.g. 3.2" style={field} />
+            </div>
+            <div>
+              <label style={lab}>Note — optional</label>
+              <input value={logNote} onChange={e => setLogNote(e.target.value)} placeholder="What did they work on?" style={field} />
+            </div>
+            {logErr && <div style={{ fontSize: 12.5, color: T.bad }}>{logErr}</div>}
+            <button onClick={submitLog} disabled={logBusy} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 800, cursor: logBusy ? 'default' : 'pointer', opacity: logBusy ? 0.6 : 1 }}>{logBusy ? 'Saving…' : 'Save & add XP'}</button>
+          </div>
+        )}
+      </div>
+    </div>
+  ) : null
+
   const tone = (n: number) => n >= 70 ? T.good : n >= 40 ? T.warn : T.bad
   const when = (s: any) => String(s.started_at || s.created_at || '')
   const live = sessions.rows.filter(s => !s.voided)
@@ -41,9 +122,12 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
       <div>
         <h2 style={{ color: T.text, fontSize: 22, fontWeight: 700, margin: 0 }}>Effort &amp; Rewards</h2>
-        <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>XP your players earn from sessions on their own smartwatch. Separate from Racket Progression.</p>
+        <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>XP your players earn from training — log it here, players can log from their app, or connect a smartwatch. Separate from Racket Progression.</p>
       </div>
-      {honest}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        {honest}
+        {logBtn}
+      </div>
     </div>
   )
 
@@ -58,10 +142,12 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
       <div>
         {header}
         <div style={{ border: `1px dashed ${T.border}`, borderRadius: 14, padding: 40, textAlign: 'center' }}>
-          <div style={{ fontSize: 26 }}>⌚</div>
-          <p style={{ color: T.text2, fontSize: 14, fontWeight: 600, margin: '8px 0 4px' }}>No watch sessions yet</p>
-          <p style={{ color: T.text3, fontSize: 13, margin: 0, lineHeight: 1.5 }}>Open a player and use <b style={{ color: T.text2 }}>Connect a watch</b> to set them up. Finished sessions appear here as XP automatically.</p>
+          <div style={{ fontSize: 26 }}>🎾</div>
+          <p style={{ color: T.text2, fontSize: 14, fontWeight: 600, margin: '8px 0 4px' }}>No sessions logged yet</p>
+          <p style={{ color: T.text3, fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>Tap <b style={{ color: T.text2 }}>Log a session</b> to record one now — no watch needed. Players can also log from their own app, or connect a smartwatch for automatic XP.</p>
+          {logBtn}
         </div>
+        {logModal}
       </div>
     )
   }
@@ -86,6 +172,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
   return (
     <div>
       {header}
+      {logModal}
 
       {/* Squad leaderboard */}
       <div style={card}>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getMembership, scopedDb } from '@/lib/coach/membership'
+import { scoreManualSession, MANUAL_MIN_DURATION_MIN } from '@/lib/coach/effort-score'
 
 export const runtime = 'nodejs'
 
@@ -18,32 +19,9 @@ export const runtime = 'nodejs'
 // effort — so it is deliberately NOT gated on `consent_wearable` (which governs
 // processing watch HR data). That keeps the reward loop open for every family.
 
-const MIN_DURATION_MIN = 10   // anti-gaming: ignore trivially short "sessions"
-const XP_CAP = 120            // matches the watch ingest cap
-const clamp = (n: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, n))
 const num = (v: unknown): number | null => {
   const n = typeof v === 'string' ? parseFloat(v) : typeof v === 'number' ? v : NaN
   return Number.isFinite(n) ? n : null
-}
-function band(value: number, lo: number, hi: number) {
-  if (hi <= lo) return 0
-  return clamp(Math.round(((value - lo) / (hi - lo)) * 100))
-}
-
-// Score a self-reported session. RPE drives effort; distance (if given) drives
-// movement, else it tracks effort; consistency is session length.
-function score(p: { duration: number; rpe: number; distance: number | null }) {
-  const effort = clamp(Math.round(p.rpe * 10))                 // RPE 1–10 → 10–100
-  let movement: number
-  if (p.distance != null && p.distance > 0 && p.duration) {
-    const mPerMin = p.distance / p.duration
-    movement = band(Math.min(mPerMin, 60), 10, 35)
-  } else {
-    movement = clamp(Math.round(effort * 0.8))
-  }
-  const consistency = band(p.duration, 0, 60)
-  const xp = Math.min(XP_CAP, Math.round(0.5 * effort + 0.3 * movement + 0.2 * consistency))
-  return { effort, movement, consistency, xp }
 }
 
 export async function POST(req: NextRequest) {
@@ -57,8 +35,8 @@ export async function POST(req: NextRequest) {
   }
 
   const duration = num(body.duration_min) ?? 0
-  if (duration < MIN_DURATION_MIN) {
-    return NextResponse.json({ error: `Session too short (min ${MIN_DURATION_MIN} min)` }, { status: 422 })
+  if (duration < MANUAL_MIN_DURATION_MIN) {
+    return NextResponse.json({ error: `Session too short (min ${MANUAL_MIN_DURATION_MIN} min)` }, { status: 422 })
   }
   const rpe = num(body.perceived_effort)
   if (rpe == null || rpe < 1 || rpe > 10) {
@@ -73,7 +51,7 @@ export async function POST(req: NextRequest) {
     .eq('id', m.scopePlayerId).eq('coach_id', m.academyId).maybeSingle()
   if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
 
-  const s = score({ duration, rpe, distance })
+  const s = scoreManualSession({ duration, rpe, distance })
 
   const { error: insErr } = await db.from('coach_watch_sessions').insert({
     coach_id: m.academyId,
