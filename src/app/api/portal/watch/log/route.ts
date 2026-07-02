@@ -71,9 +71,10 @@ export async function POST(req: NextRequest) {
   })
   if (insErr) { console.error('[portal/watch/log]', insErr.message); return NextResponse.json({ error: 'Could not save session' }, { status: 500 }) }
 
-  // Bump the player's running XP total.
+  // Bump the player's running XP total (scoped to the academy for defense-in-depth,
+  // matching every other portal write on this service-role client).
   const newTotal = (Number((player as any).xp_total) || 0) + s.xp
-  await db.from('coach_players').update({ xp_total: newTotal }).eq('id', m.scopePlayerId)
+  await db.from('coach_players').update({ xp_total: newTotal }).eq('id', m.scopePlayerId).eq('coach_id', m.academyId)
 
   return NextResponse.json({
     ok: true,

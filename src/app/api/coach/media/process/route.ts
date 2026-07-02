@@ -67,13 +67,21 @@ async function processGroup(coachId: string, rows: any[]) {
   const transcript = parts.join('\n\n')
   if (!transcript.trim()) throw new Error('The recording(s) produced no speech to transcribe.')
 
-  // 2. One combined lesson summary.
+  // 2. Resolve the player ONCE (prefer the media row's id; else a UNIQUE name
+  // match — ambiguous same-name players stay null and fall back to name-scoping)
+  // so the session + highlight clips carry a real player_id for secure portal scope.
   const playerName = rows[0]?.player_name ?? null
+  let playerId: string | null = rows[0]?.player_id ?? null
+  if (!playerId && playerName) {
+    const { data: pl } = await sb.from('coach_players').select('id').eq('coach_id', coachId).ilike('name', playerName.trim())
+    if (pl && pl.length === 1) playerId = (pl[0] as any).id
+  }
   const review = await buildLessonSummary(transcript, playerName)
 
   // 3. Create the Lesson Summary (a coach_sessions row) — nothing for the coach to type.
   const { error: lessonErr } = await sb.from('coach_sessions').insert({
     coach_id: coachId,
+    player_id: playerId,
     player_name: playerName || 'Recorded session',
     session_date: new Date().toISOString().slice(0, 10),
     focus: review.focus || 'Lesson summary',
@@ -85,15 +93,11 @@ async function processGroup(coachId: string, rows: any[]) {
   if (lessonErr) console.error('[coach/media/process] lesson row insert', lessonErr)
 
   // 3b. The session happened → auto-mark the player present today (idempotent).
-  if (playerName) {
+  if (playerId) {
     try {
       const today = new Date().toISOString().slice(0, 10)
-      const { data: pl } = await sb.from('coach_players').select('id').eq('coach_id', coachId).ilike('name', playerName.trim()).limit(1)
-      const pid = (pl as any)?.[0]?.id
-      if (pid) {
-        const { data: ex } = await sb.from('coach_attendance').select('id').eq('coach_id', coachId).eq('player_id', pid).eq('session_date', today).limit(1)
-        if (!(ex as any)?.length) await sb.from('coach_attendance').insert({ coach_id: coachId, player_id: pid, session_date: today, present: true })
-      }
+      const { data: ex } = await sb.from('coach_attendance').select('id').eq('coach_id', coachId).eq('player_id', playerId).eq('session_date', today).limit(1)
+      if (!(ex as any)?.length) await sb.from('coach_attendance').insert({ coach_id: coachId, player_id: playerId, session_date: today, present: true })
     } catch (e) { console.warn('[coach/media/process] attendance', e) }
   }
 
@@ -101,7 +105,7 @@ async function processGroup(coachId: string, rows: any[]) {
   // Best-effort: never let a clip failure fail the whole summary.
   if (clipSource) {
     try {
-      await buildHighlights(sb, coachId, rows[0], clipSource)
+      await buildHighlights(sb, coachId, rows[0], clipSource, playerId)
     } catch (e) { console.warn('[coach/media/process] highlights', e) }
   }
 
@@ -119,6 +123,7 @@ async function buildHighlights(
   coachId: string,
   source: any,
   clipSource: { buf: Buffer; ext: string; segments: TranscriptSegment[] },
+  playerId: string | null,
 ) {
   // Phase 1b + audio cross-check: visual detection finds the timing; when the
   // visual label is low-confidence or conflicts with what the coach said, the
@@ -150,7 +155,7 @@ async function buildHighlights(
     if (up.error) { console.warn('[highlights] upload failed', up.error.message); continue }
     await sb.from('coach_media').insert({
       coach_id: coachId,
-      player_id: source.player_id ?? null,
+      player_id: playerId ?? source.player_id ?? null,
       player_name: source.player_name ?? null,
       kind: 'video',
       title: `${SHOT_LABEL[c.shot]} · highlight`,

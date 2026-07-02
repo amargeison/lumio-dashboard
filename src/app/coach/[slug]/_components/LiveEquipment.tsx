@@ -10,7 +10,6 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert } from '../_lib/coach-db'
 import { seedLumioEquipment } from '../_lib/lumio-equipment'
-import { getSettings, setSettings } from '../_lib/settings-store'
 
 type Item = { id: string; item: string; category?: string | null; quantity?: number | null; status?: string | null; notes?: string | null }
 type Kit = { id: string; session_type: string; label: string }
@@ -28,9 +27,13 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
   // First visit: load the Lumio default kit + inventory as a starting point
   // (once — the coach can then edit or remove anything they don't want).
   useEffect(() => {
-    if (items.loading || kits.loading || getSettings().equipmentSeeded) return
-    if (items.rows.length || kits.rows.length) { setSettings({ equipmentSeeded: true }); return }
-    seedLumioEquipment().then(() => { setSettings({ equipmentSeeded: true }); items.reload(); kits.reload() }).catch(() => {})
+    if (items.loading || kits.loading) return
+    // Per-ACCOUNT guard: only seed when THIS coach has no equipment/kit yet. The
+    // old `equipmentSeeded` localStorage flag was shared across every account on a
+    // browser, so a second coach who signed in could be skipped and land on an
+    // empty page. Gating on the coach's own rows (RLS-scoped) is reliable per-account.
+    if (items.rows.length || kits.rows.length) return
+    seedLumioEquipment().then(() => { items.reload(); kits.reload() }).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items.loading, kits.loading])
 
