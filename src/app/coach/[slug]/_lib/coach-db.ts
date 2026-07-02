@@ -209,21 +209,22 @@ export function useCoachStats(enabled = true): CoachStats {
     ;(async () => {
       const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
       const today = new Date().toLocaleDateString('en-CA') // local YYYY-MM-DD
-      const [players, staff, sessions, bookings, skills, payments] = await Promise.all([
-        sb().from('coach_players').select('id, racket_stage, created_at'),
-        sb().from('coach_staff').select('id', { count: 'exact', head: true }),
-        sb().from('coach_sessions').select('id', { count: 'exact', head: true }).gte('session_date', weekAgo),
-        sb().from('coach_bookings').select('booking_date, status'),
-        sb().from('coach_player_skills').select('player_id, skill, score'),
-        sb().from('coach_payments').select('amount, paid'),
+      // Read via the shared per-table cache (plain GETs, de-duped with the rest of
+      // the portal). We deliberately do NOT use `{ count:'exact', head:true }` HEAD
+      // requests here — under the dashboard's load those were returning 503 and
+      // breaking the Staff and Lessons-this-week tiles. Counts are derived from the
+      // arrays instead.
+      const [prows, staff, sessions, brows, srows, pays] = await Promise.all([
+        _fetchList<any>('coach_players'),
+        _fetchList<any>('coach_staff'),
+        _fetchList<any>('coach_sessions'),
+        _fetchList<any>('coach_bookings'),
+        _fetchList<any>('coach_player_skills'),
+        _fetchList<any>('coach_payments'),
       ])
       if (cancelled) return
-      const prows: any[] = players.data ?? []
-      const brows: any[] = bookings.data ?? []
-      const srows: any[] = skills.data ?? []
-      const pays: any[] = payments.data ?? []
-      const skillFor = (pid: string) => Object.fromEntries(srows.filter(r => r.player_id === pid).map(r => [r.skill, r.score]))
-      const racketsReady = prows.filter(p => {
+      const skillFor = (pid: string) => Object.fromEntries(srows.filter((r: any) => r.player_id === pid).map((r: any) => [r.skill, r.score]))
+      const racketsReady = prows.filter((p: any) => {
         const list = SKILLS_BY_STAGE[p.racket_stage] || []
         if (!list.length) return false
         const m: any = skillFor(p.id)
@@ -231,14 +232,14 @@ export function useCoachStats(enabled = true): CoachStats {
       }).length
       setS({
         players: prows.length,
-        staff: staff.count ?? 0,
-        lessonsThisWeek: sessions.count ?? 0,
-        upcomingBookings: brows.filter(b => dayKey(b.booking_date) >= today && b.status !== 'cancelled').length,
-        sessionsToday: brows.filter(b => dayKey(b.booking_date) === today && b.status !== 'cancelled').length,
+        staff: staff.length,
+        lessonsThisWeek: sessions.filter((r: any) => dayKey(r.session_date) >= weekAgo).length,
+        upcomingBookings: brows.filter((b: any) => dayKey(b.booking_date) >= today && b.status !== 'cancelled').length,
+        sessionsToday: brows.filter((b: any) => dayKey(b.booking_date) === today && b.status !== 'cancelled').length,
         racketsReady,
-        outstandingPayments: pays.filter(p => !p.paid && (Number(p.amount) || 0) > 0).reduce((t, p) => t + (Number(p.amount) || 0), 0),
-        newPlayers: prows.filter(p => dayKey(p.created_at) >= weekAgo).length,
-        racketCounts: RACKET_STAGES.map(st => prows.filter(p => p.racket_stage === st.id).length),
+        outstandingPayments: pays.filter((p: any) => !p.paid && (Number(p.amount) || 0) > 0).reduce((t: number, p: any) => t + (Number(p.amount) || 0), 0),
+        newPlayers: prows.filter((p: any) => dayKey(p.created_at) >= weekAgo).length,
+        racketCounts: RACKET_STAGES.map(st => prows.filter((p: any) => p.racket_stage === st.id).length),
         loading: false,
       })
     })()

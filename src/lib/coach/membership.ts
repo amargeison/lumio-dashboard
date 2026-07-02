@@ -41,12 +41,21 @@ export async function getMembership(): Promise<Membership | null> {
   if (!user) return null
   const db = admin()
 
-  // Already bound to this auth user?
-  let { data: row } = await db.from('coach_members').select('*').eq('member_user_id', user.id).neq('status', 'revoked').maybeSingle()
+  // Already bound to this auth user? A user can legitimately belong to more than
+  // one academy (a parent with children at two clubs), so `.maybeSingle()` would
+  // ERROR on >1 row and lock them out. Take the most recent membership
+  // deterministically instead. (Multi-academy switching is a future enhancement.)
+  const { data: boundRows } = await db.from('coach_members').select('*')
+    .eq('member_user_id', user.id).neq('status', 'revoked')
+    .order('created_at', { ascending: false }).limit(1)
+  let row: any = boundRows?.[0] ?? null
 
   // Otherwise bind by the invited email (first sign-in) — only if not revoked.
   if (!row && user.email) {
-    const { data: pending } = await db.from('coach_members').select('*').ilike('email', user.email).neq('status', 'revoked').maybeSingle()
+    const { data: pendingRows } = await db.from('coach_members').select('*')
+      .ilike('email', user.email).neq('status', 'revoked')
+      .order('created_at', { ascending: false }).limit(1)
+    const pending = pendingRows?.[0]
     if (pending) {
       await db.from('coach_members').update({ member_user_id: user.id, status: 'active', updated_at: new Date().toISOString() }).eq('id', pending.id)
       row = { ...pending, member_user_id: user.id, status: 'active' }

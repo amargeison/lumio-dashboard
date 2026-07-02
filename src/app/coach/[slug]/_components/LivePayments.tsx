@@ -54,9 +54,23 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const [editPay, setEditPay] = useState<Pay | 'new' | null>(null)
   const [runSheet, setRunSheet] = useState<RosterRow | null>(null)
   const [assignPrefill, setAssignPrefill] = useState<string | null>(null)
-  const [pay, setPay] = useState<{ amount?: number; description?: string; player_name?: string } | null>(null)
+  const [pay, setPay] = useState<{ amount?: number; description?: string; player_name?: string; payment_id?: string } | null>(null)
   const [payConnected, setPayConnected] = useState<boolean | null>(null)
   useEffect(() => { fetch('/api/coach/pay/status').then(r => r.json()).then(d => setPayConnected(!!d.chargesEnabled)).catch(() => setPayConnected(false)) }, [])
+
+  // Returning from Stripe checkout (success_url `?paid=1`): the webhook is the
+  // source of truth, but refresh so the just-paid pack flips to Paid promptly.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const p = new URLSearchParams(window.location.search)
+    if (p.get('paid') === '1') {
+      payments.reload()
+      p.delete('paid')
+      const qs = p.toString()
+      window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : ''))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // First visit: load the Lumio default packages as a starting price list (once —
   // the coach can edit/remove anything they don't want).
@@ -179,7 +193,12 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
                         ? <span style={{ fontSize: 9.5, fontWeight: 700, color: statusColour(s), background: `${statusColour(s)}22`, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase' }}>{s}</span>
                         : <span style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, background: T.hover, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase' }}>Pay as you go</span>}</td>
                       <td style={{ padding: '10px 10px' }}>{a
-                        ? <button onClick={e => { e.stopPropagation(); togglePaid(a) }} title="Click to mark paid / unpaid" style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5, border: `1px solid ${a.paid ? T.good : T.warn}`, background: a.paid ? `${T.good}22` : 'transparent', color: a.paid ? T.good : T.warn }}>{a.paid ? '✓ Paid' : 'Mark paid'}</button>
+                        ? <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <button onClick={e => { e.stopPropagation(); togglePaid(a) }} title="Click to mark paid / unpaid" style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5, border: `1px solid ${a.paid ? T.good : T.warn}`, background: a.paid ? `${T.good}22` : 'transparent', color: a.paid ? T.good : T.warn }}>{a.paid ? '✓ Paid' : 'Mark paid'}</button>
+                            {!a.paid && payConnected && (a.amount || 0) > 0 && (
+                              <button onClick={e => { e.stopPropagation(); setPay({ payment_id: a.id, amount: a.amount || undefined, description: (a.item ? `${a.item} — ${a.player_name || ''}` : `Tennis coaching — ${a.player_name || ''}`).trim(), player_name: a.player_name || undefined }) }} title="Take a card / Apple Pay payment — auto-marks this pack paid" style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5, border: 0, background: accent.hex, color: T.btnText }}>💳 Collect</button>
+                            )}
+                          </div>
                         : <span style={{ fontSize: 12, color: T.text3 }}>—</span>}</td>
                       <td style={{ padding: '10px 10px', fontSize: 12, color: T.text2 }}>{a ? fmtD(a.renews_date) : '—'}</td>
                     </tr>
@@ -342,7 +361,7 @@ function PackageRunSheet({ T, accent, row, onClose, onEditPlan, onTakePayment }:
   )
 }
 
-function PayModal({ T, accent, connected, init, onClose }: { T: ThemeTokens; accent: AccentTokens; connected: boolean | null; init: { amount?: number; description?: string; player_name?: string }; onClose: () => void }) {
+function PayModal({ T, accent, connected, init, onClose }: { T: ThemeTokens; accent: AccentTokens; connected: boolean | null; init: { amount?: number; description?: string; player_name?: string; payment_id?: string }; onClose: () => void }) {
   const [amount, setAmount] = useState(init.amount ? String(init.amount) : '')
   const [description, setDescription] = useState(init.description || '')
   const [playerName, setPlayerName] = useState(init.player_name || '')
@@ -354,7 +373,7 @@ function PayModal({ T, accent, connected, init, onClose }: { T: ThemeTokens; acc
     if (!amt || amt < 0.5) { setErr('Enter an amount of at least £0.50'); return }
     setCreating(true); setErr('')
     try {
-      const r = await fetch('/api/coach/pay/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: amt, description: description || 'Tennis coaching', player_name: playerName || null, returnPath: window.location.pathname }) })
+      const r = await fetch('/api/coach/pay/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: amt, description: description || 'Tennis coaching', player_name: playerName || null, payment_id: init.payment_id ?? null, returnPath: window.location.pathname }) })
       const d = await r.json()
       if (d.url) { setUrl(d.url); window.open(d.url, '_blank') } else setErr(d.error || 'Could not start payment')
     } catch { setErr('Could not start payment') } finally { setCreating(false) }
