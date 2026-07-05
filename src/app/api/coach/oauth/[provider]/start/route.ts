@@ -30,7 +30,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prov
   for (const [k, v] of Object.entries(cfg.extraAuthParams ?? {})) authUrl.searchParams.set(k, v)
 
   const res = NextResponse.redirect(authUrl.toString())
-  const opts = { httpOnly: true, secure: true, sameSite: 'lax' as const, maxAge: 600, path: '/' }
+  // Browsers drop `Secure` cookies over http, which breaks local dev (the callback
+  // then finds no CSRF state → status=state). Mark Secure only on https; prod is
+  // always https so this is unchanged there.
+  const opts = { httpOnly: true, secure: req.nextUrl.protocol === 'https:', sameSite: 'lax' as const, maxAge: 600, path: '/' }
   res.cookies.set(`lumio_oauth_state_${provider}`, state, opts)
   res.cookies.set(`lumio_oauth_return_${provider}`, ret, opts)
   return res
