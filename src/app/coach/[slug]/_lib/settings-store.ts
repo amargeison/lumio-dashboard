@@ -42,6 +42,7 @@ export type CoachSettings = {
   packagesSeeded: boolean         // Payments price list auto-loaded the Lumio default packages once
   equipmentSeeded: boolean        // Equipment & Kit auto-loaded the Lumio default kit + inventory once
   ccCoachOnEmail: boolean         // CC the coach's own inbox on emails sent to players/parents
+  audioOnly: boolean              // Video & Audio module: hide the video half, show audio only (menu label → "Audio only")
   // The head coach's own contact + DBS / safeguarding record (the account owner).
   // Empty by default so a new head is correctly flagged until they record it.
   head: { phone: string; email: string; contractedHours: number | null; dbsNumber: string; dbsIssued: string; dbsExpiry: string; safeguardingTrained: boolean; safeguardingDate: string; avatarUrl: string }
@@ -74,6 +75,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   packagesSeeded: false,
   equipmentSeeded: false,
   ccCoachOnEmail: true,
+  audioOnly: false,
   head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '', avatarUrl: '' },
 }
 

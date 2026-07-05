@@ -12,6 +12,8 @@ import { dbList, dbInsert, dbUpdate, useCoachProfile, RACKET_STAGES, SKILLS_BY_S
 import { getSettings } from '../_lib/settings-store'
 import { EmptyCoachDashboard } from './EmptyCoachDashboard'
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
+import { PayModal } from './LivePayments'
+import { avatarSrc } from '@/lib/avatar'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -26,6 +28,10 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const [booking, setBooking] = useState(false)
   const [composer, setComposer] = useState<{ recipient?: string; body?: string } | null>(null)
   const [inboxOpen, setInboxOpen] = useState<string | null>(null)
+  // "Take a payment" opens the Stripe checkout QR modal (same as the Payments page).
+  const [pay, setPay] = useState<{ amount?: number; description?: string; player_name?: string; payment_id?: string } | null>(null)
+  const [payConnected, setPayConnected] = useState<boolean | null>(null)
+  useEffect(() => { fetch('/api/coach/pay/status').then(r => r.json()).then(d => setPayConnected(!!d.chargesEnabled)).catch(() => setPayConnected(false)) }, [])
   const reloadBookings = async () => { const bookings = await dbList('coach_bookings'); setD(v => ({ ...v, bookings })) }
   const reloadMessages = async () => { const messages = await dbList('coach_messages'); setD(v => ({ ...v, messages })) }
   const patchMsg = (id: string, patch: Record<string, any>) => setD(v => ({ ...v, messages: v.messages.map(m => m.id === id ? { ...m, ...patch } : m) }))
@@ -73,6 +79,9 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const todays = d.bookings.filter(b => dk(b.booking_date) === today && active(b)).sort((a, b) => String(a.start_time ?? '').localeCompare(String(b.start_time ?? '')))
   const upcoming = d.bookings.filter(b => dk(b.booking_date) >= today && active(b)).sort((a, b) => (dk(a.booking_date) + (a.start_time ?? '')).localeCompare(dk(b.booking_date) + (b.start_time ?? '')))
   const next = upcoming[0]
+  // Side box shows THIS WEEK (the hero already states today's count) — next 7 days.
+  const weekAhead = new Date(Date.now() + 7 * 86400000).toLocaleDateString('en-CA')
+  const thisWeek = upcoming.filter(b => dk(b.booking_date) <= weekAhead)
   const lessonsThisWeek = d.lessons.filter(l => dk(l.session_date) >= weekAgo).length
   const due = d.payments.filter(p => !p.paid && (Number(p.amount) || 0) > 0)
   const dueTotal = due.reduce((s, p) => s + (Number(p.amount) || 0), 0)
@@ -112,11 +121,13 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
 
   // Live Coach AI briefing — composed from real signals, refreshed every load.
   const lowAtt = d.players.map(p => ({ p, a: attPct(p.id) })).filter(x => x.a !== null && (x.a as number) < 80).sort((a, b) => (a.a as number) - (b.a as number))
+  // Always show Payments, Rackets and Retention (with live data + zero-states) so
+  // the briefing reads the same on a fresh account as a busy one.
   const briefing: { tag: string; text: string }[] = []
-  if (racketsReady.length) briefing.push({ tag: 'Rackets', text: `${racketsReady.length} player${racketsReady.length > 1 ? 's are' : ' is'} ready to move up a racket — book ${racketsReady.length > 1 ? 'assessments' : 'an assessment'}: ${racketsReady.slice(0, 3).map(p => p.name).join(', ')}.` })
-  if (lowAtt.length) briefing.push({ tag: 'Retention', text: `${lowAtt[0].p.name} is at ${lowAtt[0].a}% attendance — worth a check-in with the family.` })
+  briefing.push({ tag: 'Payments', text: dueTotal > 0 ? `${due.length} player${due.length > 1 ? 's have' : ' has'} an outstanding balance — £${dueTotal.toLocaleString()} to collect.` : 'No outstanding balances — payments are up to date.' })
+  briefing.push({ tag: 'Rackets', text: racketsReady.length ? `${racketsReady.length} player${racketsReady.length > 1 ? 's are' : ' is'} ready to move up a racket — book ${racketsReady.length > 1 ? 'assessments' : 'an assessment'}: ${racketsReady.slice(0, 3).map(p => p.name).join(', ')}.` : 'No players ready to move up a racket yet — keep logging skill progress.' })
+  briefing.push({ tag: 'Retention', text: lowAtt.length ? `${lowAtt[0].p.name} is at ${lowAtt[0].a}% attendance — worth a check-in with the family.` : 'Attendance is healthy across your players.' })
   briefing.push({ tag: 'Schedule', text: todays.length ? `${todays.length} session${todays.length > 1 ? 's' : ''} today${todays[0]?.start_time ? ` from ${todays[0].start_time}` : ''}.${next && dk(next.booking_date) > today ? ` Next after today: ${fmtDate(next.booking_date)} ${next.start_time || ''}.` : ''}` : (next ? `No sessions today — next is ${fmtDate(next.booking_date)} ${next.start_time || ''}.` : 'No upcoming sessions booked — add bookings in the calendar.') })
-  if (dueTotal > 0) briefing.push({ tag: 'Payments', text: `${due.length} player${due.length > 1 ? 's have' : ' has'} an outstanding balance — £${dueTotal.toLocaleString()} to collect.` })
   briefing.push({ tag: 'Progress', text: lessonsThisWeek ? `${lessonsThisWeek} lesson summar${lessonsThisWeek > 1 ? 'ies' : 'y'} logged this week — keep sharing the wins with players.` : 'No lesson summaries yet this week — log one after your next session.' })
 
   // Extra row cards.
@@ -131,7 +142,8 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
   const firstName = (profile.display_name || '').split(' ')[0] || clubName
   const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }
-  const sectionTitle: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 12px' }
+  // Match the demo SectionHead: white, sentence-case, 13/600 (not muted uppercase).
+  const sectionTitle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: T.text, margin: '0 0 12px' }
 
   return (
     <div style={{ fontFamily: FONT, display: 'flex', flexDirection: 'column', gap: density.gap }}>
@@ -151,19 +163,19 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           <h1 style={{ margin: '10px 0 0', fontSize: 24, fontWeight: 800, color: T.text }}>{todays.length} session{todays.length === 1 ? '' : 's'} today{racketsReady.length ? `, ${racketsReady.length} racket assessment${racketsReady.length === 1 ? '' : 's'} due` : ''}</h1>
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
             <button onClick={() => setBooking(true)} style={btn(accent, T)}>+ Add booking</button>
-            <button onClick={() => onNavigate('payments')} style={btnGhost(T)}>Take a payment</button>
+            <button onClick={() => setPay({})} style={btnGhost(T)}>Take a payment</button>
             <button onClick={() => onNavigate('lessons')} style={btnGhost(T)}>Lesson Summaries</button>
             <button onClick={() => onNavigate('calendar')} style={btnGhost(T)}>Open calendar</button>
             <button onClick={() => setComposer({})} style={btnGhost(T)}>Send message</button>
           </div>
         </div>
         <div style={card}>
-          <p style={sectionTitle}>Today</p>
-          {todays.length === 0 ? (
-            <p style={{ color: T.text3, fontSize: 13, margin: 0 }}>No sessions today. <button onClick={() => onNavigate('calendar')} style={linkBtn(accent)}>Add a booking →</button></p>
-          ) : todays.map(b => (
+          <p style={sectionTitle}>This week</p>
+          {thisWeek.length === 0 ? (
+            <p style={{ color: T.text3, fontSize: 13, margin: 0 }}>No sessions this week. <button onClick={() => onNavigate('calendar')} style={linkBtn(accent)}>Add a booking →</button></p>
+          ) : thisWeek.slice(0, 6).map(b => (
             <div key={b.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: `1px solid ${T.border}` }}>
-              <span style={{ fontSize: 12, color: accent.hex, fontWeight: 600, width: 52, flexShrink: 0 }}>{b.start_time || '—'}</span>
+              <span style={{ fontSize: 11.5, color: accent.hex, fontWeight: 600, width: 82, flexShrink: 0 }}>{new Date(b.booking_date).toLocaleDateString('en-GB', { weekday: 'short' })}{b.start_time ? ` ${b.start_time}` : ''}</span>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</div>
                 <div style={{ fontSize: 11, color: T.text3 }}>{[b.court, b.player_name].filter(Boolean).join(' · ')}</div>
@@ -253,22 +265,33 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           ))}
         </div>
 
-        {/* Needs attention — opens the player's card */}
+        {/* Needs attention — boxed rows (matches demo) + racket assessments due */}
         <div style={card}>
           <p style={sectionTitle}>Needs attention</p>
-          {needs.length === 0 ? (
-            <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>Everyone&apos;s on track. 🎾</p>
-          ) : needs.map(({ p, reason }) => (
-            <button key={p.id} onClick={() => openPlayer(p)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
-              {p.avatar_url
-                // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={p.avatar_url} alt={p.name} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                : <span style={{ width: 24, height: 24, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700, flexShrink: 0 }}>{(p.name || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('')}</span>}
-              <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{p.name}</span>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.warn, flexShrink: 0 }} />
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{reason}</span>
-            </button>
-          ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {needs.length === 0 && racketsReady.length === 0 && (
+              <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>Everyone&apos;s on track. 🎾</p>
+            )}
+            {needs.map(({ p, reason }) => (
+              <button key={p.id} onClick={() => openPlayer(p)} style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', appearance: 'none', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 8px', cursor: 'pointer' }}>
+                {p.avatar_url
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={avatarSrc(p.avatar_url)} alt={p.name} style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                  : <span style={{ width: 26, height: 26, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{(p.name || '?').split(' ').map((w: string) => w[0]).slice(0, 2).join('')}</span>}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                  <div style={{ fontSize: 10.5, color: T.text3 }}>{reason}</div>
+                </div>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: T.warn, flexShrink: 0 }} />
+              </button>
+            ))}
+            {racketsReady.length > 0 && (
+              <button onClick={() => onNavigate('belts')} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', appearance: 'none', background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '7px 8px', cursor: 'pointer' }}>
+                <span style={{ fontSize: 14 }}>🏆</span>
+                <span style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{racketsReady.length} racket assessment{racketsReady.length === 1 ? '' : 's'} due</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -317,6 +340,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
 
       {booking && <QuickBookingModal T={T} accent={accent} players={d.players} onClose={() => setBooking(false)} onSaved={() => { setBooking(false); reloadBookings() }} />}
       {composer && <LiveCoachSendMessage T={T} accent={accent} players={d.players} coachName={profile.display_name || clubName} clubName={clubName} init={composer} onClose={() => setComposer(null)} onSent={() => { setComposer(null); reloadMessages() }} />}
+      {pay && <PayModal T={T} accent={accent} connected={payConnected} init={pay} onClose={() => setPay(null)} />}
     </div>
   )
 }

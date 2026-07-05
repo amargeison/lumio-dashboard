@@ -11,6 +11,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable } from '../_lib/coach-db'
 import { levelFor, bandLabel } from '../_lib/effort-rewards'
+import { avatarSrc } from '@/lib/avatar'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 const initials = (n: string) => (n || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -115,14 +116,14 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
 
   const honest = (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 10.5, fontWeight: 700, color: accent.hex, background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 999, padding: '4px 11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-      ⌚ Smartwatch effort · estimated · no court tracking
+      Effort XP · estimated · no court tracking
     </span>
   )
   const header = (
     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
       <div>
         <h2 style={{ color: T.text, fontSize: 22, fontWeight: 700, margin: 0 }}>Effort &amp; Rewards</h2>
-        <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>XP your players earn from training — log it here, players can log from their app, or connect a smartwatch. Separate from Racket Progression.</p>
+        <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>XP your players earn from training — log it here, or players can log from their app. Separate from Racket Progression.</p>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         {honest}
@@ -144,7 +145,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
         <div style={{ border: `1px dashed ${T.border}`, borderRadius: 14, padding: 40, textAlign: 'center' }}>
           <div style={{ fontSize: 26 }}>🎾</div>
           <p style={{ color: T.text2, fontSize: 14, fontWeight: 600, margin: '8px 0 4px' }}>No sessions logged yet</p>
-          <p style={{ color: T.text3, fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>Tap <b style={{ color: T.text2 }}>Log a session</b> to record one now — no watch needed. Players can also log from their own app, or connect a smartwatch for automatic XP.</p>
+          <p style={{ color: T.text3, fontSize: 13, margin: '0 0 16px', lineHeight: 1.5 }}>Tap <b style={{ color: T.text2 }}>Log a session</b> to record one now. Players can also log from their own app.</p>
           {logBtn}
         </div>
         {logModal}
@@ -186,7 +187,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
               <span className="tnum" style={{ width: 22, textAlign: 'center', fontSize: 13, fontWeight: 800, color: i === 0 ? '#F5C518' : i === 1 ? '#C0C5CE' : i === 2 ? '#CD7F32' : T.text3 }}>{i + 1}</span>
               {r.p.avatar_url
                 // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={r.p.avatar_url} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                ? <img src={avatarSrc(r.p.avatar_url)} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                 : <span style={{ width: 30, height: 30, borderRadius: '50%', display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex, fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{initials(r.p.name)}</span>}
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: 'block', fontSize: 13.5, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.p.name}</span>

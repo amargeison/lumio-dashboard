@@ -20,6 +20,9 @@ import { requestOpenLesson } from '../_lib/lessons-store'
 import { currentBeltOf, skillScoreFor, beltProgressFor, skillsEarnedFor, setGrade, setBelt, subscribe as subscribeGrades } from '../_lib/racket-grade-store'
 import { WatchConnectPanel } from './WatchConnectPanel'
 
+// v1: Effort & Rewards is manual-only — smartwatch QR pairing is hidden until v2.
+const SHOW_WATCH_PAIRING: boolean = false
+
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
 // ─── local primitives ───────────────────────────────────────────────────────
@@ -401,14 +404,16 @@ function ConsentPanel({ T, accent, player }: { T: ThemeTokens; accent: AccentTok
         <button style={{ appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Send consent form to parent</button>
       </div>
 
-      <div style={{ marginTop: 16 }}>
-        <WatchConnectPanel
-          T={T} accent={accent}
-          token={`demo-${player.seed}-lumio-watch-sample-token`}
-          playerName={player.name.split(' ')[0]}
-          consentOk={dc.wearable}
-        />
-      </div>
+      {SHOW_WATCH_PAIRING && (
+        <div style={{ marginTop: 16 }}>
+          <WatchConnectPanel
+            T={T} accent={accent}
+            token={`demo-${player.seed}-lumio-watch-sample-token`}
+            playerName={player.name.split(' ')[0]}
+            consentOk={dc.wearable}
+          />
+        </div>
+      )}
     </div>
   )
 }

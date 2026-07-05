@@ -10,7 +10,10 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, RACKET_SKILLS, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore, useCoachProfile } from '../_lib/coach-db'
 import { WatchConnectPanel } from './WatchConnectPanel'
-import { fileToAvatarDataUrl, uploadAvatar } from '@/lib/avatar'
+import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
+
+// v1: Effort & Rewards is manual-only — smartwatch QR pairing is hidden until v2.
+const SHOW_WATCH_PAIRING: boolean = false
 
 // Generate a fresh opaque watch token client-side (matches the DB default shape).
 function newWatchToken() {
@@ -30,7 +33,7 @@ function stageOf(id?: string | null) {
 function Avatar({ accent, name, size = 40, url }: { accent: AccentTokens; name: string; size?: number; url?: string | null }) {
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={name} style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, objectFit: 'cover', background: accent.dim }} />
+    return <img src={avatarSrc(url)} alt={name} style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, objectFit: 'cover', background: accent.dim }} />
   }
   return (
     <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: size * 0.36, fontWeight: 700 }}>
@@ -479,15 +482,17 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
               <p style={{ fontSize: 11.5, color: T.text3, margin: '0 0 12px' }}>Record or change consent using <b style={{ color: T.text2 }}>Edit</b>. Use Export to fulfil a data-access request, or Delete (Contact tab) for a right-to-erasure request.</p>
               <button onClick={() => exportPlayerData(player, lessons, attendanceRows)} style={{ background: 'transparent', border: `1px solid ${T.border}`, color: T.text2, borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>⬇ Export this player&apos;s data</button>
 
-              <div style={{ marginTop: 16 }}>
-                <WatchConnectPanel
-                  T={T} accent={accent}
-                  token={player.watch_token || ''}
-                  playerName={(player.name || '').split(' ')[0]}
-                  consentOk={!!player.consent_wearable}
-                  onReset={async () => { const nt = newWatchToken(); await dbUpdate('coach_players', player.id, { watch_token: nt }); return nt }}
-                />
-              </div>
+              {SHOW_WATCH_PAIRING && (
+                <div style={{ marginTop: 16 }}>
+                  <WatchConnectPanel
+                    T={T} accent={accent}
+                    token={player.watch_token || ''}
+                    playerName={(player.name || '').split(' ')[0]}
+                    consentOk={!!player.consent_wearable}
+                    onReset={async () => { const nt = newWatchToken(); await dbUpdate('coach_players', player.id, { watch_token: nt }); return nt }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

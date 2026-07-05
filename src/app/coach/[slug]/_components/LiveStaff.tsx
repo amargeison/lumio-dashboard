@@ -9,7 +9,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile } from '../_lib/coach-db'
 import { getSettings, setSettings, subscribe } from '../_lib/settings-store'
-import { fileToAvatarDataUrl, uploadAvatar } from '@/lib/avatar'
+import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 const DAY = 86400000
@@ -112,7 +112,7 @@ export function LiveStaff({ T, accent }: Common) {
             <label title="Change photo" style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
               {sel.avatar_url
                 // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={sel.avatar_url} alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+                ? <img src={avatarSrc(sel.avatar_url)} alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
                 : <span style={{ width: 44, height: 44, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 15, fontWeight: 700 }}>{initialsOf(sel.name)}</span>}
               <span style={{ position: 'absolute', right: -2, bottom: -2, width: 18, height: 18, borderRadius: '50%', background: accent.hex, color: T.btnText, fontSize: 10, display: 'grid', placeItems: 'center', border: `2px solid ${T.panel}` }}>✎</span>
               <input type="file" accept="image/*" onChange={e => onCoachPhoto(sel, e.target.files?.[0])} style={{ display: 'none' }} />
@@ -201,7 +201,7 @@ export function LiveStaff({ T, accent }: Common) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {p.avatar_url
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={p.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      ? <img src={avatarSrc(p.avatar_url)} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                       : <span style={{ width: 28, height: 28, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700 }}>{initialsOf(p.name)}</span>}
                     <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>{p.name}</div><div style={{ fontSize: 10.5, color: T.text3 }}>{[p.category || p.level, p.age ? `Age ${p.age}` : ''].filter(Boolean).join(' · ')}</div></div>
                   </div>
@@ -267,7 +267,7 @@ export function LiveStaff({ T, accent }: Common) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {s.avatar_url
                   // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={s.avatar_url} alt="" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                  ? <img src={avatarSrc(s.avatar_url)} alt="" style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                   : <span style={{ width: 34, height: 34, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 700 }}>{initials(s.name)}</span>}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>

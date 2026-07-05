@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getMembership, scopedDb } from '@/lib/coach/membership'
+import { getMembership, scopedDb, signAvatar } from '@/lib/coach/membership'
 
 export const runtime = 'nodejs'
 
@@ -59,8 +59,13 @@ export async function GET() {
     return { id: c.id, title: c.title, shot_type: c.shot_type, duration_seconds: c.duration_seconds, clip_start: c.clip_start, created_at: c.created_at, url }
   }))
 
+  // The `avatars` bucket is private — sign the child's photo for the parent/student
+  // (they can't use the coach-side signing proxy). Handles a bare path or a legacy
+  // full public URL; leaves data/external URLs alone.
+  const avatarUrl = await signAvatar(db, player.avatar_url)
+
   return NextResponse.json({
-    player: { id: player.id, name: player.name, racket_stage: player.racket_stage, level: player.level, goal: player.goal, category: player.category, age: player.age, avatar_url: player.avatar_url, watch_token: player.watch_token },
+    player: { id: player.id, name: player.name, racket_stage: player.racket_stage, level: player.level, goal: player.goal, category: player.category, age: player.age, avatar_url: avatarUrl, watch_token: player.watch_token },
     skills, lessons, bookings, media, messages, watch, highlights,
   })
 }

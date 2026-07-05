@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, sb, dbUpdate } from '../_lib/coach-db'
+import { getSettings, subscribe as subscribeSettings } from '../_lib/settings-store'
 
 type Media = { id: string; kind?: string | null; title?: string | null; player_name?: string | null; duration_seconds?: number | null; created_at?: string; clip_of?: string | null; shot_type?: string | null; shot_confirmed?: boolean | null }
 const SHOT_OPTIONS = ['serve', 'forehand', 'backhand', 'volley', 'smash'] as const
@@ -18,9 +19,14 @@ const fmtDate = (d?: string) => { const t = d ? new Date(d) : null; return t && 
 export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const media = useCoachTable<Media>('coach_media')
   const { rows: players } = useCoachTable<{ id: string; name: string }>('coach_players')
+  // Audio-only mode (Settings): hides the video tab + video capture, defaults to audio.
+  const [audioOnly, setAudioOnly] = useState(false)
+  useEffect(() => { const r = () => setAudioOnly(getSettings().audioOnly); r(); return subscribeSettings(r) }, [])
   const [tab, setTab] = useState<'video' | 'audio'>('video')
   const [playerFilter, setPlayerFilter] = useState('')
   const [recKind, setRecKind] = useState<'audio' | 'video'>('video')
+  // In audio-only mode force the audio tab + audio capture.
+  useEffect(() => { if (audioOnly) { setTab('audio'); setRecKind('audio') } }, [audioOnly])
   const [phase, setPhase] = useState<'idle' | 'recording' | 'uploading'>('idle')
   const [secs, setSecs] = useState(0)
   const [err, setErr] = useState('')
@@ -99,8 +105,8 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
   return (
     <div style={{ fontFamily: FONT }}>
       <div style={{ marginBottom: 14 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Video &amp; Audio</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Your recordings library — court clips and session audio for review.</p>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>{audioOnly ? 'Audio' : <>Video &amp; Audio</>}</h1>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>{audioOnly ? 'Your recordings library — session audio for review.' : 'Your recordings library — court clips and session audio for review.'}</p>
       </div>
 
       {/* Player filter */}
@@ -114,7 +120,7 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginBottom: 14, width: 'fit-content' }}>
-        {(['video', 'audio'] as const).map(t => <button key={t} onClick={() => setTab(t)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: FONT, textTransform: 'capitalize', background: tab === t ? T.panel : 'transparent', color: tab === t ? T.text : T.text2, fontWeight: tab === t ? 600 : 400, boxShadow: tab === t ? `0 0 0 1px ${T.border}` : 'none' }}>{t} · {t === 'video' ? videoCount : audioCount}</button>)}
+        {(audioOnly ? (['audio'] as const) : (['video', 'audio'] as const)).map(t => <button key={t} onClick={() => setTab(t)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: FONT, textTransform: 'capitalize', background: tab === t ? T.panel : 'transparent', color: tab === t ? T.text : T.text2, fontWeight: tab === t ? 600 : 400, boxShadow: tab === t ? `0 0 0 1px ${T.border}` : 'none' }}>{t} · {t === 'video' ? videoCount : audioCount}</button>)}
       </div>
 
       {/* Lumio Vision status */}
@@ -126,7 +132,7 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
 
       {/* Record + upload */}
       <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Record video + audio</div>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>{audioOnly ? 'Record audio' : 'Record video + audio'}</div>
         <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>Field-test capture — record, play back &amp; download. No upload to AI.</div>
         {phase === 'recording' ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 14 }}>
@@ -136,10 +142,12 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
           </div>
         ) : (
           <>
-            <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 12 }}>
-              {(['audio', 'video'] as const).map(k => <button key={k} onClick={() => setRecKind(k)} style={{ appearance: 'none', border: `1px solid ${recKind === k ? accent.border : T.border}`, background: recKind === k ? accent.dim : 'transparent', color: recKind === k ? accent.hex : T.text2, borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{k === 'audio' ? '🎙️ Audio only' : '🎬 Video + Audio'}</button>)}
-            </div>
-            <div style={{ fontSize: 11, color: T.text3, marginBottom: 12 }}>Records the rear camera (point at the court) + mic. Keep clips short (10–15 min); video files are large.</div>
+            {!audioOnly && (
+              <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 12 }}>
+                {(['audio', 'video'] as const).map(k => <button key={k} onClick={() => setRecKind(k)} style={{ appearance: 'none', border: `1px solid ${recKind === k ? accent.border : T.border}`, background: recKind === k ? accent.dim : 'transparent', color: recKind === k ? accent.hex : T.text2, borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{k === 'audio' ? '🎙️ Audio only' : '🎬 Video + Audio'}</button>)}
+              </div>
+            )}
+            <div style={{ fontSize: 11, color: T.text3, marginTop: audioOnly ? 12 : 0, marginBottom: 12 }}>{audioOnly ? 'Records the mic. Keep clips short.' : 'Records the rear camera (point at the court) + mic. Keep clips short (10–15 min); video files are large.'}</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button onClick={startRecording} disabled={phase === 'uploading'} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>{recKind === 'video' ? '▶ Record video' : '🎙️ Record audio'}</button>
               <button onClick={() => fileRef.current?.click()} disabled={phase === 'uploading'} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>⬆ Upload {tab === 'audio' ? 'audio' : 'video'}</button>

@@ -332,6 +332,10 @@ export function SettingsPanel({ T, accent, density }: Common) {
 
       {open === 'menu' && (
         <Modal T={T} accent={accent} title="Menu visibility" sub="Hide nav items you don't use — they leave the sidebar instantly. Dashboard and Settings always stay." onClose={() => setOpen(null)}>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Video &amp; Audio</div>
+            <Toggle T={T} accent={accent} on={s.audioOnly} onChange={v => setSettings({ audioOnly: v })} label="Audio only" desc="Hide the video half — the module shows audio only and the menu item is renamed “Audio only”." />
+          </div>
           {COACH_GROUPS.map(group => {
             const items = COACH_SIDEBAR.filter(i => i.group === group)
             if (!items.length) return null

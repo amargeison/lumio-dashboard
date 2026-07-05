@@ -16,6 +16,7 @@ import dynamic from 'next/dynamic'
 import { createBrowserClient } from '@supabase/ssr'
 import { SportsDemoGate, type SportsDemoSession } from '@/components/sports-demo'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { avatarSrc } from '@/lib/avatar'
 import { THEMES, DENSITY } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
@@ -196,6 +197,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const T = THEMES[settings.theme]
   const accent = ACCENT_PRESETS[settings.accentKey]
   const density = DENSITY[settings.density]
+  // Audio-only mode renames the Video & Audio module to "Audio only" everywhere.
+  const navLabel = (item: { id: string; label: string }) => item.id === 'videoaudio' && settings.audioOnly ? 'Audio only' : item.label
   const sideBg = T.isDark ? '#0a0c14' : T.panel2
   const line = T.border
   const isMobile = useIsMobile()
@@ -214,7 +217,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const CoachAvatar = ({ size }: { size: number }) => (
     <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: size * 0.36, fontWeight: 700 }}>
       {coachPhoto
-        ? <img src={coachPhoto} alt={coachName} width={size} height={size} style={{ width: size, height: size, objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />
+        ? <img src={avatarSrc(coachPhoto)} alt={coachName} width={size} height={size} style={{ width: size, height: size, objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />
         : coachInitials}
     </div>
   )
@@ -345,7 +348,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         )
         case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)} />
       }
-      const title = COACH_SIDEBAR.find(i => i.id === active)?.label ?? 'This section'
+      const activeItem = COACH_SIDEBAR.find(i => i.id === active)
+      const title = (activeItem ? navLabel(activeItem) : null) ?? 'This section'
       return <EmptyModule T={T} accent={accent} density={density} title={title} onNavigate={setActive} />
     }
     switch (active) {
@@ -495,7 +499,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
                 {items.map(item => {
                   const on = active === item.id
                   return (
-                    <button key={item.id} onClick={() => { setActive(item.id); if (!pinned) setHovered(false) }} title={expanded ? undefined : item.label}
+                    <button key={item.id} onClick={() => { setActive(item.id); if (!pinned) setHovered(false) }} title={expanded ? undefined : navLabel(item)}
                       style={{
                         width: '100%', display: 'flex', alignItems: 'center', gap: 9, textAlign: 'left',
                         background: on ? accent.dim : 'transparent',
@@ -505,7 +509,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
                         fontSize: 12, cursor: 'pointer', marginBottom: 1,
                       }}>
                       <Icon name={item.icon} size={16} stroke={1.7} />
-                      {expanded && <span style={{ fontWeight: on ? 600 : 500, whiteSpace: 'nowrap', flex: 1 }}>{item.label}</span>}
+                      {expanded && <span style={{ fontWeight: on ? 600 : 500, whiteSpace: 'nowrap', flex: 1 }}>{navLabel(item)}</span>}
                       {expanded && item.badge && <span style={{ fontSize: 8.5, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '1px 5px', borderRadius: 4, letterSpacing: '0.05em' }}>{item.badge}</span>}
                     </button>
                   )

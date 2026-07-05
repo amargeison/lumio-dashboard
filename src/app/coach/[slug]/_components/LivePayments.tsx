@@ -361,7 +361,7 @@ function PackageRunSheet({ T, accent, row, onClose, onEditPlan, onTakePayment }:
   )
 }
 
-function PayModal({ T, accent, connected, init, onClose }: { T: ThemeTokens; accent: AccentTokens; connected: boolean | null; init: { amount?: number; description?: string; player_name?: string; payment_id?: string }; onClose: () => void }) {
+export function PayModal({ T, accent, connected, init, onClose }: { T: ThemeTokens; accent: AccentTokens; connected: boolean | null; init: { amount?: number; description?: string; player_name?: string; payment_id?: string }; onClose: () => void }) {
   const [amount, setAmount] = useState(init.amount ? String(init.amount) : '')
   const [description, setDescription] = useState(init.description || '')
   const [playerName, setPlayerName] = useState(init.player_name || '')

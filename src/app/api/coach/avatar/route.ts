@@ -36,7 +36,8 @@ export async function uploadAvatar(admin: any, academyId: string, playerId: stri
     const path = `${academyId}/${playerId}.jpg`
     const { error } = await admin.storage.from('avatars').upload(path, bytes, { upsert: true, contentType: m[1] })
     if (error) { console.error('[avatar] upload', error.message); return null }
-    const pub = admin.storage.from('avatars').getPublicUrl(path).data.publicUrl
-    return `${pub}?v=${Date.now()}` // cache-bust so a changed photo shows immediately
+    // Store the storage PATH — the bucket is private, so reads are signed on demand
+    // (via /api/coach/avatar-img for the coach, or server-side in the portal routes).
+    return path
   } catch (e) { console.error('[avatar]', e); return null }
 }

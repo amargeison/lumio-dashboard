@@ -33,6 +33,9 @@ import { scoreGpsSession, levelFor, bandLabel } from '../_lib/effort-rewards'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags } from '../_lib/feature-flags'
 import { WatchConnectPanel } from './WatchConnectPanel'
 
+// v1: Effort & Rewards is manual-only — smartwatch QR pairing is hidden until v2.
+const SHOW_WATCH_PAIRING: boolean = false
+
 type Props = { T: ThemeTokens; accent: AccentTokens; density: Density; playerId: string }
 
 // ─── parent-themed primitives (soft, roomy — not the dense coach UI) ─────────
@@ -237,13 +240,15 @@ export function StudentView({ T, accent, density, playerId }: Props) {
         </div>
       </PCard>
 
-      {/* Connect a watch — earn XP from your own smartwatch */}
-      <WatchConnectPanel
-        T={T} accent={accent}
-        token={`demo-${player.seed}-lumio-watch-sample-token`}
-        playerName={first}
-        consentOk
-      />
+      {/* Connect a watch — earn XP from your own smartwatch (v1: hidden, manual-only) */}
+      {SHOW_WATCH_PAIRING && (
+        <WatchConnectPanel
+          T={T} accent={accent}
+          token={`demo-${player.seed}-lumio-watch-sample-token`}
+          playerName={first}
+          consentOk
+        />
+      )}
 
       {/* ════ THE DIFFERENTIATED TRIO — lead with these ════════════════════════ */}
 
