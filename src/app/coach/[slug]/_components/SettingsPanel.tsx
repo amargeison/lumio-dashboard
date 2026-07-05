@@ -5,8 +5,8 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
-import { useCoachProfile } from '../_lib/coach-db'
-import { setSettings, resetSettings, ACCENT_PRESETS, DEFAULT_SETTINGS, type AccentKey } from '../_lib/settings-store'
+import { useCoachProfile, sb, currentCoachId } from '../_lib/coach-db'
+import { setSettings, resetSettings, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, type AccentKey } from '../_lib/settings-store'
 import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-data'
 import { getAddedVenues } from '../_lib/venues-store'
 import { AddVenueModal } from './AddVenueModal'
@@ -27,6 +27,32 @@ function Field({ T, label, children, hint }: { T: ThemeTokens; label: string; ch
 }
 function input(T: ThemeTokens): CSSProperties {
   return { width: '100%', appearance: 'none', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, color: T.text, fontSize: 13, padding: '9px 11px', fontFamily: FONT, outline: 'none' }
+}
+// Resize a logo to a <=max px data URL (keeps aspect ratio — no square crop).
+function fileToLogoDataUrl(file: File, max = 320): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new window.Image()
+      img.onload = () => {
+        const scale = Math.min(1, max / Math.max(img.width, img.height))
+        const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale))
+        const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h
+        const ctx = canvas.getContext('2d'); if (!ctx) return reject(new Error('no ctx'))
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/png'))
+      }
+      img.onerror = reject
+      img.src = reader.result as string
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+// Persist the club logo to the coach's profile so it survives across devices.
+async function saveBrandLogo(dataUrl: string | null) {
+  setSettings({ brandLogo: dataUrl || '' })
+  try { const uid = await currentCoachId(); if (uid) await sb().from('sports_profiles').update({ brand_logo_url: dataUrl }).eq('id', uid) } catch { /* local still applied */ }
 }
 function Seg<V extends string | number>({ T, accent, options, value, onChange }: { T: ThemeTokens; accent: AccentTokens; options: { v: V; label: string }[]; value: V; onChange: (v: V) => void }) {
   return (
@@ -327,6 +353,19 @@ export function SettingsPanel({ T, accent, density }: Common) {
           <Field T={T} label="Density">
             <Seg T={T} accent={accent} value={s.density} options={[{ v: 'compact', label: 'Compact' }, { v: 'regular', label: 'Regular' }, { v: 'spacious', label: 'Spacious' }]} onChange={v => setSettings({ density: v as 'compact' | 'regular' | 'spacious' })} />
           </Field>
+          <Field T={T} label="Club logo" hint="Replaces the Lumio mark top-left in your portal.">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {s.brandLogo
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={s.brandLogo} alt="Club logo" style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 8, background: T.panel2, border: `1px solid ${T.border}` }} />
+                : <div style={{ width: 44, height: 44, borderRadius: 8, background: T.panel2, border: `1px dashed ${T.border}`, display: 'grid', placeItems: 'center', fontSize: 10, color: T.text3 }}>none</div>}
+              <label style={{ appearance: 'none', border: `1px solid ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '8px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                ⬆ Upload logo
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => { const f = e.target.files?.[0]; if (!f) return; try { await saveBrandLogo(await fileToLogoDataUrl(f)) } catch { /* ignore */ } }} />
+              </label>
+              {s.brandLogo && <button onClick={() => saveBrandLogo(null)} style={{ appearance: 'none', background: 'transparent', border: 0, color: T.bad, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Remove</button>}
+            </div>
+          </Field>
         </Modal>
       )}
 
@@ -364,6 +403,11 @@ export function SettingsPanel({ T, accent, density }: Common) {
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>Contact details</div>
           <Field T={T} label="Name"><input style={input(T)} value={s.coach} onChange={e => setSettings({ coach: e.target.value })} /></Field>
           <Field T={T} label="Role"><input style={input(T)} value={profile.role} onChange={e => setProfile({ ...profile, role: e.target.value })} /></Field>
+          <Field T={T} label="Accreditation" hint="Shown on your profile card and to families.">
+            <select style={{ ...input(T), cursor: 'pointer' }} value={s.cert} onChange={e => setSettings({ cert: e.target.value })}>
+              {Array.from(new Set([s.cert, ...ACCREDITATIONS].filter(Boolean))).map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </Field>
           <Field T={T} label="Email"><input style={input(T)} value={profile.email} onChange={e => setProfile({ ...profile, email: e.target.value })} /></Field>
           <Field T={T} label="Phone"><input style={input(T)} value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} /></Field>
 

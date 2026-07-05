@@ -67,16 +67,23 @@ async function processGroup(coachId: string, rows: any[]) {
   const transcript = parts.join('\n\n')
   if (!transcript.trim()) throw new Error('The recording(s) produced no speech to transcribe.')
 
-  // 2. Resolve the player ONCE (prefer the media row's id; else a UNIQUE name
-  // match — ambiguous same-name players stay null and fall back to name-scoping)
-  // so the session + highlight clips carry a real player_id for secure portal scope.
-  const playerName = rows[0]?.player_name ?? null
-  let playerId: string | null = rows[0]?.player_id ?? null
-  if (!playerId && playerName) {
-    const { data: pl } = await sb.from('coach_players').select('id').eq('coach_id', coachId).ilike('name', playerName.trim())
-    if (pl && pl.length === 1) playerId = (pl[0] as any).id
+  // 2. Resolve the player. Prefer the media row's id/name; on a UNIQUE name match
+  // attach a real player_id (secure portal scope). If the coach didn't tag anyone
+  // (a plain "Recorded session"), let the summary AI identify the player from the
+  // roster — accepted ONLY on an exact, unique name match (never a loose AI guess).
+  const roster = (await sb.from('coach_players').select('id, name').eq('coach_id', coachId)).data ?? []
+  const matchRoster = (name?: string | null) => {
+    const n = (name || '').trim().toLowerCase()
+    if (!n) return null
+    const hits = (roster as any[]).filter(p => (p.name || '').trim().toLowerCase() === n)
+    return hits.length === 1 ? hits[0] : null
   }
-  const review = await buildLessonSummary(transcript, playerName)
+  let playerName: string | null = rows[0]?.player_name ?? null
+  let playerId: string | null = rows[0]?.player_id ?? null
+  if (!playerId && playerName) { const hit = matchRoster(playerName); if (hit) playerId = hit.id }
+  const review = await buildLessonSummary(transcript, playerName, playerName ? null : (roster as any[]).map(p => p.name).filter(Boolean).slice(0, 200))
+  // Untagged recording → adopt the AI's identification, but ONLY on an exact roster match.
+  if (!playerName && review?.player) { const hit = matchRoster(String(review.player)); if (hit) { playerName = hit.name; playerId = hit.id } }
 
   // 3. Create the Lesson Summary (a coach_sessions row) — nothing for the coach to type.
   const { error: lessonErr } = await sb.from('coach_sessions').insert({
@@ -187,9 +194,11 @@ Non-negotiable rules:
 3. Warm, plain English a parent understands; gloss any jargon in a few words.
 4. "coachNote" is a personal 2–3 sentence note to the player — encouraging, honest and specific.
 5. Before finalising, silently re-check every field against the transcript and remove anything not clearly supported.
+6. "player": if (and only if) a roster is provided in the task, set this to the EXACT roster name of the person being coached, or null if you cannot tell confidently from the transcript. Never invent or guess a name.
 
 Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:
 {
+  "player": "the player being coached — an exact name from the provided roster, or null",
   "focus": "the main theme of the session, one short line",
   "covered": ["3-6 concrete things worked on across the whole lesson"],
   "takeaways": ["2-4 key coaching points / what to remember"],
@@ -207,7 +216,7 @@ Transcript snippet: "...right, big focus today on the second serve, we want that
 Good JSON:
 {"focus":"Second serve — kick & reliability","covered":["Toss height — slightly more over the head for the kick","Brushing up the back of the ball 7→1 o'clock","Live points starting from second serve only"],"takeaways":["Kick gives a much safer margin over the net","When rushed the toss drifts forward and the serve goes flat"],"drills":["Spin-only serve ladder (10 in a row)","Second-serve-only points to 11"],"homework":"Shadow-serve 30 reps a day; film one set.","nextFocus":"Carry the kick serve into serve+1 patterns","coachNote":"Really good progress on the second serve today — when you trust the higher toss it's a different shot. Keep the daily shadow serves going.","rating":4}`
 
-async function buildLessonSummary(transcript: string, playerName: string | null) {
+async function buildLessonSummary(transcript: string, playerName: string | null, rosterNames: string[] | null = null) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('AI not configured (ANTHROPIC_API_KEY missing).')
   const client = new Anthropic({ apiKey })
@@ -221,7 +230,7 @@ async function buildLessonSummary(transcript: string, playerName: string | null)
     system: MASTER_COACH_SYSTEM,
     messages: [{
       role: 'user',
-      content: `${GOLD_EXAMPLE}\n\nNow write the summary for this real session${playerName ? ` with ${playerName}` : ''} (it may be in several parts that together cover one lesson).\n\nTRANSCRIPT:\n${clipped}`,
+      content: `${GOLD_EXAMPLE}\n\nNow write the summary for this real session${playerName ? ` with ${playerName}` : ''} (it may be in several parts that together cover one lesson).${rosterNames && rosterNames.length ? `\n\nThe coach did NOT tag a player. If the transcript clearly names who is being coached, set "player" to the EXACT matching name from this roster (else null): ${rosterNames.join(', ')}.` : ''}\n\nTRANSCRIPT:\n${clipped}`,
     }],
   })
   const draft = extractReview(textOf(draftRes))

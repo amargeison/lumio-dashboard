@@ -33,7 +33,7 @@ import { coachById } from './_lib/coaches-data'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
 import { useCoachStats, RACKET_STAGES } from './_lib/coach-db'
-import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, tierForFlags, TIERS, type FeatureFlags } from './_lib/feature-flags'
+import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags } from './_lib/feature-flags'
 
 // ── Lazy-loaded modules ─────────────────────────────────────────────────────
 // Each module is code-split so only the one you're viewing is downloaded — the
@@ -264,7 +264,6 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
     (id === 'gpsheatmaps' && !feat.effort) ||
     (id === 'belts' && !feat.racket) ||
     (id === 'videoaudio' && !feat.video && !feat.audio)
-  const planTier = TIERS.find(t => t.key === tierForFlags(feat))
   // Fall back to the dashboard if the active view is hidden by the coach OR is
   // unavailable for the current role (e.g. switching to Coach while on Payments).
   useEffect(() => {
@@ -474,11 +473,11 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${line}`, minHeight: 56, padding: expanded ? '12px 12px' : '12px 4px', gap: expanded ? 8 : 0, justifyContent: expanded ? 'flex-start' : 'center' }}>
           <div style={{ width: 32, height: 32, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0, overflow: 'hidden' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tennis_transparent_logo.png" alt="Lumio Tennis" style={{ width: 26, height: 26, objectFit: 'contain' }} />
+            <img src={settings.brandLogo || session?.logoDataUrl || '/tennis_transparent_logo.png'} alt={clubName || 'Lumio'} style={{ width: 26, height: 26, objectFit: 'contain' }} />
           </div>
           {expanded && (
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, whiteSpace: 'nowrap' }}>Lumio Coach</div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, whiteSpace: 'nowrap' }}>{clubName || 'Lumio Coach'}</div>
               <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>Tennis</div>
             </div>
           )}
@@ -528,19 +527,11 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
             </div>
           )}
         </div>
-        {/* Role switcher (Switch view) — reuses the shared RoleSwitcher; its
-            popover opens upward from this footer. Only when the rail is open. */}
-        {expanded && roleSwitcher && (
+        {/* View switcher (coach / student view) — only for the head coach, and only
+            once there's somewhere to switch to (a coach or a player has been added).
+            When impersonating, the "Viewing as" banner handles the return. */}
+        {expanded && roleSwitcher && role === 'head' && availableRoles.length > 1 && (
           <div style={{ padding: '8px 12px', borderTop: `1px solid ${line}` }}>{roleSwitcher}</div>
-        )}
-        {expanded && (
-          <div style={{ padding: '8px 12px', borderTop: `1px solid ${line}` }}>
-            <div style={{ fontSize: 9, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Plan</div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 9px', borderRadius: 999, background: accent.dim, border: `1px solid ${accent.border}` }}>
-              <span style={{ fontSize: 10.5, color: accent.hex, fontWeight: 700 }}>{planTier ? `Lumio ${planTier.name}` : 'Custom plan'}</span>
-              {planTier && <span style={{ fontSize: 9.5, color: T.text3 }}>£{planTier.price}/mo</span>}
-            </div>
-          </div>
         )}
       </aside>
 
@@ -564,7 +555,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, textAlign: 'center' }}>
               <div style={{ width: 72, margin: '0 auto' }}><CoachAvatar size={72} /></div>
               <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{coachName}</div>
-              {!isEmpty && <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{settings.cert}</div>}
+              {settings.cert && <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{settings.cert}</div>}
               <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
                 <RailStat T={T} label="Players" value={isEmpty ? liveStats.players : COACH_ORG.season.activePlayers} />
                 <RailStat T={T} label="Lessons/wk" value={isEmpty ? liveStats.lessonsThisWeek : COACH_ORG.season.lessonsThisWeek} />
