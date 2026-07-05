@@ -1,6 +1,22 @@
 // Client helpers for player profile photos: square-crop + downscale a chosen file
 // to a small JPEG data URL, and POST it to a scoped upload route.
 
+// Resolve any stored avatar value to a renderable <img src>. Player/staff photos
+// live in the PRIVATE `avatars` bucket, so a bare storage path — or a legacy full
+// public URL — is routed through the coach signing proxy (which auth-checks and
+// mints a short-lived signed URL). Data-URL upload previews and already-signed
+// URLs pass through unchanged. Degrades gracefully whether or not the bucket has
+// been flipped to private yet.
+export function avatarSrc(value?: string | null): string {
+  if (!value) return ''
+  if (value.startsWith('data:')) return value
+  if (value.includes('/object/sign/')) return value                 // already signed
+  const m = value.match(/\/avatars\/(.+?)(?:\?|$)/)                  // full public URL → path
+  if (m) return `/api/coach/avatar-img?p=${encodeURIComponent(m[1])}`
+  if (value.startsWith('http') || value.startsWith('/')) return value // some other/external URL
+  return `/api/coach/avatar-img?p=${encodeURIComponent(value)}`      // bare storage path
+}
+
 export async function fileToAvatarDataUrl(file: File, size = 256): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()

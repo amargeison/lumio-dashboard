@@ -13,6 +13,7 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, useCoachProfile, dbUpdate, dbRemove } from '../_lib/coach-db'
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
+import { avatarSrc } from '@/lib/avatar'
 
 type Msg = { id: string; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string; direction?: string | null; from_name?: string | null; thread_key?: string | null; external_id?: string | null; read?: boolean | null }
 type Player = { id: string; name: string; email?: string | null; phone?: string | null; parent_name?: string | null; avatar_url?: string | null }
@@ -40,7 +41,7 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const Av = ({ keyName, size }: { keyName: string; size: number }) => {
     const url = avatarFor(keyName)
     // eslint-disable-next-line @next/next/no-img-element
-    if (url) return <img src={url} alt={keyName} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+    if (url) return <img src={avatarSrc(url)} alt={keyName} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
     return <span style={{ width: size, height: size, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: size * 0.37, fontWeight: 700, flexShrink: 0 }}>{initials(keyName)}</span>
   }
   const [selKey, setSelKey] = useState<string | null>(null)

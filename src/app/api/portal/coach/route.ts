@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getMembership, scopedDb } from '@/lib/coach/membership'
+import { getMembership, scopedDb, signAvatar } from '@/lib/coach/membership'
 
 export const runtime = 'nodejs'
 
@@ -26,5 +26,8 @@ export async function GET() {
     names.length ? safe(db.from('coach_player_skills').select('player_id, skill, score').in('player_id', players.map((p: any) => p.id))) : [],
   ])
 
-  return NextResponse.json({ coachName: coach, players, bookings, sessions, skills })
+  // Sign each child's photo (private avatars bucket) for the sub-coach viewer.
+  const signedPlayers = await Promise.all((players as any[]).map(async (p: any) => ({ ...p, avatar_url: await signAvatar(db, p.avatar_url) })))
+
+  return NextResponse.json({ coachName: coach, players: signedPlayers, bookings, sessions, skills })
 }

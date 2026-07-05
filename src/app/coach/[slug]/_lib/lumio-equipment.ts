@@ -7,10 +7,6 @@
 import { sb, currentCoachId } from './coach-db'
 import { SESSION_KITS, EQUIPMENT_INVENTORY } from './coach-data'
 
-const STATUS_MAP: Record<string, string> = { good: 'in_stock', low: 'low', order: 'order', repair: 'repair' }
-// Parse a leading quantity from the demo's display strings ("24 dozen", "×40", "×2 pairs").
-const qtyNum = (s: string): number | null => { const m = (s || '').match(/(\d+)/); return m ? Number(m[1]) : null }
-
 export async function seedLumioEquipment(): Promise<{ kits: number; items: number }> {
   const uid = await currentCoachId()
   if (!uid) return { kits: 0, items: 0 }
@@ -31,7 +27,10 @@ export async function seedLumioEquipment(): Promise<{ kits: number; items: numbe
   for (const cat of EQUIPMENT_INVENTORY) for (const it of cat.items) {
     if (haveItem.has(it.name.toLowerCase())) continue
     const notes = [it.location, it.note].filter(Boolean).join(' · ') || null
-    itemRows.push({ coach_id: uid, item: it.name, category: cat.category, quantity: qtyNum(it.qty), status: STATUS_MAP[it.status] || 'in_stock', notes })
+    // Seed the item LIST (names/categories/notes) but start every quantity at 0 and
+    // status in-stock — a brand-new coach hasn't counted stock yet, so demo numbers
+    // (and demo low/order/repair flags) shouldn't leak in. They edit quantities inline.
+    itemRows.push({ coach_id: uid, item: it.name, category: cat.category, quantity: 0, status: 'in_stock', notes })
   }
   if (itemRows.length) { const { error } = await sb().from('coach_equipment').insert(itemRows); if (error) { console.error('[lumio-equipment] items', error.message); throw new Error(error.message) } }
 

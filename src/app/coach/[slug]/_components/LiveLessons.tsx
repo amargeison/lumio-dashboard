@@ -16,6 +16,7 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { MediaCaptureModal } from './MediaCaptureModal'
 import { useCoachTable, dbInsert, dbUpdate, SKILLS_BY_STAGE, logSessionAttendance } from '../_lib/coach-db'
+import { avatarSrc } from '@/lib/avatar'
 
 type Review = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
@@ -451,7 +452,7 @@ function SubHead({ T, accent, children, mt }: { T: ThemeTokens; accent: AccentTo
 function Avatar({ T, accent, text, size, url }: { T: ThemeTokens; accent: AccentTokens; text: string; size: number; url?: string | null }) {
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+    return <img src={avatarSrc(url)} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
   }
   return <div style={{ width: size, height: size, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.42, fontWeight: 700, border: `1px solid ${accent.border}`, flexShrink: 0 }}>{text}</div>
 }

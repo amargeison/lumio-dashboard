@@ -72,3 +72,14 @@ export async function getMembership(): Promise<Membership | null> {
 // Service-role DB handle for scoped reads — callers MUST apply the membership
 // scope to every query (academy_id = m.academyId, plus player/coach scope).
 export function scopedDb() { return admin() }
+
+// Sign a value from the PRIVATE `avatars` bucket for external viewers (parents /
+// sub-coaches), who can't use the coach-side signing proxy. Accepts a bare storage
+// path or a legacy full public URL; passes data/already-signed/external URLs through.
+export async function signAvatar(db: ReturnType<typeof admin>, value?: string | null): Promise<string | null> {
+  if (!value) return null
+  if (value.startsWith('data:') || value.includes('/object/sign/')) return value
+  const path = value.match(/\/avatars\/(.+?)(?:\?|$)/)?.[1] || (value.startsWith('http') ? null : value)
+  if (!path) return value
+  try { const { data } = await db.storage.from('avatars').createSignedUrl(path, 3600); return data?.signedUrl ?? null } catch { return null }
+}

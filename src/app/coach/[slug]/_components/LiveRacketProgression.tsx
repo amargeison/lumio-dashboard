@@ -12,6 +12,7 @@ import { useState, useMemo, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, RACKET_STAGES, SKILLS_BY_STAGE, RACKET_SKILLS } from '../_lib/coach-db'
+import { avatarSrc } from '@/lib/avatar'
 
 type Player = { id: string; name: string; level?: string | null; racket_stage?: string | null; avatar_url?: string | null }
 type SkillRow = { player_id: string; skill: string; score: number }
@@ -216,7 +217,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           {p.avatar_url
                             // eslint-disable-next-line @next/next/no-img-element
-                            ? <img src={p.avatar_url} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                            ? <img src={avatarSrc(p.avatar_url)} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                             : <span style={{ width: 24, height: 24, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, border: `1px solid ${accent.border}` }}>{initials(p.name)}</span>}
                           <span style={{ fontSize: 12, color: T.text, fontWeight: 500 }}>{p.name}</span>
                         </div>

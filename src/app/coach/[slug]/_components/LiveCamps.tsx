@@ -10,6 +10,7 @@ import { useState, useMemo, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbRemove, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
+import { avatarSrc } from '@/lib/avatar'
 
 type Camp = {
   id: string; name: string; start_date?: string | null; end_date?: string | null; capacity?: number | null
@@ -247,7 +248,7 @@ function Attendees({ T, accent, camp, attendees, players, reload, remove }: { T:
           <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: `1px solid ${T.border}` }}>
             {p?.avatar_url
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={p.avatar_url} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+              ? <img src={avatarSrc(p.avatar_url)} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
               : <span style={{ width: 26, height: 26, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700 }}>{initials(a.player_name)}</span>}
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{a.player_name}</div>
@@ -282,7 +283,7 @@ function Packs({ T, accent, camp, attendees, players, skillMap, attRows }: { T: 
           return <div key={a.id} onClick={() => setSelId(a.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 3 }}>
             {players.find(x => x.id === a.player_id)?.avatar_url
               // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={(players.find(x => x.id === a.player_id) as any).avatar_url} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+              ? <img src={avatarSrc((players.find(x => x.id === a.player_id) as any).avatar_url)} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
               : <span style={{ width: 24, height: 24, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 700 }}>{initials(a.player_name)}</span>}
             <span style={{ fontSize: 12, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.player_name}</span>
           </div>

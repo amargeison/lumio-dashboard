@@ -12,6 +12,9 @@ import { fileToAvatarDataUrl, uploadAvatar } from '@/lib/avatar'
 
 const BG = '#0B0F17', CARD = '#0F1623', PANEL2 = '#0B1220', BORDER = '#1E293B', TEXT = '#F4F7FB', MUTED = '#93A1B5', ACCENT = '#3A8EE0', GOOD = '#3FB37F'
 
+// v1: Effort & Rewards is manual-only — smartwatch pairing is hidden until v2.
+const SHOW_WATCH_PAIRING: boolean = false
+
 type Bundle = {
   player: { id: string; name: string; racket_stage?: string; level?: string; goal?: string; category?: string; age?: number; avatar_url?: string; watch_token?: string }
   skills: { skill: string; score: number }[]
@@ -35,7 +38,9 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
   const [clip, setClip] = useState<{ url: string; title: string } | null>(null)
   const onPhoto = async (file?: File | null) => {
     if (!file) return
-    try { const data = await fileToAvatarDataUrl(file); const url = await uploadAvatar('/api/portal/avatar', { dataUrl: data }); if (url) setAvatar(url) } catch { /* ignore */ }
+    // Upload returns a private storage path; show the data-URL preview now and
+    // reload so the bundle's signed avatar URL takes over.
+    try { const data = await fileToAvatarDataUrl(file); const url = await uploadAvatar('/api/portal/avatar', { dataUrl: data }); if (url) { setAvatar(data); load() } } catch { /* ignore */ }
   }
 
   const load = () => fetch('/api/portal/player').then(r => r.ok ? r.json() : null).then(d => { setB(d); setLoading(false) }).catch(() => setLoading(false))
@@ -246,7 +251,7 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
       )}
 
       {/* Connect a watch */}
-      {b.player.watch_token && watch.length === 0 && (
+      {SHOW_WATCH_PAIRING && b.player.watch_token && watch.length === 0 && (
         <div style={card}>
           <p style={h2}>Connect a watch</p>
           <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.5 }}>Track {b.player.name.split(' ')[0]}’s effort, movement and XP from an Apple Watch or Wear OS watch. In the Lumio watch app, enter this pairing code:</div>
