@@ -5,6 +5,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { COACH_ORG } from '../_lib/coach-data'
+import { ACCREDITATIONS } from '../_lib/settings-store'
 import { addCoach } from '../_lib/coaches-store'
 import { ALL_PLAYERS, COACHES, coachById } from '../_lib/coaches-data'
 import { assignPlayers, getAssignments } from '../_lib/player-assign-store'
@@ -96,7 +97,10 @@ export function AddCoachModal({ T, accent, onClose }: { T: ThemeTokens; accent: 
           </div>
           <div>
             <label style={label}>Accreditation</label>
-            <input value={accreditation} onChange={e => setAccreditation(e.target.value)} placeholder="e.g. Qualified Coach, Level 3, LTA Accredited" style={input} />
+            <select value={accreditation} onChange={e => setAccreditation(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
+              <option value="">Select accreditation…</option>
+              {ACCREDITATIONS.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
           </div>
           <div>
             <label style={label}>Specialisms (comma-separated)</label>

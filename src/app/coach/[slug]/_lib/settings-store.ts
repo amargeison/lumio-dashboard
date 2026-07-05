@@ -14,6 +14,20 @@ export const ACCENT_PRESETS: Record<AccentKey, { hex: string; dim: string; borde
   claret: { hex: '#B0455C', dim: 'rgba(176,69,92,0.16)', border: 'rgba(176,69,92,0.45)', label: 'Claret' },
 }
 
+// Coaching accreditations for the Settings dropdowns (head coach + sub-coaches).
+// Edit this list to match the qualifications your governing body issues.
+export const ACCREDITATIONS: string[] = [
+  'LTA Accredited+ Coach – Performance',
+  'LTA Accredited+ Coach',
+  'LTA Accredited Coach',
+  'Senior Performance Coach',
+  'Performance Coach',
+  'Senior Club Coach',
+  'Qualified Coach',
+  'Coaching Assistant',
+  'Coaching apprentice (in training)',
+]
+
 export type CoachSettings = {
   theme: 'dark' | 'light'
   accentKey: AccentKey
@@ -43,6 +57,7 @@ export type CoachSettings = {
   equipmentSeeded: boolean        // Equipment & Kit auto-loaded the Lumio default kit + inventory once
   ccCoachOnEmail: boolean         // CC the coach's own inbox on emails sent to players/parents
   audioOnly: boolean              // Video & Audio module: hide the video half, show audio only (menu label → "Audio only")
+  brandLogo: string               // Club/academy logo (data URL) shown top-left instead of the Lumio mark
   // The head coach's own contact + DBS / safeguarding record (the account owner).
   // Empty by default so a new head is correctly flagged until they record it.
   head: { phone: string; email: string; contractedHours: number | null; dbsNumber: string; dbsIssued: string; dbsExpiry: string; safeguardingTrained: boolean; safeguardingDate: string; avatarUrl: string }
@@ -76,6 +91,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   equipmentSeeded: false,
   ccCoachOnEmail: true,
   audioOnly: false,
+  brandLogo: '',
   head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '', avatarUrl: '' },
 }
 

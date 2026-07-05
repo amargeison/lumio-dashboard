@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile } from '../_lib/coach-db'
-import { getSettings, setSettings, subscribe } from '../_lib/settings-store'
+import { getSettings, setSettings, subscribe, ACCREDITATIONS } from '../_lib/settings-store'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -338,7 +338,12 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
           {isHead
             ? <div><label style={lbl}>Role</label><input value={d.role ?? 'Head Coach'} readOnly style={{ ...input, opacity: 0.65, cursor: 'not-allowed' }} /></div>
             : fld('role', 'Role', 'text', 'e.g. Assistant Coach')}
-          {fld('qualifications', 'Qualifications', 'text', 'e.g. Level 3')}
+          <div><label style={lbl}>Accreditation</label>
+            <select value={d.qualifications ?? ''} onChange={e => set('qualifications', e.target.value)} style={{ ...input, cursor: 'pointer' }}>
+              <option value="">— Select accreditation —</option>
+              {Array.from(new Set([d.qualifications, ...ACCREDITATIONS].filter(Boolean))).map((a: string) => <option key={a} value={a}>{a}</option>)}
+            </select>
+          </div>
           <div><label style={lbl}>Home venue</label>
             <select value={d.home_venue ?? ''} onChange={e => set('home_venue', e.target.value)} style={input}>
               <option value="">{venues.length ? '— Select venue —' : 'Add venues in Settings → Venues'}</option>

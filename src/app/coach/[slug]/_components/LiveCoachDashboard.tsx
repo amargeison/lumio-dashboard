@@ -79,9 +79,12 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const todays = d.bookings.filter(b => dk(b.booking_date) === today && active(b)).sort((a, b) => String(a.start_time ?? '').localeCompare(String(b.start_time ?? '')))
   const upcoming = d.bookings.filter(b => dk(b.booking_date) >= today && active(b)).sort((a, b) => (dk(a.booking_date) + (a.start_time ?? '')).localeCompare(dk(b.booking_date) + (b.start_time ?? '')))
   const next = upcoming[0]
-  // Side box shows THIS WEEK (the hero already states today's count) — next 7 days.
+  // "This week" stat card = bookings in the next 7 days.
   const weekAhead = new Date(Date.now() + 7 * 86400000).toLocaleDateString('en-CA')
   const thisWeek = upcoming.filter(b => dk(b.booking_date) <= weekAhead)
+  // Highlight the next not-yet-started session in the Today timeline (demo style).
+  const nowHM = new Date().toTimeString().slice(0, 5)
+  const todayHighlightId = (todays.find(b => (b.start_time || '') >= nowHM) || todays[0])?.id
   const lessonsThisWeek = d.lessons.filter(l => dk(l.session_date) >= weekAgo).length
   const due = d.payments.filter(p => !p.paid && (Number(p.amount) || 0) > 0)
   const dueTotal = due.reduce((s, p) => s + (Number(p.amount) || 0), 0)
@@ -170,25 +173,32 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           </div>
         </div>
         <div style={card}>
-          <p style={sectionTitle}>This week</p>
-          {thisWeek.length === 0 ? (
-            <p style={{ color: T.text3, fontSize: 13, margin: 0 }}>No sessions this week. <button onClick={() => onNavigate('calendar')} style={linkBtn(accent)}>Add a booking →</button></p>
-          ) : thisWeek.slice(0, 6).map(b => (
-            <div key={b.id} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: `1px solid ${T.border}` }}>
-              <span style={{ fontSize: 11.5, color: accent.hex, fontWeight: 600, width: 82, flexShrink: 0 }}>{new Date(b.booking_date).toLocaleDateString('en-GB', { weekday: 'short' })}{b.start_time ? ` ${b.start_time}` : ''}</span>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</div>
-                <div style={{ fontSize: 11, color: T.text3 }}>{[b.court, b.player_name].filter(Boolean).join(' · ')}</div>
-              </div>
-            </div>
-          ))}
+          <p style={sectionTitle}>Today</p>
+          <div style={{ position: 'relative' }}>
+            {todays.length > 0 && <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />}
+            {todays.length === 0 ? (
+              <p style={{ color: T.text3, fontSize: 13, margin: 0 }}>No sessions today. <button onClick={() => onNavigate('calendar')} style={linkBtn(accent)}>Add a booking →</button></p>
+            ) : todays.map(b => {
+              const hl = b.id === todayHighlightId
+              return (
+                <div key={b.id} style={{ position: 'relative', display: 'flex', gap: 14, padding: '6px 0' }}>
+                  <div style={{ fontSize: 11, color: hl ? accent.hex : T.text3, width: 44, paddingTop: 2 }}>{b.start_time || '—'}</div>
+                  <div style={{ position: 'absolute', left: 46, top: 9, width: 7, height: 7, borderRadius: '50%', background: hl ? accent.hex : T.panel, border: `1.5px solid ${hl ? accent.hex : T.border}` }} />
+                  <div style={{ flex: 1, paddingLeft: 14, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, color: T.text, fontWeight: hl ? 600 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</div>
+                    <div style={{ fontSize: 10.5, color: T.text3 }}>{[b.court, b.type].filter(Boolean).join(' · ')}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
 
       {/* Stat cards */}
       <div className="cm-md" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: density.gap }}>
         {[
-          { l: 'Sessions today', v: todays.length, nav: 'calendar' },
+          { l: 'This week', v: thisWeek.length, nav: 'calendar' },
           { l: 'Next session', v: next ? `${fmtDate(next.booking_date)}${next.start_time ? ' ' + next.start_time : ''}` : '—', nav: 'calendar', small: true },
           { l: 'Players', v: d.players.length, nav: 'roster' },
           { l: 'Rackets due', v: racketsReady.length, nav: 'belts' },
