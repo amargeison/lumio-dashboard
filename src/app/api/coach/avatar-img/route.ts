@@ -23,8 +23,11 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
 
-  // The coach may only view avatars stored under their own {uid}/… prefix.
-  if (path.split('/')[0] !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // The coach may only view avatars directly under their own {uid}/ prefix.
+  // Reject path traversal and empty segments so `{uid}/../otherUid/x` can't escape.
+  if (path.includes('..') || !path.startsWith(`${user.id}/`) || path.split('/').some(seg => !seg)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
   const { data, error } = await admin.storage.from('avatars').createSignedUrl(path, 3600)

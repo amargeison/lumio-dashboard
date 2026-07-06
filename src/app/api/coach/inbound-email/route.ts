@@ -49,17 +49,19 @@ function verifySvix(rawBody: string, headers: Headers, secret: string): boolean 
 export async function POST(req: NextRequest) {
   const raw = await req.text()
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
-  // Resend → Svix signature. Other providers → legacy ?token=<secret>.
+  // ── Auth (fails closed) ─────────────────────────────────────────────────────
+  // If Resend/Svix is configured, EVERY request must carry a valid signature — a
+  // missing svix-id header can't downgrade to the legacy path. Only when no Svix
+  // secret is set do we accept the legacy ?token=<secret>. No auth configured at
+  // all → refuse, so the endpoint is never open.
   const webhookSecret = process.env.RESEND_WEBHOOK_SECRET
-  const hasSvix = !!req.headers.get('svix-id')
-  if (webhookSecret && hasSvix) {
+  const legacy = process.env.RESEND_INBOUND_SECRET
+  if (webhookSecret) {
     if (!verifySvix(raw, req.headers, webhookSecret)) return NextResponse.json({ error: 'Bad signature' }, { status: 401 })
+  } else if (legacy) {
+    if (new URL(req.url).searchParams.get('token') !== legacy) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   } else {
-    const legacy = process.env.RESEND_INBOUND_SECRET
-    if (legacy && new URL(req.url).searchParams.get('token') !== legacy) {
-      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
-    }
+    return NextResponse.json({ error: 'Inbound email not configured' }, { status: 503 })
   }
 
   let payload: any

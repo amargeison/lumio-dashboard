@@ -91,13 +91,14 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
 
   // Skill map per player → rackets ready to advance (all stage skills consistent).
   const skillFor = (pid: string) => Object.fromEntries(d.skills.filter(s => s.player_id === pid).map(s => [s.skill, s.score]))
+  const awardThreshold = getSettings().awardThreshold  // 3 = Consistent, 4 = Mastered
   const racketsReady = d.players.filter(p => {
     const st = RACKET_STAGES.findIndex(s => s.id === p.racket_stage)
     if (st < 0) return false
     const list = SKILLS_BY_STAGE[RACKET_STAGES[st].id] || []
     if (!list.length) return false
     const m: any = skillFor(p.id)
-    return list.every(s => (m[s] || 0) >= 4)
+    return list.every(s => (m[s] || 0) >= awardThreshold)
   })
   // Needs attention: low attendance or no upcoming booking.
   const attPct = (pid: string) => { const r = d.attendance.filter(a => a.player_id === pid); return r.length ? Math.round(r.filter(a => a.present).length / r.length * 100) : null }
