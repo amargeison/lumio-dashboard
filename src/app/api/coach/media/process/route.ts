@@ -80,10 +80,19 @@ async function processGroup(coachId: string, rows: any[]) {
   }
   let playerName: string | null = rows[0]?.player_name ?? null
   let playerId: string | null = rows[0]?.player_id ?? null
-  if (!playerId && playerName) { const hit = matchRoster(playerName); if (hit) playerId = hit.id }
+  if (!playerId && playerName) {
+    const hit = matchRoster(playerName)
+    if (hit) playerId = hit.id
+    else console.warn('[coach/media/process] tagged player name ambiguous/unknown — session kept on name-scoping only:', playerName)
+  }
   const review = await buildLessonSummary(transcript, playerName, playerName ? null : (roster as any[]).map(p => p.name).filter(Boolean).slice(0, 200))
-  // Untagged recording → adopt the AI's identification, but ONLY on an exact roster match.
-  if (!playerName && review?.player) { const hit = matchRoster(String(review.player)); if (hit) { playerName = hit.name; playerId = hit.id } }
+  // Untagged recording → adopt the AI's identification ONLY on an exact roster match
+  // AND only if that name is actually spoken in the transcript — this blocks the AI
+  // from emitting a real roster name that was never mentioned (a false attendance/label).
+  if (!playerName && review?.player) {
+    const hit = matchRoster(String(review.player))
+    if (hit && nameInTranscript(transcript, hit.name)) { playerName = hit.name; playerId = hit.id }
+  }
 
   // 3. Create the Lesson Summary (a coach_sessions row) — nothing for the coach to type.
   const { error: lessonErr } = await sb.from('coach_sessions').insert({
@@ -216,6 +225,14 @@ Transcript snippet: "...right, big focus today on the second serve, we want that
 Good JSON:
 {"focus":"Second serve — kick & reliability","covered":["Toss height — slightly more over the head for the kick","Brushing up the back of the ball 7→1 o'clock","Live points starting from second serve only"],"takeaways":["Kick gives a much safer margin over the net","When rushed the toss drifts forward and the serve goes flat"],"drills":["Spin-only serve ladder (10 in a row)","Second-serve-only points to 11"],"homework":"Shadow-serve 30 reps a day; film one set.","nextFocus":"Carry the kick serve into serve+1 patterns","coachNote":"Really good progress on the second serve today — when you trust the higher toss it's a different shot. Keep the daily shadow serves going.","rating":4}`
 
+// True if any distinctive part of the player's name (>= 2 chars) is actually spoken
+// in the transcript — used to corroborate the AI's untagged-session identification.
+function nameInTranscript(transcript: string, name: string): boolean {
+  const tl = transcript.toLowerCase()
+  return name.toLowerCase().split(/\s+/).filter(p => p.length >= 2)
+    .some(p => new RegExp(`\\b${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(tl))
+}
+
 async function buildLessonSummary(transcript: string, playerName: string | null, rosterNames: string[] | null = null) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) throw new Error('AI not configured (ANTHROPIC_API_KEY missing).')
@@ -250,7 +267,8 @@ async function buildLessonSummary(transcript: string, playerName: string | null,
       }],
     })
     const refined = extractReview(textOf(qaRes))
-    if (refined) return refined
+    // Identity comes from pass 1 — never let the prose-QA pass drop or change the player.
+    if (refined) { refined.player = draft.player ?? null; return refined }
   } catch (e) { console.warn('[coach/media/process] QA pass skipped', e) }
   return draft
 }

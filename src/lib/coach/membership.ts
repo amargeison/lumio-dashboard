@@ -76,10 +76,14 @@ export function scopedDb() { return admin() }
 // Sign a value from the PRIVATE `avatars` bucket for external viewers (parents /
 // sub-coaches), who can't use the coach-side signing proxy. Accepts a bare storage
 // path or a legacy full public URL; passes data/already-signed/external URLs through.
-export async function signAvatar(db: ReturnType<typeof admin>, value?: string | null): Promise<string | null> {
+// SECURITY (defence-in-depth): `ownerId` is the academy/head-coach id that owns the
+// bucket folder ({ownerId}/…). The path MUST live under it and contain no traversal,
+// so a poisoned avatar_url can't be used to sign another folder's object.
+export async function signAvatar(db: ReturnType<typeof admin>, value: string | null | undefined, ownerId?: string): Promise<string | null> {
   if (!value) return null
   if (value.startsWith('data:') || value.includes('/object/sign/')) return value
   const path = value.match(/\/avatars\/(.+?)(?:\?|$)/)?.[1] || (value.startsWith('http') ? null : value)
   if (!path) return value
+  if (ownerId && (path.includes('..') || !path.startsWith(`${ownerId}/`))) return null
   try { const { data } = await db.storage.from('avatars').createSignedUrl(path, 3600); return data?.signedUrl ?? null } catch { return null }
 }

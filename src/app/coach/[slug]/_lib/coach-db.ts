@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
+import { getSettings } from './settings-store'
 
 export type CoachTable =
   | 'coach_players'
@@ -224,11 +225,12 @@ export function useCoachStats(enabled = true): CoachStats {
       ])
       if (cancelled) return
       const skillFor = (pid: string) => Object.fromEntries(srows.filter((r: any) => r.player_id === pid).map((r: any) => [r.skill, r.score]))
+      const awardThreshold = getSettings().awardThreshold  // 3 = Consistent, 4 = Mastered (matches Settings + dashboard)
       const racketsReady = prows.filter((p: any) => {
         const list = SKILLS_BY_STAGE[p.racket_stage] || []
         if (!list.length) return false
         const m: any = skillFor(p.id)
-        return list.every(sk => (m[sk] || 0) >= 4)
+        return list.every(sk => (m[sk] || 0) >= awardThreshold)
       }).length
       setS({
         players: prows.length,

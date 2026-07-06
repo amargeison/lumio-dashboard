@@ -62,7 +62,7 @@ export async function GET() {
   // The `avatars` bucket is private — sign the child's photo for the parent/student
   // (they can't use the coach-side signing proxy). Handles a bare path or a legacy
   // full public URL; leaves data/external URLs alone.
-  const avatarUrl = await signAvatar(db, player.avatar_url)
+  const avatarUrl = await signAvatar(db, player.avatar_url, m.academyId)
 
   return NextResponse.json({
     player: { id: player.id, name: player.name, racket_stage: player.racket_stage, level: player.level, goal: player.goal, category: player.category, age: player.age, avatar_url: avatarUrl, watch_token: player.watch_token },

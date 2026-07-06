@@ -27,7 +27,7 @@ export async function GET() {
   ])
 
   // Sign each child's photo (private avatars bucket) for the sub-coach viewer.
-  const signedPlayers = await Promise.all((players as any[]).map(async (p: any) => ({ ...p, avatar_url: await signAvatar(db, p.avatar_url) })))
+  const signedPlayers = await Promise.all((players as any[]).map(async (p: any) => ({ ...p, avatar_url: await signAvatar(db, p.avatar_url, m.academyId) })))
 
   return NextResponse.json({ coachName: coach, players: signedPlayers, bookings, sessions, skills })
 }
