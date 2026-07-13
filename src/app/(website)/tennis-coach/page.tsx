@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import RevenueCalculator from './RevenueCalculator'
 
 // "Ocean" accent — matches the coach portal's blue accent preset (#3A8EE0).
 const PURPLE = '#1F6FCC'        // primary (buttons, shadows) — deep ocean
@@ -675,6 +676,9 @@ export default function TennisCoachPage() {
           </div>
         </div>
       </section>
+
+      {/* ── TWO REVENUE STREAMS · ROI CALCULATOR ── */}
+      <RevenueCalculator />
 
       {/* ── FINAL CTA ── */}
       <section style={{ padding: '120px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
