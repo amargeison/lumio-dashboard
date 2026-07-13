@@ -5,8 +5,8 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
-import { useCoachProfile, sb, currentCoachId } from '../_lib/coach-db'
-import { setSettings, resetSettings, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, type AccentKey } from '../_lib/settings-store'
+import { useCoachProfile, saveCoachProfile, sb, currentCoachId } from '../_lib/coach-db'
+import { setSettings, resetSettings, getHeadProfile, setHeadProfile, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, type AccentKey } from '../_lib/settings-store'
 import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-data'
 import { getAddedVenues } from '../_lib/venues-store'
 import { AddVenueModal } from './AddVenueModal'
@@ -119,7 +119,10 @@ export function SettingsPanel({ T, accent, density }: Common) {
   // Settings (survives reload, applies across the portal). Each value reads from
   // the store (merged over defaults) and writes the full object back on change.
   const profile = { ...DEFAULT_SETTINGS.profile, ...(s.profile || {}) }
-  const setProfile = (n: typeof profile) => setSettings({ profile: n })
+  // Canonical head-coach record — the same record the Coaches module renders,
+  // so Settings → Head coach profile and the Coaches page can never disagree.
+  // (Recomputed each render; useCoachSettings re-renders on any settings change.)
+  const hp = getHeadProfile()
 
   // Seed the Head coach profile from the SIGNED-IN coach's real profile (from
   // onboarding) the first time, so a real coach sees their own name/email/phone
@@ -164,7 +167,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
 
   const GROUPS = ['You', 'Academy', 'Coaching', 'People & compliance', 'Rewards & system']
   const cards = [
-    { id: 'profile',     g: 'You',        icon: 'people',    t: 'Head coach profile',  d: `${s.coach} · ${profile.role} · email & calendar ${conn.calendarSync ? 'synced' : 'off'}` },
+    { id: 'profile',     g: 'You',        icon: 'people',    t: 'Head coach profile',  d: `${hp.name} · ${hp.role} · email & calendar ${conn.calendarSync ? 'synced' : 'off'}` },
     { id: 'integrations',g: 'You',        icon: 'calendar',  t: 'Connected accounts',  d: 'Email & calendar sync — Google, Outlook, iCloud' },
     { id: 'academy',     g: 'Academy',    icon: 'home',      t: 'Academy profile',     d: `${s.academy} · ${s.cert}` },
     { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${[booking.google && 'Google', booking.outlook && 'Outlook'].filter(Boolean).join(' + ') || 'No'} sync · ${booking.defaultDuration}m default` },
@@ -401,15 +404,18 @@ export function SettingsPanel({ T, accent, density }: Common) {
       {open === 'profile' && (
         <Modal T={T} accent={accent} title="Head coach profile" sub="Your details, calendar sync and safeguarding documents" onClose={() => setOpen(null)}>
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>Contact details</div>
-          <Field T={T} label="Name"><input style={input(T)} value={s.coach} onChange={e => setSettings({ coach: e.target.value })} /></Field>
-          <Field T={T} label="Role"><input style={input(T)} value={profile.role} onChange={e => setProfile({ ...profile, role: e.target.value })} /></Field>
+          <Field T={T} label="Name">
+            <input style={input(T)} value={hp.name} onChange={e => setHeadProfile({ name: e.target.value })}
+              onBlur={e => { const v = e.target.value.trim(); if (v && v !== realProfile.display_name) saveCoachProfile({ display_name: v }).then(() => realProfile.reload()).catch(() => {}) }} />
+          </Field>
+          <Field T={T} label="Role"><input style={input(T)} value={hp.role} onChange={e => setHeadProfile({ role: e.target.value })} /></Field>
           <Field T={T} label="Accreditation" hint="Shown on your profile card and to families.">
-            <select style={{ ...input(T), cursor: 'pointer' }} value={s.cert} onChange={e => setSettings({ cert: e.target.value })}>
-              {Array.from(new Set([s.cert, ...ACCREDITATIONS].filter(Boolean))).map(a => <option key={a} value={a}>{a}</option>)}
+            <select style={{ ...input(T), cursor: 'pointer' }} value={hp.accreditation} onChange={e => setHeadProfile({ accreditation: e.target.value })}>
+              {Array.from(new Set([hp.accreditation, ...ACCREDITATIONS].filter(Boolean))).map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </Field>
-          <Field T={T} label="Email"><input style={input(T)} value={profile.email} onChange={e => setProfile({ ...profile, email: e.target.value })} /></Field>
-          <Field T={T} label="Phone"><input style={input(T)} value={profile.phone} onChange={e => setProfile({ ...profile, phone: e.target.value })} /></Field>
+          <Field T={T} label="Email"><input style={input(T)} value={hp.email} onChange={e => setHeadProfile({ email: e.target.value })} /></Field>
+          <Field T={T} label="Phone"><input style={input(T)} value={hp.phone} onChange={e => setHeadProfile({ phone: e.target.value })} /></Field>
 
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Email &amp; calendar sync</div>
           <Field T={T} label="Connected account" hint="Sessions and bookings sync both ways.">
@@ -418,10 +424,10 @@ export function SettingsPanel({ T, accent, density }: Common) {
           <Toggle T={T} accent={accent} on={conn.calendarSync} onChange={v => setConn({ ...conn, calendarSync: v })} label="Two-way calendar sync" desc="Bookings appear in your calendar; your busy times block new bookings." />
 
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>DBS &amp; safeguarding documents</div>
-          <Field T={T} label="DBS certificate number"><input style={input(T)} value={profile.dbsNumber} onChange={e => setProfile({ ...profile, dbsNumber: e.target.value })} /></Field>
+          <Field T={T} label="DBS certificate number"><input style={input(T)} value={hp.dbsNumber} onChange={e => setHeadProfile({ dbsNumber: e.target.value })} /></Field>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <Field T={T} label="DBS expiry"><input type="date" style={input(T)} value={profile.dbsExpiry} onChange={e => setProfile({ ...profile, dbsExpiry: e.target.value })} /></Field>
-            <Field T={T} label="Safeguarding training"><input type="date" style={input(T)} value={profile.safeguardingDate} onChange={e => setProfile({ ...profile, safeguardingDate: e.target.value })} /></Field>
+            <Field T={T} label="DBS expiry"><input type="date" style={input(T)} value={hp.dbsExpiry} onChange={e => setHeadProfile({ dbsExpiry: e.target.value })} /></Field>
+            <Field T={T} label="Safeguarding training"><input type="date" style={input(T)} value={hp.safeguardingDate} onChange={e => setHeadProfile({ safeguardingDate: e.target.value, safeguardingTrained: !!e.target.value })} /></Field>
           </div>
           <button style={{ width: '100%', appearance: 'none', border: `1px dashed ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '10px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>⬆ Upload DBS certificate (PDF)</button>
           <div style={{ fontSize: 11, color: T.good, marginTop: 6 }}>✓ riverside-dbs-2024.pdf · uploaded · demo only</div>

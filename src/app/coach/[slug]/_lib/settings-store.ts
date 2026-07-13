@@ -116,6 +116,67 @@ export function resetSettings() {
   window.dispatchEvent(new CustomEvent(EVT))
 }
 
+// ── Canonical head-coach record ─────────────────────────────────────────────
+// Settings → "Head coach profile" and the Coaches module previously kept two
+// separate copies of the head coach's record (`coach`/`cert`/`profile.*` vs
+// `head.*`) which drifted apart (e.g. Settings showing a DBS number while the
+// Coaches page said "No DBS on file"). Both surfaces now read and write through
+// getHeadProfile / setHeadProfile so they can never disagree.
+//
+// Legacy `profile.*` values are honoured as a fallback ONLY when they differ
+// from the demo defaults — so a brand-new academy is correctly flagged (no
+// fake demo DBS number) until the coach records their own details.
+export type HeadProfile = {
+  name: string
+  role: string
+  accreditation: string
+  email: string
+  phone: string
+  dbsNumber: string
+  dbsIssued: string
+  dbsExpiry: string
+  safeguardingTrained: boolean
+  safeguardingDate: string
+  contractedHours: number | null
+  avatarUrl: string
+}
+
+const realOrEmpty = (v: string | undefined, demoDefault: string) => (v && v !== demoDefault ? v : '')
+
+export function getHeadProfile(): HeadProfile {
+  const s = getSettings()
+  const p = { ...DEFAULT_SETTINGS.profile, ...(s.profile || {}) }
+  const h = { ...DEFAULT_SETTINGS.head, ...(s.head || {}) }
+  const dp = DEFAULT_SETTINGS.profile
+  const safeguardingDate = h.safeguardingDate || realOrEmpty(p.safeguardingDate, dp.safeguardingDate)
+  return {
+    name: s.coach,
+    role: p.role || 'Head Coach',
+    accreditation: s.cert,
+    email: h.email || realOrEmpty(p.email, dp.email),
+    phone: h.phone || realOrEmpty(p.phone, dp.phone),
+    dbsNumber: h.dbsNumber || realOrEmpty(p.dbsNumber, dp.dbsNumber),
+    dbsIssued: h.dbsIssued,
+    dbsExpiry: h.dbsExpiry || realOrEmpty(p.dbsExpiry, dp.dbsExpiry),
+    safeguardingTrained: h.safeguardingTrained || !!safeguardingDate,
+    safeguardingDate,
+    contractedHours: h.contractedHours,
+    avatarUrl: h.avatarUrl,
+  }
+}
+
+export function setHeadProfile(patch: Partial<HeadProfile>) {
+  const n = { ...getHeadProfile(), ...patch }
+  const s = getSettings()
+  setSettings({
+    coach: n.name,
+    cert: n.accreditation,
+    // Keep the legacy `profile` card in step so any older readers stay correct.
+    profile: { ...DEFAULT_SETTINGS.profile, ...(s.profile || {}), role: n.role, email: n.email, phone: n.phone, dbsNumber: n.dbsNumber, dbsExpiry: n.dbsExpiry, safeguardingDate: n.safeguardingDate },
+    head: { phone: n.phone, email: n.email, contractedHours: n.contractedHours, dbsNumber: n.dbsNumber, dbsIssued: n.dbsIssued, dbsExpiry: n.dbsExpiry, safeguardingTrained: n.safeguardingTrained, safeguardingDate: n.safeguardingDate, avatarUrl: n.avatarUrl },
+  })
+}
+
 export function subscribe(cb: () => void): () => void {
   if (typeof window === 'undefined') return () => {}
   window.addEventListener(EVT, cb)

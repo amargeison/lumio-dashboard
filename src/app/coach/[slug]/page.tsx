@@ -139,7 +139,7 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
         if (user) {
           const { data: profile } = await supabase
             .from('sports_profiles')
-            .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete')
+            .select('sport, display_name, nickname, avatar_url, brand_name, brand_logo_url, enabled_features, onboarding_complete, setup_type, setup_complete')
             .eq('id', user.id)
             .maybeSingle()
           // Only adopt the signed-in session for a coach profile, so we never
@@ -159,6 +159,8 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
               enabledFeatures: profile.enabled_features || [],
               nickname: profile.nickname ?? null,
               onboardingComplete: !!profile.onboarding_complete,
+              setupType: profile.setup_type ?? null,
+              setupComplete: !!profile.setup_complete,
             })
           }
         }
@@ -173,6 +175,13 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
       <div style={{ fontSize: 11, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Loading…</div>
     </div>
   )
+
+  // "Set it up for me" accounts stay locked on a setup-pending screen until the
+  // Lumio team finishes loading their data and marks the portal live in
+  // Sports Admin → Onboarding (setup_complete). Self-setup and demo unaffected.
+  if (authSession && authSession.onboardingComplete && authSession.setupType === 'lumio' && !authSession.setupComplete) {
+    return <SetupPendingScreen name={authSession.userName} clubName={authSession.clubName} email={authSession.email} />
+  }
 
   if (authSession) return <CoachPortalInner session={authSession} isEmpty={isEmpty} slugClubName={slugClubName} />
 
@@ -191,6 +200,39 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
   )
 }
 
+// ─── Setup-pending lock screen ───────────────────────────────────────────────
+// Shown to "Set it up for me" founders after onboarding, until the Lumio team
+// finishes importing their data and marks the portal live (setup_complete).
+function SetupPendingScreen({ name, clubName, email }: { name?: string; clubName?: string; email?: string }) {
+  const first = (name || '').split(/\s+/)[0] || 'Coach'
+  return (
+    <div style={{ minHeight: '100vh', background: '#07080F', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', fontFamily: 'var(--font-geist-sans, system-ui)' }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/tennis_coach_logo.png" alt="Lumio Tennis Coach" style={{ height: 52, objectFit: 'contain', marginBottom: 28 }} />
+      <div style={{ width: '100%', maxWidth: 520, background: '#0d1117', border: '1px solid #1F2937', borderRadius: 20, padding: '40px 36px', textAlign: 'center' }}>
+        <div style={{ fontSize: 40, marginBottom: 14 }}>🎾</div>
+        <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 800, margin: '0 0 10px' }}>We&rsquo;re setting up {clubName || 'your portal'}</h1>
+        <p style={{ color: '#9CA3AF', fontSize: 14.5, lineHeight: 1.65, margin: '0 0 22px' }}>
+          Thanks {first} — our team is importing your data and configuring everything for you.
+          Your portal will be ready within <strong style={{ color: '#fff' }}>2–3 working days</strong>, and we&rsquo;ll email you the moment it&rsquo;s live.
+        </p>
+        <div style={{ background: '#111318', border: '1px solid #1F2937', borderRadius: 12, padding: '16px 18px', textAlign: 'left', marginBottom: 22 }}>
+          <div style={{ color: '#fff', fontSize: 13.5, fontWeight: 700, marginBottom: 5 }}>📋 Speed things up</div>
+          <div style={{ color: '#9CA3AF', fontSize: 12.5, lineHeight: 1.6 }}>
+            We&rsquo;ve emailed you our data template{email ? <> at <strong style={{ color: '#D1D5DB' }}>{email}</strong></> : null}. Fill in your players, coaches, courts, camps, equipment and payments — or send us whatever records you already have — and just reply to that email.{' '}
+            <a href="/templates/lumio-coach-import-template.xlsx" download style={{ color: '#3A8EE0', fontWeight: 600, textDecoration: 'none' }}>Download the template ⤓</a>
+          </div>
+        </div>
+        <button onClick={() => { if (typeof window !== 'undefined') window.location.reload() }}
+          style={{ appearance: 'none', border: '1px solid #374151', background: 'transparent', color: '#9CA3AF', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          ↻ Check if it&rsquo;s ready
+        </button>
+        <p style={{ color: '#4B5563', fontSize: 12, margin: '20px 0 0' }}>Questions? Email <a href="mailto:support@lumiosports.com" style={{ color: '#6B7280' }}>support@lumiosports.com</a> — a real person reads every one.</p>
+      </div>
+    </div>
+  )
+}
+
 // ─── Portal shell ───────────────────────────────────────────────────────────
 function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?: SportsDemoSession; isEmpty?: boolean; slugClubName?: string }) {
   const settings = useCoachSettings()
@@ -206,7 +248,12 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // Empty (brand-new) portals must show NO demo data — no demo coach photo,
   // name or credential. Only the account's own real values (or blanks) appear
   // until they connect their data.
-  const coachName = session?.userName || (isEmpty ? (slugClubName || '') : settings.coach)
+  // Head coach name: once the coach has set their name in Settings → Head coach
+  // profile (i.e. it's no longer the demo default), that name wins everywhere —
+  // sidebar, rail and the Coaches module all agree. Sub-coach logins keep their
+  // own session name.
+  const customHeadName = session?.role === 'head' && settings.coach && settings.coach !== COACH_ORG.coach ? settings.coach : ''
+  const coachName = customHeadName || session?.userName || (isEmpty ? (slugClubName || '') : settings.coach)
   const coachInitials = coachName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   // Live: the head coach's uploaded photo (settings). Demo: a name-seeded avatar
   // so the top-right rail matches the coach cards in the grid.
@@ -405,6 +452,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
     <CoachOnboardingWizard
       defaultName={session?.userName || ''}
       defaultAcademy={session?.clubName || slugClubName || ''}
+      defaultEmail={session?.email || ''}
       onClose={() => setShowWizard(false)}
       onDone={() => { if (typeof window !== 'undefined') window.location.reload() }}
     />

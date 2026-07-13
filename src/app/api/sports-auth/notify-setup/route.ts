@@ -191,6 +191,34 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // EMAIL 2b — Coach portal ("Set it up for me"): send the coach the data
+    // template so they can fill in players/coaches/courts/camps/equipment/
+    // payments and reply with it. Same file as Settings → Import → template.
+    if (sport === 'coach' && email && String(email).includes('@')) {
+      const templateUrl = 'https://www.lumiosports.com/templates/lumio-coach-import-template.xlsx'
+      await resend.emails.send({
+        from: 'Lumio Sports <hello@lumiocms.com>',
+        to: email,
+        subject: `Getting ${clubName || 'your academy'} set up — your data template`,
+        html: `
+          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#07080F;color:#F9FAFB;padding:32px;border-radius:12px;">
+            <img src="https://www.lumiosports.com/tennis_coach_logo.png" width="56" height="56" style="display:block;margin:0 auto 16px;object-fit:contain;" />
+            <h2 style="color:#fff;text-align:center;margin-bottom:8px;">Hi ${esc(name)} — your portal setup has started</h2>
+            <p style="color:#6B7280;text-align:center;font-size:14px;margin-bottom:28px;">Our team will have ${esc(clubName || 'your academy')} configured within 2&ndash;3 business days. To import your data, we just need it in one place.</p>
+            <div style="background:#0d1117;border:1px solid #1F2937;border-radius:10px;padding:18px;margin-bottom:16px;">
+              <div style="color:#fff;font-weight:700;font-size:14px;margin-bottom:6px;">📋 Fill in the Lumio data template</div>
+              <div style="color:#9CA3AF;font-size:13px;line-height:1.6;margin-bottom:14px;">One spreadsheet, six tabs — players, coaches &amp; staff, courts, camps, equipment and payments. Only the name column is required; fill in whatever you have and skip the rest.</div>
+              <a href="${templateUrl}" style="display:inline-block;background:#3A8EE0;color:#fff;padding:11px 22px;border-radius:8px;text-decoration:none;font-weight:700;font-size:13px;">Download the template ⤓</a>
+            </div>
+            <div style="background:#3A8EE010;border:1px solid #3A8EE030;border-radius:10px;padding:16px;">
+              <p style="color:#9CC4EA;font-size:13px;margin:0;"><strong>Just reply to this email</strong> with the completed template (or any spreadsheets, PDFs or even photos of your records you already have) and we&rsquo;ll import everything for you.</p>
+            </div>
+            <p style="color:#4B5563;font-size:12px;text-align:center;margin-top:24px;">Questions? Just reply — a real person reads every one.</p>
+          </div>
+        `,
+      })
+    }
+
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error('[notify-setup] Error:', e)
