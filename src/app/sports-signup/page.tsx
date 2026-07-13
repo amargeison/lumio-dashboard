@@ -9,15 +9,15 @@ import Link from 'next/link'
 type SportId = 'tennis' | 'tenniscoach' | 'golf' | 'darts' | 'boxing' | 'cricket' | 'rugby' | 'football' | 'nonleague' | 'grassroots' | 'womens' | 'junior'
 
 const SPORTS: { id: SportId; label: string; logo: string; color: string }[] = [
-  { id: 'football', label: 'Football Pro', logo: '/football_logo.png', color: '#2563eb' },
+  { id: 'tenniscoach', label: 'Tennis Coach', logo: '/tennis_coach_logo.png', color: '#3A8EE0' },
   { id: 'womens', label: "Women's FC", logo: '/womens_fc_logo.png', color: '#ec4899' },
+  { id: 'football', label: 'Football Pro', logo: '/football_logo.png', color: '#2563eb' },
   { id: 'junior', label: 'Junior Football', logo: '/football_logo.png', color: '#16A34A' },
   { id: 'nonleague', label: 'Non-League', logo: '/football_logo.png', color: '#f59e0b' },
   { id: 'grassroots', label: 'Grassroots', logo: '/football_logo.png', color: '#22c55e' },
   { id: 'cricket', label: 'Cricket', logo: '/cricket_logo.png', color: '#10b981' },
   { id: 'rugby', label: 'Rugby', logo: '/rugby_logo.png', color: '#f97316' },
   { id: 'tennis', label: 'Tennis', logo: '/tennis_logo.png', color: '#7C3AED' },
-  { id: 'tenniscoach', label: 'Tennis Coach', logo: '/tennis_coach_logo.png', color: '#3A8EE0' },
   { id: 'boxing', label: 'Boxing', logo: '/boxing_logo.png', color: '#dc2626' },
   { id: 'golf', label: 'Golf', logo: '/golf_logo.png', color: '#15803D' },
   { id: 'darts', label: 'Darts', logo: '/darts_logo.png', color: '#dc2626' },
@@ -34,7 +34,7 @@ export default function SportsSignupPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [club, setClub] = useState('')
-  const [sport, setSport] = useState<SportId | ''>((preselectedSport as SportId) || 'womens')
+  const [sport, setSport] = useState<SportId | ''>((preselectedSport as SportId) || 'tenniscoach')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
@@ -133,7 +133,7 @@ export default function SportsSignupPage() {
         {/* Founding member badge */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: '#facc15', backgroundColor: 'rgba(250,204,21,0.1)', border: '1px solid rgba(250,204,21,0.3)', borderRadius: 999, padding: '4px 14px', textTransform: 'uppercase' }}>
-            Founding Member · 20 spots · Free for 3 months
+            Founding Member · 5 spots · Free for 3 months
           </span>
         </div>
 

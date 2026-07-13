@@ -43,6 +43,10 @@ export interface SportsDemoSession {
   nickname?: string | null
   /** Real coach accounts only — drives first-visit onboarding wizard. */
   onboardingComplete?: boolean
+  /** Real accounts: 'lumio' (we set it up) or 'self'. Drives the setup-pending lock. */
+  setupType?: string | null
+  /** Real accounts: true once the Lumio team has finished loading the portal. */
+  setupComplete?: boolean
 }
 
 export type SportKey =
