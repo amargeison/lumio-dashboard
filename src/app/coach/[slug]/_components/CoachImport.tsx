@@ -21,6 +21,10 @@ const CATEGORIES: { key: string; table: CoachTable; label: string }[] = [
   { key: 'resources', table: 'coach_resources', label: 'Resources' },
 ]
 const labelField: Record<string, string> = { players: 'name', staff: 'name', courts: 'name', camps: 'name', equipment: 'item', payments: 'player_name', resources: 'title' }
+// Blank starter spreadsheet (players / coaches / courts / camps / equipment /
+// payments tabs) for coaches who don't have their own records to upload yet.
+// The same file is linked from onboarding and emailed on "Set it up for me".
+export const IMPORT_TEMPLATE_URL = '/templates/lumio-coach-import-template.xlsx'
 // Whitelist of columns per table — guards against unexpected AI keys breaking inserts.
 const FIELDS: Record<string, string[]> = {
   players: ['name', 'category', 'age', 'parent_name', 'racket_stage', 'goal', 'level', 'email', 'phone', 'notes'],
@@ -93,10 +97,17 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
         onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f) }} />
 
       {(status === 'idle' || status === 'reading') && (
-        <button onClick={() => fileRef.current?.click()} disabled={status === 'reading'}
-          style={{ padding: '11px 18px', borderRadius: 10, border: `1px dashed ${accent.hex}`, background: accent.dim, color: accent.hex, fontSize: 13, fontWeight: 700, cursor: 'pointer', width: '100%' }}>
-          {status === 'reading' ? 'Reading your file…' : '⬆ Choose a file to import'}
-        </button>
+        <div>
+          <button onClick={() => fileRef.current?.click()} disabled={status === 'reading'}
+            style={{ padding: '11px 18px', borderRadius: 10, border: `1px dashed ${accent.hex}`, background: accent.dim, color: accent.hex, fontSize: 13, fontWeight: 700, cursor: 'pointer', width: '100%' }}>
+            {status === 'reading' ? 'Reading your file…' : '⬆ Choose a file to import'}
+          </button>
+          <p style={{ fontSize: 12, color: T.text3, margin: '10px 0 0', textAlign: 'center' }}>
+            No records to upload yet?{' '}
+            <a href={IMPORT_TEMPLATE_URL} download style={{ color: accent.hex, fontWeight: 600, textDecoration: 'none' }}>Download the Lumio template ⤓</a>
+            {' '}— fill it in and upload it here.
+          </p>
+        </div>
       )}
 
       {status === 'preview' && (

@@ -6,7 +6,7 @@
 
 import { useState, useRef } from 'react'
 import { sb, currentCoachId } from '../_lib/coach-db'
-import { CoachImport } from './CoachImport'
+import { CoachImport, IMPORT_TEMPLATE_URL } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
 import { setSettings, getSettings } from '../_lib/settings-store'
 import { seedLumioResources } from '../_lib/lumio-resources'
@@ -26,10 +26,14 @@ function compress(file: File, size: number): Promise<string> {
   })
 }
 
-type Props = { defaultName?: string; defaultAcademy?: string; onClose: () => void; onDone: () => void }
+type Props = { defaultName?: string; defaultAcademy?: string; defaultEmail?: string; onClose: () => void; onDone: () => void }
 type Player = { name: string; level: string }
 
-export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', onClose, onDone }: Props) {
+// Founding members: the Lumio team sets every portal up, so self-setup is
+// disabled (COMING SOON) and everyone goes through "Set it up for me".
+const SELF_SETUP_ENABLED = false
+
+export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', defaultEmail = '', onClose, onDone }: Props) {
   const [step, setStep] = useState(1)
   const [academy, setAcademy] = useState(defaultAcademy)
   const [name, setName] = useState(defaultName)
@@ -37,7 +41,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
   const [slugTouched, setSlugTouched] = useState(false)
   const [logo, setLogo] = useState<string | null>(null)
   const [photo, setPhoto] = useState<string | null>(null)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(defaultEmail)
   const [phone, setPhone] = useState('')
   const [calendar, setCalendar] = useState('')
   const [dbsNumber, setDbsNumber] = useState('')
@@ -125,7 +129,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
       if (setupType === 'lumio') {
         fetch('/api/sports-auth/notify-setup', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: name.trim(), sport: 'coach', clubName: academy.trim(), portalSlug: finalSlug, setupType: 'lumio' }),
+          body: JSON.stringify({ name: name.trim(), sport: 'coach', email: email.trim() || defaultEmail, phone: phone.trim(), clubName: academy.trim(), portalSlug: finalSlug, setupType: 'lumio' }),
         }).catch(() => {})
       }
 
@@ -252,19 +256,29 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', o
         {step === 2 && (
           <div>
             <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>How would you like to get started?</h2>
-            <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 24 }}>You can switch approach at any time.</p>
+            <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 24 }}>Founding members get white-glove setup — our team loads everything for you.</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <button onClick={() => setSetupType('self')} style={{ padding: 20, borderRadius: 14, textAlign: 'left', cursor: 'pointer', background: setupType === 'self' ? ACCENT + '15' : '#111318', border: `2px solid ${setupType === 'self' ? ACCENT : '#1F2937'}` }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>🎾</div>
-                <div style={{ color: '#fff', fontSize: 15, fontWeight: 700, marginBottom: 4 }}>I&rsquo;ll add my own data</div>
-                <div style={{ color: '#9CA3AF', fontSize: 13 }}>Jump straight in — add your players, bookings and the rest yourself. Add a few players now to get going.</div>
-              </button>
               <button onClick={() => setSetupType('lumio')} style={{ padding: 20, borderRadius: 14, textAlign: 'left', cursor: 'pointer', background: setupType === 'lumio' ? ACCENT + '15' : '#111318', border: `2px solid ${setupType === 'lumio' ? ACCENT : '#1F2937'}` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}><span style={{ fontSize: 24 }}>✨</span><span style={{ background: ACCENT, color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4 }}>HANDS-OFF</span></div>
                 <div style={{ color: '#fff', fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Set it up for me</div>
                 <div style={{ color: '#9CA3AF', fontSize: 13 }}>Our team imports your players and configures your portal. We&rsquo;ll be in touch within 2&ndash;3 business days.</div>
               </button>
+              <button disabled={!SELF_SETUP_ENABLED} onClick={() => { if (SELF_SETUP_ENABLED) setSetupType('self') }}
+                style={{ padding: 20, borderRadius: 14, textAlign: 'left', cursor: SELF_SETUP_ENABLED ? 'pointer' : 'default', background: '#111318', border: '2px solid #1F2937', opacity: SELF_SETUP_ENABLED ? 1 : 0.55 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}><span style={{ fontSize: 24 }}>🎾</span><span style={{ background: '#374151', color: '#D1D5DB', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4 }}>COMING SOON</span></div>
+                <div style={{ color: '#fff', fontSize: 15, fontWeight: 700, marginBottom: 4 }}>I&rsquo;ll add my own data</div>
+                <div style={{ color: '#9CA3AF', fontSize: 13 }}>Add your players, bookings and the rest yourself. While we&rsquo;re in founding-member setup, our team does this for you.</div>
+              </button>
             </div>
+            {setupType === 'lumio' && (
+              <div style={{ marginTop: 12, background: '#111318', border: '1px solid #1F2937', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ color: '#fff', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>📋 Your data template</div>
+                <div style={{ color: '#9CA3AF', fontSize: 12.5, lineHeight: 1.5 }}>
+                  We&rsquo;ll email you our data template when you finish — fill in your players, coaches, courts, camps, equipment and payments and our team does the rest. Or grab it now:{' '}
+                  <a href={IMPORT_TEMPLATE_URL} download style={{ color: ACCENT, fontWeight: 600, textDecoration: 'none' }}>Download the template ⤓</a>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

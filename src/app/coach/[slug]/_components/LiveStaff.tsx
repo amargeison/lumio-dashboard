@@ -8,7 +8,8 @@ import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile } from '../_lib/coach-db'
-import { getSettings, setSettings, subscribe, ACCREDITATIONS } from '../_lib/settings-store'
+import { getHeadProfile, setHeadProfile, subscribe, ACCREDITATIONS } from '../_lib/settings-store'
+import { COACH_ORG } from '../_lib/coach-data'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -41,9 +42,10 @@ export function LiveStaff({ T, accent }: Common) {
   const [editing, setEditing] = useState<any | null | undefined>(undefined)
   const [role, setRole] = useState('All')
   const [sel, setSel] = useState<any | null>(null)
-  // The head coach's own contact + DBS record (the account owner), kept live.
-  const [headS, setHeadS] = useState(() => getSettings().head)
-  useEffect(() => subscribe(() => setHeadS(getSettings().head)), [])
+  // The head coach's own record (the account owner) — read from the SAME
+  // canonical store as Settings → Head coach profile, so the two always match.
+  const [headS, setHeadS] = useState(() => getHeadProfile())
+  useEffect(() => subscribe(() => setHeadS(getHeadProfile())), [])
   // Invite a coach to their own scoped portal login.
   const [inviteMsg, setInviteMsg] = useState('')
   const inviteToPortal = async (c: any) => {
@@ -61,7 +63,7 @@ export function LiveStaff({ T, accent }: Common) {
       const dataUrl = await fileToAvatarDataUrl(file)
       const url = await uploadAvatar('/api/coach/staff-avatar', c.isHead ? { head: true, dataUrl } : { staffId: c.id, dataUrl })
       if (!url) return
-      if (c.isHead) setSettings({ head: { ...getSettings().head, avatarUrl: url } }); else staff.reload()
+      if (c.isHead) setHeadProfile({ avatarUrl: url }); else staff.reload()
     } catch { /* ignore */ }
   }
 
@@ -79,10 +81,13 @@ export function LiveStaff({ T, accent }: Common) {
     return { today: bk.filter((b: any) => b.booking_date === todayISO).length, week: weekBk.length, players: coachPlayers(c).length, hours, util: c.contracted_hours ? Math.round(hours / c.contracted_hours * 100) : null }
   }
 
-  // The head coach (the signed-in account) is a first-class coach: their own
-  // contact + DBS / safeguarding record lives in settings (empty until recorded,
-  // so they're correctly flagged like anyone else).
-  const head = { id: '__head__', name: profile.display_name || 'Head Coach', role: 'Head', email: headS.email || profile.contact_email, phone: headS.phone || profile.contact_phone, qualifications: 'Head Coach', home_venue: null, isHead: true, avatar_url: headS.avatarUrl, contracted_hours: headS.contractedHours, dbs_number: headS.dbsNumber, dbs_issued: headS.dbsIssued, dbs_expiry: headS.dbsExpiry, safeguarding_trained: headS.safeguardingTrained, safeguarding_date: headS.safeguardingDate }
+  // The head coach (the signed-in account) is a first-class coach. Their record
+  // is the canonical head profile (Settings → Head coach profile) — empty until
+  // recorded, so they're correctly flagged like anyone else. Name: prefer the
+  // Settings name once it's been set/seeded (i.e. no longer the demo default),
+  // falling back to the account's display_name.
+  const headName = (headS.name && headS.name !== COACH_ORG.coach ? headS.name : '') || profile.display_name || headS.name || 'Head Coach'
+  const head = { id: '__head__', name: headName, role: 'Head', email: headS.email || profile.contact_email, phone: headS.phone || profile.contact_phone, qualifications: headS.accreditation || 'Head Coach', home_venue: null, isHead: true, avatar_url: headS.avatarUrl, contracted_hours: headS.contractedHours, dbs_number: headS.dbsNumber, dbs_issued: headS.dbsIssued, dbs_expiry: headS.dbsExpiry, safeguarding_trained: headS.safeguardingTrained, safeguarding_date: headS.safeguardingDate }
   const everyone = [head, ...staff.rows]
   const flagged = everyone.filter(s => { const st = dbsState(s.dbs_expiry); return st.label === 'Expired' || st.label.startsWith('Expires') || st.label.startsWith('No DBS') })
   const ROLES = ['All', 'Head', 'Senior', 'Coach', 'Assistant', 'Apprentice']
@@ -316,9 +321,10 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
     if (!String(d.name ?? '').trim()) { setErr('Name is required'); return }
     setSaving(true); setErr('')
     try {
-      // The head coach (you) — store contact + DBS / safeguarding in settings.
+      // The head coach (you) — write through the canonical head profile, the
+      // same record Settings → Head coach profile edits.
       if (initial?.isHead) {
-        setSettings({ head: { phone: d.phone || '', email: d.email || '', contractedHours: Number(d.contracted_hours) || null, dbsNumber: d.dbs_number || '', dbsIssued: d.dbs_issued || '', dbsExpiry: d.dbs_expiry || '', safeguardingTrained: !!d.safeguarding_trained, safeguardingDate: d.safeguarding_date || '', avatarUrl: d.avatar_url || '' } })
+        setHeadProfile({ phone: d.phone || '', email: d.email || '', contractedHours: Number(d.contracted_hours) || null, dbsNumber: d.dbs_number || '', dbsIssued: d.dbs_issued || '', dbsExpiry: d.dbs_expiry || '', safeguardingTrained: !!d.safeguarding_trained, safeguardingDate: d.safeguarding_date || '', avatarUrl: d.avatar_url || '', accreditation: d.qualifications || getHeadProfile().accreditation })
         onSaved(); return
       }
       const row = { name: d.name, role: d.role || null, email: d.email || null, phone: d.phone || null, qualifications: d.qualifications || null, home_venue: d.home_venue || null, contracted_hours: Number(d.contracted_hours) || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }
