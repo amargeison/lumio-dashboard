@@ -148,11 +148,14 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }
   // Match the demo SectionHead: white, sentence-case, 13/600 (not muted uppercase).
   const sectionTitle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: T.text, margin: '0 0 12px' }
+  // Per-module section visibility — Settings → Dashboard → Sections.
+  const sectOff = getSettings().sectionsOff?.dashboard || []
+  const showSec = (k: string) => !sectOff.includes(k)
 
   return (
     <div style={{ fontFamily: FONT, display: 'flex', flexDirection: 'column', gap: density.gap }}>
       {/* Hero + Today */}
-      <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: density.gap }}>
+      <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: showSec('today') ? '1.6fr 1fr' : '1fr', gap: density.gap }}>
         <div style={{ ...card, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${accent.dim}, ${T.panel})` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
             <div style={{ fontSize: 12, color: T.text3 }}>{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
@@ -173,7 +176,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
             <button onClick={() => setComposer({})} style={btnGhost(T)}>Send message</button>
           </div>
         </div>
-        <div style={card}>
+        <div style={{ ...card, display: showSec('today') ? undefined : 'none' }}>
           <p style={sectionTitle}>Today</p>
           <div style={{ position: 'relative' }}>
             {todays.length > 0 && <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />}
@@ -197,7 +200,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
       </div>
 
       {/* Stat cards */}
-      <div className="cm-md" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: density.gap }}>
+      <div className="cm-md" style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(5, 1fr)', gap: density.gap }}>
         {[
           { l: 'This week', v: thisWeek.length, nav: 'calendar' },
           { l: 'Next session', v: next ? `${fmtDate(next.booking_date)}${next.start_time ? ' ' + next.start_time : ''}` : '—', nav: 'calendar', small: true },
@@ -213,9 +216,9 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
       </div>
 
       {/* Inbox / Coach AI briefing / Needs attention */}
-      <div className="cm-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', gap: density.gap }}>
+      <div className="cm-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: density.gap }}>
         {/* Inbox — live, last 5 messages, synced with the Messages section */}
-        <div style={card}>
+        <div style={{ ...card, display: showSec('inbox') ? undefined : 'none' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12 }}>
             <p style={{ ...sectionTitle, margin: 0 }}>Inbox</p>
             <button onClick={() => onNavigate('messages')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>All →</button>
@@ -262,7 +265,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
         </div>
 
         {/* Coach AI briefing — live, derived from real signals */}
-        <div style={card}>
+        <div style={{ ...card, display: showSec('briefing') ? undefined : 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
             <span style={{ color: accent.hex }}>✦</span>
             <p style={{ ...sectionTitle, margin: 0 }}>Coach AI briefing</p>
@@ -277,7 +280,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
         </div>
 
         {/* Needs attention — boxed rows (matches demo) + racket assessments due */}
-        <div style={card}>
+        <div style={{ ...card, display: showSec('needs') ? undefined : 'none' }}>
           <p style={sectionTitle}>Needs attention</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {needs.length === 0 && racketsReady.length === 0 && (
@@ -307,8 +310,8 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
       </div>
 
       {/* Extra row — upcoming sessions / recent summaries / kit needing attention */}
-      <div className="cm-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: density.gap }}>
-        <div style={card}>
+      <div className="cm-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: density.gap }}>
+        <div style={{ ...card, display: showSec('upcoming') ? undefined : 'none' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12 }}>
             <p style={{ ...sectionTitle, margin: 0 }}>Upcoming sessions</p>
             <button onClick={() => onNavigate('planner')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>Planner →</button>
@@ -321,7 +324,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           ))}
         </div>
 
-        <div style={card}>
+        <div style={{ ...card, display: showSec('summaries') ? undefined : 'none' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12 }}>
             <p style={{ ...sectionTitle, margin: 0 }}>Recent summaries</p>
             <button onClick={() => onNavigate('lessons')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>All →</button>
@@ -334,7 +337,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           ))}
         </div>
 
-        <div style={card}>
+        <div style={{ ...card, display: showSec('kit') ? undefined : 'none' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12 }}>
             <p style={{ ...sectionTitle, margin: 0 }}>Kit needing attention</p>
             <button onClick={() => onNavigate('equipment')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>Equipment →</button>

@@ -58,6 +58,7 @@ export type CoachSettings = {
   ccCoachOnEmail: boolean         // CC the coach's own inbox on emails sent to players/parents
   audioOnly: boolean              // Video & Audio module: hide the video half, show audio only (menu label → "Audio only")
   brandLogo: string               // Club/academy logo (data URL) shown top-left instead of the Lumio mark
+  sectionsOff: Record<string, string[]>  // per-module hidden sections (moduleId → section keys turned off)
   // The head coach's own contact + DBS / safeguarding record (the account owner).
   // Empty by default so a new head is correctly flagged until they record it.
   head: { phone: string; email: string; contractedHours: number | null; dbsNumber: string; dbsIssued: string; dbsExpiry: string; safeguardingTrained: boolean; safeguardingDate: string; avatarUrl: string }
@@ -92,7 +93,24 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   ccCoachOnEmail: true,
   audioOnly: false,
   brandLogo: '',
+  sectionsOff: {},
   head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '', avatarUrl: '' },
+}
+
+// Toggleable sections per module — drives the "Sections" toggles in each module's
+// Settings card and what the module renders. Add a module's key here to give it
+// section toggles; the module reads sectionsOff (via isSectionOff) to hide them.
+export const MODULE_SECTIONS: Record<string, { key: string; label: string }[]> = {
+  dashboard: [
+    { key: 'today',     label: 'Today timeline' },
+    { key: 'stats',     label: 'Stat cards' },
+    { key: 'inbox',     label: 'Inbox' },
+    { key: 'briefing',  label: 'Coach AI briefing' },
+    { key: 'needs',     label: 'Needs attention' },
+    { key: 'upcoming',  label: 'Upcoming sessions' },
+    { key: 'summaries', label: 'Recent summaries' },
+    { key: 'kit',       label: 'Kit needing attention' },
+  ],
 }
 
 const KEY = 'lumio_coach_settings'
@@ -108,6 +126,17 @@ export function setSettings(patch: Partial<CoachSettings>) {
   const next = { ...getSettings(), ...patch }
   try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(EVT))
+}
+
+// Per-module section visibility helpers (used by module settings cards + modules).
+export function isSectionOff(moduleId: string, key: string): boolean {
+  return (getSettings().sectionsOff?.[moduleId] || []).includes(key)
+}
+export function setSectionOff(moduleId: string, key: string, off: boolean) {
+  const cur = getSettings().sectionsOff || {}
+  const list = new Set(cur[moduleId] || [])
+  if (off) list.add(key); else list.delete(key)
+  setSettings({ sectionsOff: { ...cur, [moduleId]: Array.from(list) } })
 }
 
 export function resetSettings() {
