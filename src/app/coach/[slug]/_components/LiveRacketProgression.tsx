@@ -12,6 +12,7 @@ import { useState, useMemo, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, RACKET_STAGES, SKILLS_BY_STAGE, RACKET_SKILLS } from '../_lib/coach-db'
+import { getSettings } from '../_lib/settings-store'
 import { avatarSrc } from '@/lib/avatar'
 
 type Player = { id: string; name: string; level?: string | null; racket_stage?: string | null; avatar_url?: string | null }
@@ -82,6 +83,8 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
     </div>
   )
   const openStage = RACKET_STAGES.find(s => s.id === open) || RACKET_STAGES[0]
+  const sectOff = getSettings().sectionsOff?.belts || []
+  const showSec = (k: string) => !sectOff.includes(k)
 
   return (
     <div style={{ fontFamily: FONT }}>
@@ -91,7 +94,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
       </div>
 
       {/* LTA alignment */}
-      <div style={{ ...card, borderColor: accent.border, background: accent.dim }}>
+      <div style={{ ...card, borderColor: accent.border, background: accent.dim, display: showSec('lta') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <span style={{ color: accent.hex, flexShrink: 0 }}>🛡️</span>
           <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5 }}>
@@ -102,7 +105,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
       </div>
 
       {/* Racket Reward System */}
-      <div style={card}>
+      <div style={{ ...card, display: showSec('rewards') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <span style={{ width: 34, height: 34, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0, fontSize: 17 }}>🏆</span>
           <div style={{ flex: 1, minWidth: 240 }}>
@@ -188,7 +191,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
       </div>
 
       {/* Squad racket matrix */}
-      <div style={card}>
+      <div style={{ ...card, display: showSec('squad') ? undefined : 'none' }}>
         {sectionHead('Squad racket matrix', `${players.length} players`)}
         {players.length === 0 ? (
           <p style={{ fontSize: 12.5, color: T.text3, padding: '8px 0' }}>No players yet — add players in the Player Roster, then set their racket and grade skills to see progress here.</p>

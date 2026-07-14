@@ -10,6 +10,7 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert } from '../_lib/coach-db'
 import { seedLumioEquipment } from '../_lib/lumio-equipment'
+import { getSettings } from '../_lib/settings-store'
 
 type Item = { id: string; item: string; category?: string | null; quantity?: number | null; status?: string | null; notes?: string | null }
 type Kit = { id: string; session_type: string; label: string }
@@ -48,6 +49,8 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
   // Inventory grouped by category.
   const cats = Array.from(new Set(items.rows.map(i => i.category || 'Uncategorised')))
   const shown = (i: Item) => filter === 'all' || needsAttention(i.status)
+  const sectOff = getSettings().sectionsOff?.equipment || []
+  const showSec = (k: string) => !sectOff.includes(k)
 
   return (
     <div style={{ fontFamily: FONT }}>
@@ -63,7 +66,7 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
         {tiles.map(([l, v, c]) => (
           <div key={l} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: '14px 16px' }}>
             <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{l}</div>
@@ -73,7 +76,7 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
       </div>
 
       {/* Kit for each session type */}
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 18, display: showSec('kit') ? undefined : 'none' }}>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, marginBottom: 10 }}>Kit for each session type <span style={{ fontSize: 11, fontWeight: 400, color: T.text3 }}>· grab-and-go checklists</span></div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
           {SESSION_TYPES.map(st => <KitCard key={st} T={T} accent={accent} type={st} items={kits.rows.filter(k => k.session_type === st)} reload={kits.reload} remove={kits.remove} />)}

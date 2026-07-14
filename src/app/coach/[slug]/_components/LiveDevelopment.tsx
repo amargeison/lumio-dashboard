@@ -15,6 +15,7 @@ import {
   SKILL_LEVELS, skillLevelColour,
 } from '../_lib/coach-db'
 import { printRacketCertificate } from './LiveRacketProgression'
+import { getSettings } from '../_lib/settings-store'
 import { avatarSrc } from '@/lib/avatar'
 
 type Player = { id: string; name: string; age?: number | null; level?: string | null; category?: string | null; parent_name?: string | null; goal?: string | null; racket_stage?: string | null; avatar_url?: string | null }
@@ -136,6 +137,8 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
     { label: 'Top speed', value: topSpeed ? `${topSpeed.toFixed(1)} km/h` : '—', sub: 'GPS watch' },
   ]
   const card: CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }
+  const sectOff = getSettings().sectionsOff?.development || []
+  const showSec = (k: string) => !sectOff.includes(k)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -155,12 +158,12 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
             style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: hasStage ? 'pointer' : 'not-allowed', opacity: hasStage ? 1 : 0.5, fontFamily: FONT }}>🏆 Racket certificate</button>
         </div>
         {/* Goal */}
-        <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '9px 12px', display: 'flex', alignItems: 'center', gap: 8, marginTop: 14 }}>
+        <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '9px 12px', display: showSec('goal') ? 'flex' : 'none', alignItems: 'center', gap: 8, marginTop: 14 }}>
           <span style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>⚑ Goal</span>
           <span style={{ fontSize: 12.5, color: T.text }}>{p.goal || 'No goal set yet — add one when you edit this player in the Roster.'}</span>
         </div>
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 14 }}>
+        <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 14 }}>
           {tiles.map(t => (
             <div key={t.label} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '9px 11px' }}>
               <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t.label}</div>
@@ -172,7 +175,7 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
       </div>
 
       {/* Working racket — live grading */}
-      <div style={card}>
+      <div style={{ ...card, display: showSec('racket') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
           <span style={{ width: 14, height: 14, borderRadius: 4, background: curStage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
           <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Working racket · {curStage.name} — {THEME[curStage.id]}</div>
@@ -200,7 +203,7 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
       </div>
 
       {/* Racket journey + recent lessons */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div style={{ display: showSec('journey') ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={card}>
           <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 10 }}>Racket journey</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
