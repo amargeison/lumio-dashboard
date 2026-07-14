@@ -11,6 +11,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable } from '../_lib/coach-db'
 import { levelFor, bandLabel } from '../_lib/effort-rewards'
+import { getSettings } from '../_lib/settings-store'
 import { avatarSrc } from '@/lib/avatar'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -169,6 +170,8 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
   const xpTotal = sel.xp
   const lvl = levelFor(xpTotal)
   const latest = sel.list[0]
+  const sectOff = getSettings().sectionsOff?.gpsheatmaps || []
+  const showSec = (k: string) => !sectOff.includes(k)
 
   return (
     <div>
@@ -176,7 +179,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
       {logModal}
 
       {/* Squad leaderboard */}
-      <div style={card}>
+      <div style={{ ...card, display: showSec('leaderboard') ? undefined : 'none' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Squad leaderboard</div>
         {ranked.map((r, i) => {
           const on = r.p.id === sel.p.id
@@ -221,7 +224,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
       </div>
 
       {/* Latest session */}
-      {latest && (
+      {latest && showSec('latest') && (
         <div style={card}>
           <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 2 }}>Latest session</div>
           <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 12 }}>{when(latest) ? new Date(when(latest)).toLocaleString('en-GB') : '—'}{latest.estimated ? ' · estimated' : ''}</div>
@@ -247,7 +250,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
       )}
 
       {/* Session history */}
-      <div style={card}>
+      <div style={{ ...card, display: showSec('history') ? undefined : 'none' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Session history</div>
         {sel.list.map((s, i) => (
           <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>

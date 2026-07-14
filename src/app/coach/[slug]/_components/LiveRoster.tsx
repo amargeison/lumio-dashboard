@@ -11,6 +11,7 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, RACKET_SKILLS, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore, useCoachProfile } from '../_lib/coach-db'
 import { WatchConnectPanel } from './WatchConnectPanel'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
+import { getSettings } from '../_lib/settings-store'
 
 // v1: Effort & Rewards is manual-only — smartwatch QR pairing is hidden until v2.
 const SHOW_WATCH_PAIRING: boolean = false
@@ -319,6 +320,8 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
     </div>
   )
 
+  const sectOff = getSettings().sectionsOff?.roster || []
+  const showSec = (k: string) => !sectOff.includes(k)
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.82)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 780, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16 }}>
@@ -343,7 +346,7 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
 
         <div style={{ padding: `${density.pad}px ${density.pad + 4}px ${density.pad + 4}px` }}>
           {/* stat tiles */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 14 }}>
+          <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 14 }}>
             {tile('Current racket', <RacketChip stage={s.stage} T={T} />)}
             {tile('Racket progress', `${racketProgress}%`, accent.hex)}
             {tile('Attendance', attPct !== null ? `${attPct}%` : '—', attPct === null ? T.text3 : attPct >= 90 ? T.good : attPct >= 80 ? T.warn : T.bad, attPct === null)}
@@ -352,7 +355,7 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
           </div>
 
           {/* goal */}
-          <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '8px 12px', display: showSec('goal') ? 'flex' : 'none', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <Icon name="flag" size={13} stroke={1.8} style={{ color: accent.hex }} />
             <span style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Goal</span>
             <span style={{ fontSize: 12.5, color: T.text }}>{player.goal || 'No goal set yet — add one when you edit this player.'}</span>

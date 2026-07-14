@@ -111,6 +111,30 @@ export const MODULE_SECTIONS: Record<string, { key: string; label: string }[]> =
     { key: 'summaries', label: 'Recent summaries' },
     { key: 'kit',       label: 'Kit needing attention' },
   ],
+  belts: [
+    { key: 'lta',     label: 'LTA alignment note' },
+    { key: 'rewards', label: 'Reward system info' },
+    { key: 'squad',   label: 'Squad racket matrix' },
+  ],
+  equipment: [
+    { key: 'stats', label: 'Stats' },
+    { key: 'kit',   label: 'Kit checklists' },
+  ],
+  gpsheatmaps: [
+    { key: 'leaderboard', label: 'Squad leaderboard' },
+    { key: 'latest',      label: 'Latest session' },
+    { key: 'history',     label: 'Session history' },
+  ],
+  development: [
+    { key: 'goal',    label: 'Goal' },
+    { key: 'stats',   label: 'Stat tiles' },
+    { key: 'racket',  label: 'Working racket' },
+    { key: 'journey', label: 'Racket journey & lessons' },
+  ],
+  roster: [
+    { key: 'stats', label: 'Player stat tiles' },
+    { key: 'goal',  label: 'Goal' },
+  ],
 }
 
 const KEY = 'lumio_coach_settings'
