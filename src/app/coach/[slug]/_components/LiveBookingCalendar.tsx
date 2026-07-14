@@ -12,6 +12,7 @@ import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile } from '../_lib/coach-db'
+import { getSettings } from '../_lib/settings-store'
 
 type Booking = {
   id: string; title: string | null; player_name: string | null; court: string | null
@@ -117,6 +118,9 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
       }} />
   )
 
+  const sectOff = getSettings().sectionsOff?.calendar || []
+  const showSec = (k: string) => !sectOff.includes(k)
+
   return (
     <div style={{ fontFamily: FONT }}>
       {/* Header */}
@@ -144,7 +148,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
       </div>
 
       {/* Calendar sync banner */}
-      {connected !== null && (
+      {connected !== null && showSec('syncbanner') && (
         calProvider ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12, padding: '9px 13px', borderRadius: 10, background: 'rgba(58,142,224,0.08)', border: '1px solid rgba(58,142,224,0.25)', fontSize: 11.5, color: T.text2 }}>
             <span style={{ fontWeight: 700, color: '#3A8EE0' }}>📅 Synced</span>
@@ -164,7 +168,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
         : <MonthGrid T={T} accent={accent} cursor={cursor} today={today} bookingsOn={bookingsOn} typeColour={TYPE_COLOUR} onOpen={b => setEditing(b)} onDay={d => { setCursor(d); setView('week') }} />}
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: 14, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
+      <div style={{ display: showSec('legend') ? 'flex' : 'none', gap: 14, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
         {TYPES.map(t => <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: TYPE_COLOUR(t) }} />{t}</span>)}
         <span style={{ marginLeft: 'auto' }}>{view === 'week' ? 'Faint fill = pending confirmation' : 'Click a day to open its week'}</span>
       </div>

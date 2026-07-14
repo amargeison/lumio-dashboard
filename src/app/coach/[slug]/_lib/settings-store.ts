@@ -135,6 +135,35 @@ export const MODULE_SECTIONS: Record<string, { key: string; label: string }[]> =
     { key: 'stats', label: 'Player stat tiles' },
     { key: 'goal',  label: 'Goal' },
   ],
+  payments: [
+    { key: 'stats',      label: 'Stat cards' },
+    { key: 'packages',   label: 'Packages on offer' },
+    { key: 'lessonpacks', label: 'Lesson packages' },
+  ],
+  calendar: [
+    { key: 'syncbanner', label: 'Calendar sync banner' },
+    { key: 'legend',     label: 'Status legend' },
+  ],
+  venues: [
+    { key: 'stats',      label: 'Stat cards' },
+    { key: 'legend',     label: 'Court status legend' },
+    { key: 'facilities', label: 'Facilities (per site)' },
+    { key: 'courts',     label: 'Courts (per site)' },
+    { key: 'coaches',    label: 'Coaches based here' },
+  ],
+  staff: [
+    { key: 'stats',    label: 'Stat cards' },
+    { key: 'dbs',      label: 'DBS & safeguarding' },
+    { key: 'week',     label: 'This week (coach)' },
+    { key: 'assigned', label: 'Assigned players' },
+  ],
+  planner: [
+    { key: 'nextup',       label: 'Next up' },
+    { key: 'stats',        label: 'Stat cards' },
+    { key: 'needsplan',    label: 'Needs a plan' },
+    { key: 'needsbooking', label: 'Needs a booking' },
+    { key: 'weekcal',      label: 'This week’s calendar' },
+  ],
 }
 
 const KEY = 'lumio_coach_settings'

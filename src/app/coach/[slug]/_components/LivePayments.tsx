@@ -111,6 +111,9 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
     ['Expiring soon', String(expiringCount), T.warn],
   ]
 
+  const sectOff = getSettings().sectionsOff?.payments || []
+  const showSec = (k: string) => !sectOff.includes(k)
+
   return (
     <div style={{ fontFamily: FONT }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -121,7 +124,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
         <button onClick={() => setPay({})} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>💳 Take a payment</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 16 }}>
         {tiles.map(([l, v, c]) => (
           <div key={l} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: '14px 16px' }}>
             <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{l}</div>
@@ -131,7 +134,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
       </div>
 
       {/* Packages on offer */}
-      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
+      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 16, display: showSec('packages') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Packages on offer</div>
           <span style={{ fontSize: 11.5, color: T.text3 }}>Your price list — what players can buy.</span>
@@ -158,7 +161,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
       </div>
 
       {/* Lesson packages (per player) */}
-      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
+      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, display: showSec('lessonpacks') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Lesson packages</div>
           <span style={{ fontSize: 11.5, color: T.text3 }}>Every player — on a package or pay-as-you-go. Sessions tick automatically from lesson summaries.</span>
