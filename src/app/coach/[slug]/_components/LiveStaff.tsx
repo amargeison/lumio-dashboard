@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile } from '../_lib/coach-db'
-import { getHeadProfile, setHeadProfile, subscribe, ACCREDITATIONS } from '../_lib/settings-store'
+import { getHeadProfile, setHeadProfile, subscribe, ACCREDITATIONS, getSettings } from '../_lib/settings-store'
 import { COACH_ORG } from '../_lib/coach-data'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
 
@@ -42,6 +42,8 @@ export function LiveStaff({ T, accent }: Common) {
   const [editing, setEditing] = useState<any | null | undefined>(undefined)
   const [role, setRole] = useState('All')
   const [sel, setSel] = useState<any | null>(null)
+  const sectOff = getSettings().sectionsOff?.staff || []
+  const showSec = (k: string) => !sectOff.includes(k)
   // The head coach's own record (the account owner) — read from the SAME
   // canonical store as Settings → Head coach profile, so the two always match.
   const [headS, setHeadS] = useState(() => getHeadProfile())
@@ -147,7 +149,7 @@ export function LiveStaff({ T, accent }: Common) {
         </div>
 
         {/* DBS & safeguarding */}
-        {st && (
+        {showSec('dbs') && st && (
           <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 10 }}>
               <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>DBS &amp; safeguarding{sel.isHead ? ' (you)' : ''}</div>
@@ -169,7 +171,7 @@ export function LiveStaff({ T, accent }: Common) {
         )}
 
         {/* This week */}
-        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
+        <div style={{ display: showSec('week') ? undefined : 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
           <div style={{ padding: '14px 16px 0', fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>This week</div>
           <div style={{ overflowX: 'auto', padding: 12 }}>
             <div style={{ minWidth: 680 }}>
@@ -197,7 +199,7 @@ export function LiveStaff({ T, accent }: Common) {
         </div>
 
         {/* Assigned players */}
-        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
+        <div style={{ display: showSec('assigned') ? undefined : 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Assigned players · {myPlayers.length}</div>
           {myPlayers.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No players assigned to this coach yet. Use “Move to coach…” on another coach, or set a player’s coach in the Roster.</div> : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
@@ -242,7 +244,7 @@ export function LiveStaff({ T, accent }: Common) {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 16 }}>
         {([['Coaches', everyone.length, T.text], ['Players', players.rows.length, '#3A8EE0'], ['DBS valid', `${dbsValid}/${everyone.length}`, T.good], ['DBS attention', flagged.length, flagged.length ? T.warn : T.text3]] as const).map(([l, v, c]) => (
           <div key={l} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: '14px 16px' }}>
             <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{l}</div>

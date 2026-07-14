@@ -14,6 +14,7 @@ import {
   demoAvatarUrl,
   type Camp, type CampAttendee,
 } from '../_lib/coach-data'
+import { getSettings } from '../_lib/settings-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -224,12 +225,15 @@ function beltColour(i: number) { return BELTS[i]?.colour ?? '#a855f7' }
 function certificateInner(a: CampAttendee, camp: Camp) {
   const stats = playerCampStats(a, camp)
   const beltName = BELTS[stats.beltEnd].name
+  const brandLogo = getSettings().brandLogo
+  const logoTag = brandLogo ? `<img src="${brandLogo}" alt="" style="height:60px;max-width:180px;object-fit:contain;display:block;margin:0 auto 14px" />` : ''
   return `
   <section class="page" style="display:flex;align-items:center;justify-content:center;padding:0">
     <div style="position:absolute;inset:10mm;border:2px solid #C9A227;border-radius:8px"></div>
     <div style="position:absolute;inset:13mm;border:1px solid #e3c97a;border-radius:6px"></div>
     <div style="position:absolute;font-size:340px;opacity:.04;top:50%;left:50%;transform:translate(-50%,-50%)">🎾</div>
     <div style="text-align:center;padding:30mm 24mm;position:relative;max-width:170mm">
+      ${logoTag}
       <div style="font-size:12px;letter-spacing:.5em;color:#a855f7;font-weight:700;text-transform:uppercase">Lumio Tennis Academy</div>
       <div style="font-family:Georgia,'Times New Roman',serif;font-size:42px;letter-spacing:.04em;margin-top:14px;color:#1a1d29">Certificate of Achievement</div>
       <div style="width:70px;height:3px;background:#C9A227;margin:16px auto 22px"></div>
@@ -279,14 +283,19 @@ function campPackHTML(a: CampAttendee, camp: Camp) {
   const improveRows = stats.improvements.map(im => `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f0f1f6"><span style="color:#16a34a;font-weight:800">▲</span><span style="font-size:13px">${esc(im)}</span><span style="margin-left:auto;font-size:10px;color:#16a34a;font-weight:700">improved</span></div>`).join('')
   const logRows = log.map(d => `<tr><td style="white-space:nowrap"><strong style="color:#7c3aed">Day ${d.day}</strong><br/><span style="color:#9099ad;font-size:9px">${esc(d.date)}</span></td><td style="white-space:nowrap"><strong>${esc(d.theme)}</strong></td><td>${esc(d.am)}</td><td>${esc(d.nextAction)}</td><td style="color:#C9A227;white-space:nowrap">${stars(d.effort)}</td></tr>`).join('')
 
+  const packLogo = getSettings().brandLogo
+  const packLogoChip = packLogo ? `<img src="${packLogo}" alt="" style="height:56px;max-width:150px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;flex-shrink:0" />` : ''
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(a.name)} — Camp Pack</title><style>${BASE_CSS}</style></head><body>
   ${certificateInner(a, camp)}
 
   <section class="page">
-    <div class="band">
-      <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;opacity:.85">Personal Camp Pack</div>
-      <div style="font-size:34px;font-weight:800;margin-top:6px">${esc(a.name)}</div>
-      <div style="opacity:.9;margin-top:4px">${esc(camp.name)} · ${esc(camp.location)}, ${esc(camp.country)} · ${esc(camp.start)} – ${esc(camp.end)}</div>
+    <div class="band" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div>
+        <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;opacity:.85">Personal Camp Pack</div>
+        <div style="font-size:34px;font-weight:800;margin-top:6px">${esc(a.name)}</div>
+        <div style="opacity:.9;margin-top:4px">${esc(camp.name)} · ${esc(camp.location)}, ${esc(camp.country)} · ${esc(camp.start)} – ${esc(camp.end)}</div>
+      </div>
+      ${packLogoChip}
     </div>
     <h3 style="margin:22px 0 12px;font-size:14px">Your fortnight by the numbers</h3>
     <div class="grid4">${statCards}</div>

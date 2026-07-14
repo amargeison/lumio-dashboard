@@ -10,6 +10,7 @@ import { useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable } from '../_lib/coach-db'
+import { getSettings } from '../_lib/settings-store'
 
 type Venue = { id: string; name: string; address?: string | null; contact_name?: string | null; contact_phone?: string | null; contact_email?: string | null; facilities?: string | null; access_note?: string | null; is_home?: boolean | null }
 type Court = { id: string; venue_id?: string | null; name: string; surface?: string | null; status?: string | null; notes?: string | null }
@@ -27,6 +28,9 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
   const { rows: bookings } = useCoachTable<Booking>('coach_bookings')
   const { rows: staff } = useCoachTable<Staff>('coach_staff')
   const [reqVenue, setReqVenue] = useState<Venue | null>(null)
+
+  const sectOff = getSettings().sectionsOff?.venues || []
+  const showSec = (k: string) => !sectOff.includes(k)
 
   const today = todayISO()
   const todaysBookings = bookings.filter(b => b.booking_date === today && b.status !== 'cancelled')
@@ -47,7 +51,7 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
         {tiles.map(t => (
           <div key={t.label} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: '14px 16px' }}>
             <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{t.label}</div>
@@ -64,7 +68,7 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
           {venues.map(v => (
-            <VenueCard key={v.id} T={T} accent={accent} venue={v}
+            <VenueCard key={v.id} T={T} accent={accent} venue={v} showSec={showSec}
               courts={courts.filter(c => c.venue_id === v.id)}
               todaysBookings={todaysBookings}
               coaches={staff.filter(s => (s.home_venue || '').trim().toLowerCase() === v.name.trim().toLowerCase())}
@@ -74,7 +78,7 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
       )}
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: 14, marginTop: 14, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
+      <div style={{ display: showSec('legend') ? 'flex' : 'none', gap: 14, marginTop: 14, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
         {[['Free', T.good], ['Your lesson', accent.hex], ['Booked', T.warn], ['Maintenance', T.bad]].map(([l, c]) => (
           <span key={l as string} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: c as string }} />{l}</span>
         ))}
@@ -85,8 +89,8 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
   )
 }
 
-function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onRequest }: {
-  T: ThemeTokens; accent: AccentTokens; venue: Venue; courts: Court[]; todaysBookings: Booking[]; coaches: Staff[]; onRequest: () => void
+function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onRequest, showSec }: {
+  T: ThemeTokens; accent: AccentTokens; venue: Venue; courts: Court[]; todaysBookings: Booking[]; coaches: Staff[]; onRequest: () => void; showSec: (k: string) => boolean
 }) {
   const facilities = (venue.facilities || '').split(',').map(s => s.trim()).filter(Boolean)
   // A court shows "Your lesson" if there's a confirmed booking today whose court matches.
@@ -138,7 +142,7 @@ function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onReques
       )}
 
       {/* Facilities */}
-      {facilities.length > 0 && (
+      {showSec('facilities') && facilities.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
           {facilities.map(f => <span key={f} style={{ fontSize: 10.5, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '3px 9px' }}>{f}</span>)}
         </div>
@@ -146,7 +150,7 @@ function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onReques
       {venue.access_note && <div style={{ fontSize: 11, color: T.text3, marginTop: 8 }}>🛈 {venue.access_note}</div>}
 
       {/* Courts */}
-      <div style={{ marginTop: 14 }}>
+      <div style={{ display: showSec('courts') ? undefined : 'none', marginTop: 14 }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Courts · {courts.length}</div>
         {courts.length === 0 ? <div style={{ fontSize: 11.5, color: T.text3 }}>No courts added for this venue yet (add them in Settings → Venues).</div> : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
@@ -167,7 +171,7 @@ function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onReques
       </div>
 
       {/* Coaches based here */}
-      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
+      <div style={{ display: showSec('coaches') ? undefined : 'none', marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Coaches based here · {coaches.length}</div>
         {coaches.length === 0 ? <div style={{ fontSize: 11.5, color: T.text3 }}>No coaches based here yet.</div> : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>

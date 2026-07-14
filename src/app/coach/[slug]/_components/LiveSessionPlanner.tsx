@@ -11,6 +11,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, dbInsert, dbRemove, RACKET_STAGES, RACKET_SKILLS, logSessionAttendance } from '../_lib/coach-db'
 import { MediaCaptureModal } from './MediaCaptureModal'
+import { getSettings } from '../_lib/settings-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -82,6 +83,8 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   const bookings = useCoachTable<any>('coach_bookings')
   const skills = useCoachTable<any>('coach_player_skills')
   const [tab, setTab] = useState<'overview' | 'today' | 'week' | 'month'>('overview')
+  const sectOff = getSettings().sectionsOff?.planner || []
+  const showSec = (k: string) => !sectOff.includes(k)
   const [open, setOpen] = useState(false)
   const [prefill, setPrefill] = useState<any | null>(null)
   const [sel, setSel] = useState<any | null>(null)
@@ -151,9 +154,9 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
 
       {tab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16 }}>
+          <div style={{ display: (showSec('nextup') || showSec('stats')) ? 'grid' : 'none', gridTemplateColumns: (showSec('nextup') && showSec('stats')) ? '1.6fr 1fr' : '1fr', gap: 16 }}>
             {/* Next up */}
-            <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18 }}>
+            <div style={{ display: showSec('nextup') ? undefined : 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18 }}>
               <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 10 }}>Next up</div>
               {nextUp ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
@@ -167,7 +170,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
               ) : <div style={{ fontSize: 13, color: T.text3 }}>No upcoming bookings. Add bookings in the Booking Calendar and they’ll appear here.</div>}
             </div>
             {/* Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {stat('Sessions today', todays.length, accent.hex)}
               {stat('This week', weekCount, accent.hex)}
               {stat('Rackets due', racketsDue, T.warn)}
@@ -176,7 +179,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
           </div>
 
           {/* Needs a plan */}
-          <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
+          <div style={{ display: showSec('needsplan') ? undefined : 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Needs a plan</div>
               <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{needsPlan.length}</div>
@@ -194,7 +197,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
           </div>
 
           {/* Needs a booking — plans waiting for a session to be booked */}
-          {unbookedPlans.length > 0 && (
+          {showSec('needsbooking') && unbookedPlans.length > 0 && (
             <div style={{ background: T.panel, border: `1px solid ${accent.border}`, borderRadius: 12, padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 6 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Needs a booking</div>
@@ -220,7 +223,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
           )}
 
           {/* This week's calendar (synced from bookings) */}
-          <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 0, overflow: 'hidden' }}>
+          <div style={{ display: showSec('weekcal') ? undefined : 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 0, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', padding: '14px 16px 0' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>This week’s calendar</div>
               <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>synced from Booking Calendar</div>
