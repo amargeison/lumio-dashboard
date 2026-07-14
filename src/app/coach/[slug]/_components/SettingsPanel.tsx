@@ -233,7 +233,43 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
         )
       })}
 
+      {/* Per-module settings — every menu item gets a settings home. General
+          controls now (show in sidebar); deeper per-module config (section
+          toggles, colour, setup) rolls out into these modals next. */}
+      <div style={{ marginBottom: density.gap + 8 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Modules</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: density.gap }}>
+          {COACH_SIDEBAR.filter(i => i.id !== 'settings').map(item => {
+            const hidden = hiddenMenu.includes(item.id)
+            return (
+              <div key={item.id} onClick={() => setOpen(`module:${item.id}`)}
+                style={{ position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad, boxShadow: T.cardShadow, cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 8, display: 'grid', placeItems: 'center', background: accent.dim }}><Icon name={item.icon} size={16} stroke={1.7} style={{ color: accent.hex }} /></div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text, flex: 1 }}>{item.label}</div>
+                  <span style={{ fontSize: 11, color: accent.hex, fontWeight: 600 }}>Edit →</span>
+                </div>
+                <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8, lineHeight: 1.45 }}>{hidden ? 'Hidden from the sidebar' : 'Shown in the sidebar'}</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
       {/* ── Editors ── */}
+      {open?.startsWith('module:') && (() => {
+        const mid = open.slice('module:'.length)
+        const item = COACH_SIDEBAR.find(i => i.id === mid)
+        if (!item) return null
+        const locked = ALWAYS_VISIBLE.includes(mid)
+        const hidden = hiddenMenu.includes(mid)
+        return (
+          <Modal readOnly={demo} T={T} accent={accent} title={item.label} sub="Module settings" onClose={() => setOpen(null)}>
+            <Toggle T={T} accent={accent} on={!hidden} onChange={v => { if (!locked) setMenuHidden(mid, !v) }} label="Show in the sidebar" desc={locked ? 'Always visible — can’t be hidden.' : 'Hide this module from the coach menu.'} />
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10, lineHeight: 1.5 }}>More options for {item.label} — section toggles, colour and setup — are coming to this panel.</div>
+          </Modal>
+        )
+      })()}
       {open === 'contact' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Contact & calendar" onClose={() => setOpen(null)}><CoachContactSettings T={T} accent={accent} /></Modal>)}
       {open === 'venuescfg' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Venues & courts" onClose={() => setOpen(null)}><CoachVenuesSettings T={T} accent={accent} /></Modal>)}
       {open === 'devcfg' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Coaching, rewards & modules" onClose={() => setOpen(null)}><CoachDevelopmentSettings T={T} accent={accent} /></Modal>)}
