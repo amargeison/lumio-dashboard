@@ -196,6 +196,7 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
       sportEmoji="🎾"
       sportLabel="Lumio Tennis Coach"
       roles={COACH_ROLES}
+      skipWizard
     >
       {(session) => <CoachPortalInner session={session} isEmpty={isEmpty} slugClubName={slugClubName} />}
     </SportsDemoGate>
