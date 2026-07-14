@@ -4,12 +4,15 @@
 // certificate. Award the player's current belt and list the skills mastered.
 
 import { BELTS, COACH_ORG, type Player } from '../_lib/coach-data'
+import { getSettings } from '../_lib/settings-store'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 export function printBeltCertificate(player: Player, beltIndex: number) {
   if (typeof window === 'undefined') return
   const belt = BELTS[beltIndex]
+  const brandLogo = getSettings().brandLogo
+  const logoTag = brandLogo ? `<img src="${brandLogo}" alt="" style="height:60px;max-width:180px;object-fit:contain;display:block;margin:0 auto 14px" />` : ''
   const skills = belt.skills.map(s => `<span class="chip">${esc(s.name)}</span>`).join('')
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(belt.name)} Racket — ${esc(player.name)}</title>
   <style>
@@ -24,6 +27,7 @@ export function printBeltCertificate(player: Player, beltIndex: number) {
     <div style="position:absolute;inset:13mm;border:1px solid #e3c97a;border-radius:6px"></div>
     <div style="position:absolute;font-size:340px;opacity:.04;top:50%;left:50%;transform:translate(-50%,-50%)">🎾</div>
     <div style="text-align:center;padding:28mm 24mm;position:relative;max-width:170mm">
+      ${logoTag}
       <div style="font-size:12px;letter-spacing:.5em;color:#a855f7;font-weight:700;text-transform:uppercase">Lumio Tennis Academy</div>
       <div style="font-family:Georgia,'Times New Roman',serif;font-size:40px;letter-spacing:.04em;margin-top:14px;color:#1a1d29">Racket Award</div>
       <div style="width:70px;height:3px;background:${belt.colour};margin:14px auto 20px;border:1px solid rgba(0,0,0,.15)"></div>

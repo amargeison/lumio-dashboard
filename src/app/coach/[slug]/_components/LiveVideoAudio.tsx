@@ -27,6 +27,9 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
   const [recKind, setRecKind] = useState<'audio' | 'video'>('video')
   // In audio-only mode force the audio tab + audio capture.
   useEffect(() => { if (audioOnly) { setTab('audio'); setRecKind('audio') } }, [audioOnly])
+  // Capture type follows the active tab — Video tab records video, Audio tab
+  // records audio. Keeps each section to a single medium (no cross-mixing).
+  useEffect(() => { if (!audioOnly) setRecKind(tab) }, [tab, audioOnly])
   const [phase, setPhase] = useState<'idle' | 'recording' | 'uploading'>('idle')
   const [secs, setSecs] = useState(0)
   const [err, setErr] = useState('')
@@ -120,7 +123,7 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginBottom: 14, width: 'fit-content' }}>
-        {(audioOnly ? (['audio'] as const) : (['video', 'audio'] as const)).map(t => <button key={t} onClick={() => setTab(t)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: FONT, textTransform: 'capitalize', background: tab === t ? T.panel : 'transparent', color: tab === t ? T.text : T.text2, fontWeight: tab === t ? 600 : 400, boxShadow: tab === t ? `0 0 0 1px ${T.border}` : 'none' }}>{t} · {t === 'video' ? videoCount : audioCount}</button>)}
+        {(audioOnly ? (['audio'] as const) : (['video', 'audio'] as const)).map(t => <button key={t} onClick={() => setTab(t)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: FONT, textTransform: 'capitalize', background: tab === t ? T.panel : 'transparent', color: tab === t ? T.text : T.text2, fontWeight: tab === t ? 600 : 400, boxShadow: tab === t ? `0 0 0 1px ${T.border}` : 'none' }}>{t} · {t === 'video' ? videoCount : audioCount}{t === 'video' && <span style={{ fontSize: 8.5, fontWeight: 800, color: accent.hex, background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 999, padding: '1px 6px', letterSpacing: '0.05em' }}>BETA</span>}</button>)}
       </div>
 
       {/* Lumio Vision status */}
@@ -130,27 +133,38 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
         <span style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{media.rows.length} clip{media.rows.length === 1 ? '' : 's'} logged</span>
       </div>
 
+      {/* Auto highlights — Video only */}
+      {!audioOnly && tab === 'video' && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: accent.dim, border: `1px solid ${accent.hex}44`, borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>✨</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, display: 'flex', alignItems: 'center', gap: 7 }}>Auto highlights <span style={{ fontSize: 8.5, fontWeight: 800, color: accent.hex, background: T.panel, border: `1px solid ${accent.hex}55`, borderRadius: 999, padding: '1px 6px', letterSpacing: '0.05em' }}>BETA</span></div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>Court video is automatically clipped into shot highlights, linked to the right player, and pushed to their mobile app — ready to review and share.</div>
+          </div>
+        </div>
+      )}
+
       {/* Record + upload */}
-      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>{audioOnly ? 'Record audio' : 'Record video + audio'}</div>
-        <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>Field-test capture — record, play back &amp; download. No upload to AI.</div>
+      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 28, lineHeight: 1 }}>{tab === 'audio' ? '🎙️' : '🎬'}</span>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.text }}>{tab === 'audio' ? 'Record match audio' : 'Record court video'}</div>
+            <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>{tab === 'audio' ? 'Capture session audio for review — record, play back &amp; download.' : 'Point at the court and capture the session — record, play back &amp; download.'}</div>
+          </div>
+        </div>
         {phase === 'recording' ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 14 }}>
-            <span style={{ fontSize: 13, color: T.bad, fontWeight: 700 }}>● Recording {recKind}</span>
-            <span style={{ fontSize: 22, fontWeight: 700, color: T.text }}>{recMm}</span>
-            <button onClick={stopRecording} style={{ appearance: 'none', border: 0, background: T.bad, color: '#fff', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>⏹ Stop &amp; save</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 16 }}>
+            <span style={{ fontSize: 13, color: T.bad, fontWeight: 700 }}>● Recording {tab}</span>
+            <span style={{ fontSize: 24, fontWeight: 800, color: T.text }}>{recMm}</span>
+            <button onClick={stopRecording} style={{ appearance: 'none', border: 0, background: T.bad, color: '#fff', borderRadius: 10, padding: '12px 22px', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: FONT }}>⏹ Stop &amp; save</button>
           </div>
         ) : (
           <>
-            {!audioOnly && (
-              <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 12 }}>
-                {(['audio', 'video'] as const).map(k => <button key={k} onClick={() => setRecKind(k)} style={{ appearance: 'none', border: `1px solid ${recKind === k ? accent.border : T.border}`, background: recKind === k ? accent.dim : 'transparent', color: recKind === k ? accent.hex : T.text2, borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{k === 'audio' ? '🎙️ Audio only' : '🎬 Video + Audio'}</button>)}
-              </div>
-            )}
-            <div style={{ fontSize: 11, color: T.text3, marginTop: audioOnly ? 12 : 0, marginBottom: 12 }}>{audioOnly ? 'Records the mic. Keep clips short.' : 'Records the rear camera (point at the court) + mic. Keep clips short (10–15 min); video files are large.'}</div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button onClick={startRecording} disabled={phase === 'uploading'} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>{recKind === 'video' ? '▶ Record video' : '🎙️ Record audio'}</button>
-              <button onClick={() => fileRef.current?.click()} disabled={phase === 'uploading'} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>⬆ Upload {tab === 'audio' ? 'audio' : 'video'}</button>
+            <div style={{ fontSize: 11.5, color: T.text3, margin: '14px 0' }}>{tab === 'audio' ? 'Records the mic. Keep clips short.' : 'Records the rear camera (point at the court) + mic. Keep clips short (10–15 min); video files are large.'}</div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button onClick={startRecording} disabled={phase === 'uploading'} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 11, padding: '14px 28px', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: FONT, boxShadow: `0 4px 14px ${accent.hex}44` }}>{tab === 'audio' ? '🎙️ Record audio' : '▶ Record video'}</button>
+              <button onClick={() => fileRef.current?.click()} disabled={phase === 'uploading'} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 11, padding: '14px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>⬆ Upload {tab === 'audio' ? 'audio' : 'video'}</button>
               <input ref={fileRef} type="file" accept={tab === 'audio' ? 'audio/*' : 'video/*'} multiple style={{ display: 'none' }} onChange={e => onPick(Array.from(e.target.files || []))} />
               {phase === 'uploading' && <span style={{ fontSize: 12, color: T.text3, alignSelf: 'center' }}>Uploading…</span>}
             </div>

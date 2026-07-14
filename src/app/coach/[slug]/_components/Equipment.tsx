@@ -121,7 +121,7 @@ export function EquipmentView({ T, accent, density }: Common) {
 
       {/* restock — tick what to buy, then let Lumio source & draft the order */}
       <Card T={T} density={density} style={{ marginBottom: density.gap, borderColor: attention.length ? `${T.warn}55` : T.border }}>
-        <SectionHead T={T} title={<><Icon name="bell" size={13} stroke={1.7} style={{ color: T.warn, marginRight: 6, verticalAlign: -2 }} />Restock list — never miss anything</>}
+        <SectionHead T={T} title={<><Icon name="bell" size={13} stroke={1.7} style={{ color: T.warn, marginRight: 6, verticalAlign: -2 }} />Restock list — never miss anything <span style={{ fontSize: 9, fontWeight: 800, color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '2px 8px', marginLeft: 8, textTransform: 'uppercase', letterSpacing: '0.05em', verticalAlign: 1 }}>Coming soon</span></>}
           right={<span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span>{selected.length} selected</span>
             {attention.length > 0 && (

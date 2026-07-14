@@ -148,8 +148,13 @@ export function VideoAudioView({ T, accent, density }: Common) {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, padding: 3, background: T.hover, borderRadius: 9, width: 'fit-content' }}>
-        {feat.video && tabBtn('video', `Video${videoRecs.length ? ` · ${videoRecs.length}` : ''}`)}
+      <div style={{ display: 'flex', gap: 4, padding: 3, background: T.hover, borderRadius: 9, width: 'fit-content', alignItems: 'center' }}>
+        {feat.video && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            {tabBtn('video', `Video${videoRecs.length ? ` · ${videoRecs.length}` : ''}`)}
+            <span style={{ fontSize: 8.5, fontWeight: 800, color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '1px 6px', letterSpacing: '0.05em' }}>BETA</span>
+          </span>
+        )}
         {feat.audio && tabBtn('audio', `Audio${audioRecs.length ? ` · ${audioRecs.length}` : ''}`)}
       </div>
 
@@ -157,6 +162,13 @@ export function VideoAudioView({ T, accent, density }: Common) {
       {tab === 'video' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
           <DeviceLine T={T} icon="eye" name="Lumio Vision" meta={`${videoRecs.length} clips logged`} />
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '12px 14px' }}>
+            <span style={{ fontSize: 18, lineHeight: 1 }}>✨</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, display: 'flex', alignItems: 'center', gap: 7 }}>Auto highlights <span style={{ fontSize: 8.5, fontWeight: 800, color: accent.hex, background: T.panel, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '1px 6px', letterSpacing: '0.05em' }}>BETA</span></div>
+              <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>Court video is automatically clipped into shot highlights, linked to the right player, and pushed to their mobile app — ready to review and share.</div>
+            </div>
+          </div>
           <MediaFieldRecorder T={T} accent={accent} density={density} defaultMode="video" />
           {videoRecs.length === 0 ? (
             <div style={{ background: T.panel, border: `1px dashed ${T.border}`, borderRadius: density.radius, padding: '40px 20px', textAlign: 'center' }}>

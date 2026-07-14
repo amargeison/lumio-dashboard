@@ -21,9 +21,9 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🤖', title: 'AI Session Review', desc: 'Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player’s plan so the next session writes itself.' },
   { icon: '🎙️', title: 'AI Lesson Transcriber', desc: 'Just talk. Record the lesson on your phone — or upload a clip — and the AI transcribes it and writes the full summary for you: what you covered, the key takeaways, the drills used and the homework. No typing after a long day on court; every player gets a proper write-up in seconds.' },
   { icon: '🎾', title: 'Racket Progression reward system', desc: 'The reward system at the heart of Lumio Coach. A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds. At every level players earn a coloured racket keyring, a matching dampener and a certificate — with a full trophy at Black — and parents fund the journey: your second revenue stream, built in.' },
-  { icon: '⌚', title: 'Effort & Rewards', desc: 'Players track sessions on the smartwatch they already own — no hardware to buy. Effort, movement and consistency scores become XP and effort levels: a motivation layer that keeps them training, kept separate from the technical racket pathway.' },
-  { icon: '🎬', title: 'Video & clips', desc: 'Your recordings library — match and training footage saved to each player, by session, so you can review technique together. The raw room behind the AI highlights, with no third-party analysis stack.' },
-  { icon: '🎞️', title: 'AI Shot Highlights', desc: 'Record the session and the AI turns it into a highlights reel — automatically clipping the best serves, forehands, backhands, volleys and smashes, each tagged by shot, straight into the player’s app for parents to watch. It reads both the video and what you say on court to get the shot right, and you approve each clip before it’s shared — so what families see is always spot on.' },
+  { icon: '⌚', title: 'Effort & Rewards', desc: 'Log training sessions and effort, movement and consistency become XP and effort levels — a motivation layer that keeps players training, kept separate from the technical racket pathway. Automatic smartwatch sync (Apple Watch & Wear OS) is coming soon; for now you log sessions in seconds and the XP works exactly the same.' },
+  { icon: '🎬', title: 'Video & clips (BETA)', desc: 'Your recordings library — match and training footage saved to each player, by session, so you can review technique together. The raw room behind the AI highlights, with no third-party analysis stack.' },
+  { icon: '🎞️', title: 'AI Shot Highlights (BETA)', desc: 'Record the session and the AI turns it into a highlights reel — automatically clipping the best serves, forehands, backhands, volleys and smashes, each tagged by shot, straight into the player’s app for parents to watch. It reads both the video and what you say on court to get the shot right, and you approve each clip before it’s shared — so what families see is always spot on.' },
   { icon: '👥', title: 'Staff / Coaches', desc: 'Run a club of coaches, not just yourself. A directory with each coach’s calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team’s week.' },
   { icon: '🏕️', title: 'Training Camps', desc: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft and a per-player camp log that captures progress day by day.' },
   { icon: '🗓️', title: 'Booking Calendar', desc: 'Your whole week across every court — private, group, cardio and match play. The single source of truth that feeds the Session Planner, so the schedule and the plans never drift apart.' },
@@ -32,8 +32,8 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
 ]
 
 const INTEGRATIONS = [
-  { icon: '⌚', name: 'Apple Watch & Wear OS', desc: 'Effort & XP from the player’s own watch' },
-  { icon: '🎬', name: 'Lumio Vision', desc: 'Video clips and annotations' },
+  { icon: '⌚', name: 'Apple Watch & Wear OS', desc: 'Coming soon — effort & XP from the player’s own watch' },
+  { icon: '🎬', name: 'Lumio Vision', desc: 'Video clips and annotations (BETA)' },
   { icon: '🤖', name: 'Claude AI', desc: 'Session reviews and camp drafts' },
   { icon: '🏛️', name: 'LTA Youth Pathway', desc: 'Racket stage mapping' },
   { icon: '💳', name: 'Stripe', desc: 'Card, Apple Pay & Google Pay to your bank' },
@@ -325,16 +325,98 @@ function CampMockup() {
   )
 }
 
+function AICoachMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>🧠 Lumio Coach AI</div>
+        <Badge color={PURPLE_LIGHT} bg="rgba(58,142,224,0.15)">One coaching brain</Badge>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Reads each player’s history on every call</div>
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+        {['Plans', 'Reviews', 'Summaries', 'Messages'].map(t => (
+          <span key={t} style={{ fontSize: 8.5, fontWeight: 800, padding: '4px 9px', borderRadius: 999, backgroundColor: '#0A0B10', color: MUTED, border: `1px solid ${BORDER_ALT}` }}>{t}</span>
+        ))}
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${PURPLE}55`, borderRadius: 10, padding: 10, marginBottom: 8 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: PURPLE_LIGHT, marginBottom: 4 }}>◎ REMEMBERS MIA CHEN</div>
+        <div style={{ fontSize: 9.5, color: MUTED, lineHeight: 1.5 }}>Last session: second-serve racket-drop. Green stage · 78% to award. Rushes under pressure at deuce.</div>
+      </div>
+      <div style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.4)', borderRadius: 10, padding: 10 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: '#10B981', marginBottom: 4 }}>✓ TODAY’S PLAN, DRAFTED</div>
+        <div style={{ fontSize: 9.5, color: TEXT, lineHeight: 1.5 }}>Picks up exactly where Mia left off — same voice, same standards, every session.</div>
+      </div>
+    </MockupFrame>
+  )
+}
+
+function AudioMockup() {
+  const bars = [0.4, 0.7, 0.45, 0.9, 0.55, 1, 0.6, 0.35, 0.8, 0.5, 0.7, 0.4, 0.95, 0.6, 0.45, 0.85, 0.5, 0.65, 0.4, 0.75, 0.55, 0.9]
+  return (
+    <MockupFrame>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>🎙️ AI Lesson Transcriber</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Mia Chen · U12 private · just record and talk</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: '9px 11px', marginBottom: 8 }}>
+        <span style={{ fontSize: 12 }}>⏹</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, height: 24, flex: 1 }}>
+          {bars.map((h, i) => <span key={i} style={{ flex: 1, height: `${h * 100}%`, background: PURPLE_LIGHT, opacity: 0.35 + h * 0.5, borderRadius: 1 }} />)}
+        </div>
+        <span style={{ fontSize: 9, fontWeight: 800, color: MUTED }}>04:12</span>
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${PURPLE}55`, borderRadius: 10, padding: 10, marginBottom: 8 }}>
+        <div style={{ fontSize: 9, fontWeight: 800, color: PURPLE_LIGHT, marginBottom: 4 }}>AUTO SUMMARY</div>
+        {[['Covered', 'Second serve — racket drop & spin'], ['Went well', 'Toss consistency, contact point'], ['Homework', 'Shadow serve ×20, deuce targets']].map(([k, v]) => (
+          <div key={k} style={{ display: 'flex', gap: 8, padding: '3px 0', fontSize: 9.5 }}>
+            <span style={{ color: MUTED, width: 58, flexShrink: 0 }}>{k}</span>
+            <span style={{ color: TEXT }}>{v}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 8.5, color: MUTED, fontStyle: 'italic' }}>Written up in seconds — no typing after a long day on court.</div>
+    </MockupFrame>
+  )
+}
+
+function VideoMockup() {
+  const clips = [
+    { shot: 'Serve', c: '#10B981' }, { shot: 'Forehand', c: PURPLE_LIGHT },
+    { shot: 'Backhand', c: '#F59E0B' }, { shot: 'Volley', c: '#06b6d4' },
+  ]
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>🎬 Video &amp; Highlights</div>
+        <Badge color={PURPLE_LIGHT} bg="rgba(58,142,224,0.15)">BETA</Badge>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Record the session — AI clips the best shots</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
+        {clips.map(cl => (
+          <div key={cl.shot} style={{ position: 'relative', aspectRatio: '16 / 9', borderRadius: 8, overflow: 'hidden', background: `linear-gradient(135deg, ${cl.c}44, ${cl.c}11)`, border: `1px solid ${BORDER_ALT}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 9 }}>▷</span>
+            <span style={{ position: 'absolute', bottom: 5, left: 5, fontSize: 7.5, fontWeight: 800, color: cl.c, background: '#0A0B10', border: `1px solid ${cl.c}66`, borderRadius: 4, padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{cl.shot}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ backgroundColor: 'rgba(31,111,204,0.12)', border: `1px solid ${PURPLE}55`, borderRadius: 8, padding: '8px 10px', fontSize: 9, color: TEXT, lineHeight: 1.5 }}>
+        ✨ Auto-clipped into highlights, linked to the right player, and pushed to their mobile app — you approve each clip before parents see it.
+      </div>
+    </MockupFrame>
+  )
+}
+
 // ── Spotlights as a tab section (one section instead of six stacked ones, so the
 // page doesn't scroll for ages). This SERVER component builds the data + renders
 // the mockups as static HTML, then hands the interactive tabs to a small client
 // island — so the rest of the page ships as HTML, not JS.
 function SpotlightTabs() {
   const spots: { tab: string; eyebrow: string; title: string; body: string; bullets: string[]; mockup: React.ReactNode }[] = [
+    { tab: 'Lumio Coach AI', eyebrow: 'SPOTLIGHT · LUMIO COACH AI', title: 'One AI coach behind everything.', body: 'Every plan, review, summary and message runs through the same coaching brain — a world-class coach with 30 years developing elite juniors and tour-winning adults — so the voice and standards never drift. And it remembers each player: it reads their history and last session’s focus on every call, so the guidance builds session to session instead of starting from scratch.', bullets: ['One coaching brain behind plans, reviews, summaries & messages', 'Remembers every player’s history and last session', 'Consistent LTA coaching voice and standards throughout', 'Builds session to session — never starts from scratch'], mockup: <AICoachMockup /> },
     { tab: 'Session Planner', eyebrow: 'SPOTLIGHT · SESSION PLANNER', title: 'Plan your whole week in minutes.', body: 'Overview, Today, This week and This month views sit over one dated schedule synced from your booking calendar. A confirmed booking becomes a ready-to-build session in two clicks — with a timed run-sheet and kit list generated for you.', bullets: ['One schedule fed straight from your bookings', 'Booking → ready-to-build session in two clicks', 'Timed run-sheet and kit list auto-generated', 'Today / week / month views over the same data'], mockup: <SessionPlannerMockup /> },
     { tab: 'AI Session Review', eyebrow: 'SPOTLIGHT · AI SESSION REVIEW', title: 'The next session writes itself.', body: "Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player's plan so you walk on court next week already prepared.", bullets: ['What went well · work on next · drills to get there', "Saved straight to the player's development plan", 'Auto-loaded into next week’s session', 'Written in an LTA coaching tone'], mockup: <SessionReviewMockup /> },
+    { tab: 'Audio sessions', eyebrow: 'SPOTLIGHT · AI LESSON TRANSCRIBER', title: 'Just talk — the write-up does itself.', body: "Record the lesson on your phone, or upload a clip, and the AI transcribes it and writes the full summary for you: what you covered, the key takeaways, the drills used and the homework. No typing after a long day on court — every player gets a proper write-up in seconds.", bullets: ['Record on your phone or upload a clip', 'Auto transcript + a full structured summary', 'Covered · takeaways · drills · homework, written for you', 'Saved to the player so parents get a proper write-up'], mockup: <AudioMockup /> },
+    { tab: 'Video & Highlights', eyebrow: 'SPOTLIGHT · VIDEO & AI SHOT HIGHLIGHTS · BETA', title: 'Record once — highlights clip themselves.', body: "Your recordings library, plus AI that turns a session into a highlights reel — automatically clipping the best serves, forehands, backhands, volleys and smashes, each tagged by shot, straight into the player's app for parents to watch. It reads both the video and what you say on court, and you approve every clip before it's shared.", bullets: ['Match & training footage saved to each player, by session', 'AI auto-clips the best shots, tagged by type', 'Linked to the right player and pushed to their mobile app', 'You approve each clip before parents see it'], mockup: <VideoMockup /> },
     { tab: 'Racket Progression', eyebrow: 'SPOTLIGHT · RACKET PROGRESSION REWARD SYSTEM', title: 'A reward system that pays you back.', body: "A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds, so players and parents always know exactly what's next. As students pass each level, you award a coloured racket keyring, a matching dampener and a certificate — and a full trophy when they reach Black: your second revenue stream, built right into the product.", bullets: ['Nine stages — White, Yellow, Orange … to Black', 'Skills tracked: Learning → Developing → Consistent → Mastered', 'Award thresholds and progress bars per player', 'Trophy racket + certificate at each level — parents fund the journey'], mockup: <RacketProgressionMockup /> },
-    { tab: 'Effort & Rewards', eyebrow: 'SPOTLIGHT · EFFORT & REWARDS', title: 'Turn every session into XP — no hardware to buy.', body: "Players track sessions on the smartwatch they already own. Effort, movement and consistency become scores, XP and effort levels, with a squad leaderboard to keep them coming back. It's estimated effort — a motivation layer that sits alongside the technical racket pathway, never replacing it, and it never tracks a player's position on court.", bullets: ['Effort, movement & consistency scores from the player’s own watch', 'XP, effort levels and a squad leaderboard', 'No tracking units or hardware to buy — uses Apple Watch or Wear OS', 'Kept separate from the LTA-mapped Racket Progression pathway'], mockup: <EffortRewardsMockup /> },
+    { tab: 'Effort & Rewards', eyebrow: 'SPOTLIGHT · EFFORT & REWARDS', title: 'Turn every session into XP — no hardware to buy.', body: "Log a session in seconds — effort, movement and consistency become scores, XP and effort levels, with a squad leaderboard to keep players coming back. It's a motivation layer that sits alongside the technical racket pathway, never replacing it, and it never tracks a player's position on court. Automatic smartwatch sync is coming soon.", bullets: ['Effort, movement & consistency scores from every session', 'XP, effort levels and a squad leaderboard', 'Smartwatch sync (Apple Watch & Wear OS) coming soon — manual logging now', 'Kept separate from the LTA-mapped Racket Progression pathway'], mockup: <EffortRewardsMockup /> },
     { tab: 'Staff & Coaches', eyebrow: 'SPOTLIGHT · STAFF & COACHES', title: 'Run a club of coaches, not just yourself.', body: "A directory with each coach's calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team's week. See who's busy, who has room, and which certifications are about to expire.", bullets: ['Per-coach calendar, specialisms and assigned players', 'Utilisation across the whole team at a glance', 'Accreditation and certification expiry alerts', 'The head-coach view of the academy week'], mockup: <StaffMockup /> },
     { tab: 'Training Camps', eyebrow: 'SPOTLIGHT · TRAINING CAMPS', title: 'Day camps and tours, drafted by AI.', body: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft to get you started and a per-player camp log that captures progress day by day — and shows you the margin before you publish.', bullets: ['Itineraries, attendees, targets and finances in one place', 'One-click AI draft for the whole camp', 'Per-player camp log captures progress day by day', 'Revenue and margin visible before you publish'], mockup: <CampMockup /> },
   ]
@@ -356,12 +438,12 @@ export default function TennisCoachPage() {
             <span style={{ color: PURPLE_LIGHT }}>Two revenue streams.</span>
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 840, margin: '0 auto 32px' }}>
-            The all-in-one platform that runs your whole tennis academy — session planning, AI reviews, video and smartwatch effort rewards — and pays you back through <strong style={{ color: TEXT }}>the Racket Progression reward system</strong>: a nine-stage pathway where players collect a coloured racket keyring and dampener at each level — a full trophy at Black — and parents fund the journey.
+            The all-in-one platform that runs your whole tennis academy — session planning, your own AI coach, video highlights and effort rewards — and pays you back through <strong style={{ color: TEXT }}>the Racket Progression reward system</strong>: a nine-stage pathway where players collect a coloured racket keyring and dampener at each level — a full trophy at Black — and parents fund the journey.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', margin: '16px 0 32px' }}>
             <span style={{ background: '#1f6fcc18', border: `1px solid ${PURPLE}`, color: PURPLE_LIGHT, padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎾🏆 Racket Progression reward system</span>
             <span style={{ background: '#06b6d418', border: '1px solid #06b6d4', color: '#06b6d4', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🤖 AI Session Review</span>
-            <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>⌚ Effort &amp; Rewards</span>
+            <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🧠 Lumio Coach AI</span>
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
             <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
@@ -497,7 +579,7 @@ export default function TennisCoachPage() {
             {[
               { name: 'Essential', price: 19, popular: false, available: true, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Staff & training camps', 'Mobile coach app'], off: ['No video, audio or effort rewards', 'No Racket Progression'] },
               { name: 'Pro Lite', price: 29, popular: false, available: false, tag: 'Adds the reward system', feats: ['Everything in Essential', 'Racket Progression reward system', 'Trophy keyrings, dampeners & certificates'], off: ['No video, audio or effort rewards'] },
-              { name: 'Pro', price: 39, popular: true, available: false, tag: 'Most popular', feats: ['Everything in Pro Lite', 'Video & audio + AI session reviews', 'Effort & Rewards (smartwatch, no hardware)'], off: [] },
+              { name: 'Pro', price: 39, popular: true, available: false, tag: 'Most popular', feats: ['Everything in Pro Lite', 'Video & audio (BETA) + AI session reviews', 'Effort & Rewards (smartwatch sync coming soon)'], off: [] },
               { name: 'Elite', price: 59, popular: false, available: false, tag: 'The full system', feats: ['Everything in Pro', 'Squad effort leaderboard & XP analytics', 'Priority onboarding & support'], off: [] },
             ].map(t => (
               <div key={t.name} style={{ backgroundColor: CARD, border: `${t.popular ? 2 : 1}px solid ${t.popular ? PURPLE : BORDER}`, borderRadius: 16, padding: 24, position: 'relative', display: 'flex', flexDirection: 'column' }}>
@@ -637,7 +719,7 @@ export default function TennisCoachPage() {
               Try the demo →
             </Link>
           </div>
-          <p style={{ fontSize: 12, color: MUTED, opacity: 0.7 }}>Demo academy · All player data is illustrative · Effort rewards via the player’s own smartwatch · video via Lumio Vision</p>
+          <p style={{ fontSize: 12, color: MUTED, opacity: 0.7 }}>Demo academy · All player data is illustrative · Effort rewards logged in-app (smartwatch sync coming soon) · video via Lumio Vision (BETA)</p>
         </div>
       </section>
     </div>

@@ -10,7 +10,7 @@ import {
   PLAYERS, LESSONS, RESOURCES, EQUIPMENT_INVENTORY, demoAvatarUrl,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
-  WEEK_START, TODAY,
+  WEEK_START, TODAY, BOOKINGS,
   type Player, type Lesson, type Resource, type Camp, type Booking,
   type CoachStatTile, type CoachScheduleItem,
 } from '../_lib/coach-data'
@@ -165,6 +165,14 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
     ? bookingsForCoach(scope).filter(b => b.date === TODAY).sort((a, b) => a.start.localeCompare(b.start))
         .map(b => ({ t: b.start, what: b.player, where: b.court, type: b.type }))
     : COACH_TODAY
+  // Upcoming = the next 7 days EXCLUDING today (today has its own timeline in the
+  // hero), so the Upcoming card isn't duplicate content. Derived from bookings.
+  const weekAheadISO = (() => { const d = new Date(TODAY); d.setDate(d.getDate() + 7); return d.toISOString().slice(0, 10) })()
+  const upNext = (scope ? bookingsForCoach(scope) : BOOKINGS)
+    .filter(b => b.status !== 'cancelled' && b.type !== 'Block' && b.date > TODAY && b.date <= weekAheadISO)
+    .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
+    .map(b => ({ date: b.date, t: b.start, what: b.player, where: b.court }))
+  const dayLabel = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' })
   const heroLine = scope && stats ? `${stats.week} sessions this week · ${stats.today} today` : '7 sessions, 4 racket assessments due'
   const [msgOpen, setMsgOpen] = useState(false)
   const [bookingOpen, setBookingOpen] = useState(false)
@@ -406,10 +414,12 @@ export function DashboardView({ T, accent, density, onNavigate }: Common & { onN
       {/* Extra row — upcoming sessions / recent summaries / kit needing attention */}
       <div className="cm-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: density.gap, marginTop: density.gap }}>
         <Card T={T} density={density}>
-          <SectionHead T={T} title="Upcoming sessions" right={<button onClick={() => onNavigate('planner')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, cursor: 'pointer', fontSize: 11, fontFamily: FONT, padding: 0 }}>Planner →</button>} />
-          {todayItems.slice(0, 3).map((b, i) => (
-            <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
-              <span className="tnum" style={{ fontSize: 11, color: accent.hex, fontWeight: 600, width: 50, flexShrink: 0, fontFamily: FONT_MONO }}>{b.t}</span>
+          <SectionHead T={T} title="Upcoming · next 7 days" right={<button onClick={() => onNavigate('calendar')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, cursor: 'pointer', fontSize: 11, fontFamily: FONT, padding: 0 }}>Calendar →</button>} />
+          {upNext.length === 0 ? (
+            <div style={{ fontSize: 12, color: T.text3, padding: '8px 0' }}>Nothing booked in the next 7 days.</div>
+          ) : upNext.slice(0, 5).map((b, i) => (
+            <div key={i} onClick={() => onNavigate('calendar')} style={{ display: 'flex', gap: 10, padding: '8px 0', borderTop: i ? `1px solid ${T.border}` : 'none', cursor: 'pointer' }}>
+              <span className="tnum" style={{ fontSize: 11, color: accent.hex, fontWeight: 600, width: 74, flexShrink: 0, fontFamily: FONT_MONO }}>{dayLabel(b.date)} {b.t}</span>
               <span style={{ fontSize: 12.5, color: T.text, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.what}{b.where ? <span style={{ color: T.text3, fontWeight: 400 }}> · {b.where}</span> : null}</span>
             </div>
           ))}

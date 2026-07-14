@@ -12,6 +12,7 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable } from '../_lib/coach-db'
 import { levelFor, bandLabel } from '../_lib/effort-rewards'
 import { getSettings } from '../_lib/settings-store'
+import { GpsLineChart } from './CoachHeatmaps'
 import { avatarSrc } from '@/lib/avatar'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -173,6 +174,11 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
   const sectOff = getSettings().sectionsOff?.gpsheatmaps || []
   const showSec = (k: string) => !sectOff.includes(k)
 
+  // Effort trend — effort score across this player's recent sessions (chronological).
+  const trendSrc = sel.list.slice().reverse()
+  const effortTrend = trendSrc.map(s => Number(s.effort_score) || 0)
+  const trendLabels = trendSrc.map(s => when(s) ? new Date(when(s)).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '')
+
   return (
     <div>
       {header}
@@ -249,6 +255,15 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
         </div>
       )}
 
+      {/* Effort trend */}
+      {effortTrend.length > 1 && showSec('trend') && (
+        <div style={card}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Effort trend</div>
+          <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 12 }}>Effort score across recent sessions</div>
+          <GpsLineChart T={T} values={effortTrend} max={100} min={0} labels={trendLabels} colour={accent.hex} height={150} width={460} target={70} valueFormat={v => `${v}`} />
+        </div>
+      )}
+
       {/* Session history */}
       <div style={{ ...card, display: showSec('history') ? undefined : 'none' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Session history</div>
@@ -265,9 +280,39 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
         ))}
       </div>
 
+      {/* How XP works */}
+      <div style={card}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 10 }}>How XP works</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+          {[
+            ['Effort', 'How hard they worked through the session — perceived effort now, heart-rate intensity once watches are connected.'],
+            ['Movement', 'How much ground they covered — distance across the session.'],
+            ['Consistency', 'Showing up and putting in a full session, every time.'],
+          ].map(([h, d]) => (
+            <div key={h} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>{h}</div>
+              <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>{d}</div>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.6, margin: '14px 0 0' }}>
+          XP builds the effort level shown above. It is a motivation layer, kept separate from Racket Progression, which you assess against the LTA Youth pathway each session. Effort rewards never advance a racket. Short sessions are ignored, XP is capped per session, and you can void anything odd.
+        </p>
+      </div>
+
+      {/* Watch sync — coming soon */}
+      <div style={{ ...card, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 22 }}>⌚</span>
+        <div style={{ flex: 1, minWidth: 220 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Smartwatch sync <span style={{ fontSize: 10, fontWeight: 800, color: accent.hex, background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 999, padding: '2px 8px', marginLeft: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coming soon</span></div>
+          <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>Players will connect a watch so sessions log heart rate, distance and duration automatically. For now, log sessions manually above — the XP works exactly the same.</div>
+        </div>
+        <span style={{ fontSize: 12, fontWeight: 700, color: T.text3, border: `1px solid ${T.border}`, borderRadius: 9, padding: '8px 14px', whiteSpace: 'nowrap' }}>Notify me</span>
+      </div>
+
       <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.6, margin: '2px 4px' }}>
         <Icon name="check" size={12} stroke={2} style={{ color: T.good, verticalAlign: -1, marginRight: 4 }} />
-        Estimated smartwatch effort — heart rate, distance and duration. It builds XP and effort levels and never advances a racket or tracks court position. Short or odd sessions can be voided from a player&apos;s record.
+        Estimated effort — never advances a racket or tracks court position. Short or odd sessions can be voided from a player&apos;s record.
       </p>
     </div>
   )

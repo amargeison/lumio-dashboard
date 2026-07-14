@@ -5,6 +5,7 @@
 // parent fills in so the coach can place them at the right belt.
 
 import { BELTS, COACH_ORG, type Player } from '../_lib/coach-data'
+import { getSettings } from '../_lib/settings-store'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const fill = (w = '100%') => `<span style="display:inline-block;border-bottom:1px dashed #b9bdca;min-width:${w};height:15px"></span>`
@@ -13,6 +14,8 @@ const line = '<div style="border-bottom:1px dashed #b9bdca;height:22px;margin:6p
 export function printWelcomePack(player: Player) {
   if (typeof window === 'undefined') return
   const first = player.name.split(' ')[0]
+  const brandLogo = getSettings().brandLogo
+  const logoChip = brandLogo ? `<img src="${brandLogo}" alt="" style="height:58px;max-width:150px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;flex-shrink:0" />` : ''
   const belt = BELTS[player.beltIndex]
   const next = BELTS[Math.min(player.beltIndex + 1, BELTS.length - 1)]
   const skills = belt.skills.map(s => `<li>${esc(s.name)} — <span style="color:#6b7280">${esc(s.note)}</span></li>`).join('')
@@ -36,10 +39,13 @@ export function printWelcomePack(player: Player) {
 
   <!-- 1. Welcome -->
   <div class="page">
-    <div class="band">
-      <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;opacity:.85">Welcome Pack</div>
-      <div style="font-size:30px;font-weight:800;margin-top:6px">Welcome, ${esc(first)}! 🎾</div>
-      <div style="opacity:.9;margin-top:4px">${esc(COACH_ORG.academy)}</div>
+    <div class="band" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div>
+        <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;opacity:.85">Welcome Pack</div>
+        <div style="font-size:30px;font-weight:800;margin-top:6px">Welcome, ${esc(first)}! 🎾</div>
+        <div style="opacity:.9;margin-top:4px">${esc(COACH_ORG.academy)}</div>
+      </div>
+      ${logoChip}
     </div>
     <p style="margin-top:18px">Hi ${esc(first)},</p>
     <p>A warm welcome to ${esc(COACH_ORG.academy)} — we're really pleased to have you on board. Whether you're brand new to tennis or coming back to it, our job is to help you improve, enjoy your tennis and hit some clear goals along the way.</p>

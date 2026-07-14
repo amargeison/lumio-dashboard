@@ -17,7 +17,7 @@
 // session picker; the period segment (Full · Set 1-3) only shows for match
 // sessions (camp/practice have no sets). Demo only — procedural/canned data.
 
-import { useState, type ReactNode } from 'react'
+import { useState, type ReactNode, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
@@ -315,6 +315,81 @@ export function HeatmapsView({ T, accent, density }: Common) {
   const [selId, setSelId] = useState(totals[0]?.p.id ?? '')
   const sel = totals.find(t => t.p.id === selId) ?? totals[0]
 
+  // Demo manual session log — mirrors the live "Log a session" (watch-free input).
+  // Demo-only: shows the flow and a faked XP result without persisting.
+  const [logOpen, setLogOpen] = useState(false)
+  const [logPlayer, setLogPlayer] = useState(totals[0]?.p.id ?? '')
+  const [logDur, setLogDur] = useState('45')
+  const [logRpe, setLogRpe] = useState(6)
+  const [logDist, setLogDist] = useState('')
+  const [logNote, setLogNote] = useState('')
+  const [logXp, setLogXp] = useState<number | null>(null)
+  const openLog = () => { setLogXp(null); setLogPlayer(sel?.p.id ?? totals[0]?.p.id ?? ''); setLogOpen(true) }
+  const submitLog = () => {
+    // Faked award so the demo shows the celebratory result (no data is saved).
+    const xp = Math.max(20, Math.round(Number(logDur || 0) * (logRpe / 6) * 1.6))
+    setLogXp(xp); setLogNote(''); setTimeout(() => { setLogOpen(false); setLogXp(null) }, 1600)
+  }
+  const dfield: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, boxSizing: 'border-box', outline: 'none', fontFamily: FONT }
+  const dlab: CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }
+  const logBtn = (
+    <button onClick={openLog} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ Log a session</button>
+  )
+  const comingSoon = (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 700, color: T.text3, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '4px 11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      ⌚ Watch sync · coming soon
+    </span>
+  )
+  const logModal = logOpen ? (
+    <div onClick={e => { if (e.target === e.currentTarget) setLogOpen(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.74)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '8vh 16px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 440, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20, fontFamily: FONT }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <span style={{ fontSize: 20 }}>🎾</span>
+          <div style={{ fontSize: 16, fontWeight: 800, color: T.text, flex: 1 }}>Log a session</div>
+          <button onClick={() => setLogOpen(false)} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15 }}>✕</button>
+        </div>
+        {logXp != null ? (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>🎉</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.good }}>+{logXp} XP added</div>
+            <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Demo preview — in your portal this saves to the player&apos;s record instantly.</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={dlab}>Player</label>
+              <select value={logPlayer} onChange={e => setLogPlayer(e.target.value)} style={{ ...dfield, cursor: 'pointer' }}>
+                {totals.map(t => <option key={t.p.id} value={t.p.id}>{t.p.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={dlab}>How long? (minutes)</label>
+              <input type="number" value={logDur} onChange={e => setLogDur(e.target.value)} min={10} style={dfield} />
+            </div>
+            <div>
+              <label style={dlab}>How hard did it feel?</label>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                  <button key={n} onClick={() => setLogRpe(n)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', border: `1px solid ${logRpe === n ? accent.hex : T.border}`, background: logRpe === n ? accent.dim : 'transparent', color: logRpe === n ? T.text : T.text3, borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 700 }}>{n}</button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: T.text3, marginTop: 5 }}><span>Easy</span><span>Flat out</span></div>
+            </div>
+            <div>
+              <label style={dlab}>Distance (km) — optional</label>
+              <input type="number" value={logDist} onChange={e => setLogDist(e.target.value)} placeholder="e.g. 3.2" style={dfield} />
+            </div>
+            <div>
+              <label style={dlab}>Note — optional</label>
+              <input value={logNote} onChange={e => setLogNote(e.target.value)} placeholder="What did they work on?" style={dfield} />
+            </div>
+            <button onClick={submitLog} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '12px', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>Save &amp; add XP</button>
+          </div>
+        )}
+      </div>
+    </div>
+  ) : null
+
   const honest = (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 10.5, fontWeight: 700, color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '4px 11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
       ⌚ Smartwatch effort · estimated · no court tracking
@@ -329,10 +404,14 @@ export function HeatmapsView({ T, accent, density }: Common) {
         </div>
         <div>
           <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Effort &amp; Rewards</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Every session a player records on their own smartwatch becomes XP towards their next racket.</p>
+          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Log training sessions and they become XP towards each player&apos;s next racket. Players can log from their own app too.</p>
         </div>
       </div>
-      {honest}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        {comingSoon}
+        {honest}
+        {logBtn}
+      </div>
     </div>
   )
 
@@ -340,9 +419,10 @@ export function HeatmapsView({ T, accent, density }: Common) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
         {header}
+        {logModal}
         <GpsCard T={T} density={density}>
           <div style={{ textAlign: 'center', padding: '30px 10px', color: T.text3, fontSize: 13 }}>
-            No watch sessions logged yet. Players connect a watch from their player page, then finished sessions appear here as XP.
+            No sessions logged yet. Tap <b style={{ color: T.text2 }}>Log a session</b> to record one now — players can also log from their own app. Smartwatch sync is coming soon.
           </div>
         </GpsCard>
       </div>
@@ -374,6 +454,7 @@ export function HeatmapsView({ T, accent, density }: Common) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
       {header}
+      {logModal}
 
       {/* Squad leaderboard */}
       <GpsCard T={T} density={density} title="Squad leaderboard" sub="Ranked by total XP earned from watch sessions">

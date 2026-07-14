@@ -123,6 +123,7 @@ export const MODULE_SECTIONS: Record<string, { key: string; label: string }[]> =
   gpsheatmaps: [
     { key: 'leaderboard', label: 'Squad leaderboard' },
     { key: 'latest',      label: 'Latest session' },
+    { key: 'trend',       label: 'Effort trend' },
     { key: 'history',     label: 'Session history' },
   ],
   development: [

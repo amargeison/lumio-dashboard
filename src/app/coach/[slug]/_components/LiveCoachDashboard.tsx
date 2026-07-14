@@ -134,8 +134,9 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   briefing.push({ tag: 'Schedule', text: todays.length ? `${todays.length} session${todays.length > 1 ? 's' : ''} today${todays[0]?.start_time ? ` from ${todays[0].start_time}` : ''}.${next && dk(next.booking_date) > today ? ` Next after today: ${fmtDate(next.booking_date)} ${next.start_time || ''}.` : ''}` : (next ? `No sessions today — next is ${fmtDate(next.booking_date)} ${next.start_time || ''}.` : 'No upcoming sessions booked — add bookings in the calendar.') })
   briefing.push({ tag: 'Progress', text: lessonsThisWeek ? `${lessonsThisWeek} lesson summar${lessonsThisWeek > 1 ? 'ies' : 'y'} logged this week — keep sharing the wins with players.` : 'No lesson summaries yet this week — log one after your next session.' })
 
-  // Extra row cards.
-  const nextSessions = upcoming.slice(0, 3)
+  // Extra row cards. Upcoming = the next 7 days EXCLUDING today (today already
+  // has its own timeline in the hero), so this isn't duplicate content.
+  const nextSessions = upcoming.filter(b => dk(b.booking_date) > today && dk(b.booking_date) <= weekAhead).slice(0, 5)
   const recentSummaries = [...d.lessons].sort((a, b) => dk(b.session_date).localeCompare(dk(a.session_date))).slice(0, 3)
   const kitAttention = d.equipment.filter(i => i.status === 'low' || i.status === 'order' || i.status === 'repair')
 
@@ -313,11 +314,11 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
       <div className="cm-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: density.gap }}>
         <div style={{ ...card, display: showSec('upcoming') ? undefined : 'none' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12 }}>
-            <p style={{ ...sectionTitle, margin: 0 }}>Upcoming sessions</p>
-            <button onClick={() => onNavigate('planner')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>Planner →</button>
+            <p style={{ ...sectionTitle, margin: 0 }}>Upcoming <span style={{ fontWeight: 400, color: T.text3 }}>· next 7 days</span></p>
+            <button onClick={() => onNavigate('calendar')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>Calendar →</button>
           </div>
-          {nextSessions.length === 0 ? <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>Nothing booked yet.</p> : nextSessions.map(b => (
-            <button key={b.id} onClick={() => onNavigate('planner')} style={{ display: 'flex', gap: 10, width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
+          {nextSessions.length === 0 ? <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>Nothing booked in the next 7 days. <button onClick={() => onNavigate('calendar')} style={linkBtn(accent)}>Open calendar →</button></p> : nextSessions.map(b => (
+            <button key={b.id} onClick={() => onNavigate('calendar')} style={{ display: 'flex', gap: 10, width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
               <span style={{ fontSize: 11, color: accent.hex, fontWeight: 600, width: 96, flexShrink: 0 }}>{fmtDate(b.booking_date)}{b.start_time ? ` ${b.start_time}` : ''}</span>
               <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</span>
             </button>

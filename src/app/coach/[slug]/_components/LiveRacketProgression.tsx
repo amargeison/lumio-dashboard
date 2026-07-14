@@ -267,6 +267,8 @@ export function printRacketCertificate(playerName: string, stage: { name: string
   if (typeof window === 'undefined') return
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const chips = skills.map(s => `<span class="chip">${esc(s)}</span>`).join('')
+  const brandLogo = getSettings().brandLogo
+  const logoTag = brandLogo ? `<img src="${brandLogo}" alt="" style="height:60px;max-width:180px;object-fit:contain;display:block;margin:0 auto 14px" />` : ''
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(stage.name)} Racket — ${esc(playerName)}</title>
   <style>*{box-sizing:border-box}body{margin:0;font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1d29;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -278,6 +280,7 @@ export function printRacketCertificate(playerName: string, stage: { name: string
     <div style="position:absolute;inset:13mm;border:1px solid #e3c97a;border-radius:6px"></div>
     <div style="position:absolute;font-size:340px;opacity:.04;top:50%;left:50%;transform:translate(-50%,-50%)">🎾</div>
     <div style="text-align:center;padding:28mm 24mm;position:relative;max-width:170mm">
+      ${logoTag}
       <div style="font-size:12px;letter-spacing:.5em;color:#3A8EE0;font-weight:700;text-transform:uppercase">Lumio Tennis Academy</div>
       <div style="font-family:Georgia,serif;font-size:40px;letter-spacing:.04em;margin-top:14px">Racket Award</div>
       <div style="width:70px;height:3px;background:${stage.colour};margin:14px auto 20px;border:1px solid rgba(0,0,0,.15)"></div>
