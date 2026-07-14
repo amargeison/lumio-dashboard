@@ -6,7 +6,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
 import { useCoachProfile, saveCoachProfile, sb, currentCoachId } from '../_lib/coach-db'
-import { setSettings, resetSettings, getHeadProfile, setHeadProfile, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, type AccentKey } from '../_lib/settings-store'
+import { setSettings, resetSettings, getHeadProfile, setHeadProfile, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, MODULE_SECTIONS, setSectionOff, type AccentKey } from '../_lib/settings-store'
 import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-data'
 import { getAddedVenues } from '../_lib/venues-store'
 import { AddVenueModal } from './AddVenueModal'
@@ -263,10 +263,20 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
         if (!item) return null
         const locked = ALWAYS_VISIBLE.includes(mid)
         const hidden = hiddenMenu.includes(mid)
+        const sections = MODULE_SECTIONS[mid] || []
+        const off = s.sectionsOff?.[mid] || []
         return (
           <Modal readOnly={demo} T={T} accent={accent} title={item.label} sub="Module settings" onClose={() => setOpen(null)}>
             <Toggle T={T} accent={accent} on={!hidden} onChange={v => { if (!locked) setMenuHidden(mid, !v) }} label="Show in the sidebar" desc={locked ? 'Always visible — can’t be hidden.' : 'Hide this module from the coach menu.'} />
-            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10, lineHeight: 1.5 }}>More options for {item.label} — section toggles, colour and setup — are coming to this panel.</div>
+            {sections.length > 0 && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 8px' }}>Sections</div>
+                {sections.map(sec => (
+                  <Toggle key={sec.key} T={T} accent={accent} on={!off.includes(sec.key)} onChange={v => setSectionOff(mid, sec.key, !v)} label={sec.label} desc={off.includes(sec.key) ? 'Hidden on this page' : 'Shown'} />
+                ))}
+              </>
+            )}
+            {sections.length === 0 && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10, lineHeight: 1.5 }}>More options for {item.label} — section toggles, colour and setup — are coming to this panel.</div>}
           </Modal>
         )
       })()}
