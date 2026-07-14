@@ -1746,11 +1746,11 @@ function CampFinance({ T, accent, density, camp, attendees }: CampSub & { attend
 // ════════════════════════════════════════════════════════════════════════════
 // SETTINGS (light placeholder)
 // ════════════════════════════════════════════════════════════════════════════
-export function SettingsView({ T, accent, density }: Common) {
+export function SettingsView({ T, accent, density, demo = false }: Common & { demo?: boolean }) {
   return (
     <>
-      <FeatureAdminPanel T={T} accent={accent} density={density} />
-      <SettingsPanel T={T} accent={accent} density={density} />
+      <FeatureAdminPanel T={T} accent={accent} density={density} demo={demo} />
+      <SettingsPanel T={T} accent={accent} density={density} demo={demo} />
     </>
   )
 }
