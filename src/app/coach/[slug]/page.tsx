@@ -385,7 +385,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'messages':    return <LiveMessages T={T} accent={accent} onConfigure={() => setActive('settings')} />
         case 'settings':    return (
           <>
-            <SettingsView T={T} accent={accent} density={density} />
+            <SettingsView T={T} accent={accent} density={density} demo={!isEmpty} />
             <div style={{ marginTop: 8 }}>
               <SettingsSection T={T} title="Contact & calendar"><CoachContactSettings T={T} accent={accent} /></SettingsSection>
               <SettingsSection T={T} title="Venues & courts"><CoachVenuesSettings T={T} accent={accent} /></SettingsSection>
@@ -420,7 +420,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       case 'payments':    return <PaymentsView T={T} accent={accent} density={density} />
       case 'settings':    return (
         <>
-          <SettingsView T={T} accent={accent} density={density} />
+          <SettingsView T={T} accent={accent} density={density} demo={!isEmpty} />
           <div style={{ marginTop: 8 }}>
             <SettingsSection T={T} title="Contact & calendar"><CoachContactSettings T={T} accent={accent} /></SettingsSection>
             <SettingsSection T={T} title="Venues & courts"><CoachVenuesSettings T={T} accent={accent} /></SettingsSection>

@@ -17,7 +17,7 @@ import {
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 const FEATURE_ORDER: FeatureKey[] = ['effort', 'video', 'audio', 'racket']
 
-export function FeatureAdminPanel({ T, accent, density }: Common) {
+export function FeatureAdminPanel({ T, accent, density, demo = false }: Common & { demo?: boolean }) {
   const [flags, setFlags] = useState<FeatureFlags>({ effort: true, video: true, audio: true, racket: true })
   useEffect(() => { const r = () => setFlags(getFlags()); r(); return subscribe(r) }, [])
   const activeTier = tierForFlags(flags)
@@ -32,6 +32,8 @@ export function FeatureAdminPanel({ T, accent, density }: Common) {
         </div>
       </div>
 
+      {demo && <div style={{ margin: '12px 0 0', padding: '8px 12px', borderRadius: 9, background: T.panel2, border: `1px solid ${T.border}`, fontSize: 11.5, color: T.text3 }}>🔒 This is a demo — plan &amp; features are read-only.</div>}
+      <div style={demo ? { pointerEvents: 'none', opacity: 0.6 } : undefined}>
       {/* Tier presets */}
       <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, margin: '14px 0 8px' }}>Tier</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
@@ -67,6 +69,7 @@ export function FeatureAdminPanel({ T, accent, density }: Common) {
             </div>
           )
         })}
+      </div>
       </div>
       <div style={{ fontSize: 10.5, color: T.text3, marginTop: 10, lineHeight: 1.5 }}>
         Off-features disappear from the sidebar, the dashboard and the student app, and their kit drops out of the restock and reward flows. Demo — saved on this device.

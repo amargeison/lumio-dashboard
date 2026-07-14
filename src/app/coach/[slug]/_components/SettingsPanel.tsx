@@ -77,11 +77,11 @@ function Toggle({ T, accent, on, onChange, label, desc }: { T: ThemeTokens; acce
     </button>
   )
 }
-function Modal({ T, accent, title, sub, onClose, children }: { T: ThemeTokens; accent: AccentTokens; title: string; sub?: string; onClose: () => void; children: ReactNode }) {
+function Modal({ T, accent, title, sub, onClose, children, readOnly = false, wide = false }: { T: ThemeTokens; accent: AccentTokens; title: string; sub?: string; onClose: () => void; children: ReactNode; readOnly?: boolean; wide?: boolean }) {
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
       style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.82)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '7vh 16px', overflowY: 'auto' }}>
-      <div style={{ width: '100%', maxWidth: 480, background: T.panel, border: `1px solid ${T.borderHi}`, borderRadius: 14, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
+      <div style={{ width: '100%', maxWidth: wide ? 680 : 480, background: T.panel, border: `1px solid ${T.borderHi}`, borderRadius: 14, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', borderBottom: `1px solid ${T.border}` }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 14.5, fontWeight: 600, color: T.text }}>{title}</div>
@@ -89,9 +89,12 @@ function Modal({ T, accent, title, sub, onClose, children }: { T: ThemeTokens; a
           </div>
           <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 17, lineHeight: 1 }}>×</button>
         </div>
-        <div style={{ padding: 18 }}>{children}</div>
+        <div style={{ padding: 18 }}>
+          {readOnly && <div style={{ marginBottom: 14, padding: '8px 12px', borderRadius: 9, background: T.panel2, border: `1px solid ${T.border}`, fontSize: 11.5, color: T.text3 }}>🔒 This is a demo — settings are read-only.</div>}
+          <div style={readOnly ? { pointerEvents: 'none', opacity: 0.6 } : undefined}>{children}</div>
+        </div>
         <div style={{ padding: '0 18px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 10.5, color: accent.hex, display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="check" size={12} stroke={2.2} /> Changes save & apply instantly</span>
+          <span style={{ fontSize: 10.5, color: readOnly ? T.text3 : accent.hex, display: 'flex', alignItems: 'center', gap: 5 }}>{readOnly ? '🔒 Read-only in the demo' : <><Icon name="check" size={12} stroke={2.2} /> Changes save & apply instantly</>}</span>
           <button onClick={onClose} style={{ appearance: 'none', border: 0, padding: '8px 18px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' }}>Done</button>
         </div>
       </div>
@@ -108,7 +111,7 @@ const KIT_OFFERS = [
 ]
 
 // ════════════════════════════════════════════════════════════════════════════
-export function SettingsPanel({ T, accent, density }: Common) {
+export function SettingsPanel({ T, accent, density, demo = false }: Common & { demo?: boolean }) {
   const s = useCoachSettings()
   const [open, setOpen] = useState<string | null>(null)
   const [addVenueOpen, setAddVenueOpen] = useState(false)
@@ -152,7 +155,10 @@ export function SettingsPanel({ T, accent, density }: Common) {
   const setBooking = (n: typeof booking) => setSettings({ booking: n })
   const gdpr = { ...DEFAULT_SETTINGS.gdpr, ...(s.gdpr || {}) }
   const setGdpr = (n: typeof gdpr) => setSettings({ gdpr: n })
-  const staffCfg = { ...DEFAULT_SETTINGS.staff, ...(s.staff || {}) }
+  // Live (real) portals start with an EMPTY DSL — the demo default (a sample head
+  // coach) must not leak onto a brand-new academy. The demo keeps the sample data.
+  const staffDefaults = demo ? DEFAULT_SETTINGS.staff : { ...DEFAULT_SETTINGS.staff, dsl: '' }
+  const staffCfg = { ...staffDefaults, ...(s.staff || {}) }
   const setStaffCfg = (n: typeof staffCfg) => setSettings({ staff: n })
   const msg = { ...DEFAULT_SETTINGS.messaging, ...(s.messaging || {}) }
   const setMsg = (n: typeof msg) => setSettings({ messaging: n })
@@ -177,7 +183,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
     { id: 'rewards',     g: 'Coaching',   icon: 'flag',      t: 'Effort & Rewards',    d: `Leaderboard ${rewards.leaderboard ? 'on' : 'off'} · watch consent default ${rewards.watchConsentDefault ? 'on' : 'off'}` },
     { id: 'sharing',     g: 'Coaching',   icon: 'megaphone', t: 'Parent sharing',      d: `Shares include: ${sharingList}` },
     { id: 'gdpr',        g: 'People & compliance', icon: 'shield', t: 'Players & data (GDPR)', d: `Retention ${gdpr.retentionYears}y · DPA ${gdpr.dpaAccepted ? 'accepted' : 'pending'}` },
-    { id: 'staff',       g: 'People & compliance', icon: 'people', t: 'Staff & safeguarding',  d: `DSL ${staffCfg.dsl} · DBS reminders ${staffCfg.reminderDays}d` },
+    { id: 'staff',       g: 'People & compliance', icon: 'people', t: 'Staff & safeguarding',  d: `DSL ${staffCfg.dsl || 'not set'} · DBS reminders ${staffCfg.reminderDays}d` },
     { id: 'messaging',   g: 'People & compliance', icon: 'note',   t: 'Messaging',             d: `${[msg.email && 'Email', msg.text && 'Text', msg.inapp && 'In-app'].filter(Boolean).join(' · ') || 'No channels'}` },
     { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: 'Your plan: Coach £39/mo · order kit & rewards' },
     { id: 'appearance',  g: 'Rewards & system', icon: 'settings', t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
@@ -191,7 +197,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
           <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Settings</h1>
           <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Tap any card to customise it — changes apply across the portal instantly.</p>
         </div>
-        <button onClick={() => resetSettings()} style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 9, padding: '7px 12px', fontSize: 11.5, cursor: 'pointer' }}>Reset to defaults</button>
+        {!demo && <button onClick={() => resetSettings()} style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 9, padding: '7px 12px', fontSize: 11.5, cursor: 'pointer' }}>Reset to defaults</button>}
       </div>
 
       {GROUPS.map(group => {
@@ -219,12 +225,12 @@ export function SettingsPanel({ T, accent, density }: Common) {
 
       {/* ── Editors ── */}
       {open === 'integrations' && (
-        <Modal T={T} accent={accent} title="Connected accounts" sub="Connect your mailbox & calendar for two-way sync and send-as-you email" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Connected accounts" sub="Connect your mailbox & calendar for two-way sync and send-as-you email" onClose={() => setOpen(null)}>
           <IntegrationsPanel T={T} accent={accent} />
         </Modal>
       )}
       {open === 'academy' && (
-        <Modal T={T} accent={accent} title="Academy profile" sub="Shown across the portal — sidebar, dashboard, packs and certificates" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Academy profile" sub="Shown across the portal — sidebar, dashboard, packs and certificates" onClose={() => setOpen(null)}>
           <Field T={T} label="Academy name"><input style={input(T)} value={s.academy} onChange={e => setSettings({ academy: e.target.value })} /></Field>
           <Field T={T} label="Head coach name"><input style={input(T)} value={s.coach} onChange={e => setSettings({ coach: e.target.value })} /></Field>
           <Field T={T} label="Certification / tagline"><input style={input(T)} value={s.cert} onChange={e => setSettings({ cert: e.target.value })} /></Field>
@@ -232,7 +238,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'belts' && (
-        <Modal T={T} accent={accent} title="Racket criteria" sub="When does a racket count as earned?" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Racket criteria" sub="When does a racket count as earned?" onClose={() => setOpen(null)}>
           <Field T={T} label="Award a racket when every skill reaches" hint="Affects racket progress % everywhere — try it, then open Player Development.">
             <Seg T={T} accent={accent} value={s.awardThreshold}
               options={[{ v: 3, label: 'Consistent' }, { v: 4, label: 'Mastered' }]}
@@ -243,7 +249,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'availability' && (
-        <Modal T={T} accent={accent} title="Availability & courts" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Availability & courts" onClose={() => setOpen(null)}>
           <Field T={T} label="Bookable hours"><input style={input(T)} value={s.bookableHours} onChange={e => setSettings({ bookableHours: e.target.value })} /></Field>
           <Field T={T} label="Lesson types offered" hint="Tap to toggle.">
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -281,7 +287,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       {addVenueOpen && <AddVenueModal T={T} accent={accent} onClose={() => setAddVenueOpen(false)} />}
 
       {open === 'pricing' && (
-        <Modal T={T} accent={accent} title="Pricing & packages" sub="Reflected on the Payments page" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Pricing & packages" sub="Reflected on the Payments page" onClose={() => setOpen(null)}>
           <Field T={T} label="Private lesson rate (£ / hour)">
             <input style={input(T)} inputMode="numeric" value={String(s.privateRate)} onChange={e => setSettings({ privateRate: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
           </Field>
@@ -290,7 +296,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'kit' && (
-        <Modal T={T} accent={accent} title="Lumio Coach Kit & rewards" sub="Order your capture kit and Racket Progression rewards" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Lumio Coach Kit & rewards" sub="Order your capture kit and Racket Progression rewards" onClose={() => setOpen(null)}>
           {/* Read-only plan line */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
             <Icon name="shield" size={15} stroke={1.7} style={{ color: accent.hex }} />
@@ -332,7 +338,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'sharing' && (
-        <Modal T={T} accent={accent} title="Parent sharing" sub="What's included when you share or export a lesson summary" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Parent sharing" sub="What's included when you share or export a lesson summary" onClose={() => setOpen(null)}>
           <Toggle T={T} accent={accent} on={s.shareHomework} onChange={v => setSettings({ shareHomework: v })} label="Include homework" desc="The practice set for the week" />
           <Toggle T={T} accent={accent} on={s.shareNextFocus} onChange={v => setSettings({ shareNextFocus: v })} label="Include next session focus" desc="What you'll work on next" />
           <Toggle T={T} accent={accent} on={s.shareCoachNote} onChange={v => setSettings({ shareCoachNote: v })} label="Include private coach note" desc="Off by default — usually for your eyes only" />
@@ -340,7 +346,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'appearance' && (
-        <Modal T={T} accent={accent} title="Appearance" sub="Watch the whole portal change as you tweak these" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Appearance" sub="Watch the whole portal change as you tweak these" onClose={() => setOpen(null)}>
           <Field T={T} label="Theme">
             <Seg T={T} accent={accent} value={s.theme} options={[{ v: 'dark', label: 'Dark' }, { v: 'light', label: 'Light' }]} onChange={v => setSettings({ theme: v as 'dark' | 'light' })} />
           </Field>
@@ -373,7 +379,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'menu' && (
-        <Modal T={T} accent={accent} title="Menu visibility" sub="Hide nav items you don't use — they leave the sidebar instantly. Dashboard and Settings always stay." onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Menu visibility" sub="Hide nav items you don't use — they leave the sidebar instantly. Dashboard and Settings always stay." onClose={() => setOpen(null)}>
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Video &amp; Audio</div>
             <Toggle T={T} accent={accent} on={s.audioOnly} onChange={v => setSettings({ audioOnly: v })} label="Audio only" desc="Hide the video half — the module shows audio only and the menu item is renamed “Audio only”." />
@@ -402,7 +408,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'profile' && (
-        <Modal T={T} accent={accent} title="Head coach profile" sub="Your details, calendar sync and safeguarding documents" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Head coach profile" sub="Your details, calendar sync and safeguarding documents" onClose={() => setOpen(null)}>
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>Contact details</div>
           <Field T={T} label="Name">
             <input style={input(T)} value={hp.name} onChange={e => setHeadProfile({ name: e.target.value })}
@@ -435,7 +441,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'booking' && (
-        <Modal T={T} accent={accent} title="Booking calendar" sub="Sync external calendars and set booking defaults" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Booking calendar" sub="Sync external calendars and set booking defaults" onClose={() => setOpen(null)}>
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>External calendar sync</div>
           <Toggle T={T} accent={accent} on={booking.google} onChange={v => setBooking({ ...booking, google: v })} label="Google Calendar" desc="Two-way sync of bookings and busy times." />
           <Toggle T={T} accent={accent} on={booking.outlook} onChange={v => setBooking({ ...booking, outlook: v })} label="Outlook / Microsoft 365" desc="Two-way sync with your work calendar." />
@@ -452,7 +458,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'rewards' && (
-        <Modal T={T} accent={accent} title="Effort & Rewards" sub="The smartwatch reward system — separate from Racket Progression" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Effort & Rewards" sub="The smartwatch reward system — separate from Racket Progression" onClose={() => setOpen(null)}>
           <Toggle T={T} accent={accent} on={rewards.leaderboard} onChange={v => setRewards({ ...rewards, leaderboard: v })} label="Show squad leaderboard" desc="Rank players by XP across the academy." />
           <Toggle T={T} accent={accent} on={rewards.levelsVisible} onChange={v => setRewards({ ...rewards, levelsVisible: v })} label="Show effort levels to players" desc="Rookie → Elite progression in the student view." />
           <Toggle T={T} accent={accent} on={rewards.watchConsentDefault} onChange={v => setRewards({ ...rewards, watchConsentDefault: v })} label="Default new players to wearable consent" desc="Off is safer — capture effort only with explicit parent consent." />
@@ -461,7 +467,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'gdpr' && (
-        <Modal T={T} accent={accent} title="Players & data (GDPR)" sub="Default consent, retention and data rights" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Players & data (GDPR)" sub="Default consent, retention and data rights" onClose={() => setOpen(null)}>
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>Default consent for new players</div>
           <Toggle T={T} accent={accent} on={gdpr.data} onChange={v => setGdpr({ ...gdpr, data: v })} label="Data processing" desc="Coach the player and manage their record." />
           <Toggle T={T} accent={accent} on={gdpr.photo} onChange={v => setGdpr({ ...gdpr, photo: v })} label="Photo & video" desc="Capture footage for coaching." />
@@ -478,7 +484,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'staff' && (
-        <Modal T={T} accent={accent} title="Staff & safeguarding" sub="Designated lead, DBS reminders and policy" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Staff & safeguarding" sub="Designated lead, DBS reminders and policy" onClose={() => setOpen(null)}>
           <Field T={T} label="Designated Safeguarding Lead"><input style={input(T)} value={staffCfg.dsl} onChange={e => setStaffCfg({ ...staffCfg, dsl: e.target.value })} /></Field>
           <Field T={T} label="DBS renewal reminder">
             <Seg T={T} accent={accent} value={staffCfg.reminderDays} options={[{ v: 30, label: '30 days' }, { v: 60, label: '60 days' }, { v: 90, label: '90 days' }]} onChange={v => setStaffCfg({ ...staffCfg, reminderDays: v })} />
@@ -489,7 +495,7 @@ export function SettingsPanel({ T, accent, density }: Common) {
       )}
 
       {open === 'messaging' && (
-        <Modal T={T} accent={accent} title="Messaging" sub="How you reach parents and players" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Messaging" sub="How you reach parents and players" onClose={() => setOpen(null)}>
           <Field T={T} label="Sender email"><input style={input(T)} value={msg.senderEmail} onChange={e => setMsg({ ...msg, senderEmail: e.target.value })} /></Field>
           <Field T={T} label="Sender phone (SMS)"><input style={input(T)} value={msg.senderPhone} onChange={e => setMsg({ ...msg, senderPhone: e.target.value })} /></Field>
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Channels</div>
