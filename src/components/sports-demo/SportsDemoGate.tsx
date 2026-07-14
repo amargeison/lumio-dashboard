@@ -64,6 +64,9 @@ interface SportsDemoGateProps {
   roles: Array<{ id: string; label: string; icon: string; description?: string }>
   /** Lock club identity (no club-setup step; role moves into the photo step). */
   lockClub?: boolean
+  /** Skip the personalisation wizard entirely — after OTP go straight to the demo
+   *  data (email → OTP → done). Used by the coach demo, which is a pure showcase. */
+  skipWizard?: boolean
   children: (session: SportsDemoSession) => React.ReactNode
 }
 
@@ -427,7 +430,7 @@ const GateOverlay = memo(function GateOverlay({ sport, sportLabel, children }: {
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────
 export default function SportsDemoGate({
   sport, defaultClubName, defaultSlug, accentColor, accentColorLight,
-  sportEmoji, sportLabel, roles, children, lockClub = false,
+  sportEmoji, sportLabel, roles, children, lockClub = false, skipWizard = false,
 }: SportsDemoGateProps) {
   void accentColorLight // available for future use
   const router = useRouter()
@@ -577,7 +580,9 @@ export default function SportsDemoGate({
 
     const isDevHost = window.location.hostname.includes('dev.')
       || window.location.hostname === 'localhost'
-    if (isDevHost) setStep(lockClub ? 'profile' : 'club')
+    // On dev we normally skip OTP into the wizard for fast iteration — but when the
+    // wizard is disabled (coach demo) keep the normal email → OTP → demo flow.
+    if (isDevHost && !skipWizard) setStep(lockClub ? 'profile' : 'club')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -820,13 +825,10 @@ export default function SportsDemoGate({
             return
           }
 
-          // FIRST-TIME VISITOR — Supabase auth cookie is set server-side,
-          // but no completed wizard exists for this (email, sport). Do
-          // NOT write the session blob; do NOT reload. Drop into the
-          // wizard ('club' step) so the user enters their name, club,
-          // and photo. finaliseSession() persists the session blob and
-          // the onboarded flag once Invite completes, and consumes
-          // pendingInstallTokenRef to apply the URL handoff.
+          // FIRST-TIME VISITOR — no completed wizard for this (email, sport).
+          // skipWizard (the coach demo) goes straight to the demo sample data;
+          // otherwise drop into the personalisation wizard ('club' step).
+          if (skipWizard) { finaliseSession(); setLoading(false); return }
           setStep(lockClub ? 'profile' : 'club')
           setLoading(false)
           return
@@ -911,6 +913,8 @@ export default function SportsDemoGate({
           }
         }
       } catch {}
+      // skipWizard (coach demo) → straight to demo data; else start the wizard.
+      if (skipWizard) { finaliseSession(); setLoading(false); return }
       setStep(lockClub ? 'profile' : 'club')
     } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Invalid or expired code.') }
     setLoading(false)
