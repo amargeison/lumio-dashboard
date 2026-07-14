@@ -11,7 +11,7 @@
 // Progression, Booking Calendar, Training Camps, Roster, Messages, Resource
 // Centre, Payments.
 
-import { useState, useRef, useEffect, use, type ReactNode } from 'react'
+import { useState, useRef, useEffect, use } from 'react'
 import dynamic from 'next/dynamic'
 import { createBrowserClient } from '@supabase/ssr'
 import { SportsDemoGate, type SportsDemoSession } from '@/components/sports-demo'
@@ -41,19 +41,6 @@ import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type Featu
 // (the chunk is cached). A light placeholder shows on first open of each.
 const ModuleLoading = () => <div style={{ padding: 48, textAlign: 'center', color: 'rgba(160,170,190,0.7)', fontSize: 13 }}>Loading…</div>
 
-// Collapsible section so the Settings page isn't one endless scroll — each area
-// is a box you open for the full detail.
-function SettingsSection({ T, title, children, defaultOpen = false }: { T: any; title: string; children: ReactNode; defaultOpen?: boolean }) {
-  return (
-    <details open={defaultOpen} style={{ marginBottom: 10 }}>
-      <summary style={{ listStyle: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, color: T.text, fontWeight: 700, fontSize: 14.5 }}>
-        <span style={{ flex: 1 }}>{title}</span>
-        <span style={{ color: T.text3, fontSize: 11 }}>▾ open</span>
-      </summary>
-      <div style={{ marginTop: 8 }}>{children}</div>
-    </details>
-  )
-}
 function lazyNamed<M, K extends keyof M>(loader: () => Promise<M>, key: K): M[K] {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return dynamic(() => loader().then(m => ({ default: (m as any)[key] })), { ssr: false, loading: ModuleLoading }) as unknown as M[K]
@@ -97,11 +84,6 @@ const LiveEffortRewards = lazyNamed(() => import('./_components/LiveEffortReward
 const LiveStaff = lazyNamed(() => import('./_components/LiveStaff'), 'LiveStaff')
 // Settings sub-panels + wizard (heavy, conditionally shown)
 const CoachOnboardingWizard = lazyNamed(() => import('./_components/CoachOnboardingWizard'), 'CoachOnboardingWizard')
-const CoachContactSettings = lazyNamed(() => import('./_components/CoachContactSettings'), 'CoachContactSettings')
-const CoachImport = lazyNamed(() => import('./_components/CoachImport'), 'CoachImport')
-const CoachCompliance = lazyNamed(() => import('./_components/CoachCompliance'), 'CoachCompliance')
-const CoachDevelopmentSettings = lazyNamed(() => import('./_components/CoachDevelopmentSettings'), 'CoachDevelopmentSettings')
-const CoachVenuesSettings = lazyNamed(() => import('./_components/CoachVenuesSettings'), 'CoachVenuesSettings')
 
 // The three view roles for the role switcher. Head + Coach are the same portal
 // filtered by permission; Student is a purpose-built player/parent view (a
@@ -386,13 +368,6 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'settings':    return (
           <>
             <SettingsView T={T} accent={accent} density={density} demo={!isEmpty} />
-            <div style={{ marginTop: 8 }}>
-              <SettingsSection T={T} title="Contact & calendar"><CoachContactSettings T={T} accent={accent} /></SettingsSection>
-              <SettingsSection T={T} title="Venues & courts"><CoachVenuesSettings T={T} accent={accent} /></SettingsSection>
-              <SettingsSection T={T} title="Coaching, rewards & modules"><CoachDevelopmentSettings T={T} accent={accent} /></SettingsSection>
-              <SettingsSection T={T} title="Privacy &amp; compliance"><CoachCompliance T={T} accent={accent} /></SettingsSection>
-              <SettingsSection T={T} title="Import data"><CoachImport T={T} accent={accent} /></SettingsSection>
-            </div>
           </>
         )
         case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)} />
@@ -421,13 +396,6 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       case 'settings':    return (
         <>
           <SettingsView T={T} accent={accent} density={density} demo={!isEmpty} />
-          <div style={{ marginTop: 8 }}>
-            <SettingsSection T={T} title="Contact & calendar"><CoachContactSettings T={T} accent={accent} /></SettingsSection>
-            <SettingsSection T={T} title="Venues & courts"><CoachVenuesSettings T={T} accent={accent} /></SettingsSection>
-            <SettingsSection T={T} title="Coaching, rewards & modules"><CoachDevelopmentSettings T={T} accent={accent} /></SettingsSection>
-            <SettingsSection T={T} title="Privacy &amp; compliance"><CoachCompliance T={T} accent={accent} demo /></SettingsSection>
-            <SettingsSection T={T} title="Import data"><CoachImport T={T} accent={accent} /></SettingsSection>
-          </div>
         </>
       )
       default:            return <DashboardView T={T} accent={accent} density={density} onNavigate={setActive} />
