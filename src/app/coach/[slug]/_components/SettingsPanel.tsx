@@ -12,6 +12,11 @@ import { getAddedVenues } from '../_lib/venues-store'
 import { AddVenueModal } from './AddVenueModal'
 import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
 import { IntegrationsPanel } from './IntegrationsPanel'
+import { CoachContactSettings } from './CoachContactSettings'
+import { CoachVenuesSettings } from './CoachVenuesSettings'
+import { CoachDevelopmentSettings } from './CoachDevelopmentSettings'
+import { CoachCompliance } from './CoachCompliance'
+import { CoachImport } from './CoachImport'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -188,6 +193,11 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: 'Your plan: Coach £39/mo · order kit & rewards' },
     { id: 'appearance',  g: 'Rewards & system', icon: 'settings', t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
     { id: 'menu',        g: 'Rewards & system', icon: 'eye',      t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
+    { id: 'contact',     g: 'You',        icon: 'note',     t: 'Contact & calendar',  d: 'Sender email, phone & calendar sync' },
+    { id: 'venuescfg',   g: 'Academy',    icon: 'home',     t: 'Venues & courts',     d: 'Venues, courts & calendar links' },
+    { id: 'devcfg',      g: 'Coaching',   icon: 'trophy',   t: 'Coaching, rewards & modules', d: 'Racket criteria, effort & module setup' },
+    { id: 'privacy',     g: 'People & compliance', icon: 'shield', t: 'Privacy & compliance', d: 'GDPR, consents & data retention' },
+    { id: 'import',      g: 'Rewards & system', icon: 'note',  t: 'Import data',          d: 'Bulk import from a spreadsheet or photo' },
   ]
 
   return (
@@ -224,6 +234,11 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       })}
 
       {/* ── Editors ── */}
+      {open === 'contact' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Contact & calendar" onClose={() => setOpen(null)}><CoachContactSettings T={T} accent={accent} /></Modal>)}
+      {open === 'venuescfg' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Venues & courts" onClose={() => setOpen(null)}><CoachVenuesSettings T={T} accent={accent} /></Modal>)}
+      {open === 'devcfg' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Coaching, rewards & modules" onClose={() => setOpen(null)}><CoachDevelopmentSettings T={T} accent={accent} /></Modal>)}
+      {open === 'privacy' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Privacy & compliance" onClose={() => setOpen(null)}><CoachCompliance T={T} accent={accent} demo={demo} /></Modal>)}
+      {open === 'import' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Import data" onClose={() => setOpen(null)}><CoachImport T={T} accent={accent} /></Modal>)}
       {open === 'integrations' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Connected accounts" sub="Connect your mailbox & calendar for two-way sync and send-as-you email" onClose={() => setOpen(null)}>
           <IntegrationsPanel T={T} accent={accent} />
