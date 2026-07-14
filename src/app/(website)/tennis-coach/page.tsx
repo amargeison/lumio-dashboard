@@ -1,7 +1,6 @@
-'use client'
-
 import Link from 'next/link'
 import RevenueCalculator from './RevenueCalculator'
+import SpotlightTabsClient from './SpotlightTabs'
 
 // "Ocean" accent — matches the coach portal's blue accent preset (#3A8EE0).
 const PURPLE = '#1F6FCC'        // primary (buttons, shadows) — deep ocean
@@ -326,30 +325,20 @@ function CampMockup() {
   )
 }
 
-// ── Spotlight wrapper ─────────────────────────────────────────────────────────
-function Spotlight({ eyebrow, title, body, bullets, mockup, reverse, altBg }: {
-  eyebrow: string; title: string; body: string; bullets: string[]; mockup: React.ReactNode; reverse?: boolean; altBg?: boolean
-}) {
-  return (
-    <section style={{ padding: '96px 24px', backgroundColor: altBg ? '#0A0C14' : BG }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
-        <div style={{ order: reverse ? 2 : 1 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, marginBottom: 16, lineHeight: 1.1 }}>{title}</h2>
-          <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.6, marginBottom: 24 }}>{body}</p>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {bullets.map(b => (
-              <li key={b} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 15, color: TEXT }}>
-                <span style={{ color: PURPLE_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>
-                <span>{b}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div style={{ order: reverse ? 1 : 2 }}>{mockup}</div>
-      </div>
-    </section>
-  )
+// ── Spotlights as a tab section (one section instead of six stacked ones, so the
+// page doesn't scroll for ages). This SERVER component builds the data + renders
+// the mockups as static HTML, then hands the interactive tabs to a small client
+// island — so the rest of the page ships as HTML, not JS.
+function SpotlightTabs() {
+  const spots: { tab: string; eyebrow: string; title: string; body: string; bullets: string[]; mockup: React.ReactNode }[] = [
+    { tab: 'Session Planner', eyebrow: 'SPOTLIGHT · SESSION PLANNER', title: 'Plan your whole week in minutes.', body: 'Overview, Today, This week and This month views sit over one dated schedule synced from your booking calendar. A confirmed booking becomes a ready-to-build session in two clicks — with a timed run-sheet and kit list generated for you.', bullets: ['One schedule fed straight from your bookings', 'Booking → ready-to-build session in two clicks', 'Timed run-sheet and kit list auto-generated', 'Today / week / month views over the same data'], mockup: <SessionPlannerMockup /> },
+    { tab: 'AI Session Review', eyebrow: 'SPOTLIGHT · AI SESSION REVIEW', title: 'The next session writes itself.', body: "Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player's plan so you walk on court next week already prepared.", bullets: ['What went well · work on next · drills to get there', "Saved straight to the player's development plan", 'Auto-loaded into next week’s session', 'Written in an LTA coaching tone'], mockup: <SessionReviewMockup /> },
+    { tab: 'Racket Progression', eyebrow: 'SPOTLIGHT · RACKET PROGRESSION REWARD SYSTEM', title: 'A reward system that pays you back.', body: "A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds, so players and parents always know exactly what's next. As students pass each level, you award a coloured racket keyring, a matching dampener and a certificate — and a full trophy when they reach Black: your second revenue stream, built right into the product.", bullets: ['Nine stages — White, Yellow, Orange … to Black', 'Skills tracked: Learning → Developing → Consistent → Mastered', 'Award thresholds and progress bars per player', 'Trophy racket + certificate at each level — parents fund the journey'], mockup: <RacketProgressionMockup /> },
+    { tab: 'Effort & Rewards', eyebrow: 'SPOTLIGHT · EFFORT & REWARDS', title: 'Turn every session into XP — no hardware to buy.', body: "Players track sessions on the smartwatch they already own. Effort, movement and consistency become scores, XP and effort levels, with a squad leaderboard to keep them coming back. It's estimated effort — a motivation layer that sits alongside the technical racket pathway, never replacing it, and it never tracks a player's position on court.", bullets: ['Effort, movement & consistency scores from the player’s own watch', 'XP, effort levels and a squad leaderboard', 'No tracking units or hardware to buy — uses Apple Watch or Wear OS', 'Kept separate from the LTA-mapped Racket Progression pathway'], mockup: <EffortRewardsMockup /> },
+    { tab: 'Staff & Coaches', eyebrow: 'SPOTLIGHT · STAFF & COACHES', title: 'Run a club of coaches, not just yourself.', body: "A directory with each coach's calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team's week. See who's busy, who has room, and which certifications are about to expire.", bullets: ['Per-coach calendar, specialisms and assigned players', 'Utilisation across the whole team at a glance', 'Accreditation and certification expiry alerts', 'The head-coach view of the academy week'], mockup: <StaffMockup /> },
+    { tab: 'Training Camps', eyebrow: 'SPOTLIGHT · TRAINING CAMPS', title: 'Day camps and tours, drafted by AI.', body: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft to get you started and a per-player camp log that captures progress day by day — and shows you the margin before you publish.', bullets: ['Itineraries, attendees, targets and finances in one place', 'One-click AI draft for the whole camp', 'Per-player camp log captures progress day by day', 'Revenue and margin visible before you publish'], mockup: <CampMockup /> },
+  ]
+  return <SpotlightTabsClient spots={spots} />
 }
 
 export default function TennisCoachPage() {
@@ -448,57 +437,8 @@ export default function TennisCoachPage() {
         </div>
       </section>
 
-      {/* ── SPOTLIGHTS ── */}
-      <Spotlight
-        eyebrow="SPOTLIGHT · SESSION PLANNER"
-        title="Plan your whole week in minutes."
-        body="Overview, Today, This week and This month views sit over one dated schedule synced from your booking calendar. A confirmed booking becomes a ready-to-build session in two clicks — with a timed run-sheet and kit list generated for you."
-        bullets={['One schedule fed straight from your bookings', 'Booking → ready-to-build session in two clicks', 'Timed run-sheet and kit list auto-generated', 'Today / week / month views over the same data']}
-        mockup={<SessionPlannerMockup />}
-      />
-
-      <Spotlight
-        altBg reverse
-        eyebrow="SPOTLIGHT · AI SESSION REVIEW"
-        title="The next session writes itself."
-        body="Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player's plan so you walk on court next week already prepared."
-        bullets={["What went well · work on next · drills to get there", "Saved straight to the player's development plan", 'Auto-loaded into next week’s session', 'Written in an LTA coaching tone']}
-        mockup={<SessionReviewMockup />}
-      />
-
-      <Spotlight
-        eyebrow="SPOTLIGHT · RACKET PROGRESSION REWARD SYSTEM"
-        title="A reward system that pays you back."
-        body="A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds, so players and parents always know exactly what's next. As students pass each level, you award a coloured racket keyring, a matching dampener and a certificate — and a full trophy when they reach Black: your second revenue stream, built right into the product."
-        bullets={['Nine stages — White, Yellow, Orange … to Black', 'Skills tracked: Learning → Developing → Consistent → Mastered', 'Award thresholds and progress bars per player', 'Trophy racket + certificate at each level — parents fund the journey']}
-        mockup={<RacketProgressionMockup />}
-      />
-
-      <Spotlight
-        altBg reverse
-        eyebrow="SPOTLIGHT · EFFORT & REWARDS"
-        title="Turn every session into XP — no hardware to buy."
-        body="Players track sessions on the smartwatch they already own. Effort, movement and consistency become scores, XP and effort levels, with a squad leaderboard to keep them coming back. It's estimated effort — a motivation layer that sits alongside the technical racket pathway, never replacing it, and it never tracks a player's position on court."
-        bullets={['Effort, movement & consistency scores from the player’s own watch', 'XP, effort levels and a squad leaderboard', 'No tracking units or hardware to buy — uses Apple Watch or Wear OS', 'Kept separate from the LTA-mapped Racket Progression pathway']}
-        mockup={<EffortRewardsMockup />}
-      />
-
-      <Spotlight
-        eyebrow="SPOTLIGHT · STAFF & COACHES"
-        title="Run a club of coaches, not just yourself."
-        body="A directory with each coach's calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team's week. See who's busy, who has room, and which certifications are about to expire."
-        bullets={['Per-coach calendar, specialisms and assigned players', 'Utilisation across the whole team at a glance', 'Accreditation and certification expiry alerts', 'The head-coach view of the academy week']}
-        mockup={<StaffMockup />}
-      />
-
-      <Spotlight
-        altBg reverse
-        eyebrow="SPOTLIGHT · TRAINING CAMPS"
-        title="Day camps and tours, drafted by AI."
-        body="Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft to get you started and a per-player camp log that captures progress day by day — and shows you the margin before you publish."
-        bullets={['Itineraries, attendees, targets and finances in one place', 'One-click AI draft for the whole camp', 'Per-player camp log captures progress day by day', 'Revenue and margin visible before you publish']}
-        mockup={<CampMockup />}
-      />
+      {/* ── SPOTLIGHTS (tabbed — one section instead of six stacked) ── */}
+      <SpotlightTabs />
 
       {/* ── WHO IT'S FOR ── */}
       <section style={{ padding: '96px 24px', backgroundColor: BG }}>
