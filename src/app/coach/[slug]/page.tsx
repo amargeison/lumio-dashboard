@@ -176,14 +176,16 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
     </div>
   )
 
-  // "Set it up for me" accounts stay locked on a setup-pending screen until the
-  // Lumio team finishes loading their data and marks the portal live in
-  // Sports Admin → Onboarding (setup_complete). Self-setup and demo unaffected.
-  if (authSession && authSession.onboardingComplete && authSession.setupType === 'lumio' && !authSession.setupComplete) {
+  // The auth-based portal + setup-pending lock apply ONLY to a real academy slug
+  // (isEmpty). The DEMO slug must ALWAYS fall through to the public demo gate
+  // below, so a signed-in coach — even one still on the setup-pending lock — can
+  // still view the live demo. "Set it up for me" accounts stay locked on the
+  // setup-pending screen until the Lumio team marks the portal live (setup_complete).
+  if (isEmpty && authSession && authSession.onboardingComplete && authSession.setupType === 'lumio' && !authSession.setupComplete) {
     return <SetupPendingScreen name={authSession.userName} clubName={authSession.clubName} email={authSession.email} />
   }
 
-  if (authSession) return <CoachPortalInner session={authSession} isEmpty={isEmpty} slugClubName={slugClubName} />
+  if (isEmpty && authSession) return <CoachPortalInner session={authSession} isEmpty={isEmpty} slugClubName={slugClubName} />
 
   return (
     <SportsDemoGate
