@@ -621,6 +621,9 @@ export default function TennisCoachPage() {
         </div>
       </section>
 
+      {/* ── TWO REVENUE STREAMS · ROI CALCULATOR ── */}
+      <RevenueCalculator />
+
       {/* ── PRICING ── */}
       <section id="pricing" style={{ padding: '96px 24px', backgroundColor: BG, borderTop: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -756,9 +759,6 @@ export default function TennisCoachPage() {
           </div>
         </div>
       </section>
-
-      {/* ── TWO REVENUE STREAMS · ROI CALCULATOR ── */}
-      <RevenueCalculator />
 
       {/* ── FINAL CTA ── */}
       <section style={{ padding: '120px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>

@@ -11,7 +11,7 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 export function printBeltCertificate(player: Player, beltIndex: number) {
   if (typeof window === 'undefined') return
   const belt = BELTS[beltIndex]
-  const brandLogo = getSettings().brandLogo
+  const brandLogo = getSettings().brandLogo || (typeof window !== 'undefined' ? `${window.location.origin}/tennis_transparent_logo.png` : '')
   const logoTag = brandLogo ? `<img src="${brandLogo}" alt="" style="height:60px;max-width:180px;object-fit:contain;display:block;margin:0 auto 14px" />` : ''
   const skills = belt.skills.map(s => `<span class="chip">${esc(s.name)}</span>`).join('')
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(belt.name)} Racket — ${esc(player.name)}</title>
