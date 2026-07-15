@@ -13,7 +13,7 @@ const BORDER_ALT = '#1F2937'
 const TEXT = '#F9FAFB'
 const MUTED = '#9CA3AF'
 
-const STAT_PILLS = ['9 coach modules', 'AI powered', 'Effort & rewards', 'LTA racket pathway', 'Mobile app']
+const STAT_PILLS = ['13 modules', 'AI powered', 'Effort & rewards', 'LTA racket pathway', 'Mobile app']
 
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🧠', title: 'Lumio Coach AI', desc: 'One coaching brain behind everything — a world-class coach with 30 years developing elite juniors and tour-winning adults. Every plan, review, summary and message runs through the same coach, so the voice and standards never drift. And it remembers each player: it reads their history and last session’s focus on every call, so the guidance builds session to session instead of starting from scratch each time.' },
@@ -38,6 +38,7 @@ const INTEGRATIONS = [
   { icon: '🏛️', name: 'LTA Youth Pathway', desc: 'Racket stage mapping' },
   { icon: '💳', name: 'Stripe', desc: 'Card, Apple Pay & Google Pay to your bank' },
   { icon: '💰', name: 'Xero', desc: 'Academy finances' },
+  { icon: '📧', name: 'Google (Gmail & Calendar)', desc: 'Send-as email and two-way calendar sync' },
   { icon: '📧', name: 'Microsoft 365', desc: 'Email and calendar' },
   { icon: '🔔', name: 'Slack', desc: 'Team and parent updates' },
   { icon: '📱', name: 'Mobile PWA', desc: 'Install on any phone' },
@@ -404,6 +405,61 @@ function VideoMockup() {
   )
 }
 
+function PaymentsMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>💳 Take a payment</div>
+        <Badge color="#10B981" bg="rgba(16,185,129,0.15)">Paid · instant</Badge>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Straight to your bank · no card reader</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
+        <KPI value="£45" label="U12 private × 6" color={PURPLE} />
+        <KPI value="£220" label="Term block" color="#10B981" />
+      </div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${PURPLE}55`, borderRadius: 10, padding: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 56, height: 56, borderRadius: 8, background: '#fff', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+          <div style={{ width: 44, height: 44, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1 }}>
+            {Array.from({ length: 25 }).map((_, i) => <div key={i} style={{ background: [0, 2, 3, 6, 8, 10, 11, 14, 16, 18, 20, 22, 24, 1, 12, 7, 17].includes(i) ? '#0A0B10' : 'transparent' }} />)}
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: TEXT }}>Scan to pay £45</div>
+          <div style={{ fontSize: 9, color: MUTED, lineHeight: 1.5, marginTop: 2 }}>Card, Apple Pay &amp; Google Pay. Sessions tick off from your lesson summaries automatically.</div>
+        </div>
+      </div>
+      <div style={{ fontSize: 8.5, color: MUTED, marginTop: 8, fontStyle: 'italic' }}>Powered by Stripe — Lumio never sees a card number.</div>
+    </MockupFrame>
+  )
+}
+
+function MobileAppMockup() {
+  return (
+    <MockupFrame>
+      <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>📱 On your phone, on court</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 12 }}>Your day at a glance · install on any phone</div>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <div style={{ width: 150, border: `1px solid ${BORDER_ALT}`, borderRadius: 20, background: '#0A0B10', padding: 10, boxShadow: `0 20px 50px ${PURPLE}22` }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 8.5, fontWeight: 800, color: TEXT }}>Today · 6 sessions</span>
+            <span style={{ fontSize: 8.5, color: PURPLE_LIGHT }}>●</span>
+          </div>
+          {[['09:00', 'Mia Chen', '#10B981'], ['10:30', 'Tom Okafor', PURPLE_LIGHT], ['16:00', 'Ava Romero', '#F59E0B']].map(([t, who, c]) => (
+            <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 0', borderTop: `1px solid ${BORDER_ALT}` }}>
+              <span style={{ fontSize: 7.5, fontWeight: 800, color: c as string, width: 26 }}>{t}</span>
+              <span style={{ fontSize: 8.5, color: TEXT }}>{who}</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 8, paddingTop: 8, borderTop: `1px solid ${BORDER_ALT}` }}>
+            {['🏠', '🗓️', '🎾', '💳', '👤'].map((ic, i) => <span key={i} style={{ fontSize: 12, opacity: i === 0 ? 1 : 0.5 }}>{ic}</span>)}
+          </div>
+        </div>
+      </div>
+      <div style={{ fontSize: 8.5, color: MUTED, marginTop: 10, textAlign: 'center', fontStyle: 'italic' }}>A bottom tab bar and the tools you actually reach for — wherever you’re coaching.</div>
+    </MockupFrame>
+  )
+}
+
 // ── Spotlights as a tab section (one section instead of six stacked ones, so the
 // page doesn't scroll for ages). This SERVER component builds the data + renders
 // the mockups as static HTML, then hands the interactive tabs to a small client
@@ -419,6 +475,8 @@ function SpotlightTabs() {
     { tab: 'Effort & Rewards', eyebrow: 'SPOTLIGHT · EFFORT & REWARDS', title: 'Turn every session into XP — no hardware to buy.', body: "Log a session in seconds — effort, movement and consistency become scores, XP and effort levels, with a squad leaderboard to keep players coming back. It's a motivation layer that sits alongside the technical racket pathway, never replacing it, and it never tracks a player's position on court. Automatic smartwatch sync is coming soon.", bullets: ['Effort, movement & consistency scores from every session', 'XP, effort levels and a squad leaderboard', 'Smartwatch sync (Apple Watch & Wear OS) coming soon — manual logging now', 'Kept separate from the LTA-mapped Racket Progression pathway'], mockup: <EffortRewardsMockup /> },
     { tab: 'Staff & Coaches', eyebrow: 'SPOTLIGHT · STAFF & COACHES', title: 'Run a club of coaches, not just yourself.', body: "A directory with each coach's calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team's week. See who's busy, who has room, and which certifications are about to expire.", bullets: ['Per-coach calendar, specialisms and assigned players', 'Utilisation across the whole team at a glance', 'Accreditation and certification expiry alerts', 'The head-coach view of the academy week'], mockup: <StaffMockup /> },
     { tab: 'Training Camps', eyebrow: 'SPOTLIGHT · TRAINING CAMPS', title: 'Day camps and tours, drafted by AI.', body: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft to get you started and a per-player camp log that captures progress day by day — and shows you the margin before you publish.', bullets: ['Itineraries, attendees, targets and finances in one place', 'One-click AI draft for the whole camp', 'Per-player camp log captures progress day by day', 'Revenue and margin visible before you publish'], mockup: <CampMockup /> },
+    { tab: 'Payments', eyebrow: 'SPOTLIGHT · PAYMENTS', title: 'Tap, scan, paid — straight to your bank.', body: "Take card, Apple Pay and Google Pay payments with no card reader needed. Sell lesson packages or charge per session, and hand over a QR code or link a parent pays in seconds. Sessions tick off automatically from your lesson summaries, and Lumio never sees a card number.", bullets: ['Card, Apple Pay & Google Pay — no reader needed', 'Sell packages or charge per session', 'QR code or link — a parent pays in seconds', 'Powered by Stripe · money lands in your own bank'], mockup: <PaymentsMockup /> },
+    { tab: 'Mobile App', eyebrow: 'SPOTLIGHT · MOBILE APP', title: 'The whole platform, on your phone.', body: "An app-like experience on the phone — a bottom tab bar, your day at a glance, and the tools you actually reach for on court, wherever you're coaching that day. Install it on any phone, no app store required.", bullets: ['Your day at a glance the moment you open it', 'Bottom tab bar — the tools you reach for on court', 'Works wherever you’re coaching that day', 'Installs on any phone as a PWA — no app store'], mockup: <MobileAppMockup /> },
   ]
   return <SpotlightTabsClient spots={spots} />
 }
@@ -438,7 +496,7 @@ export default function TennisCoachPage() {
             <span style={{ color: PURPLE_LIGHT }}>Two revenue streams.</span>
           </h1>
           <p style={{ fontSize: 20, color: MUTED, lineHeight: 1.6, maxWidth: 840, margin: '0 auto 32px' }}>
-            The all-in-one platform that runs your whole tennis academy — session planning, your own AI coach, video highlights and effort rewards — and pays you back through <strong style={{ color: TEXT }}>the Racket Progression reward system</strong>: a nine-stage pathway where players collect a coloured racket keyring and dampener at each level — a full trophy at Black — and parents fund the journey.
+            The all-in-one platform that runs your whole tennis business — session planning, your own AI coach, video highlights and effort rewards — and pays you back through <strong style={{ color: TEXT }}>the Racket Progression reward system</strong>: a nine-stage pathway where players collect a coloured racket keyring and dampener at each level — a full trophy at Black — and parents fund the journey.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', margin: '16px 0 32px' }}>
             <span style={{ background: '#1f6fcc18', border: `1px solid ${PURPLE}`, color: PURPLE_LIGHT, padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎾🏆 Racket Progression reward system</span>
@@ -457,40 +515,6 @@ export default function TennisCoachPage() {
             {STAT_PILLS.map(p => (
               <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(31,111,204,0.12)', border: `1px solid ${PURPLE}66`, color: PURPLE_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── REVENUE HIGHLIGHT PANEL ── */}
-      <section style={{ padding: '0 24px 48px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #0a1628 50%, #061020 100%)', border: `1px solid ${PURPLE}30`, borderRadius: 24, padding: '64px 48px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: `radial-gradient(circle, ${PURPLE}22 0%, transparent 70%)`, pointerEvents: 'none' }} />
-            <div style={{ position: 'relative' }}>
-              <div style={{ marginBottom: 24 }}>
-                <span style={{ background: PURPLE, color: '#fff', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>💸 One platform. Two revenue streams.</span>
-              </div>
-              <h2 style={{ fontSize: 42, fontWeight: 800, color: '#fff', marginBottom: 16, maxWidth: 760, lineHeight: 1.2 }}>The software runs your academy.<br /><span style={{ color: PURPLE_LIGHT }}>The Racket Progression reward system pays you back.</span></h2>
-              <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 720, lineHeight: 1.7, marginBottom: 48 }}>One simple subscription runs every part of your week. Then it earns its keep twice over — you award a coloured racket keyring and matching dampener (and a trophy at Black) as players climb the nine-stage pathway and parents fund the journey, and you resell the Student app to your families as recurring margin. You set the prices; you keep the upside.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
-                {[
-                  { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured racket keyring + matching dampener + certificate at each of the 9 stages — and a full trophy at Black. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £50 (~£5.50 each)' },
-                  { icon: '📱', title: 'Stream 2 — Student app resale', color: '#06b6d4', desc: 'Give families the player & parent view of everything you capture. Resell it or bundle it into a package — you keep the margin, not Lumio.', price: 'Suggested £9.99/family · you set it' },
-                  { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Pick the tier that fits — Essential to Elite — adding video, audio, effort rewards and the racket pathway as you grow. The platform that makes both revenue streams possible.', price: 'From £19/month · 4 tiers' },
-                ].map((f, i) => (
-                  <div key={i} style={{ background: `${f.color}10`, border: `1px solid ${f.color}30`, borderRadius: 16, padding: 28 }}>
-                    <div style={{ fontSize: 30, marginBottom: 12 }}>{f.icon}</div>
-                    <h3 style={{ color: f.color, fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{f.title}</h3>
-                    <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6 }}>{f.desc}</p>
-                    <div style={{ marginTop: 16, color: f.color, fontSize: 13, fontWeight: 600 }}>{f.price}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                <Link href="/sports-signup?sport=tennis" style={{ background: PURPLE, color: '#fff', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>Apply for founding access →</Link>
-                <a href="#pricing" style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', color: PURPLE_LIGHT, padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: `1px solid ${PURPLE}`, textDecoration: 'none' }}>See the numbers →</a>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -563,6 +587,40 @@ export default function TennisCoachPage() {
         </div>
       </section>
 
+      {/* ── REVENUE HIGHLIGHT PANEL ── */}
+      <section style={{ padding: '96px 24px 48px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #0a1628 50%, #061020 100%)', border: `1px solid ${PURPLE}30`, borderRadius: 24, padding: '64px 48px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: `radial-gradient(circle, ${PURPLE}22 0%, transparent 70%)`, pointerEvents: 'none' }} />
+            <div style={{ position: 'relative' }}>
+              <div style={{ marginBottom: 24 }}>
+                <span style={{ background: PURPLE, color: '#fff', padding: '6px 16px', borderRadius: 999, fontSize: 12, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' as const }}>💸 One platform. Two revenue streams.</span>
+              </div>
+              <h2 style={{ fontSize: 42, fontWeight: 800, color: '#fff', marginBottom: 16, maxWidth: 760, lineHeight: 1.2 }}>The software runs your tennis business.<br /><span style={{ color: PURPLE_LIGHT }}>The Racket Progression reward system pays you back.</span></h2>
+              <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 720, lineHeight: 1.7, marginBottom: 48 }}>One simple subscription runs every part of your week. Then it earns its keep twice over — you award a coloured racket keyring and matching dampener (and a trophy at Black) as players climb the nine-stage pathway and parents fund the journey, and you resell the Student app to your families as recurring margin. You set the prices; you keep the upside.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
+                {[
+                  { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured racket keyring + matching dampener + certificate at each of the 9 stages — and a full trophy at Black. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £50 (~£5.50 each)' },
+                  { icon: '📱', title: 'Stream 2 — Student app resale', color: '#06b6d4', desc: 'Give families the player & parent view of everything you capture. Resell it or bundle it into a package — you keep the margin, not Lumio.', price: 'Suggested £9.99/family · you set it' },
+                  { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Pick the tier that fits — Essential to Elite — adding video, audio, effort rewards and the racket pathway as you grow. The platform that makes both revenue streams possible.', price: 'From £19/month · 4 tiers' },
+                ].map((f, i) => (
+                  <div key={i} style={{ background: `${f.color}10`, border: `1px solid ${f.color}30`, borderRadius: 16, padding: 28 }}>
+                    <div style={{ fontSize: 30, marginBottom: 12 }}>{f.icon}</div>
+                    <h3 style={{ color: f.color, fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{f.title}</h3>
+                    <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6 }}>{f.desc}</p>
+                    <div style={{ marginTop: 16, color: f.color, fontSize: 13, fontWeight: 600 }}>{f.price}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <Link href="/sports-signup?sport=tennis" style={{ background: PURPLE, color: '#fff', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>Apply for founding access →</Link>
+                <a href="#pricing" style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', color: PURPLE_LIGHT, padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: `1px solid ${PURPLE}`, textDecoration: 'none' }}>See the numbers →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── PRICING ── */}
       <section id="pricing" style={{ padding: '96px 24px', backgroundColor: BG, borderTop: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
@@ -571,7 +629,7 @@ export default function TennisCoachPage() {
             One platform. Two revenue streams.
           </h2>
           <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', maxWidth: 780, margin: '0 auto 56px', lineHeight: 1.6 }}>
-            A simple subscription runs your whole academy. The kit gets you capturing from day one — and the Racket Progression reward system turns player progress into recurring income you control.
+            A simple subscription runs your whole tennis business. The kit gets you capturing from day one — and the Racket Progression reward system turns player progress into recurring income you control.
           </p>
 
           {/* Plan tiers */}
@@ -685,7 +743,7 @@ export default function TennisCoachPage() {
           <div style={{ textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
             <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 12 }}>Two revenue streams the coach drives.</h3>
             <p style={{ fontSize: 15, color: MUTED, lineHeight: 1.7, marginBottom: 28 }}>
-              The platform runs your academy and the kit gets you started. Then it pays you back twice over: <strong style={{ color: TEXT }}>award racket keyrings &amp; dampeners</strong> (and a trophy at Black) as players progress and parents fund the journey, and <strong style={{ color: TEXT }}>resell the Student app</strong> to your families as recurring margin. You set the prices; you keep the upside.
+              The platform runs your tennis business and the kit gets you started. Then it pays you back twice over: <strong style={{ color: TEXT }}>award racket keyrings &amp; dampeners</strong> (and a trophy at Black) as players progress and parents fund the journey, and <strong style={{ color: TEXT }}>resell the Student app</strong> to your families as recurring margin. You set the prices; you keep the upside.
             </p>
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 30px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
