@@ -11,7 +11,7 @@
 // the portal's T/accent tokens. Installability itself comes from the manifest +
 // layout metadata; this is just the nudge + SW.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 
 type BeforeInstallPromptEvent = Event & {
@@ -39,6 +39,8 @@ export function CoachPwaInstaller({ T, accent }: { T: ThemeTokens; accent: Accen
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [dismissed, setDismissed] = useState(true)   // hidden until effects decide
   const [showIosHint, setShowIosHint] = useState(false)
+  const [updateReady, setUpdateReady] = useState(false)   // a new SW is waiting to activate
+  const reloadingRef = useRef(false)                      // set when the user opts to reload
 
   useEffect(() => {
     setDismissed(localStorage.getItem(KEY) === 'true')
@@ -50,7 +52,28 @@ export function CoachPwaInstaller({ T, accent }: { T: ThemeTokens; accent: Accen
     // an offline fallback after recompiles. Mirrors the shared installer.
     if ('serviceWorker' in navigator) {
       if (process.env.NODE_ENV === 'production') {
-        navigator.serviceWorker.register('/sw.js').catch(() => {})
+        // When the user opts to update, the waiting SW activates and takes
+        // control → reload once so the fresh HTML/assets load. Only reload on a
+        // user-initiated update (not the first-install claim).
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (reloadingRef.current) window.location.reload()
+        })
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          // A newer SW was already waiting from a previous visit.
+          if (reg.waiting && navigator.serviceWorker.controller) setUpdateReady(true)
+          // A newer SW is downloaded while the app is open → offer to reload.
+          reg.addEventListener('updatefound', () => {
+            const nw = reg.installing
+            if (!nw) return
+            nw.addEventListener('statechange', () => {
+              // "installed" + an existing controller ⇒ it's an update, not the
+              // first install — safe to prompt for a reload.
+              if (nw.state === 'installed' && navigator.serviceWorker.controller) setUpdateReady(true)
+            })
+          })
+          // Proactively check for an update on each mount/launch.
+          reg.update().catch(() => {})
+        }).catch(() => {})
       } else {
         navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(() => {})
       }
@@ -61,9 +84,17 @@ export function CoachPwaInstaller({ T, accent }: { T: ThemeTokens; accent: Accen
   }, [])
 
   const dismiss = () => { localStorage.setItem(KEY, 'true'); setDismissed(true) }
+  // Tell the waiting SW to activate; controllerchange (above) then reloads.
+  const applyUpdate = () => {
+    if (!('serviceWorker' in navigator)) { window.location.reload(); return }
+    reloadingRef.current = true
+    navigator.serviceWorker.getRegistration()
+      .then(reg => { if (reg && reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' }); else window.location.reload() })
+      .catch(() => window.location.reload())
+  }
   const showInstallCard = !!installPrompt && !dismissed
   const showIosCard = showIosHint && !dismissed && !showInstallCard
-  if (!showInstallCard && !showIosCard) return null
+  if (!showInstallCard && !showIosCard && !updateReady) return null
 
   const card: React.CSSProperties = {
     position: 'fixed', left: 12, right: 12, bottom: 'calc(64px + 22px + env(safe-area-inset-bottom) + 10px)',
@@ -71,7 +102,25 @@ export function CoachPwaInstaller({ T, accent }: { T: ThemeTokens; accent: Accen
     background: T.panel, border: `1px solid ${accent.border}`, boxShadow: '0 20px 50px -16px rgba(0,0,0,0.6)',
   }
 
+  const updateCard: React.CSSProperties = {
+    position: 'fixed', left: 12, right: 12, bottom: 'calc(env(safe-area-inset-bottom) + 12px)',
+    zIndex: 70, borderRadius: 14, padding: 14, display: 'flex', alignItems: 'center', gap: 12,
+    background: T.panel, border: `1px solid ${accent.hex}`, boxShadow: '0 20px 50px -16px rgba(0,0,0,0.6)',
+  }
+
   return (
+    <>
+      {updateReady && (
+        <div style={updateCard} role="dialog" aria-label="Update available">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Update available</div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>A newer version of Lumio Coach is ready.</div>
+          </div>
+          <button onClick={() => setUpdateReady(false)} aria-label="Later" style={{ appearance: 'none', background: 'transparent', border: 0, color: T.text3, cursor: 'pointer', fontSize: 12.5 }}>Later</button>
+          <button onClick={applyUpdate} style={{ appearance: 'none', border: 0, padding: '9px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>Reload</button>
+        </div>
+      )}
+      {(showInstallCard || showIosCard) && (
     <div style={card} role="dialog" aria-label="Install Lumio Coach">
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -103,5 +152,7 @@ export function CoachPwaInstaller({ T, accent }: { T: ThemeTokens; accent: Accen
         </div>
       )}
     </div>
+      )}
+    </>
   )
 }

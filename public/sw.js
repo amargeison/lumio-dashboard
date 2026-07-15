@@ -9,7 +9,7 @@
  * Bump CACHE_VERSION on each deploy that ships SW changes so old caches are
  * pruned and clients pick up the new SW on next reload.
  */
-const CACHE_VERSION = 'v3-2026-06-19-css-refresh';
+const CACHE_VERSION = 'v4-2026-07-15-pwa-recover';
 const STATIC_CACHE  = `lumio-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `lumio-runtime-${CACHE_VERSION}`;
 const HTML_CACHE    = `lumio-html-${CACHE_VERSION}`;
@@ -96,15 +96,15 @@ async function staleWhileRevalidate(request, cacheName) {
   return hit || (await networkPromise) || Response.error();
 }
 
+// HTML navigations are ALWAYS served fresh from the network. We deliberately do
+// NOT cache or replay the app's HTML shell: a cached shell references hashed
+// /_next/static chunk URLs that stop existing after the next deploy, so replaying
+// a stale shell boots the app against dead chunks → "This page couldn't load".
+// When genuinely offline we fall back to the static, self-contained offline.html.
 async function networkFirstHtml(request) {
-  const cache = await caches.open(HTML_CACHE);
   try {
-    const res = await fetch(request);
-    if (res && res.ok) cache.put(request, res.clone()).catch(() => {});
-    return res;
+    return await fetch(request);
   } catch (e) {
-    const hit = await cache.match(request);
-    if (hit) return hit;
     const offline = await caches.match(OFFLINE_URL);
     return offline || new Response('Offline', { status: 503, statusText: 'Offline' });
   }
