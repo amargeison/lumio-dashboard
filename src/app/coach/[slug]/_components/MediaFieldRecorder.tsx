@@ -56,7 +56,7 @@ function pickMime(mode: Mode): { mime: string; ext: string } {
 const pad = (n: number) => String(n).padStart(2, '0')
 const mmss = (s: number) => `${pad(Math.floor(s / 60))}:${pad(s % 60)}`
 
-export function MediaFieldRecorder({ T, accent, density, sessionLabel, defaultMode = 'audio' }: Common & { sessionLabel?: string; defaultMode?: Mode }) {
+export function MediaFieldRecorder({ T, accent, density, sessionLabel, defaultMode = 'audio', lockMode = false }: Common & { sessionLabel?: string; defaultMode?: Mode; lockMode?: boolean }) {
   const [mode, setMode] = useState<Mode>(defaultMode)
   const [status, setStatus] = useState<Status>('idle')
   const [seconds, setSeconds] = useState(0)
@@ -207,11 +207,15 @@ export function MediaFieldRecorder({ T, accent, density, sessionLabel, defaultMo
         </div>
       </div>
 
-      {/* mode toggle — only when idle (mode locks once recording) */}
+      {/* mode toggle — only when idle (mode locks once recording). When lockMode
+          is set (from a single V&A tab), only that tab's capture mode is shown. */}
       {status === 'idle' && (
         <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
-          <button onClick={() => setMode('audio')} style={seg(mode === 'audio')}><Icon name="mic" size={12} stroke={1.9} /> Audio only</button>
-          <button onClick={() => setMode('video')} style={seg(mode === 'video')}><Icon name="play" size={12} stroke={1.9} /> Video + Audio</button>
+          {(lockMode ? [mode] : (['audio', 'video'] as Mode[])).map(m => (
+            <button key={m} onClick={() => { if (!lockMode) setMode(m) }} style={seg(mode === m)}>
+              <Icon name={m === 'audio' ? 'mic' : 'play'} size={12} stroke={1.9} /> {m === 'audio' ? 'Audio' : 'Video + Audio'}
+            </button>
+          ))}
         </div>
       )}
 

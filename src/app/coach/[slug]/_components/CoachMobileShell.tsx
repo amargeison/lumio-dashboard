@@ -44,6 +44,7 @@ function MoreGlyph() {
 
 export function CoachMobileShell({
   T, accent, active, onNavigate, showDemoBanner, hiddenMenu, avatar, children, roleSwitcher, roleBanner,
+  navLabel = (item) => item.label,
 }: {
   T: ThemeTokens
   accent: AccentTokens
@@ -57,6 +58,8 @@ export function CoachMobileShell({
   // shell so the mobile shell stays role-agnostic.
   roleSwitcher?: ReactNode
   roleBanner?: ReactNode
+  // Dynamic label override (e.g. Video & Audio → "Audio" when video is off).
+  navLabel?: (item: { id: string; label: string }) => string
 }) {
   const [moreOpen, setMoreOpen] = useState(false)
 
@@ -86,7 +89,7 @@ export function CoachMobileShell({
 
   // More = everything not already on a primary tab and not hidden in Settings.
   const moreItems: MoreSheetItem[] = COACH_SIDEBAR.map(i => ({
-    id: i.id, label: i.label, group: i.group, icon: NAV_EMOJI[i.id] ?? '•',
+    id: i.id, label: navLabel(i), group: i.group, icon: NAV_EMOJI[i.id] ?? '•',
   }))
   const moreHidden = new Set<string>([...hiddenMenu, ...PRIMARY_TABS])
 
@@ -135,7 +138,7 @@ export function CoachMobileShell({
         <div style={{ width: 30, height: 30, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, fontSize: 16, flexShrink: 0 }}>🎾</div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: T.text, lineHeight: 1.1 }}>Lumio Coach</div>
-          <div style={{ fontSize: 10, color: T.text3 }}>{activeItem?.label ?? 'Dashboard'}</div>
+          <div style={{ fontSize: 10, color: T.text3 }}>{activeItem ? navLabel(activeItem) : 'Dashboard'}</div>
         </div>
         {avatar}
       </div>
