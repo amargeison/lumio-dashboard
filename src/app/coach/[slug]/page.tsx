@@ -224,8 +224,6 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const T = THEMES[settings.theme]
   const accent = ACCENT_PRESETS[settings.accentKey]
   const density = DENSITY[settings.density]
-  // Audio-only mode renames the Video & Audio module to "Audio only" everywhere.
-  const navLabel = (item: { id: string; label: string }) => item.id === 'videoaudio' && settings.audioOnly ? 'Audio only' : item.label
   const sideBg = T.isDark ? '#0a0c14' : T.panel2
   const line = T.border
   const isMobile = useIsMobile()
@@ -296,6 +294,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
     (id === 'gpsheatmaps' && !feat.effort) ||
     (id === 'belts' && !feat.racket) ||
     (id === 'videoaudio' && !feat.video && !feat.audio)
+  // Video & Audio module is renamed when only one medium is on (and hidden
+  // entirely when both are off, via featureHidden above).
+  const navLabel = (item: { id: string; label: string }) => {
+    if (item.id !== 'videoaudio') return item.label
+    if (feat.video && !feat.audio) return 'Video'
+    if (feat.audio && !feat.video) return 'Audio'
+    return item.label
+  }
   // Fall back to the dashboard if the active view is hidden by the coach OR is
   // unavailable for the current role (e.g. switching to Coach while on Payments).
   useEffect(() => {
@@ -358,7 +364,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'camps':       return <LiveCamps T={T} accent={accent} />
         case 'payments':    return <LivePayments T={T} accent={accent} />
         case 'gpsheatmaps': return <LiveEffortRewards T={T} accent={accent} density={density} />
-        case 'videoaudio':  return <LiveVideoAudio T={T} accent={accent} />
+        case 'videoaudio':  return <LiveVideoAudio T={T} accent={accent} videoOn={feat.video} audioOn={feat.audio} />
         case 'planner':     return <LiveSessionPlanner T={T} accent={accent} density={density} onNavigate={setActive} />
         case 'venues':      return <LiveCourtPlanner T={T} accent={accent} onNavigate={setActive} />
         case 'development': return <LiveDevelopment T={T} accent={accent} />
@@ -387,7 +393,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       case 'venues':      return <CourtPlannerView T={T} accent={accent} density={density} />
       case 'camps':       return <CampsView T={T} accent={accent} density={density} />
       case 'roster':      return <RosterView T={T} accent={accent} density={density} onNavigate={setActive} />
-      case 'videoaudio':  return <VideoAudioView T={T} accent={accent} density={density} />
+      case 'videoaudio':  return <VideoAudioView T={T} accent={accent} density={density} videoOn={feat.video} audioOn={feat.audio} />
       case 'gpsheatmaps': return <HeatmapsView T={T} accent={accent} density={density} />
       case 'messages':    return <MessagesView T={T} accent={accent} density={density} />
       case 'resources':   return <ResourcesView T={T} accent={accent} density={density} />
@@ -462,7 +468,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       <>
         {wizard}
         <CoachMobileShell
-          T={T} accent={accent} active={active} onNavigate={setActive}
+          T={T} accent={accent} active={active} onNavigate={setActive} navLabel={navLabel}
           showDemoBanner={showDemoBanner} hiddenMenu={[...hiddenMenu, ...roleHiddenIds]}
           avatar={<CoachAvatar size={30} />}
           roleSwitcher={roleSwitcher} roleBanner={ViewingAsBanner}

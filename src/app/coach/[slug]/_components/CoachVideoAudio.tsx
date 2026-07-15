@@ -22,7 +22,6 @@ import { suggestSessionForRecording, sessionsForRecordingPlayer, type Recording 
 import { getAddedSessions, subscribe as subscribeSessions } from '../_lib/sessions-store'
 import { SessionReviewPanel } from './SessionReviewPanel'
 import { MediaFieldRecorder } from './MediaFieldRecorder'
-import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags } from '../_lib/feature-flags'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -67,7 +66,7 @@ function Waveform({ accent }: { accent: AccentTokens }) {
   )
 }
 
-export function VideoAudioView({ T, accent, density }: Common) {
+export function VideoAudioView({ T, accent, density, videoOn = true, audioOn = true }: Common & { videoOn?: boolean; audioOn?: boolean }) {
   // Coach role: only that coach's players in the picker (recordings key by
   // playerId, so a coach with none falls through to the existing empty state).
   const scope = useScopeCoachId()
@@ -80,14 +79,12 @@ export function VideoAudioView({ T, accent, density }: Common) {
   // Keep the selected player inside the current scope — reset when the role
   // switches so we never show another coach's recordings.
   useEffect(() => { setPlayerId(prev => players.some(p => p.id === prev) ? prev : (players[0]?.id ?? '')) }, [scope])  // eslint-disable-line react-hooks/exhaustive-deps
-  const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags())
-  useEffect(() => { const r = () => setFeat(getFeatureFlags()); r(); return subscribeFeatures(r) }, [])
-  const [tab, setTab] = useState<'video' | 'audio'>('video')
-  // Keep the active tab on an enabled feature.
+  const [tab, setTab] = useState<'video' | 'audio'>(videoOn ? 'video' : 'audio')
+  // Keep the active tab on an enabled medium (video/audio can be turned off in Settings).
   useEffect(() => {
-    if (tab === 'video' && !feat.video && feat.audio) setTab('audio')
-    if (tab === 'audio' && !feat.audio && feat.video) setTab('video')
-  }, [feat, tab])
+    if (tab === 'video' && !videoOn && audioOn) setTab('audio')
+    if (tab === 'audio' && !audioOn && videoOn) setTab('video')
+  }, [videoOn, audioOn, tab])
 
   const [recordings, setRecordings] = useState<Recording[]>(getRecordings())
   const [added, setAdded] = useState<TodaySession[]>([])
@@ -117,10 +114,18 @@ export function VideoAudioView({ T, accent, density }: Common) {
   const labelStyle: CSSProperties = { fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, marginBottom: 4, display: 'block' }
   const chip = (text: string, color: string, bg: string): CSSProperties => ({ fontSize: 9.5, fontWeight: 700, color, background: bg, padding: '3px 8px', borderRadius: 5, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' })
 
-  const tabBtn = (id: 'video' | 'audio', label: string) => (
-    <button key={id} onClick={() => setTab(id)}
-      style={{ appearance: 'none', border: tab === id ? `1px solid ${accent.border}` : '1px solid transparent', padding: '6px 14px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === id ? accent.dim : 'transparent', color: tab === id ? accent.hex : T.text2, fontWeight: tab === id ? 600 : 400 }}>
-      {label}
+  const bothOn = videoOn && audioOn
+  const vaTitle = bothOn ? 'Video & Audio' : (videoOn ? 'Video' : 'Audio')
+  const vaSub = bothOn
+    ? 'Your recordings library — Lumio Vision clips and session audio, tagged to sessions for review.'
+    : videoOn
+      ? 'Your recordings library — Lumio Vision clips, tagged to sessions for review.'
+      : 'Your recordings library — session audio, tagged to sessions for review.'
+  // Big hero switcher — the primary control at the top of the page.
+  const heroTab = (id: 'video' | 'audio', label: string, count: number, beta: boolean) => (
+    <button key={id} onClick={() => setTab(id)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px 22px', borderRadius: 10, fontSize: 15, fontWeight: 700, fontFamily: FONT, border: `1px solid ${tab === id ? accent.border : 'transparent'}`, background: tab === id ? accent.dim : 'transparent', color: tab === id ? accent.hex : T.text2 }}>
+      <Icon name={id === 'video' ? 'play' : 'mic'} size={16} stroke={1.9} /> {label}{count ? ` · ${count}` : ''}
+      {beta && <span style={{ fontSize: 8.5, fontWeight: 800, color: accent.hex, background: T.panel, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '1px 6px', letterSpacing: '0.05em' }}>BETA</span>}
     </button>
   )
 
@@ -130,9 +135,17 @@ export function VideoAudioView({ T, accent, density }: Common) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
       {/* Header */}
       <div>
-        <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Video &amp; Audio</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Your recordings library — Lumio Vision clips and session audio, tagged to sessions for review.</p>
+        <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>{vaTitle}</h1>
+        <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>{vaSub}</p>
       </div>
+
+      {/* Hero switcher — the first control on the page (only when both media are on) */}
+      {bothOn && (
+        <div style={{ display: 'flex', gap: 8, padding: 5, background: T.hover, borderRadius: 12 }}>
+          {heroTab('video', 'Video', videoRecs.length, true)}
+          {heroTab('audio', 'Audio', audioRecs.length, false)}
+        </div>
+      )}
 
       {/* Shared player filter */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -147,17 +160,6 @@ export function VideoAudioView({ T, accent, density }: Common) {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, padding: 3, background: T.hover, borderRadius: 9, width: 'fit-content', alignItems: 'center' }}>
-        {feat.video && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            {tabBtn('video', `Video${videoRecs.length ? ` · ${videoRecs.length}` : ''}`)}
-            <span style={{ fontSize: 8.5, fontWeight: 800, color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '1px 6px', letterSpacing: '0.05em' }}>BETA</span>
-          </span>
-        )}
-        {feat.audio && tabBtn('audio', `Audio${audioRecs.length ? ` · ${audioRecs.length}` : ''}`)}
-      </div>
-
       {/* VIDEO TAB — clip grid from the recordings store */}
       {tab === 'video' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
@@ -169,7 +171,7 @@ export function VideoAudioView({ T, accent, density }: Common) {
               <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>Court video is automatically clipped into shot highlights, linked to the right player, and pushed to their mobile app — ready to review and share.</div>
             </div>
           </div>
-          <MediaFieldRecorder T={T} accent={accent} density={density} defaultMode="video" />
+          <MediaFieldRecorder T={T} accent={accent} density={density} defaultMode="video" lockMode />
           {videoRecs.length === 0 ? (
             <div style={{ background: T.panel, border: `1px dashed ${T.border}`, borderRadius: density.radius, padding: '40px 20px', textAlign: 'center' }}>
               <Icon name="play" size={26} stroke={1.4} style={{ color: T.text3 }} />
@@ -201,7 +203,7 @@ export function VideoAudioView({ T, accent, density }: Common) {
       {tab === 'audio' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: density.gap }}>
           <DeviceLine T={T} icon="mic" name="Lumio Mic" meta={`${audioRecs.length} recordings`} />
-          <MediaFieldRecorder T={T} accent={accent} density={density} defaultMode="audio" />
+          <MediaFieldRecorder T={T} accent={accent} density={density} defaultMode="audio" lockMode />
           {audioRecs.length === 0 ? (
             <div style={{ background: T.panel, border: `1px dashed ${T.border}`, borderRadius: density.radius, padding: '40px 20px', textAlign: 'center' }}>
               <Icon name="mic" size={26} stroke={1.5} style={{ color: T.text3 }} />

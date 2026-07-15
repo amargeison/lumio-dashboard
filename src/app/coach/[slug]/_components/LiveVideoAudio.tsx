@@ -9,27 +9,25 @@ import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, sb, dbUpdate } from '../_lib/coach-db'
-import { getSettings, subscribe as subscribeSettings } from '../_lib/settings-store'
 
 type Media = { id: string; kind?: string | null; title?: string | null; player_name?: string | null; duration_seconds?: number | null; created_at?: string; clip_of?: string | null; shot_type?: string | null; shot_confirmed?: boolean | null }
 const SHOT_OPTIONS = ['serve', 'forehand', 'backhand', 'volley', 'smash'] as const
 const mmss = (s?: number | null) => { if (!s && s !== 0) return ''; const m = Math.floor((s || 0) / 60); return `${m}:${String(Math.round((s || 0) % 60)).padStart(2, '0')}` }
 const fmtDate = (d?: string) => { const t = d ? new Date(d) : null; return t && !isNaN(t.getTime()) ? t.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '' }
 
-export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { T: ThemeTokens; accent: AccentTokens; videoOn?: boolean; audioOn?: boolean }) {
   const media = useCoachTable<Media>('coach_media')
   const { rows: players } = useCoachTable<{ id: string; name: string }>('coach_players')
-  // Audio-only mode (Settings): hides the video tab + video capture, defaults to audio.
-  const [audioOnly, setAudioOnly] = useState(false)
-  useEffect(() => { const r = () => setAudioOnly(getSettings().audioOnly); r(); return subscribeSettings(r) }, [])
-  const [tab, setTab] = useState<'video' | 'audio'>('video')
+  const [tab, setTab] = useState<'video' | 'audio'>(videoOn ? 'video' : 'audio')
   const [playerFilter, setPlayerFilter] = useState('')
-  const [recKind, setRecKind] = useState<'audio' | 'video'>('video')
-  // In audio-only mode force the audio tab + audio capture.
-  useEffect(() => { if (audioOnly) { setTab('audio'); setRecKind('audio') } }, [audioOnly])
-  // Capture type follows the active tab — Video tab records video, Audio tab
-  // records audio. Keeps each section to a single medium (no cross-mixing).
-  useEffect(() => { if (!audioOnly) setRecKind(tab) }, [tab, audioOnly])
+  const [recKind, setRecKind] = useState<'audio' | 'video'>(videoOn ? 'video' : 'audio')
+  // Video/Audio can each be turned off in Settings — keep the active tab on an
+  // enabled medium, and capture the medium that matches the active tab.
+  useEffect(() => {
+    if (tab === 'video' && !videoOn && audioOn) setTab('audio')
+    if (tab === 'audio' && !audioOn && videoOn) setTab('video')
+  }, [videoOn, audioOn, tab])
+  useEffect(() => { setRecKind(tab) }, [tab])
   const [phase, setPhase] = useState<'idle' | 'recording' | 'uploading'>('idle')
   const [secs, setSecs] = useState(0)
   const [err, setErr] = useState('')
@@ -49,6 +47,7 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
   const clips = media.rows.filter(m => (m.kind || 'video') === tab && inFilter(m))
   const videoCount = media.rows.filter(m => (m.kind || 'video') === 'video').length
   const audioCount = media.rows.filter(m => m.kind === 'audio').length
+  const bothOn = videoOn && audioOn
 
   // Upload a clip to coach_media WITHOUT triggering the AI process route.
   const uploadOne = async (blob: Blob, name: string, title: string, duration?: number) => {
@@ -108,9 +107,20 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
   return (
     <div style={{ fontFamily: FONT }}>
       <div style={{ marginBottom: 14 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>{audioOnly ? 'Audio' : <>Video &amp; Audio</>}</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>{audioOnly ? 'Your recordings library — session audio for review.' : 'Your recordings library — court clips and session audio for review.'}</p>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>{bothOn ? <>Video &amp; Audio</> : videoOn ? 'Video' : 'Audio'}</h1>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>{bothOn ? 'Your recordings library — court clips and session audio for review.' : videoOn ? 'Your recordings library — court clips for review.' : 'Your recordings library — session audio for review.'}</p>
       </div>
+
+      {/* Hero switcher — the first control on the page (only when both media are on) */}
+      {bothOn && (
+        <div style={{ display: 'flex', gap: 8, padding: 5, background: T.hover, borderRadius: 12, marginBottom: 14 }}>
+          {(['video', 'audio'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, appearance: 'none', border: `1px solid ${tab === t ? T.border : 'transparent'}`, padding: '14px 22px', borderRadius: 10, fontSize: 15, cursor: 'pointer', fontFamily: FONT, textTransform: 'capitalize', background: tab === t ? T.panel : 'transparent', color: tab === t ? T.text : T.text2, fontWeight: tab === t ? 700 : 500 }}>
+              {t === 'video' ? '🎬' : '🎙️'} {t} · {t === 'video' ? videoCount : audioCount}{t === 'video' && <span style={{ fontSize: 8.5, fontWeight: 800, color: accent.hex, background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 999, padding: '1px 6px', letterSpacing: '0.05em' }}>BETA</span>}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Player filter */}
       <div style={{ marginBottom: 12 }}>
@@ -121,11 +131,6 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
         </select>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginBottom: 14, width: 'fit-content' }}>
-        {(audioOnly ? (['audio'] as const) : (['video', 'audio'] as const)).map(t => <button key={t} onClick={() => setTab(t)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: FONT, textTransform: 'capitalize', background: tab === t ? T.panel : 'transparent', color: tab === t ? T.text : T.text2, fontWeight: tab === t ? 600 : 400, boxShadow: tab === t ? `0 0 0 1px ${T.border}` : 'none' }}>{t} · {t === 'video' ? videoCount : audioCount}{t === 'video' && <span style={{ fontSize: 8.5, fontWeight: 800, color: accent.hex, background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 999, padding: '1px 6px', letterSpacing: '0.05em' }}>BETA</span>}</button>)}
-      </div>
-
       {/* Lumio Vision status */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>👁 Lumio Vision</span>
@@ -134,7 +139,7 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
       </div>
 
       {/* Auto highlights — Video only */}
-      {!audioOnly && tab === 'video' && (
+      {tab === 'video' && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: accent.dim, border: `1px solid ${accent.hex}44`, borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
           <span style={{ fontSize: 18, lineHeight: 1 }}>✨</span>
           <div style={{ flex: 1 }}>
@@ -153,6 +158,12 @@ export function LiveVideoAudio({ T, accent }: { T: ThemeTokens; accent: AccentTo
             <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>{tab === 'audio' ? 'Capture session audio for review — record, play back &amp; download.' : 'Point at the court and capture the session — record, play back &amp; download.'}</div>
           </div>
         </div>
+        {/* Capture mode — fixed to the active tab (Video tab = video+audio, Audio tab = audio) */}
+        {phase !== 'recording' && (
+          <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: accent.hex, background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 8, padding: '7px 13px', fontFamily: FONT }}>{tab === 'audio' ? '🎙️ Audio' : '🎬 Video + Audio'}</span>
+          </div>
+        )}
         {phase === 'recording' ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 16 }}>
             <span style={{ fontSize: 13, color: T.bad, fontWeight: 700 }}>● Recording {tab}</span>

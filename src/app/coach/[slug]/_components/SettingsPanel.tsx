@@ -11,6 +11,7 @@ import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-da
 import { getAddedVenues } from '../_lib/venues-store'
 import { AddVenueModal } from './AddVenueModal'
 import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
+import { getFlags, setFlag, subscribe as subscribeFeatures } from '../_lib/feature-flags'
 import { IntegrationsPanel } from './IntegrationsPanel'
 import { CoachContactSettings } from './CoachContactSettings'
 import { CoachVenuesSettings } from './CoachVenuesSettings'
@@ -122,6 +123,11 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
   const [addVenueOpen, setAddVenueOpen] = useState(false)
   // Demo "order" state — which kit items the coach has added to their order.
   const [ordered, setOrdered] = useState<string[]>([])
+  // Feature flags — Video & Audio each toggle their half of the module. Fallback
+  // matches page.tsx (demo = elite/all-on, live founder = prolite).
+  const featFallback = demo ? 'elite' : 'prolite'
+  const [feat, setFeat] = useState(() => getFlags(featFallback))
+  useEffect(() => { const r = () => setFeat(getFlags(featFallback)); r(); return subscribeFeatures(r) }, [featFallback])
 
   // Per-area settings — persisted via the same localStorage store as the rest of
   // Settings (survives reload, applies across the portal). Each value reads from
@@ -443,7 +449,8 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
         <Modal readOnly={demo} T={T} accent={accent} title="Menu visibility" sub="Hide nav items you don't use — they leave the sidebar instantly. Dashboard and Settings always stay." onClose={() => setOpen(null)}>
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Video &amp; Audio</div>
-            <Toggle T={T} accent={accent} on={s.audioOnly} onChange={v => setSettings({ audioOnly: v })} label="Audio only" desc="Hide the video half — the module shows audio only and the menu item is renamed “Audio only”." />
+            <Toggle T={T} accent={accent} on={feat.video} onChange={v => setFlag('video', v)} label="Video" desc="Court clips and AI highlights. Turn off to hide the Video tab — the menu becomes “Audio”." />
+            <Toggle T={T} accent={accent} on={feat.audio} onChange={v => setFlag('audio', v)} label="Audio" desc="Session audio recordings. Turn off to hide the Audio tab — the menu becomes “Video”." />
           </div>
           {COACH_GROUPS.map(group => {
             const items = COACH_SIDEBAR.filter(i => i.group === group)
