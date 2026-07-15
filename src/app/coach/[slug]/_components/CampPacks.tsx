@@ -225,7 +225,7 @@ function beltColour(i: number) { return BELTS[i]?.colour ?? '#a855f7' }
 function certificateInner(a: CampAttendee, camp: Camp) {
   const stats = playerCampStats(a, camp)
   const beltName = BELTS[stats.beltEnd].name
-  const brandLogo = getSettings().brandLogo
+  const brandLogo = getSettings().brandLogo || (typeof window !== 'undefined' ? `${window.location.origin}/tennis_transparent_logo.png` : '')
   const logoTag = brandLogo ? `<img src="${brandLogo}" alt="" style="height:60px;max-width:180px;object-fit:contain;display:block;margin:0 auto 14px" />` : ''
   return `
   <section class="page" style="display:flex;align-items:center;justify-content:center;padding:0">
@@ -283,7 +283,7 @@ function campPackHTML(a: CampAttendee, camp: Camp) {
   const improveRows = stats.improvements.map(im => `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f0f1f6"><span style="color:#16a34a;font-weight:800">▲</span><span style="font-size:13px">${esc(im)}</span><span style="margin-left:auto;font-size:10px;color:#16a34a;font-weight:700">improved</span></div>`).join('')
   const logRows = log.map(d => `<tr><td style="white-space:nowrap"><strong style="color:#7c3aed">Day ${d.day}</strong><br/><span style="color:#9099ad;font-size:9px">${esc(d.date)}</span></td><td style="white-space:nowrap"><strong>${esc(d.theme)}</strong></td><td>${esc(d.am)}</td><td>${esc(d.nextAction)}</td><td style="color:#C9A227;white-space:nowrap">${stars(d.effort)}</td></tr>`).join('')
 
-  const packLogo = getSettings().brandLogo
+  const packLogo = getSettings().brandLogo || (typeof window !== 'undefined' ? `${window.location.origin}/tennis_transparent_logo.png` : '')
   const packLogoChip = packLogo ? `<img src="${packLogo}" alt="" style="height:56px;max-width:150px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;flex-shrink:0" />` : ''
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(a.name)} — Camp Pack</title><style>${BASE_CSS}</style></head><body>
   ${certificateInner(a, camp)}

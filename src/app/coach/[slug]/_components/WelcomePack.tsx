@@ -14,7 +14,7 @@ const line = '<div style="border-bottom:1px dashed #b9bdca;height:22px;margin:6p
 export function printWelcomePack(player: Player) {
   if (typeof window === 'undefined') return
   const first = player.name.split(' ')[0]
-  const brandLogo = getSettings().brandLogo
+  const brandLogo = getSettings().brandLogo || (typeof window !== 'undefined' ? `${window.location.origin}/tennis_transparent_logo.png` : '')
   const logoChip = brandLogo ? `<img src="${brandLogo}" alt="" style="height:58px;max-width:150px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;flex-shrink:0" />` : ''
   const belt = BELTS[player.beltIndex]
   const next = BELTS[Math.min(player.beltIndex + 1, BELTS.length - 1)]

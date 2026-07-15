@@ -267,7 +267,7 @@ export function printRacketCertificate(playerName: string, stage: { name: string
   if (typeof window === 'undefined') return
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const chips = skills.map(s => `<span class="chip">${esc(s)}</span>`).join('')
-  const brandLogo = getSettings().brandLogo
+  const brandLogo = getSettings().brandLogo || (typeof window !== 'undefined' ? `${window.location.origin}/tennis_transparent_logo.png` : '')
   const logoTag = brandLogo ? `<img src="${brandLogo}" alt="" style="height:60px;max-width:180px;object-fit:contain;display:block;margin:0 auto 14px" />` : ''
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(stage.name)} Racket — ${esc(playerName)}</title>
