@@ -12,6 +12,13 @@ export const metadata: Metadata = {
   title: 'Ten Project — Free School & Community Tennis | LEARN. PLAY. TOGETHER.',
   description:
     'Free, fun, game-based tennis for children aged 4–10 — 10 weeks in school plus free weekend family sessions on your local community courts.',
+  icons: {
+    icon: [
+      { url: '/tenproject-favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/tenproject-favicon-64.png', sizes: '64x64', type: 'image/png' },
+    ],
+    apple: '/tenproject_logo.png',
+  },
 }
 
 export const viewport: Viewport = {

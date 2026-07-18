@@ -56,8 +56,9 @@ export default function SiteHome() {
       {/* Nav */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: '#ffffffF2', backdropFilter: 'blur(8px)', borderBottom: '1px solid #E7E2DC' }}>
         <div className="tp-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: 62 }}>
-          <a href="#top" style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0.5, color: TP_DARK, textDecoration: 'none' }}>
-            TEN <span style={{ color: TP_RED }}>PROJECT</span>
+          <a href="#top" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/tenproject_logo.png" alt="Ten Project" style={{ height: 34, width: 'auto', display: 'block' }} />
           </a>
           <nav className="tp-navlinks">
             {NAV.map(n => (
@@ -303,8 +304,8 @@ export default function SiteHome() {
                   <div style={{ width: `${Math.round((CAMPAIGN.raised / CAMPAIGN.target) * 100)}%`, height: '100%', background: TP_RED, borderRadius: 999 }} />
                 </div>
               </div>
-              <a href="#" style={{ display: 'inline-block', marginTop: 14, fontSize: 13, fontWeight: 800, color: '#fff', textDecoration: 'underline' }}>
-                Start a school campaign →
+              <a href="/fundraise/st-clements-demo" style={{ display: 'inline-block', marginTop: 14, fontSize: 13, fontWeight: 800, color: '#fff', textDecoration: 'underline' }}>
+                See a live campaign page →
               </a>
             </div>
           </div>
@@ -354,8 +355,9 @@ export default function SiteHome() {
         <div className="tp-container">
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
             <div style={{ maxWidth: 300 }}>
-              <div style={{ fontSize: 16, fontWeight: 900, color: '#fff' }}>TEN <span style={{ color: TP_RED }}>PROJECT</span></div>
-              <div style={{ fontSize: 12.5, marginTop: 8, lineHeight: 1.6 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ height: 44, width: 'auto', display: 'block' }} />
+              <div style={{ fontSize: 12.5, marginTop: 10, lineHeight: 1.6 }}>
                 Free school & community tennis for children aged 4–10.<br />LEARN. PLAY. TOGETHER.
               </div>
             </div>
