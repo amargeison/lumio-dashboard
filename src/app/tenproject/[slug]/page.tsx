@@ -49,6 +49,10 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
   useEffect(() => {
     if (typeof window === 'undefined') return
     setPhase(localStorage.getItem(STORE_KEY) ? 'ready' : 'pin')
+    // Deep-link support: /tenproject/demo?role=parent lands straight on that
+    // role after the PIN (used by the website's "See the app demo" CTA).
+    const wanted = new URLSearchParams(window.location.search).get('role')
+    if (wanted && ROLES.some(r => r.id === wanted)) setRole(wanted as Role)
   }, [])
 
   function handleChange(i: number, val: string) {
