@@ -4,7 +4,12 @@ import React, { useState } from 'react'
 import { Sparkles, Calendar, PoundSterling, Share2, CheckCircle, X, BarChart3, Download, Award, Users } from 'lucide-react'
 import { Card, SectionTitle, Pill, Thermometer } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
-import { TP_RED, TP_DARK, CAMPAIGN, FUND_EVENTS, AI_EVENT_PACK, SCHOOL_STATS } from '@/data/tenproject/demo-data'
+import { openFunderDoc } from '../_lib/funder-docs'
+import { eventResources, openEventDoc } from '../_lib/event-docs'
+import { TP_RED, TP_DARK, CAMPAIGN, FUND_EVENTS, AI_EVENT_PACK, SCHOOL_STATS, type FundraisingEvent } from '@/data/tenproject/demo-data'
+
+// AI-pack modal rows map onto the ball-hit resource docs, in order
+const AI_PACK_RESOURCE_IDS = ['checklist', 'poster', 'parent-letter', 'risk', 'sponsor-ask', 'run-sheet']
 
 const EVENT_TONE: Record<string, 'green' | 'red' | 'grey'> = {
   complete: 'green',
@@ -14,7 +19,17 @@ const EVENT_TONE: Record<string, 'green' | 'red' | 'grey'> = {
 
 export default function SchoolView() {
   const [showPack, setShowPack] = useState(false)
+  const [events, setEvents] = useState<FundraisingEvent[]>(FUND_EVENTS)
+  const [selectedEvent, setSelectedEvent] = useState<FundraisingEvent | null>(null)
   const [tab, setTab] = useState<'fundraising' | 'programme'>('programme')
+  const ballHitEvent = events.find(e => e.type === 'Sponsored ball hit') ?? events[0]
+
+  function addAiEvent() {
+    if (!events.some(e => e.id === 'f5')) {
+      setEvents(prev => [...prev, { id: 'f5', name: 'Spring Sponsored Ball Hit', type: 'Sponsored ball hit', date: '20 Mar', status: 'planned', raised: 0, target: 900 }])
+    }
+    setShowPack(false)
+  }
   const maxWeekly = Math.max(...SCHOOL_STATS.weeklyAttendance)
   const maxYear = Math.max(...SCHOOL_STATS.yearGroups.map(y => y.children))
 
@@ -48,10 +63,10 @@ export default function SchoolView() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <button onClick={() => openFunderDoc('governor-pack')} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                 <Download size={13} /> Governor pack (PDF)
               </button>
-              <button style={{ background: '#fff', color: TP_DARK, border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <button onClick={() => openFunderDoc('newsletter-snippet')} style={{ background: '#fff', color: TP_DARK, border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
                 <Share2 size={13} /> Parent newsletter snippet
               </button>
             </div>
@@ -169,17 +184,17 @@ export default function SchoolView() {
             <Calendar size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Events
           </SectionTitle>
           <div style={{ display: 'grid', gap: 8 }}>
-            {FUND_EVENTS.map(ev => (
-              <div key={ev.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>
+            {events.map(ev => (
+              <button key={ev.id} onClick={() => setSelectedEvent(ev)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F7F5F2', border: '1px solid transparent', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: TP_DARK }}>{ev.name} <Pill tone={EVENT_TONE[ev.status]}>{ev.status.toUpperCase()}</Pill></div>
-                  <div style={{ fontSize: 11.5, color: '#6B6560' }}>{ev.type} · {ev.date}</div>
+                  <div style={{ fontSize: 11.5, color: '#6B6560' }}>{ev.type} · {ev.date} · <span style={{ color: TP_RED, fontWeight: 800 }}>{eventResources(ev).length} resources ▸</span></div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 14, fontWeight: 900, color: ev.raised > 0 ? TP_RED : '#8A847E' }}>£{ev.raised.toLocaleString()}</div>
                   <div style={{ fontSize: 10.5, color: '#8A847E' }}>of £{ev.target.toLocaleString()}</div>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
           <button
@@ -232,14 +247,49 @@ export default function SchoolView() {
             </div>
             <div style={{ display: 'grid', gap: 8 }}>
               {AI_EVENT_PACK.items.map((item, i) => (
-                <div key={i} style={{ display: 'flex', gap: 9, background: '#F7F5F2', borderRadius: 10, padding: '10px 12px', fontSize: 12.5, color: TP_DARK }}>
-                  <span style={{ fontWeight: 900, color: TP_RED }}>{i + 1}.</span> {item}
-                </div>
+                <button key={i} onClick={() => openEventDoc(ballHitEvent, AI_PACK_RESOURCE_IDS[i] ?? 'run-sheet')} style={{ display: 'flex', gap: 9, background: '#F7F5F2', border: '1px solid transparent', borderRadius: 10, padding: '10px 12px', fontSize: 12.5, color: TP_DARK, cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
+                  <span style={{ fontWeight: 900, color: TP_RED }}>{i + 1}.</span>
+                  <span style={{ flex: 1 }}>{item}</span>
+                  <span style={{ color: TP_RED, fontWeight: 900, flexShrink: 0 }}>open ▸</span>
+                </button>
               ))}
             </div>
-            <button onClick={() => setShowPack(false)} style={{ marginTop: 14, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
-              Add to my events (demo)
+            <button onClick={addAiEvent} style={{ marginTop: 14, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+              Add “Spring Sponsored Ball Hit” to my events
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Event detail + resources modal */}
+      {selectedEvent && (
+        <div style={{ position: 'fixed', inset: 0, background: '#00000066', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: 16 }} onClick={() => setSelectedEvent(null)}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 22, maxWidth: 540, width: '100%', maxHeight: '84vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK }}>{selectedEvent.name} <Pill tone={EVENT_TONE[selectedEvent.status]}>{selectedEvent.status.toUpperCase()}</Pill></div>
+                <div style={{ fontSize: 12, color: '#6B6560', marginTop: 3 }}>{selectedEvent.type} · {selectedEvent.date} · £{selectedEvent.raised.toLocaleString()} raised of £{selectedEvent.target.toLocaleString()}</div>
+              </div>
+              <button onClick={() => setSelectedEvent(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6560' }}><X size={18} /></button>
+            </div>
+            <div style={{ background: '#EFEBE6', borderRadius: 999, height: 10, margin: '10px 0 14px' }}>
+              <div style={{ width: `${Math.min(100, Math.round((selectedEvent.raised / selectedEvent.target) * 100))}%`, height: '100%', background: TP_RED, borderRadius: 999 }} />
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 900, color: TP_DARK, letterSpacing: 0.5, marginBottom: 8 }}>EVENT RESOURCES — tap to open, print or copy</div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {eventResources(selectedEvent).map(r => (
+                <button key={r.id} onClick={() => openEventDoc(selectedEvent, r.id)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, background: '#F7F5F2', border: '1px solid transparent', borderRadius: 10, padding: '11px 13px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{r.title}</div>
+                    <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2 }}>{r.desc}</div>
+                  </div>
+                  <span style={{ color: TP_RED, fontWeight: 900, fontSize: 12, flexShrink: 0 }}>open ▸</span>
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: '#8A847E', marginTop: 12 }}>
+              Money logged against this event feeds the campaign thermometer automatically.
+            </div>
           </div>
         </div>
       )}
