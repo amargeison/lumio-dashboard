@@ -17,7 +17,8 @@ const NAV = [
   { id: 'sessions', label: 'Find a session' },
   { id: 'parents', label: 'Parents' },
   { id: 'schools', label: 'Schools' },
-  { id: 'impact', label: 'Impact' },
+  { id: 'results', label: 'Results' },
+  { id: 'contact', label: 'Contact' },
 ]
 
 const QUOTES = [
@@ -86,45 +87,45 @@ export default function SiteHome() {
         )}
       </header>
 
-      {/* Hero */}
-      <section id="top" style={{ background: TP_DARK, color: '#fff', padding: '72px 0 56px' }}>
+      {/* Hero — banner photo, light-washed */}
+      <section id="top" style={{ backgroundImage: 'linear-gradient(90deg, rgba(247,245,242,0.94) 0%, rgba(247,245,242,0.82) 45%, rgba(247,245,242,0.55) 100%), url(/tenproject_banner.jpg)', backgroundSize: 'cover', backgroundPosition: 'center 30%', padding: '34px 0 40px', borderBottom: '1px solid #E7E2DC' }}>
         <div className="tp-container">
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>FREE SCHOOL & COMMUNITY TENNIS · AGES 4–10</div>
-          <h1 className="tp-hero-h1" style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.05, margin: '14px 0 16px', maxWidth: 760 }}>
+          <div style={{ fontSize: 21, fontWeight: 900, letterSpacing: 1.5, color: TP_RED }}>FREE SCHOOL & COMMUNITY TENNIS · AGES 4–10</div>
+          <h1 className="tp-hero-h1" style={{ fontSize: 52, fontWeight: 900, lineHeight: 1.05, margin: '10px 0 14px', maxWidth: 760, color: TP_DARK }}>
             LEARN. <span style={{ color: TP_RED }}>PLAY.</span> TOGETHER.
           </h1>
-          <p style={{ fontSize: 17, color: '#C9C4BE', maxWidth: 640, lineHeight: 1.55, margin: 0 }}>
+          <p style={{ fontSize: 17, color: '#3D3934', maxWidth: 620, lineHeight: 1.55, margin: 0, fontWeight: 500 }}>
             Ten weeks of free, fun, game-based tennis in your child’s school — plus free weekend
             family sessions on your local community courts. Every child gets a T-shirt, a ball and
             their own Activity Booklet.
           </p>
-          <div style={{ display: 'flex', gap: 12, marginTop: 26, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 22, flexWrap: 'wrap' }}>
             <a href="#sessions" style={{ background: TP_RED, color: '#fff', borderRadius: 10, padding: '13px 22px', fontSize: 14.5, fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               Find a session near me <ArrowRight size={16} />
             </a>
-            <a href="#schools" style={{ background: '#fff', color: TP_DARK, borderRadius: 10, padding: '13px 22px', fontSize: 14.5, fontWeight: 800, textDecoration: 'none' }}>
+            <a href="#schools" style={{ background: TP_DARK, color: '#fff', borderRadius: 10, padding: '13px 22px', fontSize: 14.5, fontWeight: 800, textDecoration: 'none' }}>
               Bring it to my school
             </a>
-            <a href="#parents" style={{ background: 'none', color: '#fff', border: '1.5px solid #3A3A42', borderRadius: 10, padding: '13px 22px', fontSize: 14.5, fontWeight: 800, textDecoration: 'none' }}>
+            <a href="#parents" style={{ background: '#ffffffCC', color: TP_DARK, border: `1.5px solid ${TP_DARK}33`, borderRadius: 10, padding: '13px 22px', fontSize: 14.5, fontWeight: 800, textDecoration: 'none' }}>
               Volunteer as a TENOR
             </a>
           </div>
 
           {/* Live impact counters */}
-          <div className="tp-counters" style={{ marginTop: 40 }}>
+          <div className="tp-counters" style={{ marginTop: 28 }}>
             {[
-              ['2,000+', 'children a week in school'],
-              ['950+', 'family visits last summer'],
-              ['10 weeks', 'completely free'],
+              ['13,000+', 'families active since we began'],
+              ['6,800+', 'children through the 10 weeks'],
+              ['7,000+', 'families at weekend sessions'],
               ['100%', 'of families would recommend us'],
             ].map(([n, l]) => (
-              <div key={l} style={{ background: '#22222A', borderRadius: 12, padding: '14px 18px', minWidth: 150 }}>
+              <div key={l} style={{ background: '#ffffffE8', border: '1px solid #E7E2DC', borderRadius: 12, padding: '13px 17px', minWidth: 150 }}>
                 <div style={{ fontSize: 22, fontWeight: 900, color: TP_RED }}>{n}</div>
-                <div style={{ fontSize: 11.5, color: '#C9C4BE', marginTop: 2 }}>{l}</div>
+                <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 2, fontWeight: 600 }}>{l}</div>
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 10.5, color: '#6B6560', marginTop: 8 }}>
+          <div style={{ fontSize: 10.5, color: '#8A847E', marginTop: 8 }}>
             Counters go live from portal registers — self-updating, funder-ready.
           </div>
         </div>
@@ -174,6 +175,49 @@ export default function SiteHome() {
         </div>
       </section>
 
+      {/* The Challenge + Our Outcomes */}
+      <section id="challenge" style={{ background: TP_DARK, color: '#fff', padding: '56px 0' }}>
+        <div className="tp-container">
+          <div className="tp-grid2">
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>THE CHALLENGE</div>
+              <h2 style={{ fontSize: 28, fontWeight: 900, margin: '8px 0 12px' }}>Too many children aren’t active — and families even less so</h2>
+              <div style={{ display: 'grid', gap: 12 }}>
+                {[
+                  ['1 in 5', 'children aged 5–17 meet the Chief Medical Officer’s guideline of 60 active minutes a day'],
+                  ['72%', 'of children are not active enough during the school day'],
+                  ['10% vs 17%', 'of girls aged 13–17 are active, compared to boys — and children from less affluent or minority-ethnic backgrounds are less likely still'],
+                ].map(([n, l]) => (
+                  <div key={l} style={{ display: 'flex', gap: 14, alignItems: 'baseline' }}>
+                    <div style={{ fontSize: 26, fontWeight: 900, color: TP_RED, minWidth: 110 }}>{n}</div>
+                    <div style={{ fontSize: 13, color: '#C9C4BE', lineHeight: 1.5 }}>{l}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize: 10.5, color: '#6B6560', marginTop: 12 }}>Sources: Sport England Active People / Active Lives surveys; DCMS Taking Part child survey.</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>OUR OUTCOMES</div>
+              <h2 style={{ fontSize: 28, fontWeight: 900, margin: '8px 0 12px' }}>Build a sporting habit for life — as a family</h2>
+              <p style={{ fontSize: 13.5, color: '#C9C4BE', lineHeight: 1.6, marginTop: 0 }}>
+                Attitudes to activity are shaped in childhood. Engaging children and parents as early as
+                possible — and involving the whole family — is how the habit sticks. Everything we do serves
+                three outcomes: <strong style={{ color: '#fff' }}>LEARN</strong> (physical literacy and the life
+                skills that support achievement in school), <strong style={{ color: '#fff' }}>PLAY</strong> (more
+                opportunities to play, especially for the under-represented — building confidence, self-esteem
+                and belonging), and <strong style={{ color: '#fff' }}>TOGETHER</strong> (parents part of their
+                child’s learning, and the school as the hub of its community).
+              </p>
+              <div style={{ fontSize: 12.5, color: '#8A847E', lineHeight: 1.7, marginTop: 8, fontStyle: 'italic' }}>
+                Have fun · laugh · build confidence · get active · make friends · be an active role model ·
+                jump, hop, skip, run, throw, catch, hit · play fair · focus · bond · belong · volunteer ·
+                create quality family moments
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Find a session */}
       <section id="sessions" style={{ background: '#fff', padding: '64px 0', borderTop: '1px solid #E7E2DC', borderBottom: '1px solid #E7E2DC' }}>
         <div className="tp-container">
@@ -208,7 +252,7 @@ export default function SiteHome() {
                     Book via partner site ↗
                   </a>
                 ) : (
-                  <a href="#" style={{ display: 'inline-block', marginTop: 12, fontSize: 12.5, fontWeight: 800, color: '#fff', background: TP_RED, borderRadius: 8, padding: '8px 13px', textDecoration: 'none' }}>
+                  <a href="https://www.tenproject.org.uk/book" style={{ display: 'inline-block', marginTop: 12, fontSize: 12.5, fontWeight: 800, color: '#fff', background: TP_RED, borderRadius: 8, padding: '8px 13px', textDecoration: 'none' }}>
                     Register — it’s free
                   </a>
                 )}
@@ -240,7 +284,7 @@ export default function SiteHome() {
                   </div>
                 ))}
               </div>
-              <a href="#" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 20, background: TP_DARK, color: '#fff', borderRadius: 10, padding: '12px 20px', fontSize: 13.5, fontWeight: 800, textDecoration: 'none' }}>
+              <a href="https://www.tenproject.org.uk/book" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 20, background: TP_DARK, color: '#fff', borderRadius: 10, padding: '12px 20px', fontSize: 13.5, fontWeight: 800, textDecoration: 'none' }}>
                 <Users size={15} /> Sign up as a TENOR
               </a>
             </div>
@@ -280,9 +324,17 @@ export default function SiteHome() {
                   </div>
                 ))}
               </div>
-              <a href="#" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 20, background: '#fff', color: TP_DARK, borderRadius: 10, padding: '12px 20px', fontSize: 13.5, fontWeight: 800, textDecoration: 'none' }}>
+              <a href="https://www.tenproject.org.uk/register" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 20, background: '#fff', color: TP_DARK, borderRadius: 10, padding: '12px 20px', fontSize: 13.5, fontWeight: 800, textDecoration: 'none' }}>
                 <School size={15} /> Book Ten Project for your school
               </a>
+              <div style={{ background: '#22222A', borderRadius: 12, padding: '14px 16px', marginTop: 18 }}>
+                <div style={{ fontSize: 12.5, fontStyle: 'italic', color: '#C9C4BE', lineHeight: 1.6 }}>
+                  “The Ten Project seems to fit the aims of Sports Premium perfectly — promoting sport in
+                  school and encouraging families to get active in the community. I will certainly be
+                  planning to use the Ten Project again next academic year.”
+                </div>
+                <div style={{ fontSize: 11, color: TP_RED, fontWeight: 800, marginTop: 6 }}>— Mark Clutterbuck, Headteacher, Coombe Hill Junior School</div>
+              </div>
             </div>
             <div style={{ background: '#22222A', borderRadius: 18, padding: 26 }}>
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1.5, color: TP_RED }}>NO BUDGET? WE’LL HELP YOU RAISE IT</div>
@@ -335,6 +387,95 @@ export default function SiteHome() {
         </div>
       </section>
 
+      {/* Results / case study */}
+      <section id="results" style={{ background: '#fff', borderTop: '1px solid #E7E2DC', padding: '56px 0' }}>
+        <div className="tp-container">
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>THE RESULTS SO FAR</div>
+          <h2 style={{ fontSize: 30, fontWeight: 900, margin: '8px 0 18px' }}>From school hall to community court — the numbers</h2>
+          <div className="tp-grid3">
+            {[
+              ['13,000+', 'families — over 26,000 children and parents — active weekly through our initiatives since we began'],
+              ['6,800+', 'children have completed 10 weeks of Ten Project in school'],
+              ['4,000+', 'families registered, with 3,100+ choosing to stay connected by newsletter'],
+              ['2×', 'families attending regularly at least doubled their weekly physical activity together'],
+              ['50+', 'children and adults joined their local tennis club from one borough alone — worth £3,500+ to that club'],
+              ['50+', 'schools delivered — from Kingston and Brighton to Leeds, Oxford, Eastbourne and Ilford'],
+            ].map(([n, l]) => (
+              <div key={l} style={{ background: TP_PAPER, borderRadius: 14, padding: '16px 18px', border: '1px solid #E7E2DC' }}>
+                <div style={{ fontSize: 26, fontWeight: 900, color: TP_RED }}>{n}</div>
+                <div style={{ fontSize: 12.5, color: '#5B554F', marginTop: 4, lineHeight: 1.5 }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11.5, color: '#8A847E', marginTop: 12 }}>
+            Figures to 31 Dec 2025, from Ten Project registers and the Coombe Hill case study. Full case study and testimonials available on request — and live from the portal for partners.
+          </div>
+        </div>
+      </section>
+
+      {/* Videos */}
+      <section id="videos" style={{ padding: '56px 0' }}>
+        <div className="tp-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
+          <div style={{ maxWidth: 560 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 900, margin: '0 0 8px' }}>Videos — every shot, every warm-up</h2>
+            <div style={{ fontSize: 14, color: '#6B6560', lineHeight: 1.6 }}>
+              Instruction videos for every skill in the Activity Booklet — the forehand, backhand, volley,
+              serve, ABC warm-ups and games. Take it to your court, try it at home, try it in the park —
+              but most of all, try it as a family.
+            </div>
+          </div>
+          <a href="https://www.youtube.com/channel/UC3-1ehFIPwAKgH98SXfLf1w" target="_blank" rel="noreferrer" style={{ background: TP_RED, color: '#fff', borderRadius: 10, padding: '13px 22px', fontSize: 14, fontWeight: 800, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <PlayCircle size={17} /> Watch on YouTube
+          </a>
+        </div>
+      </section>
+
+      {/* Coaches */}
+      <section id="coaches" style={{ background: '#fff', borderTop: '1px solid #E7E2DC', padding: '56px 0' }}>
+        <div className="tp-container">
+          <h2 style={{ fontSize: 28, fontWeight: 900, margin: '0 0 8px' }}>Our coaches</h2>
+          <p style={{ fontSize: 14, color: '#6B6560', maxWidth: 640, lineHeight: 1.6, marginTop: 0 }}>
+            Fully qualified, experienced, and chosen through a bespoke interview process. Every Ten Project coach holds, as a minimum:
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+            {['LTA accredited Level 2 / 3 (or equivalent)', 'First Aid certificate', 'Enhanced DBS check (via the LTA)', 'LTA Safeguarding & Protection training', 'Insured to £5 million'].map(t => (
+              <span key={t} style={{ background: TP_PAPER, border: '1px solid #E7E2DC', borderRadius: 999, padding: '8px 16px', fontSize: 12.5, fontWeight: 700, color: TP_DARK }}>✓ {t}</span>
+            ))}
+          </div>
+          {/* Where we run */}
+          <div style={{ marginTop: 26, background: TP_PAPER, borderRadius: 14, border: '1px solid #E7E2DC', padding: '16px 18px' }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: TP_DARK, letterSpacing: 0.5, marginBottom: 8 }}>CURRENT TEN PROJECTS — IN YOUR AREA</div>
+            <div style={{ fontSize: 13, color: '#5B554F', lineHeight: 1.7 }}>
+              Kingston · Chessington · Sutton · Wallington · Brighton · Eastbourne · Leeds · Oxford ·
+              Bracknell · Tonbridge · Hemel Hempstead · Ilford — with 50+ partner schools and new venues coming soon.
+            </div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+              <a href="#sessions" style={{ fontSize: 12.5, fontWeight: 800, color: '#fff', background: TP_RED, borderRadius: 8, padding: '9px 15px', textDecoration: 'none' }}>Find your session</a>
+              <a href="https://www.tenproject.org.uk/bring-to-your-area" style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK, background: '#fff', border: '1px solid #E7E2DC', borderRadius: 8, padding: '9px 15px', textDecoration: 'none' }}>Bring Ten Project to your area</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section id="contact" style={{ padding: '56px 0' }}>
+        <div className="tp-container" style={{ display: 'flex', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div>
+            <h2 style={{ fontSize: 28, fontWeight: 900, margin: '0 0 10px' }}>Contact</h2>
+            <div style={{ fontSize: 14, color: '#5B554F', lineHeight: 1.9 }}>
+              <strong>Email:</strong> <a href="mailto:info@tenproject.org.uk" style={{ color: TP_RED, fontWeight: 800, textDecoration: 'none' }}>info@tenproject.org.uk</a><br />
+              <strong>Phone:</strong> +44 (0)7786 913 182<br />
+              <strong>Address:</strong> Ten Project Ltd, 7 Cranmer Close, Morden, London, SM4 4SU
+            </div>
+          </div>
+          <div style={{ background: TP_DARK, borderRadius: 14, padding: '18px 22px', color: '#fff', maxWidth: 360 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 900 }}>Free school & parent resources</div>
+            <div style={{ fontSize: 12.5, color: '#C9C4BE', marginTop: 5, lineHeight: 1.55 }}>Warm-ups, games and activity ideas to use at school, at home or in the park.</div>
+            <a href="https://www.tenproject.org.uk/_files/ugd/afd262_2e51f30c2efb4fecb6823866bd010491.pdf" target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: 10, background: TP_RED, color: '#fff', borderRadius: 8, padding: '9px 15px', fontSize: 12.5, fontWeight: 800, textDecoration: 'none' }}>Download the pack (PDF)</a>
+          </div>
+        </div>
+      </section>
+
       {/* Talent pathways strip */}
       <section style={{ background: '#fff', borderTop: '1px solid #E7E2DC', padding: '40px 0' }}>
         <div className="tp-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
@@ -361,26 +502,37 @@ export default function SiteHome() {
                 Free school & community tennis for children aged 4–10.<br />LEARN. PLAY. TOGETHER.
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 44, flexWrap: 'wrap', fontSize: 12.5 }}>
+            <div style={{ display: 'flex', gap: 40, flexWrap: 'wrap', fontSize: 12.5 }}>
               <div style={{ display: 'grid', gap: 7, alignContent: 'start' }}>
                 <div style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>PROGRAMME</div>
                 <a href="#what" style={{ color: '#C9C4BE', textDecoration: 'none' }}>What is Ten Project</a>
+                <a href="#challenge" style={{ color: '#C9C4BE', textDecoration: 'none' }}>The Challenge & Outcomes</a>
                 <a href="#sessions" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Find a session</a>
+                <a href="#coaches" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Coaches & where we run</a>
+                <a href="#videos" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Videos</a>
+              </div>
+              <div style={{ display: 'grid', gap: 7, alignContent: 'start' }}>
+                <div style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>SCHOOLS & IMPACT</div>
                 <a href="#schools" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Schools</a>
                 <a href="#schools" style={{ color: '#C9C4BE', textDecoration: 'none' }}>School fundraising</a>
+                <a href="#results" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Results & case study</a>
+                <a href="#impact" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Testimonials</a>
+                <a href="https://www.tenproject.org.uk/blog" style={{ color: '#C9C4BE', textDecoration: 'none' }}>News</a>
               </div>
               <div style={{ display: 'grid', gap: 7, alignContent: 'start' }}>
                 <div style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>POLICIES</div>
-                <a href="#" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Safeguarding</a>
-                <a href="#" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Photography & Filming</a>
-                <a href="#" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Privacy</a>
-                <a href="#" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Terms</a>
+                <a href="https://www.tenproject.org.uk/safeguarding-policy" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Safeguarding</a>
+                <a href="https://www.tenproject.org.uk/photography-and-filming-policy" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Photography & Filming</a>
+                <a href="https://www.tenproject.org.uk/privacy-policy" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Privacy</a>
+                <a href="https://www.tenproject.org.uk/terms-and-conditions" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Terms</a>
               </div>
               <div style={{ display: 'grid', gap: 7, alignContent: 'start' }}>
-                <div style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>PORTAL</div>
+                <div style={{ color: '#fff', fontWeight: 800, fontSize: 12 }}>PORTAL & SOCIAL</div>
                 <Link href="/tenproject/demo" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Portal login</Link>
-                <a href="#" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Coach access</a>
-                <a href="#" style={{ color: '#C9C4BE', textDecoration: 'none' }}>TENOR access</a>
+                <a href="https://www.facebook.com/tenprojectuk/" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Facebook</a>
+                <a href="https://twitter.com/tenprojectuk" style={{ color: '#C9C4BE', textDecoration: 'none' }}>X / Twitter</a>
+                <a href="https://www.instagram.com/tenprojectuk/" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Instagram</a>
+                <a href="https://www.youtube.com/channel/UC3-1ehFIPwAKgH98SXfLf1w" style={{ color: '#C9C4BE', textDecoration: 'none' }}>YouTube</a>
               </div>
             </div>
           </div>
