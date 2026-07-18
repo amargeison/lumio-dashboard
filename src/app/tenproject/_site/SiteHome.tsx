@@ -55,10 +55,10 @@ export default function SiteHome() {
 
       {/* Nav */}
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: '#ffffffF2', backdropFilter: 'blur(8px)', borderBottom: '1px solid #E7E2DC' }}>
-        <div className="tp-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: 62 }}>
+        <div className="tp-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: 88 }}>
           <a href="#top" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tenproject_logo.png" alt="Ten Project" style={{ height: 34, width: 'auto', display: 'block' }} />
+            <img src="/tenproject_logo.png" alt="Ten Project" style={{ height: 68, width: 'auto', display: 'block' }} />
           </a>
           <nav className="tp-navlinks">
             {NAV.map(n => (
