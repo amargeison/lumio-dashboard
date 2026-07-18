@@ -254,7 +254,7 @@ export default function SiteHome() {
                 weekend venue with one-tap confirm and QR check-in · all messages from your coach.
                 No app store needed — it installs from your browser.
               </div>
-              <Link href="/tenproject/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 18, background: TP_RED, color: '#fff', borderRadius: 10, padding: '11px 18px', fontSize: 13, fontWeight: 800, textDecoration: 'none' }}>
+              <Link href="/tenproject/demo?role=parent" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 18, background: TP_RED, color: '#fff', borderRadius: 10, padding: '11px 18px', fontSize: 13, fontWeight: 800, textDecoration: 'none' }}>
                 See the app demo <ArrowRight size={15} />
               </Link>
             </div>
