@@ -447,6 +447,338 @@ export const TP_TENOR_STATS_ROW = [
   { label: 'RECRUITMENT PIPELINE', value: '3' },
 ]
 
+// ─── Person detail (coach/TENOR profile pages — maps from Lumio coach view) ─
+export interface TpAssignment {
+  name: string
+  kind: 'school' | 'venue'
+  detail: string
+  status?: string
+}
+
+export interface TpPersonDetail {
+  email: string
+  phone: string
+  availability: string
+  dbsNumber?: string
+  dbsIssued?: string
+  dbsExpiry?: string
+  safeguardingDate?: string
+  firstAid?: string
+  insurance?: string
+  assignments: TpAssignment[]
+  cal: CalEvent[]
+}
+
+export const COACH_DETAILS: Record<string, TpPersonDetail> = {
+  nb: {
+    email: 'natalie@tenproject.org.uk', phone: '07700 900456', availability: 'Mon–Sat · term time + weekends',
+    dbsNumber: '0012 8891 4432', dbsIssued: '02/03/2024', dbsExpiry: '02/03/2027', safeguardingDate: '14/11/2025', firstAid: 'expires 30/08/2026 ⚠', insurance: '£5m · to 01/2027',
+    assignments: [
+      { name: 'Oakridge Primary', kind: 'school', detail: 'Y3 Falcons + Y4 Kestrels · Week 4 of 10 · 58 children', status: 'RUNNING' },
+      { name: 'Kingsmead Rec Ground', kind: 'venue', detail: 'Saturday family session · session lead · 3 TENORs', status: 'SAT 1.30PM' },
+    ],
+    cal: CAL_EVENTS.coach,
+  },
+  th: {
+    email: 'tom@tenproject.org.uk', phone: '07700 900457', availability: 'Tue–Sun · 24h/wk',
+    dbsNumber: '0043 2210 9987', dbsIssued: '10/11/2023', dbsExpiry: '10/11/2026', safeguardingDate: '02/02/2026', firstAid: 'expires in 6 weeks ⚠', insurance: '£5m · to 03/2027',
+    assignments: [
+      { name: 'Meridian Park Primary', kind: 'school', detail: '2 cohorts · 45 children · starts w/c 14 Sept', status: 'CONFIRMED' },
+      { name: 'Elmwood Park Courts', kind: 'venue', detail: 'Sunday family session · inclusive sessions · 2 TENORs', status: 'SUN 10AM' },
+    ],
+    cal: [
+      { day: 'Tue', time: '10.00', title: 'Meridian Park — planning visit', where: 'School office', kind: 'school' },
+      { day: 'Thu', time: '14.00', title: 'Inclusive-session CPD (video)', kind: 'admin' },
+      { day: 'Sun', time: '10.00', title: 'Elmwood family session — lead', where: 'Elmwood Park', kind: 'weekend' },
+    ],
+  },
+  lt: {
+    email: 'lucy@tenproject.org.uk', phone: '07700 900458', availability: 'Mon–Fri · term time',
+    dbsNumber: '0077 4451 2210', dbsIssued: '19/08/2023', dbsExpiry: '19/08/2026', safeguardingDate: '20/09/2025', firstAid: 'valid to 02/2027', insurance: '£5m · to 01/2027',
+    assignments: [
+      { name: 'Willowbrook Primary', kind: 'school', detail: 'Programme complete · renewal conversation open', status: 'COMPLETE' },
+    ],
+    cal: [
+      { day: 'Wed', time: '15.30', title: 'Willowbrook — renewal meeting w/ head', where: 'School', kind: 'school' },
+      { day: 'Fri', time: '9.00', title: 'DBS renewal — submit documents', kind: 'admin' },
+    ],
+  },
+  mw: {
+    email: 'marcus@tenproject.org.uk', phone: '07700 900459', availability: 'Tue + Thu + Sat',
+    dbsNumber: '0091 3345 6678', dbsIssued: '05/01/2025', dbsExpiry: '05/01/2028', safeguardingDate: '11/01/2026', firstAid: 'valid to 09/2026', insurance: 'covered under programme policy',
+    assignments: [
+      { name: 'Oakridge Primary', kind: 'school', detail: 'Assisting Natalie — both cohorts', status: 'RUNNING' },
+    ],
+    cal: [
+      { day: 'Tue', time: '13.15', title: 'Oakridge — assist Y3 + Y4', where: 'School hall', kind: 'school' },
+      { day: 'Sat', time: '13.30', title: 'Kingsmead family session — support', where: 'Kingsmead Rec', kind: 'weekend' },
+    ],
+  },
+  ev: {
+    email: 'eleanor@tenproject.org.uk', phone: '07700 900460', availability: 'Sat + school holidays',
+    dbsNumber: '0022 7789 0034', dbsIssued: '14/06/2024', dbsExpiry: '14/06/2027', safeguardingDate: '03/03/2026', firstAid: 'valid to 03/2027', insurance: '£5m · to 01/2027',
+    assignments: [
+      { name: 'Bramley Green Courts', kind: 'venue', detail: 'Saturday family session · adult+family focus · 2 TENORs', status: 'SAT 11.30AM' },
+    ],
+    cal: [
+      { day: 'Sat', time: '11.30', title: 'Bramley Green family session — lead', where: 'Bramley Green', kind: 'weekend' },
+    ],
+  },
+  jm: {
+    email: 'jordan@tenproject.org.uk', phone: '07700 900461', availability: 'Tue + Sat (shadowing)',
+    dbsNumber: '— application submitted', dbsIssued: '—', dbsExpiry: '—', safeguardingDate: 'booked 05/08/2026', firstAid: 'booked 12/08/2026', insurance: 'n/a until certified',
+    assignments: [
+      { name: 'Oakridge Primary', kind: 'school', detail: 'Shadowing Natalie — supervised only', status: 'TRAINING' },
+    ],
+    cal: [
+      { day: 'Tue', time: '13.15', title: 'Oakridge — shadowing (supervised)', where: 'School hall', kind: 'school' },
+    ],
+  },
+}
+
+export const TENOR_DETAILS: Record<string, TpPersonDetail> = {
+  t1: {
+    email: 'david.o@familymail.example', phone: '07700 900489', availability: 'Saturdays',
+    dbsNumber: '0055 6612 3390', dbsIssued: '20/09/2025', dbsExpiry: '20/09/2028', safeguardingDate: 'Volunteer induction 20/09/2025',
+    assignments: [{ name: 'Kingsmead Rec Ground', kind: 'venue', detail: 'Venue lead · holds store key · register duty', status: 'SAT 1.30PM' }],
+    cal: CAL_EVENTS.tenor,
+  },
+  t2: {
+    email: 'priya.s@familymail.example', phone: '07700 900490', availability: 'Saturdays',
+    dbsNumber: '0061 2298 4471', dbsIssued: '12/01/2026', dbsExpiry: '12/01/2029', safeguardingDate: 'Volunteer induction 12/01/2026',
+    assignments: [{ name: 'Kingsmead Rec Ground', kind: 'venue', detail: 'Register + warm-up games', status: 'SAT 1.30PM' }],
+    cal: [{ day: 'Sat', time: '13.10', title: 'TENOR briefing + session', where: 'Kingsmead Rec', kind: 'weekend' }],
+  },
+  t3: {
+    email: 'mark.r@familymail.example', phone: '07700 900491', availability: 'Saturdays (fortnightly)',
+    dbsNumber: 'pending — submitted 04/07/2026', dbsIssued: '—', dbsExpiry: '—', safeguardingDate: 'Volunteer induction 18/04/2026',
+    assignments: [{ name: 'Kingsmead Rec Ground', kind: 'venue', detail: 'Equipment + gate QR sign', status: 'SAT 1.30PM' }],
+    cal: [{ day: 'Fri', time: '17.30', title: 'Equipment check', where: 'Kingsmead store', kind: 'admin' }],
+  },
+  t4: {
+    email: 'ana.k@familymail.example', phone: '07700 900492', availability: 'Sundays',
+    dbsNumber: '0033 9987 1123', dbsIssued: '28/09/2025', dbsExpiry: '28/09/2028', safeguardingDate: 'Volunteer induction 28/09/2025 · inclusive-session training 11/2025',
+    assignments: [{ name: 'Elmwood Park Courts', kind: 'venue', detail: 'Runs inclusive-session adaptations', status: 'SUN 10AM' }],
+    cal: [{ day: 'Sun', time: '10.00', title: 'Elmwood family session', where: 'Elmwood Park', kind: 'weekend' }],
+  },
+  t5: {
+    email: 'tom.w@familymail.example', phone: '07700 900493', availability: 'Sundays',
+    dbsNumber: '0044 5561 8890', dbsIssued: '02/02/2026', dbsExpiry: '02/02/2029', safeguardingDate: 'Volunteer induction 02/02/2026',
+    assignments: [{ name: 'Elmwood Park Courts', kind: 'venue', detail: 'Register duty', status: 'SUN 10AM' }],
+    cal: [{ day: 'Sun', time: '10.00', title: 'Elmwood family session', where: 'Elmwood Park', kind: 'weekend' }],
+  },
+  t6: {
+    email: 'gemma.c@familymail.example', phone: '07700 900494', availability: 'Saturdays',
+    dbsNumber: '0072 3310 5567', dbsIssued: '15/03/2026', dbsExpiry: '15/03/2029', safeguardingDate: 'Volunteer induction 15/03/2026',
+    assignments: [{ name: 'Bramley Green Courts', kind: 'venue', detail: 'Register + parent liaison', status: 'SAT 11.30AM' }],
+    cal: [{ day: 'Sat', time: '11.30', title: 'Bramley Green family session', where: 'Bramley Green', kind: 'weekend' }],
+  },
+  t7: {
+    email: 'sofia.n@familymail.example', phone: '07700 900495', availability: 'Saturdays (from Sept)',
+    dbsNumber: 'pending — submitted 10/07/2026', dbsIssued: '—', dbsExpiry: '—', safeguardingDate: 'Induction booked 06/09/2026',
+    assignments: [{ name: 'Bramley Green Courts', kind: 'venue', detail: 'Joining from September', status: 'PENDING' }],
+    cal: [{ day: 'Sat', time: '9.00', title: 'Induction (booked 6 Sept)', kind: 'admin' }],
+  },
+}
+
+// ─── HQ school deep-dive detail ─────────────────────────────────────────────
+export interface TpSchoolDetail {
+  contacts: { name: string; role: string; email: string; phone: string }[]
+  safeguardingLead: string
+  funding: string
+  address: string
+  cohorts: { name: string; children: number; coach: string; week: number }[]
+  attendanceTrend: number[]     // % per week so far
+  activationPct: number
+  conversionPct: number
+  weekendVenue?: string
+  kit: string
+  fundraising?: { raised: number; target: number; supporters: number }
+  notes: string[]
+  nextActions: string[]
+}
+
+export const SCHOOL_DETAILS: Record<string, TpSchoolDetail> = {
+  oakridge: {
+    contacts: [
+      { name: 'Mrs L. Carter', role: 'Headteacher', email: 'head@oakridge.example.sch.uk', phone: '020 7946 0301' },
+      { name: 'Mrs A. Patel', role: 'PE lead (hand-over teacher)', email: 'a.patel@oakridge.example.sch.uk', phone: '020 7946 0302' },
+    ],
+    safeguardingLead: 'Mr J. Okafor (DSL)',
+    funding: 'School budget — confirmed for 2026/27',
+    address: 'Oakridge Lane, Kingsbridge',
+    cohorts: [
+      { name: 'Y3 Falcons', children: 28, coach: 'Natalie Brooks', week: 4 },
+      { name: 'Y4 Kestrels', children: 30, coach: 'Natalie Brooks', week: 4 },
+    ],
+    attendanceTrend: [92, 95, 94, 94],
+    activationPct: 62,
+    conversionPct: 21,
+    weekendVenue: 'Kingsmead Rec Ground (Sat 1.30pm)',
+    kit: 'Delivered w/c 8 Jun · 2 rackets flagged cracked — replacement requested',
+    notes: ['Head wants festival date before October half-term', 'Y4 teacher keen to lead sessions from week 7'],
+    nextActions: ['Confirm festival date + family invites', 'Replace damaged rackets before Tue', 'Push parent activation — 22 families not yet in the app'],
+  },
+  stclements: {
+    contacts: [
+      { name: 'Mr D. Whitmore', role: 'Headteacher', email: 'head@stclements.example.sch.uk', phone: '020 7946 0311' },
+      { name: 'Miss R. Adeyemi', role: 'PE lead', email: 'r.adeyemi@stclements.example.sch.uk', phone: '020 7946 0312' },
+    ],
+    safeguardingLead: 'Mrs T. Lund (DSL)',
+    funding: 'UNFUNDED for 2026/27 — fundraising campaign live',
+    address: 'Clement Road, Kingsbridge',
+    cohorts: [
+      { name: '2025/26 programme (complete)', children: 62, coach: 'Lucy Tran', week: 10 },
+    ],
+    attendanceTrend: [91, 94, 95, 92, 94, 93, 90, 95, 94, 96],
+    activationPct: 58,
+    conversionPct: 18,
+    weekendVenue: 'Kingsmead Rec Ground (Sat 1.30pm)',
+    kit: 'Equipment retained by school from 2025/26 — full set, good condition',
+    fundraising: { raised: 2150, target: 3200, supporters: 84 },
+    notes: ['Ran 2025/26 with excellent results — see Governor pack', 'PTA leading events; Sponsored Ball Hit 10 Oct is the big one'],
+    nextActions: ['£410 to match-funding trigger — nudge the public page this week', 'Confirm receiving entity (PTA vs Ten Project) for Gift Aid', 'Pencil Spring term start date for when campaign closes'],
+  },
+  meridianpark: {
+    contacts: [
+      { name: 'Ms P. Osei', role: 'Headteacher', email: 'head@meridianpark.example.sch.uk', phone: '020 7946 0321' },
+    ],
+    safeguardingLead: 'Ms P. Osei (acting DSL)',
+    funding: 'Borough grant — Ashwell active-schools fund',
+    address: 'Meridian Way, Ashwell',
+    cohorts: [
+      { name: 'Y2 (from Sept)', children: 22, coach: 'Tom Hale', week: 0 },
+      { name: 'Y3 (from Sept)', children: 23, coach: 'Tom Hale', week: 0 },
+    ],
+    attendanceTrend: [],
+    activationPct: 0,
+    conversionPct: 0,
+    weekendVenue: 'Elmwood Park Courts (Sun 10am)',
+    kit: 'Order placed — delivery due w/c 7 Sept',
+    notes: ['First programme at this school — welcome-pack QR activation to be included from day one'],
+    nextActions: ['Collect class lists + consents by 1 Sept', 'Week-1 venue setup: Tom + Elmwood TENORs', 'Send head the what-to-expect pack'],
+  },
+  harrowfield: {
+    contacts: [
+      { name: 'Mrs J. Lindley', role: 'Headteacher', email: 'head@harrowfield.example.sch.uk', phone: '020 7946 0331' },
+    ],
+    safeguardingLead: 'TBC at intake',
+    funding: 'Exploring — school has no PE budget headroom; fundraising route offered',
+    address: 'Harrow Field Road, Ashwell',
+    cohorts: [],
+    attendanceTrend: [],
+    activationPct: 0,
+    conversionPct: 0,
+    kit: '—',
+    notes: ['Enquiry via bring-to-your-area, 3 Jul', 'Head very keen; governors meet 10 Sept'],
+    nextActions: ['Send intro pack + Willowbrook results', 'Offer fundraising campaign walkthrough before governors meet'],
+  },
+  willowbrook: {
+    contacts: [
+      { name: 'Mr S. Faulkner', role: 'Headteacher', email: 'head@willowbrook.example.sch.uk', phone: '020 7946 0341' },
+    ],
+    safeguardingLead: 'Mrs K. Douglas (DSL)',
+    funding: 'PE & Sport Premium (final year) — 2026/27 UNFUNDED, renewal at risk',
+    address: 'Willow Brook Lane, Kingsbridge',
+    cohorts: [
+      { name: 'Y2 Robins (complete)', children: 30, coach: 'Lucy Tran', week: 10 },
+      { name: 'Y5 Hawks (complete)', children: 31, coach: 'Lucy Tran', week: 10 },
+    ],
+    attendanceTrend: [90, 92, 89, 91, 93, 92, 88, 94, 93, 95],
+    activationPct: 71,
+    conversionPct: 26,
+    weekendVenue: 'Bramley Green Courts (Sat 11.30am)',
+    kit: 'Retained by school — inventory checked 30 Jun',
+    notes: ['Best conversion rate in the programme (26%)', 'Head open to fundraising route — suggested switching status'],
+    nextActions: ['Switch to FUNDRAISING status and open a campaign', 'Reuse Governor-pack results as the campaign story'],
+  },
+}
+
+// ─── HQ venue deep-dive detail ──────────────────────────────────────────────
+export interface TpVenueDetail {
+  address: string
+  postcode: string
+  courts: string
+  surface: string
+  access: string
+  storage: string
+  sessions: { day: string; time: string; type: string }[]
+  leadCoach: string
+  tenorTeam: string[]
+  inclusive: boolean
+  external?: { partner: string; url: string }
+  familiesRegistered: number
+  attendanceTrend: number[]   // children per session, recent weeks
+  feederSchools: string[]
+  kit: string
+  notes: string[]
+  nextActions: string[]
+}
+
+export const VENUE_DETAILS: Record<string, TpVenueDetail> = {
+  kingsmead: {
+    address: 'Kingsmead Recreation Ground, Kings Road, Kingsbridge',
+    postcode: 'KB2 4RG',
+    courts: '3 courts (2 bookable for sessions)',
+    surface: 'Tarmac, fenced · floodlights off at weekends',
+    access: 'Gate code 2244 · QR gate sign on hook inside store',
+    storage: 'Green store box by court 1 — David Okafor holds the key',
+    sessions: [
+      { day: 'Saturday', time: '1.30–2.30pm', type: 'Free Community Family Session' },
+    ],
+    leadCoach: 'Natalie Brooks',
+    tenorTeam: ['David Okafor (lead)', 'Priya Shah', 'Mark Renwick'],
+    inclusive: false,
+    familiesRegistered: 34,
+    attendanceTrend: [14, 16, 19, 17, 19],
+    feederSchools: ['Oakridge Primary', 'St Clement’s Primary'],
+    kit: '24 rackets · 40 red balls · 4 mini nets · cones — 2 rackets cracked, replacement requested',
+    notes: ['Best-attended venue; families arrive early — open gate 1.15', 'Council re-lining courts over October half-term'],
+    nextActions: ['Replace 2 cracked rackets', 'Print fresh QR gate sign (laminate fading)'],
+  },
+  bramley: {
+    address: 'Bramley Green Courts, Green Lane, Kingsbridge',
+    postcode: 'KB5 8TW',
+    courts: '2 courts',
+    surface: 'Macadam, part-fenced',
+    access: 'Open access · QR sign zip-tied to gate',
+    storage: 'Lock-up shared with bowls club — Gemma Colefax has fob',
+    sessions: [
+      { day: 'Saturday', time: '11.30am–12.30pm', type: 'Free Community Family Session' },
+    ],
+    leadCoach: 'Eleanor Vance',
+    tenorTeam: ['Gemma Colefax', 'Sofia Nazari (from Sept)'],
+    inclusive: false,
+    familiesRegistered: 21,
+    attendanceTrend: [11, 12, 14, 13, 14],
+    feederSchools: ['Willowbrook Primary'],
+    kit: 'Full set, good condition — checked 30 Jun',
+    notes: ['Register submitted late twice — auto-submit fixed it', 'Only 2 TENORs — one absence risks the session'],
+    nextActions: ['Recruit a third TENOR (2 parents interested)', 'Confirm Sofia’s induction 6 Sept'],
+  },
+  elmwood: {
+    address: 'Elmwood Park Courts, Elmwood Avenue, Ashwell',
+    postcode: 'AW3 6QL',
+    courts: '4 courts (2 used)',
+    surface: 'Acrylic hard court',
+    access: 'Via partner booking platform · linked venue',
+    storage: 'Park keeper’s store — arrange access via council',
+    sessions: [
+      { day: 'Sunday', time: '10–11am', type: 'Free Community Family Session (inclusive)' },
+    ],
+    leadCoach: 'Tom Hale',
+    tenorTeam: ['Ana Kovač', 'Tom Whittle'],
+    inclusive: true,
+    external: { partner: 'Partner booking platform', url: 'https://clubspark.lta.org.uk' },
+    familiesRegistered: 17,
+    attendanceTrend: [8, 10, 11, 10, 11],
+    feederSchools: ['Meridian Park Primary (from Sept)'],
+    kit: 'Full set incl. sensory-friendly equipment',
+    notes: ['Bookings run through the partner platform — portal links out, attendance still via QR scan-in', 'Inclusive sessions designed with Ana — families travel from 3 boroughs'],
+    nextActions: ['Sync September restart date with partner platform listing', 'Meridian Park week-1 setup visit — Tom + TENORs'],
+  },
+}
+
 export const TP_VENUE_READINESS = [
   { venue: 'Kingsmead Rec Ground', tenors: 3, min: 2, ready: true },
   { venue: 'Bramley Green Courts', tenors: 2, min: 2, ready: true },

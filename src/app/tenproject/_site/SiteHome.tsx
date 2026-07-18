@@ -491,6 +491,28 @@ export default function SiteHome() {
         </div>
       </section>
 
+      {/* Partners */}
+      <section id="partners" style={{ background: '#fff', borderTop: '1px solid #E7E2DC', padding: '44px 0' }}>
+        <div className="tp-container">
+          <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 900, letterSpacing: 3, color: TP_DARK, marginBottom: 24 }}>PARTNERS</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '28px 44px', alignItems: 'center', justifyContent: 'center' }}>
+            {[
+              ['bift.png', 'Bright Ideas for Tennis'],
+              ['zsig.png', 'Zsig'],
+              ['park-tennis.png', 'Park Tennis Kingston'],
+              ['rbk.png', 'Royal Borough of Kingston upon Thames'],
+              ['leeds-council.png', 'Leeds City Council'],
+              ['active-leeds.png', 'Active Leeds'],
+              ['fred-perry.png', 'The Fred Perry Tennis Trust'],
+              ['as-colour.png', 'AS Colour'],
+            ].map(([f, alt]) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={f} src={`/partners/tp/${f}`} alt={alt} style={{ height: 52, width: 'auto', display: 'block' }} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer style={{ background: TP_DARK, color: '#C9C4BE', padding: '44px 0 30px' }}>
         <div className="tp-container">
@@ -538,7 +560,7 @@ export default function SiteHome() {
           </div>
           <div style={{ borderTop: '1px solid #33333B', marginTop: 28, paddingTop: 18, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', fontSize: 11.5 }}>
             <span>© 2026 Ten Project Ltd · Morden, London</span>
-            <span>Partner & funder logos sit here on the live site</span>
+            <a href="#partners" style={{ color: '#C9C4BE', textDecoration: 'none' }}>Our partners</a>
           </div>
         </div>
       </footer>

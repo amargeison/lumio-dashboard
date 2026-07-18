@@ -49,10 +49,16 @@ export default function FundraiseView({ campaign }: { campaign: CampaignData }) 
         </div>
       )}
 
-      {/* Header */}
-      <header style={{ background: DARK, padding: '38px 20px 30px', textAlign: 'center' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ height: 46, width: 'auto', display: 'inline-block' }} />
+      {/* Header — dark banner with faint photo, matching the main site */}
+      <header style={{ backgroundImage: `linear-gradient(rgba(23,23,28,0.90), rgba(23,23,28,0.90)), url(/tenproject_banner.jpg)`, backgroundSize: 'cover', backgroundPosition: 'center 30%', padding: '38px 20px 30px', textAlign: 'center' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 18 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ height: 46, width: 'auto', display: 'block' }} />
+          <div style={{ width: 1, height: 44, background: '#4A4A52' }} />
+          {/* School crest — uploaded by the school during onboarding (demo crest shown) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/demo_school_crest.svg" alt={campaign.school} style={{ height: 52, width: 'auto', display: 'block' }} />
+        </div>
         <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 10, letterSpacing: 1, fontWeight: 700 }}>SCHOOL FUNDRAISING</div>
         <h1 style={{ color: '#fff', fontSize: 30, fontWeight: 900, margin: '10px 0 6px' }}>{campaign.school}</h1>
         <div style={{ color: '#C9C4BE', fontSize: 14.5, maxWidth: 520, margin: '0 auto', lineHeight: 1.55 }}>

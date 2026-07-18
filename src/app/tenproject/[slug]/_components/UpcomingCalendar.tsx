@@ -18,14 +18,19 @@ const KIND_STYLE: Record<CalEvent['kind'], { bg: string; border: string; fg: str
   fundraising: { bg: '#FCF1DC', border: '#E8CD9A', fg: '#9A6A0B' },
 }
 
-export default function UpcomingCalendar({ role }: { role: 'school' | 'coach' | 'tenor' }) {
-  const events = CAL_EVENTS[role]
+export default function UpcomingCalendar({ role, events: eventsProp, title, sub }: {
+  role?: 'school' | 'coach' | 'tenor'
+  events?: CalEvent[]
+  title?: string
+  sub?: string
+}) {
+  const events = eventsProp ?? CAL_EVENTS[role ?? 'coach']
 
   return (
     <Card>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-        <SectionTitle sub="Your week ahead — sessions land in your own calendar automatically">
-          <CalendarDays size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Upcoming sessions
+        <SectionTitle sub={sub ?? 'Your week ahead — sessions land in your own calendar automatically'}>
+          <CalendarDays size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{title ?? 'Upcoming sessions'}
         </SectionTitle>
         <div style={{ display: 'flex', gap: 7, alignItems: 'center', flexWrap: 'wrap' }}>
           <Pill tone="green">✓ SYNCED · GOOGLE CALENDAR</Pill>
