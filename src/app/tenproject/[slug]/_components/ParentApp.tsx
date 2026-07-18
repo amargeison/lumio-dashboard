@@ -19,16 +19,18 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number 
 
 const CURRENT_WEEK = 3 // index into CURRICULUM → Week 4 (backhand block, weeks 3&4)
 
-export default function ParentApp() {
+export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean }) {
   const [tab, setTab] = useState<Tab>('week')
   const [confirmed, setConfirmed] = useState(false)
   const [practiceLogged, setPracticeLogged] = useState(false)
   const block = CURRICULUM[1] // weeks 3 & 4 — BACKHAND
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center' }}>
-      {/* Phone frame */}
-      <div style={{ width: 375, background: TP_PAPER, borderRadius: 28, border: '1px solid #E7E2DC', overflow: 'hidden', boxShadow: '0 18px 44px #00000014', display: 'flex', flexDirection: 'column', height: 700 }}>
+    <div style={fullScreen ? {} : { display: 'flex', justifyContent: 'center' }}>
+      {/* Phone frame on desktop; full-bleed on mobile */}
+      <div style={fullScreen
+        ? { width: '100%', background: TP_PAPER, display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 52px)', overflow: 'hidden' }
+        : { width: 375, background: TP_PAPER, borderRadius: 28, border: '1px solid #E7E2DC', overflow: 'hidden', boxShadow: '0 18px 44px #00000014', display: 'flex', flexDirection: 'column', height: 700 }}>
         {/* Header */}
         <div style={{ background: TP_DARK, padding: '14px 18px 12px' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}

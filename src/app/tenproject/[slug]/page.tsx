@@ -45,7 +45,17 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
   const [error, setError] = useState('')
   const [role, setRole] = useState<Role | null>(null)
   const [lockedRole, setLockedRole] = useState<Role | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
   const refs = useRef<(HTMLInputElement | null)[]>([])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(max-width: 760px)')
+    const update = () => setIsMobile(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -149,6 +159,69 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
 
   // ── Portal shell ──
   const meta = ROLE_TITLES[role]
+
+  // Mobile: slim top bar instead of the sidebar; parent app renders full-bleed.
+  if (isMobile) {
+    return (
+      <div style={{ minHeight: '100dvh', background: TP_PAPER, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ height: 52, background: TP_DARK, display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px', flexShrink: 0 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ height: 24, width: 'auto' }} />
+          {!lockedRole ? (
+            <div style={{ flex: 1, display: 'flex', gap: 6, overflowX: 'auto' }}>
+              {ROLES.map(r => (
+                <button key={r.id} onClick={() => setRole(r.id)}
+                  style={{ background: role === r.id ? TP_RED : '#22222A', color: role === r.id ? '#fff' : '#C9C4BE', border: 'none', borderRadius: 999, padding: '6px 12px', fontSize: 11, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div style={{ flex: 1, color: '#C9C4BE', fontSize: 12, fontWeight: 700 }}>{ROLES.find(r => r.id === lockedRole)?.label}</div>
+          )}
+          <button
+            onClick={() => { localStorage.removeItem(STORE_KEY); setRole(null); setPhase('pin'); setDigits(['', '', '', '', '', '']) }}
+            aria-label="Exit demo"
+            style={{ background: 'none', color: '#8A847E', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
+        {role === 'parent' ? (
+          <ParentApp fullScreen />
+        ) : (
+          <main className="tp-resp" style={{ flex: 1, minWidth: 0, padding: '14px 12px 30px' }}>
+            {/* Mobile responsiveness: flatten fixed two-column grids, make the
+                7-day calendar a swipeable strip, let wide tables scroll.
+                Scoped to .tp-resp so desktop keeps its exact layout. */}
+            <style>{`
+              .tp-resp [style*="1.4fr"], .tp-resp [style*="1.3fr"], .tp-resp [style*="1.2fr"],
+              .tp-resp [style*="grid-template-columns: 1fr 1fr"], .tp-resp [style*="grid-template-columns:1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+              }
+              .tp-resp [style*="repeat(7"] {
+                display: flex !important;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 6px;
+              }
+              .tp-resp [style*="repeat(7"] > div { min-width: 132px; flex-shrink: 0; }
+              .tp-resp table { display: block; overflow-x: auto; }
+            `}</style>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 17, fontWeight: 900, color: TP_DARK }}>{meta.title}</div>
+              <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 2 }}>{meta.sub}</div>
+            </div>
+            {role === 'hq' && <HQView />}
+            {role === 'school' && <SchoolView />}
+            {role === 'coach' && <CoachView />}
+            {role === 'tenor' && <TenorView />}
+          </main>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div style={{ zoom: 0.9, minHeight: 'calc(100vh / 0.9)', background: TP_PAPER, display: 'flex' }}>
       {/* Sidebar */}
