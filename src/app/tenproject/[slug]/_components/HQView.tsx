@@ -1,10 +1,13 @@
 'use client'
 
 import React, { useState } from 'react'
-import { AlertCircle, Info, TrendingUp, Users, School, ClipboardList, ShieldCheck, PoundSterling, BarChart3, LayoutDashboard } from 'lucide-react'
+import { AlertCircle, Info, TrendingUp, Users, School, ClipboardList, ShieldCheck, PoundSterling, BarChart3, LayoutDashboard, MapPin, Settings } from 'lucide-react'
 import { Card, SectionTitle, Stat, Pill, Thermometer } from './ui'
 import Insights from './Insights'
 import { CoachesTab, TenorsTab } from './PeopleViews'
+import SchoolsTab from './SchoolsTab'
+import VenuesTab from './VenuesTab'
+import SettingsTab from './SettingsTab'
 import { openFunderDoc } from '../_lib/funder-docs'
 import {
   TP_RED, TP_DARK, SCHOOLS, VENUES, HQ_STATS, FUNNEL, IMPACT_AREAS, NEEDS_ATTENTION, CAMPAIGN,
@@ -19,7 +22,7 @@ const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> =
 }
 
 export default function HQView() {
-  const [tab, setTab] = useState<'overview' | 'insights' | 'coaches' | 'tenors'>('overview')
+  const [tab, setTab] = useState<'overview' | 'insights' | 'schools' | 'coaches' | 'tenors' | 'venues' | 'settings'>('overview')
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -28,8 +31,11 @@ export default function HQView() {
         {([
           { id: 'overview' as const, label: 'Overview', icon: LayoutDashboard },
           { id: 'insights' as const, label: 'Insights', icon: BarChart3 },
+          { id: 'schools' as const, label: 'Schools', icon: School },
           { id: 'coaches' as const, label: 'Coaches', icon: ShieldCheck },
           { id: 'tenors' as const, label: 'TENORs', icon: Users },
+          { id: 'venues' as const, label: 'Venues', icon: MapPin },
+          { id: 'settings' as const, label: 'Settings', icon: Settings },
         ]).map(t => {
           const Icon = t.icon
           const active = tab === t.id
@@ -46,8 +52,11 @@ export default function HQView() {
       </div>
 
       {tab === 'insights' && <Insights />}
+      {tab === 'schools' && <SchoolsTab />}
       {tab === 'coaches' && <CoachesTab />}
       {tab === 'tenors' && <TenorsTab />}
+      {tab === 'venues' && <VenuesTab />}
+      {tab === 'settings' && <SettingsTab />}
 
       {tab === 'overview' && (<>
       {/* Programme health stats */}
