@@ -1,8 +1,11 @@
 'use client'
 
-import React from 'react'
-import { AlertCircle, Info, TrendingUp, Users, School, ClipboardList, ShieldCheck, PoundSterling } from 'lucide-react'
+import React, { useState } from 'react'
+import { AlertCircle, Info, TrendingUp, Users, School, ClipboardList, ShieldCheck, PoundSterling, BarChart3, LayoutDashboard } from 'lucide-react'
 import { Card, SectionTitle, Stat, Pill, Thermometer } from './ui'
+import Insights from './Insights'
+import { CoachesTab, TenorsTab } from './PeopleViews'
+import { openFunderDoc } from '../_lib/funder-docs'
 import {
   TP_RED, TP_DARK, SCHOOLS, VENUES, HQ_STATS, FUNNEL, IMPACT_AREAS, NEEDS_ATTENTION, CAMPAIGN,
 } from '@/data/tenproject/demo-data'
@@ -16,8 +19,37 @@ const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> =
 }
 
 export default function HQView() {
+  const [tab, setTab] = useState<'overview' | 'insights' | 'coaches' | 'tenors'>('overview')
+
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      {/* HQ tabs */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {([
+          { id: 'overview' as const, label: 'Overview', icon: LayoutDashboard },
+          { id: 'insights' as const, label: 'Insights', icon: BarChart3 },
+          { id: 'coaches' as const, label: 'Coaches', icon: ShieldCheck },
+          { id: 'tenors' as const, label: 'TENORs', icon: Users },
+        ]).map(t => {
+          const Icon = t.icon
+          const active = tab === t.id
+          return (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: active ? TP_DARK : '#fff', color: active ? '#fff' : TP_DARK, border: '1px solid #E7E2DC', borderRadius: 10, padding: '9px 16px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}
+            >
+              <Icon size={14} /> {t.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {tab === 'insights' && <Insights />}
+      {tab === 'coaches' && <CoachesTab />}
+      {tab === 'tenors' && <TenorsTab />}
+
+      {tab === 'overview' && (<>
       {/* Programme health stats */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <Stat label="Children reached this week" value={HQ_STATS.childrenThisWeek} accent />
@@ -141,11 +173,12 @@ export default function HQView() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {IMPACT_AREAS.map(a => <Pill key={a} tone="grey">{a}</Pill>)}
           </div>
-          <button style={{ marginTop: 14, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+          <button onClick={() => openFunderDoc('term-report')} style={{ marginTop: 14, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
             <ClipboardList size={14} /> Draft term report for funders (AI)
           </button>
         </Card>
       </div>
+      </>)}
     </div>
   )
 }

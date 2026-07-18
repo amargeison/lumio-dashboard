@@ -8,9 +8,10 @@ export const metadata: Metadata = {
   title: 'Ten Project Portal — demo',
   icons: {
     icon: [
-      { url: '/lumio-favicon-32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/lumio-favicon-64.png', sizes: '64x64', type: 'image/png' },
+      { url: '/tenproject-favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/tenproject-favicon-64.png', sizes: '64x64', type: 'image/png' },
     ],
+    apple: '/tenproject_logo.png',
   },
 }
 

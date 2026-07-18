@@ -32,7 +32,7 @@ const ROLES: { id: Role; label: string; desc: string; icon: React.ComponentType<
 
 const ROLE_TITLES: Record<Role, { title: string; sub: string }> = {
   hq: { title: 'HQ — Programme Health', sub: 'Everything across schools, coaches, venues and funders' },
-  school: { title: 'St Clement’s Primary — School view', sub: 'Your programme is in FUNDRAISING status for 2026/27' },
+  school: { title: 'St Clement’s Primary — School view', sub: 'Ran Ten Project 2025/26 · fundraising to bring it back for 2026/27' },
   parent: { title: 'Parent app', sub: 'Sarah Whitfield · Mia (7) & Tom (5) · Oakridge Primary' },
   coach: { title: 'Coach — Natalie Brooks', sub: 'Today’s in-school session and register' },
   tenor: { title: 'TENOR — David Okafor', sub: 'Saturday family session at Kingsmead Rec Ground' },
@@ -76,10 +76,9 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
     return (
       <div style={{ minHeight: '100vh', background: TP_DARK, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
         <div style={{ textAlign: 'center', maxWidth: 360 }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: 1 }}>
-            TEN <span style={{ color: TP_RED }}>PROJECT</span>
-          </div>
-          <div style={{ color: '#C9C4BE', fontSize: 13, margin: '6px 0 22px' }}>Portal demo — enter the PIN to continue</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ width: 170, height: 'auto', display: 'block', margin: '0 auto' }} />
+          <div style={{ color: '#C9C4BE', fontSize: 13, margin: '14px 0 22px' }}>Portal demo — enter the PIN to continue</div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
             {digits.map((d, i) => (
               <input
@@ -108,9 +107,9 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
       <div style={{ minHeight: '100vh', background: TP_PAPER, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
         <div style={{ maxWidth: 680, width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: 26 }}>
-            <div style={{ fontSize: 28, fontWeight: 900, color: TP_DARK, letterSpacing: 0.5 }}>
-              TEN <span style={{ color: TP_RED }}>PROJECT</span> PORTAL
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/tenproject_logo.png" alt="Ten Project" style={{ width: 190, height: 'auto', display: 'block', margin: '0 auto 10px' }} />
+            <div style={{ fontSize: 15, fontWeight: 900, color: TP_DARK, letterSpacing: 2 }}>PORTAL</div>
             <div style={{ color: '#6B6560', fontSize: 13.5, marginTop: 6 }}>
               One platform · five roles. Pick a view to explore. <DemoBadge />
             </div>
@@ -143,10 +142,9 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
       {/* Sidebar */}
       <aside style={{ width: 224, background: TP_DARK, position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', display: 'flex', flexDirection: 'column', minHeight: 0, flexShrink: 0 }}>
         <div style={{ padding: '20px 18px 14px' }}>
-          <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', letterSpacing: 0.5 }}>
-            TEN <span style={{ color: TP_RED }}>PROJECT</span>
-          </div>
-          <div style={{ fontSize: 10, color: '#8A847E', marginTop: 3, letterSpacing: 1 }}>PORTAL · DEMO</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ width: 116, height: 'auto', display: 'block' }} />
+          <div style={{ fontSize: 10, color: '#8A847E', marginTop: 7, letterSpacing: 1 }}>PORTAL · DEMO</div>
         </div>
         <nav style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px 10px' }}>
           {ROLES.map(r => {

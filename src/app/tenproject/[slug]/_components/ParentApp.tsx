@@ -30,11 +30,10 @@ export default function ParentApp() {
       {/* Phone frame */}
       <div style={{ width: 375, background: TP_PAPER, borderRadius: 28, border: '1px solid #E7E2DC', overflow: 'hidden', boxShadow: '0 18px 44px #00000014', display: 'flex', flexDirection: 'column', height: 700 }}>
         {/* Header */}
-        <div style={{ background: TP_DARK, padding: '16px 18px 12px' }}>
-          <div style={{ color: '#fff', fontSize: 15, fontWeight: 900, letterSpacing: 0.4 }}>
-            TEN <span style={{ color: TP_RED }}>PROJECT</span>
-          </div>
-          <div style={{ color: '#C9C4BE', fontSize: 11.5, marginTop: 2 }}>
+        <div style={{ background: TP_DARK, padding: '14px 18px 12px' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ height: 26, width: 'auto', display: 'block' }} />
+          <div style={{ color: '#C9C4BE', fontSize: 11.5, marginTop: 6 }}>
             Hi {PARENT.name.split(' ')[0]} — Week 4 of 10 · LEARN. PLAY. TOGETHER.
           </div>
         </div>
