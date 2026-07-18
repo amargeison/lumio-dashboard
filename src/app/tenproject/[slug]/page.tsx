@@ -44,16 +44,24 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
   const [error, setError] = useState('')
   const [role, setRole] = useState<Role | null>(null)
+  const [lockedRole, setLockedRole] = useState<Role | null>(null)
   const refs = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
     setPhase(localStorage.getItem(STORE_KEY) ? 'ready' : 'pin')
     // Deep-link support: /tenproject/demo?role=parent lands straight on that
-    // role after the PIN (used by the website's "See the app demo" CTA).
+    // role after the PIN AND locks the session to it — a parent following the
+    // website CTA never sees HQ/School/Coach/TENOR (mirrors real role-based
+    // access). The unrestricted demo stays at /tenproject/demo with no param.
     const wanted = new URLSearchParams(window.location.search).get('role')
-    if (wanted && ROLES.some(r => r.id === wanted)) setRole(wanted as Role)
+    if (wanted && ROLES.some(r => r.id === wanted)) {
+      setRole(wanted as Role)
+      setLockedRole(wanted as Role)
+    }
   }, [])
+
+  const navRoles = lockedRole ? ROLES.filter(r => r.id === lockedRole) : ROLES
 
   function handleChange(i: number, val: string) {
     const c = val.replace(/\D/g, '').slice(-1)
@@ -151,7 +159,7 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
           <div style={{ fontSize: 10, color: '#8A847E', marginTop: 7, letterSpacing: 1 }}>PORTAL · DEMO</div>
         </div>
         <nav style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px 10px' }}>
-          {ROLES.map(r => {
+          {navRoles.map(r => {
             const Icon = r.icon
             const active = role === r.id
             return (
