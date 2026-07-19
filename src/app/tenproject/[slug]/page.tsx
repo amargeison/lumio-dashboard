@@ -12,10 +12,10 @@ import React, { use, useEffect, useRef, useState } from 'react'
 import { Lock, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut } from 'lucide-react'
 import { TP_RED, TP_DARK, TP_PAPER } from '@/data/tenproject/demo-data'
 import { DemoBadge } from './_components/ui'
-import HQView from './_components/HQView'
-import SchoolView from './_components/SchoolView'
+import HQView, { HQ_SECTIONS, type HqTab } from './_components/HQView'
+import SchoolView, { SCHOOL_SECTIONS, type SchoolSection } from './_components/SchoolView'
 import ParentApp from './_components/ParentApp'
-import { CoachView, TenorView } from './_components/RegisterViews'
+import { CoachView, TenorView, COACH_SECTIONS, TENOR_SECTIONS, type CoachSection, type TenorSection } from './_components/RegisterViews'
 
 const DEMO_PIN = '071711'
 const STORE_KEY = 'lumio_tenproject_demo_active'
@@ -46,6 +46,11 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
   const [role, setRole] = useState<Role | null>(null)
   const [lockedRole, setLockedRole] = useState<Role | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  // Sidebar-driven sections per role (tennis-portal pattern)
+  const [hqSection, setHqSection] = useState<HqTab>('overview')
+  const [schoolSection, setSchoolSection] = useState<SchoolSection>('programme')
+  const [coachSection, setCoachSection] = useState<CoachSection>('stats')
+  const [tenorSection, setTenorSection] = useState<TenorSection>('session')
   const refs = useRef<(HTMLInputElement | null)[]>([])
 
   useEffect(() => {
@@ -222,9 +227,25 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
     )
   }
 
+  // Sections shown in the sidebar for the active role
+  const sections: { id: string; label: string }[] =
+    role === 'hq' ? HQ_SECTIONS
+    : role === 'school' ? SCHOOL_SECTIONS
+    : role === 'coach' ? COACH_SECTIONS
+    : role === 'tenor' ? TENOR_SECTIONS
+    : [{ id: 'app', label: 'The family app' }]
+  const activeSection =
+    role === 'hq' ? hqSection : role === 'school' ? schoolSection : role === 'coach' ? coachSection : role === 'tenor' ? tenorSection : 'app'
+  function setSection(id: string) {
+    if (role === 'hq') setHqSection(id as HqTab)
+    else if (role === 'school') setSchoolSection(id as SchoolSection)
+    else if (role === 'coach') setCoachSection(id as CoachSection)
+    else if (role === 'tenor') setTenorSection(id as TenorSection)
+  }
+
   return (
     <div style={{ zoom: 0.9, minHeight: 'calc(100vh / 0.9)', background: TP_PAPER, display: 'flex' }}>
-      {/* Sidebar */}
+      {/* Sidebar — active role's sections + switch-view panel (tennis-portal pattern) */}
       <aside style={{ width: 224, background: TP_DARK, position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', display: 'flex', flexDirection: 'column', minHeight: 0, flexShrink: 0 }}>
         <div style={{ padding: '20px 18px 14px' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -232,20 +253,41 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
           <div style={{ fontSize: 10, color: '#8A847E', marginTop: 7, letterSpacing: 1 }}>PORTAL · DEMO</div>
         </div>
         <nav style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px 10px' }}>
-          {navRoles.map(r => {
-            const Icon = r.icon
-            const active = role === r.id
+          <div style={{ fontSize: 9.5, fontWeight: 800, color: '#6B6560', letterSpacing: 1.2, padding: '4px 12px 6px' }}>
+            {ROLES.find(r => r.id === role)?.label.toUpperCase()}
+          </div>
+          {sections.map(s => {
+            const active = activeSection === s.id
             return (
               <button
-                key={r.id}
-                onClick={() => setRole(r.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: active ? TP_RED : 'none', color: active ? '#fff' : '#C9C4BE', border: 'none', borderRadius: 9, padding: '10px 12px', fontSize: 12.5, fontWeight: active ? 800 : 600, cursor: 'pointer', marginBottom: 3, textAlign: 'left' }}
+                key={s.id}
+                onClick={() => setSection(s.id)}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: active ? TP_RED : 'none', color: active ? '#fff' : '#C9C4BE', border: 'none', borderRadius: 9, padding: '9px 12px', fontSize: 12.5, fontWeight: active ? 800 : 600, cursor: 'pointer', marginBottom: 2, textAlign: 'left' }}
               >
-                <Icon size={16} /> {r.label}
+                {s.label}
               </button>
             )
           })}
         </nav>
+        {/* Switch view */}
+        {!lockedRole && (
+          <div style={{ padding: '10px 10px 4px', borderTop: '1px solid #33333B' }}>
+            <div style={{ fontSize: 9.5, fontWeight: 800, color: '#6B6560', letterSpacing: 1.2, padding: '2px 12px 6px' }}>SWITCH VIEW</div>
+            {navRoles.map(r => {
+              const Icon = r.icon
+              const active = role === r.id
+              return (
+                <button
+                  key={r.id}
+                  onClick={() => setRole(r.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', background: active ? '#22222A' : 'none', color: active ? '#fff' : '#8A847E', border: 'none', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, fontWeight: active ? 800 : 600, cursor: 'pointer', marginBottom: 2, textAlign: 'left' }}
+                >
+                  <Icon size={14} style={{ color: active ? TP_RED : undefined }} /> {r.label} {active && <span style={{ marginLeft: 'auto', color: TP_RED }}>✓</span>}
+                </button>
+              )
+            })}
+          </div>
+        )}
         <div style={{ padding: 12 }}>
           <button
             onClick={() => { localStorage.removeItem(STORE_KEY); setRole(null); setPhase('pin'); setDigits(['', '', '', '', '', '']) }}
@@ -265,11 +307,11 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
           </div>
           <DemoBadge />
         </div>
-        {role === 'hq' && <HQView />}
-        {role === 'school' && <SchoolView />}
+        {role === 'hq' && <HQView section={hqSection} onSectionChange={setHqSection} />}
+        {role === 'school' && <SchoolView section={schoolSection} />}
         {role === 'parent' && <ParentApp />}
-        {role === 'coach' && <CoachView />}
-        {role === 'tenor' && <TenorView />}
+        {role === 'coach' && <CoachView section={coachSection} />}
+        {role === 'tenor' && <TenorView section={tenorSection} />}
       </main>
     </div>
   )

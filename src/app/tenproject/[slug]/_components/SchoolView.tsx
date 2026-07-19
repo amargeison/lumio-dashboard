@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Sparkles, Calendar, PoundSterling, Share2, CheckCircle, X, BarChart3, Download, Award, Users } from 'lucide-react'
 import { Card, SectionTitle, Pill, Thermometer } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
@@ -17,11 +17,19 @@ const EVENT_TONE: Record<string, 'green' | 'red' | 'grey'> = {
   planned: 'grey',
 }
 
-export default function SchoolView() {
+export type SchoolSection = 'programme' | 'fundraising'
+export const SCHOOL_SECTIONS: { id: SchoolSection; label: string }[] = [
+  { id: 'programme', label: 'Our programme' },
+  { id: 'fundraising', label: 'Fundraising' },
+]
+
+export default function SchoolView({ section }: { section?: SchoolSection }) {
   const [showPack, setShowPack] = useState(false)
   const [events, setEvents] = useState<FundraisingEvent[]>(FUND_EVENTS)
   const [selectedEvent, setSelectedEvent] = useState<FundraisingEvent | null>(null)
-  const [tab, setTab] = useState<'fundraising' | 'programme'>('programme')
+  const [tab, setTab] = useState<'fundraising' | 'programme'>(section ?? 'programme')
+  const controlled = section !== undefined
+  useEffect(() => { if (section !== undefined) setTab(section) }, [section])
   const ballHitEvent = events.find(e => e.type === 'Sponsored ball hit') ?? events[0]
 
   function addAiEvent() {
@@ -35,8 +43,8 @@ export default function SchoolView() {
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8 }}>
+      {/* Tabs (hidden when the sidebar drives sections) */}
+      {!controlled && <div style={{ display: 'flex', gap: 8 }}>
         {([
           { id: 'programme' as const, label: 'Our programme', icon: BarChart3 },
           { id: 'fundraising' as const, label: 'Fundraising', icon: PoundSterling },
@@ -50,7 +58,7 @@ export default function SchoolView() {
             </button>
           )
         })}
-      </div>
+      </div>}
 
       {/* ── OUR PROGRAMME (results to share with governors / sponsors / parents) ── */}
       {tab === 'programme' && (<>
