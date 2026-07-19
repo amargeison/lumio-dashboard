@@ -1,25 +1,44 @@
 'use client'
 
-import React, { useState } from 'react'
-import { QrCode, WifiOff, CheckCircle, Users, ClipboardList, Sparkles, PlayCircle, BookOpen, ShieldAlert, Package, Phone, FileText, BarChart3, MapPin, GraduationCap, CalendarDays } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { QrCode, WifiOff, CheckCircle, Users, ClipboardList, Sparkles, PlayCircle, BookOpen, ShieldAlert, Package, Phone, FileText, BarChart3, MapPin, GraduationCap, CalendarDays, Send, Navigation, Printer, Share2 } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
-import { TP_RED, TP_DARK, COHORT_CHILDREN, WEEKEND_FAMILIES, VENUES, CURRICULUM, WEEK4_SESSION_PLAN, TENOR_RESOURCES, COACH_STATS, COACH_WEEKEND, COACH_RESOURCES } from '@/data/tenproject/demo-data'
+import { SendMessageWizard } from './CommsTab'
+import { openResourceDoc, openSessionCardDoc } from '../_lib/resource-docs'
+import { TP_RED, TP_DARK, COHORT_CHILDREN, WEEKEND_FAMILIES, VENUES, CURRICULUM, WEEK4_SESSION_PLAN, TENOR_RESOURCES, COACH_STATS, COACH_WEEKEND, COACH_RESOURCES, VENUE_DETAILS } from '@/data/tenproject/demo-data'
+
+export type CoachSection = 'stats' | 'today' | 'weekend' | 'resources'
+export const COACH_SECTIONS: { id: CoachSection; label: string }[] = [
+  { id: 'stats', label: 'My stats' },
+  { id: 'today', label: 'Today' },
+  { id: 'weekend', label: 'Weekend sessions' },
+  { id: 'resources', label: 'Resources' },
+]
+
+export type TenorSection = 'session' | 'resources'
+export const TENOR_SECTIONS: { id: TenorSection; label: string }[] = [
+  { id: 'session', label: 'Today’s session' },
+  { id: 'resources', label: 'Resources' },
+]
 
 // ─── COACH: today / weekend / stats / resources ─────────────────────────────
-export function CoachView() {
+export function CoachView({ section }: { section?: CoachSection }) {
   const [children, setChildren] = useState(COHORT_CHILDREN)
   const [skillTapped, setSkillTapped] = useState<Record<string, boolean>>({})
-  const [tab, setTab] = useState<'today' | 'weekend' | 'stats' | 'resources'>('stats')
+  const [tab, setTab] = useState<'today' | 'weekend' | 'stats' | 'resources'>(section ?? 'stats')
+  const [wizard, setWizard] = useState(false)
+  const controlled = section !== undefined
+  useEffect(() => { if (section !== undefined) setTab(section) }, [section])
   const present = children.filter(c => c.present).length
   const block = CURRICULUM[1]
   const maxTrend = Math.max(...COACH_STATS.attendanceTrend)
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {([
+      {/* Tabs (hidden when the sidebar drives sections) + send message */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        {!controlled && ([
           { id: 'stats' as const, label: 'My stats', icon: BarChart3 },
           { id: 'today' as const, label: 'Today', icon: ClipboardList },
           { id: 'weekend' as const, label: 'Weekend sessions', icon: CalendarDays },
@@ -34,7 +53,11 @@ export function CoachView() {
             </button>
           )
         })}
+        <button onClick={() => setWizard(true)} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 7, background: TP_RED, color: '#fff', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
+          <Send size={14} /> Send message
+        </button>
       </div>
+      {wizard && <SendMessageWizard onClose={() => setWizard(false)} defaultRecipient="Oakridge Primary" />}
 
       {/* ── WEEKEND ── */}
       {tab === 'weekend' && (<>
@@ -141,10 +164,10 @@ export function CoachView() {
                 <SectionTitle><Icon size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{col.title}</SectionTitle>
                 <div style={{ display: 'grid', gap: 7 }}>
                   {col.items.map(r => (
-                    <div key={r.title} style={{ background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{r.title} ▸</div>
+                    <button key={r.title} onClick={() => openResourceDoc(r.title)} style={{ background: '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{r.title} <span style={{ color: TP_RED }}>▸</span></div>
                       <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2 }}>{r.desc}</div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </Card>
@@ -204,19 +227,33 @@ export function CoachView() {
 }
 
 // ─── TENOR: weekend venue + QR scan-in feed + resources ─────────────────────
-export function TenorView() {
+export function TenorView({ section }: { section?: TenorSection }) {
   const [families, setFamilies] = useState(WEEKEND_FAMILIES)
-  const [tab, setTab] = useState<'session' | 'resources'>('session')
+  const [tab, setTab] = useState<'session' | 'resources'>(section ?? 'session')
+  const [wizard, setWizard] = useState(false)
+  const controlled = section !== undefined
+  useEffect(() => { if (section !== undefined) setTab(section) }, [section])
+  const [shared, setShared] = useState(false)
   const venue = VENUES[0]
+  const vd = VENUE_DETAILS[venue.id]
+  const mapQ = encodeURIComponent(`${vd.address}, ${vd.postcode}`)
   const checkedIn = families.filter(f => f.checkedIn)
   const childCount = checkedIn.reduce((n, f) => n + f.children.split('+').length, 0)
   const plan = WEEK4_SESSION_PLAN
 
+  async function shareCard() {
+    const text = `Ten Project — Week ${plan.week} ${plan.skill} session card: ${plan.blocks.map(b => `${b.time} ${b.title}`).join(' · ')}`
+    try {
+      if (navigator.share) await navigator.share({ title: 'Session card — Week 4', text })
+      else { await navigator.clipboard.writeText(text); setShared(true); setTimeout(() => setShared(false), 2000) }
+    } catch { /* cancelled */ }
+  }
+
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      {/* Session / Resources tabs */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        {([
+      {/* Session / Resources tabs (hidden when the sidebar drives sections) + send message */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        {!controlled && ([
           { id: 'session' as const, label: 'Today’s session', icon: ClipboardList },
           { id: 'resources' as const, label: 'Resources', icon: BookOpen },
         ]).map(t => {
@@ -229,7 +266,11 @@ export function TenorView() {
             </button>
           )
         })}
+        <button onClick={() => setWizard(true)} style={{ marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 7, background: TP_RED, color: '#fff', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
+          <Send size={14} /> Send message
+        </button>
       </div>
+      {wizard && <SendMessageWizard onClose={() => setWizard(false)} defaultRecipient="Kingsmead families" />}
 
       {tab === 'resources' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
@@ -255,10 +296,10 @@ export function TenorView() {
               </SectionTitle>
               <div style={{ display: 'grid', gap: 7 }}>
                 {TENOR_RESOURCES.guides.map(g => (
-                  <div key={g.title} style={{ background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{g.title}</div>
+                  <button key={g.title} onClick={() => openResourceDoc(g.title)} style={{ background: '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{g.title} <span style={{ color: TP_RED }}>▸</span></div>
                     <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2 }}>{g.desc}</div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </Card>
@@ -287,6 +328,17 @@ export function TenorView() {
           <div>
             <div style={{ color: '#fff', fontSize: 16, fontWeight: 900 }}>{venue.name} — Family Session</div>
             <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 4 }}>{venue.day} {venue.time} · you + 2 TENORs on duty · equipment in the green store box</div>
+            <div style={{ color: '#C9C4BE', fontSize: 12, marginTop: 6 }}>
+              <MapPin size={12} style={{ verticalAlign: '-1px', marginRight: 5, color: TP_RED }} />{vd.address}, {vd.postcode}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
+              <a href={`https://maps.google.com/?q=${mapQ}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#22222A', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}>
+                <MapPin size={12} /> Map
+              </a>
+              <a href={`https://www.google.com/maps/dir/?api=1&destination=${mapQ}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#22222A', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}>
+                <Navigation size={12} /> Directions
+              </a>
+            </div>
           </div>
           <div style={{ textAlign: 'center', background: '#fff', borderRadius: 12, padding: '10px 16px' }}>
             <div style={{ fontSize: 26, fontWeight: 900, color: TP_RED }}>{childCount}</div>
@@ -347,9 +399,19 @@ export function TenorView() {
 
       {/* Full session run-sheet */}
       <Card>
-        <SectionTitle sub={`Everything you need to run today — ${plan.skill} week, ${plan.duration}`}>
-          <ClipboardList size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Session card — Week {plan.week}: {plan.skill}
-        </SectionTitle>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+          <SectionTitle sub={`Everything you need to run today — ${plan.skill} week, ${plan.duration}`}>
+            <ClipboardList size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Session card — Week {plan.week}: {plan.skill}
+          </SectionTitle>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={openSessionCardDoc} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
+              <Printer size={13} /> Print
+            </button>
+            <button onClick={shareCard} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: TP_DARK, border: '1px solid #E7E2DC', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
+              <Share2 size={13} /> {shared ? 'Copied!' : 'Share'}
+            </button>
+          </div>
+        </div>
         <div style={{ display: 'grid', gap: 8 }}>
           {plan.blocks.map(b => (
             <div key={b.time} style={{ display: 'flex', gap: 12, background: '#F7F5F2', borderRadius: 10, padding: '11px 13px' }}>

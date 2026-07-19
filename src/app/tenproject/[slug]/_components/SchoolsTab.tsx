@@ -12,8 +12,10 @@ const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> =
   running: 'green', fundraising: 'red', confirmed: 'dark', enquiry: 'grey', complete: 'amber',
 }
 
-export default function SchoolsTab() {
-  const [selected, setSelected] = useState<DemoSchool | null>(null)
+export default function SchoolsTab({ initialId }: { initialId?: string }) {
+  const [selected, setSelected] = useState<DemoSchool | null>(
+    initialId ? SCHOOLS.find(s => s.id === initialId) ?? null : null,
+  )
 
   if (selected) {
     const d = SCHOOL_DETAILS[selected.id]

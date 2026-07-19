@@ -8,8 +8,10 @@ import { ArrowLeft, MapPin, Users, Package, TrendingUp, ClipboardList, ExternalL
 import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK, VENUES, VENUE_DETAILS, type DemoVenue } from '@/data/tenproject/demo-data'
 
-export default function VenuesTab() {
-  const [selected, setSelected] = useState<DemoVenue | null>(null)
+export default function VenuesTab({ initialId }: { initialId?: string }) {
+  const [selected, setSelected] = useState<DemoVenue | null>(
+    initialId ? VENUES.find(v => v.id === initialId) ?? null : null,
+  )
 
   if (selected) {
     const d = VENUE_DETAILS[selected.id]

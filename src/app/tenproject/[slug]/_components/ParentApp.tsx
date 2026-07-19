@@ -1,11 +1,15 @@
 'use client'
 
 import React, { useState } from 'react'
-import { BookOpen, Award, Calendar, MessageCircle, Users, PlayCircle, CheckCircle, QrCode, Heart } from 'lucide-react'
+import { BookOpen, Award, Calendar, MessageCircle, Users, PlayCircle, CheckCircle, QrCode, Heart, MapPin, Navigation, Camera } from 'lucide-react'
 import { Pill } from './ui'
 import {
-  TP_RED, TP_DARK, TP_PAPER, CURRICULUM, STICKER_AREAS, PARENT, PARENT_MESSAGES, CAMPAIGN,
+  TP_RED, TP_DARK, TP_PAPER, CURRICULUM, STICKER_AREAS, PARENT, PARENT_MESSAGES, CAMPAIGN, VENUE_DETAILS,
 } from '@/data/tenproject/demo-data'
+
+const YT_CHANNEL = 'https://www.youtube.com/channel/UC3-1ehFIPwAKgH98SXfLf1w'
+const KINGSMEAD = VENUE_DETAILS.kingsmead
+const MAP_Q = encodeURIComponent(`${KINGSMEAD.address}, ${KINGSMEAD.postcode}`)
 
 type Tab = 'week' | 'progress' | 'sessions' | 'messages' | 'family'
 
@@ -53,19 +57,66 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                 <div style={{ fontSize: 11, fontWeight: 800, color: TP_RED, letterSpacing: 0.6 }}>TOP TIPS</div>
                 <div style={{ fontSize: 13, color: TP_DARK, marginTop: 4 }}>{block.tip}</div>
               </div>
-              <div style={{ background: '#fff', borderRadius: 12, padding: 14, display: 'flex', gap: 10, alignItems: 'center' }}>
+              <a href={YT_CHANNEL} target="_blank" rel="noreferrer" style={{ background: '#fff', borderRadius: 12, padding: 14, display: 'flex', gap: 10, alignItems: 'center', textDecoration: 'none' }}>
                 <PlayCircle size={30} style={{ color: TP_RED, flexShrink: 0 }} />
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: TP_DARK }}>Watch: the backhand</div>
                   <div style={{ fontSize: 11.5, color: '#6B6560' }}>Take it to your court, try it at home — but most of all try it as a family!</div>
                 </div>
-              </div>
+                <span style={{ color: TP_RED, fontWeight: 900, fontSize: 13 }}>▶</span>
+              </a>
               <button
                 onClick={() => setPracticeLogged(true)}
                 style={{ background: practiceLogged ? '#187A3C' : TP_DARK, color: '#fff', border: 'none', borderRadius: 10, padding: '12px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
               >
                 {practiceLogged ? '✓ Practice logged — great work Mia & Tom!' : 'We practised this week — log it'}
               </button>
+
+              {/* Next session */}
+              <button onClick={() => setTab('sessions')} style={{ background: '#fff', border: 'none', borderRadius: 12, padding: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: 10.5, fontWeight: 800, color: TP_RED, letterSpacing: 0.6 }}>NEXT FAMILY SESSION</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 900, color: TP_DARK, marginTop: 3 }}>{PARENT.venue.day} {PARENT.venue.time.split('–')[0]} · {PARENT.venue.name}</div>
+                    <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2 }}>{confirmed ? '✓ You’re confirmed' : 'Tap to confirm you’re coming'}</div>
+                  </div>
+                  <Calendar size={22} style={{ color: TP_RED, flexShrink: 0 }} />
+                </div>
+              </button>
+
+              {/* Progress snapshot */}
+              <button onClick={() => setTab('progress')} style={{ background: '#fff', border: 'none', borderRadius: 12, padding: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%' }}>
+                <div style={{ fontSize: 10.5, fontWeight: 800, color: TP_RED, letterSpacing: 0.6, marginBottom: 8 }}>STICKER PROGRESS</div>
+                {PARENT.children.map(c => (
+                  <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 7 }}>
+                    <div style={{ width: 44, fontSize: 12, fontWeight: 900, color: TP_DARK }}>{c.name}</div>
+                    <div style={{ flex: 1, background: '#EFEBE6', borderRadius: 999, height: 9 }}>
+                      <div style={{ width: `${(c.stickers / 6) * 100}%`, height: '100%', background: TP_RED, borderRadius: 999 }} />
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#6B6560' }}>{c.stickers}/6</div>
+                  </div>
+                ))}
+                <div style={{ fontSize: 10.5, color: '#8A847E' }}>Mia earned The Shots sticker today — tap to see the wall 🎉</div>
+              </button>
+
+              {/* Latest message */}
+              <button onClick={() => setTab('messages')} style={{ background: '#fff', border: 'none', borderRadius: 12, padding: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: TP_RED, letterSpacing: 0.6 }}>LATEST MESSAGE</span>
+                  <span style={{ fontSize: 10, color: '#8A847E' }}>{PARENT_MESSAGES[0].when}</span>
+                </div>
+                <div style={{ fontSize: 12, color: TP_DARK, lineHeight: 1.5 }}>
+                  <strong style={{ color: TP_RED }}>{PARENT_MESSAGES[0].from}:</strong> {PARENT_MESSAGES[0].text}
+                </div>
+              </button>
+
+              {/* #tenproject competition */}
+              <div style={{ background: TP_DARK, borderRadius: 12, padding: 14, color: '#fff', display: 'flex', gap: 10, alignItems: 'center' }}>
+                <Camera size={22} style={{ color: TP_RED, flexShrink: 0 }} />
+                <div style={{ fontSize: 11.5, lineHeight: 1.5 }}>
+                  <strong>#tenproject competition</strong> — share a family practice photo or clip for the chance to win a trip to Wimbledon! (Only ever shared with your consent.)
+                </div>
+              </div>
             </>
           )}
 
@@ -104,6 +155,17 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                 <div style={{ fontSize: 11, fontWeight: 800, color: TP_RED, letterSpacing: 0.6 }}>YOUR NEXT FAMILY SESSION</div>
                 <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK, marginTop: 4 }}>{PARENT.venue.name}</div>
                 <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 2 }}>{PARENT.venue.day} {PARENT.venue.time} · free · all the family welcome</div>
+                <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 8, background: TP_PAPER, borderRadius: 9, padding: '8px 10px' }}>
+                  <MapPin size={12} style={{ verticalAlign: '-2px', marginRight: 5, color: TP_RED }} />{KINGSMEAD.address}, {KINGSMEAD.postcode}
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <a href={`https://maps.google.com/?q=${MAP_Q}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: 'center', background: TP_PAPER, color: TP_DARK, border: '1px solid #E7E2DC', borderRadius: 9, padding: '9px 0', fontSize: 11.5, fontWeight: 800, textDecoration: 'none' }}>
+                    <MapPin size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />View map
+                  </a>
+                  <a href={`https://www.google.com/maps/dir/?api=1&destination=${MAP_Q}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: 'center', background: TP_PAPER, color: TP_DARK, border: '1px solid #E7E2DC', borderRadius: 9, padding: '9px 0', fontSize: 11.5, fontWeight: 800, textDecoration: 'none' }}>
+                    <Navigation size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />Directions
+                  </a>
+                </div>
                 <button
                   onClick={() => setConfirmed(true)}
                   style={{ marginTop: 10, width: '100%', background: confirmed ? '#187A3C' : TP_RED, color: '#fff', border: 'none', borderRadius: 10, padding: '11px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}

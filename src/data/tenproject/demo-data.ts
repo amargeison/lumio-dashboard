@@ -168,11 +168,57 @@ export const FUNNEL = [
 
 export const IMPACT_AREAS = ['Health', 'Family', 'Exercise', 'Confidence', 'Focus', 'Self-Esteem', 'Socialising', 'Academic Attainment', 'Well-Being', 'Concentration']
 
-export const NEEDS_ATTENTION = [
-  { id: 'a1', text: 'Willowbrook renewal at risk — school reports no 2026/27 funding. Suggest: switch to fundraising status.', kind: 'warn' },
-  { id: 'a2', text: 'Bramley Green register not submitted for Sat 11 Jul — chase TENOR team.', kind: 'warn' },
-  { id: 'a3', text: 'Coach Tom Hale’s First Aid certificate expires in 6 weeks.', kind: 'info' },
-  { id: 'a4', text: 'St Clement’s campaign is £410 from its match-funding trigger.', kind: 'info' },
+export const NEEDS_ATTENTION: { id: string; text: string; kind: string; target: { tab: string; id?: string } }[] = [
+  { id: 'a1', text: 'Willowbrook renewal at risk — school reports no 2026/27 funding. Suggest: switch to fundraising status.', kind: 'warn', target: { tab: 'schools', id: 'willowbrook' } },
+  { id: 'a2', text: 'Bramley Green register not submitted for Sat 11 Jul — chase TENOR team.', kind: 'warn', target: { tab: 'venues', id: 'bramley' } },
+  { id: 'a3', text: 'Coach Tom Hale’s First Aid certificate expires in 6 weeks.', kind: 'info', target: { tab: 'coaches' } },
+  { id: 'a4', text: 'St Clement’s campaign is £410 from its match-funding trigger.', kind: 'info', target: { tab: 'schools', id: 'stclements' } },
+]
+
+// ─── Comms (HQ communications centre — mapped from tennis coach Send Message) ─
+export const COMMS_INBOX = [
+  { id: 'i1', from: 'Mrs L. Carter', who: 'Head — Oakridge Primary', channel: 'email', when: '08:42', text: 'Festival date works — can we hold the hall from 1pm? Also 3 parents asked about weekend sessions after Friday’s assembly.', unread: true },
+  { id: 'i2', from: 'David Okafor', who: 'TENOR — Kingsmead', channel: 'whatsapp', when: '08:15', text: 'Two cracked rackets in the store box — flagged in the app. Do we swap Saturday or wait for the delivery?', unread: true },
+  { id: 'i3', from: 'Sarah Whitfield', who: 'Parent — Oakridge', channel: 'app', when: 'Yesterday', text: 'Mia lost her booklet 😅 is there a way to get a replacement before Saturday?', unread: true },
+  { id: 'i4', from: 'Mr D. Whitmore', who: 'Head — St Clement’s', channel: 'email', when: 'Yesterday', text: 'PTA confirmed the quiz night venue for 14 Nov. Can the portal page show it once the poster is ready?', unread: false },
+  { id: 'i5', from: 'Natalie Brooks', who: 'Lead coach', channel: 'sms', when: 'Mon', text: 'Y4 Kestrels flying — 3 more sticker awards today. AI summary sent to the school.', unread: false },
+  { id: 'i6', from: 'Bracknell Parks Team', who: 'Jocks Lane venue contact', channel: 'email', when: 'Mon', text: 'Courts resurfacing complete — happy to restart sessions from September.', unread: false },
+]
+
+export const COMMS_RECIPIENTS = [
+  { id: 'r1', label: 'Oakridge Primary', desc: 'School · head + PE lead', icon: 'school' },
+  { id: 'r2', label: 'St Clement’s Primary', desc: 'School · head + PTA', icon: 'school' },
+  { id: 'r3', label: 'Kingsmead families', desc: 'Group · 34 families', icon: 'group' },
+  { id: 'r4', label: 'Kingsmead TENOR team', desc: 'Group · 3 TENORs', icon: 'group' },
+  { id: 'r5', label: 'All coaches', desc: 'Group · 6 coaches', icon: 'group' },
+  { id: 'r6', label: 'All parents (term-time)', desc: 'Broadcast · 121 activated families', icon: 'broadcast' },
+]
+
+export const NEWSLETTERS = [
+  { id: 'n1', title: 'September restart — venues & dates', status: 'draft', when: 'send w/c 1 Sept', opens: null },
+  { id: 'n2', title: 'What a summer! Term wrap-up', status: 'sent', when: '15 Jul', opens: '61% opened · 24% clicked' },
+  { id: 'n3', title: 'Week 4 — backhand week + Saturday sessions', status: 'sent', when: 'Mon', opens: '74% opened · 41% confirmed a session' },
+]
+
+// ─── Social media (mapped from the tennis Media & Content module) ───────────
+export const SOCIAL_STATS = [
+  { platform: 'Instagram', handle: '@tenprojectuk', followers: '4.8K', delta: '+6.2% vs last month' },
+  { platform: 'Facebook', handle: '/tenprojectuk', followers: '3.1K', delta: '+2.1% vs last month' },
+  { platform: 'YouTube', handle: 'Ten Project', followers: '1.9K', delta: '+9.4% vs last month' },
+  { platform: 'X / Twitter', handle: '@tenprojectuk', followers: '2.2K', delta: '+0.8% vs last month' },
+]
+
+export const SOCIAL_QUEUE = [
+  { id: 's1', when: 'Today 17:00', platform: 'IG', status: 'scheduled', text: 'Backhand week at Oakridge! 58 children, two hands on the grip, zero swings missed (well, almost). LEARN. PLAY. TOGETHER. 🎾 #tenproject', media: true },
+  { id: 's2', when: 'Sat 15:30', platform: 'FB', status: 'scheduled', text: 'Saturday = family session day. Kingsmead Rec, 1.30pm, everything provided, everyone welcome — scan in at the gate and play. #tenproject', media: true },
+  { id: 's3', when: 'Sun 18:00', platform: 'IG', status: 'draft', text: 'Sticker of the week 🌟 — the moment a first backhand clears the net. Booklet out, sticker in. (Shared with family consent.)', media: false },
+  { id: 's4', when: 'Mon 09:00', platform: 'X', status: 'needs approval', text: 'St Clement’s is £410 from unlocking match funding for their 2026/27 programme. Local businesses — the Sponsored Ball Hit on 10 Oct has your name on it.', media: false },
+]
+
+export const SOCIAL_AI_CAPTIONS = [
+  'Week 4 = BACKHAND week 🎾 Two hands, favourite hand at the bottom, swing low to high. 58 children at Oakridge nailed it today — see you Saturday at Kingsmead, 1.30pm. Everything provided. #tenproject #LearnPlayTogether',
+  'From school hall to community court: 44 families joined weekend sessions this term — our best yet. Free, all equipment provided, every family welcome. Find your venue at tenproject.org.uk #tenproject',
+  'One booklet. Six Success Stickers. Ten weeks. The look on their face when sticker #3 goes in? That’s the whole point. 🎾 #tenproject #LearnPlayTogether',
 ]
 
 // ─── TENOR session plan — Week 4 (backhand) ─────────────────────────────────
@@ -783,6 +829,73 @@ export const TP_VENUE_READINESS = [
   { venue: 'Kingsmead Rec Ground', tenors: 3, min: 2, ready: true },
   { venue: 'Bramley Green Courts', tenors: 2, min: 2, ready: true },
   { venue: 'Elmwood Park Courts', tenors: 2, min: 2, ready: true, note: 'Tight — one absence cancels. Recruiting a third.' },
+]
+
+// ─── HQ Equipment & Kit (mapped from tennis coach Equipment module) ─────────
+export const TP_EQUIP_STATS = [
+  { label: 'ITEMS TRACKED', value: '46' },
+  { label: 'IN STOCK', value: '33' },
+  { label: 'NEED ATTENTION', value: '9' },
+  { label: 'ON ORDER', value: '4' },
+]
+
+export const TP_RESTOCK: { id: string; name: string; where: string; status: 'running-low' | 'to-order' | 'repair' }[] = [
+  { id: 'e1', name: 'Rackets 19" (mini)', where: 'Kingsmead store — 2 cracked, replacements due', status: 'repair' },
+  { id: 'e2', name: 'Red felt balls', where: 'Bramley Green — down to 22, reorder at 30', status: 'running-low' },
+  { id: 'e3', name: 'T-shirts age 5–6', where: 'HQ welcome-pack stock — 14 left, Meridian needs 22', status: 'to-order' },
+  { id: 'e4', name: 'Activity Booklets', where: 'HQ — 40 left; September intake needs 45+', status: 'to-order' },
+  { id: 'e5', name: 'Success Sticker sheets', where: 'HQ — half a term left at current award rate', status: 'running-low' },
+  { id: 'e6', name: 'Mini-net tension cords', where: 'Elmwood — one net sagging', status: 'repair' },
+  { id: 'e7', name: 'First-aid kit refills', where: 'All venues — plasters low after summer', status: 'running-low' },
+  { id: 'e8', name: 'QR gate signs (laminated)', where: 'Kingsmead fading · Meridian needs printing', status: 'to-order' },
+]
+
+export const TP_KITS: { name: string; items: string[] }[] = [
+  { name: 'In-school session', items: ['24 rackets (19"–23")', '40 red felt balls', '20 cones', '4 mini nets', 'Throw-down lines', 'First aid kit', 'Register tablet/phone'] },
+  { name: 'Weekend family session', items: ['24 rackets', '40 red balls', 'Mini nets ×4', 'Balloon drill bag', 'QR gate sign', 'Live-count device', 'Water station'] },
+  { name: 'Welcome pack (per child)', items: ['Ten Project T-shirt (sized)', 'Tennis ball', 'Activity Booklet', 'Parent activation QR card'] },
+  { name: 'Festival — Week 10', items: ['Station signage ×5', 'Certificates (printed from roster)', 'Festival stickers', 'Scoreboard', 'PA / music speaker', 'Bunting + finish arch'] },
+  { name: 'Inclusive session add-on', items: ['Sensory-friendly balls', 'Bigger/lighter rackets', 'Visual timetable cards', 'Quiet-space sign'] },
+]
+
+export const TP_INVENTORY: { category: string; items: { name: string; where: string; qty: string; status: 'in-stock' | 'running-low' | 'to-order' | 'repair' }[] }[] = [
+  {
+    category: 'Rackets & balls',
+    items: [
+      { name: 'Rackets 19"–21" (mini)', where: 'Split across 3 venue stores', qty: '×38', status: 'repair' },
+      { name: 'Rackets 23"', where: 'Venue stores + HQ spares', qty: '×24', status: 'in-stock' },
+      { name: 'Red felt balls', where: 'All venues', qty: '×96', status: 'running-low' },
+      { name: 'Foam / sensory balls', where: 'Elmwood (inclusive kit)', qty: '×20', status: 'in-stock' },
+    ],
+  },
+  {
+    category: 'Court equipment',
+    items: [
+      { name: 'Mini nets', where: '4 per venue', qty: '×12', status: 'repair' },
+      { name: 'Cones', where: 'All venues', qty: '×60', status: 'in-stock' },
+      { name: 'Throw-down lines', where: 'School kit bags', qty: '×8 sets', status: 'in-stock' },
+      { name: 'Balloon drill bags', where: 'Weekend kits', qty: '×3', status: 'in-stock' },
+    ],
+  },
+  {
+    category: 'Welcome packs & print',
+    items: [
+      { name: 'T-shirts (by size)', where: 'HQ — age 4–5: 26 · 5–6: 14 · 7-8: 31 · 9-10: 28', qty: '×99', status: 'to-order' },
+      { name: 'Activity Booklets', where: 'HQ print stock', qty: '×40', status: 'to-order' },
+      { name: 'Success Sticker sheets', where: 'HQ + coach bags', qty: '×55', status: 'running-low' },
+      { name: 'Certificates (blank)', where: 'HQ — printed per roster at week 9', qty: '×120', status: 'in-stock' },
+      { name: 'QR gate signs', where: 'One per venue + spares', qty: '×5', status: 'to-order' },
+    ],
+  },
+  {
+    category: 'Medical & welfare',
+    items: [
+      { name: 'First aid kits', where: 'One per venue + school bags', qty: '×6', status: 'running-low' },
+      { name: 'Ice packs', where: 'Venue cool boxes', qty: '×12', status: 'in-stock' },
+      { name: 'Hi-vis (TENOR bibs)', where: 'Venue stores', qty: '×9', status: 'in-stock' },
+      { name: 'Water station cups', where: 'Weekend kits', qty: '×200', status: 'in-stock' },
+    ],
+  },
 ]
 
 // TENOR weekend register — Kingsmead
