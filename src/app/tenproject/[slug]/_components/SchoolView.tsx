@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Sparkles, Calendar, PoundSterling, Share2, CheckCircle, X, BarChart3, Download, Award, Users } from 'lucide-react'
+import { Sparkles, Calendar, PoundSterling, Share2, CheckCircle, X, BarChart3, Download, Award, Users, LineChart } from 'lucide-react'
 import { Card, SectionTitle, Pill, Thermometer } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
+import SchoolInsights from './SchoolInsights'
 import { openFunderDoc } from '../_lib/funder-docs'
 import { eventResources, openEventDoc } from '../_lib/event-docs'
 import { TP_RED, TP_DARK, CAMPAIGN, FUND_EVENTS, AI_EVENT_PACK, SCHOOL_STATS, type FundraisingEvent } from '@/data/tenproject/demo-data'
@@ -17,9 +18,10 @@ const EVENT_TONE: Record<string, 'green' | 'red' | 'grey'> = {
   planned: 'grey',
 }
 
-export type SchoolSection = 'programme' | 'fundraising'
+export type SchoolSection = 'programme' | 'insights' | 'fundraising'
 export const SCHOOL_SECTIONS: { id: SchoolSection; label: string }[] = [
   { id: 'programme', label: 'Our programme' },
+  { id: 'insights', label: 'Insights' },
   { id: 'fundraising', label: 'Fundraising' },
 ]
 
@@ -27,7 +29,7 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
   const [showPack, setShowPack] = useState(false)
   const [events, setEvents] = useState<FundraisingEvent[]>(FUND_EVENTS)
   const [selectedEvent, setSelectedEvent] = useState<FundraisingEvent | null>(null)
-  const [tab, setTab] = useState<'fundraising' | 'programme'>(section ?? 'programme')
+  const [tab, setTab] = useState<SchoolSection>(section ?? 'programme')
   const controlled = section !== undefined
   useEffect(() => { if (section !== undefined) setTab(section) }, [section])
   const ballHitEvent = events.find(e => e.type === 'Sponsored ball hit') ?? events[0]
@@ -47,6 +49,7 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
       {!controlled && <div style={{ display: 'flex', gap: 8 }}>
         {([
           { id: 'programme' as const, label: 'Our programme', icon: BarChart3 },
+          { id: 'insights' as const, label: 'Insights', icon: LineChart },
           { id: 'fundraising' as const, label: 'Fundraising', icon: PoundSterling },
         ]).map(t => {
           const Icon = t.icon
@@ -59,6 +62,9 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
           )
         })}
       </div>}
+
+      {/* ── INSIGHTS (governor-grade impact dashboard) ── */}
+      {tab === 'insights' && <SchoolInsights />}
 
       {/* ── OUR PROGRAMME (results to share with governors / sponsors / parents) ── */}
       {tab === 'programme' && (<>

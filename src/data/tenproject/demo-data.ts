@@ -244,6 +244,31 @@ export const WEEK4_SESSION_PLAN = {
   ],
 }
 
+// ─── Coach in-school session plan — Week 4 (backhand), Oakridge ─────────────
+export const OAKRIDGE_ADDRESS = 'Oakridge Primary, Oakridge Lane, Kingsbridge, KB1 2LN'
+
+export const WEEK4_SCHOOL_PLAN = {
+  week: 4,
+  skill: 'BACKHAND',
+  duration: '60 min per cohort + changeover',
+  blocks: [
+    { time: '1.00pm', mins: 15, title: 'Arrival & setup', detail: 'Sign in at reception (lanyard!), hall setup: 4 stations, mini nets, cones, red balls in feeder buckets. Mrs Patel joins for the hand-over segment.' },
+    { time: '1.15pm', mins: 10, title: 'Warm-up — ABCs', detail: 'Traffic-lights (agility) → racket-balance relay (balance) → throw-catch-clap pairs (coordination). Whole class moving inside 60 seconds.' },
+    { time: '1.25pm', mins: 10, title: 'Skill intro — the backhand', detail: 'Two-handed grip, favourite hand at the BOTTOM. Demo slow, then shadow swings in lines — look for the low-to-high finish over the shoulder.' },
+    { time: '1.35pm', mins: 15, title: 'Drills — stations', detail: 'St 1: balloon backhands · St 2: drop-feed over mini net · St 3: target-zone backhands · St 4: teacher-led shadow + sticker spotting. Rotate every 4 minutes.' },
+    { time: '1.50pm', mins: 15, title: 'Rally games', detail: '“Beat the coach” backhand points → team rally ladder. Names of sticker-standard backhands go on the board as you see them.' },
+    { time: '2.05pm', mins: 10, title: 'Together time + sticker moments', detail: 'Award BACKHAND skill taps in the app (parents see it tonight); booklet reminder; plug Saturday’s family session at Kingsmead. Reset hall for Y4 Kestrels, 2.20pm.' },
+  ],
+  coachingPoints: ['Favourite hand at the bottom of the grip', 'Low to high — finish over the shoulder', 'Sideways stance, step towards the ball', 'Mrs Patel leads the warm-up from week 5 — hand her the cards today'],
+  equipment: ['24 rackets (19"–23")', '40 red felt balls (2 feeder buckets)', '20 cones · 4 mini nets', 'Throw-down lines', 'Sticker sheet + booklet trolley', 'First-aid kit (hall cupboard)'],
+  safety: ['Hall floor swept; no water bottles on court area', 'School behaviour policy applies — teacher present throughout', 'Photos: school consent list is in the register — check flags first', 'Safeguarding concern: report to school DSL (Mr J. Okafor) AND HQ lead — never investigate'],
+  videos: [
+    { title: 'The Backhand — main skill video', length: '2:40' },
+    { title: 'Station drills — backhand set', length: '1:55' },
+    { title: 'ABC warm-ups (all 3 games)', length: '3:05' },
+  ],
+}
+
 export const TENOR_RESOURCES = {
   weeks: CURRICULUM.map((c, i) => ({
     label: `Weeks ${c.weeks} — ${c.skill}`,
@@ -298,6 +323,87 @@ export const INSIGHTS = {
     { area: 'Academic Attainment', pct: 38 },
   ],
   inclusion: { inclusiveVenuePct: 33, boroughs: 2, freeSessions: '100%', girls: '48%' },
+  // ── Extra HQ insight datasets (headline feature) ──
+  monthlyReach: [ // children per month across the year
+    { m: 'Sep', n: 1180 }, { m: 'Oct', n: 1420 }, { m: 'Nov', n: 1510 }, { m: 'Dec', n: 990 },
+    { m: 'Jan', n: 1350 }, { m: 'Feb', n: 1480 }, { m: 'Mar', n: 1720 }, { m: 'Apr', n: 1610 },
+    { m: 'May', n: 1900 }, { m: 'Jun', n: 2050 }, { m: 'Jul', n: 2140 },
+  ],
+  retentionCohorts: [ // % still attending weekends, weeks after first visit
+    { term: 'Autumn 25', w1: 100, w4: 62, w8: 48, w10: 41 },
+    { term: 'Spring 26', w1: 100, w4: 68, w8: 54, w10: 47 },
+    { term: 'Summer 26', w1: 100, w4: 71, w8: 58, w10: 52 },
+  ],
+  demographics: {
+    gender: [{ label: 'Girls', pct: 48 }, { label: 'Boys', pct: 51 }, { label: 'Prefer not to say', pct: 1 }],
+    age: [{ label: '4–5', pct: 22 }, { label: '6–7', pct: 41 }, { label: '8–10', pct: 37 }],
+    fsm: 38,          // % eligible for free school meals (deprivation reach)
+    sen: 14,          // % with SEND
+    firstSport: 61,   // % for whom this is their first organised sport
+    ethnicMinority: 44,
+  },
+  boroughs: [
+    { name: 'Kingsbridge', schools: 3, children: 940, venues: 1 },
+    { name: 'Ashwell', schools: 2, children: 520, venues: 1 },
+    { name: 'Brookhaven', schools: 1, children: 340, venues: 1 },
+  ],
+  compliance: { dbsValid: 94, safeguardingCurrent: 100, firstAidCurrent: 89, insured: 100 },
+  socialValue: {
+    perChild: 42,        // programme cost per child (£)
+    svRatio: 4.7,        // social value £ returned per £1 spent
+    volunteerHours: 1840, // TENOR hours this year
+    clubReferrals: 63,
+  },
+  quotesReel: [
+    { q: 'The progress in their coordination, confidence and self-esteem has been incredible — a highlight of the year.', who: 'Class teacher, Y3' },
+    { q: '100% of families said Ten Project improved their family’s quality of life.', who: 'Summer 2026 family survey' },
+    { q: 'It fits the aims of Sports Premium perfectly — sport in school and families active in the community.', who: 'Headteacher, Coombe Hill' },
+  ],
+}
+
+// ─── School Insights (governor/funder-facing, per-school deep dashboard) ─────
+export const SCHOOL_INSIGHTS = {
+  school: 'St Clement’s Primary',
+  term: 'Summer term 2025/26 (completed)',
+  headline: [
+    { label: 'Children took part', value: '62', sub: 'across Y2–Y4, 100% of eligible classes' },
+    { label: 'Attendance rate', value: '93%', sub: 'vs 88% school PE average' },
+    { label: 'Completed all 10 weeks', value: '58', sub: '94% completion' },
+    { label: 'Success Stickers earned', value: '287', sub: 'avg 4.6 of 6 per child' },
+    { label: 'App-activated families', value: '58%', sub: '36 of 62 households' },
+    { label: 'Onto weekend sessions', value: '11', sub: 'families now active in the community' },
+  ],
+  weeklyAttendance: [91, 94, 95, 92, 94, 93, 90, 95, 94, 96],
+  skillGrowth: [ // % of children at "secure" for each skill, start vs end
+    { skill: 'Agility / balance / coord.', start: 34, end: 88 },
+    { skill: 'Forehand', start: 8, end: 82 },
+    { skill: 'Backhand', start: 5, end: 74 },
+    { skill: 'Volley', start: 3, end: 69 },
+    { skill: 'Serve', start: 2, end: 61 },
+    { skill: 'Rally & scoring', start: 6, end: 71 },
+  ],
+  yearGroups: [
+    { year: 'Y2', children: 20, attendance: 95, stickers: 4.8 },
+    { year: 'Y3', children: 22, attendance: 92, stickers: 4.5 },
+    { year: 'Y4', children: 20, attendance: 93, stickers: 4.4 },
+  ],
+  wellbeing: [ // teacher-rated, % of children improved
+    { area: 'Confidence', pct: 88 },
+    { area: 'Concentration in class', pct: 64 },
+    { area: 'Teamwork & communication', pct: 79 },
+    { area: 'Physical activity levels', pct: 91 },
+    { area: 'Enjoyment of PE', pct: 96 },
+  ],
+  curriculum: ['Fundamental movement skills', 'Physical literacy (PE National Curriculum)', 'Healthy active lifestyles', 'Communication & teamwork', 'School–community links'],
+  premiumSpend: {
+    programmeCost: 3200,
+    perChild: 52,
+    outcomesHit: ['Engagement of all pupils in regular activity', 'Broader experience of sports offered', 'Increased confidence, knowledge & skills of staff'],
+  },
+  quotes: [
+    { q: 'It has been wonderful to see the children’s confidence develop in all-round school life as the weeks progressed — and it gave me excellent ideas for my own PE lessons.', who: 'Miss Howard, Year 2 teacher' },
+    { q: 'The children have absolutely loved it. The lessons are fully inclusive and the games are exciting and motivating!', who: 'Parent survey' },
+  ],
 }
 
 // ─── Coach stats, schedule & resources ──────────────────────────────────────

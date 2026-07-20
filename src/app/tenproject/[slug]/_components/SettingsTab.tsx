@@ -3,8 +3,8 @@
 // HQ Settings — organisation, branding, integrations, comms, roles, data.
 // Toggles are live in-session (demo state); production persists per-org.
 
-import React, { useState } from 'react'
-import { Building2, Palette, Plug, Bell, Users, ShieldCheck } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
+import { Building2, Palette, Plug, Bell, Users, ShieldCheck, Moon, MessageSquare } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 
@@ -32,12 +32,53 @@ export default function SettingsTab() {
   const [t, setT] = useState<Record<string, boolean>>({
     weeklyComms: true, sessionAlerts: true, dbsAlerts: true, fundingAlerts: true, digest: false,
     stripe: false, mailchimp: true, gcal: true, ms365: false, clubspark: true,
-    photoDefault: false, retention: true,
+    photoDefault: false, retention: true, autoMaster: true, quietHours: true,
   })
   const flip = (k: string) => () => setT(prev => ({ ...prev, [k]: !prev[k] }))
 
+  // Paper is the default; Dark mode is the per-device opt-in.
+  // Key 'tp_dark' is only ever set when dark is explicitly chosen.
+  const [darkMode, setDarkMode] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') setDarkMode(localStorage.getItem('tp_dark') === '1')
+  }, [])
+  function toggleDarkMode() {
+    const next = !darkMode
+    setDarkMode(next)
+    if (next) localStorage.setItem('tp_dark', '1')
+    else localStorage.removeItem('tp_dark')
+    window.dispatchEvent(new Event('tp-theme'))
+  }
+
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      {/* Appearance */}
+      <Card>
+        <SectionTitle><Moon size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Appearance</SectionTitle>
+        <Row label="Dark mode" desc="Darkens the whole portal on this device — logos, photos and documents stay true-colour" on={darkMode} onChange={toggleDarkMode} />
+      </Card>
+
+      {/* Communications */}
+      <Card>
+        <SectionTitle sub="Sender identity, channels and automation rules for the Communications centre">
+          <MessageSquare size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Communications
+        </SectionTitle>
+        <div style={{ display: 'grid', gap: 10, fontSize: 12.5, marginBottom: 6 }}>
+          {([
+            ['Sender name', 'Ten Project'],
+            ['Reply-to', 'info@tenproject.org.uk'],
+            ['Newsletter footer', 'Charity details · unsubscribe · preference centre (auto-added)'],
+          ] as [string, string][]).map(([l, v]) => (
+            <div key={l} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, borderBottom: '1px solid #F0EBE5', paddingBottom: 8 }}>
+              <span style={{ color: '#8A847E', fontWeight: 700 }}>{l}</span>
+              <span style={{ fontWeight: 800, color: TP_DARK, textAlign: 'right' }}>{v}</span>
+            </div>
+          ))}
+        </div>
+        <Row label="Automations enabled" desc="Master switch for all comms automations (weekly sends, sticker notifications, register chasing)" on={t.autoMaster} onChange={flip('autoMaster')} />
+        <Row label="Quiet hours (8pm–8am)" desc="Non-urgent messages queue overnight; session cancellations always send" on={t.quietHours} onChange={flip('quietHours')} />
+      </Card>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Organisation */}
         <Card>
