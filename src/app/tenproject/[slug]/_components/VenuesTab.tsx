@@ -134,8 +134,7 @@ export default function VenuesTab({ initialId }: { initialId?: string }) {
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-        <SectionTitle sub="Every weekend community venue — access, sessions, teams and attendance in one place">Weekend venues</SectionTitle>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -50, marginBottom: 4, position: 'relative', zIndex: 1 }}>
         <button style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
           <MapPin size={14} /> Add venue
         </button>

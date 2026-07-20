@@ -11,7 +11,6 @@
 import React, { use, useEffect, useRef, useState } from 'react'
 import { Lock, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp } from 'lucide-react'
 import { TP_RED, TP_DARK, TP_BLACK, TP_PAPER } from '@/data/tenproject/demo-data'
-import { DemoBadge } from './_components/ui'
 import HQView, { type HqTab } from './_components/HQView'
 import SchoolView, { type SchoolSection } from './_components/SchoolView'
 import ParentApp from './_components/ParentApp'
@@ -36,6 +35,41 @@ const ROLE_TITLES: Record<Role, { title: string; sub: string }> = {
   parent: { title: 'Parent app', sub: 'Sarah Whitfield · Mia (7) & Tom (5) · Oakridge Primary' },
   coach: { title: 'Coach — Natalie Brooks', sub: 'Today’s in-school session and register' },
   tenor: { title: 'TENOR — David Okafor', sub: 'Saturday family session at Kingsmead Rec Ground' },
+}
+
+// The landing section per role keeps the role title; every other section shows
+// its own name as the page headline.
+const LANDING_SECTION: Record<Role, string> = { hq: 'overview', school: 'programme', coach: 'stats', tenor: 'session', parent: 'app' }
+
+const SECTION_HEADERS: Record<string, Record<string, { title: string; sub: string }>> = {
+  hq: {
+    insights: { title: 'Insights', sub: 'Participation, conversion, impact and social value — funder-ready' },
+    schools: { title: 'Schools', sub: 'Every partner school — profile, programme, stats and actions in one place' },
+    venues: { title: 'Weekend venues', sub: 'Every weekend community venue — access, sessions, teams and attendance in one place' },
+    coaches: { title: 'Coaches', sub: 'Your coaching team at a glance — accreditations, compliance and workload across the programme' },
+    tenors: { title: 'TENORs', sub: 'Your volunteer parents — inductions, venue cover and the “can this session run?” view' },
+    comms: { title: 'Communications', sub: 'One inbox, newsletters and automations — replacing your email tools' },
+    social: { title: 'Social', sub: 'Plan, schedule, publish and measure across every channel' },
+    equipment: { title: 'Equipment & Kit', sub: 'Everything across venues, school bags and welcome-pack stock — edit inline, restock in one click' },
+    settings: { title: 'Settings', sub: 'Organisation, branding, integrations, comms and data' },
+  },
+  school: {
+    insights: { title: 'Insights', sub: 'Your impact dashboard — built for governors, sponsors and your Sports Premium return' },
+    fundraising: { title: 'Fundraising', sub: 'Your 2026/27 campaign — thermometer, events and donations' },
+  },
+  coach: {
+    today: { title: 'Schools', sub: 'Your schools and today’s in-school session' },
+    weekend: { title: 'Weekend sessions', sub: 'Your Saturday and Sunday family sessions' },
+    resources: { title: 'Resources', sub: 'Session plans, videos and guides' },
+  },
+  tenor: {
+    resources: { title: 'Resources', sub: 'Videos, session cards, guides and who to call' },
+  },
+}
+
+function headerFor(role: Role, section: string): { title: string; sub: string } {
+  if (section === LANDING_SECTION[role]) return ROLE_TITLES[role]
+  return SECTION_HEADERS[role]?.[section] ?? ROLE_TITLES[role]
 }
 
 export default function TenProjectPortal({ params }: { params: Promise<{ slug: string }> }) {
@@ -174,7 +208,7 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
             <img src="/tenproject_logo.png" alt="Ten Project" style={{ width: 190, height: 'auto', display: 'block', margin: '0 auto 10px' }} />
             <div style={{ fontSize: 15, fontWeight: 900, color: TP_DARK, letterSpacing: 2 }}>PORTAL</div>
             <div style={{ color: '#6B6560', fontSize: 13.5, marginTop: 6 }}>
-              One platform · five roles. Pick a view to explore. <DemoBadge />
+              One platform · five roles. Pick a view to explore.
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
@@ -415,13 +449,12 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
       {/* Main */}
       {darkStyle}
       <main className={contentClass} style={{ flex: 1, minWidth: 0, padding: '22px 26px 40px', background: mainBg }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, gap: 12, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ fontSize: 21, fontWeight: 900, color: TP_DARK }}>{meta.title}</div>
-            <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 3 }}>{meta.sub}</div>
-          </div>
-          <DemoBadge />
+        {(() => { const hm = role === 'parent' ? meta : headerFor(role, activeSection); return (
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 21, fontWeight: 900, color: TP_DARK }}>{hm.title}</div>
+          <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 3 }}>{hm.sub}</div>
         </div>
+        ) })()}
         {role === 'hq' && <HQView section={hqSection} onSectionChange={setHqSection} />}
         {role === 'school' && <SchoolView section={schoolSection} />}
         {role === 'parent' && <ParentApp />}

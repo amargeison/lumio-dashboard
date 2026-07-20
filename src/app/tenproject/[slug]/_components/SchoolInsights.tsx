@@ -4,7 +4,7 @@
 // share or export. Built to win Sports Premium renewal conversations.
 
 import React from 'react'
-import { TrendingUp, Award, HeartHandshake, Download, Share2, GraduationCap, Sparkles, Quote } from 'lucide-react'
+import { TrendingUp, Award, HeartHandshake, Download, Share2, GraduationCap, Sparkles, Quote, BarChart2, ArrowUpRight } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK, SCHOOL_INSIGHTS } from '@/data/tenproject/demo-data'
 import { openFunderDoc } from '../_lib/funder-docs'
@@ -125,6 +125,53 @@ export default function SchoolInsights() {
           </div>
         </Card>
       </div>
+
+      {/* How you compare — benchmark panel (distinct from the operational page) */}
+      <Card>
+        <SectionTitle sub="Your school against the Ten Project average and the national baseline — context governors ask for">
+          <BarChart2 size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />How your school compares
+        </SectionTitle>
+        <div style={{ display: 'grid', gap: 12 }}>
+          {S.benchmarks.map(b => {
+            const max = Math.max(b.you, b.programme, b.national, 1)
+            const rows: [string, number, string][] = [
+              ['Your school', b.you, TP_RED],
+              ['Ten Project avg', b.programme, RED_SOFT],
+              ['National', b.national, '#C9C4BE'],
+            ]
+            return (
+              <div key={b.metric}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 5 }}>
+                  <span style={{ fontWeight: 800, color: TP_DARK }}>{b.metric}</span>
+                  <span style={{ fontSize: 10.5, color: '#8A847E' }}>{b.note}</span>
+                </div>
+                <div style={{ display: 'grid', gap: 4 }}>
+                  {rows.map(([lbl, val, col]) => (
+                    <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 96, fontSize: 10.5, color: '#6B6560', fontWeight: 700, flexShrink: 0 }}>{lbl}</div>
+                      <div style={{ flex: 1, background: '#EFEBE6', borderRadius: 999, height: 12 }}>
+                        <div style={{ width: `${(val / max) * 100}%`, height: '100%', background: col, borderRadius: 999 }} />
+                      </div>
+                      <div style={{ width: 34, fontSize: 11, fontWeight: 800, color: TP_DARK, textAlign: 'right' }}>{val}{b.unit}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 14, marginTop: 14, background: '#FDE8E8', borderRadius: 12, padding: '14px 16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <ArrowUpRight size={26} style={{ color: TP_RED, flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 14, fontWeight: 900, color: TP_DARK }}>
+              Distance travelled: {S.distanceTravelled.start}% → {S.distanceTravelled.end}%
+            </div>
+            <div style={{ fontSize: 12, color: '#5B554F', marginTop: 2 }}>
+              {S.distanceTravelled.label} — doubled over the ten weeks, and now well above the national {S.distanceTravelled.start}%.
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Sports Premium value */}
       <Card>
