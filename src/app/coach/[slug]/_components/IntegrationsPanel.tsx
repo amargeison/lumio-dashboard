@@ -16,7 +16,7 @@ type Status = { connections: Connection[]; configured: Record<Provider, boolean>
 const META: { id: Provider; name: string; icon: string; blurb: string }[] = [
   { id: 'google',    name: 'Google (Gmail & Calendar)', icon: '🟦', blurb: 'Two-way calendar sync + send as your Gmail address.' },
   { id: 'microsoft', name: 'Outlook (Microsoft 365)',   icon: '🟧', blurb: 'Two-way calendar sync + send as your Outlook address.' },
-  { id: 'icloud',    name: 'Apple iCloud',              icon: '⚪', blurb: 'CalDAV calendar + send-as, via an app-specific password.' },
+  { id: 'icloud',    name: 'Apple iCloud',              icon: '⚪', blurb: 'Two-way calendar sync + send-as email, via an app-specific password.' },
 ]
 
 export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
