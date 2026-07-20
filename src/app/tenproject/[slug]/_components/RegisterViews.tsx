@@ -1,17 +1,80 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { QrCode, WifiOff, CheckCircle, Users, ClipboardList, Sparkles, PlayCircle, BookOpen, ShieldAlert, Package, Phone, FileText, BarChart3, MapPin, GraduationCap, CalendarDays, Send, Navigation, Printer, Share2 } from 'lucide-react'
+import { QrCode, WifiOff, CheckCircle, Users, ClipboardList, Sparkles, PlayCircle, BookOpen, ShieldAlert, Package, Phone, FileText, BarChart3, MapPin, GraduationCap, CalendarDays, Send, Navigation, Printer, Share2, School } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
 import { SendMessageWizard } from './CommsTab'
 import { openResourceDoc, openSessionCardDoc } from '../_lib/resource-docs'
-import { TP_RED, TP_DARK, COHORT_CHILDREN, WEEKEND_FAMILIES, VENUES, CURRICULUM, WEEK4_SESSION_PLAN, TENOR_RESOURCES, COACH_STATS, COACH_WEEKEND, COACH_RESOURCES, VENUE_DETAILS } from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK, COHORT_CHILDREN, WEEKEND_FAMILIES, VENUES, CURRICULUM, WEEK4_SESSION_PLAN, WEEK4_SCHOOL_PLAN, OAKRIDGE_ADDRESS, TENOR_RESOURCES, COACH_STATS, COACH_WEEKEND, COACH_RESOURCES, VENUE_DETAILS } from '@/data/tenproject/demo-data'
+
+// ─── Shared session run-sheet card (used by Coach today/weekend + TENOR) ────
+function SessionRunSheet({ plan, context, onPrint }: {
+  plan: typeof WEEK4_SESSION_PLAN
+  context: string
+  onPrint: () => void
+}) {
+  return (
+    <Card>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+        <SectionTitle sub={`${context} — ${plan.skill} week, ${plan.duration}`}>
+          <ClipboardList size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Session card — Week {plan.week}: {plan.skill}
+        </SectionTitle>
+        <button onClick={onPrint} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
+          <Printer size={13} /> Print
+        </button>
+      </div>
+      <div style={{ display: 'grid', gap: 8 }}>
+        {plan.blocks.map(b => (
+          <div key={b.time} style={{ display: 'flex', gap: 12, background: '#F7F5F2', borderRadius: 10, padding: '11px 13px' }}>
+            <div style={{ flexShrink: 0, width: 74 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 900, color: TP_RED }}>{b.time}</div>
+              <div style={{ fontSize: 10, color: '#8A847E', fontWeight: 700 }}>{b.mins} min</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{b.title}</div>
+              <div style={{ fontSize: 12, color: '#5B554F', marginTop: 2, lineHeight: 1.5 }}>{b.detail}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 12, marginTop: 14 }}>
+        <div style={{ background: '#FDE8E8', borderRadius: 10, padding: '12px 14px' }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: TP_RED, letterSpacing: 0.6, marginBottom: 6 }}>COACHING POINTS</div>
+          {plan.coachingPoints.map(cp => <div key={cp} style={{ fontSize: 11.5, color: TP_DARK, marginBottom: 4 }}>• {cp}</div>)}
+        </div>
+        <div style={{ background: '#F7F5F2', borderRadius: 10, padding: '12px 14px' }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: TP_DARK, letterSpacing: 0.6, marginBottom: 6 }}>
+            <Package size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} />EQUIPMENT
+          </div>
+          {plan.equipment.map(eq => <div key={eq} style={{ fontSize: 11.5, color: '#5B554F', marginBottom: 4 }}>• {eq}</div>)}
+        </div>
+        <div style={{ background: '#FCF1DC', borderRadius: 10, padding: '12px 14px' }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: '#9A6A0B', letterSpacing: 0.6, marginBottom: 6 }}>
+            <ShieldAlert size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} />SAFETY & SAFEGUARDING
+          </div>
+          {plan.safety.map(s => <div key={s} style={{ fontSize: 11.5, color: '#5B554F', marginBottom: 4 }}>• {s}</div>)}
+        </div>
+        <div style={{ background: '#F7F5F2', borderRadius: 10, padding: '12px 14px' }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: TP_DARK, letterSpacing: 0.6, marginBottom: 6 }}>
+            <PlayCircle size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} />THIS WEEK’S VIDEOS
+          </div>
+          {plan.videos.map(v => (
+            <div key={v.title} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: '#5B554F', marginBottom: 4 }}>
+              <span>▸ {v.title}</span>
+              <span style={{ color: '#8A847E', fontWeight: 700 }}>{v.length}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  )
+}
 
 export type CoachSection = 'stats' | 'today' | 'weekend' | 'resources'
 export const COACH_SECTIONS: { id: CoachSection; label: string }[] = [
   { id: 'stats', label: 'My stats' },
-  { id: 'today', label: 'Today' },
+  { id: 'today', label: 'Schools' },
   { id: 'weekend', label: 'Weekend sessions' },
   { id: 'resources', label: 'Resources' },
 ]
@@ -40,7 +103,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
         {!controlled && ([
           { id: 'stats' as const, label: 'My stats', icon: BarChart3 },
-          { id: 'today' as const, label: 'Today', icon: ClipboardList },
+          { id: 'today' as const, label: 'Schools', icon: School },
           { id: 'weekend' as const, label: 'Weekend sessions', icon: CalendarDays },
           { id: 'resources' as const, label: 'Resources', icon: BookOpen },
         ]).map(t => {
@@ -66,29 +129,49 @@ export function CoachView({ section }: { section?: CoachSection }) {
           <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 4 }}>{COACH_WEEKEND.setupDuty}</div>
         </Card>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          {[COACH_WEEKEND.lead, COACH_WEEKEND.support].map(s => (
-            <Card key={s.venue}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                <div>
-                  <div style={{ fontSize: 14.5, fontWeight: 900, color: TP_DARK }}>
-                    <MapPin size={14} style={{ verticalAlign: '-2px', marginRight: 5, color: TP_RED }} />{s.venue}
+          {[COACH_WEEKEND.lead, COACH_WEEKEND.support].map(s => {
+            const vd = VENUE_DETAILS[s.venue.includes('Kingsmead') ? 'kingsmead' : 'elmwood']
+            const q = encodeURIComponent(`${vd.address}, ${vd.postcode}`)
+            return (
+              <Card key={s.venue}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 14.5, fontWeight: 900, color: TP_DARK }}>
+                      <MapPin size={14} style={{ verticalAlign: '-2px', marginRight: 5, color: TP_RED }} />{s.venue}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#6B6560', marginTop: 3 }}>{s.day} {s.time} · {vd.courts}</div>
+                    <div style={{ fontSize: 11.5, color: '#8A847E', marginTop: 3 }}>{vd.address}, {vd.postcode}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: '#6B6560', marginTop: 3 }}>{s.day} {s.time}</div>
+                  <Pill tone={s.role === 'Session lead' ? 'red' : 'dark'}>{s.role.toUpperCase()}</Pill>
                 </div>
-                <Pill tone={s.role === 'Session lead' ? 'red' : 'dark'}>{s.role.toUpperCase()}</Pill>
-              </div>
-              <div style={{ fontSize: 12, color: '#5B554F', marginTop: 10, background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>{s.note}</div>
-              <div style={{ marginTop: 10, fontSize: 11.5, color: '#6B6560' }}>
-                <Users size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />
-                TENORs: {s.tenors.join(', ')} · last register: <strong style={{ color: TP_RED }}>{s.lastCount}</strong> children
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <button style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>Open session plan</button>
-                <button style={{ background: '#fff', color: TP_DARK, border: '1.5px solid #E7E2DC', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>Message TENORs</button>
-              </div>
-            </Card>
-          ))}
+                <div style={{ display: 'flex', gap: 8, marginTop: 9 }}>
+                  <a href={`https://maps.google.com/?q=${q}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F7F5F2', color: TP_DARK, border: '1px solid #E7E2DC', borderRadius: 8, padding: '6px 11px', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}>
+                    <MapPin size={12} /> Map
+                  </a>
+                  <a href={`https://www.google.com/maps/dir/?api=1&destination=${q}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#F7F5F2', color: TP_DARK, border: '1px solid #E7E2DC', borderRadius: 8, padding: '6px 11px', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}>
+                    <Navigation size={12} /> Directions
+                  </a>
+                </div>
+                <div style={{ fontSize: 12, color: '#5B554F', marginTop: 10, background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>{s.note}</div>
+                <div style={{ display: 'grid', gap: 5, marginTop: 10, fontSize: 11.5, color: '#6B6560' }}>
+                  <div><Users size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />TENORs: {s.tenors.join(', ')}</div>
+                  <div><Package size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />Storage: {vd.storage}</div>
+                  <div><QrCode size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />Access: {vd.access} · last register: <strong style={{ color: TP_RED }}>{s.lastCount}</strong> children · {vd.familiesRegistered} families registered</div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <button onClick={() => openResourceDoc('Week 4 session plan — BACKHAND (family)')} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>Open session plan</button>
+                  <button onClick={() => setWizard(true)} style={{ background: '#fff', color: TP_DARK, border: '1.5px solid #E7E2DC', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>Message TENORs</button>
+                </div>
+              </Card>
+            )
+          })}
         </div>
+
+        <SessionRunSheet
+          plan={WEEK4_SESSION_PLAN}
+          context="Saturday's family session at Kingsmead — you lead, TENORs run the register"
+          onPrint={openSessionCardDoc}
+        />
       </>)}
 
       {/* ── MY STATS ── */}
@@ -176,14 +259,46 @@ export function CoachView({ section }: { section?: CoachSection }) {
         </div>
       )}
 
-      {/* ── TODAY ── */}
+      {/* ── SCHOOLS ── */}
       {tab === 'today' && (<>
+      {/* My schools strip */}
+      <Card>
+        <SectionTitle sub="The schools you deliver — today’s live session is highlighted">
+          <School size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />My schools
+        </SectionTitle>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 10 }}>
+          {COACH_STATS.cohortProgress.map((c, i) => (
+            <div key={c.cohort} style={{ background: i === 0 ? '#FDE8E8' : '#F7F5F2', border: i === 0 ? `1.5px solid ${TP_RED}44` : '1.5px solid transparent', borderRadius: 10, padding: '11px 13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{c.cohort}</div>
+                {i === 0 && <Pill tone="red">TODAY</Pill>}
+              </div>
+              <div style={{ fontSize: 11, color: '#6B6560', marginTop: 3 }}>
+                {c.week === 10 ? 'Complete' : `Week ${c.week} of 10`} · {c.attendance}% attendance · {c.stickers} stickers
+              </div>
+              <div style={{ background: '#EFEBE6', borderRadius: 999, height: 6, marginTop: 7 }}>
+                <div style={{ width: `${(c.week / 10) * 100}%`, height: '100%', background: c.week === 10 ? '#187A3C' : TP_RED, borderRadius: 999 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       <Card style={{ background: TP_DARK, border: 'none' }}>
         <div style={{ color: '#fff', fontSize: 16, fontWeight: 900 }}>Oakridge Primary — Y3 Falcons · Week 4 of 10</div>
         <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 4 }}>
-          Today 1.15–2.15pm · {block.skill} block · Run-sheet: warm-up ABCs (10m) → grip & swing (15m) → rally games (25m) → together time (10m)
+          Today 1.15–2.15pm · {block.skill} block · Mrs Patel (PE lead) assisting — hand-over segment in together time
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+        <div style={{ color: '#C9C4BE', fontSize: 12, marginTop: 6 }}>
+          <MapPin size={12} style={{ verticalAlign: '-1px', marginRight: 5, color: TP_RED }} />{OAKRIDGE_ADDRESS} · sign in at reception
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
+          <a href={`https://maps.google.com/?q=${encodeURIComponent(OAKRIDGE_ADDRESS)}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#22222A', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}>
+            <MapPin size={12} /> Map
+          </a>
+          <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(OAKRIDGE_ADDRESS)}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#22222A', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}>
+            <Navigation size={12} /> Directions
+          </a>
           <Pill tone="red">{present} / {children.length} PRESENT</Pill>
           <Pill tone="grey">KIT: 24 rackets · red balls · cones</Pill>
           <Pill tone="grey">NEXT: Y4 Kestrels 2.20pm</Pill>
@@ -221,6 +336,12 @@ export function CoachView({ section }: { section?: CoachSection }) {
           <Sparkles size={14} /> AI cohort summary for the school (demo)
         </button>
       </Card>
+
+      <SessionRunSheet
+        plan={WEEK4_SCHOOL_PLAN}
+        context="Everything you need for today's in-school session"
+        onPrint={() => openResourceDoc('Week 4 session plan — BACKHAND (school)')}
+      />
       </>)}
     </div>
   )

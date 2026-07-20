@@ -9,13 +9,13 @@
 // Standard portal zoom 0.9 — sidebar compensates with calc(100vh / 0.9).
 
 import React, { use, useEffect, useRef, useState } from 'react'
-import { Lock, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut } from 'lucide-react'
-import { TP_RED, TP_DARK, TP_PAPER } from '@/data/tenproject/demo-data'
+import { Lock, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp } from 'lucide-react'
+import { TP_RED, TP_DARK, TP_BLACK, TP_PAPER } from '@/data/tenproject/demo-data'
 import { DemoBadge } from './_components/ui'
-import HQView, { HQ_SECTIONS, type HqTab } from './_components/HQView'
-import SchoolView, { SCHOOL_SECTIONS, type SchoolSection } from './_components/SchoolView'
+import HQView, { type HqTab } from './_components/HQView'
+import SchoolView, { type SchoolSection } from './_components/SchoolView'
 import ParentApp from './_components/ParentApp'
-import { CoachView, TenorView, COACH_SECTIONS, TENOR_SECTIONS, type CoachSection, type TenorSection } from './_components/RegisterViews'
+import { CoachView, TenorView, type CoachSection, type TenorSection } from './_components/RegisterViews'
 
 const DEMO_PIN = '071711'
 const STORE_KEY = 'lumio_tenproject_demo_active'
@@ -61,6 +61,41 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
     mq.addEventListener('change', update)
     return () => mq.removeEventListener('change', update)
   }, [])
+
+  // Theme — paper is the default; Settings → Appearance → "Dark mode" opts in.
+  const [dark, setDark] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sync = () => setDark(localStorage.getItem('tp_dark') === '1')
+    sync()
+    window.addEventListener('tp-theme', sync)
+    return () => window.removeEventListener('tp-theme', sync)
+  }, [])
+
+  // Sidebar pin — floating rail that expands on hover when unpinned.
+  const [pinned, setPinned] = useState(true)
+  const [railHover, setRailHover] = useState(false)
+  useEffect(() => {
+    if (typeof window !== 'undefined') setPinned(localStorage.getItem('tp_sidebar_pin') !== '0')
+  }, [])
+  function togglePin() {
+    setPinned(p => {
+      localStorage.setItem('tp_sidebar_pin', p ? '0' : '1')
+      return !p
+    })
+  }
+
+  // Content-area inversion keeps every component untouched; images re-invert
+  // so logos, crests and photos stay true-colour. Sidebar/top bar already dark.
+  // Main bg is #EEEEEB when dark — its inverse is exactly Ten Project #111114.
+  const darkStyle = dark ? (
+    <style>{`
+      .tp-theme-dark { filter: invert(1) hue-rotate(180deg); }
+      .tp-theme-dark img { filter: invert(1) hue-rotate(180deg); }
+    `}</style>
+  ) : null
+  const contentClass = dark ? 'tp-theme-dark' : undefined
+  const mainBg = dark ? '#EEEEEB' : TP_PAPER
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -131,7 +166,8 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
   // ── Role picker ──
   if (!role) {
     return (
-      <div style={{ minHeight: '100vh', background: TP_PAPER, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div className={contentClass} style={{ minHeight: '100vh', background: mainBg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        {darkStyle}
         <div style={{ maxWidth: 680, width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: 26 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -169,7 +205,7 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
   if (isMobile) {
     return (
       <div style={{ minHeight: '100dvh', background: TP_PAPER, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ height: 52, background: TP_DARK, display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px', flexShrink: 0 }}>
+        <div style={{ height: 52, background: TP_BLACK, display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px', flexShrink: 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ height: 24, width: 'auto' }} />
           {!lockedRole ? (
@@ -192,10 +228,11 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
             <LogOut size={16} />
           </button>
         </div>
+        {darkStyle}
         {role === 'parent' ? (
-          <ParentApp fullScreen />
+          <div className={contentClass}><ParentApp fullScreen /></div>
         ) : (
-          <main className="tp-resp" style={{ flex: 1, minWidth: 0, padding: '14px 12px 30px' }}>
+          <main className={`tp-resp ${contentClass ?? ''}`} style={{ flex: 1, minWidth: 0, padding: '14px 12px 30px', background: mainBg }}>
             {/* Mobile responsiveness: flatten fixed two-column grids, make the
                 7-day calendar a swipeable strip, let wide tables scroll.
                 Scoped to .tp-resp so desktop keeps its exact layout. */}
@@ -227,13 +264,55 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
     )
   }
 
-  // Sections shown in the sidebar for the active role
-  const sections: { id: string; label: string }[] =
-    role === 'hq' ? HQ_SECTIONS
-    : role === 'school' ? SCHOOL_SECTIONS
-    : role === 'coach' ? COACH_SECTIONS
-    : role === 'tenor' ? TENOR_SECTIONS
-    : [{ id: 'app', label: 'The family app' }]
+  // Grouped, icon-led sidebar nav per role (tennis-coach style)
+  type NavIcon = React.ComponentType<{ size?: number | string; style?: React.CSSProperties }>
+  const NAV_GROUPS: { group: string; items: { id: string; label: string; icon: NavIcon }[] }[] =
+    role === 'hq' ? [
+      { group: 'PROGRAMME', items: [
+        { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+        { id: 'insights', label: 'Insights', icon: BarChart3 },
+      ] },
+      { group: 'NETWORK', items: [
+        { id: 'schools', label: 'Schools', icon: School },
+        { id: 'venues', label: 'Venues', icon: MapPin },
+      ] },
+      { group: 'TEAM', items: [
+        { id: 'coaches', label: 'Coaches', icon: ShieldCheck },
+        { id: 'tenors', label: 'TENORs', icon: Users },
+      ] },
+      { group: 'ENGAGE', items: [
+        { id: 'comms', label: 'Communications', icon: Send },
+        { id: 'social', label: 'Social', icon: Share2 },
+      ] },
+      { group: 'OPERATIONS', items: [
+        { id: 'equipment', label: 'Equipment & Kit', icon: Package },
+        { id: 'settings', label: 'Settings', icon: Settings },
+      ] },
+    ]
+    : role === 'school' ? [
+      { group: 'YOUR SCHOOL', items: [
+        { id: 'programme', label: 'Our programme', icon: BarChart3 },
+        { id: 'insights', label: 'Insights', icon: TrendingUp },
+        { id: 'fundraising', label: 'Fundraising', icon: PoundSterling },
+      ] },
+    ]
+    : role === 'coach' ? [
+      { group: 'COACHING', items: [
+        { id: 'stats', label: 'My stats', icon: BarChart3 },
+        { id: 'today', label: 'Schools', icon: School },
+        { id: 'weekend', label: 'Weekend sessions', icon: CalendarDays },
+        { id: 'resources', label: 'Resources', icon: BookOpen },
+      ] },
+    ]
+    : role === 'tenor' ? [
+      { group: 'VOLUNTEERING', items: [
+        { id: 'session', label: 'Today’s session', icon: ClipboardList },
+        { id: 'resources', label: 'Resources', icon: BookOpen },
+      ] },
+    ]
+    : [
+      { group: 'FAMILY', items: [{ id: 'app', label: 'The family app', icon: Smartphone }] },
+    ]
   const activeSection =
     role === 'hq' ? hqSection : role === 'school' ? schoolSection : role === 'coach' ? coachSection : role === 'tenor' ? tenorSection : 'app'
   function setSection(id: string) {
@@ -242,35 +321,68 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
     else if (role === 'coach') setCoachSection(id as CoachSection)
     else if (role === 'tenor') setTenorSection(id as TenorSection)
   }
+  const expanded = pinned || railHover
+  const sidebarWidth = expanded ? 232 : 64
 
   return (
     <div style={{ zoom: 0.9, minHeight: 'calc(100vh / 0.9)', background: TP_PAPER, display: 'flex' }}>
-      {/* Sidebar — active role's sections + switch-view panel (tennis-portal pattern) */}
-      <aside style={{ width: 224, background: TP_DARK, position: 'sticky', top: 0, height: 'calc(100vh / 0.9)', display: 'flex', flexDirection: 'column', minHeight: 0, flexShrink: 0 }}>
-        <div style={{ padding: '20px 18px 14px' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ width: 116, height: 'auto', display: 'block' }} />
-          <div style={{ fontSize: 10, color: '#8A847E', marginTop: 7, letterSpacing: 1 }}>PORTAL · DEMO</div>
+      {/* Sidebar — Ten Project black, floating rail with pin, grouped icon menu */}
+      {!pinned && <div style={{ width: 64, flexShrink: 0 }} />}
+      <aside
+        onMouseEnter={() => setRailHover(true)}
+        onMouseLeave={() => setRailHover(false)}
+        style={{
+          width: sidebarWidth, transition: 'width .16s ease', background: TP_BLACK,
+          display: 'flex', flexDirection: 'column', minHeight: 0, flexShrink: 0, overflow: 'hidden',
+          ...(pinned
+            ? { position: 'sticky' as const, top: 0, height: 'calc(100vh / 0.9)' }
+            : { position: 'fixed' as const, left: 0, top: 0, height: 'calc(100vh / 0.9)', zIndex: 50, boxShadow: expanded ? '10px 0 34px #00000066' : 'none' }),
+        }}
+      >
+        <div style={{ padding: expanded ? '18px 16px 12px' : '18px 0 12px', display: 'flex', alignItems: 'flex-start', justifyContent: expanded ? 'space-between' : 'center', gap: 8 }}>
+          {expanded ? (
+            <div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ width: 108, height: 'auto', display: 'block' }} />
+              <div style={{ fontSize: 9.5, color: '#8A847E', marginTop: 6, letterSpacing: 1 }}>PORTAL · DEMO</div>
+            </div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src="/tenproject-favicon-64.png" alt="TP" style={{ width: 30, height: 30, borderRadius: 7 }} />
+          )}
+          {expanded && (
+            <button onClick={togglePin} title={pinned ? 'Unpin — sidebar floats and expands on hover' : 'Pin sidebar open'}
+              style={{ background: pinned ? '#22222A' : TP_RED, color: pinned ? '#8A847E' : '#fff', border: 'none', borderRadius: 7, padding: 6, cursor: 'pointer', display: 'inline-flex' }}>
+              {pinned ? <Pin size={13} /> : <PinOff size={13} />}
+            </button>
+          )}
         </div>
-        <nav style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '6px 10px' }}>
-          <div style={{ fontSize: 9.5, fontWeight: 800, color: '#6B6560', letterSpacing: 1.2, padding: '4px 12px 6px' }}>
-            {ROLES.find(r => r.id === role)?.label.toUpperCase()}
-          </div>
-          {sections.map(s => {
-            const active = activeSection === s.id
-            return (
-              <button
-                key={s.id}
-                onClick={() => setSection(s.id)}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: active ? TP_RED : 'none', color: active ? '#fff' : '#C9C4BE', border: 'none', borderRadius: 9, padding: '9px 12px', fontSize: 12.5, fontWeight: active ? 800 : 600, cursor: 'pointer', marginBottom: 2, textAlign: 'left' }}
-              >
-                {s.label}
-              </button>
-            )
-          })}
+        <nav style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: expanded ? '2px 10px' : '2px 8px' }}>
+          {NAV_GROUPS.map(g => (
+            <div key={g.group} style={{ marginBottom: 8 }}>
+              {expanded && (
+                <div style={{ fontSize: 9, fontWeight: 800, color: '#6B6560', letterSpacing: 1.4, padding: '6px 12px 4px' }}>{g.group}</div>
+              )}
+              {g.items.map(s => {
+                const Icon = s.icon
+                const active = activeSection === s.id
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setSection(s.id)}
+                    title={s.label}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: expanded ? 'flex-start' : 'center', gap: 10, width: '100%', background: active ? TP_RED : 'none', color: active ? '#fff' : '#C9C4BE', border: 'none', borderRadius: 9, padding: expanded ? '8px 12px' : '9px 0', fontSize: 12.5, fontWeight: active ? 800 : 600, cursor: 'pointer', marginBottom: 2, textAlign: 'left', whiteSpace: 'nowrap' }}
+                  >
+                    <Icon size={15} style={{ flexShrink: 0 }} />
+                    {expanded && s.label}
+                  </button>
+                )
+              })}
+            </div>
+          ))}
         </nav>
         {/* Switch view */}
-        {!lockedRole && (
+        {expanded && !lockedRole && (
           <div style={{ padding: '10px 10px 4px', borderTop: '1px solid #33333B' }}>
             <div style={{ fontSize: 9.5, fontWeight: 800, color: '#6B6560', letterSpacing: 1.2, padding: '2px 12px 6px' }}>SWITCH VIEW</div>
             {navRoles.map(r => {
@@ -288,6 +400,7 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
             })}
           </div>
         )}
+        {expanded && (
         <div style={{ padding: 12 }}>
           <button
             onClick={() => { localStorage.removeItem(STORE_KEY); setRole(null); setPhase('pin'); setDigits(['', '', '', '', '', '']) }}
@@ -296,10 +409,12 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
             <LogOut size={14} /> Exit demo
           </button>
         </div>
+        )}
       </aside>
 
       {/* Main */}
-      <main style={{ flex: 1, minWidth: 0, padding: '22px 26px 40px' }}>
+      {darkStyle}
+      <main className={contentClass} style={{ flex: 1, minWidth: 0, padding: '22px 26px 40px', background: mainBg }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18, gap: 12, flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontSize: 21, fontWeight: 900, color: TP_DARK }}>{meta.title}</div>

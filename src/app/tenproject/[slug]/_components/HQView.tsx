@@ -76,7 +76,7 @@ export default function HQView({ section, onSectionChange }: {
           { id: 'venues' as const, label: 'Venues', icon: MapPin },
           { id: 'coaches' as const, label: 'Coaches', icon: ShieldCheck },
           { id: 'tenors' as const, label: 'TENORs', icon: Users },
-          { id: 'comms' as const, label: 'Comms', icon: Send },
+          { id: 'comms' as const, label: 'Communications', icon: Send },
           { id: 'social' as const, label: 'Social', icon: Share2 },
           { id: 'equipment' as const, label: 'Equipment', icon: Package },
           { id: 'settings' as const, label: 'Settings', icon: Settings },
