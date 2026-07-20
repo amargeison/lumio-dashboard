@@ -35,8 +35,7 @@ export default function EquipmentTab() {
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-        <SectionTitle sub="Everything across venues, school bags and welcome-pack stock — edit inline, restock in one click">Equipment & Kit</SectionTitle>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -50, marginBottom: 4, position: 'relative', zIndex: 1 }}>
         <button onClick={printKitList} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
           <Printer size={14} /> Print kit list
         </button>

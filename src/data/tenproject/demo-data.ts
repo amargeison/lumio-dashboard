@@ -200,6 +200,69 @@ export const NEWSLETTERS = [
   { id: 'n3', title: 'Week 4 — backhand week + Saturday sessions', status: 'sent', when: 'Mon', opens: '74% opened · 41% confirmed a session' },
 ]
 
+// ─── Full comms suite (Mailchimp-replacement) ───────────────────────────────
+export const COMMS_STATS_NL = [
+  { label: 'AVG OPEN RATE', value: '68%', sub: 'industry avg 37%' },
+  { label: 'AVG CLICK RATE', value: '31%', sub: 'industry avg 3%' },
+  { label: 'LIST SIZE', value: '121', sub: '+8 this month' },
+  { label: 'UNSUBSCRIBES', value: '0.3%', sub: 'last 90 days' },
+  { label: 'DELIVERABILITY', value: '99.1%', sub: 'bounce 0.9%' },
+]
+
+export interface CommsCampaign {
+  id: string; title: string; status: 'sent' | 'draft' | 'scheduled' | 'testing'
+  when: string; audience: string; sent?: number; openRate?: number; clickRate?: number
+  bounceRate?: number; unsub?: number; replies?: number; variant?: string
+}
+export const COMMS_CAMPAIGNS: CommsCampaign[] = [
+  { id: 'c1', title: 'Week 4 — backhand week + Saturday sessions', status: 'sent', when: 'Mon 09:00', audience: 'All families', sent: 121, openRate: 74, clickRate: 41, bounceRate: 1, unsub: 0, replies: 6 },
+  { id: 'c2', title: 'What a summer! Term wrap-up', status: 'sent', when: '15 Jul', audience: 'All families', sent: 118, openRate: 61, clickRate: 24, bounceRate: 2, unsub: 1, replies: 3 },
+  { id: 'c3', title: 'St Clement’s Sponsored Ball Hit — pledge now', status: 'sent', when: '8 Jul', audience: 'St Clement’s families', sent: 62, openRate: 69, clickRate: 38, bounceRate: 0, unsub: 0, replies: 2 },
+  { id: 'c4', title: 'A/B test — “We’re back!” vs “Your Sept sessions”', status: 'testing', when: 'sends Thu 17:00', audience: 'All families', variant: 'Variant A leading · 63% vs 57% open' },
+  { id: 'c5', title: 'September restart — venues & dates', status: 'draft', when: 'scheduled w/c 1 Sept', audience: 'All families' },
+]
+
+export const COMMS_TEMPLATES = [
+  { id: 't1', name: 'Weekly session confirmation', desc: 'Per-venue, auto-personalised', emoji: '📅' },
+  { id: 't2', name: 'Term welcome / restart', desc: 'Hero + venue finder + CTAs', emoji: '🎾' },
+  { id: 't3', name: 'Fundraising push', desc: 'Thermometer + donate button', emoji: '💷' },
+  { id: 't4', name: 'Sticker celebration', desc: 'Progress + share prompt', emoji: '🌟' },
+  { id: 't5', name: 'School / governor update', desc: 'Impact stats for heads', emoji: '📊' },
+  { id: 't6', name: 'Blank — drag & drop', desc: 'Start from scratch', emoji: '✏️' },
+]
+
+export interface CommsAudience {
+  id: string; name: string; count: number; growth?: string; desc: string
+  email: number; sms: number; app: number  // % reachable/opted-in per channel
+}
+export const COMMS_AUDIENCES: CommsAudience[] = [
+  { id: 'all', name: 'All families', count: 121, growth: '+8 this month', desc: 'Every activated household, term-time', email: 96, sms: 71, app: 88 },
+  { id: 'kingsmead', name: 'Kingsmead families', count: 34, desc: 'Linked to the Saturday venue', email: 97, sms: 74, app: 91 },
+  { id: 'oakridge', name: 'Oakridge Primary', count: 58, desc: 'Current in-school programme', email: 95, sms: 69, app: 90 },
+  { id: 'tenors', name: 'TENOR volunteers', count: 7, desc: 'Weekend session leads', email: 100, sms: 100, app: 100 },
+  { id: 'lapsed', name: 'Lapsed families', count: 23, desc: 'No weekend attendance 4+ weeks — win-back', email: 91, sms: 65, app: 78 },
+  { id: 'highintent', name: 'High-intent (not yet weekend)', count: 31, desc: 'Engaged in-app, no weekend session yet', email: 94, sms: 68, app: 96 },
+  { id: 'schools', name: 'School leads', count: 12, desc: 'Heads & PE leads — B2B pipeline', email: 100, sms: 0, app: 0 },
+]
+
+export interface CommsJourney {
+  id: string; name: string; trigger: string; steps: string[]; active: boolean; inJourney: number
+}
+export const COMMS_JOURNEYS: CommsJourney[] = [
+  { id: 'j1', name: 'New family welcome series', trigger: 'On registration', steps: ['Welcome + what to expect (instant)', 'Your first session details (day 1)', 'Meet your coach (day 3)', 'How the booklet works (day 7)'], active: true, inJourney: 14 },
+  { id: 'j2', name: 'Weekend conversion nudge', trigger: 'Reached in school, no weekend visit by wk3', steps: ['“Try it together this Saturday” (wk3)', 'Reminder + map (wk4)', 'What other families say (wk5)'], active: true, inJourney: 31 },
+  { id: 'j3', name: 'Win-back', trigger: 'No attendance for 4 weeks', steps: ['“We’ve missed you” (day 0)', 'This week’s session + skill (day 3)'], active: true, inJourney: 23 },
+  { id: 'j4', name: 'Fundraising supporter journey', trigger: 'On donation', steps: ['Instant thank-you + receipt', 'Milestone update as target nears', '“We did it!” on unlock'], active: false, inJourney: 0 },
+]
+
+export const COMMS_EVENT_AUTOS = [
+  { id: 'a1', label: 'Weekly session confirmations', desc: 'Mon + Thu in term time — each family gets THEIR venue only', meta: 'Last run Mon 09:00 · 121 sent · 74% opened' },
+  { id: 'a2', label: 'Sticker notifications', desc: 'Parent notified the evening a Success Sticker is awarded', meta: '34 sent this week' },
+  { id: 'a3', label: 'Session change alerts', desc: 'Cancelled/moved → instant push + SMS fallback + calendar update', meta: 'Last fired 14 Jun (rain, Bramley)' },
+  { id: 'a4', label: 'Register chasing', desc: 'Missing register at 6pm → TENOR lead + HQ nudged', meta: 'Fired Sat (Bramley Green) — resolved' },
+  { id: 'a5', label: 'Birthday & milestone messages', desc: 'A little message on a child’s birthday and on programme completion', meta: '5 queued this week' },
+]
+
 // ─── Social media (mapped from the tennis Media & Content module) ───────────
 export const SOCIAL_STATS = [
   { platform: 'Instagram', handle: '@tenprojectuk', followers: '4.8K', delta: '+6.2% vs last month' },
@@ -208,12 +271,40 @@ export const SOCIAL_STATS = [
   { platform: 'X / Twitter', handle: '@tenprojectuk', followers: '2.2K', delta: '+0.8% vs last month' },
 ]
 
-export const SOCIAL_QUEUE = [
-  { id: 's1', when: 'Today 17:00', platform: 'IG', status: 'scheduled', text: 'Backhand week at Oakridge! 58 children, two hands on the grip, zero swings missed (well, almost). LEARN. PLAY. TOGETHER. 🎾 #tenproject', media: true },
-  { id: 's2', when: 'Sat 15:30', platform: 'FB', status: 'scheduled', text: 'Saturday = family session day. Kingsmead Rec, 1.30pm, everything provided, everyone welcome — scan in at the gate and play. #tenproject', media: true },
-  { id: 's3', when: 'Sun 18:00', platform: 'IG', status: 'draft', text: 'Sticker of the week 🌟 — the moment a first backhand clears the net. Booklet out, sticker in. (Shared with family consent.)', media: false },
-  { id: 's4', when: 'Mon 09:00', platform: 'X', status: 'needs approval', text: 'St Clement’s is £410 from unlocking match funding for their 2026/27 programme. Local businesses — the Sponsored Ball Hit on 10 Oct has your name on it.', media: false },
+export interface SocialPost {
+  id: string; when: string; platform: 'IG' | 'FB' | 'X' | 'YT'
+  status: 'scheduled' | 'draft' | 'needs approval'
+  text: string; media: 'photo' | 'video' | 'carousel' | 'none'; hue: number
+}
+export const SOCIAL_QUEUE: SocialPost[] = [
+  { id: 's1', when: 'Today 17:00', platform: 'IG', status: 'scheduled', text: 'Backhand week at Oakridge! 58 children, two hands on the grip, zero swings missed (well, almost). LEARN. PLAY. TOGETHER. 🎾 #tenproject', media: 'photo', hue: 8 },
+  { id: 's2', when: 'Sat 15:30', platform: 'FB', status: 'scheduled', text: 'Saturday = family session day. Kingsmead Rec, 1.30pm, everything provided, everyone welcome — scan in at the gate and play. #tenproject', media: 'carousel', hue: 150 },
+  { id: 's3', when: 'Sun 11:00', platform: 'YT', status: 'scheduled', text: '60 seconds of the Ten Project Festival — every child a certificate, every family on court. 🎾', media: 'video', hue: 350 },
+  { id: 's4', when: 'Sun 18:00', platform: 'IG', status: 'draft', text: 'Sticker of the week 🌟 — the moment a first backhand clears the net. Booklet out, sticker in. (Shared with family consent.)', media: 'photo', hue: 40 },
+  { id: 's5', when: 'Mon 09:00', platform: 'X', status: 'needs approval', text: 'St Clement’s is £410 from unlocking match funding for their 2026/27 programme. Local businesses — the Sponsored Ball Hit on 10 Oct has your name on it.', media: 'none', hue: 210 },
 ]
+
+export interface SocialPublished {
+  id: string; when: string; platform: 'IG' | 'FB' | 'X' | 'YT'; text: string; media: 'photo' | 'video' | 'carousel'; hue: number
+  reach: number; likes: number; comments: number; shares: number; saves: number; clicks: number; top?: boolean
+}
+export const SOCIAL_PUBLISHED: SocialPublished[] = [
+  { id: 'p1', when: 'Wed 18:00', platform: 'IG', text: 'What a summer! 950+ family visits, 100% would recommend us. Thank you for playing together. 🎾', media: 'carousel', hue: 8, reach: 4820, likes: 612, comments: 44, shares: 38, saves: 71, clicks: 190, top: true },
+  { id: 'p2', when: 'Sat 20:00', platform: 'FB', text: 'Today at Kingsmead — 19 families, one very determined rally. See you next Saturday!', media: 'photo', hue: 150, reach: 2140, likes: 188, comments: 22, shares: 14, saves: 9, clicks: 63 },
+  { id: 'p3', when: 'Thu 12:00', platform: 'YT', text: '45 seconds: how we teach the backhand to 5-year-olds (spoiler: balloons).', media: 'video', hue: 350, reach: 1310, likes: 96, comments: 11, shares: 7, saves: 18, clicks: 210 },
+  { id: 'p4', when: 'Tue 09:00', platform: 'IG', text: 'Sticker moment 🌟 first backhand over the net. That face is the whole programme.', media: 'photo', hue: 40, reach: 1890, likes: 274, comments: 19, shares: 12, saves: 33, clicks: 41 },
+]
+
+export const SOCIAL_GROWTH = [ // total followers across channels, last 8 weeks
+  { w: 'W1', n: 10200 }, { w: 'W2', n: 10480 }, { w: 'W3', n: 10910 }, { w: 'W4', n: 11250 },
+  { w: 'W5', n: 11640 }, { w: 'W6', n: 12080 }, { w: 'W7', n: 12520 }, { w: 'W8', n: 12900 },
+]
+
+export const SOCIAL_BEST_TIMES: Record<string, string> = {
+  IG: 'Best time: Sun 11am & Wed 6pm', FB: 'Best time: Sat 3pm', X: 'Best time: Mon 9am', YT: 'Best time: Sun 11am',
+}
+
+export const SOCIAL_HASHTAGS = ['#tenproject', '#LearnPlayTogether', '#SchoolTennis', '#FamilyTennis', '#FreeTennis', '#GrassrootsTennis', '#PrimaryPE', '#ActiveFamilies', '#CommunityTennis', '#Wimbledon']
 
 export const SOCIAL_AI_CAPTIONS = [
   'Week 4 = BACKHAND week 🎾 Two hands, favourite hand at the bottom, swing low to high. 58 children at Oakridge nailed it today — see you Saturday at Kingsmead, 1.30pm. Everything provided. #tenproject #LearnPlayTogether',
@@ -404,6 +495,15 @@ export const SCHOOL_INSIGHTS = {
     { q: 'It has been wonderful to see the children’s confidence develop in all-round school life as the weeks progressed — and it gave me excellent ideas for my own PE lessons.', who: 'Miss Howard, Year 2 teacher' },
     { q: 'The children have absolutely loved it. The lessons are fully inclusive and the games are exciting and motivating!', who: 'Parent survey' },
   ],
+  // How this school compares — your school vs the Ten Project average vs the national baseline
+  benchmarks: [
+    { metric: 'Session attendance', you: 93, programme: 91, national: 88, unit: '%', note: 'vs your school’s PE average' },
+    { metric: 'Girls taking part', you: 49, programme: 48, national: 42, unit: '%', note: 'girls as a share of participants' },
+    { metric: 'Meeting 60 active mins/day', you: 41, programme: 33, national: 20, unit: '%', note: 'CMO guideline — measured start vs end' },
+    { metric: 'Family engagement', you: 58, programme: 46, national: 12, unit: '%', note: 'households active in the parent app' },
+  ],
+  distanceTravelled: { start: 20, end: 41, label: 'children meeting the CMO 60-active-minutes guideline' },
+  attendanceCompare: { you: 93, schoolPE: 88, delta: 5 },
 }
 
 // ─── Coach stats, schedule & resources ──────────────────────────────────────

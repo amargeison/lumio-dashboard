@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Sparkles, Calendar, PoundSterling, Share2, CheckCircle, X, BarChart3, Download, Award, Users, LineChart } from 'lucide-react'
+import { Sparkles, Calendar, PoundSterling, Share2, CheckCircle, X, BarChart3, Download, LineChart } from 'lucide-react'
 import { Card, SectionTitle, Pill, Thermometer } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
 import SchoolInsights from './SchoolInsights'
@@ -40,8 +40,6 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
     }
     setShowPack(false)
   }
-  const maxWeekly = Math.max(...SCHOOL_STATS.weeklyAttendance)
-  const maxYear = Math.max(...SCHOOL_STATS.yearGroups.map(y => y.children))
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -66,105 +64,67 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
       {/* ── INSIGHTS (governor-grade impact dashboard) ── */}
       {tab === 'insights' && <SchoolInsights />}
 
-      {/* ── OUR PROGRAMME (results to share with governors / sponsors / parents) ── */}
+      {/* ── OUR PROGRAMME (operational status — what's happening & what's next) ── */}
       {tab === 'programme' && (<>
+        {/* Status banner */}
         <Card style={{ background: TP_DARK, border: 'none' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
             <div>
-              <div style={{ color: '#fff', fontSize: 16, fontWeight: 900 }}>Your Ten Project results — {SCHOOL_STATS.term}</div>
-              <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 4 }}>
-                Evidence for governors, sponsors and parents — and the case for funding 2026/27.
+              <div style={{ color: TP_RED, fontSize: 11, fontWeight: 800, letterSpacing: 1.5 }}>PROGRAMME STATUS</div>
+              <div style={{ color: '#fff', fontSize: 18, fontWeight: 900, marginTop: 5 }}>Completed 2025/26 · fundraising to return for 2026/27</div>
+              <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 5, maxWidth: 560 }}>
+                Your ten weeks ran last summer and finished with the Festival. Because direct PE &amp; Sport Premium funding has ended, your 2026/27 programme is now being fundraised — you’re {Math.round((CAMPAIGN.raised / CAMPAIGN.target) * 100)}% of the way there.
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button onClick={() => openFunderDoc('governor-pack')} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                <Download size={13} /> Governor pack (PDF)
-              </button>
-              <button onClick={() => openFunderDoc('newsletter-snippet')} style={{ background: '#fff', color: TP_DARK, border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-                <Share2 size={13} /> Parent newsletter snippet
-              </button>
-            </div>
+            <button onClick={() => setTab('fundraising')} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 16px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <PoundSterling size={14} /> Go to fundraising
+            </button>
+          </div>
+          <div style={{ background: '#fff', borderRadius: 10, padding: '12px 14px', marginTop: 14 }}>
+            <Thermometer raised={CAMPAIGN.raised} target={CAMPAIGN.target} height={14} />
           </div>
         </Card>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-          {SCHOOL_STATS.headline.map(h => (
-            <Card key={h.label} style={{ padding: '14px 16px' }}>
-              <div style={{ fontSize: 24, fontWeight: 900, color: TP_RED }}>{h.value}</div>
-              <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2, fontWeight: 600 }}>{h.label}</div>
-            </Card>
-          ))}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        {/* Where you are — the operational snapshot */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 16 }}>
           <Card>
-            <SectionTitle sub="% attendance by week — from the digital registers, not estimates">Weekly attendance</SectionTitle>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 110 }}>
-              {SCHOOL_STATS.weeklyAttendance.map((v, i) => (
-                <div key={i} style={{ flex: 1, textAlign: 'center' }}>
-                  <div style={{ height: (v / maxWeekly) * 88, background: i === 9 ? TP_RED : '#E8B4B3', borderRadius: '4px 4px 0 0' }} title={`${v}%`} />
-                  <div style={{ fontSize: 9, color: '#8A847E', marginTop: 3, fontWeight: 700 }}>W{i + 1}</div>
+            <SectionTitle sub="Your programme at a glance — the operational picture">Your programme</SectionTitle>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {([
+                ['Term delivered', SCHOOL_STATS.term.replace(' (completed)', ''), 'green'],
+                ['Cohorts', 'Y2, Y3 and Y4 — 62 children across 3 classes', 'grey'],
+                ['Coach', 'Lucy Tran (LTA Level 2)', 'grey'],
+                ['Linked weekend venue', 'Kingsmead Rec Ground · Sat 1.30pm — 11 families continued', 'red'],
+                ['Equipment', 'Full set retained by the school (good condition, checked 30 Jun)', 'grey'],
+                ['Next step', 'Reach the fundraising target → programme flips to CONFIRMED and week 1 is scheduled', 'red'],
+              ] as [string, string, 'green' | 'grey' | 'red'][]).map(([k, v, tone]) => (
+                <div key={k} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>
+                  <div style={{ width: 150, flexShrink: 0, fontSize: 11.5, fontWeight: 800, color: '#8A847E' }}>{k}</div>
+                  <div style={{ flex: 1, fontSize: 12.5, color: TP_DARK }}>{v}</div>
                 </div>
               ))}
-            </div>
-            <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 8 }}>
-              Attendance held above 90% all term — week 10 (the Festival) was the best-attended session of the year.
             </div>
           </Card>
           <Card>
-            <SectionTitle sub="Participation by year group + skills earned across the six booklet areas">Who took part & what they learnt</SectionTitle>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-              {SCHOOL_STATS.yearGroups.map(y => (
-                <div key={y.year} style={{ flex: 1, textAlign: 'center', background: '#F7F5F2', borderRadius: 10, padding: '10px 6px' }}>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: TP_RED }}>{y.children}</div>
-                  <div style={{ fontSize: 10.5, color: '#6B6560', fontWeight: 700 }}>{y.year}</div>
-                  <div style={{ background: '#EFEBE6', borderRadius: 999, height: 5, marginTop: 6 }}>
-                    <div style={{ width: `${(y.children / maxYear) * 100}%`, height: '100%', background: TP_RED, borderRadius: 999 }} />
-                  </div>
-                </div>
-              ))}
+            <SectionTitle sub="Share your results — one click">Quick actions</SectionTitle>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <button onClick={() => setTab('insights')} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#FDE8E8', color: TP_DARK, border: 'none', borderRadius: 10, padding: '12px 13px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', textAlign: 'left' }}>
+                <LineChart size={15} style={{ color: TP_RED }} /> Open the full impact dashboard →
+              </button>
+              <button onClick={() => openFunderDoc('governor-pack')} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#F7F5F2', color: TP_DARK, border: 'none', borderRadius: 10, padding: '12px 13px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', textAlign: 'left' }}>
+                <Download size={15} style={{ color: TP_RED }} /> Governor pack (PDF)
+              </button>
+              <button onClick={() => openFunderDoc('newsletter-snippet')} style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#F7F5F2', color: TP_DARK, border: 'none', borderRadius: 10, padding: '12px 13px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', textAlign: 'left' }}>
+                <Share2 size={15} style={{ color: TP_RED }} /> Parent newsletter snippet
+              </button>
             </div>
-            <div style={{ display: 'grid', gap: 5 }}>
-              {SCHOOL_STATS.stickerAreas.map(a => (
-                <div key={a.area} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 150, fontSize: 10.5, fontWeight: 700, color: TP_DARK, flexShrink: 0 }}>{a.area}</div>
-                  <div style={{ flex: 1, background: '#EFEBE6', borderRadius: 999, height: 8 }}>
-                    <div style={{ width: `${a.pct}%`, height: '100%', background: '#F0524F', borderRadius: 999 }} />
-                  </div>
-                  <div style={{ width: 34, fontSize: 10.5, fontWeight: 800, color: '#6B6560', textAlign: 'right' }}>{a.pct}%</div>
-                </div>
-              ))}
+            <div style={{ fontSize: 11, color: '#8A847E', marginTop: 10 }}>
+              The numbers, charts and wellbeing evidence live in <strong>Insights</strong> — this page is your live status and next steps.
             </div>
           </Card>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Card>
-            <SectionTitle sub="What the programme delivered against the PE National Curriculum">
-              <Award size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Curriculum outcomes
-            </SectionTitle>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-              {SCHOOL_STATS.outcomes.map(o => <Pill key={o} tone="grey">{o}</Pill>)}
-            </div>
-            <div style={{ fontSize: 12, color: '#5B554F', marginTop: 12, background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>
-              <Users size={13} style={{ verticalAlign: '-2px', marginRight: 6 }} />
-              11 families continued to free weekend community sessions — the school-community link in action.
-            </div>
-          </Card>
-          <Card>
-            <SectionTitle sub="Collected through the parent app, publish-consented">What families said</SectionTitle>
-            <div style={{ display: 'grid', gap: 9 }}>
-              {SCHOOL_STATS.quotes.map((q, i) => (
-                <div key={i} style={{ background: '#FDE8E8', borderRadius: 10, padding: '11px 13px' }}>
-                  <div style={{ fontSize: 12.5, fontStyle: 'italic', color: TP_DARK, lineHeight: 1.5 }}>“{q.q}”</div>
-                  <div style={{ fontSize: 11, color: TP_RED, fontWeight: 800, marginTop: 5 }}>— {q.who}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        <UpcomingCalendar role="school" />
+        <UpcomingCalendar role="school" title="Key dates" sub="Fundraising events and — once confirmed — your programme sessions land here automatically" />
       </>)}
 
       {/* ── FUNDRAISING ── */}
