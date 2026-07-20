@@ -1,11 +1,13 @@
 // Server-only calendar sync engine for the Tennis Coach portal.
-// Pushes Lumio bookings into the coach's connected Google / Microsoft calendars and
-// keeps the event ids in coach_calendar_links so updates + deletes propagate.
-// iCloud (CalDAV) is stubbed for a later increment.
+// Pushes Lumio bookings into the coach's connected Google / Microsoft / Apple
+// iCloud calendars and keeps the event ids in coach_calendar_links so updates +
+// deletes propagate. Google/Microsoft use OAuth tokens; iCloud uses CalDAV with
+// the coach's app-specific password (see ./caldav).
 
-import { getFreshAccessToken, serviceClient, type Provider } from './oauth'
+import { getFreshAccessToken, getConnection, serviceClient, type Provider } from './oauth'
+import { icloudPutEvent, icloudDeleteEvent, icloudBusy } from './caldav'
 
-const SYNC_PROVIDERS: Provider[] = ['google', 'microsoft']
+const SYNC_PROVIDERS: Provider[] = ['google', 'microsoft', 'icloud']
 // Lumio's founding coaches are UK-based; event times are interpreted in this zone.
 // (Make this per-coach when we go beyond the UK.)
 const TZ = 'Europe/London'
@@ -90,6 +92,15 @@ export async function syncBooking(coachId: string, e: CalEvent): Promise<{ synce
   const existing = Object.fromEntries((await getLinks(coachId, e.bookingId)).map(l => [l.provider, l.external_event_id]))
   const synced: Provider[] = []
   for (const provider of SYNC_PROVIDERS) {
+    if (provider === 'icloud') {
+      const conn = await getConnection(coachId, 'icloud')
+      if (!conn?.app_password || !conn.caldav_url || !conn.email_address) continue
+      const href = await icloudPutEvent(conn.caldav_url, conn.email_address, conn.app_password,
+        { uid: `lumio-${e.bookingId}`, title: e.title, start: e.start, end: e.end, location: e.location, description: e.description },
+        existing['icloud'])
+      if (href) { await saveLink(coachId, e.bookingId, 'icloud', href); synced.push('icloud') }
+      continue
+    }
     const token = await getFreshAccessToken(coachId, provider)
     if (!token) continue
     const extId = provider === 'google'
@@ -151,6 +162,14 @@ export async function getBusyTimes(coachId: string, fromISO: string, toISO: stri
     } catch { /* skip on error */ }
   }
 
+  const iConn = await getConnection(coachId, 'icloud')
+  if (iConn?.app_password && iConn.caldav_url && iConn.email_address) {
+    try {
+      const busy = await icloudBusy(iConn.caldav_url, iConn.email_address, iConn.app_password, fromISO, toISO)
+      for (const b of busy) all.push(b)
+    } catch { /* skip on error */ }
+  }
+
   return mergeIntervals(all)
 }
 
@@ -158,6 +177,11 @@ export async function getBusyTimes(coachId: string, fromISO: string, toISO: stri
 export async function unsyncBooking(coachId: string, bookingId: string): Promise<void> {
   const links = await getLinks(coachId, bookingId)
   for (const l of links) {
+    if (l.provider === 'icloud') {
+      const conn = await getConnection(coachId, 'icloud')
+      if (conn?.app_password && conn.email_address) await icloudDeleteEvent(l.external_event_id, conn.email_address, conn.app_password)
+      continue
+    }
     const token = await getFreshAccessToken(coachId, l.provider)
     if (!token) continue
     if (l.provider === 'google') await googleDelete(token, l.external_event_id)

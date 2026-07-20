@@ -1,9 +1,10 @@
 // Server-only "send as the coach" helper. Routes an outbound email through the
-// coach's connected Gmail / Microsoft mailbox so it arrives from their own
-// address. Returns { ok:false } when no connected mailbox can send — the caller
-// then falls back to Resend.
+// coach's connected Gmail / Microsoft / iCloud mailbox so it arrives from their
+// own address (iCloud via SMTP; the others via API). Returns { ok:false } when
+// no connected mailbox can send — the caller then falls back to Resend.
 
 import { getConnection, getFreshAccessToken, type Provider } from './oauth'
+import { sendMailSmtp } from './smtp'
 
 export type OutboundMail = { to: string; subject: string; html: string; replyTo?: string; bcc?: string }
 
@@ -47,15 +48,29 @@ async function sendMicrosoft(token: string, msg: OutboundMail): Promise<boolean>
   return res.ok || res.status === 202
 }
 
-// Try Google first, then Microsoft. Returns the provider that sent, or ok:false.
+// iCloud SMTP submission endpoint (STARTTLS on 587). Same app-specific password
+// the coach uses for CalDAV.
+const ICLOUD_SMTP = { host: 'smtp.mail.me.com', port: 587 }
+
+// Try Google, then Microsoft, then iCloud. Returns the provider that sent, or ok:false.
 export async function sendAsCoach(coachId: string, msg: OutboundMail): Promise<{ ok: boolean; provider?: Provider; from?: string }> {
-  for (const provider of ['google', 'microsoft'] as Provider[]) {
+  for (const provider of ['google', 'microsoft', 'icloud'] as Provider[]) {
     const conn = await getConnection(coachId, provider)
     if (!conn || !conn.capabilities?.includes('send_email')) continue
-    const token = await getFreshAccessToken(coachId, provider)
-    if (!token) continue
     const from = conn.email_address || undefined
     try {
+      if (provider === 'icloud') {
+        if (!conn.app_password || !conn.email_address) continue
+        const r = await sendMailSmtp({
+          ...ICLOUD_SMTP,
+          user: conn.email_address, pass: conn.app_password, from: conn.email_address,
+          to: msg.to, subject: msg.subject, html: msg.html, replyTo: msg.replyTo, bcc: msg.bcc,
+        })
+        if (r.ok) return { ok: true, provider, from: from || undefined }
+        continue
+      }
+      const token = await getFreshAccessToken(coachId, provider)
+      if (!token) continue
       const ok = provider === 'google' ? await sendGoogle(token, from, msg) : await sendMicrosoft(token, msg)
       if (ok) return { ok: true, provider, from: from || undefined }
     } catch { /* try the next connected mailbox */ }
@@ -101,7 +116,7 @@ export async function fetchInboundGmail(coachId: string): Promise<InboundMail[]>
 
 // Whether the coach has any mailbox capable of send-as (cheap pre-check).
 export async function hasConnectedMailbox(coachId: string): Promise<boolean> {
-  for (const provider of ['google', 'microsoft'] as Provider[]) {
+  for (const provider of ['google', 'microsoft', 'icloud'] as Provider[]) {
     const conn = await getConnection(coachId, provider)
     if (conn?.capabilities?.includes('send_email')) return true
   }
