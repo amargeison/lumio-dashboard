@@ -1031,6 +1031,115 @@ export const VENUE_DETAILS: Record<string, TpVenueDetail> = {
   },
 }
 
+// ─── PE & School Sport Partnership Network (PESSPN) readiness ────────────────
+// Indicative framework: DfE confirms conditions of grant Sept 2026 and appoints
+// the national delivery partner Nov 2026, so exact qualifying criteria are not
+// yet published. This maps the published direction + the old PE & Sport
+// Premium's five key indicators onto what Ten Project's data already evidences.
+export interface PesspnCriterion { id: string; label: string; desc: string }
+export const PESSPN_CRITERIA: PesspnCriterion[] = [
+  { id: 'data', label: 'Verifiable participation data', desc: 'Every child, every session — from digital registers, not estimates' },
+  { id: 'regular', label: 'Regular activity sustained', desc: 'Attendance held across the term (target 85%+)' },
+  { id: 'priority', label: 'Priority-group reach', desc: 'Girls, SEND, FSM and previously-inactive children engaged' },
+  { id: 'cpd', label: 'Staff confidence & CPD', desc: 'Teachers upskilled to sustain delivery after the coach leaves' },
+  { id: 'broader', label: 'Broader offer & competition', desc: 'Festival, talent pathways and weekend sessions beyond the core' },
+  { id: 'wholeschool', label: 'Whole-school & family engagement', desc: 'Parents active and the PE profile raised across the school' },
+  { id: 'impact', label: 'Impact evidence & reporting', desc: 'Funder-ready impact data produced automatically' },
+  { id: 'partner', label: 'Active delivery partnership', desc: 'Working with an accredited provider (Ten Project)' },
+]
+
+export type PesspnStatus = 'met' | 'progress' | 'gap'
+export type PesspnVerdict = 'on-track' | 'nearly' | 'at-risk'
+export interface SchoolReadiness {
+  verdict: PesspnVerdict; score: number; summary: string
+  items: Record<string, { status: PesspnStatus; note: string }>
+}
+
+const R = (status: PesspnStatus, note: string) => ({ status, note })
+export const SCHOOL_READINESS: Record<string, SchoolReadiness> = {
+  oakridge: {
+    verdict: 'on-track', score: 86, summary: 'Strong across the board — live registers, high attendance and staff hand-over underway. Keep the weekend conversion climbing.',
+    items: {
+      data: R('met', 'Named-child registers live, 94% capture'),
+      regular: R('met', '94% attendance across the term so far'),
+      priority: R('progress', 'Girls 49%; SEND + FSM tracked, reach growing'),
+      cpd: R('progress', 'Mrs Patel (PE lead) leading warm-ups from week 5'),
+      broader: R('met', 'Festival booked; weekend venue linked; pathway live'),
+      wholeschool: R('progress', '62% parent activation — pushing toward 80%'),
+      impact: R('met', 'Impact dashboard + governor pack generated'),
+      partner: R('met', 'Delivered by Ten Project (LTA-accredited)'),
+    },
+  },
+  willowbrook: {
+    verdict: 'nearly', score: 78, summary: 'Best delivery in the programme (26% conversion) — but 2026/27 is unfunded. Reaching the fundraising target secures continuity, the one gap to qualifying.',
+    items: {
+      data: R('met', 'Full registers retained; 71% activation'),
+      regular: R('met', '92% attendance, strong retention'),
+      priority: R('met', 'Best priority-group reach in the programme'),
+      cpd: R('met', 'Two teachers trained to co-deliver'),
+      broader: R('met', 'Festival delivered; 26% to weekend sessions'),
+      wholeschool: R('met', 'High family engagement, PE profile raised'),
+      impact: R('met', 'Full impact evidence available'),
+      partner: R('gap', 'Continuity at risk — unfunded for 2026/27'),
+    },
+  },
+  stclements: {
+    verdict: 'nearly', score: 72, summary: 'Excellent 2025/26 evidence base — the fundraising campaign is what carries it into the qualifying year. On track once the target is hit.',
+    items: {
+      data: R('met', '2025/26 registers complete'),
+      regular: R('met', '93% attendance last term'),
+      priority: R('progress', 'Good reach; refresh demographics at re-registration'),
+      cpd: R('progress', 'PE lead engaged; refresher needed for new year'),
+      broader: R('met', 'Festival delivered; weekend link established'),
+      wholeschool: R('progress', '58% activation — grow with the campaign'),
+      impact: R('met', 'Governor pack + impact dashboard ready'),
+      partner: R('progress', 'Fundraising to re-engage Ten Project for 2026/27'),
+    },
+  },
+  meridianpark: {
+    verdict: 'at-risk', score: 34, summary: 'Confirmed for September but no delivery data yet. Readiness will build fast once registers and parent activation go live in week 1 — the platform captures it from day one.',
+    items: {
+      data: R('gap', 'Programme starts Sept — no data yet'),
+      regular: R('gap', 'Not started'),
+      priority: R('progress', 'Class lists + consents being collected'),
+      cpd: R('gap', 'Teacher hand-over planned from week 5'),
+      broader: R('progress', 'Weekend venue (Elmwood) linked ready'),
+      wholeschool: R('gap', 'Parent activation from welcome pack, week 1'),
+      impact: R('gap', 'Reporting begins with delivery'),
+      partner: R('met', 'Confirmed with Ten Project (Tom Hale)'),
+    },
+  },
+  harrowfield: {
+    verdict: 'at-risk', score: 12, summary: 'Enquiry stage, no budget. The fundraising route is the way in — until a programme runs there is nothing to evidence for the Network.',
+    items: {
+      data: R('gap', 'No programme running'),
+      regular: R('gap', 'Not started'),
+      priority: R('gap', 'Not started'),
+      cpd: R('gap', 'Not started'),
+      broader: R('gap', 'Not started'),
+      wholeschool: R('gap', 'Not started'),
+      impact: R('gap', 'Nothing to report yet'),
+      partner: R('progress', 'Bring-to-your-area enquiry; fundraising offered'),
+    },
+  },
+}
+
+export const PESSPN_TIMELINE: { when: string; label: string; done: boolean }[] = [
+  { when: '2025/26', label: 'Final year of direct PE & Sport Premium payments to schools', done: true },
+  { when: 'Jul 2026', label: 'Premium spending return due (31 Jul)', done: true },
+  { when: 'Sept 2026', label: 'DfE publishes conditions of grant for the new Network', done: false },
+  { when: '2026/27', label: '£150m transitional payment (median school ~£8,000)', done: false },
+  { when: 'Nov 2026', label: 'National delivery partner appointed', done: false },
+  { when: 'Apr 2027', label: 'PE & School Sport Partnership Network delivery begins', done: false },
+]
+
+export const PESSPN_GUIDANCE: { title: string; source: string; date: string; url: string }[] = [
+  { title: 'PE & sport premium: conditions of grant 2025 to 2026', source: 'GOV.UK / DfE', date: 'updated 2026', url: 'https://www.gov.uk/guidance/pe-and-sport-premium-conditions-of-grant' },
+  { title: 'PE & School Sport Partnership Network — announcement', source: 'GOV.UK / DfE', date: 'May 2026', url: 'https://www.gov.uk/government/news' },
+  { title: 'Primary PE and sport premium: spending guidance', source: 'GOV.UK / DfE', date: '2025/26', url: 'https://www.gov.uk/guidance/pe-and-sport-premium-for-primary-schools' },
+  { title: 'School Games & Active Partnerships network', source: 'Sport England', date: 'ongoing', url: 'https://www.sportengland.org' },
+]
+
 export const TP_VENUE_READINESS = [
   { venue: 'Kingsmead Rec Ground', tenors: 3, min: 2, ready: true },
   { venue: 'Bramley Green Courts', tenors: 2, min: 2, ready: true },

@@ -6,6 +6,7 @@
 import React, { useState } from 'react'
 import { ArrowLeft, School, Phone, Mail, ShieldCheck, Package, PoundSterling, MapPin, TrendingUp, ClipboardList } from 'lucide-react'
 import { Card, SectionTitle, Pill, Thermometer } from './ui'
+import { SchoolReadinessCard } from './SportNetworkTab'
 import { TP_RED, TP_DARK, SCHOOLS, SCHOOL_DETAILS, type DemoSchool } from '@/data/tenproject/demo-data'
 
 const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> = {
@@ -128,6 +129,9 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
             <Thermometer raised={d.fundraising.raised} target={d.fundraising.target} height={16} />
           </Card>
         )}
+
+        {/* PE & School Sport Partnership Network readiness */}
+        <SchoolReadinessCard schoolId={selected.id} />
 
         {/* Notes + actions */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
