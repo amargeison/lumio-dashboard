@@ -9,7 +9,7 @@
 // Standard portal zoom 0.9 — sidebar compensates with calc(100vh / 0.9).
 
 import React, { use, useEffect, useRef, useState } from 'react'
-import { Lock, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp } from 'lucide-react'
+import { Lock, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp, Landmark } from 'lucide-react'
 import { TP_RED, TP_DARK, TP_BLACK, TP_PAPER } from '@/data/tenproject/demo-data'
 import HQView, { type HqTab } from './_components/HQView'
 import SchoolView, { type SchoolSection } from './_components/SchoolView'
@@ -51,6 +51,7 @@ const SECTION_HEADERS: Record<string, Record<string, { title: string; sub: strin
     comms: { title: 'Communications', sub: 'One inbox, newsletters and automations — replacing your email tools' },
     social: { title: 'Social', sub: 'Plan, schedule, publish and measure across every channel' },
     equipment: { title: 'Equipment & Kit', sub: 'Everything across venues, school bags and welcome-pack stock — edit inline, restock in one click' },
+    network: { title: 'PE & School Sport Partnership Network', sub: 'Which schools are on track to qualify for the new funding — readiness, key dates and the latest DfE guidance, in one place' },
     settings: { title: 'Settings', sub: 'Organisation, branding, integrations, comms and data' },
   },
   school: {
@@ -320,6 +321,7 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
       ] },
       { group: 'OPERATIONS', items: [
         { id: 'equipment', label: 'Equipment & Kit', icon: Package },
+        { id: 'network', label: 'Sport Network', icon: Landmark },
         { id: 'settings', label: 'Settings', icon: Settings },
       ] },
     ]
