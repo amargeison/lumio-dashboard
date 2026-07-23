@@ -8,7 +8,7 @@ import type { Metadata } from 'next'
 // Not yet linked from the main nav.
 
 export const metadata: Metadata = {
-  title: 'Lumio Impact — deliver it, prove it, fund it',
+  title: 'Lumio Impact — run the programme, prove the impact, unlock the funding',
   description:
     'The platform for organisations delivering sport and activity into schools and communities. Digital registers become funder-grade impact evidence, a built-in fundraising engine keeps unfunded schools in, and a parent app ties it all together.',
 }
@@ -53,19 +53,18 @@ export default function ImpactPage() {
         @media (max-width: 820px) { .li-grid3, .li-grid2 { grid-template-columns: 1fr; } .li-h1 { font-size: 40px !important; } }
       `}</style>
 
-      {/* Hero */}
-      <section style={{ padding: '90px 0 70px', borderBottom: `1px solid ${BORDER}` }}>
-        <div className="li-wrap">
-          <div style={{ display: 'inline-block', background: `${PURPLE}22`, color: PURPLE_LIGHT, border: `1px solid ${PURPLE}55`, borderRadius: 999, padding: '6px 14px', fontSize: 12.5, fontWeight: 700, letterSpacing: 1 }}>
-            LUMIO IMPACT
-          </div>
-          <h1 className="li-h1" style={{ fontSize: 60, fontWeight: 900, lineHeight: 1.05, margin: '20px 0 18px', maxWidth: 820 }}>
-            Deliver it. Prove it. <span style={{ color: PURPLE_LIGHT }}>Fund it.</span>
+      {/* Hero — centred, matching the other lumiosports.com product pages */}
+      <section style={{ padding: '70px 0 66px', borderBottom: `1px solid ${BORDER}`, background: '#121C34' }}>
+        <div className="li-wrap" style={{ textAlign: 'center' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/lumio-impact-logo-web.png" alt="Lumio Impact" style={{ width: 'min(560px, 90%)', height: 'auto', display: 'block', margin: '0 auto 28px' }} />
+          <h1 className="li-h1" style={{ fontSize: 56, fontWeight: 900, lineHeight: 1.06, margin: '0 auto 18px', maxWidth: 860 }}>
+            Run the programme. Prove the impact. <span style={{ color: PURPLE_LIGHT }}>Unlock the funding.</span>
           </h1>
-          <p style={{ fontSize: 18, color: MUTED, maxWidth: 660, lineHeight: 1.6, margin: 0 }}>
+          <p style={{ fontSize: 18, color: MUTED, maxWidth: 680, lineHeight: 1.6, margin: '0 auto' }}>
             The platform for organisations delivering sport and activity into schools and communities. Your registers become funder-grade impact evidence, a built-in fundraising engine keeps unfunded schools in the game, and a parent app ties it all together — on your own brand.
           </p>
-          <div style={{ display: 'flex', gap: 12, marginTop: 30, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 12, marginTop: 30, flexWrap: 'wrap', justifyContent: 'center' }}>
             <Link href="/tenproject/demo" style={{ background: PURPLE, color: '#fff', borderRadius: 10, padding: '14px 24px', fontSize: 15, fontWeight: 800, textDecoration: 'none' }}>
               See it live in a demo →
             </Link>
@@ -73,7 +72,7 @@ export default function ImpactPage() {
               Talk to us
             </a>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 34 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 34, justifyContent: 'center' }}>
             {PILLS.map(p => (
               <span key={p} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 999, padding: '7px 15px', fontSize: 12.5, color: MUTED, fontWeight: 600 }}>{p}</span>
             ))}
