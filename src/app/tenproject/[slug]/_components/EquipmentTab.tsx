@@ -55,7 +55,10 @@ export default function EquipmentTab() {
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
           <SectionTitle sub="Tick what you need, then Source & order — the portal finds the supplier and drafts the order email">
-            Restock list — never miss anything
+            Restock list — never miss anything&nbsp;&nbsp;
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, verticalAlign: '2px', background: '#FCF1DC', color: '#9A6A0B', border: '1px solid #E8CD9A', borderRadius: 999, padding: '2px 9px', fontSize: 9.5, fontWeight: 900, letterSpacing: 0.5 }}>
+              ⏳ COMING SOON · V2
+            </span>
           </SectionTitle>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 11.5, color: '#8A847E', fontWeight: 700 }}>{ticked.length} selected</span>
