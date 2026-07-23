@@ -8,7 +8,7 @@ import type { Metadata } from 'next'
 // Not yet linked from the main nav.
 
 export const metadata: Metadata = {
-  title: 'Lumio Impact — run the programme, prove the impact, unlock the funding',
+  title: 'Lumio Impact — deliver it, prove it, fund it',
   description:
     'The platform for organisations delivering sport and activity into schools and communities. Digital registers become funder-grade impact evidence, a built-in fundraising engine keeps unfunded schools in, and a parent app ties it all together.',
 }
@@ -21,7 +21,6 @@ const CARD_ALT = '#111827'
 const BORDER = '#1E293B'
 const TEXT = '#F9FAFB'
 const MUTED = '#9CA3AF'
-const GREEN = '#34D399'
 
 const PILLS = ['Digital registers', 'Funder reporting', 'Fundraising engine', 'Parent app', 'Safeguarding', 'On your domain']
 
@@ -60,8 +59,8 @@ export default function ImpactPage() {
           <div style={{ display: 'inline-block', background: `${PURPLE}22`, color: PURPLE_LIGHT, border: `1px solid ${PURPLE}55`, borderRadius: 999, padding: '6px 14px', fontSize: 12.5, fontWeight: 700, letterSpacing: 1 }}>
             LUMIO IMPACT
           </div>
-          <h1 className="li-h1" style={{ fontSize: 56, fontWeight: 900, lineHeight: 1.05, margin: '20px 0 18px', maxWidth: 820 }}>
-            Run the programme. Prove the impact. <span style={{ color: PURPLE_LIGHT }}>Unlock the funding.</span>
+          <h1 className="li-h1" style={{ fontSize: 60, fontWeight: 900, lineHeight: 1.05, margin: '20px 0 18px', maxWidth: 820 }}>
+            Deliver it. Prove it. <span style={{ color: PURPLE_LIGHT }}>Fund it.</span>
           </h1>
           <p style={{ fontSize: 18, color: MUTED, maxWidth: 660, lineHeight: 1.6, margin: 0 }}>
             The platform for organisations delivering sport and activity into schools and communities. Your registers become funder-grade impact evidence, a built-in fundraising engine keeps unfunded schools in the game, and a parent app ties it all together — on your own brand.
@@ -149,34 +148,6 @@ export default function ImpactPage() {
                 <div style={{ fontSize: 13.5, color: MUTED, marginTop: 7, lineHeight: 1.55 }}>{a.desc}</div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Proof */}
-      <section style={{ padding: '64px 0' }}>
-        <div className="li-wrap">
-          <div style={{ fontSize: 12.5, fontWeight: 800, letterSpacing: 2, color: GREEN }}>PROVEN IN THE FIELD</div>
-          <h2 style={{ fontSize: 32, fontWeight: 900, margin: '10px 0 18px', maxWidth: 720 }}>Already running a real programme</h2>
-          <p style={{ fontSize: 16, color: MUTED, maxWidth: 720, lineHeight: 1.65 }}>
-            Lumio Impact is live with Ten Project — a schools-and-community tennis charity delivering free 10-week programmes in primary schools plus free weekend family sessions. The whole flow, end to end: registers, parent app, fundraising and funder-ready reporting.
-          </p>
-          <div className="li-grid3" style={{ marginTop: 26 }}>
-            {[
-              ['2,000+', 'children a week reached in curriculum time'],
-              ['91%', 'average attendance — from named-child registers'],
-              ['£4.70', 'social value returned per £1 spent'],
-            ].map(([n, l]) => (
-              <div key={l as string} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: '20px 22px' }}>
-                <div style={{ fontSize: 30, fontWeight: 900, color: GREEN }}>{n}</div>
-                <div style={{ fontSize: 13.5, color: MUTED, marginTop: 4 }}>{l}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 24 }}>
-            <Link href="/tenproject/demo" style={{ color: PURPLE_LIGHT, fontSize: 15, fontWeight: 800, textDecoration: 'none' }}>
-              Explore the live demo →
-            </Link>
           </div>
         </div>
       </section>
