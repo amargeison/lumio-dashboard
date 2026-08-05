@@ -6,7 +6,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
 import { useCoachProfile, saveCoachProfile, sb, currentCoachId } from '../_lib/coach-db'
-import { setSettings, resetSettings, getHeadProfile, setHeadProfile, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, MODULE_SECTIONS, setSectionOff, type AccentKey } from '../_lib/settings-store'
+import { setSettings, resetSettings, getHeadProfile, setHeadProfile, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, LIVE_DEFAULT_SETTINGS, MODULE_SECTIONS, setSectionOff, type AccentKey } from '../_lib/settings-store'
 import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-data'
 import { getAddedVenues } from '../_lib/venues-store'
 import { AddVenueModal } from './AddVenueModal'
@@ -132,7 +132,10 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
   // Per-area settings — persisted via the same localStorage store as the rest of
   // Settings (survives reload, applies across the portal). Each value reads from
   // the store (merged over defaults) and writes the full object back on change.
-  const profile = { ...DEFAULT_SETTINGS.profile, ...(s.profile || {}) }
+  // Seed every per-area block falls back to. The demo keeps its sample persona;
+  // a real academy falls back to blanks and fills from the coach's own profile.
+  const D = demo ? DEFAULT_SETTINGS : LIVE_DEFAULT_SETTINGS
+  const profile = { ...D.profile, ...(s.profile || {}) }
   // Canonical head-coach record — the same record the Coaches module renders,
   // so Settings → Head coach profile and the Coaches page can never disagree.
   // (Recomputed each render; useCoachSettings re-renders on any settings change.)
@@ -148,6 +151,8 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     if (realProfile.loading || !realProfile.display_name) return
     const patch: Record<string, any> = {}
     if (!s.coach || s.coach === COACH_ORG.coach) patch.coach = realProfile.display_name
+    // Same for the academy name — it comes from onboarding as brand_name.
+    if ((!s.academy || s.academy === COACH_ORG.academy) && realProfile.brand_name) patch.academy = realProfile.brand_name
     const needEmail = !profile.email || profile.email === DEFAULT_SETTINGS.profile.email
     const needPhone = !profile.phone || profile.phone === DEFAULT_SETTINGS.profile.phone
     if ((needEmail && realProfile.contact_email) || (needPhone && realProfile.contact_phone)) {
@@ -159,21 +164,20 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     }
     if (Object.keys(patch).length) setSettings(patch)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [realProfile.loading, realProfile.display_name, realProfile.contact_email, realProfile.contact_phone])
-  const conn = { ...DEFAULT_SETTINGS.conn, ...(s.conn || {}) }
+  }, [realProfile.loading, realProfile.display_name, realProfile.brand_name, realProfile.contact_email, realProfile.contact_phone])
+  const conn = { ...D.conn, ...(s.conn || {}) }
   const setConn = (n: typeof conn) => setSettings({ conn: n })
-  const booking = { ...DEFAULT_SETTINGS.booking, ...(s.booking || {}) }
+  const booking = { ...D.booking, ...(s.booking || {}) }
   const setBooking = (n: typeof booking) => setSettings({ booking: n })
-  const gdpr = { ...DEFAULT_SETTINGS.gdpr, ...(s.gdpr || {}) }
+  const gdpr = { ...D.gdpr, ...(s.gdpr || {}) }
   const setGdpr = (n: typeof gdpr) => setSettings({ gdpr: n })
   // Live (real) portals start with an EMPTY DSL — the demo default (a sample head
   // coach) must not leak onto a brand-new academy. The demo keeps the sample data.
-  const staffDefaults = demo ? DEFAULT_SETTINGS.staff : { ...DEFAULT_SETTINGS.staff, dsl: '' }
-  const staffCfg = { ...staffDefaults, ...(s.staff || {}) }
+  const staffCfg = { ...D.staff, ...(s.staff || {}) }
   const setStaffCfg = (n: typeof staffCfg) => setSettings({ staff: n })
-  const msg = { ...DEFAULT_SETTINGS.messaging, ...(s.messaging || {}) }
+  const msg = { ...D.messaging, ...(s.messaging || {}) }
   const setMsg = (n: typeof msg) => setSettings({ messaging: n })
-  const rewards = { ...DEFAULT_SETTINGS.rewards, ...(s.rewards || {}) }
+  const rewards = { ...D.rewards, ...(s.rewards || {}) }
   const setRewards = (n: typeof rewards) => setSettings({ rewards: n })
 
   const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
@@ -184,12 +188,12 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
 
   const GROUPS = ['You', 'Academy', 'Coaching', 'People & compliance', 'Rewards & system']
   const cards = [
-    { id: 'profile',     g: 'You',        icon: 'people',    t: 'Head coach profile',  d: `${hp.name} · ${hp.role} · email & calendar ${conn.calendarSync ? 'synced' : 'off'}` },
+    { id: 'profile',     g: 'You',        icon: 'people',    t: 'Head coach profile',  d: `${[hp.name, hp.role].filter(Boolean).join(' · ')} · email & calendar ${conn.calendarSync ? 'synced' : 'off'}` },
     { id: 'integrations',g: 'You',        icon: 'calendar',  t: 'Connected accounts',  d: 'Email & calendar sync — Google, Outlook, iCloud' },
-    { id: 'academy',     g: 'Academy',    icon: 'home',      t: 'Academy profile',     d: `${s.academy} · ${s.cert}` },
+    { id: 'academy',     g: 'Academy',    icon: 'home',      t: 'Academy profile',     d: [s.academy, s.cert].filter(Boolean).join(' · ') || 'Add your academy name & accreditation' },
     { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${[booking.google && 'Google', booking.outlook && 'Outlook'].filter(Boolean).join(' + ') || 'No'} sync · ${booking.defaultDuration}m default` },
     { id: 'availability',g: 'Academy',    icon: 'grid',      t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
-    { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: `Private £${s.privateRate}/hr · packs & renewals` },
+    { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: s.privateRate ? `Private £${s.privateRate}/hr · packs & renewals` : 'Set your hourly rate · packs & renewals' },
     { id: 'belts',       g: 'Coaching',   icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
     { id: 'rewards',     g: 'Coaching',   icon: 'flag',      t: 'Effort & Rewards',    d: `Leaderboard ${rewards.leaderboard ? 'on' : 'off'} · watch consent default ${rewards.watchConsentDefault ? 'on' : 'off'}` },
     { id: 'sharing',     g: 'Coaching',   icon: 'megaphone', t: 'Parent sharing',      d: `Shares include: ${sharingList}` },
@@ -298,9 +302,9 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       )}
       {open === 'academy' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Academy profile" sub="Shown across the portal — sidebar, dashboard, packs and certificates" onClose={() => setOpen(null)}>
-          <Field T={T} label="Academy name"><input style={input(T)} value={s.academy} onChange={e => setSettings({ academy: e.target.value })} /></Field>
-          <Field T={T} label="Head coach name"><input style={input(T)} value={s.coach} onChange={e => setSettings({ coach: e.target.value })} /></Field>
-          <Field T={T} label="Certification / tagline"><input style={input(T)} value={s.cert} onChange={e => setSettings({ cert: e.target.value })} /></Field>
+          <Field T={T} label="Academy name"><input style={input(T)} placeholder="Your academy name" value={s.academy} onChange={e => setSettings({ academy: e.target.value })} /></Field>
+          <Field T={T} label="Head coach name"><input style={input(T)} placeholder="Your name" value={s.coach} onChange={e => setSettings({ coach: e.target.value })} /></Field>
+          <Field T={T} label="Certification / tagline"><input style={input(T)} placeholder="e.g. LTA Accredited Coach" value={s.cert} onChange={e => setSettings({ cert: e.target.value })} /></Field>
         </Modal>
       )}
 
@@ -356,7 +360,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {open === 'pricing' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Pricing & packages" sub="Reflected on the Payments page" onClose={() => setOpen(null)}>
           <Field T={T} label="Private lesson rate (£ / hour)">
-            <input style={input(T)} inputMode="numeric" value={String(s.privateRate)} onChange={e => setSettings({ privateRate: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
+            <input style={input(T)} inputMode="numeric" placeholder="e.g. 38" value={s.privateRate ? String(s.privateRate) : ''} onChange={e => setSettings({ privateRate: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
           </Field>
           <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>Packages and renewal rules are managed on the Payments page; this rate feeds new quotes and the Payments header.</div>
         </Modal>
@@ -565,10 +569,19 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {open === 'messaging' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Messaging" sub="How you reach parents and players" onClose={() => setOpen(null)}>
           <Field T={T} label="Sender email"><input style={input(T)} value={msg.senderEmail} onChange={e => setMsg({ ...msg, senderEmail: e.target.value })} /></Field>
-          <Field T={T} label="Sender phone (SMS)"><input style={input(T)} value={msg.senderPhone} onChange={e => setMsg({ ...msg, senderPhone: e.target.value })} /></Field>
+          {/* Texts go out over Lumio's own messaging number, server-side — there is
+              no per-coach sending number, so the live portal states that instead of
+              offering a field that wouldn't change where texts come from. */}
+          {demo
+            ? <Field T={T} label="Sender phone (SMS)"><input style={input(T)} value={msg.senderPhone} onChange={e => setMsg({ ...msg, senderPhone: e.target.value })} /></Field>
+            : <Field T={T} label="Text (SMS) sender">
+                <div style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.55 }}>
+                  Texts send from Lumio&rsquo;s messaging number — there&rsquo;s no per-coach number to set. Replies come back to your Lumio inbox.
+                </div>
+              </Field>}
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Channels</div>
           <Toggle T={T} accent={accent} on={msg.email} onChange={v => setMsg({ ...msg, email: v })} label="Email" desc="Uses the sender email above." />
-          <Toggle T={T} accent={accent} on={msg.text} onChange={v => setMsg({ ...msg, text: v })} label="Text (SMS)" desc="Uses the sender phone above." />
+          <Toggle T={T} accent={accent} on={msg.text} onChange={v => setMsg({ ...msg, text: v })} label="Text (SMS)" desc={demo ? 'Uses the sender phone above.' : 'Sends from Lumio’s messaging number.'} />
           <Toggle T={T} accent={accent} on={msg.inapp} onChange={v => setMsg({ ...msg, inapp: v })} label="In-app (Lumio message)" desc="Always available to players in the app." />
         </Modal>
       )}

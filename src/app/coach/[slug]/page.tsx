@@ -109,6 +109,10 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
   const slugClubName = clubNameFromSlug(slug)
   const [authChecked, setAuthChecked] = useState(false)
   const [authSession, setAuthSession] = useState<SportsDemoSession | null>(null)
+  // The setup-pending screen is a status update, NOT a lock. Skipping onboarding
+  // has always dropped a founder straight into the working portal, so completing
+  // it must never leave them with less access — they can always continue through.
+  const [enterAnyway, setEnterAnyway] = useState(false)
 
   useEffect(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -163,8 +167,8 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
   // below, so a signed-in coach — even one still on the setup-pending lock — can
   // still view the live demo. "Set it up for me" accounts stay locked on the
   // setup-pending screen until the Lumio team marks the portal live (setup_complete).
-  if (isEmpty && authSession && authSession.onboardingComplete && authSession.setupType === 'lumio' && !authSession.setupComplete) {
-    return <SetupPendingScreen name={authSession.userName} clubName={authSession.clubName} email={authSession.email} />
+  if (isEmpty && authSession && authSession.onboardingComplete && authSession.setupType === 'lumio' && !authSession.setupComplete && !enterAnyway) {
+    return <SetupPendingScreen name={authSession.userName} clubName={authSession.clubName} email={authSession.email} onEnter={() => setEnterAnyway(true)} />
   }
 
   if (isEmpty && authSession) return <CoachPortalInner session={authSession} isEmpty={isEmpty} slugClubName={slugClubName} />
@@ -188,7 +192,7 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
 // ─── Setup-pending lock screen ───────────────────────────────────────────────
 // Shown to "Set it up for me" founders after onboarding, until the Lumio team
 // finishes importing their data and marks the portal live (setup_complete).
-function SetupPendingScreen({ name, clubName, email }: { name?: string; clubName?: string; email?: string }) {
+function SetupPendingScreen({ name, clubName, email, onEnter }: { name?: string; clubName?: string; email?: string; onEnter?: () => void }) {
   const first = (name || '').split(/\s+/)[0] || 'Coach'
   return (
     <div style={{ minHeight: '100vh', background: '#07080F', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', fontFamily: 'var(--font-geist-sans, system-ui)' }}>
@@ -208,10 +212,19 @@ function SetupPendingScreen({ name, clubName, email }: { name?: string; clubName
             <a href="/templates/lumio-coach-import-template.xlsx" download style={{ color: '#3A8EE0', fontWeight: 600, textDecoration: 'none' }}>Download the template ⤓</a>
           </div>
         </div>
-        <button onClick={() => { if (typeof window !== 'undefined') window.location.reload() }}
-          style={{ appearance: 'none', border: '1px solid #374151', background: 'transparent', color: '#9CA3AF', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          ↻ Check if it&rsquo;s ready
-        </button>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {onEnter && (
+            <button onClick={onEnter}
+              style={{ appearance: 'none', border: 'none', background: '#3A8EE0', color: '#fff', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              Go to my portal now →
+            </button>
+          )}
+          <button onClick={() => { if (typeof window !== 'undefined') window.location.reload() }}
+            style={{ appearance: 'none', border: '1px solid #374151', background: 'transparent', color: '#9CA3AF', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            ↻ Check if it&rsquo;s ready
+          </button>
+        </div>
+        {onEnter && <p style={{ color: '#4B5563', fontSize: 12, margin: '14px 0 0' }}>Your portal already works — it&rsquo;s just empty until we load your data. Have a look around any time.</p>}
         <p style={{ color: '#4B5563', fontSize: 12, margin: '20px 0 0' }}>Questions? Email <a href="mailto:support@lumiosports.com" style={{ color: '#6B7280' }}>support@lumiosports.com</a> — a real person reads every one.</p>
       </div>
     </div>
