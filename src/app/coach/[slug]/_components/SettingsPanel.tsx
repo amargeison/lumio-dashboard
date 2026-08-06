@@ -203,6 +203,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: 'Your plan: Coach £39/mo · order kit & rewards' },
     { id: 'appearance',  g: 'Rewards & system', icon: 'settings', t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
     { id: 'menu',        g: 'Rewards & system', icon: 'eye',      t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
+    { id: 'studentapp',  g: 'Rewards & system', icon: 'people',   t: 'Parent & student app', d: s.studentApp ? 'On · Student view available in your profile menu' : 'Off · your switcher shows coach views only' },
     { id: 'contact',     g: 'You',        icon: 'note',     t: 'Contact & calendar',  d: 'Sender email, phone & calendar sync' },
     { id: 'venuescfg',   g: 'Academy',    icon: 'home',     t: 'Venues & courts',     d: 'Venues, courts & calendar links' },
     { id: 'devcfg',      g: 'Coaching',   icon: 'trophy',   t: 'Coaching, rewards & modules', d: 'Racket criteria, effort & module setup' },
@@ -476,6 +477,21 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
               </div>
             )
           })}
+        </Modal>
+      )}
+
+      {/* Parent & student app — deliberately NOT readOnly in the demo. Every
+          other card is locked there because it would edit a sample academy's
+          data; this one only decides whether the Student view is offered in the
+          profile menu, and locking it would make that view unreachable in the
+          demo now it's off by default. */}
+      {open === 'studentapp' && (
+        <Modal T={T} accent={accent} title="Parent & student app" sub="The player & parent view of your academy" onClose={() => setOpen(null)}>
+          <Toggle T={T} accent={accent} on={!!s.studentApp} onChange={v => setSettings({ studentApp: v })}
+            label="Student app" desc="On: your profile menu gains a Student view so you can see the academy as a player or parent does. Off: coach views only." />
+          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>
+            The parent &amp; student app is a <strong style={{ color: T.text2 }}>Pro / Academy</strong> feature. It&rsquo;s yours to switch on or off here for now — no billing attached yet.
+          </div>
         </Modal>
       )}
 

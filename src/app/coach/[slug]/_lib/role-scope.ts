@@ -8,7 +8,7 @@
 //   • student — Student: a player/parent view (placeholder this phase; Phase 2).
 //
 // The role itself is owned by the demo session (lumio_sports_demo_coach.role,
-// written by the shared RoleSwitcher). The portal shell mirrors the active role
+// written by the profile menu's Switch view). The portal shell mirrors the active role
 // into this module-level scope store so the DATA VIEWS can scope themselves
 // WITHOUT threading a prop through every view — mirrors menu-visibility.ts's
 // pub/sub shape. Head = scope null = views render exactly as before.

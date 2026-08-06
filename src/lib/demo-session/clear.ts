@@ -26,6 +26,7 @@ const WIPE_SUFFIXES = [
   '_onboarded',
   '_demo_active',
   '_session_ts',
+  '_signed_out',
 ] as const
 
 export function wipeDemoSurvivors(sport: string) {
@@ -36,6 +37,37 @@ export function wipeDemoSurvivors(sport: string) {
       localStorage.removeItem(`lumio_${sport}${suffix}`)
     }
   } catch { /* ignore */ }
+}
+
+// ─── Deliberate sign-out marker ─────────────────────────────────────────────
+// clearDemoSession() drops the session blob but deliberately KEEPS the
+// survivors, and the gate rebuilds a session straight back out of them on the
+// very next mount — both via its dev-host survivor rebuild and via the
+// Supabase demo-session check, which clearDemoSession can't touch. That is the
+// right behaviour for someone returning after a while, and exactly wrong the
+// instant they press "Exit demo": they get looped back into the portal they
+// just left.
+//
+// This marker records "the user deliberately ended THIS sport's demo". The
+// gate honours it by skipping both rebuild paths, and clears it the moment
+// they verify an OTP to come back in — so demo ENTRY is untouched, only the
+// automatic re-entry is blocked. Sport-scoped, so only a portal that calls
+// markDemoSignedOut is affected.
+const signedOutKey = (sport: string) => `lumio_${sport}_signed_out`
+
+export function markDemoSignedOut(sport: string) {
+  if (typeof window === 'undefined') return
+  try { localStorage.setItem(signedOutKey(sport), 'true') } catch { /* ignore */ }
+}
+
+export function isDemoSignedOut(sport: string): boolean {
+  if (typeof window === 'undefined') return false
+  try { return localStorage.getItem(signedOutKey(sport)) === 'true' } catch { return false }
+}
+
+export function clearDemoSignedOut(sport: string) {
+  if (typeof window === 'undefined') return
+  try { localStorage.removeItem(signedOutKey(sport)) } catch { /* ignore */ }
 }
 
 export function touchDemoSessionTs(sport: string) {
