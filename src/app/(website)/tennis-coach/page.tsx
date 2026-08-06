@@ -66,7 +66,8 @@ const PARENT_FEATURES = [
 ]
 // Reward + capture kit. Tracking now uses the player's own smartwatch, so there
 // is no extra tracking hardware — the bundle is the reward keyrings/dampeners/trophy
-// plus the video capture stand and mic, framed as a one-off £85 bundle.
+// plus the video capture stand and mic, framed as a one-off bundle from £85
+// (indicative — the mic spec is still under field test).
 const KIT_PARTS = [
   { name: 'Capture stand', note: 'Court stand for phone or tablet' },
   { name: 'Microphone', note: 'Spec under field test' },
@@ -600,9 +601,9 @@ export default function TennisCoachPage() {
               <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 720, lineHeight: 1.7, marginBottom: 48 }}>One simple subscription runs every part of your week. Then it earns its keep twice over — you award a coloured racket keyring and matching dampener (and a trophy at Black) as players climb the nine-stage pathway and parents fund the journey, and you resell the Student app to your families as recurring margin. You set the prices; you keep the upside.</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
                 {[
-                  { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured racket keyring + matching dampener + certificate at each of the 9 stages — and a full trophy at Black. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £50 (~£5.50 each)' },
+                  { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Award a coloured racket keyring + matching dampener + certificate at each of the 9 stages — and a full trophy at Black. Players collect the set; parents pay for the journey. Reorder sets as you award them.', price: 'Reorder set of 9 · £45 (~£5 each)' },
                   { icon: '📱', title: 'Stream 2 — Student app resale', color: '#06b6d4', desc: 'Give families the player & parent view of everything you capture. Resell it or bundle it into a package — you keep the margin, not Lumio.', price: 'Suggested £9.99/family · you set it' },
-                  { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Pick the tier that fits — Essential to Elite — adding video, audio, effort rewards and the racket pathway as you grow. The platform that makes both revenue streams possible.', price: 'From £19/month · 4 tiers' },
+                  { icon: '🧩', title: 'One subscription', color: '#10b981', desc: 'Pick the tier that fits — Standard to Academy — adding video, audio, the parent app, effort rewards and the racket pathway as you grow. The platform that makes both revenue streams possible.', price: 'From £9/month · 3 tiers' },
                 ].map((f, i) => (
                   <div key={i} style={{ background: `${f.color}10`, border: `1px solid ${f.color}30`, borderRadius: 16, padding: 28 }}>
                     <div style={{ fontSize: 30, marginBottom: 12 }}>{f.icon}</div>
@@ -638,10 +639,9 @@ export default function TennisCoachPage() {
           {/* Plan tiers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16, marginBottom: 20 }}>
             {[
-              { name: 'Essential', price: 19, popular: false, available: true, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Staff & training camps', 'Mobile coach app'], off: ['No video, audio or effort rewards', 'No Racket Progression'] },
-              { name: 'Pro Lite', price: 29, popular: false, available: false, tag: 'Adds the reward system', feats: ['Everything in Essential', 'Racket Progression reward system', 'Trophy keyrings, dampeners & certificates'], off: ['No video, audio or effort rewards'] },
-              { name: 'Pro', price: 39, popular: true, available: false, tag: 'Most popular', feats: ['Everything in Pro Lite', 'Video & audio (BETA) + AI session reviews', 'Effort & Rewards (smartwatch sync coming soon)'], off: [] },
-              { name: 'Elite', price: 59, popular: false, available: false, tag: 'The full system', feats: ['Everything in Pro', 'Squad effort leaderboard & XP analytics', 'Priority onboarding & support'], off: [] },
+              { name: 'Standard', price: 9, popular: false, available: true, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Messages to players & parents', 'Mobile coach app'], off: ['No video or audio', 'No parent & student app', 'No training camps', 'No Racket Progression'] },
+              { name: 'Pro', price: 19, popular: true, available: false, tag: 'Most popular', feats: ['Everything in Standard', 'Video & audio (BETA) + AI session reviews', 'Parent & student app to resell', 'Training camps'], off: ['No Racket Progression or Effort & Rewards'] },
+              { name: 'Academy', price: 29, popular: false, available: false, tag: 'The full system', feats: ['Everything in Pro', 'Racket Progression reward system', 'Effort & Rewards + squad leaderboard', 'Buy trophy-racket sets & certificates — or just use the software'], off: [] },
             ].map(t => (
               <div key={t.name} style={{ backgroundColor: CARD, border: `${t.popular ? 2 : 1}px solid ${t.popular ? PURPLE : BORDER}`, borderRadius: 16, padding: 24, position: 'relative', display: 'flex', flexDirection: 'column' }}>
                 {t.popular && <div style={{ position: 'absolute', top: -11, left: 24, background: PURPLE, color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most popular</div>}
@@ -663,7 +663,7 @@ export default function TennisCoachPage() {
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 12, color: MUTED, textAlign: 'center', margin: '0 0 40px' }}>Founding access — free for 3 months on any tier. Kit sold separately; Essential needs no kit.</p>
+          <p style={{ fontSize: 12, color: MUTED, textAlign: 'center', margin: '0 0 40px' }}>Founding access — free for 3 months on any tier. Kit sold separately; Standard needs no kit.</p>
 
           {/* A — Student add-on (second revenue stream) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 24 }}>
@@ -703,6 +703,7 @@ export default function TennisCoachPage() {
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, justifyContent: 'flex-end' }}>
+                  <span style={{ fontSize: 20, fontWeight: 700, color: MUTED, lineHeight: 1 }}>from</span>
                   <span style={{ fontSize: 48, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£85</span>
                 </div>
                 <div style={{ fontSize: 12.5, color: MUTED }}>full kit · one-off</div>
@@ -718,7 +719,7 @@ export default function TennisCoachPage() {
               ))}
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '12px 0 4px' }}>
                 <span style={{ fontSize: 13, fontWeight: 800, color: TEXT, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Full kit total</span>
-                <span style={{ fontSize: 22, fontWeight: 900, color: PURPLE_LIGHT }}>£85</span>
+                <span style={{ fontSize: 22, fontWeight: 900, color: PURPLE_LIGHT }}>from £85</span>
               </div>
             </div>
             <div style={{ fontSize: 12.5, color: MUTED, fontStyle: 'italic' }}>
@@ -737,8 +738,8 @@ export default function TennisCoachPage() {
               </p>
             </div>
             <div style={{ textAlign: 'center', flexShrink: 0 }}>
-              <div style={{ fontSize: 34, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£50</div>
-              <div style={{ fontSize: 12.5, color: MUTED }}>reorder set of 9 · ~£5.50 each</div>
+              <div style={{ fontSize: 34, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£45</div>
+              <div style={{ fontSize: 12.5, color: MUTED }}>reorder set of 9 · ~£5 each</div>
             </div>
           </div>
 
