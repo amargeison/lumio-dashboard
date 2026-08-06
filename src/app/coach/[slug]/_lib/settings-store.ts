@@ -56,10 +56,15 @@ export type CoachSettings = {
   packagesSeeded: boolean         // Payments price list auto-loaded the Lumio default packages once
   equipmentSeeded: boolean        // Equipment & Kit auto-loaded the Lumio default kit + inventory once
   ccCoachOnEmail: boolean         // CC the coach's own inbox on emails sent to players/parents
-  // Parent & student app — OFF by default. When on, the profile menu's Switch
-  // view gains the Student option; when off the switcher offers coach views
-  // only. Coach-controlled for now; this is the hook the future Pro/Academy
-  // paid-tier gate will sit behind (no billing enforcement yet).
+  // Parent & student app. When on, the profile menu's Switch view gains the
+  // Student option; when off the switcher offers coach views only. Coach-
+  // controlled for now; this is the hook the future Pro/Academy paid-tier gate
+  // will sit behind (no billing enforcement yet).
+  //
+  // The DEFAULT differs by portal: ON in the demo (it's a showcase feature —
+  // pitches shouldn't need a trip through Settings to reach it), OFF for a real
+  // academy (they opt in). See LIVE_DEFAULT_SETTINGS. A coach's own saved choice
+  // always wins over either default.
   studentApp: boolean
   audioOnly: boolean              // Video & Audio module: hide the video half, show audio only (menu label → "Audio only")
   brandLogo: string               // Club/academy logo (data URL) shown top-left instead of the Lumio mark
@@ -96,7 +101,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   packagesSeeded: false,
   equipmentSeeded: false,
   ccCoachOnEmail: true,
-  studentApp: false,
+  studentApp: true,
   audioOnly: false,
   brandLogo: '',
   sectionsOff: {},
@@ -128,6 +133,9 @@ export const LIVE_DEFAULT_SETTINGS: CoachSettings = {
   coach: '',
   cert: '',
   privateRate: 0,
+  // Real academies opt IN to the parent & student app (Settings → Parent &
+  // student app). Only the demo seed defaults it on.
+  studentApp: false,
   profile: { role: 'Head Coach', email: '', phone: '', dbsNumber: '', dbsExpiry: '', safeguardingDate: '' },
   staff: { ...DEFAULT_SETTINGS.staff, dsl: '' },
   messaging: { ...DEFAULT_SETTINGS.messaging, senderEmail: '', senderPhone: '' },

@@ -55,7 +55,7 @@ export default function RevenueCalculator() {
   // Stream 2 — Student app resale
   const [families, setFamilies] = useState(18)
   const [appMargin, setAppMargin] = useState(6)
-  const [sub, setSub] = useState(19)
+  const [sub, setSub] = useState(9)
 
   // Rewards are annual, shown monthly; app income is already monthly.
   const rewardMonth = (players * stages * margin) / 12
@@ -148,7 +148,7 @@ export default function RevenueCalculator() {
             <Slider id="roi-stages" label="Stages awarded per player / year" value={stages} min={1} max={9} step={1}
               display={String(stages)} hint="9 stages total (White → Black). Most players earn 1–3 a year." onChange={setStages} />
             <Slider id="roi-margin" label="Your margin per award (£)" value={margin} min={3} max={20} step={1}
-              display={'£' + margin} hint="A set of 9 costs you ~£50 (~£5.50 each). You set the price." onChange={setMargin} />
+              display={'£' + margin} hint="A set of 9 costs you ~£45 (~£5 each). You set the price." onChange={setMargin} />
 
             <div style={{ marginTop: 4, paddingTop: 14, borderTop: `1px dashed ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <span style={{ fontSize: 12.5, color: MUTED }}>Reward income</span>
@@ -169,8 +169,8 @@ export default function RevenueCalculator() {
               display={String(families)} hint="Usually a share of your players' families — start with your keenest." onChange={setFamilies} />
             <Slider id="roi-appmargin" label="Your margin per family / month (£)" value={appMargin} min={2} max={15} step={1}
               display={'£' + appMargin} hint="Suggested price £9.99/family — you set it and keep the margin, not Lumio." onChange={setAppMargin} />
-            <Slider id="roi-sub" label="Your Lumio subscription (£/mo)" value={sub} min={19} max={59} step={10}
-              display={'£' + sub} hint="Essential £19 · Pro Lite £29 · Pro £39 · Elite £59." onChange={setSub} />
+            <Slider id="roi-sub" label="Your Lumio subscription (£/mo)" value={sub} min={9} max={29} step={10}
+              display={'£' + sub} hint="Standard £9 · Pro £19 · Academy £29." onChange={setSub} />
 
             <div style={{ marginTop: 4, paddingTop: 14, borderTop: `1px dashed ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <span style={{ fontSize: 12.5, color: MUTED }}>App income</span>
@@ -225,7 +225,7 @@ export default function RevenueCalculator() {
 
         {/* Small print */}
         <p style={{ marginTop: 22, textAlign: 'center', fontSize: 11.5, color: '#64748B', maxWidth: 760, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
-          Illustrative only. Figures are estimates based on the numbers you enter and Lumio&apos;s published pricing (reorder set of 9 ~£50; suggested Student app £9.99/family; tiers from £19/month). Actual income depends on your own pricing and uptake. Not a guarantee of earnings.
+          Illustrative only. Figures are estimates based on the numbers you enter and Lumio&apos;s published pricing (reorder set of 9 ~£45; suggested Student app £9.99/family; tiers from £9/month). Actual income depends on your own pricing and uptake. Not a guarantee of earnings.
         </p>
       </div>
     </section>

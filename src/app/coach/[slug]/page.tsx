@@ -29,7 +29,7 @@ import { getSession as getDemoSession, saveSession as saveDemoSession } from '@/
 import {
   normalizeRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole,
 } from './_lib/role-scope'
-import { coachById } from './_lib/coaches-data'
+import { coachById, coachStats } from './_lib/coaches-data'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
@@ -228,6 +228,9 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
       skipWizard
       // Real academy slug → the gate is a LIVE sign-in, not a demo invitation.
       liveSignIn={isEmpty}
+      // The gate has no navigation, so after "Exit demo" the logo is the only
+      // way back out — point it at the Tennis Coach marketing page.
+      logoHref="/tennis-coach"
     >
       {(session) => <CoachPortalInner session={session} isEmpty={isEmpty} slugClubName={slugClubName} />}
     </SportsDemoGate>
@@ -376,6 +379,17 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // impersonatedCoach names the coach the Coach role is viewing as, for the
   // "viewing as" banner.
   const impersonatedCoach = role === 'coach' ? (coachById(coachIdForRole(role) ?? '')?.name ?? null) : null
+  // ─── Right-rail profile follows the ACTIVE role ───────────────────────────
+  // The rail used to be hardwired to the head coach, so impersonating Rachel
+  // left the page saying "Viewing as Rachel Adeyemi" while the rail still
+  // showed Vincent Jones and his headshot. It now resolves through the SAME
+  // coachId the data views scope to (role-scope's coachIdForRole), with the
+  // per-coach numbers the Staff page already computes (coachStats).
+  //
+  // DEMO ONLY: COACHES/coachStats are demo data, so a real academy keeps its own
+  // head-coach card — a live portal must never render Rachel.
+  const railCoach = !isEmpty && role === 'coach' ? coachById(coachIdForRole(role) ?? '') : undefined
+  const railStats = railCoach ? coachStats(railCoach.id) : null
   const roleLabel = COACH_ROLES.find(r => r.id === role)?.label ?? 'Head Coach'
   // Real coach portal: Head Coach is the only view until data unlocks the others —
   // adding a staff member unlocks Coach; adding a player unlocks Student. The demo
@@ -653,14 +667,35 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
 
           {/* right rail */}
           <div className="coach-rail" style={{ width: 264, flexShrink: 0, borderLeft: `1px solid ${line}`, padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Profile card — the impersonated coach when a role is being viewed,
+                otherwise the account's own head coach (see railCoach above). */}
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, textAlign: 'center' }}>
-              <div style={{ width: 72, margin: '0 auto' }}><CoachAvatar size={72} /></div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{coachName}</div>
-              {settings.cert && <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{settings.cert}</div>}
+              <div style={{ width: 72, margin: '0 auto' }}>
+                {railCoach
+                  // Same avatar source as the Staff page, so a coach's face is the
+                  // same one wherever they appear in the demo.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={demoAvatarUrl(railCoach.name)} alt={railCoach.name} width={72} height={72} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
+                  : <CoachAvatar size={72} />}
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{railCoach ? railCoach.name : coachName}</div>
+              {(railCoach ? railCoach.accreditation : settings.cert) && <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{railCoach ? railCoach.accreditation : settings.cert}</div>}
               <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
-                <RailStat T={T} label="Players" value={isEmpty ? liveStats.players : COACH_ORG.season.activePlayers} />
-                <RailStat T={T} label="Lessons/wk" value={isEmpty ? liveStats.lessonsThisWeek : COACH_ORG.season.lessonsThisWeek} />
-                <RailStat T={T} label="Retention" value={isEmpty ? '—' : `${COACH_ORG.season.retention}%`} />
+                {railStats ? (
+                  <>
+                    {/* This coach's own week — retention is an academy-wide figure,
+                        so utilisation (hours booked vs contracted) takes its slot. */}
+                    <RailStat T={T} label="Players" value={railStats.players} />
+                    <RailStat T={T} label="Lessons/wk" value={railStats.week} />
+                    <RailStat T={T} label="Utilisation" value={`${railStats.utilisation}%`} />
+                  </>
+                ) : (
+                  <>
+                    <RailStat T={T} label="Players" value={isEmpty ? liveStats.players : COACH_ORG.season.activePlayers} />
+                    <RailStat T={T} label="Lessons/wk" value={isEmpty ? liveStats.lessonsThisWeek : COACH_ORG.season.lessonsThisWeek} />
+                    <RailStat T={T} label="Retention" value={isEmpty ? '—' : `${COACH_ORG.season.retention}%`} />
+                  </>
+                )}
               </div>
             </div>
 

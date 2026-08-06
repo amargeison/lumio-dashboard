@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect, memo } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { SPORT_STATS } from '@/lib/sports/cardStats'
@@ -76,6 +77,13 @@ interface SportsDemoGateProps {
    * it knows whether the slug is the demo one (see the coach portal's DEMO_SLUGS).
    */
   liveSignIn?: boolean
+  /**
+   * Where the gate's logo links to — the sport's marketing page. Optional and
+   * unset by default: a gate with no website to return to keeps the plain,
+   * unclickable logo it has always had. Set it and the logo becomes the way out
+   * of an otherwise navigation-free screen for a signed-out visitor.
+   */
+  logoHref?: string
   children: (session: SportsDemoSession) => React.ReactNode
 }
 
@@ -405,8 +413,8 @@ const InviteStep = memo(function InviteStep({
   )
 })
 
-const PortalLogo = memo(function PortalLogo({ sport }: { sport: string }) {
-  return (
+const PortalLogo = memo(function PortalLogo({ sport, href }: { sport: string; href?: string }) {
+  const img = (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={SPORT_LOGOS[sport] || '/Lumio_Sports_logo.png'}
@@ -414,6 +422,12 @@ const PortalLogo = memo(function PortalLogo({ sport }: { sport: string }) {
       style={{ width: 144, height: 144, objectFit: 'contain', display: 'block', margin: '0 auto 12px' }}
     />
   )
+  // A logged-out gate is otherwise a dead end — there is no nav on it, so
+  // someone who signs out of the demo has no way back to the marketing site.
+  // Callers that have a website to return to pass `href` (see logoHref);
+  // gates without one keep the plain, unclickable logo.
+  if (!href) return img
+  return <Link href={href} aria-label="Back to the Lumio website" style={{ display: 'block' }}>{img}</Link>
 })
 
 // Stable, module-level overlay shell. MUST live outside the gate component:
@@ -421,12 +435,12 @@ const PortalLogo = memo(function PortalLogo({ sport }: { sport: string }) {
 // render, so each keystroke in the controlled email/OTP inputs remounted the
 // whole subtree and the caret jumped to the end. Hoisting keeps the inputs
 // mounted across renders so the caret stays put.
-const GateOverlay = memo(function GateOverlay({ sport, sportLabel, liveSignIn, children }: { sport: string; sportLabel: string; liveSignIn?: boolean; children: React.ReactNode }) {
+const GateOverlay = memo(function GateOverlay({ sport, sportLabel, liveSignIn, logoHref, children }: { sport: string; sportLabel: string; liveSignIn?: boolean; logoHref?: string; children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif' }}>
       <div className="w-full max-w-md">
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <PortalLogo sport={sport} />
+          <PortalLogo sport={sport} href={logoHref} />
           <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: 0 }}>{sportLabel}</h2>
           {/* Live portals drop the "Interactive demo" strapline entirely — see
               the liveSignIn prop doc. Branding above it is unchanged. */}
@@ -442,7 +456,7 @@ const GateOverlay = memo(function GateOverlay({ sport, sportLabel, liveSignIn, c
 export default function SportsDemoGate({
   sport, defaultClubName, defaultSlug, accentColor, accentColorLight,
   sportEmoji, sportLabel, roles, children, lockClub = false, skipWizard = false,
-  liveSignIn = false,
+  liveSignIn = false, logoHref,
 }: SportsDemoGateProps) {
   void accentColorLight // available for future use
   const router = useRouter()
@@ -1057,7 +1071,7 @@ export default function SportsDemoGate({
   // coach signing into their academy gets sign-in copy; the demo slug keeps the
   // original "Explore the demo" wording verbatim.
   if (step === 'email') return (
-    <GateOverlay sport={sport} sportLabel={sportLabel} liveSignIn={liveSignIn}>
+    <GateOverlay sport={sport} sportLabel={sportLabel} liveSignIn={liveSignIn} logoHref={logoHref}>
       <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8">
         <h2 className="text-lg font-bold text-white mb-1">{liveSignIn ? 'Sign in to your portal' : 'Explore the demo'}</h2>
         <p className="text-sm text-gray-400 mb-6">
@@ -1084,7 +1098,7 @@ export default function SportsDemoGate({
 
   // ── STEP 2: OTP ──
   if (step === 'otp') return (
-    <GateOverlay sport={sport} sportLabel={sportLabel} liveSignIn={liveSignIn}>
+    <GateOverlay sport={sport} sportLabel={sportLabel} liveSignIn={liveSignIn} logoHref={logoHref}>
       <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8">
         <h2 className="text-lg font-bold text-white mb-1">Check your email</h2>
         <p className="text-sm text-gray-400 mb-6">We sent a 6-digit code to <span className="text-white font-medium">{email}</span>.</p>
@@ -1101,7 +1115,7 @@ export default function SportsDemoGate({
 
   // ── STEP 3: CLUB ──
   if (step === 'club') return (
-    <GateOverlay sport={sport} sportLabel={sportLabel}>
+    <GateOverlay sport={sport} sportLabel={sportLabel} logoHref={logoHref}>
       <ClubStep
         clubNameRef={clubNameRef}
         defaultClubName={defaultClubName}
@@ -1124,7 +1138,7 @@ export default function SportsDemoGate({
 
   // ── STEP 4: PROFILE ──
   if (step === 'profile') return (
-    <GateOverlay sport={sport} sportLabel={sportLabel}>
+    <GateOverlay sport={sport} sportLabel={sportLabel} logoHref={logoHref}>
       <ProfileStep
         userNameRef={userNameRef}
         nicknameRef={nicknameRef}
@@ -1160,7 +1174,7 @@ export default function SportsDemoGate({
 
   // ── STEP 5: EARLY ACCESS ──
   if (step === 'earlyaccess') return (
-    <GateOverlay sport={sport} sportLabel={sportLabel}>
+    <GateOverlay sport={sport} sportLabel={sportLabel} logoHref={logoHref}>
       <EarlyAccessStep
         accentColor={accentColor}
         email={email}
@@ -1175,7 +1189,7 @@ export default function SportsDemoGate({
 
   // ── STEP 6: INVITE ──
   if (step === 'invite') return (
-    <GateOverlay sport={sport} sportLabel={sportLabel}>
+    <GateOverlay sport={sport} sportLabel={sportLabel} logoHref={logoHref}>
       <InviteStep
         accentColor={accentColor}
         sport={sport}
