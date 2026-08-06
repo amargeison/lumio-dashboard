@@ -31,7 +31,9 @@ import {
 } from './_lib/role-scope'
 import { coachById } from './_lib/coaches-data'
 import { CoachMobileShell } from './_components/CoachMobileShell'
+import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
+import { clearDemoSession, wipeDemoSurvivors } from '@/lib/demo-session/clear'
 import { useCoachStats, RACKET_STAGES } from './_lib/coach-db'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags } from './_lib/feature-flags'
 
@@ -100,6 +102,39 @@ const DEMO_SLUGS = new Set(['demo'])
 
 function clubNameFromSlug(slug: string): string {
   return slug.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Your Academy'
+}
+
+// ─── Sign out ───────────────────────────────────────────────────────────────
+// One implementation for both portals, because a real academy slug can be
+// reached two ways — a pre-existing Supabase session (the auth path above) or a
+// fresh OTP through the gate — and both must end the real session.
+//
+// LIVE: end the Supabase session FIRST, then clear every local key. Order
+// matters: if the local session blob survived, returning to the portal URL would
+// let the gate restore it and walk straight back in — a logout that doesn't log
+// you out. Wiping the survivors (name, photo, brand) costs nothing for a real
+// coach: their identity and data live in Supabase (sports_profiles + the coach
+// tables) and are re-read on sign-in.
+//
+// DEMO: there is no real session to end. Drop the local demo session — keeping
+// the survivors, so signing back in resumes the same persona — and return to the
+// demo gate. Same contract as the tennis/golf portals' Sign out.
+async function signOutCoach(live: boolean) {
+  if (typeof window === 'undefined') return
+  if (!live) {
+    clearDemoSession('coach')
+    window.location.href = '/tennis/coach/demo'
+    return
+  }
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  try {
+    if (url && key) await createBrowserClient(url, key).auth.signOut()
+  } catch { /* still clear locally and leave */ }
+  wipeDemoSurvivors('coach')
+  // Back to the real login, which sends them straight here again after OTP.
+  const back = window.location.pathname
+  window.location.href = back ? `/sports-login?redirectTo=${encodeURIComponent(back)}` : '/sports-login'
 }
 
 // ─── Page entry: auth check → demo gate → portal ────────────────────────────
@@ -183,6 +218,8 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
       sportLabel="Lumio Tennis Coach"
       roles={COACH_ROLES}
       skipWizard
+      // Real academy slug → the gate is a LIVE sign-in, not a demo invitation.
+      liveSignIn={isEmpty}
     >
       {(session) => <CoachPortalInner session={session} isEmpty={isEmpty} slugClubName={slugClubName} />}
     </SportsDemoGate>
@@ -335,6 +372,18 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const switcherSession = session ? { ...session, role } : null
   const impersonatedCoach = role === 'coach' ? (coachById(coachIdForRole(role) ?? '')?.name ?? null) : null
   const roleLabel = COACH_ROLES.find(r => r.id === role)?.label ?? 'Head Coach'
+  // Log out (see signOutCoach). isEmpty — a real academy slug — is the live/demo
+  // switch, so it holds whether the coach arrived on a pre-existing Supabase
+  // session or by signing in through the gate on this visit.
+  const profileMenu = (variant: 'sidebar' | 'compact', avatarSize: number) => (
+    <CoachProfileMenu
+      T={T} accent={accent} variant={variant} expanded={expanded}
+      avatar={<CoachAvatar size={avatarSize} />}
+      coachName={coachName} roleLabel={roleLabel}
+      onLogout={() => { void signOutCoach(isEmpty) }}
+      logoutLabel={isEmpty ? 'Log out' : 'Exit demo'}
+    />
+  )
   // Real coach portal: Head Coach is the only view until data unlocks the others —
   // adding a staff member unlocks Coach; adding a player unlocks Student. The demo
   // keeps all three.
@@ -483,7 +532,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         <CoachMobileShell
           T={T} accent={accent} active={active} onNavigate={setActive} navLabel={navLabel}
           showDemoBanner={showDemoBanner} hiddenMenu={[...hiddenMenu, ...roleHiddenIds]}
-          avatar={<CoachAvatar size={30} />}
+          avatar={profileMenu('compact', 30)}
           roleSwitcher={roleSwitcher} roleBanner={ViewingAsBanner}
         >
           {renderView()}
@@ -556,14 +605,10 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
           })}
         </nav>
 
-        <div style={{ borderTop: `1px solid ${line}`, padding: expanded ? '10px 12px' : '10px 4px', display: 'flex', alignItems: 'center', gap: 9, justifyContent: expanded ? 'flex-start' : 'center' }}>
-          <CoachAvatar size={30} />
-          {expanded && (
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: T.text, whiteSpace: 'nowrap' }}>{coachName}</div>
-              <div style={{ fontSize: 9.5, color: T.text3, whiteSpace: 'nowrap' }}>{roleLabel}</div>
-            </div>
-          )}
+        {/* Profile block — now a menu (Log out lives here). Overflow must stay
+            visible on this row or the pop-up menu is clipped by the sidebar. */}
+        <div style={{ borderTop: `1px solid ${line}`, padding: expanded ? '10px 12px' : '10px 4px', display: 'flex', alignItems: 'center', justifyContent: expanded ? 'flex-start' : 'center', overflow: 'visible' }}>
+          {profileMenu('sidebar', 30)}
         </div>
         {/* View switcher (coach / student view) — only for the head coach, and only
             once there's somewhere to switch to (a coach or a player has been added).
