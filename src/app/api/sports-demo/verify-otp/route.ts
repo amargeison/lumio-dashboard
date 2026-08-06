@@ -199,17 +199,41 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Returning user's own demo profile ──────────────────────────────────
+    // Read BEFORE the upsert below, and returned in this response. The OTP we
+    // just checked is the proof of ownership, so the gate no longer needs a
+    // standalone /get-profile?email=… lookup to restore a persona — that
+    // lookup was readable by anyone with an email address.
+    let leadProfile: Record<string, unknown> | null = null
+    try {
+      const { data } = await anon
+        .from('sports_demo_leads')
+        .select('user_name, club_name, role, nickname, avatar_url, logo_url, first_seen')
+        .eq('email', normalisedEmail)
+        .eq('sport', sport)
+        .maybeSingle()
+      leadProfile = data ?? null
+    } catch {
+      // Table/columns may not exist yet — non-fatal, treated as first-time.
+    }
+
     // Demo lead log (lead capture table, separate from auth). Founders are
     // tracked through the founding-member pipeline, not the demo leads table.
+    //
+    // Each field falls back to what's already stored. The gate's verifyOtp call
+    // sends only { email, code, sport, slug }, so writing `userName || null`
+    // wiped the saved name, club, nickname and role on EVERY sign-in — which is
+    // why the returning-user restore below could never find a profile.
     if (!isFounder) try {
+      const prior = (leadProfile ?? {}) as Record<string, string | null>
       await anon.from('sports_demo_leads').upsert({
         email: normalisedEmail,
         sport,
-        club_name: clubName || null,
-        user_name: userName || null,
-        nickname: nickname || null,
-        role: role || null,
-        first_seen: new Date().toISOString(),
+        club_name: clubName || prior.club_name || null,
+        user_name: userName || prior.user_name || null,
+        nickname: nickname || prior.nickname || null,
+        role: role || prior.role || null,
+        first_seen: prior.first_seen || new Date().toISOString(),
         last_seen: new Date().toISOString(),
       }, { onConflict: 'email,sport' })
     } catch {
@@ -318,6 +342,18 @@ export async function POST(req: NextRequest) {
       sessionMinted,
       userId: supabaseUserId,
       installToken,
+      // The verified address's OWN saved persona (null when first-time). Only
+      // ever the email whose OTP just passed — see the read above.
+      profile: leadProfile
+        ? {
+            user_name:  leadProfile.user_name  ?? null,
+            club_name:  leadProfile.club_name  ?? null,
+            role:       leadProfile.role       ?? null,
+            nickname:   leadProfile.nickname   ?? null,
+            avatar_url: leadProfile.avatar_url ?? null,
+            logo_url:   leadProfile.logo_url   ?? null,
+          }
+        : null,
     })
     for (const c of response.cookies.getAll()) {
       finalResponse.cookies.set(c.name, c.value, c)

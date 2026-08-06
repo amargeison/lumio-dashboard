@@ -694,6 +694,11 @@ export default function SportsDemoGate({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sport])
 
+  // ?restore=true&email=… — the ONE caller that isn't behind an OTP. It only
+  // enriches an already-restored session with avatar/logo/nickname, and the
+  // route now answers from the session cookie rather than the email in the URL:
+  // a visitor with a session for that address still gets their picture back, a
+  // stranger passing someone else's address gets 401/403 and nothing changes.
   useEffect(() => {
     if (!restoredParamsEmail) return
     fetch(`/api/sports-demo/get-profile?email=${encodeURIComponent(restoredParamsEmail)}&sport=${sport}`)
@@ -804,21 +809,17 @@ export default function SportsDemoGate({
           // add-to-home-screen capture; the demo still works.
           if (data.installToken) pendingInstallTokenRef.current = data.installToken
 
-          // Pull the saved profile to decide returning-user vs first-time.
+          // Returning-user vs first-time. The profile rides back on the
+          // verify-otp response itself — the code we just passed IS the proof
+          // this address is ours, so there's no separate lookup to make (that
+          // lookup used to answer for any email anyone cared to type).
           // We only short-circuit to 'done' (skip wizard) if the server
           // has a populated user_name. First-time visitors fall through
           // to setStep(lockClub ? 'profile' : 'club') and let the wizard own persona capture.
-          let profile: {
+          const profile: {
             user_name?: string; club_name?: string; role?: string
             avatar_url?: string | null; logo_url?: string | null; nickname?: string | null
-          } | null = null
-          try {
-            const profileRes = await fetch(
-              `/api/sports-demo/get-profile?email=${encodeURIComponent(email)}&sport=${sport}`,
-            )
-            const profileData = await profileRes.json().catch(() => null)
-            if (profileData?.profile?.user_name) profile = profileData.profile
-          } catch { /* network — treat as first-time visitor */ }
+          } | null = data.profile?.user_name ? data.profile : null
 
           if (profile?.user_name) {
             // RETURNING USER — server has a completed profile. Persist
@@ -876,12 +877,12 @@ export default function SportsDemoGate({
           return
         }
       }
-      // Check for existing demo profile — skip setup if found
+      // Check for existing demo profile — skip setup if found. Same source as
+      // the sessionMinted branch above: the verify-otp response, which only
+      // ever carries the profile of the address whose code just passed.
       try {
-        const profileRes = await fetch(`/api/sports-demo/get-profile?email=${encodeURIComponent(email)}&sport=${sport}`)
-        const profileData = await profileRes.json()
-        if (profileData.profile?.user_name) {
-          const p = profileData.profile
+        if (data.profile?.user_name) {
+          const p = data.profile
           const savedPhoto = typeof window !== 'undefined' ? localStorage.getItem(`lumio_demo_photo_${email.toLowerCase()}`) : null
           const restored: SportsDemoSession = {
             email,
