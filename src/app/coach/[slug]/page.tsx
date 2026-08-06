@@ -25,7 +25,7 @@ import {
 import { useCoachSettings } from './_lib/use-settings'
 import { ACCENT_PRESETS } from './_lib/settings-store'
 import { getHidden, subscribe as subscribeMenu, ALWAYS_VISIBLE } from './_lib/menu-visibility'
-import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
+import { getSession as getDemoSession, saveSession as saveDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import {
   normalizeRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole,
 } from './_lib/role-scope'
@@ -33,7 +33,7 @@ import { coachById } from './_lib/coaches-data'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
-import { clearDemoSession, wipeDemoSurvivors } from '@/lib/demo-session/clear'
+import { clearDemoSession, wipeDemoSurvivors, markDemoSignedOut } from '@/lib/demo-session/clear'
 import { useCoachStats, RACKET_STAGES } from './_lib/coach-db'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags } from './_lib/feature-flags'
 
@@ -119,10 +119,18 @@ function clubNameFromSlug(slug: string): string {
 // DEMO: there is no real session to end. Drop the local demo session — keeping
 // the survivors, so signing back in resumes the same persona — and return to the
 // demo gate. Same contract as the tennis/golf portals' Sign out.
+//
+// markDemoSignedOut is what makes "Exit demo" actually exit. Clearing the
+// session alone isn't enough: the gate rebuilds one from the survivors on its
+// very next mount (dev-host rebuild) and from the Supabase demo cookie (every
+// host), so the user was bounced straight back into the demo. The marker parks
+// the gate on "Explore the demo" until they choose to enter again — the next
+// verified OTP clears it and resumes this same persona.
 async function signOutCoach(live: boolean) {
   if (typeof window === 'undefined') return
   if (!live) {
     clearDemoSession('coach')
+    markDemoSignedOut('coach')
     window.location.href = '/tennis/coach/demo'
     return
   }
@@ -310,9 +318,9 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
 
   // ─── Active VIEW ROLE (role switcher) ──────────────────────────────────────
   // Initialised from the demo session (legacy/unknown roles normalise to head);
-  // RoleSwitcher persists the choice back into the session blob so it survives
-  // reload. The active role drives (a) which coachId the data views scope to and
-  // (b) which nav items are available.
+  // changeRole (below) persists the choice back into the session blob so it
+  // survives reload. The active role drives (a) which coachId the data views
+  // scope to and (b) which nav items are available.
   const [role, setRole] = useState<CoachViewRole>(normalizeRole(session?.role))
   // Mirror the role's coachId into the module-level scope the data views read.
   useEffect(() => { setScopeCoachId(coachIdForRole(role)); return () => setScopeCoachId(null) }, [role])
@@ -365,40 +373,54 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // hidden set so its tabs + More sheet honour them too.
   const roleHiddenIds = COACH_SIDEBAR.filter(i => !roleAllowsNav(role, i.id) || featureHidden(i.id)).map(i => i.id)
 
-  // Banner / switcher context. The role switcher reuses the shared component;
-  // we hand it a session whose role mirrors live state so its "current view"
-  // marker tracks the switch. impersonatedCoach names the coach the Coach role
-  // is viewing as, for the "viewing as" banner.
-  const switcherSession = session ? { ...session, role } : null
+  // impersonatedCoach names the coach the Coach role is viewing as, for the
+  // "viewing as" banner.
   const impersonatedCoach = role === 'coach' ? (coachById(coachIdForRole(role) ?? '')?.name ?? null) : null
   const roleLabel = COACH_ROLES.find(r => r.id === role)?.label ?? 'Head Coach'
-  // Log out (see signOutCoach). isEmpty — a real academy slug — is the live/demo
-  // switch, so it holds whether the coach arrived on a pre-existing Supabase
-  // session or by signing in through the gate on this visit.
-  const profileMenu = (variant: 'sidebar' | 'compact', avatarSize: number) => (
-    <CoachProfileMenu
-      T={T} accent={accent} variant={variant} expanded={expanded}
-      avatar={<CoachAvatar size={avatarSize} />}
-      coachName={coachName} roleLabel={roleLabel}
-      onLogout={() => { void signOutCoach(isEmpty) }}
-      logoutLabel={isEmpty ? 'Log out' : 'Exit demo'}
-    />
-  )
   // Real coach portal: Head Coach is the only view until data unlocks the others —
   // adding a staff member unlocks Coach; adding a player unlocks Student. The demo
-  // keeps all three.
-  const availableRoles = isEmpty
+  // keeps all three. Student is additionally opt-in (Settings → Parent & student
+  // app, off by default) on both, so it never appears unless the coach asks for it.
+  const availableRoles = (isEmpty
     ? COACH_ROLES.filter(r => r.id === 'head' || (r.id === 'coach' && liveStats.staff > 0) || (r.id === 'student' && liveStats.players > 0))
     : COACH_ROLES
+  ).filter(r => r.id !== 'student' || settings.studentApp)
   // If the active role is no longer available (data removed), drop back to Head.
   useEffect(() => {
     if (!isEmpty || liveStats.loading) return
     if (role === 'coach' && liveStats.staff === 0) setRole('head')
     if (role === 'student' && liveStats.players === 0) setRole('head')
   }, [isEmpty, role, liveStats.loading, liveStats.staff, liveStats.players])
-  const roleSwitcher = switcherSession ? (
-    <RoleSwitcher session={switcherSession} roles={availableRoles} accentColor={accent.hex} onRoleChange={r => setRole(normalizeRole(r))} />
-  ) : null
+  // Turning the student app off while viewing it must not strand the coach there.
+  useEffect(() => {
+    if (role === 'student' && !settings.studentApp) setRole('head')
+  }, [role, settings.studentApp])
+  // Switching view persists back into the demo session blob — the same key the
+  // gate restores from — so the choice survives a reload. (This is what the shared
+  // RoleSwitcher used to do before the switcher moved into the profile menu.)
+  const changeRole = (roleId: string) => {
+    setRole(normalizeRole(roleId))
+    const s = getDemoSession('coach')
+    if (s) { try { saveDemoSession('coach', { ...s, role: roleId }) } catch { /* ignore */ } }
+  }
+  // THE profile control: identity + Switch view + Log out, in one bottom-left
+  // block (see CoachProfileMenu). Switch view is offered only to a head coach
+  // with somewhere to switch to; while impersonating, the "Viewing as" banner
+  // owns the way back. Log out is always there — it's the only way out of a
+  // session on a shared club device. isEmpty — a real academy slug — is the
+  // live/demo switch for signOutCoach, so it holds whether the coach arrived on
+  // a pre-existing Supabase session or by signing in through the gate.
+  const switchableRoles = role === 'head' && availableRoles.length > 1 ? availableRoles : undefined
+  const profileMenu = (variant: 'sidebar' | 'compact', avatarSize: number) => (
+    <CoachProfileMenu
+      T={T} accent={accent} variant={variant} expanded={expanded}
+      avatar={<CoachAvatar size={avatarSize} />}
+      coachName={coachName} roleLabel={roleLabel}
+      roles={switchableRoles} activeRole={role} onSelectRole={changeRole}
+      onLogout={() => { void signOutCoach(isEmpty) }}
+      logoutLabel={isEmpty ? 'Log out' : 'Exit demo'}
+    />
+  )
   const ViewingAsBanner = role === 'head' ? null : (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 24px', fontSize: 12, fontWeight: 600, background: 'rgba(245,158,11,0.14)', color: '#B45309', borderBottom: '1px solid rgba(245,158,11,0.3)', flexShrink: 0 }}>
       <span style={{ fontSize: 13 }}>👁</span>
@@ -533,7 +555,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
           T={T} accent={accent} active={active} onNavigate={setActive} navLabel={navLabel}
           showDemoBanner={showDemoBanner} hiddenMenu={[...hiddenMenu, ...roleHiddenIds]}
           avatar={profileMenu('compact', 30)}
-          roleSwitcher={roleSwitcher} roleBanner={ViewingAsBanner}
+          roleBanner={ViewingAsBanner}
         >
           {renderView()}
         </CoachMobileShell>
@@ -605,17 +627,13 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
           })}
         </nav>
 
-        {/* Profile block — now a menu (Log out lives here). Overflow must stay
+        {/* THE profile block — one control carrying Switch view AND Log out.
+            There used to be a second one below it (the shared RoleSwitcher),
+            which read as two people signed in at once. Overflow must stay
             visible on this row or the pop-up menu is clipped by the sidebar. */}
         <div style={{ borderTop: `1px solid ${line}`, padding: expanded ? '10px 12px' : '10px 4px', display: 'flex', alignItems: 'center', justifyContent: expanded ? 'flex-start' : 'center', overflow: 'visible' }}>
           {profileMenu('sidebar', 30)}
         </div>
-        {/* View switcher (coach / student view) — only for the head coach, and only
-            once there's somewhere to switch to (a coach or a player has been added).
-            When impersonating, the "Viewing as" banner handles the return. */}
-        {expanded && roleSwitcher && role === 'head' && availableRoles.length > 1 && (
-          <div style={{ padding: '8px 12px', borderTop: `1px solid ${line}` }}>{roleSwitcher}</div>
-        )}
       </aside>
 
       {/* main */}

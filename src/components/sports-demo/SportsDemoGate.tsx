@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { SPORT_STATS } from '@/lib/sports/cardStats'
-import { clearDemoSession, wipeDemoSurvivors, touchDemoSessionTs, DEMO_SESSION_TTL_MS } from '@/lib/demo-session/clear'
+import { clearDemoSession, wipeDemoSurvivors, touchDemoSessionTs, isDemoSignedOut, clearDemoSignedOut, DEMO_SESSION_TTL_MS } from '@/lib/demo-session/clear'
 
 // ── SPORT LOGOS ───────────────────────────────────────────────────────────
 const SPORT_LOGOS: Record<string, string> = {
@@ -533,8 +533,14 @@ export default function SportsDemoGate({
           //
           // After DEMO_SESSION_TTL_MS of inactivity (no survivor write), the
           // survivors are wiped on mount and the wizard fires fresh.
+          //
+          // A deliberate sign-out (markDemoSignedOut) suppresses the rebuild
+          // entirely — otherwise "Exit demo" drops the session and this block
+          // hands it straight back, landing the user in the portal they just
+          // left. The survivors stay put; the next verified OTP clears the
+          // marker and resumes the same persona.
           const hasOnboarded = localStorage.getItem(`lumio_${sport}_onboarded`) === 'true'
-          if (hasOnboarded) {
+          if (hasOnboarded && !isDemoSignedOut(sport)) {
             const tsRaw = localStorage.getItem(`lumio_${sport}_session_ts`)
             const ts = tsRaw ? Number(tsRaw) : 0
             if (!ts) {
@@ -611,6 +617,11 @@ export default function SportsDemoGate({
     )
     let cancelled = false
     ;(async () => {
+      // Deliberate sign-out wins over the cookie. verify-otp mints a real
+      // Supabase session for demo users, which clearDemoSession cannot end —
+      // without this guard "Exit demo" is undone here a tick later, on prod as
+      // well as dev. Cleared again on the next verified OTP.
+      if (isDemoSignedOut(sport)) return
       const { data: { session: sbSession } } = await supabase.auth.getSession()
       if (cancelled || !sbSession) return
       const meta = (sbSession.user.app_metadata ?? {}) as Record<string, unknown>
@@ -751,6 +762,11 @@ export default function SportsDemoGate({
       })
       const data = await res.json()
       if (!data.verified && !data.success) throw new Error(data.error ?? 'Invalid code')
+      // The user has deliberately come back in — lift the sign-out marker so the
+      // survivor/Supabase rebuilds work normally again from here on. Done once,
+      // before the branches below, so every route through this function (returning
+      // user, server profile, local survivors, skipWizard, wizard) is covered.
+      clearDemoSignedOut(sport)
       // Path C: verify-otp set an sb-*-auth-token cookie for the
       // provisioned demo user. Before redirecting we MUST persist the
       // gate session to localStorage — otherwise we get an OTP loop:

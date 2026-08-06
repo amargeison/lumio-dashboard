@@ -43,7 +43,7 @@ function MoreGlyph() {
 }
 
 export function CoachMobileShell({
-  T, accent, active, onNavigate, showDemoBanner, hiddenMenu, avatar, children, roleSwitcher, roleBanner,
+  T, accent, active, onNavigate, showDemoBanner, hiddenMenu, avatar, children, roleBanner,
   navLabel = (item) => item.label,
 }: {
   T: ThemeTokens
@@ -54,9 +54,9 @@ export function CoachMobileShell({
   hiddenMenu: string[]
   avatar: ReactNode
   children: ReactNode
-  // Role switcher (Switch view) + "viewing as" banner — passed from the portal
-  // shell so the mobile shell stays role-agnostic.
-  roleSwitcher?: ReactNode
+  // "Viewing as" banner — passed from the portal shell so the mobile shell stays
+  // role-agnostic. Switching view itself lives in the top-bar avatar menu
+  // (`avatar`), which is the single profile control on mobile too.
   roleBanner?: ReactNode
   // Dynamic label override (e.g. Video & Audio → "Audio" when video is off).
   navLabel?: (item: { id: string; label: string }) => string
@@ -148,11 +148,6 @@ export function CoachMobileShell({
       )}
 
       {roleBanner}
-
-      {/* Role switcher strip (Switch view) */}
-      {roleSwitcher && (
-        <div style={{ padding: '8px 14px', borderBottom: `1px solid ${T.border}`, background: barBg }}>{roleSwitcher}</div>
-      )}
 
       {/* Scrollable main — desktop views render single-column in here, unchanged */}
       <main style={{ flex: 1, minWidth: 0, padding: 14, paddingBottom: 'calc(64px + 22px + env(safe-area-inset-bottom))' }}>
