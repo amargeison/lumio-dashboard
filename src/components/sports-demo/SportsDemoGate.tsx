@@ -67,6 +67,15 @@ interface SportsDemoGateProps {
   /** Skip the personalisation wizard entirely — after OTP go straight to the demo
    *  data (email → OTP → done). Used by the coach demo, which is a pure showcase. */
   skipWizard?: boolean
+  /**
+   * TRUE when this gate is fronting a REAL customer portal rather than the demo.
+   * The OTP mechanism is identical either way — only the copy changes: a paying
+   * coach signing into their own academy must see "Sign in to your portal", not
+   * "Interactive demo / Explore the demo", which reads as though they've landed
+   * on a sales page instead of their account. The caller decides, because only
+   * it knows whether the slug is the demo one (see the coach portal's DEMO_SLUGS).
+   */
+  liveSignIn?: boolean
   children: (session: SportsDemoSession) => React.ReactNode
 }
 
@@ -412,14 +421,16 @@ const PortalLogo = memo(function PortalLogo({ sport }: { sport: string }) {
 // render, so each keystroke in the controlled email/OTP inputs remounted the
 // whole subtree and the caret jumped to the end. Hoisting keeps the inputs
 // mounted across renders so the caret stays put.
-const GateOverlay = memo(function GateOverlay({ sport, sportLabel, children }: { sport: string; sportLabel: string; children: React.ReactNode }) {
+const GateOverlay = memo(function GateOverlay({ sport, sportLabel, liveSignIn, children }: { sport: string; sportLabel: string; liveSignIn?: boolean; children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#07080F', fontFamily: 'DM Sans, sans-serif' }}>
       <div className="w-full max-w-md">
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <PortalLogo sport={sport} />
           <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 700, margin: 0 }}>{sportLabel}</h2>
-          <p style={{ color: '#6B7280', fontSize: 13, marginTop: 4 }}>Interactive demo</p>
+          {/* Live portals drop the "Interactive demo" strapline entirely — see
+              the liveSignIn prop doc. Branding above it is unchanged. */}
+          <p style={{ color: '#6B7280', fontSize: 13, marginTop: 4 }}>{liveSignIn ? 'Sign in to continue' : 'Interactive demo'}</p>
         </div>
         {children}
       </div>
@@ -431,6 +442,7 @@ const GateOverlay = memo(function GateOverlay({ sport, sportLabel, children }: {
 export default function SportsDemoGate({
   sport, defaultClubName, defaultSlug, accentColor, accentColorLight,
   sportEmoji, sportLabel, roles, children, lockClub = false, skipWizard = false,
+  liveSignIn = false,
 }: SportsDemoGateProps) {
   void accentColorLight // available for future use
   const router = useRouter()
@@ -1025,25 +1037,38 @@ export default function SportsDemoGate({
   }
 
   // ── STEP 1: EMAIL ──
+  // Same OTP mechanism for demo and live — only the wording differs. A real
+  // coach signing into their academy gets sign-in copy; the demo slug keeps the
+  // original "Explore the demo" wording verbatim.
   if (step === 'email') return (
-    <GateOverlay sport={sport} sportLabel={sportLabel}>
+    <GateOverlay sport={sport} sportLabel={sportLabel} liveSignIn={liveSignIn}>
       <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8">
-        <h2 className="text-lg font-bold text-white mb-1">Explore the demo</h2>
-        <p className="text-sm text-gray-400 mb-6">Enter your email to get instant access. We&apos;ll send a quick verification code.</p>
+        <h2 className="text-lg font-bold text-white mb-1">{liveSignIn ? 'Sign in to your portal' : 'Explore the demo'}</h2>
+        <p className="text-sm text-gray-400 mb-6">
+          {liveSignIn
+            ? <>Enter your email and we&apos;ll send you a sign-in code.</>
+            : <>Enter your email to get instant access. We&apos;ll send a quick verification code.</>}
+        </p>
         <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError('') }}
           onKeyDown={e => e.key === 'Enter' && requestOtp()} placeholder="your@email.com" autoFocus
           className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gray-500 mb-3" />
         {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
         <button onClick={requestOtp} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50"
-          style={{ background: loading ? '#374151' : accentColor }}>{loading ? 'Sending code...' : 'Get access →'}</button>
-        <p className="text-[11px] text-gray-600 text-center mt-4">No password. No credit card. Just a quick code to keep bots out.</p>
+          style={{ background: loading ? '#374151' : accentColor }}>
+          {loading ? 'Sending code...' : (liveSignIn ? 'Sign in →' : 'Get access →')}
+        </button>
+        <p className="text-[11px] text-gray-600 text-center mt-4">
+          {liveSignIn
+            ? 'No password needed — we’ll email you a 6-digit code.'
+            : 'No password. No credit card. Just a quick code to keep bots out.'}
+        </p>
       </div>
     </GateOverlay>
   )
 
   // ── STEP 2: OTP ──
   if (step === 'otp') return (
-    <GateOverlay sport={sport} sportLabel={sportLabel}>
+    <GateOverlay sport={sport} sportLabel={sportLabel} liveSignIn={liveSignIn}>
       <div className="bg-[#0d1117] border border-gray-800 rounded-2xl p-8">
         <h2 className="text-lg font-bold text-white mb-1">Check your email</h2>
         <p className="text-sm text-gray-400 mb-6">We sent a 6-digit code to <span className="text-white font-medium">{email}</span>.</p>
