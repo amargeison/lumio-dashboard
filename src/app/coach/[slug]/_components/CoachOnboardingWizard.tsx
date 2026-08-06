@@ -29,9 +29,12 @@ function compress(file: File, size: number): Promise<string> {
 type Props = { defaultName?: string; defaultAcademy?: string; defaultEmail?: string; onClose: () => void; onDone: () => void }
 type Player = { name: string; level: string }
 
-// Founding members: the Lumio team sets every portal up, so self-setup is
-// disabled (COMING SOON) and everyone goes through "Set it up for me".
-const SELF_SETUP_ENABLED = false
+// Self-setup is the real founder journey: the coach enters their own academy and
+// lands straight in a working portal. "Set it up for me" stays available for
+// anyone who'd rather hand their data over, but it must not be the only route —
+// that path parks the founder on the setup-pending screen until the Lumio team
+// marks the portal live, which meant completing onboarding LOCKED them out.
+const SELF_SETUP_ENABLED = true
 
 export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', defaultEmail = '', onClose, onDone }: Props) {
   const [step, setStep] = useState(1)
@@ -80,6 +83,10 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         onboarding_complete: true,
         updated_at: new Date().toISOString(),
       }
+      // Self-setup portals are live the moment onboarding finishes — nothing is
+      // pending from the Lumio team, so they must not sit behind the
+      // setup-pending screen (and they read as "live", not "pending", in admin).
+      if (setupType === 'self') update.setup_complete = true
       if (photo) update.avatar_url = photo
       if (logo) update.brand_logo_url = logo
       if (email.trim()) update.contact_email = email.trim()
@@ -264,10 +271,10 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                 <div style={{ color: '#9CA3AF', fontSize: 13 }}>Our team imports your players and configures your portal. We&rsquo;ll be in touch within 2&ndash;3 business days.</div>
               </button>
               <button disabled={!SELF_SETUP_ENABLED} onClick={() => { if (SELF_SETUP_ENABLED) setSetupType('self') }}
-                style={{ padding: 20, borderRadius: 14, textAlign: 'left', cursor: SELF_SETUP_ENABLED ? 'pointer' : 'default', background: '#111318', border: '2px solid #1F2937', opacity: SELF_SETUP_ENABLED ? 1 : 0.55 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}><span style={{ fontSize: 24 }}>🎾</span><span style={{ background: '#374151', color: '#D1D5DB', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4 }}>COMING SOON</span></div>
+                style={{ padding: 20, borderRadius: 14, textAlign: 'left', cursor: SELF_SETUP_ENABLED ? 'pointer' : 'default', background: setupType === 'self' ? ACCENT + '15' : '#111318', border: `2px solid ${setupType === 'self' ? ACCENT : '#1F2937'}`, opacity: SELF_SETUP_ENABLED ? 1 : 0.55 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}><span style={{ fontSize: 24 }}>🎾</span><span style={{ background: '#374151', color: '#D1D5DB', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4 }}>{SELF_SETUP_ENABLED ? 'START NOW' : 'COMING SOON'}</span></div>
                 <div style={{ color: '#fff', fontSize: 15, fontWeight: 700, marginBottom: 4 }}>I&rsquo;ll add my own data</div>
-                <div style={{ color: '#9CA3AF', fontSize: 13 }}>Add your players, bookings and the rest yourself. While we&rsquo;re in founding-member setup, our team does this for you.</div>
+                <div style={{ color: '#9CA3AF', fontSize: 13 }}>Add your players, courts and bookings yourself — upload a spreadsheet or add them by hand. Your portal is ready to use straight away.</div>
               </button>
             </div>
             {setupType === 'lumio' && (

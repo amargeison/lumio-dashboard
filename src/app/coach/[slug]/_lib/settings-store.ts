@@ -97,6 +97,42 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '', avatarUrl: '' },
 }
 
+// ── Demo seed vs live academy ───────────────────────────────────────────────
+// DEFAULT_SETTINGS above is the DEMO seed — a sample persona (head coach name,
+// academy, accreditation, contact details, pricing, sender email/phone). A real
+// founder's portal must NEVER show any of it: a brand-new academy starts blank
+// and fills from the coach's own sports_profiles record as they set it up.
+//
+// The portal is identified by its slug: /coach/demo (and the canonical
+// /tennis/coach/demo) is the demo; every other slug is a real academy. Deriving
+// that from the URL keeps every caller correct no matter which module reads
+// settings first — there's no provider to thread a flag through.
+export function isDemoPortal(): boolean {
+  if (typeof window === 'undefined') return false
+  const parts = window.location.pathname.split('/').filter(Boolean)
+  const i = parts.lastIndexOf('coach')
+  return i >= 0 && parts[i + 1] === 'demo'
+}
+
+// Live defaults: identical to the demo seed except every field that carries the
+// demo persona is blank, so the coach sees their own details or an empty field.
+export const LIVE_DEFAULT_SETTINGS: CoachSettings = {
+  ...DEFAULT_SETTINGS,
+  academy: '',
+  coach: '',
+  cert: '',
+  privateRate: 0,
+  profile: { role: 'Head Coach', email: '', phone: '', dbsNumber: '', dbsExpiry: '', safeguardingDate: '' },
+  staff: { ...DEFAULT_SETTINGS.staff, dsl: '' },
+  messaging: { ...DEFAULT_SETTINGS.messaging, senderEmail: '', senderPhone: '' },
+  syncedVenues: [],
+}
+
+// The seed this portal should fall back to for anything the coach hasn't set.
+export function activeDefaults(): CoachSettings {
+  return isDemoPortal() ? DEFAULT_SETTINGS : LIVE_DEFAULT_SETTINGS
+}
+
 // Toggleable sections per module — drives the "Sections" toggles in each module's
 // Settings card and what the module renders. Add a module's key here to give it
 // section toggles; the module reads sectionsOff (via isSectionOff) to hide them.
@@ -171,8 +207,12 @@ const KEY = 'lumio_coach_settings'
 const EVT = 'lumio-coach-settings-changed'
 
 export function getSettings(): CoachSettings {
+  // Server render keeps the static seed so the first client render matches it —
+  // useCoachSettings starts from DEFAULT_SETTINGS for exactly that reason and
+  // swaps to the real values (below) on mount.
   if (typeof window === 'undefined') return DEFAULT_SETTINGS
-  try { const raw = localStorage.getItem(KEY); return raw ? { ...DEFAULT_SETTINGS, ...JSON.parse(raw) } : DEFAULT_SETTINGS } catch { return DEFAULT_SETTINGS }
+  const base = activeDefaults()
+  try { const raw = localStorage.getItem(KEY); return raw ? { ...base, ...JSON.parse(raw) } : base } catch { return base }
 }
 
 export function setSettings(patch: Partial<CoachSettings>) {
@@ -228,8 +268,11 @@ const realOrEmpty = (v: string | undefined, demoDefault: string) => (v && v !== 
 
 export function getHeadProfile(): HeadProfile {
   const s = getSettings()
-  const p = { ...DEFAULT_SETTINGS.profile, ...(s.profile || {}) }
-  const h = { ...DEFAULT_SETTINGS.head, ...(s.head || {}) }
+  const d = activeDefaults()
+  const p = { ...d.profile, ...(s.profile || {}) }
+  const h = { ...d.head, ...(s.head || {}) }
+  // Compared against the DEMO seed on purpose: realOrEmpty's job is to blank out
+  // any legacy demo value that made it into storage.
   const dp = DEFAULT_SETTINGS.profile
   const safeguardingDate = h.safeguardingDate || realOrEmpty(p.safeguardingDate, dp.safeguardingDate)
   return {
@@ -255,7 +298,7 @@ export function setHeadProfile(patch: Partial<HeadProfile>) {
     coach: n.name,
     cert: n.accreditation,
     // Keep the legacy `profile` card in step so any older readers stay correct.
-    profile: { ...DEFAULT_SETTINGS.profile, ...(s.profile || {}), role: n.role, email: n.email, phone: n.phone, dbsNumber: n.dbsNumber, dbsExpiry: n.dbsExpiry, safeguardingDate: n.safeguardingDate },
+    profile: { ...activeDefaults().profile, ...(s.profile || {}), role: n.role, email: n.email, phone: n.phone, dbsNumber: n.dbsNumber, dbsExpiry: n.dbsExpiry, safeguardingDate: n.safeguardingDate },
     head: { phone: n.phone, email: n.email, contractedHours: n.contractedHours, dbsNumber: n.dbsNumber, dbsIssued: n.dbsIssued, dbsExpiry: n.dbsExpiry, safeguardingTrained: n.safeguardingTrained, safeguardingDate: n.safeguardingDate, avatarUrl: n.avatarUrl },
   })
 }

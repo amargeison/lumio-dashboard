@@ -58,8 +58,11 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
   const s = getSettings()
   const emailSynced = !!s.conn?.emailProvider
   const provider = providerLabel(s.conn?.emailProvider || '')
-  const phoneConfigured = !!s.messaging?.senderPhone && s.messaging?.text !== false
-  const senderPhone = s.messaging?.senderPhone || ''
+  // Texts are sent server-side from Lumio's own messaging number (Twilio) — there
+  // is no per-coach sending number, so we never name one here. The only thing the
+  // coach controls is whether the Text channel is on at all; if texting isn't
+  // enabled on the account, the send route says so per recipient in the results.
+  const textingOn = s.messaging?.text !== false
 
   const togglePerson = (name: string) => setSelectedNames(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
   const toggleChannel = (id: string) => setChannels(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id])
@@ -78,9 +81,9 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
       case 'email':    return emailSynced
         ? { note: `Live — sent through ${provider}, no app opens`, tag: 'Live', live: true }
         : { note: 'Connect your mailbox in Settings to send email', tag: 'Setup', live: false }
-      case 'sms':      return phoneConfigured
-        ? { note: `Live — sends from your Lumio number (${senderPhone})`, tag: 'Live', live: true }
-        : { note: 'Add a Lumio number in Settings to text automatically', tag: 'Setup', live: false }
+      case 'sms':      return textingOn
+        ? { note: 'Sends from Lumio’s messaging number — replies come back to your inbox', tag: 'Live', live: true }
+        : { note: 'Text is switched off — turn it on in Settings → Messaging', tag: 'Setup', live: false }
       case 'whatsapp': return { note: 'Coming soon — needs WhatsApp Business verification', tag: 'Soon', live: false }
     }
   }
@@ -91,7 +94,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
     switch (id) {
       case 'internal': return 'Added to the inbox'
       case 'email':    return emailSynced ? `Sent through ${provider}` : 'Needs mailbox setup'
-      case 'sms':      return phoneConfigured ? `Texted from ${senderPhone}` : 'Needs a Lumio number'
+      case 'sms':      return textingOn ? 'Texted from Lumio’s number' : 'Text is off in Settings'
       case 'whatsapp': return 'Coming soon'
     }
   }
