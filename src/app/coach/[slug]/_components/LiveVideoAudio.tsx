@@ -3,14 +3,25 @@
 // Live Video & Audio — the demo recordings library over real data. Player filter,
 // Video/Audio tabs, live Record (video+audio or audio-only) and Upload, with
 // playback + download. Clips live in coach_media (the same private bucket as the
-// AI lesson recordings) but here it's a raw review library — NO transcription/AI.
+// AI lesson recordings).
+//
+// AI review runs through the ONE shared pipeline (/api/coach/media/process →
+// transcribe → Lumio Coach persona summary → coach_sessions row) — the same route
+// the Lesson Summaries / Session Planner "Add audio" flows use. Nothing is
+// duplicated here; this page is just another entry point to it.
+//   • AUDIO  → auto-runs on upload/record (audio is always a session).
+//   • VIDEO  → stored as-is, with a per-clip "Generate AI review" button, because
+//              video is often footage/highlights rather than a lesson. Running it
+//              also produces the auto-highlight clips (buildHighlights in the route).
+// This component only ever renders for a real signed-in coach portal (isEmpty in
+// coach/[slug]/page.tsx), so none of this can fire on the demo.
 
 import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, sb, dbUpdate } from '../_lib/coach-db'
 
-type Media = { id: string; kind?: string | null; title?: string | null; player_name?: string | null; duration_seconds?: number | null; created_at?: string; clip_of?: string | null; shot_type?: string | null; shot_confirmed?: boolean | null }
+type Media = { id: string; kind?: string | null; title?: string | null; player_name?: string | null; duration_seconds?: number | null; created_at?: string; clip_of?: string | null; shot_type?: string | null; shot_confirmed?: boolean | null; status?: string | null; review?: unknown }
 const SHOT_OPTIONS = ['serve', 'forehand', 'backhand', 'volley', 'smash'] as const
 const mmss = (s?: number | null) => { if (!s && s !== 0) return ''; const m = Math.floor((s || 0) / 60); return `${m}:${String(Math.round((s || 0) % 60)).padStart(2, '0')}` }
 const fmtDate = (d?: string) => { const t = d ? new Date(d) : null; return t && !isNaN(t.getTime()) ? t.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '' }
@@ -32,13 +43,17 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
   const [secs, setSecs] = useState(0)
   const [err, setErr] = useState('')
   const [play, setPlay] = useState<{ url: string; kind: string; title: string } | null>(null)
+  // Media ids currently going through the AI pipeline (auto for audio, opt-in for video).
+  const [reviewing, setReviewing] = useState<string[]>([])
   const fileRef = useRef<HTMLInputElement>(null)
   const recRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<BlobPart[]>([])
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Guards the review poll loop against setting state after unmount.
+  const aliveRef = useRef(true)
 
-  useEffect(() => () => { stopTracks(); if (timerRef.current) clearInterval(timerRef.current) }, [])
+  useEffect(() => () => { aliveRef.current = false; stopTracks(); if (timerRef.current) clearInterval(timerRef.current) }, [])
   const stopTracks = () => { streamRef.current?.getTracks().forEach(t => t.stop()); streamRef.current = null }
 
   const inFilter = (m: Media) => (!playerFilter || (m.player_name || '') === playerFilter)
@@ -49,8 +64,10 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
   const audioCount = media.rows.filter(m => m.kind === 'audio').length
   const bothOn = videoOn && audioOn
 
-  // Upload a clip to coach_media WITHOUT triggering the AI process route.
-  const uploadOne = async (blob: Blob, name: string, title: string, duration?: number) => {
+  // Upload a clip to coach_media. Video is left at 'done' (stored only, review is
+  // opt-in); audio is left as the sign route created it so the AI pipeline below
+  // can take it straight through.
+  const uploadOne = async (blob: Blob, name: string, title: string, duration?: number): Promise<{ id: string; isVideo: boolean }> => {
     const isVideo = blob.type.startsWith('video') || (!blob.type && recKind === 'video')
     const sign = await fetch('/api/coach/media/sign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: isVideo ? 'video' : 'audio', playerName: playerFilter || null, fileName: name }) })
     if (sign.status === 401) throw new Error('Uploading needs a signed-in coach account.')
@@ -58,14 +75,53 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
     if (!sign.ok) throw new Error(sd.error || `Upload failed (${sign.status})`)
     const up = await sb().storage.from('coach-media').uploadToSignedUrl(sd.path, sd.token, blob, { contentType: blob.type || undefined })
     if (up.error) throw new Error('Storage upload failed: ' + up.error.message)
-    await dbUpdate('coach_media', sd.id, { title, duration_seconds: duration ?? null, status: 'done' }).catch(() => {})
+    await dbUpdate('coach_media', sd.id, { title, duration_seconds: duration ?? null, ...(isVideo ? { status: 'done' } : {}) }).catch(() => {})
+    return { id: sd.id as string, isVideo }
   }
 
   const runUploads = async (items: { blob: Blob; name: string; title: string; duration?: number }[]) => {
     setPhase('uploading'); setErr('')
-    try { for (const it of items) await uploadOne(it.blob, it.name, it.title, it.duration); media.reload() }
+    const audioIds: string[] = []
+    try {
+      for (const it of items) {
+        const { id, isVideo } = await uploadOne(it.blob, it.name, it.title, it.duration)
+        if (!isVideo) audioIds.push(id)
+      }
+      media.reload()
+    }
     catch (e) { setErr(e instanceof Error ? e.message : 'Upload failed') }
     setPhase('idle')
+    // Audio is always a session → run the AI review automatically. Each file is
+    // its own lesson here (unlike the capture modal, where a coach groups parts).
+    for (const id of audioIds) void runReview([id])
+  }
+
+  // ── AI review — the ONE shared pipeline ────────────────────────────────────
+  // Posts to /api/coach/media/process, exactly as MediaCaptureModal does: it
+  // transcribes, summarises under the Lumio Coach persona, writes the
+  // coach_sessions row and (for video) cuts the highlight clips. We only poll the
+  // row until the route flips its status.
+  const runReview = async (ids: string[]) => {
+    if (!ids.length) return
+    setErr('')
+    setReviewing(prev => Array.from(new Set([...prev, ...ids])))
+    try {
+      const r = await fetch('/api/coach/media/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) })
+      const d = await r.json().catch(() => ({}))
+      if (r.status === 401) throw new Error('AI review needs a signed-in coach account.')
+      if (!r.ok) throw new Error(d.error || `AI review failed (${r.status})`)
+      for (let tries = 0; tries < 150; tries++) {
+        await new Promise(res => setTimeout(res, 4000))
+        if (!aliveRef.current) return
+        const j = await fetch(`/api/coach/media/${ids[0]}`).then(x => x.json()).catch(() => null)
+        if (j?.status === 'done') break
+        if (j?.status === 'error') throw new Error(j.error || 'AI review failed')
+      }
+    } catch (e) {
+      if (aliveRef.current) setErr(e instanceof Error ? e.message : 'AI review failed')
+    } finally {
+      if (aliveRef.current) { setReviewing(prev => prev.filter(id => !ids.includes(id))); media.reload() }
+    }
   }
 
   const startRecording = async () => {
@@ -138,13 +194,22 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
         <span style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{media.rows.length} clip{media.rows.length === 1 ? '' : 's'} logged</span>
       </div>
 
-      {/* Auto highlights — Video only */}
+      {/* AI review notice — audio auto-runs, video is opt-in per clip */}
+      {tab === 'audio' && (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: accent.dim, border: `1px solid ${accent.hex}44`, borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>✨</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>AI lesson review</div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>Session audio is transcribed and written up automatically — the summary lands in Lesson Summaries against the player. You type nothing.</div>
+          </div>
+        </div>
+      )}
       {tab === 'video' && (
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, background: accent.dim, border: `1px solid ${accent.hex}44`, borderRadius: 10, padding: '12px 14px', marginBottom: 14 }}>
           <span style={{ fontSize: 18, lineHeight: 1 }}>✨</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, display: 'flex', alignItems: 'center', gap: 7 }}>Auto highlights <span style={{ fontSize: 8.5, fontWeight: 800, color: accent.hex, background: T.panel, border: `1px solid ${accent.hex}55`, borderRadius: 999, padding: '1px 6px', letterSpacing: '0.05em' }}>BETA</span></div>
-            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>Court video is automatically clipped into shot highlights, linked to the right player, and pushed to their mobile app — ready to review and share.</div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, display: 'flex', alignItems: 'center', gap: 7 }}>AI review &amp; auto highlights <span style={{ fontSize: 8.5, fontWeight: 800, color: accent.hex, background: T.panel, border: `1px solid ${accent.hex}55`, borderRadius: 999, padding: '1px 6px', letterSpacing: '0.05em' }}>BETA</span></div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>Tap <strong style={{ color: T.text2 }}>Generate AI review</strong> on a clip and it&apos;s written up as a lesson summary and clipped into shot highlights, linked to the right player. Video is opt-in — not every clip is a lesson.</div>
           </div>
         </div>
       )}
@@ -208,6 +273,22 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
                       ? <span style={{ fontSize: 10.5, color: T.good, fontWeight: 700, whiteSpace: 'nowrap' }} title="Shared with the player/parent">✓ Shared</span>
                       : <button onClick={() => m.shot_type && confirmShot(m, m.shot_type)} disabled={!m.shot_type} title="Publish this clip to the player/parent app" style={{ appearance: 'none', border: 0, cursor: m.shot_type ? 'pointer' : 'not-allowed', background: accent.hex, color: T.btnText, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 700, fontFamily: FONT, opacity: m.shot_type ? 1 : 0.5, whiteSpace: 'nowrap' }}>Publish ✓</button>}
                   </div>
+                )}
+                {/* AI review — the same /api/coach/media/process pipeline as the
+                    Lesson Summaries "Add audio" flow. Audio has already run
+                    automatically on upload, so the button here is a retry; video
+                    is opt-in because it's often footage, not a lesson. Highlight
+                    clips (clip_of) are derived from an already-reviewed session. */}
+                {!m.clip_of && (
+                  reviewing.includes(m.id) || m.status === 'processing' ? (
+                    <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: accent.hex }}>✨ Generating AI review…</div>
+                  ) : m.review ? (
+                    <div title="A lesson summary was generated from this recording — see Lesson Summaries" style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: T.good }}>✓ AI review saved</div>
+                  ) : (
+                    <button onClick={() => runReview([m.id])} title={tab === 'video' ? 'Transcribe this video and write the lesson summary' : 'Run the AI review on this recording again'} style={{ marginTop: 6, width: '100%', appearance: 'none', border: `1px solid ${accent.hex}55`, background: accent.dim, color: accent.hex, borderRadius: 7, padding: '5px 9px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+                      {tab === 'video' ? '✨ Generate AI review' : '↻ Retry AI review'}
+                    </button>
+                  )
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <span style={{ fontSize: 10, color: T.text3, flex: 1 }}>{[m.player_name, fmtDate(m.created_at)].filter(Boolean).join(' · ')}</span>

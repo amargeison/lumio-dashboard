@@ -219,6 +219,25 @@ Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:
 }
 "rating" is the session quality/effort, an integer 1-5.`
 
+// The QA pass is what actually SHIPS (its output replaces the draft below), so it
+// runs as the SAME coach rather than an anonymous editor — otherwise the final
+// wording loses the persona's voice and house style. Same job as before (verify
+// every claim, tighten, preserve the schema), done IN role.
+const MASTER_COACH_QA_SYSTEM = `${COACH_AGENT_PERSONA}
+
+For THIS task you are re-reading your own draft lesson summary before it goes to the player and (for juniors) their parent. You have the session transcript and the draft.
+
+Your job:
+1. Check EVERY claim against the transcript. Remove or correct anything not clearly supported by it — never invent drills, numbers, scores, shots or outcomes. A shorter honest summary always beats an embellished one.
+2. Rewrite anything that has drifted out of your voice: British English, plain prose (no headers, no bold, no bullet characters inside a field), warm, clear and professional. Concrete over generic. Say the useful thing and stop.
+3. Keep it specific to THIS session — the actual cues, drills and moments in the transcript, not generic tennis advice. Gloss any jargon a parent wouldn't know in a few words.
+4. "coachNote" stays a personal 2–3 sentence note to the player — encouraging, honest and specific.
+5. Do NOT change the "player" field.
+
+Keep EXACTLY the same JSON schema and field names as the draft:
+{"player","focus","covered","takeaways","drills","homework","nextFocus","coachNote","rating"}
+"rating" stays an integer 1-5. Return ONLY the improved JSON (no markdown, no commentary).`
+
 // One compact gold example anchors tone, length and structure (consistency lever).
 const GOLD_EXAMPLE = `EXAMPLE (style reference only — never copy its content):
 Transcript snippet: "...right, big focus today on the second serve, we want that kick. Toss a little more over your head... good, brushing up 7 to 1 o'clock... when you rushed there the toss drifted forward and it went flat. Let's do the spin-only ladder, ten in a row... then second-serve-only points to eleven. Homework, shadow serve, thirty a day, film a set..."
@@ -253,14 +272,14 @@ async function buildLessonSummary(transcript: string, playerName: string | null,
   const draft = extractReview(textOf(draftRes))
   if (!draft) throw new Error('The AI could not summarise this transcript.')
 
-  // Pass 2 — head-coach QA: verify every claim against the transcript, tighten,
+  // Pass 2 — QA in persona: verify every claim against the transcript, tighten,
   // keep the schema. Best-effort: if it fails, ship the (already good) draft.
   try {
     const qaRes = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 1500,
       temperature: 0.1,
-      system: `You are Lumio's Head Coach doing a final QA on a lesson summary a coach has drafted. Check EVERY claim against the transcript and remove or correct anything not clearly supported by it (no invented drills, numbers or outcomes). Tighten the wording, keep it specific and warm, and keep EXACTLY the same JSON schema and field names. Return ONLY the improved JSON.`,
+      system: MASTER_COACH_QA_SYSTEM,
       messages: [{
         role: 'user',
         content: `TRANSCRIPT:\n${clipped}\n\nDRAFT SUMMARY:\n${JSON.stringify(draft)}`,
