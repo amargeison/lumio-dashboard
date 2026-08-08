@@ -13,6 +13,8 @@ import { sb, dbInsert } from '../_lib/coach-db'
 export type LessonReview = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
   homework?: string; nextFocus?: string; coachNote?: string; rating?: number
+  // Diagnostic layer on AI summaries built from a recording (see agent-persona.ts).
+  assessment?: string; technique?: string[]; recap?: string
 }
 type Phase = 'choose' | 'recording' | 'uploading' | 'processing' | 'done' | 'error'
 
@@ -230,7 +232,9 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.good }}>✓ Summary ready</div>
               {review.focus && <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '10px 12px' }}><div style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>Focus</div><div style={{ fontSize: 14, color: T.text, fontWeight: 600, marginTop: 2 }}>{review.focus}</div></div>}
+              {review.assessment && <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderLeft: `3px solid ${accent.hex}`, borderRadius: 8, padding: '10px 12px' }}><div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700 }}>Assessment</div><div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.6, marginTop: 3 }}>{review.assessment}</div></div>}
               {!!review.covered?.length && <Section T={T} title="Covered" items={review.covered} />}
+              {!!review.technique?.length && <Section T={T} title="How we worked on it" items={review.technique} />}
               {!!review.takeaways?.length && <Section T={T} title="Key takeaways" items={review.takeaways} />}
               {review.homework && <div style={{ fontSize: 12.5, color: T.text2 }}><b style={{ color: T.text }}>Homework:</b> {review.homework}</div>}
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
