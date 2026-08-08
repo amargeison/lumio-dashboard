@@ -22,6 +22,11 @@ type Review = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
   homework?: string; nextFocus?: string; coachNote?: string; rating?: number
   skillsWorked?: string[]; time?: string; court?: string; type?: string; duration?: number
+  // Diagnostic layer (AI summaries from a recording). `assessment` is the coach's
+  // judgement — the one highest-leverage priority, why it matters and what it is
+  // costing — and leads the whole summary. `technique` is HOW the coach taught it.
+  // `recap` is the short plain-language headline behind the "Summary" button.
+  assessment?: string; technique?: string[]; recap?: string
 }
 type PlayerLite = { id: string; name: string; racket_stage?: string | null }
 type Session = {
@@ -202,9 +207,10 @@ function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, on
   onExport: () => void; onEdit: () => void; onDuplicate: () => void; onDelete: () => void
 }) {
   const [shareOpen, setShareOpen] = useState(false)
+  const [recapOpen, setRecapOpen] = useState(false)
   const r = s.review_json || {}
   const rating = s.rating ?? r.rating ?? 0
-  const hasStructured = !!(r.covered?.length || r.takeaways?.length || r.drills?.length || r.skillsWorked?.length || r.homework || r.nextFocus)
+  const hasStructured = !!(r.assessment || r.covered?.length || r.takeaways?.length || r.drills?.length || r.skillsWorked?.length || r.homework || r.nextFocus)
   const card: CSSProperties = { background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' }
   const meta = [r.time, r.duration ? `${r.duration} min` : '', r.court, r.type].filter(Boolean).join(' · ')
 
@@ -228,6 +234,18 @@ function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, on
         <div style={{ fontSize: 14, color: T.text, fontWeight: 600, marginTop: 2 }}>{s.focus || r.focus || 'Lesson summary'}</div>
       </div>
 
+      {/* The coach's diagnosis leads the summary — the one highest-leverage
+          priority, why it matters and what it is costing — before the
+          chronological "what we covered". */}
+      {r.assessment && (
+        <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderLeft: `3px solid ${accent.hex}`, borderRadius: 8, padding: '12px 14px', marginBottom: 16 }}>
+          <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 700, marginBottom: 5 }}>
+            {s.player_name ? `Where ${s.player_name.split(/\s+/)[0]} is right now` : 'Assessment'}
+          </div>
+          <div style={{ fontSize: 13, color: T.text, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{r.assessment}</div>
+        </div>
+      )}
+
       {hasStructured ? (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
@@ -245,6 +263,10 @@ function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, on
               {!!r.drills?.length && <>
                 <SubHead T={T} accent={accent}>⚑ Drills used</SubHead>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{r.drills.map((d, i) => <span key={i} style={{ fontSize: 11.5, color: T.text2, padding: '4px 8px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}` }}>{d}</span>)}</div>
+              </>}
+              {!!r.technique?.length && <>
+                <SubHead T={T} accent={accent} mt>◈ How we worked on it</SubHead>
+                {r.technique.map((t, i) => <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12.5, color: T.text2, padding: '4px 0', lineHeight: 1.5 }}><span style={{ color: accent.hex, flexShrink: 0 }}>·</span>{t}</div>)}
               </>}
               {!!r.skillsWorked?.length && <>
                 <SubHead T={T} accent={accent} mt>🏆 Skills worked</SubHead>
@@ -288,6 +310,7 @@ function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, on
       <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
         <button onClick={() => setShareOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>📣 Share with parent</button>
         <button onClick={onDuplicate} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Duplicate</button>
+        <button onClick={() => setRecapOpen(true)} title="The short version — a 2-3 sentence recap of the session" style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Summary</button>
         <button onClick={onExport} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Export PDF</button>
         <button onClick={onEdit} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Edit</button>
         <button onClick={onDelete} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Delete</button>
@@ -295,6 +318,7 @@ function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, on
 
       {hasStructured && <CoachAiBrief T={T} accent={accent} s={s} />}
       {shareOpen && <ShareMenu T={T} accent={accent} s={s} onClose={() => setShareOpen(false)} />}
+      {recapOpen && <RecapModal T={T} accent={accent} s={s} onClose={() => setRecapOpen(false)} />}
     </div>
   )
 }
@@ -477,7 +501,9 @@ function draftSections(focus: string, note: string) {
 function formatReviewText(r: Review): string {
   const out: string[] = []
   if (r.focus) out.push(`Focus: ${r.focus}`)
+  if (r.assessment) out.push('\nAssessment:\n' + r.assessment)
   if (r.covered?.length) out.push('\nWhat we covered:\n' + r.covered.map(x => `• ${x}`).join('\n'))
+  if (r.technique?.length) out.push('\nHow we worked on it:\n' + r.technique.map(x => `• ${x}`).join('\n'))
   if (r.takeaways?.length) out.push('\nKey takeaways:\n' + r.takeaways.map(x => `• ${x}`).join('\n'))
   if (r.drills?.length) out.push('\nDrills: ' + r.drills.join(', '))
   if (r.homework) out.push('\nHomework: ' + r.homework)
@@ -540,6 +566,11 @@ function SummaryFormModal({ T, accent, players, session, onClose, onSave }: {
     setSaving(true)
     const isNew = playerSel === '__new__' && !players.some(p => p.name.toLowerCase() === who.toLowerCase())
     const review: Review = {
+      // The form doesn't expose the AI diagnostic layer, so rebuilding the review
+      // from the fields alone would silently drop it on any edit. Carry it over.
+      ...(r0.assessment ? { assessment: r0.assessment } : {}),
+      ...(r0.technique?.length ? { technique: r0.technique } : {}),
+      ...(r0.recap ? { recap: r0.recap } : {}),
       focus: focus.trim(), covered: splitLines(covered), takeaways: splitLines(takeaways), drills: splitLines(drills),
       skillsWorked: [...skills], homework: homework.trim(), nextFocus: nextFocus.trim(), coachNote: coachNote.trim(),
       rating, time, court: court.trim(), type, duration: Number(dur) || 60,
@@ -637,12 +668,69 @@ function SummaryFormModal({ T, accent, players, session, onClose, onSave }: {
   )
 }
 
+// ── Short recap ───────────────────────────────────────────────────────────────
+// The "Summary" button shows the headline of the session in 2-3 plain sentences,
+// distinct from the full detailed summary. AI summaries written since the
+// diagnostic tuning carry a proper "recap" field; for everything before that
+// (and for manually-typed summaries) we derive one locally from what the summary
+// already holds — no per-click API call, so the button is instant and free.
+const lowerFirst = (x: string) => x.charAt(0).toLowerCase() + x.slice(1)
+const stripEnd = (x: string) => x.replace(/\s*[.;,]+\s*$/, '')
+const firstSentences = (text: string, n: number) =>
+  (text.match(/[^.!?]+[.!?]+(\s|$)/g) || [text]).map(x => x.trim()).slice(0, n).join(' ').trim()
+
+function shortRecap(s: Session): { text: string; source: 'ai' | 'derived' } {
+  const r = s.review_json || {}
+  if (r.recap?.trim()) return { text: r.recap.trim(), source: 'ai' }
+
+  const first = (s.player_name || '').trim().split(/\s+/)[0]
+  const focus = stripEnd((s.focus || r.focus || '').trim())
+  const out: string[] = []
+  if (focus) out.push(`${first ? `${first}'s session` : 'This session'} focused on ${lowerFirst(focus)}.`)
+  // Where there's a diagnosis it IS the headline; otherwise the top takeaway.
+  const lead = (r.assessment || r.takeaways?.[0] || r.covered?.[0] || '').trim()
+  if (lead) out.push(firstSentences(`${stripEnd(lead)}.`, r.assessment ? 2 : 1))
+  const homework = stripEnd((r.homework || '').trim())
+  const next = stripEnd((r.nextFocus || '').trim())
+  if (homework && homework.toLowerCase() !== 'not set') out.push(`To practise before next time: ${lowerFirst(homework)}.`)
+  else if (next) out.push(`Next session: ${lowerFirst(next)}.`)
+
+  const derived = out.join(' ').trim()
+  if (derived) return { text: derived, source: 'derived' }
+  const fallback = (r.coachNote || s.summary || s.ai_review || '').trim()
+  return { text: fallback ? firstSentences(fallback, 3) : 'No detail recorded for this summary yet — use Edit to add notes.', source: 'derived' }
+}
+
+function RecapModal({ T, accent, s, onClose }: { T: ThemeTokens; accent: AccentTokens; s: Session; onClose: () => void }) {
+  const { text, source } = shortRecap(s)
+  const [copied, setCopied] = useState(false)
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, fontFamily: FONT, padding: 16 }}>
+      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 18, width: 440, maxWidth: '100%' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Summary</div>
+          <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>{s.player_name || 'Recorded session'} · {fmtDate(s.session_date)}</div>
+        </div>
+        <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 12 }}>The short version — {source === 'ai' ? 'the headline of the session.' : 'drawn from the full summary below it.'}</div>
+        <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '13px 15px', fontSize: 13.5, color: T.text, lineHeight: 1.65 }}>{text}</div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+          <button onClick={() => navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600) }).catch(() => {})}
+            style={{ flex: 1, appearance: 'none', border: 0, padding: '9px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{copied ? 'Copied ✓' : '📋 Copy'}</button>
+          <button onClick={onClose} style={{ flex: 1, appearance: 'none', padding: '9px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer', fontFamily: FONT }}>Close</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Share / export helpers ────────────────────────────────────────────────────
 function shareText(s: Session): string {
   const r = s.review_json || {}
   const out: string[] = [`Lesson summary — ${s.player_name || 'Recorded session'} (${fmtDate(s.session_date)})`, '']
   if (s.focus || r.focus) out.push(`Focus: ${s.focus || r.focus}`, '')
+  if (r.assessment) out.push('Assessment:', r.assessment, '')
   if (r.covered?.length) out.push('What we covered:', ...r.covered.map(c => `• ${c}`), '')
+  if (r.technique?.length) out.push('How we worked on it:', ...r.technique.map(t => `• ${t}`), '')
   if (r.takeaways?.length) out.push('Key takeaways:', ...r.takeaways.map(t => `• ${t}`), '')
   if (r.drills?.length) out.push(`Drills: ${r.drills.join(', ')}`, '')
   if (r.homework) out.push(`Homework: ${r.homework}`, '')
@@ -661,7 +749,9 @@ function printSession(s: Session) {
 </head><body>
 <h1>${esc(s.player_name || 'Recorded session')}</h1><h2>${esc(fmtDate(s.session_date))}${stars ? ` · ${'★'.repeat(stars)}` : ''}</h2>
 <div class="focus">${esc(s.focus || r.focus || 'Lesson summary')}</div>
+${r.assessment ? `<h3>Assessment</h3><p>${esc(r.assessment)}</p>` : ''}
 ${block('What we covered', r.covered || [])}
+${block('How we worked on it', r.technique || [])}
 ${block('Key takeaways', r.takeaways || [])}
 ${r.drills && r.drills.length ? `<h3>Drills used</h3><p>${esc(r.drills.join(', '))}</p>` : ''}
 ${r.homework ? `<h3>Homework</h3><p>${esc(r.homework)}</p>` : ''}
