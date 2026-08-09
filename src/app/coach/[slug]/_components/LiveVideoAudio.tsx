@@ -19,7 +19,8 @@
 import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, sb, dbUpdate } from '../_lib/coach-db'
+import { useCoachTable, dbUpdate, invalidateCoachTable } from '../_lib/coach-db'
+import { uploadMedia, confirmAndProcess, pollMedia, isProcessingStatus, processStageShort } from '../_lib/media-upload'
 
 type Media = { id: string; kind?: string | null; title?: string | null; player_name?: string | null; duration_seconds?: number | null; created_at?: string; clip_of?: string | null; shot_type?: string | null; shot_confirmed?: boolean | null; status?: string | null; review?: unknown }
 const SHOT_OPTIONS = ['serve', 'forehand', 'backhand', 'volley', 'smash'] as const
@@ -43,8 +44,12 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
   const [secs, setSecs] = useState(0)
   const [err, setErr] = useState('')
   const [play, setPlay] = useState<{ url: string; kind: string; title: string } | null>(null)
-  // Media ids currently going through the AI pipeline (auto for audio, opt-in for video).
-  const [reviewing, setReviewing] = useState<string[]>([])
+  // Media ids currently going through the AI pipeline (auto for audio, opt-in for
+  // video), each mapped to the stage the server last reported — so a clip's card
+  // reads "Transcribing…" / "Writing summary…" rather than one static label.
+  const [reviewing, setReviewing] = useState<Record<string, string>>({})
+  // Live upload progress: real bytes for the file in flight.
+  const [up, setUp] = useState<{ index: number; total: number; pct: number | null; note: string } | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const recRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<BlobPart[]>([])
@@ -64,32 +69,34 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
   const audioCount = media.rows.filter(m => m.kind === 'audio').length
   const bothOn = videoOn && audioOn
 
-  // Upload a clip to coach_media. Video is left at 'done' (stored only, review is
-  // opt-in); audio is left as the sign route created it so the AI pipeline below
-  // can take it straight through.
-  const uploadOne = async (blob: Blob, name: string, title: string, duration?: number): Promise<{ id: string; isVideo: boolean }> => {
-    const isVideo = blob.type.startsWith('video') || (!blob.type && recKind === 'video')
-    const sign = await fetch('/api/coach/media/sign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: isVideo ? 'video' : 'audio', playerName: playerFilter || null, fileName: name }) })
-    if (sign.status === 401) throw new Error('Uploading needs a signed-in coach account.')
-    const sd = await sign.json().catch(() => ({}))
-    if (!sign.ok) throw new Error(sd.error || `Upload failed (${sign.status})`)
-    const up = await sb().storage.from('coach-media').uploadToSignedUrl(sd.path, sd.token, blob, { contentType: blob.type || undefined })
-    if (up.error) throw new Error('Storage upload failed: ' + up.error.message)
-    await dbUpdate('coach_media', sd.id, { title, duration_seconds: duration ?? null, ...(isVideo ? { status: 'done' } : {}) }).catch(() => {})
-    return { id: sd.id as string, isVideo }
-  }
-
+  // Upload clips to coach_media through the SHARED flow (_lib/media-upload.ts) —
+  // the same sign → upload → confirm-readable → process sequence the capture modal
+  // uses, so both entry points get real byte progress and the same protection
+  // against processing a file storage can't hand back yet. Video is left at 'done'
+  // (stored only, review is opt-in); audio is left as the sign route created it so
+  // the AI pipeline below can take it straight through.
   const runUploads = async (items: { blob: Blob; name: string; title: string; duration?: number }[]) => {
     setPhase('uploading'); setErr('')
+    setUp({ index: 0, total: items.length, pct: 0, note: '' })
     const audioIds: string[] = []
     try {
-      for (const it of items) {
-        const { id, isVideo } = await uploadOne(it.blob, it.name, it.title, it.duration)
-        if (!isVideo) audioIds.push(id)
-      }
-      media.reload()
+      const uploaded = await uploadMedia(items, {
+        kind: recKind,
+        playerName: playerFilter || null,
+        onProgress: p => setUp({ index: p.index, total: p.total, pct: p.phase === 'uploading' ? p.pct : null, note: '' }),
+        // Write the title/duration as each file lands, then show it straight away.
+        afterEach: async m => {
+          await dbUpdate('coach_media', m.id, {
+            title: m.item.title, duration_seconds: m.item.duration ?? null,
+            ...(m.isVideo ? { status: 'done' } : {}),
+          }).catch(() => {})
+          media.reload()
+        },
+      })
+      for (const u of uploaded) if (!u.isVideo) audioIds.push(u.id)
     }
     catch (e) { setErr(e instanceof Error ? e.message : 'Upload failed') }
+    setUp(null)
     setPhase('idle')
     // Audio is always a session → run the AI review automatically. Each file is
     // its own lesson here (unlike the capture modal, where a coach groups parts).
@@ -104,23 +111,24 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
   const runReview = async (ids: string[]) => {
     if (!ids.length) return
     setErr('')
-    setReviewing(prev => Array.from(new Set([...prev, ...ids])))
+    const stage = (s: string) => setReviewing(prev => Object.fromEntries([...Object.entries(prev), ...ids.map(id => [id, s])]))
+    stage('processing')
     try {
-      const r = await fetch('/api/coach/media/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) })
-      const d = await r.json().catch(() => ({}))
-      if (r.status === 401) throw new Error('AI review needs a signed-in coach account.')
-      if (!r.ok) throw new Error(d.error || `AI review failed (${r.status})`)
-      for (let tries = 0; tries < 150; tries++) {
-        await new Promise(res => setTimeout(res, 4000))
-        if (!aliveRef.current) return
-        const j = await fetch(`/api/coach/media/${ids[0]}`).then(x => x.json()).catch(() => null)
-        if (j?.status === 'done') break
-        if (j?.status === 'error') throw new Error(j.error || 'AI review failed')
-      }
+      // Confirm the object is readable before asking the pipeline to open it —
+      // this is what removed the "Object not found" / manual-retry path.
+      await confirmAndProcess(ids)
+      await pollMedia(ids[0], {
+        isAlive: () => aliveRef.current,
+        onStatus: s => { if (aliveRef.current) stage(s) },
+      })
     } catch (e) {
       if (aliveRef.current) setErr(e instanceof Error ? e.message : 'AI review failed')
     } finally {
-      if (aliveRef.current) { setReviewing(prev => prev.filter(id => !ids.includes(id))); media.reload() }
+      if (aliveRef.current) {
+        setReviewing(prev => Object.fromEntries(Object.entries(prev).filter(([id]) => !ids.includes(id))))
+        media.reload()                              // clips + review state land here on their own
+        invalidateCoachTable('coach_sessions')      // …and the summary is fresh over in Lesson Summaries
+      }
     }
   }
 
@@ -162,6 +170,10 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
 
   return (
     <div style={{ fontFamily: FONT }}>
+      <style>{`
+        @keyframes lvaSpin { to { transform: rotate(360deg) } }
+        @keyframes lvaSlide { 0% { transform: translateX(-100%) } 100% { transform: translateX(400%) } }
+      `}</style>
       <div style={{ marginBottom: 14 }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>{bothOn ? <>Video &amp; Audio</> : videoOn ? 'Video' : 'Audio'}</h1>
         <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>{bothOn ? 'Your recordings library — court clips and session audio for review.' : videoOn ? 'Your recordings library — court clips for review.' : 'Your recordings library — session audio for review.'}</p>
@@ -242,8 +254,22 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
               <button onClick={startRecording} disabled={phase === 'uploading'} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 11, padding: '14px 28px', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: FONT, boxShadow: `0 4px 14px ${accent.hex}44` }}>{tab === 'audio' ? '🎙️ Record audio' : '▶ Record video'}</button>
               <button onClick={() => fileRef.current?.click()} disabled={phase === 'uploading'} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 11, padding: '14px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>⬆ Upload {tab === 'audio' ? 'audio' : 'video'}</button>
               <input ref={fileRef} type="file" accept={tab === 'audio' ? 'audio/*' : 'video/*'} multiple style={{ display: 'none' }} onChange={e => onPick(Array.from(e.target.files || []))} />
-              {phase === 'uploading' && <span style={{ fontSize: 12, color: T.text3, alignSelf: 'center' }}>Uploading…</span>}
             </div>
+            {/* Real upload progress — a big file used to sit on a static "Uploading…" */}
+            {phase === 'uploading' && up && (
+              <div style={{ marginTop: 14, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 8 }}>
+                  <span style={{ width: 15, height: 15, borderRadius: '50%', border: `2px solid ${accent.hex}33`, borderTopColor: accent.hex, display: 'inline-block', animation: 'lvaSpin 0.9s linear infinite', flexShrink: 0 }} />
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>
+                    {up.pct === null ? 'Uploading…' : `Uploading… ${up.pct}%`}
+                  </span>
+                  {up.total > 1 && <span style={{ fontSize: 11.5, color: T.text3 }}>File {up.index + 1} of {up.total}</span>}
+                </div>
+                <div style={{ height: 5, borderRadius: 999, background: T.hover, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 999, background: accent.hex, width: up.pct === null ? '30%' : `${up.pct}%`, transition: 'width 0.3s ease', animation: up.pct === null ? 'lvaSlide 1.4s ease-in-out infinite' : 'none' }} />
+                </div>
+              </div>
+            )}
             {err && <div style={{ fontSize: 12, color: T.bad, marginTop: 8 }}>{err}</div>}
           </>
         )}
@@ -280,8 +306,11 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
                     is opt-in because it's often footage, not a lesson. Highlight
                     clips (clip_of) are derived from an already-reviewed session. */}
                 {!m.clip_of && (
-                  reviewing.includes(m.id) || m.status === 'processing' ? (
-                    <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: accent.hex }}>✨ Generating AI review…</div>
+                  reviewing[m.id] || isProcessingStatus(m.status) ? (
+                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: accent.hex }}>
+                      <span style={{ width: 11, height: 11, borderRadius: '50%', border: `2px solid ${accent.hex}33`, borderTopColor: accent.hex, display: 'inline-block', animation: 'lvaSpin 0.9s linear infinite', flexShrink: 0 }} />
+                      {processStageShort(reviewing[m.id] || m.status)}
+                    </div>
                   ) : m.review ? (
                     <div title="A lesson summary was generated from this recording — see Lesson Summaries" style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: T.good }}>✓ AI review saved</div>
                   ) : (

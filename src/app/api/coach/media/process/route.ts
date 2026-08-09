@@ -12,6 +12,11 @@ export const maxDuration = 300
 // sections) and turns the combined transcript into a single AI lesson summary,
 // which is also written as a coach_sessions row. Runs in the background; the
 // client polls the first media id for status. Auth = the coach's session.
+//
+// coach_media.status walks: uploaded → processing → transcribing → summarising →
+// done (or error). The middle two are progress breadcrumbs for the UI (the column
+// is free text — no constraint to migrate); anything reading them should use the
+// isProcessingStatus/processStageLabel helpers in _lib/media-upload.ts.
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
@@ -41,20 +46,56 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ status: 'processing', firstId: idList[0] })
 }
 
+// Storage acknowledges a signed-URL upload before the object is dependably
+// readable back, so opening it here immediately after the browser finished
+// uploading is a race — and losing it used to fail the whole review with "Object
+// not found", leaving the coach to click "Retry AI review". The client now waits
+// for /api/coach/media/ready first; this is the backstop, so a transient
+// not-found costs a few seconds instead of the summary. Any OTHER storage error
+// is a real failure and fails fast.
+const NOT_FOUND_RE = /not[\s_-]?found|does not exist|no such|404/i
+
+async function downloadWithRetry(sb: ReturnType<typeof serviceClient>, path: string): Promise<Blob> {
+  const delays = [0, 700, 1500, 3000, 5000, 8000, 12000]   // ~30s of grace in total
+  let last = 'unknown'
+  for (let i = 0; i < delays.length; i++) {
+    if (delays[i]) await new Promise(r => setTimeout(r, delays[i]))
+    const dl = await sb.storage.from('coach-media').download(path)
+    if (!dl.error && dl.data) {
+      if (i) console.warn(`[coach/media/process] object became readable on attempt ${i + 1}: ${path}`)
+      return dl.data
+    }
+    last = dl.error?.message || 'unknown'
+    if (!NOT_FOUND_RE.test(last)) break
+    console.warn(`[coach/media/process] object not readable yet (attempt ${i + 1}/${delays.length}): ${path}`)
+  }
+  throw new Error('Could not read an uploaded file: ' + last)
+}
+
+// Progress breadcrumbs the UI reads back through /api/coach/media/{id}, so the
+// coach sees Transcribing… → Writing summary… instead of one static state.
+// Purely informational — the pipeline itself is unchanged.
+async function markStage(sb: ReturnType<typeof serviceClient>, ids: string[], status: 'transcribing' | 'summarising') {
+  try {
+    await sb.from('coach_media').update({ status, updated_at: new Date().toISOString() }).in('id', ids)
+  } catch (e) { console.warn('[coach/media/process] stage update', e) }
+}
+
 async function processGroup(coachId: string, rows: any[]) {
   const sb = serviceClient()
   const multi = rows.length > 1
+  const allIds = rows.map(r => r.id)
 
   // 1. Transcribe each file, in order, storing each part's transcript. We keep
   // the first video file's buffer + timestamped segments so we can cut per-shot
   // highlight clips from a single-video upload (the common case).
   const parts: string[] = []
   let clipSource: { buf: Buffer; ext: string; segments: TranscriptSegment[] } | null = null
+  await markStage(sb, allIds, 'transcribing')
   for (let i = 0; i < rows.length; i++) {
     const m = rows[i]
-    const dl = await sb.storage.from('coach-media').download(m.storage_path)
-    if (dl.error || !dl.data) throw new Error('Could not read an uploaded file: ' + (dl.error?.message || 'unknown'))
-    const buf = Buffer.from(await dl.data.arrayBuffer())
+    const data = await downloadWithRetry(sb, m.storage_path)
+    const buf = Buffer.from(await data.arrayBuffer())
     const { text: t, segments } = await transcribeMediaTimed(buf, m.mime_type || '', m.storage_path)
     parts.push(multi ? `--- Part ${i + 1} ---\n${t}` : t)
     await sb.from('coach_media').update({ transcript: t, updated_at: new Date().toISOString() }).eq('id', m.id)
@@ -85,6 +126,7 @@ async function processGroup(coachId: string, rows: any[]) {
     if (hit) playerId = hit.id
     else console.warn('[coach/media/process] tagged player name ambiguous/unknown — session kept on name-scoping only:', playerName)
   }
+  await markStage(sb, allIds, 'summarising')
   const review = await buildLessonSummary(transcript, playerName, playerName ? null : (roster as any[]).map(p => p.name).filter(Boolean).slice(0, 200))
   // Untagged recording → adopt the AI's identification ONLY on an exact roster match
   // AND only if that name is actually spoken in the transcript — this blocks the AI

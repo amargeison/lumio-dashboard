@@ -9,8 +9,9 @@ import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { useCoachTable, dbInsert, dbRemove, RACKET_STAGES, RACKET_SKILLS, logSessionAttendance } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbRemove, invalidateCoachTable, RACKET_STAGES, RACKET_SKILLS, logSessionAttendance } from '../_lib/coach-db'
 import { MediaCaptureModal } from './MediaCaptureModal'
+import { pollMedia } from '../_lib/media-upload'
 import { getSettings } from '../_lib/settings-store'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -590,7 +591,11 @@ function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onComp
           {KIT_BY_TYPE[(plan.session_type as SType) || 'Private'].map(k => <span key={k} style={{ fontSize: 11, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '3px 10px' }}>{k}</span>)}
         </div>
         {mediaOpen && <MediaCaptureModal T={T} accent={accent} defaultKind="audio" players={players} playerName={plan.group_name || undefined}
-          onClose={() => setMediaOpen(false)} onSummary={() => { setMediaOpen(false); onCompleted() }} />}
+          onClose={() => setMediaOpen(false)}
+          // Closing the modal mid-build must not lose the summary: keep watching,
+          // and drop the cached Lesson Summaries so it's there when the coach looks.
+          onProcessing={id => { void pollMedia(id, {}).then(() => invalidateCoachTable('coach_sessions')).catch(() => {}) }}
+          onSummary={() => { setMediaOpen(false); onCompleted() }} />}
       </>
   )
   // Inline (Today view) — render as a panel under the session cards, like the demo.
