@@ -16,6 +16,7 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { MediaCaptureModal } from './MediaCaptureModal'
 import { useCoachTable, dbInsert, dbUpdate, SKILLS_BY_STAGE, logSessionAttendance } from '../_lib/coach-db'
+import { pollMedia, processStageShort } from '../_lib/media-upload'
 import { avatarSrc } from '@/lib/avatar'
 
 type Review = {
@@ -93,8 +94,24 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
   ]
 
   // Closing the recording modal mid-processing leaves the summary building
-  // server-side; poll-reload over the next few minutes so it appears when ready.
-  const bgReload = () => [4, 10, 20, 40, 70, 110, 160].forEach(secs => setTimeout(() => reload(), secs * 1000))
+  // server-side. We keep watching that media row here — outside the modal — so the
+  // finished summary drops into the list on its own. No navigating away and back.
+  const [building, setBuilding] = useState<{ id: string; stage: string } | null>(null)
+  const aliveRef = useRef(true)
+  useEffect(() => () => { aliveRef.current = false }, [])
+
+  const watchProcessing = (mediaId: string) => {
+    setBuilding({ id: mediaId, stage: 'processing' })
+    pollMedia(mediaId, {
+      isAlive: () => aliveRef.current,
+      onStatus: s => { if (aliveRef.current) setBuilding(b => (b && b.id === mediaId ? { ...b, stage: s } : b)) },
+    })
+      // Reload FIRST, then clear the selection — the effect below then lands on
+      // the freshly-arrived summary rather than re-picking the previous newest.
+      .then(async () => { if (aliveRef.current) { await reload(); setSelId(null) } })
+      .catch(() => { /* the modal/Video & Audio page surfaces the error */ })
+      .finally(() => { if (aliveRef.current) setBuilding(b => (b?.id === mediaId ? null : b)) })
+  }
 
   const onShare = (s: Session) => {
     const txt = shareText(s)
@@ -126,12 +143,24 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
     </div>
   )
 
+  // Visible proof the AI review is still running after the modal is closed — with
+  // the live stage, so the page never looks like it has stalled.
+  const buildingBanner = building && (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 14px', marginBottom: 12 }}>
+      <style>{`@keyframes llSpin { to { transform: rotate(360deg) } }`}</style>
+      <span style={{ width: 15, height: 15, borderRadius: '50%', border: `2px solid ${accent.hex}33`, borderTopColor: accent.hex, display: 'inline-block', animation: 'llSpin 0.9s linear infinite', flexShrink: 0 }} />
+      <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{processStageShort(building.stage)}</div>
+      <div style={{ fontSize: 11.5, color: T.text3 }}>Your summary will appear here automatically — no need to refresh.</div>
+    </div>
+  )
+
   const modals = (
     <>
       {mediaKind && (
         <MediaCaptureModal T={T} accent={accent} defaultKind={mediaKind} players={players}
-          onClose={() => { setMediaKind(false); bgReload() }}
-          onSummary={() => { setMediaKind(false); setSelId(null); reload() }} />
+          onClose={() => setMediaKind(false)}
+          onProcessing={watchProcessing}
+          onSummary={async () => { setMediaKind(false); await reload(); setSelId(null) }} />
       )}
       {editing && (
         <SummaryFormModal T={T} accent={accent} players={players}
@@ -153,7 +182,7 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
   if (!rows.length) {
     return (
       <div style={{ fontFamily: FONT }}>
-        {header}{tabs}
+        {header}{tabs}{buildingBanner}
         <div style={{ textAlign: 'center', padding: '48px 20px', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12 }}>
           <div style={{ fontSize: 26 }}>📝</div>
           <div style={{ fontSize: 14, fontWeight: 600, color: T.text, marginTop: 10 }}>No lesson summaries yet</div>
@@ -166,7 +195,7 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
 
   return (
     <div style={{ fontFamily: FONT }}>
-      {header}{tabs}
+      {header}{tabs}{buildingBanner}
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 14, alignItems: 'start' }}>
         {/* List */}
         <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 8, alignSelf: 'start' }}>

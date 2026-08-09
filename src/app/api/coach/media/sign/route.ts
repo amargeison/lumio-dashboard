@@ -34,5 +34,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Could not save media: ${error.message}` }, { status: 500 })
   }
 
-  return NextResponse.json({ id: data.id, path: objectPath, token: signed.data.token })
+  // `signedUrl` lets the browser PUT the bytes over XHR instead of supabase-js, so
+  // the upload reports real byte progress (see _lib/media-upload.ts). The client
+  // falls back to `path` + `token` via supabase-js if that ever fails.
+  return NextResponse.json({ id: data.id, path: objectPath, token: signed.data.token, signedUrl: signed.data.signedUrl })
 }

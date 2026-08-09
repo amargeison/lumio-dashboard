@@ -8,7 +8,8 @@
 import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { sb, dbInsert } from '../_lib/coach-db'
+import { dbInsert } from '../_lib/coach-db'
+import { uploadMedia, confirmAndProcess, pollMedia, processStageLabel, processStep, type UploadPhase } from '../_lib/media-upload'
 
 export type LessonReview = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
@@ -17,6 +18,9 @@ export type LessonReview = {
   assessment?: string; technique?: string[]; recap?: string
 }
 type Phase = 'choose' | 'recording' | 'uploading' | 'processing' | 'done' | 'error'
+
+// The three visible stages of the pipeline, in order (see processStep()).
+const STEPS = ['Uploading', 'Transcribing', 'Writing summary'] as const
 
 // Canned result for the demo simulation (no real upload/transcription). Mirrors
 // the demo's Tom Okafor second-serve lesson so the flow feels real to prospects.
@@ -36,9 +40,13 @@ const DEMO_REVIEW: LessonReview = {
   rating: 5,
 }
 
-export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind = 'audio', playerName, demo = false, players = [] }: {
+export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing, defaultKind = 'audio', playerName, demo = false, players = [] }: {
   T: ThemeTokens; accent: AccentTokens; onClose: () => void
   onSummary?: (review: LessonReview, transcript: string) => void
+  // Fired the moment the AI review starts, with the media id the pipeline writes
+  // its result to. Lets the host page keep watching in the background so the new
+  // summary lands in the list even if the coach closes this modal.
+  onProcessing?: (mediaId: string) => void
   defaultKind?: 'audio' | 'video'; playerName?: string; demo?: boolean
   players?: { id: string; name: string }[]
 }) {
@@ -55,15 +63,31 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
   const [review, setReview] = useState<LessonReview | null>(null)
   const [transcript, setTranscript] = useState('')
   const [uploadInfo, setUploadInfo] = useState('')
+  // Live progress through the pipeline, so the coach never sees a static screen:
+  // `pct` is real bytes-uploaded (null = indeterminate), `procStatus` is the
+  // server's own breadcrumb (transcribing / summarising) and `elapsed` ticks
+  // throughout so there is always something moving.
+  const [pct, setPct] = useState<number | null>(null)
+  const [note, setNote] = useState('')
+  const [procStatus, setProcStatus] = useState<string>('')
+  const [elapsed, setElapsed] = useState(0)
   const fileRef = useRef<HTMLInputElement>(null)
   const recRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<BlobPart[]>([])
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Closing the modal must not leave the poll loop writing into a dead component.
+  const aliveRef = useRef(true)
 
-  useEffect(() => () => { stopTracks(); if (timerRef.current) clearInterval(timerRef.current); if (pollRef.current) clearInterval(pollRef.current) }, [])
+  useEffect(() => () => { aliveRef.current = false; stopTracks(); if (timerRef.current) clearInterval(timerRef.current) }, [])
   const stopTracks = () => { streamRef.current?.getTracks().forEach(t => t.stop()); streamRef.current = null }
+
+  // Elapsed clock for the whole upload → summary run.
+  useEffect(() => {
+    if (phase !== 'uploading' && phase !== 'processing') return
+    const t = setInterval(() => setElapsed(s => s + 1), 1000)
+    return () => clearInterval(t)
+  }, [phase])
 
   // ── Record ──────────────────────────────────────────────────────────────────
   const startRecording = async () => {
@@ -93,59 +117,56 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
     uploadAll(files.map(f => ({ blob: f as Blob, name: f.name })))
   }
 
-  const uploadOne = async (blob: Blob, name: string, who: string): Promise<string> => {
-    const isVideo = blob.type.startsWith('video')
-    // 1. Get a one-time signed upload URL (server also creates the media row).
-    const signRes = await fetch('/api/coach/media/sign', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind: isVideo ? 'video' : kind, playerName: who || playerName, fileName: name }),
-    })
-    if (signRes.status === 401) throw new Error('Uploading recordings needs a signed-in coach account. The demo runs on sample data — sign up for founder access to add your own audio/video.')
-    const sign = await signRes.json().catch(() => ({}))
-    if (!signRes.ok) throw new Error(sign.error || `Could not start upload (${signRes.status})`)
-    // 2. Upload the bytes straight to Supabase Storage — no Next/proxy size limit.
-    const { error } = await sb().storage.from('coach-media').uploadToSignedUrl(sign.path, sign.token, blob, { contentType: blob.type || undefined })
-    if (error) throw new Error('Upload to storage failed: ' + error.message)
-    return sign.id as string
-  }
-
+  // Upload → confirm the object is readable → process → poll. The confirm step is
+  // what killed the old "Object not found" race: /process no longer runs before
+  // storage can hand the file back. All of it lives in _lib/media-upload.ts, so
+  // the Video & Audio page gets exactly the same behaviour.
   const uploadAll = async (items: { blob: Blob; name: string }[]) => {
-    setPhase('uploading'); setErr('')
+    setPhase('uploading'); setErr(''); setPct(0); setProcStatus(''); setElapsed(0); setNote('')
     try {
       const who = resolvePlayer()
       // New player typed → add to the roster first so the summary lands on a profile.
       if (!demo && who && !players.some(p => p.name.toLowerCase() === who.toLowerCase())) {
         await dbInsert('coach_players', { name: who }).catch(() => {})
       }
-      const ids: string[] = []
-      for (let i = 0; i < items.length; i++) {
-        setUploadInfo(items.length > 1 ? `Uploading ${i + 1} of ${items.length}…` : '')
-        ids.push(await uploadOne(items[i].blob, items[i].name, who))
-      }
-      await fetch('/api/coach/media/process', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids }) })
-      setPhase('processing')
-      poll(ids[0])
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Upload failed'); setPhase('error') }
+      const uploaded = await uploadMedia(items, {
+        kind, playerName: who || playerName || null,
+        onProgress: p => {
+          setPct(p.phase === 'uploading' ? p.pct : null)
+          setUploadInfo(p.total > 1 ? `File ${p.index + 1} of ${p.total}` : '')
+        },
+      })
+      const ids = uploaded.map(u => u.id)
+      setPct(100)
+      await confirmAndProcess(ids, ph => setNote(phaseNote(ph, items.length)))
+      setPhase('processing'); setProcStatus('processing'); setUploadInfo(''); setNote('')
+      // The host page keeps watching too, so the summary appears in the list even
+      // if the coach closes this modal while it builds.
+      onProcessing?.(ids[0])
+      const done = await pollMedia(ids[0], {
+        isAlive: () => aliveRef.current,
+        onStatus: s => { if (aliveRef.current) setProcStatus(s) },
+      })
+      if (!aliveRef.current) return
+      setReview((done.review as LessonReview) || {}); setTranscript(done.transcript || ''); setPhase('done')
+    } catch (e) {
+      if (!aliveRef.current) return
+      setErr(e instanceof Error ? e.message : 'Upload failed'); setPhase('error')
+    }
   }
 
-  const poll = (id: string) => {
-    let tries = 0
-    pollRef.current = setInterval(async () => {
-      tries++
-      try {
-        const r = await fetch(`/api/coach/media/${id}`)
-        const j = await r.json().catch(() => ({}))
-        if (j.status === 'done') { clearInterval(pollRef.current!); setReview(j.review || {}); setTranscript(j.transcript || ''); setPhase('done') }
-        else if (j.status === 'error') { clearInterval(pollRef.current!); setErr(j.error || 'Processing failed'); setPhase('error') }
-      } catch { /* keep polling */ }
-      if (tries > 150) { clearInterval(pollRef.current!); setErr('Still processing — check Lesson Summaries shortly.'); setPhase('error') }
-    }, 4000)
-  }
+  const phaseNote = (ph: UploadPhase, total: number) =>
+    ph === 'confirming' ? (total > 1 ? 'Checking your files landed…' : 'Checking your file landed…') : 'Starting the AI review…'
 
   const save = () => { if (review) onSummary?.(review, transcript); onClose() }
 
   // Demo simulation: no real upload — show the flow then a canned summary.
-  const runDemo = () => { setPhase('processing'); setErr(''); setTimeout(() => { setReview(DEMO_REVIEW); setTranscript(''); setPhase('done') }, 1800) }
+  // Walks the same stages as the live flow so the demo shows the real experience.
+  const runDemo = () => {
+    setPhase('processing'); setErr(''); setElapsed(0); setProcStatus('transcribing')
+    setTimeout(() => { if (aliveRef.current) setProcStatus('summarising') }, 1100)
+    setTimeout(() => { if (aliveRef.current) { setReview(DEMO_REVIEW); setTranscript(''); setPhase('done') } }, 2400)
+  }
 
   // ── UI ───────────────────────────────────────────────────────────────────────
   const btn = (bg: string, color: string): CSSProperties => ({ appearance: 'none', border: 0, borderRadius: 10, padding: '11px 16px', fontSize: 13, fontWeight: 700, fontFamily: FONT, cursor: 'pointer', background: bg, color })
@@ -217,16 +238,66 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, defaultKind =
             </div>
           )}
 
-          {(phase === 'uploading' || phase === 'processing') && (
-            <div style={{ textAlign: 'center', padding: '28px 0' }}>
-              <div style={{ fontSize: 30, marginBottom: 10 }}>{phase === 'uploading' ? '⬆' : '✨'}</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{phase === 'uploading' ? (uploadInfo || 'Uploading…') : 'Transcribing & writing the summary…'}</div>
-              <div style={{ fontSize: 12, color: T.text3, marginTop: 6 }}>{phase === 'processing' ? 'A long lesson can take a couple of minutes. You can keep working — it’ll appear in Lesson Summaries when ready.' : 'Sending your recording securely.'}</div>
-              {phase === 'processing' && (
-                <button onClick={onClose} style={{ ...btn('transparent', T.text2), border: `1px solid ${T.border}`, marginTop: 16, padding: '9px 16px' }}>Close &amp; keep working</button>
-              )}
-            </div>
-          )}
+          {(phase === 'uploading' || phase === 'processing') && (() => {
+            // Never a static screen: a step rail showing where we are, a bar that
+            // moves (real bytes while uploading, indeterminate after), the server's
+            // own stage text, and an elapsed clock.
+            const step = phase === 'uploading' ? 0 : Math.max(1, processStep(procStatus))
+            const headline = phase === 'uploading'
+              ? (note || (pct === null ? 'Uploading…' : `Uploading… ${pct}%`))
+              : processStageLabel(procStatus)
+            const sub = phase === 'uploading'
+              ? (uploadInfo ? `${uploadInfo} · sent securely straight to storage` : 'Sent securely straight to storage.')
+              : 'A long lesson can take a couple of minutes. You can keep working — it’ll appear in Lesson Summaries when ready.'
+            const determinate = phase === 'uploading' && !note && pct !== null
+            return (
+              <div style={{ padding: '20px 0 6px' }}>
+                <style>{`
+                  @keyframes mcmSpin { to { transform: rotate(360deg) } }
+                  @keyframes mcmSlide { 0% { transform: translateX(-100%) } 100% { transform: translateX(400%) } }
+                  @keyframes mcmPulse { 0%,100% { opacity: 1 } 50% { opacity: .45 } }
+                `}</style>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', border: `2.5px solid ${accent.hex}33`, borderTopColor: accent.hex, display: 'inline-block', animation: 'mcmSpin 0.9s linear infinite' }} />
+                  <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{headline}</div>
+                </div>
+
+                {/* Step rail — Uploading → Transcribing → Writing summary */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                  {STEPS.map((s, i) => {
+                    const state = i < step ? 'done' : i === step ? 'active' : 'todo'
+                    const col = state === 'done' ? T.good : state === 'active' ? accent.hex : T.text4
+                    return (
+                      <div key={s} style={{ flex: 1, textAlign: 'center' }}>
+                        <div style={{ height: 4, borderRadius: 999, overflow: 'hidden', background: state === 'todo' ? T.hover : `${col}33` }}>
+                          <div style={{
+                            height: '100%', borderRadius: 999, background: col,
+                            width: state === 'done' ? '100%' : state === 'active' ? (determinate ? `${pct}%` : '30%') : '0%',
+                            transition: 'width 0.3s ease',
+                            animation: state === 'active' && !determinate ? 'mcmSlide 1.4s ease-in-out infinite' : 'none',
+                          }} />
+                        </div>
+                        <div style={{ fontSize: 10.5, marginTop: 6, fontWeight: state === 'active' ? 700 : 500, color: state === 'todo' ? T.text4 : col, animation: state === 'active' ? 'mcmPulse 1.8s ease-in-out infinite' : 'none' }}>
+                          {state === 'done' ? '✓ ' : ''}{s}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, textAlign: 'center' }}>{sub}</div>
+                <div className="tnum" style={{ fontSize: 11, color: T.text4, marginTop: 8, textAlign: 'center', fontFamily: FONT }}>
+                  {`${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')} elapsed`}
+                </div>
+                {phase === 'processing' && (
+                  <div style={{ textAlign: 'center' }}>
+                    <button onClick={onClose} style={{ ...btn('transparent', T.text2), border: `1px solid ${T.border}`, marginTop: 14, padding: '9px 16px' }}>Close &amp; keep working</button>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {phase === 'done' && review && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
