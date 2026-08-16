@@ -94,10 +94,34 @@ function clean(row: Record<string, any>) {
 }
 
 // ── Calendar sync (Phase 2) ─────────────────────────────────────────────────
-// When a booking is written, push it to the coach's connected calendars via the
-// server route. Best-effort and fire-and-forget: it never blocks or fails the DB
-// write, and quietly no-ops if no calendar is connected. A cancelled booking is
-// removed from the calendar instead of pushed.
+// ONE-WAY push: Lumio booking → the coach's connected calendars, via the server
+// route. Importing calendar events back into Lumio is not built.
+//
+// The push stays fire-and-forget so it never blocks or fails the DB write — but
+// the outcome is no longer thrown away. It's published on the little store below
+// so the booking calendar can show "Synced" only when a write actually landed,
+// and "Sync failed" when it didn't.
+
+export type CalSyncState =
+  | { status: 'idle' }
+  | { status: 'syncing' }
+  | { status: 'synced'; providers: string[]; at: number }
+  | { status: 'failed'; reason: string; at: number }
+
+let calSyncState: CalSyncState = { status: 'idle' }
+const calSyncSubs = new Set<(s: CalSyncState) => void>()
+
+export function getCalendarSyncState(): CalSyncState { return calSyncState }
+export function subscribeCalendarSync(fn: (s: CalSyncState) => void): () => void {
+  calSyncSubs.add(fn)
+  fn(calSyncState)
+  return () => { calSyncSubs.delete(fn) }
+}
+function setCalSync(s: CalSyncState) {
+  calSyncState = s
+  calSyncSubs.forEach(fn => { try { fn(s) } catch { /* a bad subscriber must not break sync */ } })
+}
+
 function syncBookingCalendar(row: any) {
   try {
     if (!row?.id) return
@@ -110,6 +134,7 @@ function syncBookingCalendar(row: any) {
     const pad = (n: number) => String(n).padStart(2, '0')
     const start = `${row.booking_date}T${pad(h)}:${pad(m)}:00`
     const end = `${row.booking_date}T${pad(Math.floor(total / 60) % 24)}:${pad(total % 60)}:00`
+    setCalSync({ status: 'syncing' })
     fetch('/api/coach/calendar/event', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -119,7 +144,23 @@ function syncBookingCalendar(row: any) {
         location: row.court || undefined,
         description: row.notes || undefined,
       }),
-    }).catch(() => {})
+    })
+      .then(async res => {
+        const j = await res.json().catch(() => ({} as any))
+        if (res.ok && j?.ok) {
+          // No calendar connected at all — nothing to report either way.
+          if (!j.connected) { setCalSync({ status: 'idle' }); return }
+          setCalSync({ status: 'synced', providers: j.synced ?? [], at: Date.now() })
+          return
+        }
+        const reason = j?.failed?.[0]?.reason || j?.error || `Calendar sync failed (HTTP ${res.status}).`
+        console.error('[coach-db] calendar sync failed', j)
+        setCalSync({ status: 'failed', reason, at: Date.now() })
+      })
+      .catch(err => {
+        console.error('[coach-db] calendar sync error', err)
+        setCalSync({ status: 'failed', reason: "Couldn't reach the calendar sync service.", at: Date.now() })
+      })
   } catch { /* never block the write */ }
 }
 function removeBookingCalendar(id: string) {

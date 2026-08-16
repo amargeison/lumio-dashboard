@@ -16,15 +16,17 @@ export async function POST(req: NextRequest) {
   }
 
   // Validate the credentials by resolving the coach's calendar over CalDAV.
-  let calendarUrl: string | null = null
+  // Discovery always runs fresh here — connect and re-connect both re-resolve, so a
+  // stale/incorrect caldav_url from an earlier connection is never carried over.
+  let calendar: Awaited<ReturnType<typeof icloudDiscoverCalendar>> = null
   try {
-    calendarUrl = await icloudDiscoverCalendar(appleId.trim(), appPassword.trim())
+    calendar = await icloudDiscoverCalendar(appleId.trim(), appPassword.trim())
   } catch {
     return NextResponse.json({ error: 'Could not reach iCloud. Please try again.' }, { status: 502 })
   }
-  if (!calendarUrl) {
+  if (!calendar) {
     return NextResponse.json({
-      error: 'Could not sign in to iCloud. Check your Apple ID and that this is an app-specific password (create one at appleid.apple.com), not your normal password.',
+      error: 'Could not sign in to iCloud, or the account has no writable calendar. Check your Apple ID and that this is an app-specific password (create one at appleid.apple.com), not your normal password.',
     }, { status: 400 })
   }
 
@@ -32,10 +34,11 @@ export async function POST(req: NextRequest) {
     provider: 'icloud',
     email_address: appleId.trim(),
     app_password: appPassword.trim(),
-    caldav_url: calendarUrl,   // resolved calendar collection URL (per-user pod)
+    caldav_url: calendar.url,   // resolved calendar collection URL (per-user pod)
     capabilities: ['calendar', 'send_email'],   // send_email via iCloud SMTP (same app password)
     status: 'connected',
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true })
+  // calendarName lets the UI confirm WHICH calendar bookings will land in.
+  return NextResponse.json({ ok: true, calendarName: calendar.name })
 }

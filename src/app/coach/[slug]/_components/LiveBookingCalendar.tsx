@@ -5,13 +5,15 @@
 // the actual current week/month from today, so a coach who signs up in October
 // lands on October. Week + Month views, a clear "Month YYYY" heading with prev /
 // next / Today, colour-coded blocks by type, and Add/Edit/Delete that write to
-// coach_bookings — which auto-sync to the coach's connected Google / Microsoft
-// calendar via the Phase 2 engine (coach-db → /api/coach/calendar/event).
+// coach_bookings — which are pushed out to the coach's connected Google /
+// Microsoft / iCloud calendar via the Phase 2 engine (coach-db →
+// /api/coach/calendar/event). One-way only: nothing is imported back from the
+// calendar, so the banner must never claim two-way sync.
 
 import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile, subscribeCalendarSync, type CalSyncState } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 
 type Booking = {
@@ -105,6 +107,11 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   const calProvider = connected && connected.length ? connected[0] : null
   const provLabel = (p: string) => p === 'google' ? 'Google Calendar' : p === 'microsoft' ? 'Microsoft / Outlook' : p === 'icloud' ? 'iCloud' : p
 
+  // Live push outcome. "Synced" is only claimed once a booking write actually
+  // landed; a failed write shows as FAILED rather than a cosmetic success.
+  const [syncState, setSyncState] = useState<CalSyncState>({ status: 'idle' })
+  useEffect(() => subscribeCalendarSync(setSyncState), [])
+
   const modals = editing && (
     <BookingFormModal T={T} accent={accent} players={players} coaches={coaches} typeColour={TYPE_COLOUR}
       booking={editing === 'new' ? null : editing}
@@ -147,17 +154,29 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
         </div>
       </div>
 
-      {/* Calendar sync banner */}
+      {/* Calendar sync banner. One-way: Lumio bookings → the coach's calendar.
+          "Synced" is claimed only after a booking write actually succeeded — before
+          that it reads as "connected", and a failed write reads as failed. */}
       {connected !== null && showSec('syncbanner') && (
         calProvider ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12, padding: '9px 13px', borderRadius: 10, background: 'rgba(58,142,224,0.08)', border: '1px solid rgba(58,142,224,0.25)', fontSize: 11.5, color: T.text2 }}>
-            <span style={{ fontWeight: 700, color: '#3A8EE0' }}>📅 Synced</span>
-            <span>Bookings sync to your {provLabel(calProvider)}{busy.length ? ` · ${busy.length} busy ${busy.length === 1 ? 'block' : 'blocks'} this week shown striped` : ''}.</span>
-          </div>
+          syncState.status === 'failed' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12, padding: '9px 13px', borderRadius: 10, background: `${T.bad}14`, border: `1px solid ${T.bad}59`, fontSize: 11.5, color: T.text2 }}>
+              <span style={{ fontWeight: 700, color: T.bad }}>⚠ Sync failed</span>
+              <span>{syncState.reason} Your booking is saved in Lumio, but it did not reach your {provLabel(calProvider)}.</span>
+              <button onClick={() => onNavigate?.('settings')} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: T.bad, color: '#fff', borderRadius: 8, padding: '5px 12px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Reconnect →</button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12, padding: '9px 13px', borderRadius: 10, background: 'rgba(58,142,224,0.08)', border: '1px solid rgba(58,142,224,0.25)', fontSize: 11.5, color: T.text2 }}>
+              <span style={{ fontWeight: 700, color: '#3A8EE0' }}>
+                {syncState.status === 'syncing' ? '📅 Syncing…' : syncState.status === 'synced' ? '📅 Synced' : '📅 Calendar connected'}
+              </span>
+              <span>Your Lumio bookings are added to your {provLabel(calProvider)}{busy.length ? ` · ${busy.length} busy ${busy.length === 1 ? 'block' : 'blocks'} this week shown striped` : ''}.</span>
+            </div>
+          )
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12, padding: '9px 13px', borderRadius: 10, background: accent.dim, border: `1px solid ${accent.border}`, fontSize: 11.5, color: T.text2 }}>
             <span style={{ fontWeight: 700, color: accent.hex }}>🔗 Connect your calendar</span>
-            <span>Sync bookings two-way with Google or Microsoft so your court diary stays in step.</span>
+            <span>Add your Lumio bookings to your Google, Outlook or iCloud calendar automatically.</span>
             <button onClick={() => onNavigate?.('settings')} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 8, padding: '5px 12px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Connect in Settings →</button>
           </div>
         )

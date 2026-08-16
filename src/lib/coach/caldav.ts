@@ -66,9 +66,40 @@ async function propfind(url: string, auth: string, body: string, depth: '0' | '1
   return (res.ok || res.status === 207) ? await res.text() : ''
 }
 
-// Resolve the coach's default writable VEVENT calendar collection URL.
+// A resolved calendar collection: where we PUT booking events.
+export type DiscoveredCalendar = { url: string; name: string | null }
+
+// Is this PROPFIND response block a real calendar collection we can write events to?
+//
+// NOTE (the bug this replaces): iCloud's calendar-home container
+// (…/<id>/calendars/) advertises <supported-calendar-component-set> containing
+// VEVENT even though it is NOT a calendar — its resourcetype is a bare
+// <collection/>. Testing "does the text VEVENT appear" therefore matched the
+// container, which is the FIRST entry in the Depth:1 listing, so discovery
+// returned it and every event PUT was rejected. Only <calendar/> inside
+// <resourcetype> is authoritative (RFC 4791 §4.2).
+//
+// Both patterns are anchored on the tag name so the substring "calendar" inside
+// calendar-home-set / supported-calendar-component-set cannot false-positive.
+const CALENDAR_RESOURCETYPE = /<(?:[a-z0-9]+:)?calendar[\s/>]/i
+const SUPPORTS_VEVENT = /<(?:[a-z0-9]+:)?comp\b[^>]*\bname=["']VEVENT["']/i
+
+function isWritableEventCalendar(block: string): boolean {
+  const resourcetype = innerTag(block, 'resourcetype')
+  if (!resourcetype || !CALENDAR_RESOURCETYPE.test(resourcetype)) return false
+  // Must accept VEVENTs — excludes the VTODO-only Reminders collection.
+  const comps = innerTag(block, 'supported-calendar-component-set')
+  return !!comps && SUPPORTS_VEVENT.test(comps)
+}
+
+function samePath(a: string, b: string): boolean {
+  const norm = (u: string) => { try { return new URL(u).pathname.replace(/\/+$/, '') } catch { return u.replace(/\/+$/, '') } }
+  return norm(a) === norm(b)
+}
+
+// Resolve the calendar collection that Lumio bookings should be written to.
 // Returns null when the credentials are wrong or no event calendar is found.
-export async function icloudDiscoverCalendar(appleId: string, appPassword: string): Promise<string | null> {
+export async function icloudDiscoverCalendar(appleId: string, appPassword: string): Promise<DiscoveredCalendar | null> {
   const auth = authHeader(appleId, appPassword)
 
   // 1. current-user-principal (at the service root)
@@ -79,26 +110,38 @@ export async function icloudDiscoverCalendar(appleId: string, appPassword: strin
   if (!principalHref) return null
   const principalUrl = new URL(principalHref, ICLOUD_ROOT).toString()
 
-  // 2. calendar-home-set (on the principal)
+  // 2. calendar-home-set + the account's default calendar (RFC 6638). The default
+  //    is the calendar Apple's own Calendar app creates new events in — i.e. the
+  //    one the coach is actually looking at — so we prefer it when it's writable.
   const p2 = await propfind(principalUrl, auth,
-    '<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><c:calendar-home-set/></d:prop></d:propfind>', '0')
+    '<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><c:calendar-home-set/><c:schedule-default-calendar-URL/></d:prop></d:propfind>', '0')
   const homeBlock = innerTag(p2, 'calendar-home-set')
   const homeHref = homeBlock && firstHref(homeBlock)
   if (!homeHref) return null
   const homeUrl = new URL(homeHref, principalUrl).toString()
+  const defaultBlock = innerTag(p2, 'schedule-default-calendar-URL')
+  const defaultHref = defaultBlock && firstHref(defaultBlock)
 
-  // 3. list collections in the home; pick the first writable VEVENT calendar.
+  // 3. list collections in the home and keep every real, writable VEVENT calendar.
   const p3 = await propfind(homeUrl, auth,
     '<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><d:resourcetype/><d:displayname/><c:supported-calendar-component-set/></d:prop></d:propfind>', '1')
-  const responses = p3.split(/<[^>]*\bresponse\b[^>]*>/i).slice(1)
-  for (const block of responses) {
-    if (!/VEVENT/i.test(block)) continue                        // must support events (skips reminders/VTODO)
+  const candidates: DiscoveredCalendar[] = []
+  for (const block of p3.split(/<[^>]*\bresponse\b[^>]*>/i).slice(1)) {
     const href = firstHref(block)
     if (!href) continue
-    if (/\/(inbox|outbox|notification)/i.test(href)) continue   // skip scheduling collections
-    return new URL(href, homeUrl).toString()
+    if (/\/(inbox|outbox|notification)\/?$/i.test(href)) continue   // scheduling collections
+    if (!isWritableEventCalendar(block)) continue                   // container / Reminders / non-calendars
+    candidates.push({ url: new URL(href, homeUrl).toString(), name: (innerTag(block, 'displayname') || '').trim() || null })
   }
-  return null
+  if (!candidates.length) return null
+
+  // Prefer the account default; otherwise fall back to the first real calendar.
+  if (defaultHref) {
+    const defaultUrl = new URL(defaultHref, principalUrl).toString()
+    const match = candidates.find(c => samePath(c.url, defaultUrl))
+    if (match) return match
+  }
+  return candidates[0]
 }
 
 // ─── iCalendar (RFC 5545) build + parse ──────────────────────────────────────
@@ -139,10 +182,16 @@ function eventHref(calendarUrl: string, uid: string): string {
   return new URL(`${encodeURIComponent(uid)}.ics`, base).toString()
 }
 
-// Create or update an event. Returns its href (stored as the external id) or null.
+// Result of an event write. The failure case carries the CalDAV status so the
+// caller can log it and show the coach something better than a silent no-op.
+export type PutResult =
+  | { ok: true; href: string }
+  | { ok: false; status: number; detail: string }
+
+// Create or update an event at a deterministic href (idempotent PUT).
 export async function icloudPutEvent(
   calendarUrl: string, appleId: string, appPassword: string, e: IcalEvent, existingHref?: string,
-): Promise<string | null> {
+): Promise<PutResult> {
   const auth = authHeader(appleId, appPassword)
   const href = existingHref || eventHref(calendarUrl, e.uid)
   const res = await davFetch(href, {
@@ -150,7 +199,9 @@ export async function icloudPutEvent(
     headers: { 'Content-Type': 'text/calendar; charset=utf-8' },
     body: buildIcs(e),
   }, auth)
-  return (res.status === 200 || res.status === 201 || res.status === 204) ? href : null
+  if (res.status === 200 || res.status === 201 || res.status === 204) return { ok: true, href }
+  const detail = (await res.text().catch(() => '')).replace(/\s+/g, ' ').trim().slice(0, 300)
+  return { ok: false, status: res.status, detail }
 }
 
 export async function icloudDeleteEvent(href: string, appleId: string, appPassword: string): Promise<void> {
