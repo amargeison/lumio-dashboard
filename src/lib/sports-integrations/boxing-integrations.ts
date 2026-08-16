@@ -269,7 +269,7 @@ export const BOXING_INTEGRATIONS: Record<string, IntegrationConfig> = {
     endpoints: [
       { endpoint: 'Inbox Classification', desc: 'Every email tagged: promoter / sponsor / sanctioning / travel / camp / personal.', status: 'Live' },
       { endpoint: 'Contract-Thread Grouping', desc: 'Multi-party contract threads grouped and tracked per-deal.', status: 'Live' },
-      { endpoint: 'Calendar Sync', desc: 'Two-way — add a camp day to Lumio, it lands in Google Calendar.', status: 'Live' },
+      { endpoint: 'Calendar Sync', desc: 'One-way (Lumio → Google) — add a camp day to Lumio, it lands in Google Calendar.', status: 'Live' },
       { endpoint: 'Sanctioning-Body Extraction', desc: 'Mandatory notifications and purse-bid emails routed to the Rankings view.', status: 'Live' },
       { endpoint: 'Sponsor Obligation Flagging', desc: 'Brand-email deliverables and deadlines into Sponsorships tracker.', status: 'Live' },
       { endpoint: 'AI Reply Drafts', desc: 'Suggested replies in your voice — review and send from Lumio.', status: 'Beta' },

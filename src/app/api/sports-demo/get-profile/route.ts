@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+
+import { resolveCaller } from '@/lib/sports-demo-auth'
 
 function getSupabase() {
   return createClient(
@@ -16,47 +16,26 @@ function getSupabase() {
 // limit. Anyone who could guess an email could read the person behind it.
 //
 // Identity now comes from the Supabase session cookie, never from the query
-// string. verify-otp mints exactly that cookie once the 6-digit code is
-// confirmed, so "has a session for this address" is the same proof of
-// ownership the OTP already established. The `email` param is kept only so a
+// string (see @/lib/sports-demo-auth). The `email` param is kept only so a
 // mismatched caller is rejected outright rather than quietly served someone
 // else's row — it is never what the query selects on.
 //
 // No session → nothing. Session for a different address → nothing.
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const email = searchParams.get('email')
   const sport = searchParams.get('sport')
-
   if (!sport) return NextResponse.json({ profile: null }, { status: 400 })
 
-  // getUser() (not getSession()) — it validates the JWT against the auth
-  // server rather than trusting whatever the cookie decodes to.
-  let sessionEmail: string | null = null
-  try {
-    const cookieStore = await cookies()
-    const ssr = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { cookies: { getAll: () => cookieStore.getAll(), setAll: () => { /* read-only route */ } } },
-    )
-    const { data } = await ssr.auth.getUser()
-    sessionEmail = data.user?.email?.toLowerCase() ?? null
-  } catch { /* treat as unauthenticated */ }
-
-  if (!sessionEmail) return NextResponse.json({ profile: null }, { status: 401 })
-  if (email && email.toLowerCase() !== sessionEmail) {
-    return NextResponse.json({ profile: null }, { status: 403 })
-  }
+  const caller = await resolveCaller(searchParams.get('email'))
+  if (!caller.ok) return NextResponse.json({ profile: null }, { status: caller.status })
 
   try {
-    const supabase = getSupabase()
-    const { data } = await supabase
+    const { data } = await getSupabase()
       .from('sports_demo_leads')
       .select('user_name, club_name, role, nickname, avatar_url, logo_url')
       // Scoped to the SESSION's address — this is what makes the service-role
       // key safe here: the query can only ever resolve to the caller's own row.
-      .eq('email', sessionEmail)
+      .eq('email', caller.email)
       .eq('sport', sport)
       .maybeSingle()
 
@@ -66,21 +45,33 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// ─── POST: write the caller's OWN demo profile ──────────────────────────────
+// Same exposure the GET had, in the other direction: this used to take an
+// arbitrary `email` in the body and upsert that lead's name / club / role on the
+// service-role key with no auth, so anyone could overwrite (or mass-create) rows
+// belonging to addresses they don't own. Now scoped to the session address.
+//
+// Safe to gate: the only caller is SportsDemoGate's finaliseSession(), which
+// runs after verify-otp has already minted the session cookie.
 export async function POST(req: NextRequest) {
   try {
     const { email, sport, userName, clubName, role } = await req.json()
-    if (!email || !sport) return NextResponse.json({ ok: false })
-    const supabase = getSupabase()
-    await supabase.from('sports_demo_leads').upsert({
-      email: email.toLowerCase(),
+    if (!sport) return NextResponse.json({ ok: false }, { status: 400 })
+
+    const caller = await resolveCaller(email)
+    if (!caller.ok) return NextResponse.json({ ok: false }, { status: caller.status })
+
+    await getSupabase().from('sports_demo_leads').upsert({
+      email: caller.email,
       sport,
       user_name: userName || null,
       club_name: clubName || null,
       role: role || null,
       last_seen: new Date().toISOString(),
     }, { onConflict: 'email,sport' })
+
     return NextResponse.json({ ok: true })
   } catch {
-    return NextResponse.json({ ok: false })
+    return NextResponse.json({ ok: false }, { status: 500 })
   }
 }

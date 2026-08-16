@@ -253,7 +253,7 @@ export const TENNIS_INTEGRATIONS: Record<string, IntegrationConfig> = {
     endpoints: [
       { endpoint: 'Inbox Classification', desc: 'Every email tagged: tournament / sponsor / travel / coach / personal.', status: 'Live' },
       { endpoint: 'Tournament Entry Extraction', desc: 'Auto-pulls event, date, entry fee from tour confirmations.', status: 'Live' },
-      { endpoint: 'Calendar Sync', desc: 'Two-way — add a practice slot in Lumio, it lands in Google Calendar.', status: 'Live' },
+      { endpoint: 'Calendar Sync', desc: 'One-way (Lumio → Google) — add a practice slot in Lumio, it lands in Google Calendar.', status: 'Live' },
       { endpoint: 'Coach Meeting Detection', desc: 'Detects video-call links in invites — surfaced in morning briefing.', status: 'Live' },
       { endpoint: 'Sponsor Obligation Flagging', desc: 'Pulls deliverables/deadlines from brand emails into Sponsorship tracker.', status: 'Live' },
       { endpoint: 'AI Reply Drafts', desc: 'Suggested replies in your voice — review and send without leaving Lumio.', status: 'Beta' },

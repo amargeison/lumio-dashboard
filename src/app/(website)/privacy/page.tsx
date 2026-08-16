@@ -77,8 +77,10 @@ export default function PrivacyPage() {
             <h2 className="text-lg font-bold text-white mb-3">5. Connected accounts (Google, Microsoft &amp; Apple)</h2>
             <p>
               If you connect a Google, Microsoft or Apple account, we access your calendar and the ability to send email
-              on your behalf solely to provide the features you switch on — two-way calendar sync and sending messages
-              from your own address. We do not read the contents of your inbox.
+              on your behalf solely to provide the features you switch on. Specifically: we write your Lumio bookings into
+              your calendar, we read your existing busy times so the booking calendar does not double-book you, and we send
+              messages from your own address. Calendar sync is one-way — we do not import your calendar&apos;s events into
+              Lumio. We do not read the contents of your inbox.
             </p>
             <div className="bg-blue-600/5 border border-blue-500/15 rounded-xl p-4 mt-3">
               <p>
