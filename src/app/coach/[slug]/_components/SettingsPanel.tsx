@@ -297,7 +297,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {open === 'privacy' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Privacy & compliance" onClose={() => setOpen(null)}><CoachCompliance T={T} accent={accent} demo={demo} /></Modal>)}
       {open === 'import' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Import data" onClose={() => setOpen(null)}><CoachImport T={T} accent={accent} /></Modal>)}
       {open === 'integrations' && (
-        <Modal readOnly={demo} T={T} accent={accent} title="Connected accounts" sub="Connect your mailbox & calendar for two-way sync and send-as-you email" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Connected accounts" sub="Connect your mailbox & calendar to add bookings to your calendar and send as you" onClose={() => setOpen(null)}>
           <IntegrationsPanel T={T} accent={accent} />
         </Modal>
       )}
@@ -512,10 +512,10 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           <Field T={T} label="Phone"><input style={input(T)} value={hp.phone} onChange={e => setHeadProfile({ phone: e.target.value })} /></Field>
 
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Email &amp; calendar sync</div>
-          <Field T={T} label="Connected account" hint="Sessions and bookings sync both ways.">
+          <Field T={T} label="Connected account" hint="Sessions and bookings are added to your calendar.">
             <Seg T={T} accent={accent} value={conn.emailProvider} options={[{ v: 'google', label: 'Google' }, { v: 'outlook', label: 'Outlook' }, { v: 'none', label: 'None' }]} onChange={v => setConn({ ...conn, emailProvider: v })} />
           </Field>
-          <Toggle T={T} accent={accent} on={conn.calendarSync} onChange={v => setConn({ ...conn, calendarSync: v })} label="Two-way calendar sync" desc="Bookings appear in your calendar; your busy times block new bookings." />
+          <Toggle T={T} accent={accent} on={conn.calendarSync} onChange={v => setConn({ ...conn, calendarSync: v })} label="Calendar sync (one-way)" desc="Your Lumio bookings are added to your calendar. Busy times from it show striped in your diary." />
 
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>DBS &amp; safeguarding documents</div>
           <Field T={T} label="DBS certificate number"><input style={input(T)} value={hp.dbsNumber} onChange={e => setHeadProfile({ dbsNumber: e.target.value })} /></Field>
@@ -531,8 +531,8 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {open === 'booking' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Booking calendar" sub="Sync external calendars and set booking defaults" onClose={() => setOpen(null)}>
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>External calendar sync</div>
-          <Toggle T={T} accent={accent} on={booking.google} onChange={v => setBooking({ ...booking, google: v })} label="Google Calendar" desc="Two-way sync of bookings and busy times." />
-          <Toggle T={T} accent={accent} on={booking.outlook} onChange={v => setBooking({ ...booking, outlook: v })} label="Outlook / Microsoft 365" desc="Two-way sync with your work calendar." />
+          <Toggle T={T} accent={accent} on={booking.google} onChange={v => setBooking({ ...booking, google: v })} label="Google Calendar" desc="Bookings are added to your Google Calendar; busy times show striped." />
+          <Toggle T={T} accent={accent} on={booking.outlook} onChange={v => setBooking({ ...booking, outlook: v })} label="Outlook / Microsoft 365" desc="Bookings are added to your work calendar; busy times show striped." />
           <Field T={T} label="iCal subscribe URL" hint="Paste a read-only feed to overlay external commitments.">
             <input style={input(T)} value={booking.ical} onChange={e => setBooking({ ...booking, ical: e.target.value })} placeholder="webcal://…" />
           </Field>

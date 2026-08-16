@@ -35,8 +35,9 @@ export function providerConfig(provider: Provider): ProviderConfig | null {
     return {
       authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
       tokenUrl: 'https://oauth2.googleapis.com/token',
-      // Calendar two-way + send-as. Inbox read (gmail.readonly) is deliberately
-      // NOT requested yet — it's a Google "restricted" scope needing CASA review.
+      // Calendar read/write (we currently only write bookings out — importing
+      // events into Lumio isn't built) + send-as. Inbox read (gmail.readonly) is
+      // deliberately NOT requested yet — a Google "restricted" scope needing CASA review.
       scopes: [
         'openid', 'email', 'profile',
         'https://www.googleapis.com/auth/calendar',

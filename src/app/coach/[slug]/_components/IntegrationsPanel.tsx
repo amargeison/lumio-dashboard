@@ -2,8 +2,12 @@
 
 // Settings → Connected accounts. Lets a coach connect their Google / Outlook
 // mailbox + calendar (OAuth) or iCloud (app-specific password) for calendar
-// two-way sync and sending email as their own address. Talks to the
+// sync and sending email as their own address. Talks to the
 // /api/coach/integrations + /api/coach/oauth/* routes; never sees raw tokens.
+//
+// Calendar sync is ONE-WAY for every provider: Lumio bookings are written out to
+// the connected calendar. Importing external events back into Lumio is not built,
+// so no copy here may promise "two-way".
 
 import { useEffect, useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
@@ -14,9 +18,9 @@ type Connection = { provider: Provider; email_address: string | null; capabiliti
 type Status = { connections: Connection[]; configured: Record<Provider, boolean> }
 
 const META: { id: Provider; name: string; icon: string; blurb: string }[] = [
-  { id: 'google',    name: 'Google (Gmail & Calendar)', icon: '🟦', blurb: 'Two-way calendar sync + send as your Gmail address.' },
-  { id: 'microsoft', name: 'Outlook (Microsoft 365)',   icon: '🟧', blurb: 'Two-way calendar sync + send as your Outlook address.' },
-  { id: 'icloud',    name: 'Apple iCloud',              icon: '⚪', blurb: 'Two-way calendar sync + send-as email, via an app-specific password.' },
+  { id: 'google',    name: 'Google (Gmail & Calendar)', icon: '🟦', blurb: 'Bookings → your Google Calendar, plus send as your Gmail address.' },
+  { id: 'microsoft', name: 'Outlook (Microsoft 365)',   icon: '🟧', blurb: 'Bookings → your Outlook calendar, plus send as your Outlook address.' },
+  { id: 'icloud',    name: 'Apple iCloud',              icon: '⚪', blurb: 'Bookings → your iCloud calendar, plus send-as email, via an app-specific password.' },
 ]
 
 export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
@@ -28,6 +32,7 @@ export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: Accen
   const [appPw, setAppPw] = useState('')
   const [icloudBusy, setIcloudBusy] = useState(false)
   const [icloudErr, setIcloudErr] = useState('')
+  const [icloudNote, setIcloudNote] = useState('')
 
   const load = async () => {
     setLoading(true)
@@ -54,6 +59,9 @@ export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: Accen
   }
   const disconnect = async (p: Provider) => {
     await fetch(`/api/coach/integrations?provider=${p}`, { method: 'DELETE' })
+    // Disconnect removes the stored row entirely, so a later reconnect re-runs
+    // CalDAV discovery from scratch rather than reusing a stale calendar URL.
+    if (p === 'icloud') { setIcloudNote(''); setIcloudErr('') }
     load()
   }
   const connectIcloud = async () => {
@@ -65,6 +73,9 @@ export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: Accen
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok) { setIcloudErr(j.error || 'Could not connect'); setIcloudBusy(false); return }
+      // Name the calendar bookings will land in — so picking the wrong one is obvious now,
+      // not after a booking quietly goes missing.
+      setIcloudNote(j.calendarName ? `Connected — bookings will be added to your “${j.calendarName}” calendar.` : 'Connected.')
       setAppleId(''); setAppPw(''); load()
     } catch { setIcloudErr('Network error') }
     setIcloudBusy(false)
@@ -85,7 +96,8 @@ export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: Accen
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <p style={{ margin: 0, fontSize: 12, color: T.text3, lineHeight: 1.5 }}>
-        Connect a mailbox and calendar so bookings sync both ways and lesson summaries can send from your own address.
+        Connect a mailbox and calendar so your Lumio bookings appear in your own calendar and lesson summaries send from your own address.
+        Sync is one-way for now — bookings go out to your calendar; events you create in your calendar are not brought into Lumio.
         Reading your inbox into Lumio is a later phase (it needs extra Google/Microsoft review).
       </p>
 
@@ -115,6 +127,10 @@ export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: Accen
                 <span style={{ fontSize: 10.5, color: T.text3, textAlign: 'right', maxWidth: 130 }}>Add OAuth credentials to enable</span>
               )}
             </div>
+
+            {m.id === 'icloud' && isOn && icloudNote && (
+              <div style={{ marginTop: 9, fontSize: 11, color: T.good }}>{icloudNote}</div>
+            )}
 
             {/* iCloud connect form (no OAuth) */}
             {m.id === 'icloud' && !isOn && (
