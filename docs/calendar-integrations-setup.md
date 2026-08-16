@@ -1,6 +1,8 @@
 # Calendar & email integrations — setup guide
 
-The Tennis Coach portal supports two-way calendar sync (and send-as email) for
+The Tennis Coach portal supports one-way calendar sync — Lumio bookings are pushed
+out to the coach's calendar, and free/busy is read back for availability; external
+events are NOT imported into Lumio — plus send-as email, for
 three providers. The **code is already built**; each provider just needs
 credentials.
 

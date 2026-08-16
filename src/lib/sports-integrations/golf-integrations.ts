@@ -103,7 +103,7 @@ export const GOLF_INTEGRATIONS: Record<string, IntegrationConfig> = {
     endpoints: [
       { endpoint: 'Inbox Classification', desc: 'Every inbound email tagged: tournament / sponsor / travel / coach / personal.', status: 'Live' },
       { endpoint: 'Tournament Entry Detection', desc: 'Auto-extracts event, date, entry fee from tour email confirmations.', status: 'Live' },
-      { endpoint: 'Calendar Sync', desc: 'Two-way sync — add a tee time in Lumio and it lands in Google Calendar.', status: 'Live' },
+      { endpoint: 'Calendar Sync', desc: 'One-way (Lumio → Google) — add a tee time in Lumio and it lands in Google Calendar.', status: 'Live' },
       { endpoint: 'Coach Meeting Extraction', desc: 'Detects video-call links in meeting invites and surfaces them in morning briefing.', status: 'Live' },
       { endpoint: 'Sponsor Obligation Flagging', desc: 'Pulls deliverables and deadlines out of brand emails into Sponsorship tracker.', status: 'Live' },
       { endpoint: 'Reply Drafting (AI)', desc: 'Suggested replies drafted in your voice — review and send without leaving Lumio.', status: 'Beta' },

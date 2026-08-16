@@ -38,7 +38,7 @@ const INTEGRATIONS = [
   { icon: '🏛️', name: 'LTA Youth Pathway', desc: 'Racket stage mapping' },
   { icon: '💳', name: 'Stripe', desc: 'Card, Apple Pay & Google Pay to your bank' },
   { icon: '💰', name: 'Xero', desc: 'Academy finances' },
-  { icon: '📧', name: 'Google (Gmail & Calendar)', desc: 'Send-as email and two-way calendar sync' },
+  { icon: '📧', name: 'Google (Gmail & Calendar)', desc: 'Send-as email, and your Lumio bookings land straight in Google Calendar' },
   { icon: '📧', name: 'Microsoft 365', desc: 'Email and calendar' },
   { icon: '🔔', name: 'Slack', desc: 'Team and parent updates' },
   { icon: '📱', name: 'Mobile PWA', desc: 'Install on any phone' },

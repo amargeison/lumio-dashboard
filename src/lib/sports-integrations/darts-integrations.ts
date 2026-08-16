@@ -201,7 +201,7 @@ export const DARTS_INTEGRATIONS: Record<string, IntegrationConfig> = {
     endpoints: [
       { endpoint: 'Inbox Classification', desc: 'Every email tagged: tournament / sponsor / exhibition / travel / personal.', status: 'Live' },
       { endpoint: 'Exhibition Enquiry Detection', desc: 'Promoter emails auto-extracted into the Exhibitions view.', status: 'Live' },
-      { endpoint: 'Calendar Sync', desc: 'Two-way — add a match to Lumio, it lands in Google Calendar.', status: 'Live' },
+      { endpoint: 'Calendar Sync', desc: 'One-way (Lumio → Google) — add a match to Lumio, it lands in Google Calendar.', status: 'Live' },
       { endpoint: 'Tour-Admin Extraction', desc: 'Entry confirmations, qualifier cut-offs, Q-School dates.', status: 'Live' },
       { endpoint: 'Sponsor Obligation Flagging', desc: 'Brand-email deliverables and deadlines into Sponsorship tracker.', status: 'Live' },
       { endpoint: 'AI Reply Drafts', desc: 'Suggested replies in your voice — review and send from Lumio.', status: 'Beta' },

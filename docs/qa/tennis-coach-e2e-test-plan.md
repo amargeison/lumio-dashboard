@@ -79,7 +79,7 @@ Legend: **B** = buttons/actions, **D** = data/stat bindings to verify, **E** = e
 
 ### 5.9 Booking Calendar / Court & Venue Planner
 - B: Add/edit/cancel booking; venue map/directions; courts.
-- D: Calendar two-way sync copy correct (no "coming soon"); bookings feed Planner + dashboard "today".
+- D: Calendar one-way sync copy correct (no "coming soon", no "two-way" claim); bookings feed Planner + dashboard "today".
 
 ### 5.10 Training Camps
 - B: Create camp; itinerary; attendees; targets; **camp packs** (print); AI draft.
