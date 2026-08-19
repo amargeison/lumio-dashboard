@@ -10,9 +10,9 @@ import { useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { PLAYERS, WEEK_START, TODAY, dateForDay, type Booking } from '../_lib/coach-data'
+import { PLAYERS, WEEK_START, TODAY, dateForDay, DEMO_BUSY, type Booking } from '../_lib/coach-data'
 import { dayIndexForDate } from '../_lib/schedule'
-import { addBooking, updateBooking, removeBooking } from '../_lib/bookings-store'
+import { addBooking, updateBooking, removeBooking, getBookings } from '../_lib/bookings-store'
 
 const TYPES: Booking['type'][] = ['Private', 'Group', 'Cardio', 'Match play', 'Block']
 const COURTS = ['Court 1', 'Court 2', 'Court 3', 'Court 4', '—']
@@ -43,6 +43,36 @@ export function AddBookingModal({ T, accent, onClose, editBooking }: { T: ThemeT
 
   const isLabel = LABEL_TYPES.includes(type)
   const canSave = player.trim().length > 0 && end > start && date.length === 10
+
+  // ── Availability for the chosen day ────────────────────────────────────────
+  // Checked against BOTH the coach's connected-calendar commitments (DEMO_BUSY)
+  // and the lessons already on the calendar that day. Double-booking over the
+  // school run and over another lesson are the same mistake, so they are treated
+  // identically — the only difference is what the warning is able to name.
+  const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+  const toHHMM = (n: number) => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`
+  const overlaps = (aS: number, aE: number, bS: number, bE: number) => aS < bE && bS < aE
+
+  const dayBusy = [
+    ...DEMO_BUSY.filter(b => b.date === date)
+      .map(b => ({ start: toMins(b.start), end: toMins(b.end), label: b.label })),
+    ...getBookings()
+      // A booking cannot clash with itself, and a cancelled one frees its slot.
+      .filter(b => b.date === date && b.id !== editBooking?.id && b.status !== 'cancelled')
+      .map(b => ({ start: toMins(b.start), end: toMins(b.end), label: b.player || 'another lesson' })),
+  ]
+
+  const startM = toMins(start), endM = toMins(end)
+  const durMins = Math.max(15, endM - startM)
+  const clash = endM > startM ? dayBusy.find(b => overlaps(startM, endM, b.start, b.end)) : undefined
+
+  // Start times on the same quarter-hour grid as the pickers, where a booking of
+  // this length would fit cleanly.
+  const lastSlot = toMins(TIMES[TIMES.length - 1])
+  const freeSlots = TIMES.filter(t => {
+    const m = toMins(t)
+    return m + durMins <= lastSlot && !dayBusy.some(b => overlaps(m, m + durMins, b.start, b.end))
+  })
 
   const save = () => {
     if (!canSave) return
@@ -130,6 +160,38 @@ export function AddBookingModal({ T, accent, onClose, editBooking }: { T: ThemeT
             </div>
           </div>
           {end <= start && <div style={{ fontSize: 10.5, color: T.warn }}>End time must be after the start time.</div>}
+
+          {/* Availability. Warns, never blocks — a coach may deliberately
+              double-book, and refusing the save would be overruling them. */}
+          {end > start && (
+            <div>
+              {clash ? (
+                <div style={{ fontSize: 11.5, color: T.warn, background: `${T.warn}14`, border: `1px solid ${T.warn}33`, borderRadius: 9, padding: '8px 10px' }}>
+                  ⚠ {start}–{end} clashes with {clash.label} ({toHHMM(clash.start)}–{toHHMM(clash.end)}). You can still save.
+                </div>
+              ) : (
+                <div style={{ fontSize: 11.5, color: T.good }}>✓ {start}–{end} is free — no clash with your calendar or your other lessons</div>
+              )}
+
+              {freeSlots.length > 0 ? (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 10, color: T.text3, marginBottom: 5 }}>Free {durMins}-min slots on this day — tap one to use it</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                    {freeSlots.slice(0, 12).map(t => (
+                      <button key={t} type="button"
+                        onClick={() => { setStart(t); setEnd(toHHMM(toMins(t) + durMins)) }}
+                        style={{ appearance: 'none', border: `1px solid ${t === start ? accent.hex : T.border}`, background: t === start ? accent.dim : 'transparent', color: t === start ? accent.hex : T.text2, borderRadius: 7, padding: '4px 8px', fontSize: 11.5, cursor: 'pointer', fontFamily: FONT }}>
+                        {t}
+                      </button>
+                    ))}
+                    {freeSlots.length > 12 && <span style={{ fontSize: 11, color: T.text3, alignSelf: 'center' }}>+{freeSlots.length - 12} more</span>}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: T.text3, marginTop: 6 }}>No free {durMins}-min slots left on this day.</div>
+              )}
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button onClick={save} disabled={!canSave}
