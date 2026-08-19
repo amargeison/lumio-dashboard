@@ -57,7 +57,13 @@ export function LiveRoster({ T, accent, density }: Common) {
   const skills = useCoachTable<any>('coach_player_skills')
   const attendance = useCoachTable<any>('coach_attendance')
   const wpProfile = useCoachProfile()
-  const wpOrg = { academy: wpProfile.brand_name || 'Lumio Tennis Academy', coach: wpProfile.display_name || 'Your Coach' }
+  // Logo priority: the academy logo uploaded at onboarding (DB), then any logo set
+  // in Settings (localStorage), then the Lumio tennis mark so a pack is never
+  // completely unbranded.
+  const wpLogo = wpProfile.brand_logo_url
+    || getSettings().brandLogo
+    || (typeof window !== 'undefined' ? `${window.location.origin}/tennis_transparent_logo.png` : '')
+  const wpOrg = { academy: wpProfile.brand_name || 'Lumio Tennis Academy', coach: wpProfile.display_name || 'Your Coach', logo: wpLogo }
   const [group, setGroup] = useState<'All' | typeof CATEGORIES[number]>('All')
   const [sel, setSel] = useState<any | null>(null)
   const [editing, setEditing] = useState<any | null | undefined>(undefined) // undefined = closed
@@ -517,9 +523,14 @@ const WP_THEME: Record<string, string> = { white: 'Foundations', yellow: 'Rallyi
 
 // Rich 3-page printable welcome pack — welcome letter, starting action plan, and
 // an onboarding questionnaire (mirrors the demo, over live data).
-function printWelcomePack(p: any, org?: { academy: string; coach: string }) {
+function printWelcomePack(p: any, org?: { academy: string; coach: string; logo?: string }) {
   if (typeof window === 'undefined') return
   const academy = org?.academy || 'Lumio Tennis Academy', coach = org?.coach || 'Your Coach'
+  // White plate behind the mark so a dark or transparent logo still reads on the
+  // coloured band.
+  const logoChip = org?.logo
+    ? `<img src="${org.logo}" alt="" style="height:58px;max-width:150px;object-fit:contain;background:#fff;border-radius:10px;padding:8px;flex-shrink:0" />`
+    : ''
   const esc = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const fill = (w = '100%') => `<span style="display:inline-block;border-bottom:1px dashed #b9bdca;min-width:${w};height:15px"></span>`
   const line = '<div style="border-bottom:1px dashed #b9bdca;height:22px;margin:6px 0"></div>'
@@ -543,7 +554,14 @@ function printWelcomePack(p: any, org?: { academy: string; coach: string }) {
   .foot{position:absolute;bottom:12mm;left:16mm;right:16mm;display:flex;justify-content:space-between;font-size:9px;color:#aab;border-top:1px solid #eee;padding-top:8px}@page{size:A4;margin:0}</style></head><body>
 
   <div class="page">
-    <div class="band"><div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;opacity:.85">Welcome Pack</div><div style="font-size:30px;font-weight:800;margin-top:6px">Welcome, ${esc(first)}! 🎾</div><div style="opacity:.9;margin-top:4px">${esc(academy)}</div></div>
+    <div class="band" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div>
+        <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;opacity:.85">Welcome Pack</div>
+        <div style="font-size:30px;font-weight:800;margin-top:6px">Welcome, ${esc(first)}! 🎾</div>
+        <div style="opacity:.9;margin-top:4px">${esc(academy)}</div>
+      </div>
+      ${logoChip}
+    </div>
     <p style="margin-top:18px">Hi ${esc(first)},</p>
     <p>A warm welcome to ${esc(academy)} — we're really pleased to have you on board. Whether you're brand new to tennis or coming back to it, our job is to help you improve, enjoy your tennis and hit some clear goals along the way.</p>
     <p>We coach using a <strong>racket progression system</strong> (like martial arts) — you'll work through clear skills at each racket, earn certificates as you progress, and always know what you're working towards. It keeps things fun, structured and motivating.</p>

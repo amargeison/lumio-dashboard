@@ -8,7 +8,7 @@ import { useState, useRef } from 'react'
 import { sb, currentCoachId } from '../_lib/coach-db'
 import { CoachImport, IMPORT_TEMPLATE_URL } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
-import { setSettings, getSettings } from '../_lib/settings-store'
+import { setSettings, getSettings, ACCREDITATIONS } from '../_lib/settings-store'
 import { seedLumioResources } from '../_lib/lumio-resources'
 import { seedLumioPackages } from '../_lib/lumio-packages'
 import { applyTier } from '../_lib/feature-flags'
@@ -40,6 +40,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
   const [step, setStep] = useState(1)
   const [academy, setAcademy] = useState(defaultAcademy)
   const [name, setName] = useState(defaultName)
+  const [accreditation, setAccreditation] = useState('')
   const [slug, setSlug] = useState(slugify(defaultAcademy || defaultName))
   const [slugTouched, setSlugTouched] = useState(false)
   const [logo, setLogo] = useState<string | null>(null)
@@ -83,6 +84,11 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         onboarding_complete: true,
         updated_at: new Date().toISOString(),
       }
+      // Accreditation lives in Settings as `cert` — that is what the right-rail
+      // profile card reads. It was previously only reachable via Settings, so a
+      // coach who completed onboarding and never opened Settings had no
+      // qualification shown anywhere, and the rail line silently rendered nothing.
+      if (accreditation) setSettings({ cert: accreditation })
       // Self-setup portals are live the moment onboarding finishes — nothing is
       // pending from the Lumio team, so they must not sit behind the
       // setup-pending screen (and they read as "live", not "pending", in admin).
@@ -180,6 +186,14 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
               <div>
                 <label style={lbl}>Your name</label>
                 <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Freya Jones" style={input} />
+              </div>
+              <div>
+                <label style={lbl}>Your accreditation <span style={{ color: '#4B5563', fontWeight: 400 }}>(optional)</span></label>
+                <select value={accreditation} onChange={e => setAccreditation(e.target.value)} style={{ ...input, cursor: 'pointer' }}>
+                  <option value="">— select your qualification —</option>
+                  {ACCREDITATIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+                <p style={{ color: '#6B7280', fontSize: 11.5, margin: '6px 0 0', lineHeight: 1.5 }}>Shown on your profile card and on anything you print for players. Change it any time in Settings.</p>
               </div>
               <div>
                 <label style={lbl}>Your portal URL</label>
