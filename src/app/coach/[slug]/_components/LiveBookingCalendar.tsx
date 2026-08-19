@@ -114,6 +114,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
 
   const modals = editing && (
     <BookingFormModal T={T} accent={accent} players={players} coaches={coaches} typeColour={TYPE_COLOUR}
+      bookings={rows}
       booking={editing === 'new' ? null : editing}
       defaultDate={iso(cursor)}
       onClose={() => setEditing(null)}
@@ -307,9 +308,10 @@ function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, onOpen, o
 }
 
 // ── Add / Edit booking modal ──────────────────────────────────────────────────
-function BookingFormModal({ T, accent, players, coaches, typeColour, booking, defaultDate, onClose, onSave, onDelete }: {
+function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, booking, defaultDate, onClose, onSave, onDelete }: {
   T: ThemeTokens; accent: AccentTokens; players: { id: string; name: string }[]; coaches: string[]
   typeColour: (t: string | null) => string
+  bookings: Booking[]
   booking: Booking | null; defaultDate: string
   onClose: () => void
   onSave: (vals: Record<string, any>, newPlayer: string | null) => Promise<void>
@@ -330,6 +332,68 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, booking, de
   const [saving, setSaving] = useState(false)
 
   const who = (playerSel === '__new__' ? newPlayer : playerSel).trim()
+
+  // ── Availability for the chosen day ────────────────────────────────────────
+  // "Busy" means BOTH the coach's connected calendar (iCloud/Google/Outlook
+  // free-busy) and their existing Lumio bookings. Double-booking a lesson over a
+  // dentist appointment and over another lesson are the same mistake, so they are
+  // treated identically here.
+  //
+  // Times are browser-local minutes-since-midnight, matching the striped overlay
+  // on the week grid above — so the form and the grid can never disagree about
+  // whether a slot is free. (Coaches are UK-based; revisit alongside the TZ
+  // constant in lib/coach/calendar.ts if that ever stops being true.)
+  const [extBusy, setExtBusy] = useState<{ start: number; end: number }[] | null>(null)
+  useEffect(() => {
+    if (!date) { setExtBusy([]); return }
+    let cancelled = false
+    setExtBusy(null)                                  // null = still checking
+    const from = new Date(`${date}T00:00:00`)
+    const to = new Date(from); to.setDate(to.getDate() + 1)
+    fetch(`/api/coach/calendar/availability?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`)
+      .then(r => (r.ok ? r.json() : { busy: [] }))
+      .then(j => {
+        if (cancelled) return
+        const mapped = (Array.isArray(j.busy) ? j.busy : []).map((iv: { start: string; end: string }) => {
+          const s = new Date(iv.start), e = new Date(iv.end)
+          // Clamp intervals that start the day before / end the day after.
+          return {
+            start: iso(s) === date ? s.getHours() * 60 + s.getMinutes() : 0,
+            end: iso(e) === date ? e.getHours() * 60 + e.getMinutes() : 24 * 60,
+          }
+        })
+        setExtBusy(mapped.filter((b: { start: number; end: number }) => b.end > b.start))
+      })
+      .catch(() => { if (!cancelled) setExtBusy([]) })   // no calendar connected → silent, not an error
+    return () => { cancelled = true }
+  }, [date])
+
+  const durMins = Math.max(15, Number(dur) || 60)
+  const startMins = parseMins(start) ?? 0
+  const overlaps = (aS: number, aE: number, bS: number, bE: number) => aS < bE && bS < aE
+
+  // Other Lumio bookings that day. Excludes the booking being edited (it cannot
+  // clash with itself) and anything cancelled.
+  const lumioBusy = bookings
+    .filter(b => b.booking_date === date && b.id !== booking?.id && b.status !== 'cancelled')
+    .map(b => {
+      const s = parseMins(b.start_time)
+      return s == null ? null : { start: s, end: s + (b.duration_min || 60), label: b.title || b.player_name || 'another lesson' }
+    })
+    .filter(Boolean) as { start: number; end: number; label: string }[]
+
+  const allBusy = [...lumioBusy, ...(extBusy ?? []).map(b => ({ ...b, label: 'your connected calendar' }))]
+  const clash = allBusy.find(b => overlaps(startMins, startMins + durMins, b.start, b.end))
+
+  // Free starts on the hour/half-hour within coaching hours that fit the duration.
+  const DAY_START = 7 * 60, DAY_END = 21 * 60
+  const freeSlots: number[] = []
+  if (extBusy !== null) {
+    for (let t = DAY_START; t + durMins <= DAY_END; t += 30) {
+      if (!allBusy.some(b => overlaps(t, t + durMins, b.start, b.end))) freeSlots.push(t)
+    }
+  }
+
   const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box' }
   const lbl: CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 6px' }
   const canSave = (!!title.trim() || !!who) && !saving
@@ -374,6 +438,40 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, booking, de
             <div><label style={lbl}>Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} style={field} /></div>
             <div><label style={lbl}>Start</label><input type="time" value={start} onChange={e => setStart(e.target.value)} style={field} /></div>
             <div><label style={lbl}>Mins</label><input type="number" min={15} step={15} value={dur} onChange={e => setDur(e.target.value)} style={field} /></div>
+          </div>
+
+          {/* Availability. Warns, never blocks — a coach may deliberately
+              double-book, and refusing the save would be us overruling them. */}
+          <div style={{ marginTop: -4 }}>
+            {extBusy === null ? (
+              <div style={{ fontSize: 11.5, color: T.text3 }}>Checking your calendar…</div>
+            ) : clash ? (
+              <div style={{ fontSize: 11.5, color: T.warn, background: `${T.warn}14`, border: `1px solid ${T.warn}33`, borderRadius: 9, padding: '8px 10px' }}>
+                ⚠ {minsToHHMM(startMins)}–{minsToHHMM(startMins + durMins)} clashes with {clash.label} ({minsToHHMM(clash.start)}–{minsToHHMM(clash.end)}). You can still save.
+              </div>
+            ) : (
+              <div style={{ fontSize: 11.5, color: T.good }}>✓ {minsToHHMM(startMins)}–{minsToHHMM(startMins + durMins)} is free</div>
+            )}
+
+            {extBusy !== null && freeSlots.length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 10.5, color: T.text3, marginBottom: 5 }}>
+                  Free {durMins}-min slots on this day — tap one to use it
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {freeSlots.slice(0, 12).map(t => (
+                    <button key={t} type="button" onClick={() => setStart(minsToHHMM(t))}
+                      style={{ appearance: 'none', border: `1px solid ${t === startMins ? accent.hex : T.border}`, background: t === startMins ? accent.dim : 'transparent', color: t === startMins ? accent.hex : T.text2, borderRadius: 7, padding: '4px 8px', fontSize: 11.5, fontFamily: FONT_MONO, cursor: 'pointer' }}>
+                      {minsToHHMM(t)}
+                    </button>
+                  ))}
+                  {freeSlots.length > 12 && <span style={{ fontSize: 11, color: T.text3, alignSelf: 'center' }}>+{freeSlots.length - 12} more</span>}
+                </div>
+              </div>
+            )}
+            {extBusy !== null && freeSlots.length === 0 && (
+              <div style={{ fontSize: 11, color: T.text3, marginTop: 6 }}>No free {durMins}-min slots between 07:00 and 21:00 on this day.</div>
+            )}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div><label style={lbl}>Status</label>
