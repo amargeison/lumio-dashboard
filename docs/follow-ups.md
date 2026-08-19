@@ -337,3 +337,42 @@ module (`src/app/junior/[slug]/_components/JuniorReferees.tsx`
 and protect tabs also depend partially on this workstream
 (real-time availability, cross-club abuse-report routing) but
 their canned UI is functional as a single-club demo today.
+
+## Calendar PULL sync — external events into Lumio (parked 19 Aug 2026)
+
+Deferred because what was actually wanted turned out to be free/busy checking at
+the point of booking, which shipped instead (clash warning + free-slot chips in
+both the live and demo booking forms). PULL remains unbuilt. TRIGGER: a coach
+asks for their external calendar events to appear inside Lumio as bookings.
+
+A migration for this was drafted and deleted rather than left half-applied. The
+design is preserved here because the awkward parts are not obvious:
+
+- `coach_bookings` gains `source` ('lumio' | 'icloud'), `external_uid`,
+  `external_href`, `external_etag`, `last_pulled_at`.
+- The importer may ONLY ever touch rows where `source <> 'lumio'`. Undo for a bad
+  sync is then one statement: `delete from coach_bookings where coach_id = …
+  and source = 'icloud'`. Without that column an automated importer writing into
+  live booking data has no undo at all.
+- Idempotency: partial unique index on `(coach_id, external_uid) where
+  external_uid is not null`, so a re-run updates rather than duplicates.
+- **Echo suppression**: events Lumio itself pushed carry a UID starting `lumio-`
+  (see `lib/coach/caldav.ts`). The importer must skip those, or every pushed
+  booking comes back as a duplicate of itself on the next pull.
+- Deletion detection: rows inside the sync window whose `last_pulled_at` was not
+  refreshed by the current run are events the coach deleted in Apple Calendar.
+- A `coach_calendar_pull_state` table (per coach: last_run_at, last_ok_at,
+  last_error, counts) so a background job that fails at 3am surfaces its error
+  instead of dying silently.
+
+Known hard parts, none of which exist today:
+- `caldav.ts` has PROPFIND, PUT, DELETE and a free-busy REPORT — but no
+  `calendar-query` REPORT and no VEVENT parser.
+- Apple emits `DTSTART;TZID=Europe/London:…`, all-day events as `VALUE=DATE`,
+  and recurring events as `RRULE`. RRULE is the trap: a standing Tuesday slot
+  imports as a single booking unless occurrences are expanded.
+- There is no scheduler anywhere in this codebase. A background pull means a new
+  secured cron route plus a system-cron/PM2 entry on the VPS — new operational
+  surface that can fail unattended.
+- Imported rows have no `player_name` / `player_id` (a dentist appointment has no
+  player). Check the booking calendar and Session Planner tolerate that.

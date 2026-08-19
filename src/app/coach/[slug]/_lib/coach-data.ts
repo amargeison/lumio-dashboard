@@ -497,6 +497,32 @@ const BOOKINGS_SEED: Omit<Booking, 'date'>[] = [
 // from its weekday index so we never hand-type dates.
 export const BOOKINGS: Booking[] = BOOKINGS_SEED.map(b => ({ ...b, date: dateForDay(b.day) }))
 
+// ── Connected-calendar busy blocks ──────────────────────────────────────────
+// The coach's OTHER commitments — the things that are not lessons. In the LIVE
+// portal these come from real iCloud/Google/Outlook free-busy; here they are
+// canned, for two reasons: a demo must look identical every time it is shown,
+// and it must not depend on anyone being signed in.
+//
+// (The demo previously called the live availability API, which returns nothing
+// when unauthenticated — so the demo displayed no busy blocks at all, and the
+// booking form told the coach to "keep them free" without showing them.)
+export type BusyBlock = {
+  day: number      // 0=Mon … 6=Sun, same convention as BOOKINGS
+  date: string     // derived via dateForDay()
+  start: string    // 'HH:MM', local
+  end: string
+  label: string    // named, so a clash warning can say WHAT it clashes with
+}
+const DEMO_BUSY_SEED: Omit<BusyBlock, 'date'>[] = [
+  { day: 0, start: '08:15', end: '09:00', label: 'School run' },
+  { day: 1, start: '12:30', end: '14:00', label: 'Club committee meeting' },
+  { day: 2, start: '08:15', end: '09:00', label: 'School run' },
+  { day: 2, start: '16:00', end: '17:00', label: 'Dentist' },
+  { day: 3, start: '08:15', end: '09:00', label: 'School run' },
+  { day: 4, start: '17:00', end: '18:30', label: 'LTA coaching CPD' },
+]
+export const DEMO_BUSY: BusyBlock[] = DEMO_BUSY_SEED.map(b => ({ ...b, date: dateForDay(b.day) }))
+
 // ─── Resource centre ────────────────────────────────────────────────────────
 export type Resource = {
   id: string

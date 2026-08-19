@@ -10,8 +10,8 @@ import {
   PLAYERS, LESSONS, RESOURCES, EQUIPMENT_INVENTORY, demoAvatarUrl,
   PACKAGES, PAY_SUMMARY,
   CAMPS, CAMP_ATTENDEES, CAMP_TARGETS, buildCampItinerary, playerDevStats,
-  WEEK_START, TODAY, BOOKINGS,
-  type Player, type Lesson, type Resource, type Camp, type Booking,
+  WEEK_START, TODAY, BOOKINGS, DEMO_BUSY,
+  type Player, type Lesson, type Resource, type Camp, type Booking, type BusyBlock,
   type CoachStatTile, type CoachScheduleItem,
 } from '../_lib/coach-data'
 import { ALL_PLAYERS, bookingsForCoach, coachStats, coachById } from '../_lib/coaches-data'
@@ -996,29 +996,15 @@ export function CalendarView({ T, accent, density }: Common) {
   const openEdit = (it: { bookingId?: string }) => { if (it.bookingId) { const b = getBookings().find(x => x.id === it.bookingId); if (b) setEditBooking(b) } }
   // Coach role: only that coach's bookings (bookingCalItems filters by coachId).
   const items = bookingCalItems(scope ?? undefined, addedBookings)
-  // Busy times pulled from the coach's connected Google/Outlook calendar (Phase 2),
-  // so they can see true free slots. Empty (and silent) if no calendar is connected.
-  const [busy, setBusy] = useState<{ start: string; end: string }[]>([])
-  useEffect(() => {
-    const from = `${WEEK_START}T00:00:00Z`
-    const d = new Date(`${WEEK_START}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 7)
-    fetch(`/api/coach/calendar/availability?from=${encodeURIComponent(from)}&to=${encodeURIComponent(d.toISOString())}`)
-      .then(r => (r.ok ? r.json() : { busy: [] })).then(j => setBusy(Array.isArray(j.busy) ? j.busy : [])).catch(() => {})
-  }, [])
-  const fmtBusy = (iv: { start: string; end: string }) => {
-    const o = { timeZone: 'Europe/London' as const, hour: '2-digit' as const, minute: '2-digit' as const, hour12: false }
-    const day = new Date(iv.start).toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' })
-    return `${day} ${new Date(iv.start).toLocaleTimeString('en-GB', o)}–${new Date(iv.end).toLocaleTimeString('en-GB', o)}`
-  }
-  // ISO busy intervals → grid coords (London date + HH:MM) for the week grid overlay.
-  const busyBlocks = busy.map(iv => {
-    const toGrid = (iso: string) => ({
-      date: new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Europe/London' }),
-      time: new Date(iso).toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false }),
-    })
-    const s = toGrid(iv.start), e = toGrid(iv.end)
-    return { date: s.date, start: s.time, end: e.date === s.date ? e.time : '23:59' }
-  })
+  // The coach's other commitments, from their connected calendar. Canned here —
+  // see DEMO_BUSY in coach-data. This used to call the live availability API,
+  // which returns nothing to an unauthenticated visitor, so the demo showed zero
+  // busy blocks and the banner below never appeared.
+  const busy = DEMO_BUSY
+  const fmtBusy = (b: BusyBlock) =>
+    `${new Date(`${b.date}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short' })} ${b.start}–${b.end}`
+  // Already in grid coords (local date + HH:MM) — no timezone conversion needed.
+  const busyBlocks = busy.map(b => ({ date: b.date, start: b.start, end: b.end }))
   // Month view = 30 days from the start of the current week, grouped into the
   // shared MonthAgenda (the same component the Session Planner's month tab uses).
   const rangeEnd = (() => { const d = new Date(WEEK_START + 'T00:00:00'); d.setDate(d.getDate() + 30); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` })()
@@ -1039,7 +1025,7 @@ export function CalendarView({ T, accent, density }: Common) {
       {busy.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 12, padding: '9px 13px', borderRadius: 10, background: 'rgba(58,142,224,0.08)', border: '1px solid rgba(58,142,224,0.25)', fontSize: 11.5, color: T.text2 }}>
           <span style={{ fontWeight: 700, color: '#3A8EE0' }}>📅 Your calendar:</span>
-          <span>{busy.length} busy {busy.length === 1 ? 'block' : 'blocks'} this week{view === 'week' ? ' — shown striped on the grid below' : `: ${busy.slice(0, 6).map(fmtBusy).join(' · ')}${busy.length > 6 ? ` +${busy.length - 6} more` : ''}`}. Keep them free when booking.</span>
+          <span>{busy.length} busy {busy.length === 1 ? 'block' : 'blocks'} this week{view === 'week' ? ' — shown striped on the grid below' : `: ${busy.slice(0, 6).map(fmtBusy).join(' · ')}${busy.length > 6 ? ` +${busy.length - 6} more` : ''}`}. The booking form checks these for you and suggests free slots.</span>
         </div>
       )}
       {view === 'week' ? (
