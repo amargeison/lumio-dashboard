@@ -69,9 +69,28 @@ export function providerConfigured(provider: Provider): boolean {
   return !!(c && c.clientId && c.clientSecret)
 }
 
+// The canonical PUBLIC origin for coach-facing redirects.
+//
+// In production Next runs in standalone mode behind nginx, so `req.nextUrl.origin`
+// resolves from the Host header the Node process actually receives — which is the
+// internal bind address, http://0.0.0.0:3000, not the public domain. Redirecting a
+// coach there drops them on ERR_CONNECTION_REFUSED, and it does so on the SUCCESS
+// path too: a Google account that connected perfectly still looked broken because
+// the final bounce went to a dead URL.
+//
+// OAUTH_REDIRECT_BASE already has to hold the real public origin (the provider
+// validates redirect_uri against it), so it is the reliable source here as well.
+// NOTE for local dev: with OAUTH_REDIRECT_BASE pointing at production, an OAuth
+// round-trip started locally comes back to production — different origin, so the
+// CSRF-state cookie and the coach's session are both missing and the callback
+// correctly answers `status=signin`. To run the flow locally, unset
+// OAUTH_REDIRECT_BASE and register the loopback callback with the provider.
+export function publicOrigin(fallback: string): string {
+  return (process.env.OAUTH_REDIRECT_BASE || fallback).replace(/\/$/, '')
+}
+
 export function redirectUri(origin: string, provider: Provider): string {
-  const base = (process.env.OAUTH_REDIRECT_BASE || origin).replace(/\/$/, '')
-  return `${base}/api/coach/oauth/${provider}/callback`
+  return `${publicOrigin(origin)}/api/coach/oauth/${provider}/callback`
 }
 
 export function serviceClient() {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { providerConfig, providerConfigured, redirectUri, sessionCoachId, OAUTH_PROVIDERS, type Provider } from '@/lib/coach/oauth'
+import { providerConfig, providerConfigured, redirectUri, publicOrigin, sessionCoachId, OAUTH_PROVIDERS, type Provider } from '@/lib/coach/oauth'
 
 // Kicks off the OAuth consent flow for Google / Microsoft. The coach hits this
 // from Settings → Connected accounts; we stash a CSRF state + return path in
@@ -11,7 +11,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prov
   const ret = req.nextUrl.searchParams.get('return') || '/'
   const back = (status: string) => {
     const sep = ret.includes('?') ? '&' : '?'
-    return NextResponse.redirect(new URL(`${ret}${sep}integration=${provider}&status=${status}`, req.nextUrl.origin))
+    // publicOrigin, not req.nextUrl.origin — behind nginx the latter is the
+    // internal bind address and the coach lands on a refused connection.
+    return NextResponse.redirect(new URL(`${ret}${sep}integration=${provider}&status=${status}`, publicOrigin(req.nextUrl.origin)))
   }
 
   const coachId = await sessionCoachId()
