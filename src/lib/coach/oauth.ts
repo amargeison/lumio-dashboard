@@ -64,7 +64,21 @@ export function providerConfig(provider: Provider): ProviderConfig | null {
 }
 
 // True once the OAuth app credentials are present in the environment.
+// Google/Microsoft OAuth is PARKED while the pilot runs on iCloud.
+//
+// Credentials are present, so without this gate the portal shows working
+// "Connect" buttons for both. That is worse than showing nothing: the Google app
+// is still in "Testing" publishing status, so any coach who is not on the
+// test-user allowlist gets Google's hard error screen — "Access blocked: Lumio
+// Sports has not completed the Google verification process" — with our app name
+// on it. During a pilot with a head coach and 8 staff, that reads as a broken
+// product rather than an unfinished feature.
+//
+// Set COACH_OAUTH_LIVE=true to re-enable, once Google verification has cleared
+// (and the Azure consent state has been checked). iCloud is unaffected — it is
+// not OAuth and never passes through here.
 export function providerConfigured(provider: Provider): boolean {
+  if (process.env.COACH_OAUTH_LIVE !== 'true') return false
   const c = providerConfig(provider)
   return !!(c && c.clientId && c.clientSecret)
 }

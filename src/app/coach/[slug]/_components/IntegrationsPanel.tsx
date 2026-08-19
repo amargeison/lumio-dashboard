@@ -124,7 +124,9 @@ export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: Accen
               ) : m.id === 'icloud' ? null : ok ? (
                 <button onClick={() => connect(m.id)} style={btn(accent.hex, T.btnText)}>Connect</button>
               ) : (
-                <span style={{ fontSize: 10.5, color: T.text3, textAlign: 'right', maxWidth: 130 }}>Add OAuth credentials to enable</span>
+                // Coach-facing, not developer-facing: this branch is now what a coach
+                // sees for Google/Outlook while those are parked (see providerConfigured).
+                <span style={{ fontSize: 10.5, color: T.text3, textAlign: 'right', maxWidth: 130 }}>Coming soon</span>
               )}
             </div>
 
