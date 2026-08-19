@@ -58,6 +58,9 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   const [editing, setEditing] = useState<Booking | 'new' | null>(null)
   const [connected, setConnected] = useState<string[] | null>(null)
   const [busy, setBusy] = useState<{ date: string; start: number; end: number }[]>([])
+  // Set when the coach clicks an empty cell on the week grid, so the form opens
+  // already pointed at the day and time they clicked rather than at a default.
+  const [newSlot, setNewSlot] = useState<{ date: string; start: string } | null>(null)
 
   const today = new Date()
   const weekStart = useMemo(() => mondayOf(cursor), [cursor])
@@ -116,13 +119,14 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
     <BookingFormModal T={T} accent={accent} players={players} coaches={coaches} typeColour={TYPE_COLOUR}
       bookings={rows}
       booking={editing === 'new' ? null : editing}
-      defaultDate={iso(cursor)}
-      onClose={() => setEditing(null)}
+      defaultDate={newSlot?.date || iso(cursor)}
+      defaultStart={newSlot?.start}
+      onClose={() => { setEditing(null); setNewSlot(null) }}
       onDelete={editing !== 'new' ? async () => { await remove(editing.id); setEditing(null); reload() } : undefined}
       onSave={async (vals, newPlayer) => {
         if (newPlayer) await dbInsert('coach_players', { name: newPlayer }).catch(() => {})
         if (editing === 'new') await add(vals); else await edit(editing.id, vals)
-        setEditing(null); reload()
+        setEditing(null); setNewSlot(null); reload()
       }} />
   )
 
@@ -184,7 +188,9 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
       )}
 
       {view === 'week'
-        ? <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={rows} busy={busy} typeColour={TYPE_COLOUR} onOpen={b => setEditing(b)} />
+        ? <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={rows} busy={busy} typeColour={TYPE_COLOUR}
+            onOpen={b => setEditing(b)}
+            onSlotClick={(dayKey, mins) => { setNewSlot({ date: dayKey, start: minsToHHMM(mins) }); setEditing('new') }} />
         : <MonthGrid T={T} accent={accent} cursor={cursor} today={today} bookingsOn={bookingsOn} typeColour={TYPE_COLOUR} onOpen={b => setEditing(b)} onDay={d => { setCursor(d); setView('week') }} />}
 
       {/* Legend */}
@@ -203,10 +209,11 @@ function NavBtn({ T, onClick, children }: { T: ThemeTokens; onClick: () => void;
 }
 
 // ── Week grid ─────────────────────────────────────────────────────────────────
-function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, onOpen }: {
+function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, onOpen, onSlotClick }: {
   T: ThemeTokens; accent: AccentTokens; days: Date[]; today: Date
   bookings: Booking[]; busy: { date: string; start: number; end: number }[]
   typeColour: (t: string | null) => string; onOpen: (b: Booking) => void
+  onSlotClick: (dayKey: string, mins: number) => void
 }) {
   const yFor = (mins: number) => Math.max(0, Math.min((mins / 60 - HOUR_START) * ROW_H, HOURS.length * ROW_H))
   return (
@@ -232,8 +239,24 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, onOpen }
             const dayKey = iso(d)
             const dayBusy = busy.filter(b => b.date === dayKey)
             const dayBookings = bookings.filter(b => b.booking_date === dayKey)
+            // Clicking anywhere empty in this column starts a booking there: the
+            // vertical position IS the time, converted from the click offset and
+            // snapped to the nearest half hour. Bookings on top stopPropagation so
+            // clicking one still opens it for editing. The busy overlays are
+            // pointer-events:none, so clicking a striped block opens the form and
+            // immediately shows the clash warning — more useful than a dead zone.
             return (
-              <div key={di} style={{ position: 'relative', borderLeft: `1px solid ${T.border}` }}>
+              <div key={di}
+                title="Click to add a booking at this time"
+                onClick={e => {
+                  const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+                  const raw = HOUR_START * 60 + ((e.clientY - rect.top) / ROW_H) * 60
+                  const snapped = Math.round(raw / 30) * 30
+                  const first = HOUR_START * 60
+                  const last = (HOUR_START + HOURS.length) * 60 - 30
+                  onSlotClick(dayKey, Math.max(first, Math.min(snapped, last)))
+                }}
+                style={{ position: 'relative', borderLeft: `1px solid ${T.border}`, cursor: 'pointer' }}>
                 {HOURS.map(h => <div key={h} style={{ height: ROW_H, borderTop: `1px solid ${T.border}` }} />)}
                 {dayBusy.map((b, bi) => {
                   const top = yFor(b.start), h = yFor(b.end) - top
@@ -246,7 +269,7 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, onOpen }
                   const top = yFor(startM), height = Math.max(yFor(startM + dur) - top - 2, 20)
                   const c = typeColour(b.type)
                   return (
-                    <div key={b.id} onClick={() => onOpen(b)} title={`${b.title || b.player_name || 'Booking'} · ${minsToHHMM(startM)}`}
+                    <div key={b.id} onClick={e => { e.stopPropagation(); onOpen(b) }} title={`${b.title || b.player_name || 'Booking'} · ${minsToHHMM(startM)}`}
                       style={{ position: 'absolute', left: 3, right: 3, top: top + 1, height, background: b.status === 'pending' ? `${c}14` : `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '3px 6px', overflow: 'hidden', opacity: b.status === 'cancelled' ? 0.45 : 1, cursor: 'pointer', zIndex: 1 }}>
                       <div style={{ fontSize: 10.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Booking'}</div>
                       <div style={{ fontSize: 9, color: T.text2, fontFamily: FONT_MONO }}>{minsToHHMM(startM)}{b.court ? ` · ${b.court}` : ''}</div>
@@ -308,11 +331,11 @@ function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, onOpen, o
 }
 
 // ── Add / Edit booking modal ──────────────────────────────────────────────────
-function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, booking, defaultDate, onClose, onSave, onDelete }: {
+function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, booking, defaultDate, defaultStart, onClose, onSave, onDelete }: {
   T: ThemeTokens; accent: AccentTokens; players: { id: string; name: string }[]; coaches: string[]
   typeColour: (t: string | null) => string
   bookings: Booking[]
-  booking: Booking | null; defaultDate: string
+  booking: Booking | null; defaultDate: string; defaultStart?: string
   onClose: () => void
   onSave: (vals: Record<string, any>, newPlayer: string | null) => Promise<void>
   onDelete?: () => Promise<void>
@@ -323,7 +346,11 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, b
   const [newPlayer, setNewPlayer] = useState(booking && !known ? booking.player_name || '' : '')
   const [court, setCourt] = useState(booking?.court || '')
   const [date, setDate] = useState(booking?.booking_date || defaultDate)
-  const [start, setStart] = useState(() => { const m = parseMins(booking?.start_time ?? null); return m == null ? '16:00' : minsToHHMM(m) })
+  const [start, setStart] = useState(() => {
+    const m = parseMins(booking?.start_time ?? null)
+    if (m != null) return minsToHHMM(m)
+    return defaultStart || '16:00'   // defaultStart = the grid cell the coach clicked
+  })
   const [dur, setDur] = useState(String(booking?.duration_min ?? 60))
   const [type, setType] = useState(booking?.type || 'Private')
   const [status, setStatus] = useState(booking?.status || 'confirmed')
