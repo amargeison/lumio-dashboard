@@ -145,9 +145,54 @@ export async function icloudDiscoverCalendar(appleId: string, appPassword: strin
 }
 
 // ─── iCalendar (RFC 5545) build + parse ──────────────────────────────────────
+
+// Lumio bookings arrive as NAIVE wall-clock strings ("2026-08-24T16:00:00") —
+// the coach's local time, with no offset attached (see coach-db.ts). `new Date()`
+// parses a date-time with no offset as *server* local time, and the VPS runs UTC,
+// so a 16:00 BST lesson used to ship as 160000Z — i.e. 17:00 BST in the coach's
+// calendar. Correct in winter (GMT == UTC), an hour late every summer, which is a
+// horrible way to find a bug. So: interpret naive input in the coach's zone before
+// converting. Strings that already carry a Z or ±HH:MM (the free-busy window comes
+// in that way) are trusted as-is and pass straight through.
+//
+// TZ duplicates the constant in calendar.ts rather than importing it — calendar.ts
+// imports THIS module, so importing back would be circular. Keep the two in step;
+// make both per-coach together when Lumio goes beyond the UK.
+const TZ = 'Europe/London'
+const HAS_OFFSET = /(Z|[+-]\d\d:?\d\d)$/
+
+// Milliseconds to ADD to a UTC instant to get the wall-clock reading in `tz`.
+function zoneOffsetMs(utcMs: number, tz: string): number {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, hour12: false,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    }).formatToParts(new Date(utcMs)).map(part => [part.type, part.value]),
+  ) as Record<string, string>
+  // hour can format as "24" for midnight in some ICU builds — normalise it.
+  const asIfUtc = Date.UTC(
+    +parts.year, +parts.month - 1, +parts.day,
+    +parts.hour % 24, +parts.minute, +parts.second,
+  )
+  return asIfUtc - utcMs
+}
+
+// "YYYY-MM-DDTHH:MM(:SS)" read as wall-clock time in `tz` → the real UTC instant.
+function wallClockToUtcMs(naive: string, tz: string): number {
+  const m = naive.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/)
+  if (!m) return new Date(naive).getTime()          // unrecognised — fall back
+  const guess = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] ?? 0))
+  // Two passes so a time sitting near a DST transition still converges.
+  const first = guess - zoneOffsetMs(guess, tz)
+  return guess - zoneOffsetMs(first, tz)
+}
+
 function icalUtc(iso: string): string {
   // 2026-06-20T15:00:00.000Z → 20260620T150000Z
-  return new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '')
+  const s = iso.trim()
+  const ms = HAS_OFFSET.test(s) ? new Date(s).getTime() : wallClockToUtcMs(s, TZ)
+  return new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '')
 }
 function icalEsc(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')
