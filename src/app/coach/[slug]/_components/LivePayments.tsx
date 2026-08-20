@@ -8,8 +8,9 @@ import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, sb, currentCoachId } from '../_lib/coach-db'
-import { getSettings, setSettings } from '../_lib/settings-store'
-import { seedLumioPackages } from '../_lib/lumio-packages'
+import { getSettings, setSettings, isDemoPortal } from '../_lib/settings-store'
+import { seedLumioPackages, PACKAGE_CHOICES } from '../_lib/lumio-packages'
+import { SetupWizard } from './SetupWizard'
 
 // Package type → Equipment & Kit session-type checklist.
 const KIND_TO_SESSION: Record<string, string> = { Private: 'Private lesson', Performance: 'Private lesson', Adult: 'Private lesson', Group: 'Group / squad', Junior: 'Group / squad', Cardio: 'Cardio Tennis' }
@@ -72,14 +73,25 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // First visit: load the Lumio default packages as a starting price list (once —
-  // the coach can edit/remove anything they don't want).
-  useEffect(() => {
-    if (packages.loading || getSettings().packagesSeeded) return
-    if (packages.rows.length) { setSettings({ packagesSeeded: true }); return }
-    seedLumioPackages().then(() => { setSettings({ packagesSeeded: true }); packages.reload() }).catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [packages.loading])
+  // First visit used to SILENTLY insert all six Lumio packages, so a new coach's
+  // price list was somebody else's prices until they noticed and edited them —
+  // and a price list is the one thing a coach must own. It now offers a choice
+  // (see SetupWizard). `packagesSeeded` is reused as "the coach has answered
+  // this", so "start empty" is remembered rather than re-asked every visit.
+  const [setupAnswered, setSetupAnswered] = useState(false)
+  // NOTE: an earlier version of this flipped `packagesSeeded` to true whenever the
+  // coach had packages. That fought the Settings toggle — switching the starter
+  // packages off while holding packages would silently switch itself back on. It
+  // was also redundant: showSetup already requires an empty price list, so a coach
+  // with packages never sees the wizard regardless of the flag.
+
+  const showSetup = !isDemoPortal()
+    && !packages.loading && packages.rows.length === 0
+    && !setupAnswered && !getSettings().packagesSeeded
+
+  const finishSetup = () => { setSettings({ packagesSeeded: true }); setSetupAnswered(true) }
+  const applySetup = async (sel: Record<string, string[]>) => { await seedLumioPackages(sel.packages); finishSetup(); packages.reload() }
+  const loadAllSetup = async () => { await seedLumioPackages(); finishSetup(); packages.reload() }
 
   // Lesson packages are driven by the roster: every player appears, on a package
   // or "pay as you go". Sessions used are derived from submitted lesson summaries
@@ -123,6 +135,16 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
         </div>
         <button onClick={() => setPay({})} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>💳 Take a payment</button>
       </div>
+
+      {showSetup && (
+        <div style={{ marginBottom: 16 }}>
+          <SetupWizard T={T} accent={accent}
+            title="Build your price list"
+            blurb="Pick the packages you want to offer. Prices are Lumio's suggestions — edit them to yours once they're in, or start empty and write your own from scratch."
+            groups={[{ key: 'packages', title: 'Suggested packages', hint: 'Edit names, prices and features after adding', options: PACKAGE_CHOICES }]}
+            onApply={applySetup} onLoadAll={loadAllSetup} onSkip={finishSetup} />
+        </div>
+      )}
 
       <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12, marginBottom: 16 }}>
         {tiles.map(([l, v, c]) => (

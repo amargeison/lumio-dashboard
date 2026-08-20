@@ -19,6 +19,8 @@ import { CoachDevelopmentSettings } from './CoachDevelopmentSettings'
 import { CoachCompliance } from './CoachCompliance'
 import { CoachImport } from './CoachImport'
 import { seedLumioResources, LUMIO_RESOURCES } from '../_lib/lumio-resources'
+import { seedLumioEquipment, EQUIPMENT_KIT_CHOICES, EQUIPMENT_CATEGORY_CHOICES } from '../_lib/lumio-equipment'
+import { seedLumioPackages, LUMIO_PACKAGES } from '../_lib/lumio-packages'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -178,6 +180,229 @@ function ResourceCentreSettings({ T, accent }: { T: ThemeTokens; accent: AccentT
         </button>
         {typeof wipe === 'object' && <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8 }}>Cleared {wipe.removed} resource{wipe.removed === 1 ? '' : 's'}.</div>}
         {wipe === 'error' && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 8 }}>Couldn’t clear your resources — try again.</div>}
+      </div>
+    </>
+  )
+}
+
+// Booking confirmation emails — lives on the Booking Calendar module because that
+// is where bookings are made, and a coach looking for "does this email people?"
+// looks at the calendar rather than at a messaging screen.
+//
+// This is a kill switch with real-world consequences in BOTH directions: on, and
+// a test booking emails a real parent; off, and nobody is told their session is
+// confirmed. So the copy states plainly who receives what, and the panel warns
+// when the coach's own copy cannot be delivered.
+function BookingEmailsSettings({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+  const s = useCoachSettings()
+  const profile = useCoachProfile()
+  const on = s.bookingEmails !== false
+  const coachEmail = (profile.contact_email || '').trim()
+
+  const note: CSSProperties = { fontSize: 11, marginBottom: 8, lineHeight: 1.5 }
+  return (
+    <>
+      <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 8px' }}>Confirmation emails</div>
+      <Toggle T={T} accent={accent} on={on} onChange={v => setSettings({ bookingEmails: v })} label="Email a confirmation when a booking is made"
+        desc={on
+          ? 'Sent from your own address the moment a booking is created — with the date, the venue and a map link, what you covered last session including any homework, and what this session will work on.'
+          : 'Off — nobody is emailed when a booking is made, including you.'} />
+
+      {on && (
+        <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '11px 12px', marginBottom: 10 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Who receives it</div>
+          <div style={{ fontSize: 11.5, color: T.text2, lineHeight: 1.6 }}>
+            <div><strong style={{ color: T.text }}>Under 16</strong> — sent to the parent on the player&apos;s record, never to the child. If a player&apos;s age is blank they are treated as under 16.</div>
+            <div style={{ marginTop: 5 }}><strong style={{ color: T.text }}>16 and over</strong> — sent to the player.</div>
+            <div style={{ marginTop: 5 }}><strong style={{ color: T.text }}>You</strong> — always copied, so a booking never goes unseen. Your copy also states where the player&apos;s went, and why.</div>
+          </div>
+        </div>
+      )}
+
+      {on && !coachEmail && (
+        <div style={{ ...note, color: T.warn, background: `${T.warn}14`, border: `1px solid ${T.warn}33`, borderRadius: 9, padding: '9px 11px' }}>
+          ⚠ No contact email on your profile, so your own copy cannot be sent. Add one in Settings → Contact details — players and parents will still be emailed.
+        </div>
+      )}
+      <div style={{ ...note, color: T.text3, marginBottom: 16 }}>
+        A player with no email on file — and an under-16 with no parent email — is skipped rather than emailed at a guessed address. Add addresses on the Player Roster.
+      </div>
+    </>
+  )
+}
+
+// How big the Lumio starter kit actually is — derived from the seed data rather
+// than hard-coded, so this copy can never drift from what the button inserts.
+const LUMIO_KIT_COUNT = EQUIPMENT_KIT_CHOICES.reduce((n, k) => n + k.count, 0)
+const LUMIO_INVENTORY_COUNT = EQUIPMENT_CATEGORY_CHOICES.reduce((n, c) => n + c.count, 0)
+
+// Equipment & Kit module settings — the same two controls as the Resource Centre
+// above, over the coach's OWN live module.
+//
+// Why this exists: the starter kit could only ever be loaded from the setup
+// wizard, and the wizard only offers itself on an empty module. A coach who
+// chose “I’ll add my own”, or who later cleared the lot, had no route back to
+// Lumio’s list; a coach who loaded it by mistake had to delete 67 rows one at a
+// time. Both now have a control here.
+//
+// Unlike Resources, this module is backed by TWO tables — coach_kit_items (the
+// per-session-type checklists) and coach_equipment (the inventory) — so both the
+// seed and the wipe must cover the pair, or the module is left half-full.
+function EquipmentKitSettings({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+  const s = useCoachSettings()
+  // `equipmentSeeded` now means “the coach has answered the starter-kit question”
+  // (it used to mean “we auto-seeded”). It is what LiveEquipment reads to decide
+  // whether to show SetupWizard, so this toggle and that wizard stay in step.
+  const on = s.equipmentSeeded === true
+  const [seed, setSeed] = useState<'idle' | 'busy' | 'error' | { kits: number; items: number }>('idle')
+  const [wipe, setWipe] = useState<'idle' | 'busy' | 'error' | { kits: number; items: number }>('idle')
+
+  const toggleKit = async (v: boolean) => {
+    if (seed === 'busy' || wipe === 'busy') return
+    setSettings({ equipmentSeeded: v })
+    if (!v) { setSeed('idle'); return }
+    setSeed('busy')
+    try {
+      // Called with no selection = the whole starter kit (the optional argument is
+      // for the wizard's tick boxes). The seeder skips anything the coach already
+      // has, so pressing this twice never duplicates a row.
+      const { kits, items } = await seedLumioEquipment()
+      invalidateCoachTable('coach_kit_items')  // both halves are cached table reads —
+      invalidateCoachTable('coach_equipment')  // force a fresh read of each
+      setSeed({ kits, items })
+    } catch { setSeed('error') }
+  }
+
+  const clearAll = async () => {
+    if (seed === 'busy' || wipe === 'busy') return
+    if (!confirm('Delete every kit checklist item and every piece of inventory? That includes Lumio’s starter kit and anything you have added yourself. This cannot be undone.')) return
+    setWipe('busy')
+    try {
+      const uid = await currentCoachId()
+      if (!uid) { setWipe('error'); return }
+      // Scoped to the signed-in coach to match RLS (coach_id = auth.uid()); the
+      // .select() hands back the deleted rows, so the coach gets a real count
+      // rather than a button that appears to do nothing. Two deletes, because the
+      // module is two tables — clearing only one would leave it half-populated.
+      const kitDel = await sb().from('coach_kit_items').delete().eq('coach_id', uid).select('id')
+      if (kitDel.error) throw new Error(kitDel.error.message)
+      const invDel = await sb().from('coach_equipment').delete().eq('coach_id', uid).select('id')
+      if (invDel.error) throw new Error(invDel.error.message)
+      invalidateCoachTable('coach_kit_items')
+      invalidateCoachTable('coach_equipment')
+      // The module is empty again, so the coach has in effect un-answered the setup
+      // question. Clearing the flag is what lets the setup wizard offer itself a
+      // second time, instead of leaving them staring at an empty module with no
+      // way to get Lumio's kit back.
+      setSettings({ equipmentSeeded: false })
+      setSeed('idle')
+      setWipe({ kits: (kitDel.data ?? []).length, items: (invDel.data ?? []).length })
+    } catch { setWipe('error') }
+  }
+
+  const note: CSSProperties = { fontSize: 11, marginBottom: 8, lineHeight: 1.5 }
+  return (
+    <>
+      <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 8px' }}>Starter kit</div>
+      <Toggle T={T} accent={accent} on={on} onChange={v => { void toggleKit(v) }} label="Lumio starter kit"
+        desc={on ? `${LUMIO_KIT_COUNT} checklist items across ${EQUIPMENT_KIT_CHOICES.length} session types and ${LUMIO_INVENTORY_COUNT} inventory items in your live module — edit quantities and remove what you don’t carry.` : 'Off — your kit checklists and inventory show only what you add yourself.'} />
+      {seed === 'busy' && <div style={{ ...note, color: T.text3 }}>Loading the starter kit into your Equipment &amp; Kit module…</div>}
+      {typeof seed === 'object' && <div style={{ ...note, color: T.good }}>✓ Added {seed.kits} kit item{seed.kits === 1 ? '' : 's'} and {seed.items} inventory item{seed.items === 1 ? '' : 's'}{seed.kits + seed.items === 0 ? ' — you already had the full starter kit' : ''}.</div>}
+      {seed === 'error' && <div style={{ ...note, color: T.bad }}>Couldn’t load the starter kit — try again.</div>}
+      <div style={{ ...note, color: T.text3, marginBottom: 16 }}>Switching this off leaves the kit you already have — it only stops Lumio’s starter kit being added. To empty the module, use Clear all kit &amp; inventory.</div>
+
+      <div style={{ fontSize: 10, fontWeight: 700, color: T.bad, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Danger zone</div>
+      <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '11px 12px' }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>Clear all kit &amp; inventory</div>
+        <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2, lineHeight: 1.5 }}>Permanently deletes every session kit checklist and every inventory item — Lumio’s and your own. There is no undo. You’ll be offered the starter kit again next time you open the module.</div>
+        <button onClick={() => { void clearAll() }} disabled={wipe === 'busy'}
+          style={{ marginTop: 10, appearance: 'none', background: 'transparent', color: T.bad, border: `1px solid ${T.bad}`, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: wipe === 'busy' ? 'default' : 'pointer', opacity: wipe === 'busy' ? 0.6 : 1 }}>
+          {wipe === 'busy' ? 'Clearing…' : 'Clear all kit & inventory'}
+        </button>
+        {typeof wipe === 'object' && <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8 }}>Cleared {wipe.kits} kit item{wipe.kits === 1 ? '' : 's'} and {wipe.items} inventory item{wipe.items === 1 ? '' : 's'}.</div>}
+        {wipe === 'error' && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 8 }}>Couldn’t clear your equipment — try again.</div>}
+      </div>
+    </>
+  )
+}
+
+// Payments & Packages module settings. Scope is the PRICE LIST only
+// (coach_packages) — see clearAll for why the payments themselves are left alone.
+//
+// Why this exists: same one-way door as the other two modules. The starter price
+// list was only ever offered on an empty module, so a coach who started from
+// scratch (or cleared it) could never get Lumio’s packages back, and a coach who
+// loaded them by mistake had to delete six packages by hand.
+function PaymentsPackagesSettings({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+  const s = useCoachSettings()
+  // `packagesSeeded` now means “the coach has answered the starter-packages
+  // question” (it used to mean “we auto-seeded”), and LivePayments reads it to
+  // decide whether to show SetupWizard.
+  const on = s.packagesSeeded === true
+  const [seed, setSeed] = useState<'idle' | 'busy' | 'error' | { added: number }>('idle')
+  const [wipe, setWipe] = useState<'idle' | 'busy' | 'error' | { removed: number }>('idle')
+
+  const togglePackages = async (v: boolean) => {
+    if (seed === 'busy' || wipe === 'busy') return
+    setSettings({ packagesSeeded: v })
+    if (!v) { setSeed('idle'); return }
+    setSeed('busy')
+    try {
+      // No argument = all of them (the optional list is for the wizard's tick
+      // boxes). The seeder skips any package name the coach already has, so this
+      // never duplicates and never overwrites prices they have edited.
+      const added = await seedLumioPackages()
+      invalidateCoachTable('coach_packages')  // the price list is a cached table read
+      setSeed({ added })
+    } catch { setSeed('error') }
+  }
+
+  const clearAll = async () => {
+    if (seed === 'busy' || wipe === 'busy') return
+    if (!confirm('Delete every package in your price list? That includes Lumio’s starter packages and any you have priced yourself. Player payments are not affected. This cannot be undone.')) return
+    setWipe('busy')
+    try {
+      const uid = await currentCoachId()
+      if (!uid) { setWipe('error'); return }
+      // ONLY coach_packages. coach_payments is deliberately untouched: those rows
+      // are real money — what each player has actually paid or owes — not a starter
+      // set, and no button in Settings should be able to wipe a payment history.
+      // (They reference a package by free-text name, not a foreign key, so deleting
+      // the price list leaves every payment row intact and readable.)
+      // Scoped to the signed-in coach to match RLS (coach_id = auth.uid()); the
+      // .select() hands back the deleted rows so the coach gets a real count.
+      const { data, error } = await sb().from('coach_packages').delete().eq('coach_id', uid).select('id')
+      if (error) throw new Error(error.message)
+      invalidateCoachTable('coach_packages')
+      // Price list is empty again, so the coach has in effect un-answered the setup
+      // question — clearing the flag lets the setup wizard offer the packages again.
+      setSettings({ packagesSeeded: false })
+      setSeed('idle')
+      setWipe({ removed: (data ?? []).length })
+    } catch { setWipe('error') }
+  }
+
+  const note: CSSProperties = { fontSize: 11, marginBottom: 8, lineHeight: 1.5 }
+  return (
+    <>
+      <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 8px' }}>Price list</div>
+      <Toggle T={T} accent={accent} on={on} onChange={v => { void togglePackages(v) }} label="Lumio starter packages"
+        desc={on ? `${LUMIO_PACKAGES.length} ready-written packages in your live price list — rename, re-price or remove any of them.` : 'Off — your price list shows only the packages you add yourself.'} />
+      {seed === 'busy' && <div style={{ ...note, color: T.text3 }}>Loading the starter packages into your price list…</div>}
+      {typeof seed === 'object' && <div style={{ ...note, color: T.good }}>✓ Added {seed.added} package{seed.added === 1 ? '' : 's'}{seed.added === 0 ? ' — you already had the full set' : ''}.</div>}
+      {seed === 'error' && <div style={{ ...note, color: T.bad }}>Couldn’t load the starter packages — try again.</div>}
+      <div style={{ ...note, color: T.text3, marginBottom: 16 }}>Prices are Lumio’s suggestions, not yours — check every one before you share your price list. Switching this off leaves the packages you already have; to empty the list, use Clear all packages.</div>
+
+      <div style={{ fontSize: 10, fontWeight: 700, color: T.bad, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Danger zone</div>
+      <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '11px 12px' }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>Clear all packages</div>
+        <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2, lineHeight: 1.5 }}>Permanently deletes every package in your price list — Lumio’s and your own. Player payments and lesson packs are not touched. There is no undo.</div>
+        <button onClick={() => { void clearAll() }} disabled={wipe === 'busy'}
+          style={{ marginTop: 10, appearance: 'none', background: 'transparent', color: T.bad, border: `1px solid ${T.bad}`, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: wipe === 'busy' ? 'default' : 'pointer', opacity: wipe === 'busy' ? 0.6 : 1 }}>
+          {wipe === 'busy' ? 'Clearing…' : 'Clear all packages'}
+        </button>
+        {typeof wipe === 'object' && <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8 }}>Cleared {wipe.removed} package{wipe.removed === 1 ? '' : 's'}.</div>}
+        {wipe === 'error' && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 8 }}>Couldn’t clear your packages — try again.</div>}
       </div>
     </>
   )
@@ -363,6 +588,9 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
               </>
             )}
             {mid === 'resources' && <ResourceCentreSettings T={T} accent={accent} />}
+            {mid === 'equipment' && <EquipmentKitSettings T={T} accent={accent} />}
+            {mid === 'payments' && <PaymentsPackagesSettings T={T} accent={accent} />}
+            {mid === 'calendar' && <BookingEmailsSettings T={T} accent={accent} />}
             {sections.length === 0 && mid !== 'resources' && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10, lineHeight: 1.5 }}>More options for {item.label} — section toggles, colour and setup — are coming to this panel.</div>}
           </Modal>
         )

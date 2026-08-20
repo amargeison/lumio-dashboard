@@ -53,6 +53,7 @@ export type CoachSettings = {
   primaryVenueId: string         // home / main site (overrides the data default)
   syncedVenues: string[]         // venue ids with calendar sync connected
   resourcesPreloaded: boolean    // Resource Centre starts with Lumio's library (true) or empty so the coach adds their own (false)
+  bookingEmails: boolean          // Email a confirmation when a booking is created (parent for under-16s, plus a copy to the coach)
   packagesSeeded: boolean         // Payments price list auto-loaded the Lumio default packages once
   equipmentSeeded: boolean        // Equipment & Kit auto-loaded the Lumio default kit + inventory once
   ccCoachOnEmail: boolean         // CC the coach's own inbox on emails sent to players/parents
@@ -98,6 +99,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   primaryVenueId: '',
   syncedVenues: ['riverside'],
   resourcesPreloaded: true,
+  bookingEmails: true,
   packagesSeeded: false,
   equipmentSeeded: false,
   ccCoachOnEmail: true,

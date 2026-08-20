@@ -9,8 +9,9 @@ import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert } from '../_lib/coach-db'
-import { seedLumioEquipment } from '../_lib/lumio-equipment'
-import { getSettings } from '../_lib/settings-store'
+import { seedLumioEquipment, EQUIPMENT_KIT_CHOICES, EQUIPMENT_CATEGORY_CHOICES } from '../_lib/lumio-equipment'
+import { SetupWizard } from './SetupWizard'
+import { getSettings, setSettings, isDemoPortal } from '../_lib/settings-store'
 
 type Item = { id: string; item: string; category?: string | null; quantity?: number | null; status?: string | null; notes?: string | null }
 type Kit = { id: string; session_type: string; label: string }
@@ -25,18 +26,27 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
   const [edit, setEdit] = useState<Item | 'new' | null>(null)
   const [filter, setFilter] = useState<'all' | 'attention'>('all')
 
-  // First visit: load the Lumio default kit + inventory as a starting point
-  // (once — the coach can then edit or remove anything they don't want).
-  useEffect(() => {
-    if (items.loading || kits.loading) return
-    // Per-ACCOUNT guard: only seed when THIS coach has no equipment/kit yet. The
-    // old `equipmentSeeded` localStorage flag was shared across every account on a
-    // browser, so a second coach who signed in could be skipped and land on an
-    // empty page. Gating on the coach's own rows (RLS-scoped) is reliable per-account.
-    if (items.rows.length || kits.rows.length) return
-    seedLumioEquipment().then(() => { items.reload(); kits.reload() }).catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.loading, kits.loading])
+  // First visit used to SILENTLY seed the full Lumio kit — 39 inventory items and
+  // 28 kit lines — so a new coach's first view of this module was somebody else's
+  // kit list, and their only route to their own was deleting things one at a time.
+  // It now offers a choice instead (see SetupWizard). `equipmentSeeded` is reused
+  // as "the coach has answered this", so choosing "start empty" is remembered and
+  // they are not asked again every visit.
+  //
+  // The row check stays as the primary gate: it is RLS-scoped, so it is correct
+  // per-account even before settings have hydrated from coach_settings.
+  const [setupAnswered, setSetupAnswered] = useState(false)
+  const showSetup = !isDemoPortal()
+    && !items.loading && !kits.loading
+    && items.rows.length === 0 && kits.rows.length === 0
+    && !setupAnswered && !getSettings().equipmentSeeded
+
+  const finishSetup = () => { setSettings({ equipmentSeeded: true }); setSetupAnswered(true) }
+  const applySetup = async (sel: Record<string, string[]>) => {
+    await seedLumioEquipment({ kitTypes: sel.kits, categories: sel.inventory })
+    finishSetup(); items.reload(); kits.reload()
+  }
+  const loadAllSetup = async () => { await seedLumioEquipment(); finishSetup(); items.reload(); kits.reload() }
 
   const statusColour = (s?: string | null) => s === 'in_stock' ? T.good : s === 'order' ? '#3A8EE0' : s === 'repair' ? T.bad : T.warn
   const tiles: [string, number, string][] = [
@@ -64,6 +74,19 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
           <button onClick={() => printKit(SESSION_TYPES, kits.rows, items.rows)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>🖨️ Print kit list</button>
         </div>
       </div>
+
+      {showSetup && (
+        <div style={{ marginBottom: 16 }}>
+          <SetupWizard T={T} accent={accent}
+            title="Build your kit list"
+            blurb="Pick the session kits and inventory categories you actually use — you can edit, add to or remove anything afterwards. Everything starts ticked, so untick what you don't need."
+            groups={[
+              { key: 'kits', title: 'Session kit checklists', hint: 'Grab-and-go lists per session type', options: EQUIPMENT_KIT_CHOICES },
+              { key: 'inventory', title: 'Inventory categories', hint: 'Quantities all start at zero — you count your own stock', options: EQUIPMENT_CATEGORY_CHOICES },
+            ]}
+            onApply={applySetup} onLoadAll={loadAllSetup} onSkip={finishSetup} />
+        </div>
+      )}
 
       {/* Stats */}
       <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>

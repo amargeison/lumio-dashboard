@@ -13,6 +13,10 @@ export async function sendEmail(params: {
   subject: string
   html: string
   scheduledAt?: string
+  // Passed straight through to Resend. Needed wherever Lumio sends on someone
+  // else's behalf — a coach's booking confirmation must let a parent reply to the
+  // coach, not to a noreply address.
+  replyTo?: string
 }) {
   // Send if production OR if RESEND_API_KEY is explicitly set (allows dev/preview sending)
   if (!IS_PRODUCTION && !HAS_RESEND_KEY) {
