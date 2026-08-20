@@ -5,7 +5,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
-import { useCoachProfile, saveCoachProfile, sb, currentCoachId } from '../_lib/coach-db'
+import { useCoachProfile, saveCoachProfile, sb, currentCoachId, invalidateCoachTable } from '../_lib/coach-db'
 import { setSettings, resetSettings, getHeadProfile, setHeadProfile, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, LIVE_DEFAULT_SETTINGS, MODULE_SECTIONS, setSectionOff, type AccentKey } from '../_lib/settings-store'
 import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-data'
 import { getAddedVenues } from '../_lib/venues-store'
@@ -18,6 +18,7 @@ import { CoachVenuesSettings } from './CoachVenuesSettings'
 import { CoachDevelopmentSettings } from './CoachDevelopmentSettings'
 import { CoachCompliance } from './CoachCompliance'
 import { CoachImport } from './CoachImport'
+import { seedLumioResources, LUMIO_RESOURCES } from '../_lib/lumio-resources'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -105,6 +106,80 @@ function Modal({ T, accent, title, sub, onClose, children, readOnly = false, wid
         </div>
       </div>
     </div>
+  )
+}
+
+// Resource Centre module settings. Both controls act on the coach's OWN live
+// Resource Centre (the coach_resources rows behind /resources), not on a preview.
+//
+// Why this exists: the Lumio starter library could only ever be loaded during
+// onboarding. A coach who chose “I’ll add my own” was stuck with an empty Centre
+// for good — a one-way door with no handle on the inside. And a coach who loaded
+// it by mistake had to delete every card one at a time. Both now have a control.
+function ResourceCentreSettings({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+  const s = useCoachSettings()
+  const on = s.resourcesPreloaded !== false
+  const [seed, setSeed] = useState<'idle' | 'busy' | 'error' | { added: number }>('idle')
+  const [wipe, setWipe] = useState<'idle' | 'busy' | 'error' | { removed: number }>('idle')
+
+  const toggleLibrary = async (v: boolean) => {
+    if (seed === 'busy' || wipe === 'busy') return
+    setSettings({ resourcesPreloaded: v })
+    if (!v) { setSeed('idle'); return }
+    setSeed('busy')
+    try {
+      // Safe to run whatever the coach already has — the seeder skips any title
+      // already in their library, so switching this back on never duplicates.
+      const added = await seedLumioResources()
+      invalidateCoachTable('coach_resources')  // Resource Centre reads a cached table — force a fresh read
+      setSeed({ added })
+    } catch { setSeed('error') }
+  }
+
+  const clearAll = async () => {
+    if (seed === 'busy' || wipe === 'busy') return
+    if (!confirm('Delete every resource in your Resource Centre? That includes the Lumio library and anything you have added yourself. This cannot be undone.')) return
+    setWipe('busy')
+    try {
+      const uid = await currentCoachId()
+      if (!uid) { setWipe('error'); return }
+      // Scoped to the signed-in coach to match RLS (coach_id = auth.uid()); the
+      // .select() hands back the deleted rows, so the coach gets a real count
+      // rather than a button that appears to do nothing.
+      const { data, error } = await sb().from('coach_resources').delete().eq('coach_id', uid).select('id')
+      if (error) throw new Error(error.message)
+      invalidateCoachTable('coach_resources')
+      // The library has just been deleted, so the toggle must stop claiming it
+      // is loaded — otherwise it reads “on” over an empty Centre.
+      setSettings({ resourcesPreloaded: false })
+      setSeed('idle')
+      setWipe({ removed: (data ?? []).length })
+    } catch { setWipe('error') }
+  }
+
+  const note: CSSProperties = { fontSize: 11, marginBottom: 8, lineHeight: 1.5 }
+  return (
+    <>
+      <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 8px' }}>Library</div>
+      <Toggle T={T} accent={accent} on={on} onChange={v => { void toggleLibrary(v) }} label="Lumio starter library"
+        desc={on ? `${LUMIO_RESOURCES.length} drills, plans and worksheets in your live Resource Centre, tagged to the racket system.` : 'Off — your Resource Centre shows only the resources you add yourself.'} />
+      {seed === 'busy' && <div style={{ ...note, color: T.text3 }}>Loading the library into your Resource Centre…</div>}
+      {typeof seed === 'object' && <div style={{ ...note, color: T.good }}>✓ Added {seed.added} resource{seed.added === 1 ? '' : 's'}{seed.added === 0 ? ' — you already had the full library' : ''}.</div>}
+      {seed === 'error' && <div style={{ ...note, color: T.bad }}>Couldn’t load the library — try again.</div>}
+      <div style={{ ...note, color: T.text3, marginBottom: 16 }}>Switching this off leaves the resources you already have — it only stops Lumio’s library being added. To empty the Centre, use Clear all resources.</div>
+
+      <div style={{ fontSize: 10, fontWeight: 700, color: T.bad, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Danger zone</div>
+      <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '11px 12px' }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>Clear all resources</div>
+        <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2, lineHeight: 1.5 }}>Permanently deletes every resource in your live Resource Centre — Lumio’s and your own. There is no undo.</div>
+        <button onClick={() => { void clearAll() }} disabled={wipe === 'busy'}
+          style={{ marginTop: 10, appearance: 'none', background: 'transparent', color: T.bad, border: `1px solid ${T.bad}`, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: wipe === 'busy' ? 'default' : 'pointer', opacity: wipe === 'busy' ? 0.6 : 1 }}>
+          {wipe === 'busy' ? 'Clearing…' : 'Clear all resources'}
+        </button>
+        {typeof wipe === 'object' && <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8 }}>Cleared {wipe.removed} resource{wipe.removed === 1 ? '' : 's'}.</div>}
+        {wipe === 'error' && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 8 }}>Couldn’t clear your resources — try again.</div>}
+      </div>
+    </>
   )
 }
 
@@ -287,7 +362,8 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
                 ))}
               </>
             )}
-            {sections.length === 0 && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10, lineHeight: 1.5 }}>More options for {item.label} — section toggles, colour and setup — are coming to this panel.</div>}
+            {mid === 'resources' && <ResourceCentreSettings T={T} accent={accent} />}
+            {sections.length === 0 && mid !== 'resources' && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10, lineHeight: 1.5 }}>More options for {item.label} — section toggles, colour and setup — are coming to this panel.</div>}
           </Modal>
         )
       })()}
