@@ -10,6 +10,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, RACKET_STAGES } from '../_lib/coach-db'
+import { isPrintable, openPrintable } from '../_lib/resource-printables'
 import { DrillLibrary } from './DrillLibrary'
 
 type Res = { id: string; title: string; category?: string | null; format?: string | null; level?: string | null; duration?: string | null; racket?: string | null; tags?: string | null; url?: string | null; notes?: string | null }
@@ -106,7 +107,12 @@ export function LiveResources({ T, accent, density }: { T: ThemeTokens; accent: 
                   {tags.map(t => <span key={t} style={{ fontSize: 10, color: T.text3 }}>#{t}</span>)}
                 </div>
                 <div style={{ marginTop: 10, paddingTop: 8, borderTop: `1px solid ${T.border}` }}>
-                  {r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: accent.hex, textDecoration: 'none' }}>▸ {actionLabel(r.format)} →</a>
+                  {/* Three states, in priority order: a Lumio printable (real
+                      content, opens a print-ready A4 page), an external link, or
+                      nothing yet. */}
+                  {isPrintable(r.url)
+                    ? <button onClick={() => openPrintable(r)} style={{ appearance: 'none', border: 0, background: 'transparent', padding: 0, fontSize: 12, fontWeight: 600, color: accent.hex, cursor: 'pointer', fontFamily: 'inherit' }}>▸ Open printable →</button>
+                    : r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: accent.hex, textDecoration: 'none' }}>▸ {actionLabel(r.format)} →</a>
                     : <span style={{ fontSize: 11.5, color: T.text3 }}>▸ {r.format || 'Resource'} · preview coming soon</span>}
                 </div>
               </div>
