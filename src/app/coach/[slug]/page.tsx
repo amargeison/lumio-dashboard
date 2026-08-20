@@ -24,6 +24,7 @@ import {
 } from './_lib/coach-data'
 import { useCoachSettings } from './_lib/use-settings'
 import { ACCENT_PRESETS } from './_lib/settings-store'
+import { startSettingsSync } from './_lib/settings-sync'
 import { getHidden, subscribe as subscribeMenu, ALWAYS_VISIBLE } from './_lib/menu-visibility'
 import { getSession as getDemoSession, saveSession as saveDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import {
@@ -327,6 +328,18 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const [role, setRole] = useState<CoachViewRole>(normalizeRole(session?.role))
   // Mirror the role's coachId into the module-level scope the data views read.
   useEffect(() => { setScopeCoachId(coachIdForRole(role)); return () => setScopeCoachId(null) }, [role])
+
+  // Cross-device settings. Settings were localStorage-only, so a coach who set the
+  // portal up on a desktop saw none of it on the phone they carry onto court. This
+  // pulls coach_settings into the local cache on mount (and whenever the tab
+  // regains focus) and mirrors every later change back. No-op on the demo portal
+  // and when signed out. See _lib/settings-sync.
+  useEffect(() => {
+    let stop: (() => void) | null = null
+    let cancelled = false
+    startSettingsSync().then(fn => { if (cancelled) fn(); else stop = fn })
+    return () => { cancelled = true; stop?.() }
+  }, [])
 
   // Live menu-visibility: items the coach hid in Settings are filtered out of
   // the sidebar; if the active view gets hidden, fall back to the dashboard.

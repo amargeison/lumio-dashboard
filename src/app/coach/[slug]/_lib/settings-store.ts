@@ -220,6 +220,42 @@ export const MODULE_SECTIONS: Record<string, { key: string; label: string }[]> =
 const KEY = 'lumio_coach_settings'
 const EVT = 'lumio-coach-settings-changed'
 
+// ── Cross-device persistence ────────────────────────────────────────────────
+// localStorage remains the SYNCHRONOUS cache — getSettings() is called from
+// hundreds of render paths and cannot become async — but on a live portal it is
+// only a cache. settings-sync registers a persist hook here that mirrors every
+// write to coach_settings, and hydrates the cache from that table on load, so a
+// coach's iPhone on court and iMac at home converge.
+//
+// A hook rather than a direct import: this module is pulled into server-rendered
+// paths, and it must not drag the Supabase browser client with it. The demo
+// portal never registers one, so the demo stays localStorage-only as intended.
+type PersistFn = (next: CoachSettings) => void
+let persist: PersistFn | null = null
+export function setSettingsPersist(fn: PersistFn | null) { persist = fn }
+
+// Write straight to the cache WITHOUT echoing back to the server. Used by the
+// hydrate path — without this, loading from the server would immediately push
+// the same values back up as if the coach had just changed them.
+export function primeSettingsCache(next: Partial<CoachSettings>) {
+  if (typeof window === 'undefined') return
+  try { localStorage.setItem(KEY, JSON.stringify({ ...getSettings(), ...next })) } catch { /* ignore */ }
+  window.dispatchEvent(new CustomEvent(EVT))
+}
+
+// Exactly what is in the cache, with no defaults layered on top of a miss — unlike
+// getSettings(), which always merges activeDefaults(). This is what gets mirrored
+// server-side, and it is empty on a device that has never had settings set.
+//
+// Note the cache has always held the MERGED object (setSettings writes
+// {...getSettings(), ...patch}), so stored blobs do include values that merely
+// matched a default at the time. That predates this table; the consequence is that
+// changing a default does not retroactively reach a coach who already has a blob.
+export function rawSettings(): Partial<CoachSettings> {
+  if (typeof window === 'undefined') return {}
+  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : {} } catch { return {} }
+}
+
 export function getSettings(): CoachSettings {
   // Server render keeps the static seed so the first client render matches it —
   // useCoachSettings starts from DEFAULT_SETTINGS for exactly that reason and
@@ -234,6 +270,9 @@ export function setSettings(patch: Partial<CoachSettings>) {
   const next = { ...getSettings(), ...patch }
   try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(EVT))
+  // Mirror to the server (debounced inside the hook). Never awaited: a slow or
+  // failed write must not make the settings UI feel laggy or lose the local change.
+  persist?.(next)
 }
 
 // Per-module section visibility helpers (used by module settings cards + modules).
@@ -251,6 +290,9 @@ export function resetSettings() {
   if (typeof window === 'undefined') return
   try { localStorage.removeItem(KEY) } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(EVT))
+  // Clear the server copy too, or the next hydrate would restore what the coach
+  // just reset — on this device and every other one.
+  persist?.(activeDefaults())
 }
 
 // ── Canonical head-coach record ─────────────────────────────────────────────
