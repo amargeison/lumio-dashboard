@@ -191,4 +191,184 @@ export const PRINTABLE_CONTENT: Record<string, Printable> = {
     success: 'Every player in the group holds at least one rally of five during the games, without being fed by the coach.',
     notesLines: 2,
   },
+
+  // ─── YELLOW ───────────────────────────────────────────────────────────────
+  'yellow-two-hander': {
+    kind: 'drill',
+    diagnosis: 'A backhand steered with the arms alone has no margin and no depth, so it lands short and invites the opponent forward. The player then hits it harder, which makes it worse. The fault is almost always that the shoulders never turned — the arms are doing a job the body should be doing.',
+    objective: 'A two-handed backhand driven by a shoulder turn, met in front of the front hip.',
+    setup: ['Player on the baseline, coach feeding from mid-court.', 'Both hands on the grip — left hand doing most of the work for a right-hander.', 'Cone level with the front foot as the contact marker.'],
+    progressions: [
+      { name: 'Turn only', detail: 'No ball. On the coach\u2019s call, turn the shoulders so the back is half-visible. Racket goes with the body.', reps: '15 turns' },
+      { name: 'Drop feed', detail: 'Coach drops close. Player turns early, then drives low to high through the cone.', reps: '15 balls' },
+      { name: 'Moving feed', detail: 'Feed one metre either side. Turn must be complete before the bounce.', reps: '20 balls' },
+      { name: 'Cross-court rally', detail: 'Backhand to backhand, aiming past the service line.', reps: '5 minutes' },
+    ],
+    cues: ['"Show them your back pocket" — that is the turn, in one image.', '"Left hand drives, right hand steers" (reverse for a left-hander).', '"Finish over the shoulder" — the follow-through proves the swing path.'],
+    faults: [
+      { fault: 'Arms swing, shoulders stay square', why: 'No power source; ball lands short', fix: 'Back to shadow turns. Coach holds the player\u2019s front shoulder and turns it for them.' },
+      { fault: 'Contact beside the back hip', why: 'Racket face open; ball floats', fix: 'Cone marker at the front foot, contact must happen past it.' },
+      { fault: 'Top hand comes off at contact', why: 'Loses control and depth', fix: 'Both hands stay on through the finish — check the follow-through position.' },
+    ],
+    success: 'Fifteen of twenty backhands land past the service line, with a visible shoulder turn completed before the ball bounces.',
+    progress: 'Harder: feed deeper and wider so the turn must happen on the move. Easier: return to drop feeds and slow the count down.',
+    court: { zones: [{ x: 0.5, y: 0.06, w: 0.385, h: 0.22, label: 'Past the service line', colour: '#d9a91f' }], note: 'Depth is the measure here, not power. Anything landing short does not count.' },
+    notesLines: 3,
+  },
+
+  'yellow-crosscourt-targets': {
+    kind: 'drill',
+    diagnosis: 'Balls land short and central, which is the most inviting ball in tennis — it gives the opponent an easy step-in and takes the court away from the player who hit it. Players do not do this deliberately; they simply have no target other than "in", and "in" includes the worst ball on the court.',
+    objective: 'A default rally ball that lands cross-court and past the service line, hit on demand rather than by luck.',
+    setup: ['Throw-down lines or cones marking a cross-court zone in each corner.', 'Cooperative rally, both players from the baseline.', 'Scoreboard visible — the target zone scores, the rest does not.'],
+    progressions: [
+      { name: 'Zone rally', detail: 'Cooperative cross-court rally. Count only the balls landing in the marked zone.', reps: '10 in the zone' },
+      { name: 'Both wings', detail: 'Forehand cross, then backhand cross. Switch on the coach\u2019s call.', reps: '10 each' },
+      { name: 'Zone points', detail: 'Play points where a ball outside the zone loses the point even if it lands in.', reps: '11 points' },
+      { name: 'Change of direction', detail: 'Three cross-court, then one down the line. The line ball only counts from a zone ball.', reps: '8 sets' },
+    ],
+    cues: ['"Over the low part of the net" — cross-court is geometrically the safer ball.', '"Aim a metre inside the line, not at it."', '"Deep first, angle later."'],
+    faults: [
+      { fault: 'Aiming at the lines', why: 'Errors from ambition, not technique', fix: 'Move the zone a metre inside the lines and score only that.' },
+      { fault: 'Ball lands short but in', why: 'Invites the opponent to attack', fix: 'Short balls score zero. Depth is the only currency this session.' },
+      { fault: 'Down the line every third ball', why: 'Lowest-margin shot chosen from a neutral ball', fix: 'Down the line is unlocked only from a ball inside the zone.' },
+    ],
+    success: 'Ten consecutive rally balls landing in the cross-court zone, then eleven points played where an out-of-zone ball loses the point.',
+    court: { zones: [
+      { x: 0.115, y: 0.06, w: 0.34, h: 0.2, label: 'Zone', colour: '#d9a91f' },
+      { x: 0.545, y: 0.74, w: 0.34, h: 0.2, label: 'Zone', colour: '#d9a91f' },
+    ], note: 'Cross-court zones, a metre inside both the sideline and the baseline. Anything outside scores nothing.' },
+    notesLines: 3,
+  },
+
+  'yellow-net-clearance': {
+    kind: 'drill',
+    diagnosis: 'Most unforced errors at this stage are net errors, not long ones — and a net error is a wasted point with no upside whatsoever. Players aim at the top of the net because it feels accurate. Raising the target by a metre removes more errors than any technical change available at this level.',
+    objective: 'A metre of net clearance as the default rally ball, not as a defensive option.',
+    setup: ['A rope, ribbon or line of cones a metre above the net — a spare net band works.', 'Cooperative rallying from the baseline.'],
+    progressions: [
+      { name: 'Over the rope', detail: 'Cooperative rally where every ball must pass between the net and the rope. Under the rope does not count.', reps: '10 consecutive' },
+      { name: 'Rope and depth', detail: 'Same, plus the ball must land past the service line.', reps: '10 consecutive' },
+      { name: 'Rope under pressure', detail: 'Points played with the rope rule live.', reps: '11 points' },
+      { name: 'Rope removed', detail: 'Rope taken away. Player keeps the same trajectory from memory.', reps: '5 minutes' },
+    ],
+    cues: ['"A metre over, every time."', '"Height is not defensive — height is margin."', '"If it clips the tape, it was the right shot badly executed. If it goes into the tape, it was the wrong target."'],
+    faults: [
+      { fault: 'Flattens out when pressed', why: 'Error rate spikes exactly when it matters', fix: 'Rope stays up during the points phase. Under the rope loses the point.' },
+      { fault: 'Height achieved by scooping', why: 'No pace, floats and sits up', fix: 'Low to high with the racket face on edge — height from swing path, not from an open face.' },
+    ],
+    success: 'Twenty consecutive rally balls over the rope and past the service line, then eleven points with the rope rule live and fewer than three net errors.',
+    notesLines: 2,
+  },
+
+  'yellow-recovery-t': {
+    kind: 'drill',
+    diagnosis: 'Players admire the shot they have just hit and get wrong-footed by the reply. They are not slow — they simply never started moving back. At this stage a rally is lost one shot after the good shot, and the player blames their fitness rather than their habit.',
+    objective: 'An automatic recovery step towards the middle before the opponent strikes the ball.',
+    setup: ['A cone or throw-down marker at the centre mark.', 'Coach feeds alternately wide to each corner.'],
+    progressions: [
+      { name: 'Hit and touch', detail: 'Player hits, then must touch the centre marker with a foot before the next feed is released.', reps: '20 balls' },
+      { name: 'Shuffle, don\u2019t stroll', detail: 'Same, but recovery is a side shuffle facing the net, never a turn and jog.', reps: '20 balls' },
+      { name: 'Split at the marker', detail: 'Recovery finishes with a split-step timed to the coach\u2019s feed.', reps: '20 balls' },
+      { name: 'Live points', detail: 'Points played. Coach calls out any ball hit without a recovery first.', reps: '11 points' },
+    ],
+    cues: ['"Hit and get home."', '"Face the net the whole way" — turning your back costs you the next ball.', '"Land as they hit, not after."'],
+    faults: [
+      { fault: 'Watches the shot before moving', why: 'Half a second lost on every ball', fix: 'Feed released the instant they hit, so there is no time to watch.' },
+      { fault: 'Turns and jogs back', why: 'Cannot change direction from that position', fix: 'Side shuffle only. Turning the hips is an automatic restart of the rep.' },
+      { fault: 'Recovers to the exact centre every time', why: 'Wrong position after a wide ball', fix: 'Introduce recovering to the bisector, not the middle, once the habit exists.' },
+    ],
+    success: 'Twenty consecutive feeds where the player touches the recovery marker and splits before the next ball, with no reminder from the coach.',
+    court: { zones: [{ x: 0.42, y: 0.82, w: 0.16, h: 0.12, label: 'Home', colour: '#d9a91f' }], note: 'Recovery marker at the centre mark. Later this becomes the bisector of the opponent\u2019s angles rather than a fixed spot.' },
+    notesLines: 2,
+  },
+
+  'yellow-serve-throw': {
+    kind: 'drill',
+    diagnosis: 'A serve pushed with a stiff arm caps out at a speed the player will outgrow within a year, and it loads the shoulder in exactly the way that causes trouble later. The throwing action has to come first; the toss is then built to suit it. Building the toss first is the most common sequencing mistake in junior coaching.',
+    objective: 'A serve that comes from a throwing action, with the toss arranged around it.',
+    setup: ['Foam or soft balls to begin, so throwing is safe.', 'Player side-on to the net, feet set.'],
+    progressions: [
+      { name: 'Throw the ball', detail: 'Player throws a ball over the net, side-on, from the serve stance. No racket at all.', reps: '15 throws' },
+      { name: 'Throw the racket (safely)', detail: 'Same action holding the racket, stopping at contact height. Feel the same sequence.', reps: '15 shadows' },
+      { name: 'Toss to the throw', detail: 'Now add the toss — placed where the throwing hand naturally arrives, not where a book says.', reps: '20 serves' },
+      { name: 'Serve at 60%', detail: 'Whole action, low pace, into the box. Rhythm over speed.', reps: '20 serves' },
+    ],
+    cues: ['"Throw it, don\u2019t push it."', '"Elbow leads, hand follows."', '"Slow legs, fast arm" — the speed comes last, not first.'],
+    faults: [
+      { fault: 'Straight arm from start to finish', why: 'No racket-head speed and a loaded shoulder', fix: 'Back to throwing a ball. If they cannot throw it, they cannot serve it.' },
+      { fault: 'Toss too far in front', why: 'Player chases it and the action breaks down', fix: 'Let three tosses drop without hitting and mark where they land. Adjust to the throw.' },
+      { fault: 'Serving hard immediately', why: 'Action collapses under effort', fix: 'Cap at 60% for the whole session. Speed is not on the agenda this week.' },
+    ],
+    success: 'Fifteen of twenty serves land in the box at roughly 60% pace, with a visible elbow-leads-hand sequence the coach can see from the side.',
+    notesLines: 3,
+  },
+
+  'warmup-dynamic': {
+    kind: 'drill',
+    diagnosis: 'Cold players hit late for the first twenty minutes and then decide they are having a bad day — and a bad first twenty minutes of a one-hour lesson is a third of the session gone. The warm-up is not a formality; it is what makes minute one of the session usable.',
+    objective: 'A ten-minute on-court warm-up that leaves the player ready to hit properly on the first ball.',
+    setup: ['Baseline to service line, no racket for the first half.'],
+    progressions: [
+      { name: 'Raise', detail: 'Two lengths of easy jogging, then side shuffles and carioca, both directions.', reps: '3 minutes' },
+      { name: 'Mobilise', detail: 'Leg swings, hip openers, trunk rotations, shoulder circles. Controlled, not bounced.', reps: '3 minutes' },
+      { name: 'Activate', detail: 'Split-steps on the spot, short accelerations to the service line, three lateral bounds each way.', reps: '2 minutes' },
+      { name: 'Potentiate', detail: 'Shadow swings on both wings, then five shadow serves building to full speed.', reps: '2 minutes' },
+    ],
+    cues: ['"Warm up to play, not to tick a box."', '"Controlled range, not bounced range" — bouncing a cold muscle is how you strain one.'],
+    faults: [
+      { fault: 'Static stretching before hitting', why: 'Reduces power output and does not prepare movement', fix: 'Move stretching to the cool-down. Warm-up is dynamic only.' },
+      { fault: 'Skipped when running late', why: 'The first twenty minutes are then wasted anyway', fix: 'Cut the session content, not the warm-up. It is cheaper.' },
+    ],
+    success: 'The player strikes the first ball of the session cleanly and in balance, and can say the warm-up made a difference without being asked leadingly.',
+    notesLines: 2,
+  },
+
+  'yellow-between-points': {
+    kind: 'worksheet',
+    diagnosis: 'One bad point becomes three because nothing separates them. The player carries the last error into the next serve, tightens, and misses again — and by then it looks like a technical collapse when it started as twenty unmanaged seconds. A routine simple enough for a junior to actually use is worth more than a sophisticated one they abandon.',
+    rows: [
+      { label: '1 · Turn away', detail: 'Face the back fence. The point is finished either way.' },
+      { label: '2 · One breath', detail: 'Breathe out slowly, longer than you breathed in. Shoulders drop.' },
+      { label: '3 · Pick your target', detail: 'Decide where the next serve or return is going before you turn round.' },
+      { label: '4 · Go', detail: 'Routine, then play. No changing your mind at the toss.' },
+    ],
+    prompts: [
+      { heading: 'When do you forget to do it?', hint: 'Be specific — which score, which opponent, which shot.', lines: 2 },
+      { heading: 'Your own words for step 3', hint: 'Something you would actually say to yourself.', lines: 2 },
+    ],
+    success: 'You complete all four steps on every point of two consecutive service games — including the games you lose. A coach watching from the side can see it without being told when to look.',
+  },
+
+  'yellow-scoring-sheet': {
+    kind: 'worksheet',
+    diagnosis: 'Players avoid entering competitions because they are quietly unsure about scoring, calls or what to do at a changeover — and they will rarely say so. It has nothing to do with tennis ability and it stops good players competing for months. One page removes the excuse.',
+    rows: [
+      { label: 'Game scoring', detail: '15, 30, 40, game. 40-40 is deuce; you need two points clear from there.' },
+      { label: 'Set scoring', detail: 'First to six games, two clear. At 6-6 you play a tie-break unless told otherwise.' },
+      { label: 'Tie-break', detail: 'First to seven, two clear. Change ends every six points. Serve one, then two each.' },
+      { label: 'Calling the score', detail: 'Server calls it, out loud, before every point. Your score first.' },
+      { label: 'Line calls', detail: 'You call your own side. If you are not sure, the ball was in. That is the rule, not politeness.' },
+      { label: 'Changeovers', detail: 'Change ends after the first game, then every two games. Ninety seconds.' },
+    ],
+    prompts: [{ heading: 'Anything you are still unsure about', hint: 'Write it down and ask your coach — everyone has one.', lines: 2 }],
+    success: 'You can call the score correctly through a full set, including a tie-break, without checking with anyone.',
+  },
+
+  'yellow-first-comp': {
+    kind: 'worksheet',
+    diagnosis: 'A first match is usually lost in the car park rather than on court. The player has no idea what the day looks like, so every unfamiliar thing becomes evidence that they should not be there. Preparing player and parent for the shape of the day makes nerves normal instead of a surprise.',
+    rows: [
+      { label: 'Before you leave', detail: 'Two rackets if you have them, water, food you actually like, spare shirt, sun cream.' },
+      { label: 'When you arrive', detail: 'Find the referee\u2019s desk and check in. Then find your court and warm up properly.' },
+      { label: 'The warm-up', detail: 'Five minutes with your opponent, including serves. It is part of the match, not a chat.' },
+      { label: 'During the match', detail: 'Call your score before every point. Take your ninety seconds at changeovers. Drink.' },
+      { label: 'Afterwards', detail: 'Shake hands whatever happened. Then tell your coach one thing that went well and one thing you would change.' },
+    ],
+    prompts: [
+      { heading: 'What are you most nervous about?', hint: 'Naming it makes it smaller. Everyone has one.', lines: 2 },
+      { heading: 'One thing you will do well regardless of the result', hint: 'Something you control — your routine, your effort, your attitude.', lines: 2 },
+    ],
+    success: 'You complete the day start to finish, keep your between-points routine going in at least one full game, and can name one thing you did well regardless of the score.',
+  },
 }
