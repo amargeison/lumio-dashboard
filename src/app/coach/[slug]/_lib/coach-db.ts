@@ -66,7 +66,9 @@ export async function dbInsert(table: CoachTable, row: Record<string, any>) {
   if (!coach_id) throw new Error('Not signed in')
   const { data, error } = await sb().from(table).insert({ ...clean(row), coach_id }).select().single()
   if (error) { console.error('[coach-db] insert', table, error.message); throw new Error(error.message) }
-  if (table === 'coach_bookings') syncBookingCalendar(data)
+  // Confirmation email fires on CREATE only — dbUpdate deliberately does not call
+  // it, because editing a booking should not re-thank somebody for making it.
+  if (table === 'coach_bookings') { syncBookingCalendar(data); sendBookingConfirmation(data) }
   return data
 }
 
@@ -120,6 +122,25 @@ export function subscribeCalendarSync(fn: (s: CalSyncState) => void): () => void
 function setCalSync(s: CalSyncState) {
   calSyncState = s
   calSyncSubs.forEach(fn => { try { fn(s) } catch { /* a bad subscriber must not break sync */ } })
+}
+
+// Booking confirmation email — to the player or (for an under-16) their parent,
+// plus a copy to the coach so a new booking never goes unseen.
+//
+// Fire-and-forget like the calendar push, so a mail failure can never block or
+// fail the booking write itself. The SERVER decides the recipient and builds the
+// content; the client only ever sends a booking id, so nothing about who gets
+// emailed is decided in the browser.
+function sendBookingConfirmation(row: any) {
+  try {
+    if (!row?.id) return
+    if ((row.status || '').toLowerCase() === 'cancelled') return
+    if (getSettings().bookingEmails === false) return   // coach has switched them off
+    fetch('/api/coach/bookings/confirm', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: row.id }),
+    }).catch(() => { /* silent — the booking itself already saved */ })
+  } catch { /* ignore */ }
 }
 
 function syncBookingCalendar(row: any) {

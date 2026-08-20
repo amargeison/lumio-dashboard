@@ -14,12 +14,23 @@ export const LUMIO_PACKAGES: Record<string, any>[] = [
   { name: 'Cardio tennis — 6 pack', kind: 'Cardio', price: 60, sessions: 6, period: 'per pack', description: 'High-energy, music-led tennis fitness — all levels welcome.', features: '6 × 45-min cardio sessions\nAll abilities\nNo booking needed — just turn up\nGreat for fitness', equipment: 'Ball machine or 2 baskets\nCones ×16\nMusic speaker' },
 ]
 
-export async function seedLumioPackages(): Promise<number> {
+// The setup wizard offers these individually — six packages with prices is a
+// list a coach will genuinely read, unlike sixty pieces of equipment.
+export const PACKAGE_CHOICES = LUMIO_PACKAGES.map(p => ({
+  id: p.name as string,
+  label: p.name as string,
+  sub: `£${p.price} ${p.period} · ${p.sessions} sessions`,
+}))
+
+// `names` omitted means all of them — preserves the original behaviour for the
+// onboarding path and any existing caller.
+export async function seedLumioPackages(names?: string[]): Promise<number> {
   const uid = await currentCoachId()
   if (!uid) return 0
   const existing = await sb().from('coach_packages').select('name').eq('coach_id', uid)
   const have = new Set((existing.data ?? []).map((r: any) => (r.name || '').toLowerCase()))
-  const rows = LUMIO_PACKAGES.filter(p => !have.has(p.name.toLowerCase())).map((p, i) => ({ ...p, coach_id: uid, sort_order: i }))
+  const wanted = LUMIO_PACKAGES.filter(p => !names || names.includes(p.name as string))
+  const rows = wanted.filter(p => !have.has(p.name.toLowerCase())).map((p, i) => ({ ...p, coach_id: uid, sort_order: i }))
   if (!rows.length) return 0
   const { error } = await sb().from('coach_packages').insert(rows)
   if (error) { console.error('[lumio-packages] seed', error.message); throw new Error(error.message) }
