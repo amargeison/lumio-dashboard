@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { publicSiteOrigin } from '@/lib/public-origin'
 import { sendCampSignupEmails, type SignupMailInput } from '@/lib/coach/camp-signup-email'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
@@ -19,6 +20,10 @@ export const runtime = 'nodejs'
 //   • The amount charged is read from the camp record server-side. Nothing about
 //     money is taken from the request body.
 //   • Capacity is enforced here, not in the browser.
+//   • It is rate limited two ways. Per IP in memory, and per CAMP against the
+//     database — because the duplicate guard only catches the same name AND the
+//     same email on the same camp, so varying the name alone would otherwise
+//     create unlimited player and attendee rows and unlimited Stripe sessions.
 
 function db() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
@@ -39,6 +44,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'That email address does not look right.' }, { status: 400 })
   }
 
+  // Before any database work: a flood should cost us nothing.
+  // Six in ten minutes is generous for a parent with three children and a typo,
+  // and useless to anyone scripting it.
+  const ip = clientIp(req.headers)
+  const burst = rateLimit(`camp-signup:${ip}`, 6, 10 * 60_000)
+  if (!burst.ok) {
+    return NextResponse.json(
+      { error: 'That is a lot of sign-ups at once. Give it a few minutes and try again.' },
+      { status: 429, headers: { 'Retry-After': String(burst.retryAfterSeconds) } },
+    )
+  }
+  const daily = rateLimit(`camp-signup-day:${ip}`, 30, 24 * 60 * 60_000)
+  if (!daily.ok) {
+    return NextResponse.json(
+      { error: 'Too many sign-ups from this connection today. Please contact your coach directly.' },
+      { status: 429, headers: { 'Retry-After': String(daily.retryAfterSeconds) } },
+    )
+  }
+
   const sb = db()
   try {
     const { data: camp } = await sb.from('coach_camps')
@@ -49,6 +73,21 @@ export async function POST(req: NextRequest) {
     // not be distinguishable from one that never existed.
     if (!camp || !camp.signup_open) {
       return NextResponse.json({ error: 'Sign-ups for this camp are not open.' }, { status: 404 })
+    }
+
+    // The real backstop. In-memory counters die with the process and are
+    // per-worker; this one is neither. A camp legitimately fills in bursts when
+    // a coach shares the link, so the ceiling is deliberately well above a busy
+    // hour and only catches a machine.
+    const hourAgo = new Date(Date.now() - 60 * 60_000).toISOString()
+    const { count: recent } = await sb.from('coach_camp_attendees')
+      .select('id', { count: 'exact', head: true })
+      .eq('camp_id', camp.id).eq('source', 'signup').gte('signed_up_at', hourAgo)
+    if ((recent ?? 0) >= 60) {
+      return NextResponse.json(
+        { error: 'Sign-ups are busy right now. Please try again shortly.' },
+        { status: 429, headers: { 'Retry-After': '600' } },
+      )
     }
 
     const { count } = await sb.from('coach_camp_attendees')
@@ -100,7 +139,11 @@ export async function POST(req: NextRequest) {
       // filled by people who never pay.
       status: needsPayment ? 'pending' : 'confirmed',
       amount_pennies: needsPayment ? pennies : 0,
-      paid: !needsPayment ? false : false,
+      // Always false on creation, whichever mode the camp is in. A camp with no
+      // online payment is usually one where the coach takes the money in person,
+      // so marking it paid here would inflate the Finance tab's collected total
+      // for money nobody has received. The coach ticks it when it lands.
+      paid: false,
       source: 'signup', signed_up_at: new Date().toISOString(),
     }).select('id').single()
 
