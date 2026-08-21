@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
-import { COACH_AGENT_PERSONA } from '@/lib/coach/agent-persona'
+import { runCoachAgent } from '@/lib/coach/agent'
 import { publicSiteOrigin } from '@/lib/public-origin'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -112,25 +111,23 @@ export async function POST(req: NextRequest) {
       ["Coach's own note for parents", camp.signup_note],
     ].filter(([, v]) => !!v).map(([l, v]) => `${l}: ${v}`).join('\n')
 
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const res = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    // Through the shared agent, so the persona AND the methodology are always
+    // present. This route used to build its own client with only the persona —
+    // the announcement was written by a coach with no coaching standards behind
+    // him, which is exactly the drift a single entry point exists to prevent.
+    const { text } = await runCoachAgent({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      extraSystem: `${PROMO_STANDARD}\n\n${SHAPE}`,
+      maxTokens: 2000,
       temperature: 0.6,
-      max_tokens: 2000,
-      system: `${COACH_AGENT_PERSONA}\n\n${PROMO_STANDARD}\n\n${SHAPE}`,
-      messages: [{
-        role: 'user',
-        content: `Write the announcement copy for this camp.\n\n${facts}\n\n${
-          signupUrl
-            ? 'There IS a sign-up link. Every channel should end pointing at it. Do NOT paste the URL into the text yourself — write the sentence that carries it, and the link is appended.'
-            : 'There is NO sign-up link yet. The action is replying to the coach. Do not invent a booking page or a phone number.'
-        }`,
-      }],
+      task: `Write the announcement copy for this camp.\n\n${facts}\n\n${
+        signupUrl
+          ? 'There IS a sign-up link. Every channel should end pointing at it. Do NOT paste the URL into the text yourself — write the sentence that carries it, and the link is appended.'
+          : 'There is NO sign-up link yet. The action is replying to the coach. Do not invent a booking page or a phone number.'
+      }`,
     })
-
-    const text = res.content.map(c => (c.type === 'text' ? c.text : '')).join('').trim()
     // Models occasionally wrap JSON in a fence despite being told not to.
-    const json = text.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
+    const json = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
     let plan: any
     try { plan = JSON.parse(json) } catch {
       const s = json.indexOf('{'), e = json.lastIndexOf('}')

@@ -523,7 +523,27 @@ const WP_THEME: Record<string, string> = { white: 'Foundations', yellow: 'Rallyi
 
 // Rich 3-page printable welcome pack — welcome letter, starting action plan, and
 // an onboarding questionnaire (mirrors the demo, over live data).
-function printWelcomePack(p: any, org?: { academy: string; coach: string; logo?: string }) {
+async function printWelcomePack(p: any, org?: { academy: string; coach: string; logo?: string }) {
+  // The window is opened synchronously, before the await. Open it after and
+  // every browser blocks it as a non-gesture pop-up.
+  const w = window.open('', '_blank', 'width=920,height=1040')
+  if (!w) { alert('Please allow pop-ups to open the welcome pack.'); return }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Welcome Pack</title></head><body style="font-family:-apple-system,Segoe UI,Arial,sans-serif;padding:60px;text-align:center;color:#555">Lumio Coach is writing the welcome pack…</body></html>')
+  w.document.close()
+
+  // The four-week plan, written for THIS player. If Lumio Coach can't be
+  // reached the pack still prints — a family waiting on a welcome pack should
+  // not be told to come back later — but with the generic plan, and the pack
+  // says so rather than passing it off as written for them.
+  let plan: { welcome?: string; weeks?: { week: string; focus: string }[]; first_session?: string; parent_note?: string } | null = null
+  try {
+    const r = await fetch('/api/coach/welcome-plan', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ playerId: p.id }),
+    })
+    if (r.ok) { const d = await r.json(); if (d?.weeks?.length) plan = d }
+  } catch { /* fall through to the generic plan */ }
+
   if (typeof window === 'undefined') return
   const academy = org?.academy || 'Lumio Tennis Academy', coach = org?.coach || 'Your Coach'
   // White plate behind the mark so a dark or transparent logo still reads on the
@@ -578,13 +598,19 @@ function printWelcomePack(p: any, org?: { academy: string; coach: string; logo?:
     <div class="accentbox" style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:25px;border-radius:5px;background:${stage.colour};border:1px solid rgba(0,0,0,.25)"></span><div><div style="font-size:16px;font-weight:700">${esc(stage.name)} racket — ${esc(theme)}</div><div style="font-size:11px;color:#6b7280">Your suggested starting point — confirmed after your first session</div></div></div>
     <h2>Skills you'll work on first</h2><ul>${skills}</ul>
     ${p.goal ? `<h2>Your goal</h2><p>${esc(p.goal)}</p>` : ''}
+    ${plan?.welcome ? `<p style="font-size:13px;line-height:1.65">${esc(plan.welcome)}</p>` : ''}
     <h2>First four weeks</h2>
     <table><thead><tr><th style="width:70px">Week</th><th>Focus</th></tr></thead><tbody>
-      <tr><td>Week 1</td><td>Assessment &amp; getting to know your game — set your racket and goal</td></tr>
-      <tr><td>Week 2</td><td>Foundations of ${esc(theme.toLowerCase())}</td></tr>
-      <tr><td>Week 3</td><td>Build &amp; repeat — take the new skills into rallies and games</td></tr>
-      <tr><td>Week 4</td><td>First progress check — celebrate the wins and set the next target (${esc(next.name)})</td></tr>
+      ${plan?.weeks?.length
+        ? plan.weeks.map(wk => `<tr><td>${esc(wk.week)}</td><td>${esc(wk.focus)}</td></tr>`).join('')
+        : `<tr><td>Week 1</td><td>Assessment &amp; getting to know your game — set your racket and goal</td></tr>
+           <tr><td>Week 2</td><td>Foundations of ${esc(theme.toLowerCase())}</td></tr>
+           <tr><td>Week 3</td><td>Build &amp; repeat — take the new skills into rallies and games</td></tr>
+           <tr><td>Week 4</td><td>First progress check — celebrate the wins and set the next target (${esc(next.name)})</td></tr>`}
     </tbody></table>
+    ${plan?.first_session ? `<h2>Your first session</h2><p style="font-size:13px;line-height:1.65">${esc(plan.first_session)}</p>` : ''}
+    ${plan?.parent_note ? `<div class="accentbox" style="margin-top:12px"><strong>For parents:</strong> ${esc(plan.parent_note)}</div>` : ''}
+    ${plan ? '' : '<p style="font-size:10px;color:#9099ad;margin-top:10px">General starting plan — your coach will tailor it after the first session.</p>'}
     <div class="foot"><span>${esc(academy)}</span><span>${esc(coach)}</span></div>
   </div>
 
@@ -607,8 +633,6 @@ function printWelcomePack(p: any, org?: { academy: string; coach: string; logo?:
     <div class="foot"><span>${esc(academy)}</span><span>Onboarding · ${esc(p.name)}</span></div>
   </div>
   </body></html>`
-  const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to open the welcome pack.'); return }
-  w.document.write(html); w.document.close(); w.focus()
+  w.document.open(); w.document.write(html); w.document.close(); w.focus()
   setTimeout(() => { try { w.print() } catch { /* manual */ } }, 350)
 }
