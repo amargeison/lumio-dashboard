@@ -4,6 +4,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { COACH_AGENT_PERSONA } from '@/lib/coach/agent-persona'
 import { publicSiteOrigin } from '@/lib/public-origin'
+import { rateLimit } from '@/lib/rate-limit'
 
 export const maxDuration = 120
 
@@ -59,6 +60,17 @@ export async function POST(req: NextRequest) {
 
   const { campId } = (await req.json().catch(() => ({}))) as Body
   if (!campId) return NextResponse.json({ error: 'campId is required' }, { status: 400 })
+
+  // Authenticated, so this is not about abuse — it is about spend. Every call is
+  // a paid model request, and the Re-write button is one click. Twelve in ten
+  // minutes is more re-writes than anyone needs and caps a stuck finger.
+  const gate = rateLimit(`camp-promo:${coachId}`, 12, 10 * 60_000)
+  if (!gate.ok) {
+    return NextResponse.json(
+      { error: 'Give Lumio Coach a moment — try again in a few minutes.' },
+      { status: 429, headers: { 'Retry-After': String(gate.retryAfterSeconds) } },
+    )
+  }
 
   try {
     const db = serviceClient()
