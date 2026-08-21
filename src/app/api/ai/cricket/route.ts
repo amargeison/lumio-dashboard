@@ -7,6 +7,14 @@ import {
   rateLimitedResponse,
   capReachedResponse,
 } from '@/lib/ai/guards'
+import { sanitizeAiBody, AiBodyError } from '@/lib/ai/body-guard'
+
+// Held server-side so the browser names a preset instead of defining what the
+// model is. Moved here from two call sites in the cricket portal.
+const PRESETS: Record<string, string> = {
+  'ecb-compliance': 'You are an ECB compliance expert helping a County Championship club. Be direct and specific. The club is Oakridge CC, CPA completion 73%, 3 DBS issues, safeguarding incidents pending. Answer questions about County Partnership Agreement requirements, ECB standards, and deadlines.',
+  'match-report': 'You are the media officer for Oakridge CC. Write match reports in a professional but warm style for club communications.',
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +24,8 @@ export async function POST(req: NextRequest) {
     const cap = checkDailyCap()
     if (!cap.ok) return capReachedResponse(cap.spent)
 
-    const body = await req.json()
+    // The browser does not get to choose what the model is — see body-guard.
+    const body = sanitizeAiBody(await req.json(), { presets: PRESETS })
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })
@@ -44,7 +53,8 @@ export async function POST(req: NextRequest) {
       recordSpend(data.usage.input_tokens, data.usage.output_tokens, data.model || body.model, 'cricket')
     }
     return NextResponse.json(data)
-  } catch {
+  } catch (e) {
+    if (e instanceof AiBodyError) return NextResponse.json({ error: e.message }, { status: e.status })
     return NextResponse.json({ error: 'Failed to call AI' }, { status: 500 })
   }
 }

@@ -11,7 +11,7 @@
 import { useState, useMemo, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, RACKET_STAGES, SKILLS_BY_STAGE, RACKET_SKILLS } from '../_lib/coach-db'
+import { useCoachTable, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE, RACKET_SKILLS } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 import { avatarSrc } from '@/lib/avatar'
 
@@ -49,6 +49,8 @@ const TOTAL_SKILLS = RACKET_STAGES.reduce((n, s) => n + (SKILLS_BY_STAGE[s.id]?.
 export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const { rows: players, edit } = useCoachTable<Player>('coach_players')
   const { rows: skillRows } = useCoachTable<SkillRow>('coach_player_skills')
+  // The coach whose name goes on the certificate.
+  const profile = useCoachProfile()
   const [open, setOpen] = useState('white')
 
   // playerId → { skill: score }
@@ -71,7 +73,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
     const raw = rawIdxOf(p)
     if (raw < 0) { edit(p.id, { racket_stage: 'white' }); return }   // start them on White
     const completed = RACKET_STAGES[raw]
-    printRacketCertificate(p.name, completed, SKILLS_BY_STAGE[completed.id] || [])
+    printRacketCertificate(p.name, completed, SKILLS_BY_STAGE[completed.id] || [], certOrg(profile))
     if (raw < LAST) edit(p.id, { racket_stage: RACKET_STAGES[raw + 1].id })
   }
 
@@ -263,7 +265,24 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
 }
 
 // Printable racket-award certificate (live equivalent of the demo's).
-export function printRacketCertificate(playerName: string, stage: { name: string; colour: string }, skills: string[]) {
+// Who signs a certificate. Lumio Coach designs the racket pathway; the person
+// who hands a child their keyring is the coach whose name belongs on it. This
+// used to read "Lumio Coach · Head Coach" — the AI's name, on a child's award.
+//
+// If the coach hasn't filled their name in yet we print an EMPTY signature line
+// rather than a wrong name. A blank line is something a coach can sign by hand;
+// someone else's name is something a parent notices.
+export type CertOrg = { coach: string; cert: string; academy: string }
+export function certOrg(profile?: { display_name?: string | null; brand_name?: string | null } | null): CertOrg {
+  const s = getSettings()
+  return {
+    coach: (profile?.display_name || s.coach || '').trim(),
+    cert: (s.cert || '').trim(),
+    academy: (profile?.brand_name || s.academy || '').trim(),
+  }
+}
+
+export function printRacketCertificate(playerName: string, stage: { name: string; colour: string }, skills: string[], org: CertOrg) {
   if (typeof window === 'undefined') return
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const chips = skills.map(s => `<span class="chip">${esc(s)}</span>`).join('')
@@ -296,7 +315,7 @@ export function printRacketCertificate(playerName: string, stage: { name: string
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#9099ad;margin-bottom:8px">Skills mastered</div>${chips}
       </div>
       <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:34px;padding:0 6mm">
-        <div style="text-align:center"><div style="font-family:Georgia,serif;font-style:italic;font-size:21px">Lumio Coach</div><div style="border-top:1px solid #cfd3df;margin-top:4px;padding-top:5px;font-size:10px;color:#6b7280">Head Coach</div></div>
+        <div style="text-align:center"><div style="font-family:Georgia,serif;font-style:italic;font-size:21px;min-height:26px">${esc(org.coach)}</div><div style="border-top:1px solid #cfd3df;margin-top:4px;padding-top:5px;font-size:10px;color:#6b7280">${esc(org.cert || 'Coach')}${org.academy ? ' · ' + esc(org.academy) : ''}</div></div>
         <div style="width:80px;height:80px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#F4D77B,#C9A227);box-shadow:0 5px 16px rgba(201,162,39,.45);display:flex;align-items:center;justify-content:center;color:#5a4710;font-weight:800;font-size:11px;text-align:center;line-height:1.1;border:3px solid #fff;outline:2px solid #C9A227">RACKET<br/>EARNED</div>
         <div style="text-align:center"><div style="font-family:Georgia,serif;font-size:17px">${esc(today)}</div><div style="border-top:1px solid #cfd3df;margin-top:4px;padding-top:5px;font-size:10px;color:#6b7280">Date awarded</div></div>
       </div>

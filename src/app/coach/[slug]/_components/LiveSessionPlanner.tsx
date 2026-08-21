@@ -5,7 +5,7 @@
 // to draft focus points & drills) and the auto-generated timed run-sheet, wired
 // to coach_session_plans.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
@@ -364,9 +364,13 @@ function printRunSheets(todayPlans: any[]) {
   const esc = (s: string) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!))
   if (!todayPlans.length) { alert('No planned sessions for today to print.'); return }
   const blocks = todayPlans.map(p => {
-    const sheet = runSheet((p.session_type as SType) || 'Private', p.focus || '', p.duration_min || 60)
-    const rows = sheet.map(ph => `<tr><td style="width:50px;color:#1f6fd6;font-weight:700">${ph.mins}m</td><td><b>${esc(ph.phase)}</b><div style="color:#555;font-size:12px">${esc(ph.detail)}</div></td></tr>`).join('')
-    const kit = (KIT_BY_TYPE[(p.session_type as SType) || 'Private'] || []).map(k => `<span style="display:inline-block;border:1px solid #ccc;border-radius:20px;padding:2px 10px;margin:0 4px 6px;font-size:12px">${esc(k)}</span>`).join('')
+    // Print what Lumio Coach designed. The template is only a fallback for plans
+    // saved before he built them — a printed sheet that disagrees with the one on
+    // screen is worse than no printout.
+    const stored = Array.isArray(p.run_sheet) ? p.run_sheet : []
+    const sheet = stored.length ? stored : runSheet((p.session_type as SType) || 'Private', p.focus || '', p.duration_min || 60)
+    const rows = sheet.map((ph: { mins: number; phase: string; detail: string }) => `<tr><td style="width:50px;color:#1f6fd6;font-weight:700">${ph.mins}m</td><td><b>${esc(ph.phase)}</b><div style="color:#555;font-size:12px">${esc(ph.detail)}</div></td></tr>`).join('')
+    const kit = ((Array.isArray(p.kit) && p.kit.length ? p.kit : KIT_BY_TYPE[(p.session_type as SType) || 'Private']) || []).map((k: string) => `<span style="display:inline-block;border:1px solid #ccc;border-radius:20px;padding:2px 10px;margin:0 4px 6px;font-size:12px">${esc(k)}</span>`).join('')
     return `<div style="page-break-inside:avoid;margin-bottom:28px"><h2 style="margin:0">${esc(p.title || 'Session')}</h2><div style="color:#555;font-size:13px;margin:2px 0 6px">${esc([p.session_type, p.start_time, p.court, (p.duration_min || 60) + ' mins'].filter(Boolean).join(' · '))}</div>${p.focus ? `<div style="background:#eef3fb;border-radius:6px;padding:8px 10px;font-weight:600;margin-bottom:8px">${esc(p.focus)}</div>` : ''}<table style="width:100%;border-collapse:collapse">${rows}</table><div style="margin-top:10px"><b style="font-size:12px;color:#555">Kit:</b><br/>${kit}</div></div>`
   }).join('')
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Run-sheet — ${new Date().toLocaleDateString('en-GB')}</title><style>body{font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:720px;margin:32px auto;color:#111;padding:0 20px}td{padding:6px 4px;vertical-align:top;border-top:1px solid #eee}</style></head><body><h1>Today’s run-sheet · ${new Date().toLocaleDateString('en-GB')}</h1>${blocks}</body></html>`
@@ -394,6 +398,16 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
   const [drafting, setDrafting] = useState(false)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
+  // Lumio Coach's plan. `built` is the gate: a session plan is not savable until
+  // he has designed it, because a run-sheet nobody wrote is the thing a coach
+  // ends up standing on court holding.
+  const [aiSheet, setAiSheet] = useState<{ phase: string; mins: number; detail: string; cue?: string }[]>([])
+  const [aiKit, setAiKit] = useState<string[]>([])
+  const [coachNote, setCoachNote] = useState('')
+  const [built, setBuilt] = useState(false)
+  const [onHistory, setOnHistory] = useState(false)
+  const [manual, setManual] = useState(false)
+  const autoRan = useRef(false)
 
   // The player's last lesson summary → its "next focus" is what this session should
   // pick up from, so the coach doesn't retype it.
@@ -415,7 +429,8 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
   // Prefill racket + last-session focus from the chosen roster player.
   const onPickPlayer = (name: string) => { setPlayer(name); const p = players.find(x => x.name === name); if (p?.racket_stage) setRacket(p.racket_stage); const f = lastFocusFor(name); if (f) setFocus(f) }
 
-  const draft = async () => {
+  const build = async () => {
+    if (drafting) return
     // Fall back to the player's last "next focus" if the coach hasn't typed one.
     let useFocus = focus.trim()
     if (!useFocus) { useFocus = lastFocusFor(player); if (useFocus) setFocus(useFocus) }
@@ -424,15 +439,35 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
     try {
       const res = await fetch('/api/coach/session-draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, focus: useFocus, racket: RACKET_STAGES.find(s => s.id === racket)?.name, standard, duration, note, player }) })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Draft failed')
+      if (!res.ok) throw new Error(data.error || 'Lumio Coach could not build the plan')
       setFocusPoints((data.focus_points || []).join('\n'))
       setDrills((data.drills || []).join('\n'))
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Draft failed') }
+      setAiSheet(data.run_sheet || [])
+      setAiKit(data.kit || [])
+      setCoachNote(data.coach_note || '')
+      setOnHistory(!!data.built_on_history)
+      setBuilt(true)
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Lumio Coach could not build the plan') }
     setDrafting(false)
   }
 
+  // Build once, automatically, as soon as there is enough to plan from. A coach
+  // opening this modal wants a plan, not a button — but it fires ONCE per open
+  // (autoRan) so editing the focus afterwards does not quietly spend a call on
+  // every keystroke. Rebuild is explicit from there.
+  useEffect(() => {
+    if (autoRan.current || built || drafting || manual) return
+    if (!player.trim() || !focus.trim()) return
+    autoRan.current = true
+    void build()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [player, focus, built, drafting, manual])
+
   const save = async () => {
     if (!focus.trim()) { setErr('Session focus is required'); return }
+    // The gate. Every plan is either designed by Lumio Coach or explicitly
+    // written by the coach — never an unattributed template.
+    if (!built && !manual) { setErr('Let Lumio Coach build the plan first, or choose to write it yourself.'); return }
     setSaving(true); setErr('')
     try {
       await dbInsert('coach_session_plans', {
@@ -440,6 +475,12 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
         session_date: date || null, start_time: time || null, session_type: type, court: court || null,
         group_name: player || null, focus, duration_min: duration || null, racket_stage: racket || null,
         standard: standard || null, focus_points: focusPoints || null, drills: drills || null, notes: note || null,
+        run_sheet: aiSheet.length ? aiSheet : null,
+        kit: aiKit.length ? aiKit : null,
+        coach_note: coachNote || null,
+        built_by: built ? 'lumio-coach' : 'coach',
+        designed_at: new Date().toISOString(),
+        source: 'planner',
       })
       onSaved()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Save failed'); setSaving(false) }
@@ -447,7 +488,7 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
 
   const input: React.CSSProperties = { width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none', marginTop: 5 }
   const lbl: React.CSSProperties = { display: 'block', color: T.text3, fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }
-  const sheet = runSheet(type, focus, duration || 60)
+
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '4vh 16px', overflowY: 'auto' }}>
@@ -485,11 +526,29 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
             <div style={{ marginTop: 12 }}><label style={lbl}>Standard</label><input value={standard} onChange={e => setStandard(e.target.value)} placeholder="e.g. LTA Youth · Orange" style={input} /></div>
             <div style={{ marginTop: 12 }}><label style={lbl}>Session focus *</label><input value={focus} onChange={e => setFocus(e.target.value)} placeholder="e.g. Forehand volley — punch & firm wrist" style={input} /></div>
 
-            {/* AI assist */}
+            {/* Lumio Coach builds the plan. */}
             <div style={{ marginTop: 14, background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 10, padding: 12 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: accent.hex, marginBottom: 6 }}>✨ AI assist — draft the focus points &amp; drills</div>
+              <div style={{ fontSize: 11.5, fontWeight: 700, color: accent.hex, marginBottom: 6 }}>
+                ✦ {built ? 'Built by Lumio Coach' : 'Lumio Coach builds this plan'}
+              </div>
               <input value={note} onChange={e => setNote(e.target.value)} placeholder="Optional note — what do you want from this session?" style={{ ...input, marginTop: 0 }} />
-              <button onClick={draft} disabled={drafting} style={{ marginTop: 8, padding: '8px 14px', borderRadius: 9, border: 'none', background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', opacity: drafting ? 0.6 : 1 }}>{drafting ? 'Drafting…' : 'Draft with AI'}</button>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button onClick={build} disabled={drafting} style={{ padding: '8px 14px', borderRadius: 9, border: 'none', background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', opacity: drafting ? 0.6 : 1 }}>
+                  {drafting ? 'Building…' : built ? '↻ Rebuild' : '✦ Build the plan'}
+                </button>
+                {!built && !drafting && (
+                  <button onClick={() => setManual(true)} style={{ padding: '8px 12px', borderRadius: 9, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Write it myself</button>
+                )}
+              </div>
+              {built && (
+                <div style={{ fontSize: 11, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>
+                  {onHistory
+                    ? 'Built from this player’s last session and their record — edit anything below.'
+                    : 'No previous sessions for this player yet, so this is built from the stage and focus alone.'}
+                </div>
+              )}
+              {manual && !built && <div style={{ fontSize: 11, color: T.warn, marginTop: 8 }}>Writing it yourself — this plan will be saved as yours, not Lumio Coach’s.</div>}
+              {coachNote && <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8, lineHeight: 1.55, fontStyle: 'italic' }}>“{coachNote}”</div>}
             </div>
 
             <div style={{ marginTop: 12 }}><label style={lbl}>Focus points (one per line)</label><textarea value={focusPoints} onChange={e => setFocusPoints(e.target.value)} rows={3} style={{ ...input, resize: 'vertical' }} /></div>
@@ -500,27 +559,42 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
           <div>
             <label style={lbl}>Run-sheet ({duration || 60} mins)</label>
             <div style={{ marginTop: 6, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: 12 }}>
-              {sheet.map((ph, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, padding: '6px 0', borderBottom: i < sheet.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+              {aiSheet.length === 0 ? (
+                <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.6, padding: '6px 0' }}>
+                  {drafting ? 'Lumio Coach is building the run-sheet…' : 'Pick a player and a focus and Lumio Coach will build the run-sheet — phase by phase, timed to the minute.'}
+                </div>
+              ) : aiSheet.map((ph, i) => (
+                <div key={i} style={{ display: 'flex', gap: 8, padding: '6px 0', borderBottom: i < aiSheet.length - 1 ? `1px solid ${T.border}` : 'none' }}>
                   <span style={{ fontSize: 11, color: accent.hex, fontWeight: 700, width: 34, flexShrink: 0 }}>{ph.mins}m</span>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{ph.phase}</div>
                     <div style={{ fontSize: 10.5, color: T.text3, lineHeight: 1.4 }}>{ph.detail}</div>
+                    {ph.cue && <div style={{ fontSize: 10.5, color: accent.hex, lineHeight: 1.4, marginTop: 2 }}>Cue: {ph.cue}</div>}
                   </div>
                 </div>
               ))}
             </div>
             <label style={{ ...lbl, marginTop: 14, display: 'block' }}>Kit list</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-              {KIT_BY_TYPE[type].map(k => <span key={k} style={{ fontSize: 11, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '3px 10px' }}>{k}</span>)}
+              {aiKit.length === 0
+                ? <span style={{ fontSize: 11, color: T.text3 }}>Built with the plan.</span>
+                : aiKit.map(k => <span key={k} style={{ fontSize: 11, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '3px 10px' }}>{k}</span>)}
             </div>
-            <p style={{ fontSize: 10.5, color: T.text3, marginTop: 10 }}>The run-sheet and kit list are generated automatically for the session type.</p>
+            <p style={{ fontSize: 10.5, color: T.text3, marginTop: 10 }}>Lumio Coach writes the run-sheet and kit for this player and this focus — not a template for the session type.</p>
           </div>
         </div>
 
         {err && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 12 }}>{err}</p>}
         <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-          <button onClick={save} disabled={saving} style={{ flex: 1, padding: '12px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>{saving ? 'Saving…' : '✓ Add session'}</button>
+          {(() => {
+            const ready = (built || manual) && !saving
+            return (
+              <button onClick={save} disabled={!ready} title={ready ? '' : 'Lumio Coach is building this plan'}
+                style={{ flex: 1, padding: '12px', borderRadius: 10, border: 'none', background: ready ? accent.hex : T.hover, color: ready ? T.btnText : T.text3, fontSize: 14, fontWeight: 700, cursor: ready ? 'pointer' : 'not-allowed' }}>
+                {saving ? 'Saving…' : drafting ? 'Lumio Coach is building the plan…' : built || manual ? '✓ Add session' : 'Waiting for Lumio Coach…'}
+              </button>
+            )
+          })()}
           <button onClick={onClose} style={{ padding: '12px 18px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
         </div>
       </div>
@@ -530,7 +604,12 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
 
 // ── Saved session run-sheet ──────────────────────────────────────────────────
 function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onCompleted, onClose, onDelete, inline }: Common & { plan: any; players: any[]; onNavigate?: (s: string) => void; onCompleted: () => void; onClose: () => void; onDelete: () => void; inline?: boolean }) {
-  const sheet = runSheet((plan.session_type as SType) || 'Private', plan.focus || '', plan.duration_min || 60)
+  // Prefer the run-sheet Lumio Coach actually designed and we stored. The
+  // template is kept only for plans created before he built them, so an old plan
+  // still renders something rather than an empty box.
+  const stored: { phase: string; mins: number; detail: string; cue?: string }[] = Array.isArray(plan.run_sheet) ? plan.run_sheet : []
+  const sheet = stored.length ? stored : runSheet((plan.session_type as SType) || 'Private', plan.focus || '', plan.duration_min || 60)
+  const kit: string[] = Array.isArray(plan.kit) && plan.kit.length ? plan.kit : KIT_BY_TYPE[(plan.session_type as SType) || 'Private']
   const fp = (plan.focus_points || '').split('\n').filter(Boolean)
   const dr = (plan.drills || '').split('\n').filter(Boolean)
   const [mediaOpen, setMediaOpen] = useState(false)
@@ -588,7 +667,7 @@ function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onComp
           )}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 16 }}>
-          {KIT_BY_TYPE[(plan.session_type as SType) || 'Private'].map(k => <span key={k} style={{ fontSize: 11, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '3px 10px' }}>{k}</span>)}
+          {kit.map(k => <span key={k} style={{ fontSize: 11, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '3px 10px' }}>{k}</span>)}
         </div>
         {mediaOpen && <MediaCaptureModal T={T} accent={accent} defaultKind="audio" players={players} playerName={plan.group_name || undefined}
           onClose={() => setMediaOpen(false)}

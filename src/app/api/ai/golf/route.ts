@@ -8,6 +8,16 @@ import {
   rateLimitedResponse,
   capReachedResponse,
 } from '@/lib/ai/guards'
+import { sanitizeAiBody, AiBodyError } from '@/lib/ai/body-guard'
+
+// The system prompts these features use, held server-side so the browser names
+// one instead of defining it. Moved here from three call sites in the golf
+// portal when the passthrough stopped accepting a client-supplied system prompt.
+const PRESETS: Record<string, string> = {
+  'performance': 'You are Lumio AI, golf performance analyst for James Halton (#87 OWGR, DP World Tour). Be direct, data-driven, and specific. 2-3 sentences per section.',
+  'career': 'You are Lumio AI, strategic golf career analyst. Be direct and specific — this player takes your recommendations seriously.',
+  'agent-pitch': 'You are Sarah Mitchell, ISM sports agent, writing a sponsorship pitch on behalf of your client. Write in professional but warm agent voice. Be specific with stats.',
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +27,8 @@ export async function POST(req: NextRequest) {
     const cap = checkDailyCap()
     if (!cap.ok) return capReachedResponse(cap.spent)
 
-    const body = await req.json()
+    // The browser does not get to choose what the model is — see body-guard.
+    const body = sanitizeAiBody(await req.json(), { presets: PRESETS, allowWebSearch: true })
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })
@@ -48,7 +59,8 @@ export async function POST(req: NextRequest) {
       model: body.model, tokens: data.usage?.output_tokens,
     }).catch(() => {})
     return NextResponse.json(data)
-  } catch {
+  } catch (e) {
+    if (e instanceof AiBodyError) return NextResponse.json({ error: e.message }, { status: e.status })
     return NextResponse.json({ error: 'Failed to call AI' }, { status: 500 })
   }
 }

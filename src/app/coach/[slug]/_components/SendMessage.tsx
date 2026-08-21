@@ -147,8 +147,12 @@ export function CoachSendMessage({ T, accent, onClose, preset }: { T: ThemeToken
       const usedChannels = (urgent ? [...CHANNEL_IDS] : channels as ChannelId[]).map(id => CHANNEL_META[id]?.label || id)
       const res = await fetch('/api/ai/tennis', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, system: COACH_AGENT_PERSONA, messages: [{ role: 'user',
-          content: `Draft a warm, professional but concise message on behalf of ${COACH_ORG.coach}, a tennis coach at ${COACH_ORG.academy}. Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message intent: ${messageText}. ${urgent ? 'This is URGENT — prepend [URGENT] and keep the tone immediate.' : ''} Return only the final message text, no preamble. Plain prose only — no bullet points, dashes, numbered lists, emoji at line starts, bold, headers or markdown.`
+        // Demo portal: no coach session exists, so this uses the public sport
+        // endpoint. That endpoint no longer accepts a client-supplied `system`
+        // (it was an open door to an unauthenticated LLM), so the persona goes
+        // in the message itself — same voice, nothing the server has to trust.
+        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, messages: [{ role: 'user',
+          content: `${COACH_AGENT_PERSONA}\n\nDraft a warm, professional but concise message on behalf of ${COACH_ORG.coach}, a tennis coach at ${COACH_ORG.academy}. Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message intent: ${messageText}. ${urgent ? 'This is URGENT — prepend [URGENT] and keep the tone immediate.' : ''} Return only the final message text, no preamble. Plain prose only — no bullet points, dashes, numbered lists, emoji at line starts, bold, headers or markdown.`
         }] })
       })
       const data = await res.json()

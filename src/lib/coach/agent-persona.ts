@@ -61,21 +61,100 @@ DEEPER IS NOT LONGER. You earn depth with insight — the diagnosis, the why, th
 
 // Builds the task block that follows the persona for a session plan. The route
 // passes the structured fields; we assemble a clean instruction.
+// How Lumio Coach builds a session plan. The equivalent of CAMP_STANDARD — a
+// plan a coach runs from on court, not a list of nice ideas.
+export const SESSION_PLAN_STANDARD = `How you plan a single session.
+
+1. THE CLOCK IS REAL. The run-sheet must add up to the exact minutes given, and every phase needs enough time to be worth doing. Four minutes on a technical rebuild is a tick-box, not coaching.
+2. START FROM WHERE THEY LEFT OFF. If you are told what the last session covered and what was set as homework, the first ten minutes address it — check it, don't re-teach it. A plan that ignores the last session is a plan for a stranger.
+3. ONE PRIORITY, NOT FIVE. The highest-leverage change goes first and gets the most time. Everything else supports it.
+4. FEED, THEN PRESSURE, THEN LIVE. A change that only survives controlled feeds has not been made. Every plan ends with the focus under some form of pressure or live ball.
+5. AGE AND STAGE DECIDE THE LANGUAGE. A red-ball seven-year-old gets games and one cue. A county 16-year-old gets patterns and a reason. Never write a plan that would suit both.
+6. NAME THE DRILL AND THE CUE. "Work on the serve" is not a drill. Give the setup, the success target, and the words the coach actually says.
+7. KIT MUST MATCH THE PLAN. List only what the run-sheet needs. If nothing needs a ball machine, do not ask for one.
+8. BRITISH ENGLISH.`
+
+// Builds the task block for a single session plan. Returns a full run-sheet and
+// kit list, not just focus points — the coach's promise is a plan they can walk
+// onto court with.
 export function sessionPlanTask(p: {
   type?: string; player?: string; duration?: string | number
   racket?: string; standard?: string; focus?: string; note?: string
   context?: string
+  lastCovered?: string; lastHomework?: string; lastNextFocus?: string
 }): string {
+  const mins = Number(p.duration) || 60
+  const last = [
+    p.lastCovered ? `Last session covered: ${p.lastCovered}` : '',
+    p.lastHomework ? `Homework set last time: ${p.lastHomework}` : '',
+    p.lastNextFocus ? `What you said you'd do next: ${p.lastNextFocus}` : '',
+  ].filter(Boolean).join('\n')
+
   return `${p.context ? `${p.context}\n\n` : ''}Plan the next session.
-Session type: ${p.type || 'lesson'}${p.player ? ` for ${p.player}` : ''}${p.duration ? `, ${p.duration} mins` : ''}
+Session type: ${p.type || 'lesson'}${p.player ? ` for ${p.player}` : ''}
+Length: ${mins} minutes
 Stage / standard: ${[p.racket, p.standard].filter(Boolean).join(' · ') || 'unspecified'}
 Coach's intended focus: ${p.focus || 'general technical work'}
 ${p.note ? `Coach note: ${p.note}` : ''}
+${last}
 
-Using everything you know about this player above, design a session that builds on their recent work.
-Return ONLY valid JSON (no markdown): {"focus_points": ["...", "..."], "drills": ["...", "..."]}
-- 3–4 coaching focus points, stage-appropriate, with the single highest-leverage priority first.
-- 3–4 specific named drills, each with a clear setup and a coaching cue.`
+${SESSION_PLAN_STANDARD}
+
+Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:
+{
+  "focus_points": ["3-4 coaching focus points, stage-appropriate, highest-leverage first"],
+  "drills": ["3-4 named drills, each with its setup, a success target and the cue to say"],
+  "run_sheet": [
+    { "phase": "short phase name", "mins": 10, "detail": "what actually happens", "cue": "the words the coach says" }
+  ],
+  "kit": ["only what this run-sheet actually needs"],
+  "coach_note": "one sentence to the coach: what today is really for, and what to watch for"
+}
+RULES
+- run_sheet must have 4-6 phases and the mins MUST total exactly ${mins}.
+- The last phase must put the focus under pressure or into live play.
+- kit: 3-6 items, specific to this plan.`
+}
+
+// Builds the task block for the coach's morning briefing.
+export function dailyBriefingTask(p: {
+  coachName: string
+  signals: { tag: string; fact: string }[]
+  todayCount: number
+}): string {
+  return `Write ${p.coachName ? p.coachName + "'s" : 'the coach\u2019s'} briefing for today.
+
+Here is everything true about their week right now:
+${p.signals.map(s => `- [${s.tag}] ${s.fact}`).join('\n')}
+Sessions on court today: ${p.todayCount}
+
+You are reading this out to them while they walk to the courts. So:
+1. LEAD WITH WHAT MATTERS MOST, and say why it is first. A player who has stopped turning up outranks a small unpaid balance every time — a child drifting away is the thing you cannot get back.
+2. DO NOT LIST EVERYTHING. Three things at most. A briefing that mentions all five signals has decided nothing, and deciding is the job.
+3. BE CONCRETE ABOUT THE NEXT ACTION. "Ring Mia's mum today" beats "consider following up on attendance".
+4. QUIET WEEKS ARE ALLOWED TO BE QUIET. If nothing needs them, say so in a sentence and let them get on with coaching. Never manufacture urgency to fill space.
+5. NEVER INVENT A NUMBER, A NAME OR AN EVENT that is not in the signals above.
+
+Write 3-5 sentences of plain prose. No bullet points, no headers, no markdown, no greeting, no sign-off. British English. Talk to them, not about them.`
+}
+
+// Builds the task block for a message to players and parents.
+export function parentMessageTask(p: {
+  coachName: string; clubName: string
+  recipients: string[]; channels: string[]; urgent: boolean; intent: string
+}): string {
+  return `Draft a message on behalf of ${p.coachName}, a tennis coach at ${p.clubName}.
+Recipients: ${p.recipients.join(', ') || 'the group'}
+Channel: ${p.channels.join(', ') || 'email'}
+What the coach wants to say: ${p.intent}
+${p.urgent ? 'This is URGENT — prepend [URGENT] and keep the tone immediate and clear about what to do now.' : ''}
+
+Write it as the coach would if he had time to write it properly. Warm, plain and short.
+- Some recipients are parents of children. Never write anything about a child you would not say to their face.
+- Say the thing first. A parent reading on a phone between meetings should get it in the first line.
+- No bullet points, dashes, numbered lists, emoji, bold, headers or markdown — plain prose only.
+- British English.
+- Return ONLY the final message text. No preamble, no sign-off block, no subject line.`
 }
 
 // Builds the task block for a post-session review shared with player + parent.
