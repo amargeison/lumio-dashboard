@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, getCoach, admin } from '../_stripe'
+import { publicSiteOrigin } from '@/lib/public-origin'
 
 export const runtime = 'nodejs'
 
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   const { data: row } = await db.from('coach_stripe').select('*').eq('coach_id', user.id).maybeSingle()
   if (!row?.stripe_account_id || !row.charges_enabled) return NextResponse.json({ error: 'Connect your bank first (Settings → Payments & Packages).' }, { status: 400 })
 
-  const origin = new URL(req.url).origin
+  const origin = publicSiteOrigin(new URL(req.url).origin)
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',

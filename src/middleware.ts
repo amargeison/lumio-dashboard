@@ -10,6 +10,9 @@ const RESERVED_SLUGS = new Set([
   'insights', 'school-office', 'offline', 'admin', 'blog', 'football',
   'womens', 'rugby', 'cricket', 'tennis', 'golf', 'boxing', 'darts',
   'nonleague', 'grassroots', 'join', 'sports-signup', 'sports-login', 'sports-admin',
+  // /camp/<slug> is the public camp sign-up page. Reserving it stops a camp whose
+  // slug happens to collide with a dashboard route being rewritten away.
+  'camp',
 ])
 
 const DASHBOARD_ROUTES = new Set([

@@ -99,3 +99,14 @@ __pycache__/
 # master logo JPG/PNG). Not app source — the optimized web assets live in
 # /public/tenproject_*.png. Kept out of app history to avoid binary bloat.
 /Ten Project/
+
+# One-off maintenance scripts and reports written by AI sessions against live
+# data (account audits, test-account wipes, calendar checks). Useful at the time,
+# never source — and several take a service-role key as an argument.
+/account-inventory.mjs
+/wipe-test-accounts.mjs
+/calendar-connection-check.mjs
+/sync-fix-report.txt
+/tsconfig.check.json
+/_to_delete/
+.claude/

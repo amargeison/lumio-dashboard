@@ -6,13 +6,14 @@
 // designed by the Lumio Master Coach AI (/api/coach/camp-design) and editable.
 // Attendees link to the roster so Player Packs pull real racket/attendance/skills.
 
-import { useState, useMemo, type CSSProperties, type ReactNode } from 'react'
+import { useState, useEffect, useMemo, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbRemove, useCoachProfile, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
 import { avatarSrc } from '@/lib/avatar'
 import { CampDesigner, type CampPlan } from './CampDesigner'
 import { campOrg, printParentBrief, printRunSheet, printPlayerReport, printCertificate } from '../_lib/camp-printables'
+import { CampPromote } from './CampPromote'
 import { getSettings } from '../_lib/settings-store'
 
 type Camp = {
@@ -26,6 +27,9 @@ type Camp = {
   itinerary?: CampDay[] | null
   equipment?: string[] | null; objectives?: string[] | null
   parent_brief?: ParentBrief | null; ages?: string | null; group_size?: number | null; intent?: string | null
+  // Public sign-up page (/camp/[slug]). Closed until the coach opens it.
+  signup_slug?: string | null; signup_open?: boolean | null
+  payment_mode?: string | null; deposit_amount?: number | null; signup_note?: string | null
 }
 export type CampSession = { slot?: string; time?: string; title?: string; type?: string; where?: string; detail?: string; cue?: string }
 export type CampDay = {
@@ -41,8 +45,21 @@ const SESSION_COLOUR: Record<string, string> = {
   Technical: '#3A8EE0', Tactical: '#a855f7', Physical: '#e0483f', 'Match play': '#3fbf6a',
   Video: '#d9a91f', Recovery: '#5bc0be', Social: '#f08a24', Briefing: '#8b93a7', Logistics: '#8b93a7',
 }
-type Attendee = { id: string; camp_id: string; player_id?: string | null; player_name: string; paid?: boolean | null }
-type Player = { id: string; name: string; age?: number | null; racket_stage?: string | null; avatar_url?: string | null }
+type Attendee = {
+  id: string; camp_id: string; player_id?: string | null; player_name: string; paid?: boolean | null
+  // Everything below arrives from the public sign-up form. A coach adding a
+  // player from the roster leaves it all empty, which is why every field is
+  // optional and the UI only shows what is actually there.
+  parent_name?: string | null; parent_email?: string | null; parent_phone?: string | null
+  player_age?: number | null; medical_notes?: string | null; emergency_contact?: string | null
+  consent_photo?: boolean | null; consent_medical?: boolean | null
+  status?: string | null; amount_pennies?: number | null; source?: string | null; signed_up_at?: string | null
+}
+type Player = {
+  id: string; name: string; age?: number | null; racket_stage?: string | null; avatar_url?: string | null
+  // Used by the Promote tab to work out who an announcement can reach.
+  email?: string | null; parent_email?: string | null; parent_name?: string | null
+}
 
 const DAY = 86400000
 const fmtD = (d?: string | null) => { const t = d ? new Date(d) : null; return t && !isNaN(t.getTime()) ? t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—' }
@@ -63,6 +80,9 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   const [selId, setSelId] = useState<string | null>(null)
   const [tab, setTab] = useState('overview')
   const [formOpen, setFormOpen] = useState(false)
+  // Until now a camp could be created but never edited — so capacity and price,
+  // both of which the public sign-up page depends on, were fixed at creation.
+  const [editOpen, setEditOpen] = useState(false)
 
   const sel = camps.rows.find(c => c.id === selId) ?? camps.rows[0]
   const campAttendees = attendees.rows.filter(a => a.camp_id === sel?.id)
@@ -85,7 +105,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   }
 
   const booked = (c: Camp) => attendees.rows.filter(a => a.camp_id === c.id).length
-  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['finance', 'Finance']]
+  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['promote', 'Promote'], ['finance', 'Finance']]
 
   return (
     <div style={{ fontFamily: FONT }}>
@@ -132,7 +152,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
           {TABS.map(([id, label]) => <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 14px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: FONT, background: tab === id ? T.panel : 'transparent', color: tab === id ? T.text : T.text2, fontWeight: tab === id ? 600 : 400, boxShadow: tab === id ? `0 0 0 1px ${T.border}` : 'none' }}>{label}</button>)}
         </div>
 
-        {tab === 'overview' && <Overview T={T} accent={accent} camp={sel} booked={campAttendees.length} />}
+        {tab === 'overview' && <Overview T={T} accent={accent} camp={sel} booked={campAttendees.length} signups={campAttendees.filter(a => a.source === 'signup').length} onSave={v => camps.edit(sel.id, v)} />}
         {tab === 'itinerary' && <Itinerary T={T} accent={accent} camp={sel} onSave={v => camps.edit(sel.id, v)} attendeeNames={campAttendees.map(a => a.player_name)} />}
         {tab === 'equipment' && <ListEditor T={T} accent={accent} title="Equipment & kit" items={sel.equipment || []} onSave={items => camps.edit(sel.id, { equipment: items })} placeholder="One kit item per line" />}
         {tab === 'targets' && (
@@ -143,11 +163,15 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
         )}
         {tab === 'attendees' && <Attendees T={T} accent={accent} camp={sel} attendees={campAttendees} players={players} reload={attendees.reload} remove={attendees.remove} />}
         {tab === 'packs' && <Packs T={T} accent={accent} camp={sel} attendees={campAttendees} players={players} skillMap={skillMap} skillDates={skillDates} attRows={attRows} />}
+        {tab === 'promote' && <CampPromote T={T} accent={accent} campId={sel.id} campName={sel.name} players={players} />}
         {tab === 'finance' && <Finance T={T} accent={accent} camp={sel} attendees={campAttendees} editAtt={attendees.edit} editCamp={v => camps.edit(sel.id, v)} />}
 
-        <div style={{ marginTop: 16 }}>
+        <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button onClick={() => setEditOpen(true)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>Edit camp details</button>
           <button onClick={async () => { if (confirm(`Delete ${sel.name}?`)) { await camps.remove(sel.id); setSelId(null) } }} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.bad, borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>Delete camp</button>
         </div>
+
+        {editOpen && <CampForm T={T} accent={accent} camp={sel} onClose={() => setEditOpen(false)} onSave={async v => { await camps.edit(sel.id, v); setEditOpen(false) }} />}
       </>}
 
       {formOpen && <CampForm T={T} accent={accent} camp={null} onClose={() => setFormOpen(false)} onSave={async v => { const r = await camps.add(v) as any; if (r?.id) setSelId(r.id); setFormOpen(false) }} />}
@@ -171,7 +195,7 @@ function card(T: ThemeTokens): CSSProperties { return { background: T.panel, bor
 function box(T: ThemeTokens): CSSProperties { return { background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' } }
 function lbl(T: ThemeTokens): CSSProperties { return { fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' } }
 
-function Overview({ T, accent, camp, booked }: { T: ThemeTokens; accent: AccentTokens; camp: Camp; booked: number }) {
+function Overview({ T, accent, camp, booked, signups, onSave }: { T: ThemeTokens; accent: AccentTokens; camp: Camp; booked: number; signups: number; onSave: (v: Record<string, any>) => Promise<void> }) {
   const revenue = (camp.price || 0) * booked
   const collected = camp.collected || 0
   const glance: [string, ReactNode][] = [
@@ -180,6 +204,7 @@ function Overview({ T, accent, camp, booked }: { T: ThemeTokens; accent: AccentT
     ['Daily rhythm', camp.daily_rhythm || '—'], ['Capacity', `${booked} of ${camp.capacity || '—'} booked`], ['Board', camp.board || '—'],
   ]
   return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
     <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14 }}>
       <div style={card(T)}>
         <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 12 }}>Camp at a glance</div>
@@ -198,6 +223,138 @@ function Overview({ T, accent, camp, booked }: { T: ThemeTokens; accent: AccentT
           {camp.objectives.slice(0, 4).map((o, i) => <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12, color: T.text2, padding: '3px 0' }}><span style={{ color: accent.hex }}>›</span>{o}</div>)}
         </>}
       </div>
+    </div>
+    <SignupPanel T={T} accent={accent} camp={camp} booked={booked} signups={signups} onSave={onSave} />
+    </div>
+  )
+}
+
+// ─── PUBLIC SIGN-UP PAGE ─────────────────────────────────────────────────────
+// The coach half of /camp/[slug]. Nothing is public until the coach sets a link
+// AND turns sign-ups on: signup_open defaults to false, so no existing camp
+// becomes visible on the internet as a side effect of this upgrade.
+const slugify = (s: string) => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60)
+
+function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTokens; accent: AccentTokens; camp: Camp; booked: number; signups: number; onSave: (v: Record<string, any>) => Promise<void> }) {
+  const [slug, setSlug] = useState(camp.signup_slug || '')
+  const [mode, setMode] = useState(camp.payment_mode || 'none')
+  const [dep, setDep] = useState(camp.deposit_amount != null ? String(camp.deposit_amount) : '')
+  const [note, setNote] = useState(camp.signup_note || '')
+  const [origin, setOrigin] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [err, setErr] = useState('')
+  const [copied, setCopied] = useState(false)
+
+  // Re-seed when the coach switches camp — otherwise the previous camp's link is
+  // still sitting in the box and one Save puts it on the wrong camp.
+  useEffect(() => {
+    setSlug(camp.signup_slug || ''); setMode(camp.payment_mode || 'none')
+    setDep(camp.deposit_amount != null ? String(camp.deposit_amount) : '')
+    setNote(camp.signup_note || ''); setMsg(''); setErr('')
+  }, [camp.id])
+  useEffect(() => { setOrigin(window.location.origin) }, [])
+
+  const isOpen = !!camp.signup_open
+  const cleanSlug = slugify(slug)
+  const url = origin && cleanSlug ? origin + '/camp/' + cleanSlug : ''
+  const depNum = Number(dep) || 0
+  const dirty = cleanSlug !== (camp.signup_slug || '')
+    || mode !== (camp.payment_mode || 'none')
+    || depNum !== (Number(camp.deposit_amount) || 0)
+    || note !== (camp.signup_note || '')
+
+  const save = async (extra: Record<string, any> = {}) => {
+    setErr(''); setMsg(''); setBusy(true)
+    try {
+      await onSave({
+        signup_slug: cleanSlug || null, payment_mode: mode,
+        deposit_amount: mode === 'deposit' ? depNum || null : null,
+        signup_note: note || null, ...extra,
+      })
+      setMsg('Saved.')
+    } catch (e) {
+      const m = e instanceof Error ? e.message : ''
+      // A unique index is what stops two camps sharing a public URL. Translate it —
+      // a coach should not be shown a Postgres constraint name.
+      setErr(/duplicate|unique/i.test(m) ? 'That link is already in use. Try adding the year or the venue.' : (m || 'Could not save.'))
+    } finally { setBusy(false) }
+  }
+
+  const toggle = async () => {
+    if (!isOpen && !cleanSlug) { setErr('Give the page a link first.'); return }
+    await save({ signup_open: !isOpen })
+  }
+
+  const inp: CSSProperties = { background: T.panel2, color: T.text, border: '1px solid ' + T.border, borderRadius: 8, padding: '8px 10px', fontSize: 12.5, fontFamily: FONT, width: '100%', boxSizing: 'border-box', outline: 'none' }
+
+  return (
+    <div style={card(T)}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Public sign-up page</div>
+        <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, padding: '2px 7px', borderRadius: 999, color: isOpen ? T.good : T.text3, background: isOpen ? T.good + '22' : T.hover, border: '1px solid ' + (isOpen ? T.good + '55' : T.border) }}>{isOpen ? 'Live' : 'Closed'}</span>
+        {signups > 0 && <span style={{ fontSize: 11, color: T.text3 }}>{signups} signed up through the page</span>}
+        <button onClick={toggle} disabled={busy} style={{ marginLeft: 'auto', appearance: 'none', border: isOpen ? '1px solid ' + T.border : 0, background: isOpen ? 'transparent' : accent.hex, color: isOpen ? T.text2 : T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: busy ? 'wait' : 'pointer', fontFamily: FONT }}>
+          {isOpen ? 'Close sign-ups' : 'Open sign-ups'}
+        </button>
+      </div>
+      <p style={{ margin: '6px 0 14px', fontSize: 12, color: T.text3, lineHeight: 1.55, maxWidth: 640 }}>
+        Share one link and parents sign their child up themselves. Name, age, medical notes and consents land straight on your Attendees list, and the money goes into your own Stripe account.
+      </p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12 }}>
+        <div>
+          <div style={lbl(T)}>Page link</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+            <span style={{ fontSize: 11.5, color: T.text3, fontFamily: FONT_MONO, whiteSpace: 'nowrap' }}>/camp/</span>
+            <input value={slug} onChange={e => setSlug(e.target.value)} placeholder={slugify(camp.name) || 'summer-camp'} style={{ ...inp, fontFamily: FONT_MONO }} />
+          </div>
+          {!slug.trim() && !!slugify(camp.name) && (
+            <button onClick={() => setSlug(slugify(camp.name))} style={{ marginTop: 5, appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 11.5, cursor: 'pointer', padding: 0, fontFamily: FONT }}>Use “{slugify(camp.name)}”</button>
+          )}
+        </div>
+        <div>
+          <div style={lbl(T)}>Payment</div>
+          <select value={mode} onChange={e => setMode(e.target.value)} style={{ ...inp, marginTop: 4 }}>
+            <option value="none">No payment — just reserve a place</option>
+            <option value="deposit">Deposit now, balance later</option>
+            <option value="full">Full amount ({money(camp.price || 0)})</option>
+          </select>
+        </div>
+        {mode === 'deposit' && (
+          <div>
+            <div style={lbl(T)}>Deposit (£)</div>
+            <input value={dep} onChange={e => setDep(e.target.value.replace(/[^0-9.]/g, ''))} inputMode="decimal" placeholder="50" style={{ ...inp, marginTop: 4 }} />
+            {depNum > 0 && (camp.price || 0) > 0 && <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>Balance of {money(Math.max(0, (camp.price || 0) - depNum))} still due to you.</div>}
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        <div style={lbl(T)}>A line for parents (optional)</div>
+        <textarea value={note} onChange={e => setNote(e.target.value)} rows={2} placeholder="Drop-off arrangements, what to bring, who to call on the day."
+          style={{ ...inp, marginTop: 4, resize: 'vertical', lineHeight: 1.5 }} />
+        <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>The rest of the page is written from Lumio Coach&apos;s parent brief — design the itinerary first and the page fills itself in.</div>
+      </div>
+
+      {err && <div style={{ fontSize: 12, color: T.bad, marginTop: 10 }}>{err}</div>}
+      {!err && msg && <div style={{ fontSize: 12, color: T.good, marginTop: 10 }}>{msg}</div>}
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <button onClick={() => save()} disabled={busy || !dirty} style={{ appearance: 'none', border: 0, background: dirty ? accent.hex : T.hover, color: dirty ? T.btnText : T.text3, borderRadius: 9, padding: '8px 16px', fontSize: 12.5, fontWeight: 700, cursor: dirty && !busy ? 'pointer' : 'default', fontFamily: FONT }}>{busy ? 'Saving…' : 'Save'}</button>
+        {!!url && <>
+          <span style={{ fontSize: 11.5, color: T.text2, fontFamily: FONT_MONO, background: T.panel2, border: '1px solid ' + T.border, borderRadius: 8, padding: '7px 10px', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</span>
+          <button onClick={() => { navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800) }}
+            style={{ appearance: 'none', border: '1px solid ' + T.border, background: 'transparent', color: T.text2, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>{copied ? '✓ Copied' : 'Copy link'}</button>
+          {isOpen && !dirty && <a href={url} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, fontWeight: 600, color: accent.hex, textDecoration: 'none' }}>Open page ↗</a>}
+        </>}
+      </div>
+
+      {dirty && <div style={{ fontSize: 11.5, color: T.warn, marginTop: 8 }}>Unsaved changes — the live page still shows the old details until you save.</div>}
+      {camp.capacity
+        ? <div style={{ fontSize: 11.5, color: T.text3, marginTop: 8 }}>The page stops taking sign-ups at {camp.capacity} places — {Math.max(0, camp.capacity - booked)} left.</div>
+        : <div style={{ fontSize: 11.5, color: T.warn, marginTop: 8 }}>No capacity set, so the page will keep accepting sign-ups. Set one with “Edit camp details”.</div>}
+      {mode !== 'none' && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 6 }}>Places are only held once payment clears. If your Stripe account isn&apos;t connected yet, sign-ups are still saved and marked awaiting payment.</div>}
     </div>
   )
 }
@@ -399,6 +556,7 @@ function ListEditor({ T, accent, title, items, onSave, placeholder }: { T: Theme
 
 function Attendees({ T, accent, camp, attendees, players, reload, remove }: { T: ThemeTokens; accent: AccentTokens; camp: Camp; attendees: Attendee[]; players: Player[]; reload: () => void; remove: (id: string) => Promise<void> }) {
   const [pick, setPick] = useState('')
+  const [openId, setOpenId] = useState<string | null>(null)
   const taken = new Set(attendees.map(a => a.player_name.toLowerCase()))
   const add = async (name: string, playerId: string | null) => {
     if (!name.trim() || taken.has(name.toLowerCase())) return
@@ -417,17 +575,41 @@ function Attendees({ T, accent, camp, attendees, players, reload, remove }: { T:
       {attendees.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No attendees yet.</div> : attendees.map(a => {
         const p = players.find(x => x.id === a.player_id)
         const st = p ? RACKET_STAGES.find(s => s.id === p.racket_stage) : null
+        const fromPage = a.source === 'signup'
+        const pending = a.status === 'pending'
+        // What the parent typed into the public form. A coach adding a player from
+        // the roster has none of this, so the expander only appears when it exists.
+        const details = ([
+          ['Parent', a.parent_name || ''], ['Email', a.parent_email || ''], ['Phone', a.parent_phone || ''],
+          ['Emergency contact', a.emergency_contact || ''], ['Medical / allergies', a.medical_notes || ''],
+        ] as [string, string][]).filter(d => !!d[1])
+        const showing = openId === a.id
         return (
-          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: `1px solid ${T.border}` }}>
-            {p?.avatar_url
-              // eslint-disable-next-line @next/next/no-img-element
-              ? <img src={avatarSrc(p.avatar_url)} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-              : <span style={{ width: 26, height: 26, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700 }}>{initials(a.player_name)}</span>}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{a.player_name}</div>
-              <div style={{ fontSize: 10.5, color: T.text3 }}>{st ? st.name : (p?.age ? `Age ${p.age}` : 'Guest')}</div>
+          <div key={a.id} style={{ padding: '8px 0', borderTop: `1px solid ${T.border}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {p?.avatar_url
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={avatarSrc(p.avatar_url)} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                : <span style={{ width: 26, height: 26, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{initials(a.player_name)}</span>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{a.player_name}</span>
+                  {fromPage && <span style={{ fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4, color: accent.hex, background: accent.dim, borderRadius: 4, padding: '1px 5px' }}>Signed up online</span>}
+                  {pending && <span style={{ fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4, color: T.warn, background: `${T.warn}22`, borderRadius: 4, padding: '1px 5px' }}>Awaiting payment</span>}
+                  {/* A medical note must be visible without anyone opening anything. */}
+                  {!!a.medical_notes && <span style={{ fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4, color: T.bad, background: `${T.bad}22`, borderRadius: 4, padding: '1px 5px' }}>Medical note</span>}
+                </div>
+                <div style={{ fontSize: 10.5, color: T.text3 }}>{[st ? st.name : null, (a.player_age || p?.age) ? `Age ${a.player_age || p?.age}` : null, a.parent_name || null].filter(Boolean).join(' · ') || 'Guest'}</div>
+              </div>
+              {details.length > 0 && <button onClick={() => setOpenId(showing ? null : a.id)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 7, padding: '3px 9px', fontSize: 11, cursor: 'pointer', fontFamily: FONT, flexShrink: 0 }}>{showing ? 'Hide' : 'Details'}</button>}
+              <button onClick={async () => { await remove(a.id); reload() }} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>×</button>
             </div>
-            <button onClick={async () => { await remove(a.id); reload() }} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 16 }}>×</button>
+            {showing && (
+              <div style={{ margin: '8px 0 4px 36px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+                {details.map(d => <div key={d[0]} style={box(T)}><div style={lbl(T)}>{d[0]}</div><div style={{ fontSize: 12, color: T.text, marginTop: 3, wordBreak: 'break-word' }}>{d[1]}</div></div>)}
+                <div style={box(T)}><div style={lbl(T)}>Consents</div><div style={{ fontSize: 12, color: T.text, marginTop: 3 }}>{`${a.consent_photo ? 'Photos ✓' : 'Photos ✗'} · ${a.consent_medical ? 'First aid ✓' : 'First aid ✗'}`}</div></div>
+              </div>
+            )}
           </div>
         )
       })}
@@ -561,7 +743,7 @@ function CampForm({ T, accent, camp, onClose, onSave }: { T: ThemeTokens; accent
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '4vh 16px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 520, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>New camp</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>{camp ? 'Edit camp' : 'New camp'}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><label style={lab}>Camp name *</label><input value={d.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Algarve Performance Camp" style={field} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
