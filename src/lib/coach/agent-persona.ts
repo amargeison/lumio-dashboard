@@ -61,21 +61,218 @@ DEEPER IS NOT LONGER. You earn depth with insight — the diagnosis, the why, th
 
 // Builds the task block that follows the persona for a session plan. The route
 // passes the structured fields; we assemble a clean instruction.
+// How Lumio Coach builds a session plan. The equivalent of CAMP_STANDARD — a
+// plan a coach runs from on court, not a list of nice ideas.
+export const SESSION_PLAN_STANDARD = `How you plan a single session.
+
+1. THE CLOCK IS REAL. The run-sheet must add up to the exact minutes given, and every phase needs enough time to be worth doing. Four minutes on a technical rebuild is a tick-box, not coaching.
+2. START FROM WHERE THEY LEFT OFF. If you are told what the last session covered and what was set as homework, the first ten minutes address it — check it, don't re-teach it. A plan that ignores the last session is a plan for a stranger.
+3. ONE PRIORITY, NOT FIVE. The highest-leverage change goes first and gets the most time. Everything else supports it.
+4. FEED, THEN PRESSURE, THEN LIVE. A change that only survives controlled feeds has not been made. Every plan ends with the focus under some form of pressure or live ball.
+5. AGE AND STAGE DECIDE THE LANGUAGE. A red-ball seven-year-old gets games and one cue. A county 16-year-old gets patterns and a reason. Never write a plan that would suit both.
+6. NAME THE DRILL AND THE CUE. "Work on the serve" is not a drill. Give the setup, the success target, and the words the coach actually says.
+7. KIT MUST MATCH THE PLAN. List only what the run-sheet needs. If nothing needs a ball machine, do not ask for one.
+8. BRITISH ENGLISH.`
+
+// Builds the task block for a single session plan. Returns a full run-sheet and
+// kit list, not just focus points — the coach's promise is a plan they can walk
+// onto court with.
 export function sessionPlanTask(p: {
   type?: string; player?: string; duration?: string | number
   racket?: string; standard?: string; focus?: string; note?: string
   context?: string
+  lastCovered?: string; lastHomework?: string; lastNextFocus?: string
 }): string {
+  const mins = Number(p.duration) || 60
+  const last = [
+    p.lastCovered ? `Last session covered: ${p.lastCovered}` : '',
+    p.lastHomework ? `Homework set last time: ${p.lastHomework}` : '',
+    p.lastNextFocus ? `What you said you'd do next: ${p.lastNextFocus}` : '',
+  ].filter(Boolean).join('\n')
+
   return `${p.context ? `${p.context}\n\n` : ''}Plan the next session.
-Session type: ${p.type || 'lesson'}${p.player ? ` for ${p.player}` : ''}${p.duration ? `, ${p.duration} mins` : ''}
+Session type: ${p.type || 'lesson'}${p.player ? ` for ${p.player}` : ''}
+Length: ${mins} minutes
 Stage / standard: ${[p.racket, p.standard].filter(Boolean).join(' · ') || 'unspecified'}
 Coach's intended focus: ${p.focus || 'general technical work'}
 ${p.note ? `Coach note: ${p.note}` : ''}
+${last}
 
-Using everything you know about this player above, design a session that builds on their recent work.
-Return ONLY valid JSON (no markdown): {"focus_points": ["...", "..."], "drills": ["...", "..."]}
-- 3–4 coaching focus points, stage-appropriate, with the single highest-leverage priority first.
-- 3–4 specific named drills, each with a clear setup and a coaching cue.`
+${SESSION_PLAN_STANDARD}
+
+Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:
+{
+  "focus_points": ["3-4 coaching focus points, stage-appropriate, highest-leverage first"],
+  "drills": ["3-4 named drills, each with its setup, a success target and the cue to say"],
+  "run_sheet": [
+    { "phase": "short phase name", "mins": 10, "detail": "what actually happens", "cue": "the words the coach says" }
+  ],
+  "kit": ["only what this run-sheet actually needs"],
+  "coach_note": "one sentence to the coach: what today is really for, and what to watch for"
+}
+RULES
+- run_sheet must have 4-6 phases and the mins MUST total exactly ${mins}.
+- The last phase must put the focus under pressure or into live play.
+- kit: 3-6 items, specific to this plan.`
+}
+
+// Builds the task block for a player's development targets.
+export function playerTargetsTask(p: {
+  playerName: string; age: number | null; stage: string | null; standard: string | null
+  goal: string | null; notes: string | null
+  weakest: string[]; strongest: string[]; context?: string
+}): string {
+  const facts = [
+    `Player: ${p.playerName}`,
+    p.age ? `Age: ${p.age}` : '',
+    p.stage ? `Racket stage: ${p.stage}` : '',
+    p.standard ? `Standard: ${p.standard}` : '',
+    p.goal ? `Their own goal: ${p.goal}` : '',
+    p.notes ? `Coach's notes: ${p.notes}` : '',
+    p.weakest.length ? `Lowest-scoring skills (out of 5): ${p.weakest.join(', ')}` : '',
+    p.strongest.length ? `Strongest skills: ${p.strongest.join(', ')}` : '',
+  ].filter(Boolean).join('\n')
+
+  return `${p.context ? `${p.context}\n\n` : ''}Set development targets for the next block of sessions.
+
+${facts}
+
+1. THREE TARGETS. Not five. A player working on five things is working on nothing, and the coach has to be able to hold them in their head on court.
+2. THE SKILLS MATRIX IS EVIDENCE, NOT A TO-DO LIST. The lowest score is not automatically the priority — pick what unlocks the most, and say so in "why". Sometimes the weakest thing is weak because something upstream is.
+3. SERVE THEIR OWN GOAL where they have stated one. A player who wants to win a club match and a player who wants to enjoy Saturday mornings do not get the same targets.
+4. EACH TARGET MUST BE MEASURABLE by someone standing on a court with no equipment. "Eight of ten second serves land beyond the service line" — not "improved consistency".
+5. AGE AND STAGE DECIDE THE LANGUAGE. A red-ball nine-year-old's targets should be things they would be pleased to hear.
+6. HONEST TIMEFRAMES. A grip change is half a term, not a fortnight. Do not promise a block can deliver what it cannot.
+7. NEVER INVENT a result, an injury or a history you were not given.
+8. BRITISH ENGLISH.
+
+Return ONLY valid JSON (no markdown) in EXACTLY this shape:
+{
+  "targets": [
+    { "target": "what they are working towards", "why": "why this one, and why now", "measure": "how the coach knows it has happened", "by": "a realistic timeframe, e.g. 6 sessions" }
+  ],
+  "note": "one sentence to the coach about the block as a whole — what to protect, or what not to chase yet"
+}
+- Exactly 3 targets.`
+}
+
+// Builds the task block for turning a coach's note into a lesson summary.
+export function lessonSummaryTask(p: {
+  player: string; focus: string; note: string
+  rating: number | string | null; date: string; context?: string
+}): string {
+  return `${p.context ? `${p.context}\n\n` : ''}Turn this coach's note into a lesson summary.
+
+Player: ${p.player || 'the player'}
+Date: ${p.date || 'today'}
+Focus: ${p.focus || '(not stated)'}
+Coach rating (1-5): ${p.rating ?? 'n/a'}
+The coach's note, as they typed it: ${p.note || '(none — work from the focus and their record)'}
+
+${COACH_DIAGNOSTIC_STANDARD}
+
+This is shared with the player and, for juniors, their parent. So:
+1. DIAGNOSE, DO NOT NARRATE. "Hit forehands" is not a summary. What actually changed, what is still in the way, and why.
+2. USE THE COACH'S OWN OBSERVATIONS. Their note is the evidence. Do not overwrite what they saw with something more general, and do not invent a detail they did not mention.
+3. HOMEWORK A FAMILY CAN ACTUALLY DO — at home, without a court or a coach, in ten minutes.
+4. NEXT FOCUS MUST FOLLOW FROM TODAY. It is the sentence the next session plan will be built from.
+5. NOTHING A PLAYER WOULD BE EMBARRASSED to have their parent read. Honest, never harsh.
+6. BRITISH ENGLISH.
+
+Return ONLY valid JSON (no markdown) in EXACTLY this shape:
+{
+  "assessment": "1-2 sentences — your read on where they are with this",
+  "covered": ["3-4 things the session actually covered"],
+  "takeaways": ["2-3 things worth remembering — a win and an honest watch-out"],
+  "drills": ["2-4 drills used, named"],
+  "homework": "one specific thing to do before the next session",
+  "nextFocus": "one sentence — what the next session builds on",
+  "recap": "ONE sentence a parent could read on their phone and know how it went"
+}`
+}
+
+// Builds the task block for a new player's welcome pack plan.
+export function welcomePlanTask(p: {
+  playerName: string; age: number | null; stage: string | null; standard: string | null
+  goal: string | null; notes: string | null
+  academy: string; coachName: string; context?: string
+}): string {
+  const first = (p.playerName || '').split(' ')[0] || 'the player'
+  const facts = [
+    `Player: ${p.playerName}`,
+    p.age ? `Age: ${p.age}` : '',
+    p.stage ? `Starting racket stage: ${p.stage}` : '',
+    p.standard ? `Standard: ${p.standard}` : '',
+    p.goal ? `Their stated goal: ${p.goal}` : '',
+    p.notes ? `Coach's notes: ${p.notes}` : '',
+    `Academy: ${p.academy}`,
+    `Coach: ${p.coachName}`,
+  ].filter(Boolean).join('\n')
+
+  return `${p.context ? `${p.context}\n\n` : ''}Write the starting plan for ${first}'s welcome pack.
+
+${facts}
+
+This is the FIRST thing this family is handed. A parent decides here whether they made the right choice.
+
+1. WRITE IT FOR THIS PLAYER. A nine-year-old starting on red ball and a fifteen-year-old coming back after two years off do not get the same four weeks. If you have their goal, the plan should visibly serve it.
+2. FOUR WEEKS, EACH ONE EARNING THE NEXT. Week 1 is assessment because you have not seen them play yet — say what you will be looking for. By week 4 there must be something concrete they can do that they could not do in week 1.
+3. PROMISE ONLY WHAT A COACH CAN DELIVER in four sessions. No transformations.
+4. NO JARGON IN THE PARENT NOTE. A parent who has never played tennis reads it.
+5. NEVER INVENT a history, an injury, a result or a family detail you were not given.
+6. BRITISH ENGLISH. Warm and plain — you are pleased they have joined.
+
+Return ONLY valid JSON (no markdown) in EXACTLY this shape:
+{
+  "welcome": "2-3 sentences to ${first} — what these first weeks are for and what you want them to feel by the end",
+  "weeks": [
+    { "week": "Week 1", "focus": "one specific sentence — what happens and what it is for" }
+  ],
+  "first_session": "one sentence on what the first session will actually be like, written to settle nerves",
+  "parent_note": "2-3 sentences to the parent — what to expect, what helps at home, and what you will tell them and when"
+}
+- Exactly 4 weeks.`
+}
+
+// Builds the task block for the coach's morning briefing.
+export function dailyBriefingTask(p: {
+  coachName: string
+  signals: { tag: string; fact: string }[]
+  todayCount: number
+}): string {
+  return `Write ${p.coachName ? p.coachName + "'s" : 'the coach\u2019s'} briefing for today.
+
+Here is everything true about their week right now:
+${p.signals.map(s => `- [${s.tag}] ${s.fact}`).join('\n')}
+Sessions on court today: ${p.todayCount}
+
+You are reading this out to them while they walk to the courts. So:
+1. LEAD WITH WHAT MATTERS MOST, and say why it is first. A player who has stopped turning up outranks a small unpaid balance every time — a child drifting away is the thing you cannot get back.
+2. DO NOT LIST EVERYTHING. Three things at most. A briefing that mentions all five signals has decided nothing, and deciding is the job.
+3. BE CONCRETE ABOUT THE NEXT ACTION. "Ring Mia's mum today" beats "consider following up on attendance".
+4. QUIET WEEKS ARE ALLOWED TO BE QUIET. If nothing needs them, say so in a sentence and let them get on with coaching. Never manufacture urgency to fill space.
+5. NEVER INVENT A NUMBER, A NAME OR AN EVENT that is not in the signals above.
+
+Write 3-5 sentences of plain prose. No bullet points, no headers, no markdown, no greeting, no sign-off. British English. Talk to them, not about them.`
+}
+
+// Builds the task block for a message to players and parents.
+export function parentMessageTask(p: {
+  coachName: string; clubName: string
+  recipients: string[]; channels: string[]; urgent: boolean; intent: string
+}): string {
+  return `Draft a message on behalf of ${p.coachName}, a tennis coach at ${p.clubName}.
+Recipients: ${p.recipients.join(', ') || 'the group'}
+Channel: ${p.channels.join(', ') || 'email'}
+What the coach wants to say: ${p.intent}
+${p.urgent ? 'This is URGENT — prepend [URGENT] and keep the tone immediate and clear about what to do now.' : ''}
+
+Write it as the coach would if he had time to write it properly. Warm, plain and short.
+- Some recipients are parents of children. Never write anything about a child you would not say to their face.
+- Say the thing first. A parent reading on a phone between meetings should get it in the first line.
+- No bullet points, dashes, numbered lists, emoji, bold, headers or markdown — plain prose only.
+- British English.
+- Return ONLY the final message text. No preamble, no sign-off block, no subject line.`
 }
 
 // Builds the task block for a post-session review shared with player + parent.

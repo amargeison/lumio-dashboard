@@ -25,13 +25,23 @@ export async function runCoachAgent(opts: {
   task: string
   maxTokens?: number
   model?: string
+  temperature?: number
+  // Appended AFTER the persona and methodology — the way to add a task-specific
+  // standard (how to design a camp, how to write an announcement) without being
+  // able to drop the base. Prefer this to `system`.
+  extraSystem?: string
+  // Full override. Only for a caller that genuinely is not Lumio Coach; using it
+  // to add a standard is how the voice drifted in the first place.
   system?: string
 }): Promise<CoachAgentResult> {
   const client = new Anthropic({ apiKey: opts.apiKey })
+  const system = opts.system
+    || (opts.extraSystem ? `${COACH_AGENT_SYSTEM}\n\n${opts.extraSystem}` : COACH_AGENT_SYSTEM)
   const res = await client.messages.create({
     model: opts.model || 'claude-sonnet-4-6',
     max_tokens: opts.maxTokens ?? 900,
-    system: opts.system || COACH_AGENT_SYSTEM,
+    ...(opts.temperature != null ? { temperature: opts.temperature } : {}),
+    system,
     messages: [{ role: 'user', content: opts.task }],
   })
   let text = ''

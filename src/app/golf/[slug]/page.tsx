@@ -1944,7 +1944,7 @@ function RoundPrepView({ player, session }: { player: GolfPlayer; session: Sport
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
           max_tokens: 800,
-          system: 'You are Lumio AI, golf performance analyst for James Halton (#87 OWGR, DP World Tour). Be direct, data-driven, and specific. 2-3 sentences per section.',
+          preset: 'performance',
           messages: [{
             role: 'user',
             content: `Generate a post-round debrief. Round data: ${JSON.stringify(form)}. Player's season SG profile: OTT +0.41, ATG -0.28, ARG +0.15, Putting -1.18. Respond ONLY in JSON: { "headline": "one sentence summary", "what_worked": "...", "what_didnt": "...", "practice_focus": "one specific drill or focus for next session", "mindset_note": "one sentence for mental coach" }`,
@@ -2767,7 +2767,7 @@ function _ScheduleOptimiserLiveUnused() {
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
           max_tokens: 1000,
-          system: 'You are Lumio AI, strategic golf career analyst. Be direct and specific — this player takes your recommendations seriously.',
+          preset: 'career',
           messages: [{
             role: 'user',
             content: 'Optimise the tournament schedule for James Halton. His profile: OWGR #87 (target #61 career high, #50 for Major invitations), Race to Dubai #43 (needs top 50, currently +260 pts behind cut), SG profile: OTT +0.41, ATG -0.28, Putting -1.18 (critical weakness). Course fit scores: Halden Motors International 8.1, Halden Motors Championship 9.0, Scottish Open 7.2, The Open 6.8, Omega European Masters 8.8, Dunhill Links 7.0. Current season prize money £367k. He is entered in: Halden Motors International (this week), Scottish Open, The Open, British Masters, Omega Euro Masters. Which 5 remaining events should he absolutely prioritise, and which 2 should he consider skipping if fatigued? Respond ONLY in JSON: { "must_play": [{"event": "...", "reason": "..."}, ...], "consider_skipping": [{"event": "...", "reason": "..."}], "season_strategy": "2 sentence overall advice" }',
@@ -5798,7 +5798,7 @@ function AgentPipelineView({ player, session }: { player: GolfPlayer; session: S
         body: JSON.stringify({
           model: 'claude-sonnet-4-6',
           max_tokens: 1000,
-          system: 'You are Sarah Mitchell, ISM sports agent, writing a sponsorship pitch on behalf of your client. Write in professional but warm agent voice. Be specific with stats.',
+          preset: 'agent-pitch',
           messages: [{ role: 'user', content: userPrompt }],
         }),
       });

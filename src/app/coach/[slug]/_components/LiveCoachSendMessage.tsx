@@ -16,7 +16,6 @@ import { useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { getSettings } from '../_lib/settings-store'
-import { COACH_AGENT_PERSONA } from '@/lib/coach/agent-persona'
 
 const clean = (s: string) => s.replace(/[*_#`>]/g, '').replace(/^\s*[-•]\s*/gm, '').replace(/\n{3,}/g, '\n\n').trim()
 
@@ -104,15 +103,24 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
     setLoading(true); setErr('')
     try {
       const usedChannels = (urgent ? [...CHANNEL_IDS] : channels as ChannelId[]).map(id => CHANNEL_META[id]?.label || id)
-      const res = await fetch('/api/ai/tennis', {
+      // Authenticated Lumio Coach route. This used to post the persona from the
+      // browser to an unauthenticated passthrough — so the voice writing to a
+      // parent was whatever the client claimed it was.
+      const res = await fetch('/api/coach/message-draft', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 400, system: COACH_AGENT_PERSONA, messages: [{ role: 'user',
-          content: `Draft a warm, professional but concise message on behalf of ${coachName}, a tennis coach at ${clubName}. Recipients: ${allRecipients.join(', ')}. Channel: ${usedChannels.join(', ')}. Message intent: ${messageText}. ${urgent ? 'This is URGENT — prepend [URGENT] and keep the tone immediate.' : ''} Return only the final message text, no preamble. Plain prose only — no bullet points, dashes, numbered lists, emoji at line starts, bold, headers or markdown.`
-        }] })
+        body: JSON.stringify({ intent: messageText, recipients: allRecipients, channels: usedChannels, urgent }),
       })
       const data = await res.json()
-      setAiDraft(clean(data?.content?.[0]?.text || messageText))
-    } catch { setAiDraft(urgent ? `[URGENT] ${messageText}` : messageText) }
+      if (!res.ok) throw new Error(data.error || 'Lumio Coach could not draft that')
+      setAiDraft(clean(data.text || ''))
+    } catch (e) {
+      // No silent fallback to the coach's raw text. It used to look identical to
+      // a successful draft, so a failed call sent an untidied note to a parent
+      // while the coach believed Lumio Coach had written it.
+      setErr(e instanceof Error ? e.message : 'Lumio Coach could not draft that')
+      setLoading(false)
+      return
+    }
     setLoading(false)
     setStep('preview')
   }

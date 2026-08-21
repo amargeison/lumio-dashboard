@@ -921,7 +921,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-6', max_tokens: 600,
-          system: 'You are an ECB compliance expert helping a County Championship club. Be direct and specific. The club is Oakridge CC, CPA completion 73%, 3 DBS issues, safeguarding incidents pending. Answer questions about County Partnership Agreement requirements, ECB standards, and deadlines.',
+          preset: 'ecb-compliance',
           messages: [{ role: 'user', content: question }],
         }),
       });
@@ -6458,7 +6458,7 @@ function CricketPortalInner({ session, slug }: { session?: SportsDemoSession; sl
           body: JSON.stringify({
             model: 'claude-sonnet-4-6',
             max_tokens: 600,
-            system: 'You are the media officer for Oakridge CC. Write match reports in a professional but warm style for club communications.',
+            preset: 'match-report',
             messages: [{ role: 'user', content: `Write a 150-word match report for: ${selected.opponent} (${selected.homeAway}), ${selected.competition}, ${selected.date}. Score: ${selected.score} vs ${selected.oppScore}. Result: ${selected.result}. Man of match: ${reportMom}. Notes: ${reportNotes}. Format for club website and social media use.` }],
           }),
         });

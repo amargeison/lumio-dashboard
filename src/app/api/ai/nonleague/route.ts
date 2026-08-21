@@ -7,6 +7,7 @@ import {
   rateLimitedResponse,
   capReachedResponse,
 } from '@/lib/ai/guards'
+import { sanitizeAiBody, AiBodyError } from '@/lib/ai/body-guard'
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +17,8 @@ export async function POST(req: NextRequest) {
     const cap = checkDailyCap()
     if (!cap.ok) return capReachedResponse(cap.spent)
 
-    const body = await req.json()
+    // The browser does not get to choose what the model is — see body-guard.
+    const body = sanitizeAiBody(await req.json())
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 })
@@ -44,7 +46,8 @@ export async function POST(req: NextRequest) {
       recordSpend(data.usage.input_tokens, data.usage.output_tokens, data.model || body.model, 'nonleague')
     }
     return NextResponse.json(data)
-  } catch {
+  } catch (e) {
+    if (e instanceof AiBodyError) return NextResponse.json({ error: e.message }, { status: e.status })
     return NextResponse.json({ error: 'Failed to call AI' }, { status: 500 })
   }
 }

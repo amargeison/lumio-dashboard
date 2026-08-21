@@ -123,7 +123,9 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   }
   const REACTIONS = ['👍', '❤️', '😄', '✅']
 
-  // Live Coach AI briefing — composed from real signals, refreshed every load.
+  // The signals. These are FACTS about the coach's week, not the briefing —
+  // Lumio Coach turns them into the briefing (see the effect below). Anything
+  // added here becomes something he can decide to lead with.
   const lowAtt = d.players.map(p => ({ p, a: attPct(p.id) })).filter(x => x.a !== null && (x.a as number) < 80).sort((a, b) => (a.a as number) - (b.a as number))
   // Always show Payments, Rackets and Retention (with live data + zero-states) so
   // the briefing reads the same on a fresh account as a busy one.
@@ -152,6 +154,48 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   // Per-module section visibility — Settings → Dashboard → Sections.
   const sectOff = getSettings().sectionsOff?.dashboard || []
   const showSec = (k: string) => !sectOff.includes(k)
+
+
+  // ── The briefing, written by Lumio Coach ────────────────────────────────────
+  // Cached per day AND per set of signals: revisiting the dashboard costs
+  // nothing, but if something real changes — a payment lands, a player is ready
+  // to move up — the briefing is rewritten rather than going stale.
+  const [aiBriefing, setAiBriefing] = useState('')
+  const [briefingState, setBriefingState] = useState<'idle' | 'loading' | 'failed'>('idle')
+  const signalKey = briefing.map(b => `${b.tag}:${b.text}`).join('|')
+
+  useEffect(() => {
+    if (!signalKey) return
+    const today = new Date().toISOString().slice(0, 10)
+    let hash = 0
+    for (let i = 0; i < signalKey.length; i++) { hash = (hash * 31 + signalKey.charCodeAt(i)) | 0 }
+    const cacheKey = `lumio.briefing.${today}.${hash}`
+    try {
+      const cached = sessionStorage.getItem(cacheKey)
+      if (cached) { setAiBriefing(cached); return }
+    } catch { /* private mode — just fetch */ }
+
+    let cancelled = false
+    setBriefingState('loading')
+    fetch('/api/coach/briefing', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        signals: briefing.map(b => ({ tag: b.tag, fact: b.text })),
+        todayCount: todays.length,
+      }),
+    })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (cancelled) return
+        if (!ok || !d.briefing) { setBriefingState('failed'); return }
+        setAiBriefing(d.briefing)
+        setBriefingState('idle')
+        try { sessionStorage.setItem(cacheKey, d.briefing) } catch { /* nothing to do */ }
+      })
+      .catch(() => { if (!cancelled) setBriefingState('failed') })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signalKey])
 
   return (
     <div style={{ fontFamily: FONT, display: 'flex', flexDirection: 'column', gap: density.gap }}>
@@ -265,19 +309,38 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           })}
         </div>
 
-        {/* Coach AI briefing — live, derived from real signals */}
+        {/* Lumio Coach's briefing. The badge only says "Lumio Coach" when he
+            actually wrote it — if the call fails the panel shows the underlying
+            numbers, plainly labelled as numbers. */}
         <div style={{ ...card, display: showSec('briefing') ? undefined : 'none' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
             <span style={{ color: accent.hex }}>✦</span>
-            <p style={{ ...sectionTitle, margin: 0 }}>Coach AI briefing</p>
-            <span style={{ marginLeft: 'auto', fontSize: 10, color: T.text3 }}>live</span>
+            <p style={{ ...sectionTitle, margin: 0 }}>{aiBriefing ? 'Lumio Coach’s briefing' : 'Your week at a glance'}</p>
+            <span style={{ marginLeft: 'auto', fontSize: 10, color: T.text3 }}>
+              {briefingState === 'loading' ? 'writing…' : aiBriefing ? 'Lumio Coach' : briefingState === 'failed' ? 'the numbers' : ''}
+            </span>
           </div>
-          {briefing.map((b, i) => (
-            <div key={i} style={{ display: 'flex', gap: 10, padding: '7px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
-              <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.05em', width: 64, flexShrink: 0, paddingTop: 2 }}>{b.tag}</span>
-              <span style={{ fontSize: 12, color: T.text2, lineHeight: 1.45 }}>{b.text}</span>
-            </div>
-          ))}
+
+          {aiBriefing ? (
+            <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap' }}>{aiBriefing}</p>
+          ) : (
+            <>
+              {briefingState === 'loading' && (
+                <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 8 }}>Lumio Coach is reading your week…</div>
+              )}
+              {briefing.map((b, i) => (
+                <div key={i} style={{ display: 'flex', gap: 10, padding: '7px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.05em', width: 64, flexShrink: 0, paddingTop: 2 }}>{b.tag}</span>
+                  <span style={{ fontSize: 12, color: T.text2, lineHeight: 1.45 }}>{b.text}</span>
+                </div>
+              ))}
+              {briefingState === 'failed' && (
+                <div style={{ fontSize: 11, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>
+                  These are your numbers — Lumio Coach couldn’t write the briefing just now, so nothing here has been prioritised for you.
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* Needs attention — boxed rows (matches demo) + racket assessments due */}

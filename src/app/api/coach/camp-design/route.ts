@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 
 import { sessionCoachId } from '@/lib/coach/oauth'
-import { COACH_AGENT_PERSONA, COACH_METHODOLOGY } from '@/lib/coach/agent-persona'
+import { COACH_METHODOLOGY } from '@/lib/coach/agent-persona'
+import { runCoachAgent } from '@/lib/coach/agent'
 
 export const maxDuration = 120
 
@@ -75,15 +75,13 @@ export async function POST(req: NextRequest) {
   const residential = /resid|full|half|board|b&b|hotel/i.test(b.board || '') && !/day/i.test(b.board || '')
 
   try {
-    const client = new Anthropic({ apiKey })
-    const res = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 8000,
+    // Shared agent: persona + methodology come from one place.
+    const { text: txt } = await runCoachAgent({
+      apiKey,
+      extraSystem: `${COACH_METHODOLOGY}\n\n${CAMP_STANDARD}\n\n${SHAPE}`,
+      maxTokens: 8000,
       temperature: 0.4,
-      system: `${COACH_AGENT_PERSONA}\n\n${COACH_METHODOLOGY}\n\n${CAMP_STANDARD}\n\n${SHAPE}`,
-      messages: [{
-        role: 'user',
-        content: [
+      task: [
           `Design this camp.`,
           `Camp name: ${b.name || 'Training camp'}`,
           `Length: ${days} day${days === 1 ? '' : 's'}${b.startDate ? ` starting ${b.startDate}` : ''}`,
@@ -96,11 +94,8 @@ export async function POST(req: NextRequest) {
           ``,
           `Return the JSON with exactly ${days} itinerary day${days === 1 ? '' : 's'}.`,
         ].filter(Boolean).join('\n'),
-      }],
     })
 
-    let txt = ''
-    for (const c of res.content) if (c.type === 'text') txt += c.text
     const m = txt.replace(/```json\s*/gi, '').replace(/```/g, '').trim().match(/\{[\s\S]*\}/)
     if (!m) return NextResponse.json({ error: 'The AI could not design this camp.' }, { status: 502 })
     const plan = JSON.parse(m[0])

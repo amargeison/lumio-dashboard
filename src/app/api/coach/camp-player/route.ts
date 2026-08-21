@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
-import { COACH_AGENT_PERSONA, COACH_METHODOLOGY, COACH_DIAGNOSTIC_STANDARD } from '@/lib/coach/agent-persona'
+import { COACH_METHODOLOGY, COACH_DIAGNOSTIC_STANDARD } from '@/lib/coach/agent-persona'
+import { runCoachAgent } from '@/lib/coach/agent'
 
 export const maxDuration = 120
 
@@ -85,22 +85,17 @@ export async function POST(req: NextRequest) {
       (camp.itinerary || []).length ? `Itinerary themes: ${(camp.itinerary || []).map((d: any) => `D${d.day} ${d.theme || d.focus || ''}`).join(' · ')}` : '',
     ].filter(Boolean).join('\n')
 
-    const client = new Anthropic({ apiKey })
-    const res = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: mode === 'report' ? 1600 : 4000,
+    // Shared agent: persona + methodology come from one place.
+    const { text: txt } = await runCoachAgent({
+      apiKey,
+      extraSystem: `${COACH_METHODOLOGY}\n\n${COACH_DIAGNOSTIC_STANDARD}\n\n${mode === 'report' ? REPORT_SHAPE : TARGETS_SHAPE}`,
+      maxTokens: mode === 'report' ? 1600 : 4000,
       temperature: 0.4,
-      system: `${COACH_AGENT_PERSONA}\n\n${COACH_METHODOLOGY}\n\n${COACH_DIAGNOSTIC_STANDARD}\n\n${mode === 'report' ? REPORT_SHAPE : TARGETS_SHAPE}`,
-      messages: [{
-        role: 'user',
-        content: mode === 'report'
-          ? `Write the end-of-camp report for ${b.playerName}.\n\n${campCtx}\n\n${ctx}`
-          : `Set individual camp targets for each player below.\n\n${campCtx}\n\n${ctx}\n\nReturn one entry per player, ${roster.length} in total.`,
-      }],
+      task: mode === 'report'
+        ? `Write the end-of-camp report for ${b.playerName}.\n\n${campCtx}\n\n${ctx}`
+        : `Set individual camp targets for each player below.\n\n${campCtx}\n\n${ctx}\n\nReturn one entry per player, ${roster.length} in total.`,
     })
 
-    let txt = ''
-    for (const c of res.content) if (c.type === 'text') txt += c.text
     const m = txt.replace(/```json\s*/gi, '').replace(/```/g, '').trim().match(/\{[\s\S]*\}/)
     if (!m) return NextResponse.json({ error: 'The AI could not produce that.' }, { status: 502 })
     const out = JSON.parse(m[0])

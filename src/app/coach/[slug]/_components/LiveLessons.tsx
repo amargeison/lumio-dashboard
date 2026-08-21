@@ -380,8 +380,43 @@ function buildBrief(s: Session) {
 }
 
 function CoachAiBrief({ T, accent, s }: { T: ThemeTokens; accent: AccentTokens; s: Session }) {
-  const brief = buildBrief(s)
+  // The template brief is the starting frame; Lumio Coach replaces it as soon as
+  // he answers. Same route the Session Planner uses, so a plan created here and
+  // a plan created there are the same artefact — timed run-sheet, kit and all.
+  const fallback = buildBrief(s)
+  const [brief, setBrief] = useState(fallback)
+  const [kit, setKit] = useState<string[]>([])
+  const [byBoris, setByBoris] = useState(false)
+  const [briefErr, setBriefErr] = useState('')
   const totalMins = brief.plan.reduce((sum, p) => sum + p.mins, 0)
+
+  useEffect(() => {
+    let cancelled = false
+    const nextFocus = s.review_json?.nextFocus || s.focus || ''
+    if (!nextFocus.trim()) return
+    fetch('/api/coach/session-draft', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'Private', focus: nextFocus, duration: 60,
+        player: s.player_name, note: 'This plan follows straight on from the lesson just reviewed.',
+      }),
+    })
+      .then(r => r.json().then(d => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (cancelled || !ok || !d.run_sheet?.length) { if (!cancelled && !ok) setBriefErr('Lumio Coach could not build the next session — showing a general plan.'); return }
+        setBrief({
+          workOn: d.focus_points?.length ? d.focus_points : fallback.workOn,
+          plan: d.run_sheet.map((ph: { phase: string; mins: number; detail: string }) => ({ phase: ph.phase, mins: ph.mins, detail: ph.detail })),
+          planDrills: d.drills?.length ? d.drills : fallback.planDrills,
+          parentTip: d.coach_note || fallback.parentTip,
+        })
+        setKit(d.kit || [])
+        setByBoris(true)
+      })
+      .catch(() => { if (!cancelled) setBriefErr('Lumio Coach could not build the next session — showing a general plan.') })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.id])
   const bookings = useCoachTable<any>('coach_bookings')
   const plans = useCoachTable<any>('coach_session_plans')
   const [added, setAdded] = useState<'idle' | 'saving' | 'done' | 'unbooked'>('idle')
@@ -421,7 +456,13 @@ function CoachAiBrief({ T, accent, s }: { T: ThemeTokens; accent: AccentTokens; 
         focus: planFocus,
         duration_min: totalMins,
         drills: brief.planDrills.join('\n'),
+        focus_points: brief.workOn.join('\n'),
         notes: brief.plan.map(p => `${p.mins}m · ${p.phase}: ${p.detail}`).join('\n'),
+        run_sheet: byBoris ? brief.plan : null,
+        kit: kit.length ? kit : null,
+        built_by: byBoris ? 'lumio-coach' : 'coach',
+        designed_at: new Date().toISOString(),
+        source: 'lesson-review',
       })
       plans.reload()
       setAdded(bk ? 'done' : 'unbooked')
@@ -431,9 +472,10 @@ function CoachAiBrief({ T, accent, s }: { T: ThemeTokens; accent: AccentTokens; 
     <div style={{ marginTop: 16, border: `1px solid ${accent.border}`, borderRadius: 12, padding: 16, background: `linear-gradient(180deg, ${accent.dim}, transparent 60%)` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
         <span style={{ color: accent.hex }}>✦</span>
-        <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Coach AI brief</span>
-        <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>from this session</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{byBoris ? 'Lumio Coach’s next session' : 'Suggested next session'}</span>
+        <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>{byBoris ? 'built from this lesson' : briefErr ? 'general plan' : 'building…'}</span>
       </div>
+      {briefErr && <div style={{ fontSize: 11, color: T.text3, marginBottom: 8 }}>{briefErr}</div>}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>What to work on next</div>
@@ -571,6 +613,13 @@ function SummaryFormModal({ T, accent, players, session, onClose, onSave }: {
   const [coachNote, setCoachNote] = useState(r0.coachNote || (session?.summary && !r0.coachNote ? session.summary : '') || '')
   const [rating, setRating] = useState(session?.rating ?? r0.rating ?? 4)
   const [drafted, setDrafted] = useState(false)
+  const [drafting, setDrafting] = useState(false)
+  const [draftErr, setDraftErr] = useState('')
+  // Written by Lumio Coach and carried through save. The form doesn't show them:
+  // `assessment` is the diagnostic layer, and `recap` is the one-liner the Summary
+  // modal displays — a field that existed with nothing ever writing to it.
+  const [aiAssessment, setAiAssessment] = useState('')
+  const [aiRecap, setAiRecap] = useState('')
   const [saving, setSaving] = useState(false)
 
   const who = (playerSel === '__new__' ? newPlayer : playerSel).trim()
@@ -584,10 +633,28 @@ function SummaryFormModal({ T, accent, players, session, onClose, onSave }: {
     <div style={{ marginBottom: 12 }}><label style={lbl}>{label}</label>{children}{hint && <div style={{ fontSize: 10, color: T.text3, marginTop: 3 }}>{hint}</div>}</div>
   )
 
-  const runDraft = () => {
-    const d = draftSections(focus, note)
-    setCovered(d.covered.join('\n')); setTakeaways(d.takeaways.join('\n')); setDrills(d.drills.join('\n'))
-    setHomework(d.homework); setNextFocus(d.nextFocus); setDrafted(true)
+  const runDraft = async () => {
+    if (drafting) return
+    setDrafting(true); setDraftErr('')
+    try {
+      const res = await fetch('/api/coach/lesson-summary', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player: who, focus, note, rating, date }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || 'Lumio Coach could not write that summary')
+      setCovered((d.covered || []).join('\n'))
+      setTakeaways((d.takeaways || []).join('\n'))
+      setDrills((d.drills || []).join('\n'))
+      setHomework(d.homework || ''); setNextFocus(d.nextFocus || '')
+      setAiAssessment(d.assessment || ''); setAiRecap(d.recap || '')
+      setDrafted(true)
+    } catch (e) {
+      // No silent fall-back to a template. If the button says Lumio Coach wrote
+      // it, he did — and this summary gets shared with a parent.
+      setDraftErr(e instanceof Error ? e.message : 'Lumio Coach could not write that summary')
+    }
+    setDrafting(false)
   }
 
   const save = async () => {
@@ -597,9 +664,9 @@ function SummaryFormModal({ T, accent, players, session, onClose, onSave }: {
     const review: Review = {
       // The form doesn't expose the AI diagnostic layer, so rebuilding the review
       // from the fields alone would silently drop it on any edit. Carry it over.
-      ...(r0.assessment ? { assessment: r0.assessment } : {}),
+      ...((aiAssessment || r0.assessment) ? { assessment: aiAssessment || r0.assessment } : {}),
       ...(r0.technique?.length ? { technique: r0.technique } : {}),
-      ...(r0.recap ? { recap: r0.recap } : {}),
+      ...((aiRecap || r0.recap) ? { recap: aiRecap || r0.recap } : {}),
       focus: focus.trim(), covered: splitLines(covered), takeaways: splitLines(takeaways), drills: splitLines(drills),
       skillsWorked: [...skills], homework: homework.trim(), nextFocus: nextFocus.trim(), coachNote: coachNote.trim(),
       rating, time, court: court.trim(), type, duration: Number(dur) || 60,
@@ -655,7 +722,10 @@ function SummaryFormModal({ T, accent, players, session, onClose, onSave }: {
               <span style={{ fontSize: 10.5, color: T.text3 }}>jot a quick note, draft the sections</span>
             </div>
             <textarea rows={2} value={note} onChange={e => setNote(e.target.value)} placeholder="e.g. Worked the kick serve, better net margin, toss drifts forward when rushed" style={{ ...field, resize: 'none', lineHeight: 1.5 }} />
-            <button onClick={runDraft} disabled={!focus.trim()} style={{ marginTop: 8, appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: focus.trim() ? accent.hex : T.hover, color: focus.trim() ? T.btnText : T.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: focus.trim() ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: 7 }}>✦ {drafted ? 'Re-draft sections' : 'Draft sections with AI'}</button>
+            <>
+              <button onClick={runDraft} disabled={!focus.trim() || drafting} style={{ marginTop: 8, appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: focus.trim() ? accent.hex : T.hover, color: focus.trim() ? T.btnText : T.text3, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: focus.trim() && !drafting ? 'pointer' : 'not-allowed', display: 'inline-flex', alignItems: 'center', gap: 7 }}>✦ {drafting ? 'Lumio Coach is writing…' : drafted ? 'Re-write with Lumio Coach' : 'Write it with Lumio Coach'}</button>
+              {draftErr && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 6 }}>{draftErr}</div>}
+            </>
             {drafted && <span style={{ fontSize: 10.5, color: accent.hex, marginLeft: 10 }}>✓ drafted below — edit anything</span>}
           </div>
 

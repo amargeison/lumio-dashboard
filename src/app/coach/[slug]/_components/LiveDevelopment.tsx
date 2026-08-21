@@ -7,18 +7,24 @@
 // journey, GPS-watch effort stats and their recent lessons. Stats are limited to
 // what we can actually measure today — no fabricated 1st-serve %/win-rate.
 
-import { useState, useMemo, type ReactNode, type CSSProperties } from 'react'
+import { useState, useEffect, useMemo, type ReactNode, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
-  useCoachTable, setSkillScore, RACKET_STAGES, RACKET_SKILLS,
+  useCoachTable, useCoachProfile, setSkillScore, RACKET_STAGES, RACKET_SKILLS,
   SKILL_LEVELS, skillLevelColour,
 } from '../_lib/coach-db'
-import { printRacketCertificate } from './LiveRacketProgression'
+import { printRacketCertificate, certOrg } from './LiveRacketProgression'
 import { getSettings } from '../_lib/settings-store'
 import { avatarSrc } from '@/lib/avatar'
 
-type Player = { id: string; name: string; age?: number | null; level?: string | null; category?: string | null; parent_name?: string | null; goal?: string | null; racket_stage?: string | null; avatar_url?: string | null }
+type Target = { target: string; why?: string; measure?: string; by?: string }
+type Player = {
+  id: string; name: string; age?: number | null; level?: string | null; category?: string | null
+  parent_name?: string | null; goal?: string | null; racket_stage?: string | null; avatar_url?: string | null
+  // Set by Lumio Coach, persisted so they are still there next week.
+  targets?: Target[] | null; targets_note?: string | null; targets_by?: string | null; targets_set_at?: string | null
+}
 const THEME: Record<string, string> = { white: 'Foundations', yellow: 'Rallying', orange: 'Net & Touch', green: 'The Serve', blue: 'Spin & Shape', purple: 'Specialty Shots', brown: 'Weapons', red: 'Tactics', black: 'Mastery' }
 const TOTAL_SKILLS = RACKET_STAGES.reduce((n, s) => n + (RACKET_SKILLS[s.id]?.length || 0), 0)
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
@@ -110,6 +116,9 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
   gps: { distance_m: number | null; top_speed_kmh: number | null; avg_hr: number | null }[]
   onGrade: (skill: string, score: number) => void
 }) {
+  // Same coach identity as the Racket Progression tab — an identical
+  // certificate must not be signed differently depending on which tab printed it.
+  const profile = useCoachProfile()
   const rawIdx = RACKET_STAGES.findIndex(s => s.id === p.racket_stage)
   const hasStage = rawIdx >= 0
   const cur = hasStage ? rawIdx : 0
@@ -153,10 +162,12 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
             <div style={{ fontSize: 19, fontWeight: 600, color: T.text }}>{p.name}</div>
             <div style={{ fontSize: 12, color: T.text3 }}>{p.category || p.level || 'Player'}{p.age ? ` · Age ${p.age}` : ''}{p.parent_name ? ` · Parent: ${p.parent_name}` : ''}</div>
           </div>
-          <button onClick={() => hasStage && printRacketCertificate(p.name, curStage, curSkills.map(s => s.name))}
+          <button onClick={() => hasStage && printRacketCertificate(p.name, curStage, curSkills.map(s => s.name), certOrg(profile))}
             disabled={!hasStage}
             style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: hasStage ? 'pointer' : 'not-allowed', opacity: hasStage ? 1 : 0.5, fontFamily: FONT }}>🏆 Racket certificate</button>
         </div>
+        <PlayerTargets T={T} accent={accent} p={p} />
+
         {/* Goal */}
         <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '9px 12px', display: showSec('goal') ? 'flex' : 'none', alignItems: 'center', gap: 8, marginTop: 14 }}>
           <span style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>⚑ Goal</span>
@@ -236,6 +247,76 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── Development targets ──────────────────────────────────────────────────────
+// The goal says where a player wants to get to. This says what the next block of
+// sessions is actually for — the piece that was missing, so a skills matrix and
+// a pile of lesson summaries never added up to a plan.
+function PlayerTargets({ T, accent, p }: { T: ThemeTokens; accent: AccentTokens; p: Player }) {
+  const [targets, setTargets] = useState<Target[]>(Array.isArray(p.targets) ? p.targets : [])
+  const [note, setNote] = useState(p.targets_note || '')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+
+  // Switching player must not leave the previous player's targets on screen.
+  useEffect(() => {
+    setTargets(Array.isArray(p.targets) ? p.targets : [])
+    setNote(p.targets_note || ''); setErr('')
+  }, [p.id, p.targets, p.targets_note])
+
+  const set = async () => {
+    if (busy) return
+    setBusy(true); setErr('')
+    try {
+      const r = await fetch('/api/coach/player-targets', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playerId: p.id }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || 'Lumio Coach could not set targets')
+      setTargets(d.targets || []); setNote(d.note || '')
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Lumio Coach could not set targets') }
+    setBusy(false)
+  }
+
+  const when = p.targets_set_at ? new Date(p.targets_set_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''
+
+  return (
+    <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: 14, marginTop: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>◎ Development targets</span>
+        {targets.length > 0 && when && <span style={{ fontSize: 10.5, color: T.text3 }}>set {when}{p.targets_by === 'lumio-coach' ? ' by Lumio Coach' : ''}</span>}
+        <button onClick={set} disabled={busy} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: targets.length ? 'transparent' : accent.hex, color: targets.length ? accent.hex : T.btnText, borderRadius: 8, padding: targets.length ? '4px 8px' : '7px 13px', fontSize: 11.5, fontWeight: 700, cursor: busy ? 'wait' : 'pointer', fontFamily: FONT }}>
+          {busy ? 'Lumio Coach is thinking…' : targets.length ? '↻ Re-set' : '✦ Set targets'}
+        </button>
+      </div>
+
+      {err && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 8 }}>{err}</div>}
+
+      {targets.length === 0 && !busy && !err && (
+        <div style={{ fontSize: 12, color: T.text3, marginTop: 8, lineHeight: 1.55 }}>
+          Nothing set yet. Lumio Coach reads {(p.name || 'this player').split(' ')[0]}&rsquo;s skills, their record and their own goal, and picks the three things worth working on next.
+        </div>
+      )}
+
+      {targets.map((t, i) => (
+        <div key={i} style={{ display: 'flex', gap: 10, padding: '9px 0', borderTop: i ? `1px solid ${T.border}` : `1px solid ${T.border}`, marginTop: i ? 0 : 10 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: accent.hex, width: 16, flexShrink: 0, paddingTop: 1 }}>{i + 1}</span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{t.target}</div>
+            {t.why && <div style={{ fontSize: 11.5, color: T.text2, lineHeight: 1.5, marginTop: 2 }}>{t.why}</div>}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
+              {t.measure && <span style={{ fontSize: 10.5, color: T.text3 }}>✓ {t.measure}</span>}
+              {t.by && <span style={{ fontSize: 10.5, color: T.text3 }}>· {t.by}</span>}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {note && <div style={{ fontSize: 11.5, color: T.text2, marginTop: 10, lineHeight: 1.55, fontStyle: 'italic' }}>&ldquo;{note}&rdquo;</div>}
     </div>
   )
 }

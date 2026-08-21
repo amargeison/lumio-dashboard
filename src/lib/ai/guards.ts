@@ -10,6 +10,8 @@
 // when we have more than one node handling traffic.
 // ───────────────────────────────────────────────────────────────────────────
 
+import { clientIp } from '@/lib/rate-limit'
+
 export const DAILY_CAP_USD = 5.0
 export const IP_LIMIT = 10
 export const WINDOW_MS = 10 * 60 * 1000 // 10 minutes
@@ -29,13 +31,12 @@ const g = globalThis as unknown as {
 const rateStore: RLStore = g.__lumioAIRateLimit ?? new Map()
 g.__lumioAIRateLimit = rateStore
 
+// Delegates to the shared helper. This used to take the FIRST entry of
+// X-Forwarded-For, which under nginx's appending idiom is whatever the caller
+// sent — so anyone could mint a fresh rate-limit bucket per request just by
+// varying a header, and the per-IP window did nothing at all.
 export function getClientIp(req: Request): string {
-  const xff = req.headers.get('x-forwarded-for')
-  if (xff) {
-    const first = xff.split(',')[0]?.trim()
-    if (first) return first
-  }
-  return req.headers.get('x-real-ip') || 'unknown'
+  return clientIp(req.headers)
 }
 
 export function checkRateLimit(ip: string): { ok: true } | { ok: false; retryInSec: number } {
