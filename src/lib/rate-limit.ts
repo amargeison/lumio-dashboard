@@ -45,19 +45,42 @@ export function rateLimit(key: string, limit: number, windowMs: number): RateVer
   return { ok: true, retryAfterSeconds: 0 }
 }
 
-// Behind nginx the socket address is always the proxy, so the client IP is only
-// in the forwarded header. Take the FIRST entry: later ones are appended by
-// intermediaries and a caller can send their own header, which would let them
-// mint a fresh bucket per request if we read from the end.
+// Behind a proxy the socket address is always the proxy, so the client IP is
+// only in a forwarded header. Take the LAST entry, which is correct under both
+// nginx idioms:
 //
-// If there is no header at all we return a single shared key rather than
-// skipping the limit — an unattributable caller should share one bucket with
-// every other unattributable caller, not get a free pass.
+//   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;  # APPENDS
+//     -> "<whatever the client sent>, <real client IP>"
+//        the head is attacker-controlled; the tail was written by nginx.
+//
+//   proxy_set_header X-Forwarded-For $remote_addr;                # REPLACES
+//     -> "<real client IP>"  — one entry, so last and first are the same.
+//
+// An earlier version of this function took the FIRST entry and justified it as
+// anti-spoofing. That is exactly inverted: under the appending idiom the first
+// entry is whatever the caller chose to send, so a new value on each request
+// would mint a fresh bucket every time and this limiter would do nothing.
+//
+// TRUSTED_PROXY_HOPS is how many proxies write to this header. One nginx is 1.
+// Put a CDN in front and it becomes 2, without a code change: we count back
+// that many entries from the end to find the last address we actually trust.
 export function clientIp(headers: Headers): string {
+  const hops = Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1)
   const fwd = headers.get('x-forwarded-for')
   if (fwd) {
-    const first = fwd.split(',')[0]?.trim()
-    if (first) return first
+    const parts = fwd.split(',').map(p => p.trim()).filter(Boolean)
+    // Never index past the start: a header shorter than the expected hop count
+    // means fewer proxies than configured, and the first entry is then the
+    // closest thing to the origin we have.
+    const pick = parts[Math.max(0, parts.length - hops)]
+    if (pick) return pick
   }
-  return headers.get('x-real-ip')?.trim() || 'unknown'
+  // X-Real-IP is set by nginx as a single value and cannot be appended to, so
+  // it is a good fallback — but only a fallback, because if nginx is NOT
+  // setting it then whatever the client sent passes straight through.
+  const real = headers.get('x-real-ip')?.trim()
+  if (real) return real
+  // No attribution at all. Share one bucket with every other unattributable
+  // caller rather than handing out a free pass.
+  return 'unknown'
 }
