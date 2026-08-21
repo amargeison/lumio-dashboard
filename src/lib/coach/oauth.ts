@@ -5,6 +5,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { publicSiteOrigin } from '@/lib/public-origin'
 
 export type Provider = 'google' | 'microsoft' | 'icloud'
 
@@ -92,16 +93,24 @@ export function providerConfigured(provider: Provider): boolean {
 // path too: a Google account that connected perfectly still looked broken because
 // the final bounce went to a dead URL.
 //
-// OAUTH_REDIRECT_BASE already has to hold the real public origin (the provider
-// validates redirect_uri against it), so it is the reliable source here as well.
-// NOTE for local dev: with OAUTH_REDIRECT_BASE pointing at production, an OAuth
+// OAuth redirects use the same public origin as every other outbound link, so
+// this is now one helper rather than two near-identical ones.
+//
+// It used to read OAUTH_REDIRECT_BASE and nothing else. That made the .env
+// documentation a trap: follow its advice — set PUBLIC_SITE_URL, drop
+// OAUTH_REDIRECT_BASE — and Stripe links keep working while OAuth silently falls
+// back to the request origin, reinstating the 0.0.0.0:3000 bug on the very path
+// it was first found on. Delegating means both read the same two variables in
+// the same order, and the shared helper also logs loudly before it ever emits an
+// internal origin in production.
+//
+// NOTE for local dev: with the public base pointing at production, an OAuth
 // round-trip started locally comes back to production — different origin, so the
 // CSRF-state cookie and the coach's session are both missing and the callback
-// correctly answers `status=signin`. To run the flow locally, unset
-// OAUTH_REDIRECT_BASE and register the loopback callback with the provider.
-export function publicOrigin(fallback: string): string {
-  return (process.env.OAUTH_REDIRECT_BASE || fallback).replace(/\/$/, '')
-}
+// correctly answers `status=signin`. To run the flow locally, unset both
+// PUBLIC_SITE_URL and OAUTH_REDIRECT_BASE and register the loopback callback
+// with the provider.
+export const publicOrigin = publicSiteOrigin
 
 export function redirectUri(origin: string, provider: Provider): string {
   return `${publicOrigin(origin)}/api/coach/oauth/${provider}/callback`
