@@ -91,12 +91,18 @@ const SPORT_FEATURES_EMAIL: Record<string, string[]> = {
     '📋 <strong>Dual Registration Manager</strong> &mdash; expiry alerts, window tracking, parent club comms.',
     '⚡ <strong>Demerger Readiness Tracker</strong> &mdash; for clubs going standalone. Legal checklist, financial modelling.',
   ],
+  // Kept deliberately in step with the six feature cards on the Tennis Coach
+  // sales page. An earlier version of this list promised an "AI Coaching
+  // Briefing" and "Lumio GPS & Vision" — neither of which ships — which is a
+  // bad thing to put in front of a founding member on day one.
   coach: [
-    '🎾 <strong>AI Coaching Briefing</strong> &mdash; your day in 60 seconds. Today&rsquo;s lessons, who&rsquo;s progressing, camp prep, payments due and court availability.',
-    '🏆 <strong>Racket Progression reward system</strong> &mdash; a colour-graded reward pathway per player: a coloured racket keyring, matching dampener and certificate at each stage, building to a full trophy at Black.',
-    '📈 <strong>Player Development Tracker</strong> &mdash; lesson summaries, four-corner reviews and AI session notes that build each player&rsquo;s story over time.',
-    '📡 <strong>Lumio GPS &amp; Vision</strong> &mdash; on-court GPS tracking and video analysis: distance, speed, heart rate and movement heatmaps for every session.',
-    '💷 <strong>Payments, Packages &amp; Camps</strong> &mdash; invoices, renewals, package carryover, day camps and tours. One platform. Two revenue streams.',
+    '\u{1F9E0} <strong>Lumio Coach AI</strong> &mdash; one coaching brain behind everything: a world-class coach with 30 years developing elite juniors and tour-winning adults. Every plan, review, summary and message runs through the same coach, and it reads each player&rsquo;s history before it answers &mdash; so the guidance builds session to session instead of starting from scratch.',
+    '\u{1F4CB} <strong>Session Planner</strong> &mdash; plan every session in minutes across Overview, Today, This week and This month, on one dated schedule synced from your booking calendar. A confirmed booking becomes a ready-to-build session in two clicks, with a timed run-sheet and kit list generated for you.',
+    '\u{1F916} <strong>AI Session Review</strong> &mdash; turn a finished lesson into a structured review: what went well, what to work on next, and the drills to get there. It saves straight to the player&rsquo;s plan, so the next session writes itself.',
+    '\u{1F399}\uFE0F <strong>AI Lesson Transcriber</strong> &mdash; just talk. Record the lesson on your phone or upload a clip, and the AI writes the full summary: what you covered, the key takeaways, the drills used and the homework. No typing after a long day on court &mdash; every player gets a proper write-up in seconds.',
+    '\u{1F4B7} <strong>Payments &amp; Packages</strong> &mdash; sell lesson packs and take card payments that land in your own Stripe account, not ours. Every pack tracks sessions used against the total, flags what is expiring or overdue, and shows you earned against outstanding at a glance &mdash; so chasing money stops being a Sunday evening job.',
+    '\u{1F3D5}\uFE0F <strong>Camps &amp; Sign-up Pages</strong> &mdash; Lumio Coach designs the camp day by day, then gives you a public page to share. Parents sign their own child up &mdash; name, age, medical notes and consents land straight on your attendee list &mdash; and pay a deposit or the full amount up front. Announcement copy for email, WhatsApp and social is written for you.',
+    '\u{1F3BE} <strong>Racket Progression reward system</strong> &mdash; the reward system at the heart of Lumio Coach: a nine-stage pathway from White to Black, tracked against its criteria with progress bars and award thresholds. At every level players earn a coloured racket keyring, a matching dampener and a certificate, building to a full trophy at Black &mdash; and parents fund the journey.',
   ],
   junior: [
     '⚽ <strong>Safeguarding &amp; Consent Hub</strong> &mdash; welfare officer dashboard, DBS register, photography and filming consent per child, court-order restrictions handled with column-level care. Auditable end to end.',

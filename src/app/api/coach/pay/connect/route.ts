@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, getCoach, admin } from '../_stripe'
+import { publicSiteOrigin } from '@/lib/public-origin'
 
 export const runtime = 'nodejs'
 
@@ -10,7 +11,10 @@ export async function POST(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: 'Payments not configured yet' }, { status: 500 })
 
   const { returnPath = '/' } = (await req.json().catch(() => ({}))) as { returnPath?: string }
-  const origin = new URL(req.url).origin
+  // Stripe sends the coach BACK here after they enter their bank details, so an
+  // internal origin does not merely look wrong — it strands them on a dead URL at
+  // the end of onboarding, with a Stripe account that exists but no way back.
+  const origin = publicSiteOrigin(new URL(req.url).origin)
   const db = admin()
 
   try {
