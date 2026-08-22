@@ -505,7 +505,7 @@ export default function TennisCoachPage() {
             <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🧠 Lumio Coach AI</span>
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
+            <Link href="/sports-signup?sport=tenniscoach" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
               Apply for free founding access →
             </Link>
             <Link href="/tennis/coach/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
@@ -614,7 +614,7 @@ export default function TennisCoachPage() {
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                <Link href="/sports-signup?sport=tennis" style={{ background: PURPLE, color: '#fff', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>Apply for founding access →</Link>
+                <Link href="/sports-signup?sport=tenniscoach" style={{ background: PURPLE, color: '#fff', padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>Apply for founding access →</Link>
                 <a href="#pricing" style={{ display: 'inline-flex', alignItems: 'center', background: 'transparent', color: PURPLE_LIGHT, padding: '14px 32px', borderRadius: 999, fontWeight: 700, fontSize: 15, border: `1px solid ${PURPLE}`, textDecoration: 'none' }}>See the numbers →</a>
               </div>
             </div>
@@ -750,7 +750,7 @@ export default function TennisCoachPage() {
               The platform runs your tennis business and the kit gets you started. Then it pays you back twice over: <strong style={{ color: TEXT }}>award racket keyrings &amp; dampeners</strong> (and a trophy at Black) as players progress and parents fund the journey, and <strong style={{ color: TEXT }}>resell the Student app</strong> to your families as recurring margin. You set the prices; you keep the upside.
             </p>
             <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 30px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
+              <Link href="/sports-signup?sport=tenniscoach" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 30px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, textDecoration: 'none', boxShadow: `0 16px 40px ${PURPLE}55` }}>
                 Apply for founding access →
               </Link>
               <Link href="/tennis/coach/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 30px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 15, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
@@ -771,7 +771,7 @@ export default function TennisCoachPage() {
             Explore the live demo — no signup, no account needed. Plan a session, run an AI review, and see the Racket Progression reward system for yourself.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
-            <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
+            <Link href="/sports-signup?sport=tenniscoach" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
               Apply for free founding access →
             </Link>
             <Link href="/tennis/coach/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
