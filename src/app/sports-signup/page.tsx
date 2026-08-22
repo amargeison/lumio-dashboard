@@ -27,14 +27,12 @@ const SPORTS: { id: SportId; label: string; logo: string; color: string }[] = [
 const LIVE_SPORTS = new Set<SportId>(['womens', 'tenniscoach'])
 
 export default function SportsSignupPage() {
-  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
-  const preselectedSport = searchParams?.get('sport') || ''
 
   const [step, setStep] = useState<'form' | 'otp'>('form')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [club, setClub] = useState('')
-  const [sport, setSport] = useState<SportId | ''>((preselectedSport as SportId) || 'tenniscoach')
+  const [sport, setSport] = useState<SportId | ''>('tenniscoach')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [digits, setDigits] = useState(['', '', '', '', '', ''])
@@ -43,6 +41,23 @@ export default function SportsSignupPage() {
 
   const accent = sport ? SPORTS.find(s => s.id === sport)?.color || '#8B5CF6' : '#8B5CF6'
   const clubSlug = club.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'my-club'
+
+  // The ?sport= preselect is read AFTER mount, not during render.
+  //
+  // It used to be read inline with `typeof window !== 'undefined'`, which meant
+  // the server rendered one sport and the client hydrated with another — the UI
+  // showed the card from the server's guess while the value actually submitted
+  // came from the URL. A Tennis Coach sign-up could therefore look correct on
+  // screen and still be saved as a tennis PLAYER, which picked the player
+  // welcome email and dropped the coach into the player portal.
+  //
+  // It is also validated now: only a sport that is actually live can be
+  // preselected. A stale link, a typo or a wrong CTA falls back to the default
+  // instead of silently signing someone up to the wrong product.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('sport') || ''
+    if (q && LIVE_SPORTS.has(q as SportId)) setSport(q as SportId)
+  }, [])
 
   useEffect(() => {
     if (resendCountdown <= 0) return
