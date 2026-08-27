@@ -407,7 +407,7 @@ export function PayModal({ T, accent, connected, init, onClose }: { T: ThemeToke
   if (connected === false) {
     return (
       <Shell T={T} title="Take a payment" onClose={onClose} footer={<button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, border: 0, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Got it</button>}>
-        <div style={{ fontSize: 13, color: T.text2, lineHeight: 1.6 }}>Connect your bank first to take payments. Go to <strong style={{ color: T.text }}>Settings → Payments &amp; Packages → Take payments</strong> and connect with Stripe (a couple of minutes). Money then lands straight in your account.</div>
+        <div style={{ fontSize: 13, color: T.text2, lineHeight: 1.6 }}>Connect your bank first. Go to <strong style={{ color: T.text }}>Settings → Pricing &amp; packages</strong> and use <strong style={{ color: T.text }}>Connect your bank</strong> at the bottom — a couple of minutes with Stripe. The money then lands straight in your own account.</div>
       </Shell>
     )
   }
