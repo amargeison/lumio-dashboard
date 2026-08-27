@@ -16,6 +16,7 @@ import { IntegrationsPanel } from './IntegrationsPanel'
 import { CoachContactSettings } from './CoachContactSettings'
 import { CoachVenuesSettings } from './CoachVenuesSettings'
 import { CoachDevelopmentSettings } from './CoachDevelopmentSettings'
+import { TakePayments } from './TakePayments'
 import { CoachCompliance } from './CoachCompliance'
 import { CoachImport } from './CoachImport'
 import { seedLumioResources, LUMIO_RESOURCES } from '../_lib/lumio-resources'
@@ -493,7 +494,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     { id: 'academy',     g: 'Academy',    icon: 'home',      t: 'Academy profile',     d: [s.academy, s.cert].filter(Boolean).join(' · ') || 'Add your academy name & accreditation' },
     { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${[booking.google && 'Google', booking.outlook && 'Outlook'].filter(Boolean).join(' + ') || 'No'} sync · ${booking.defaultDuration}m default` },
     { id: 'availability',g: 'Academy',    icon: 'grid',      t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
-    { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: s.privateRate ? `Private £${s.privateRate}/hr · packs & renewals` : 'Set your hourly rate · packs & renewals' },
+    { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: s.privateRate ? `Private £${s.privateRate}/hr · take payments` : 'Set your hourly rate · take payments' },
     { id: 'belts',       g: 'Coaching',   icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
     { id: 'rewards',     g: 'Coaching',   icon: 'flag',      t: 'Effort & Rewards',    d: `Leaderboard ${rewards.leaderboard ? 'on' : 'off'} · watch consent default ${rewards.watchConsentDefault ? 'on' : 'off'}` },
     { id: 'sharing',     g: 'Coaching',   icon: 'megaphone', t: 'Parent sharing',      d: `Shares include: ${sharingList}` },
@@ -668,6 +669,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
             <input style={input(T)} inputMode="numeric" placeholder="e.g. 38" value={s.privateRate ? String(s.privateRate) : ''} onChange={e => setSettings({ privateRate: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
           </Field>
           <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>Packages and renewal rules are managed on the Payments page; this rate feeds new quotes and the Payments header.</div>
+          <TakePayments T={T} accent={accent} />
         </Modal>
       )}
 
