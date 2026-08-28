@@ -18,11 +18,21 @@ export const COACH_AGENT_SYSTEM = `${COACH_AGENT_PERSONA}\n\n${COACH_METHODOLOGY
 
 export type CoachAgentResult = { text: string }
 
+// Exactly one of these, never both.
+//
+// `task` is the ordinary case: an instruction block built by one of the *Task
+// helpers in agent-persona.ts. `content` is for when a coach has uploaded a
+// file — a PDF, a spreadsheet, a screenshot — and the model has to read it
+// rather than a string. A union rather than two optional fields, so passing
+// neither, or both, is a compile error instead of a confusing runtime one.
+type AgentInput =
+  | { task: string; content?: never }
+  | { content: unknown[]; task?: never }
+
 // Run a single agent turn. `task` is the instruction block (typically built by
 // the *Task helpers in agent-persona.ts). Persona is always the system prompt.
 export async function runCoachAgent(opts: {
   apiKey: string
-  task: string
   maxTokens?: number
   model?: string
   temperature?: number
@@ -33,19 +43,62 @@ export async function runCoachAgent(opts: {
   // Full override. Only for a caller that genuinely is not Lumio Coach; using it
   // to add a standard is how the voice drifted in the first place.
   system?: string
-}): Promise<CoachAgentResult> {
+} & AgentInput): Promise<CoachAgentResult> {
   const client = new Anthropic({ apiKey: opts.apiKey })
-  const system = opts.system
-    || (opts.extraSystem ? `${COACH_AGENT_SYSTEM}\n\n${opts.extraSystem}` : COACH_AGENT_SYSTEM)
+  const system = buildSystem(opts)
   const res = await client.messages.create({
     model: opts.model || 'claude-sonnet-4-6',
     max_tokens: opts.maxTokens ?? 900,
     ...(opts.temperature != null ? { temperature: opts.temperature } : {}),
     system,
-    messages: [{ role: 'user', content: opts.task }],
+    messages: [{ role: 'user', content: (opts.content ?? opts.task) as never }],
   })
   let text = ''
   for (const b of res.content) if (b.type === 'text') text += b.text
+  return { text: text.trim() }
+}
+
+// The persona is assembled in exactly one place. Both runners call this, so a
+// streaming route cannot quietly end up with a different Boris to a blocking one.
+function buildSystem(opts: { system?: string; extraSystem?: string }): string {
+  return opts.system
+    || (opts.extraSystem ? `${COACH_AGENT_SYSTEM}\n\n${opts.extraSystem}` : COACH_AGENT_SYSTEM)
+}
+
+/**
+ * The same agent, streamed.
+ *
+ * Needed for the long jobs — designing an eight-day camp is six or seven
+ * thousand output tokens, which is well over a minute of silence on a blocking
+ * request. nginx gives up on an idle upstream at sixty seconds and Cloudflare at
+ * a hundred, so the camp designer was reliably dying on longer camps while
+ * shorter ones squeaked through. Streaming keeps bytes moving, which defeats
+ * both, and it lets the coach watch the days appear instead of a spinner.
+ *
+ * `onText` receives the full text so far, not the delta — callers want to look
+ * at what has been produced, not reassemble it.
+ */
+export async function runCoachAgentStream(opts: {
+  apiKey: string
+  task: string
+  maxTokens?: number
+  model?: string
+  temperature?: number
+  extraSystem?: string
+  system?: string
+  onText?: (fullTextSoFar: string) => void
+}): Promise<CoachAgentResult> {
+  const client = new Anthropic({ apiKey: opts.apiKey })
+  let text = ''
+  const stream = client.messages.stream({
+    model: opts.model || 'claude-sonnet-4-6',
+    max_tokens: opts.maxTokens ?? 900,
+    ...(opts.temperature != null ? { temperature: opts.temperature } : {}),
+    system: buildSystem(opts),
+    messages: [{ role: 'user', content: opts.task }],
+  })
+  stream.on('text', t => { text += t; opts.onText?.(text) })
+  await stream.finalMessage()
   return { text: text.trim() }
 }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { campAudience, audienceBrief } from '@/lib/coach/camp-audience'
 
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { COACH_METHODOLOGY, COACH_DIAGNOSTIC_STANDARD } from '@/lib/coach/agent-persona'
@@ -25,14 +26,14 @@ const TARGETS_SHAPE = `Return ONLY valid JSON (no markdown):
 - Goals must differ meaningfully between players of different stages. If two players are at the same stage, differentiate on their recent work.
 - No goal may be generic enough to apply to any player at any camp.`
 
-const REPORT_SHAPE = `Return ONLY valid JSON (no markdown):
+const reportShape = (adultCamp: boolean) => `Return ONLY valid JSON (no markdown):
 { "headline": "one sentence — the single most useful thing this player takes away",
   "assessment": "2-3 sentences: how the week went, leading with your judgement not the chronology",
   "progress": ["2-4 things that measurably moved"],
   "nextSteps": ["2-3 specific things to work on next"],
   "homework": "one concrete thing to do before the next session",
   "coachNote": "one warm, personal line to the player" }
-- A parent will read this. Warm, specific, honest — never flattery.`
+- ${adultCamp ? 'The player reads this themselves — write to them as "you".' : 'A parent will read this.'} Warm, specific, honest — never flattery.`
 
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
     const campCtx = [
       `Camp: ${camp.name}`,
       `Length: ${(camp.itinerary || []).length || '?'} days`,
-      camp.ages ? `Ages: ${camp.ages}` : '',
+      audienceBrief(camp),
       camp.intent ? `What the coach wants them to leave with: ${camp.intent}` : '',
       camp.daily_rhythm ? `Daily rhythm: ${camp.daily_rhythm}` : '',
       (camp.objectives || []).length ? `Camp objectives:\n${(camp.objectives || []).map((o: string) => `  - ${o}`).join('\n')}` : '',
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
     // Shared agent: persona + methodology come from one place.
     const { text: txt } = await runCoachAgent({
       apiKey,
-      extraSystem: `${COACH_METHODOLOGY}\n\n${COACH_DIAGNOSTIC_STANDARD}\n\n${mode === 'report' ? REPORT_SHAPE : TARGETS_SHAPE}`,
+      extraSystem: `${COACH_METHODOLOGY}\n\n${COACH_DIAGNOSTIC_STANDARD}\n\n${mode === 'report' ? reportShape(campAudience(camp) === 'adult') : TARGETS_SHAPE}`,
       maxTokens: mode === 'report' ? 1600 : 4000,
       temperature: 0.4,
       task: mode === 'report'

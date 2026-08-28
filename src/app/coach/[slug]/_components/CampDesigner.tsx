@@ -13,9 +13,10 @@
 //     changes the plan: who it is for, how many, and what they should leave with.
 //     A coach should finish this between lessons, on a phone.
 
-import { useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties, useRef } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { UPLOAD_ACCEPT } from '@/lib/coach/file-to-content'
 
 type Session = { slot?: string; time?: string; title?: string; type?: string; where?: string; detail?: string; cue?: string }
 type Day = { day: number; theme?: string; rest?: boolean; coachFocus?: string; sessions?: Session[] }
@@ -32,7 +33,7 @@ export function CampDesigner({
   T, accent, camp, days, onClose, onAccept,
 }: {
   T: ThemeTokens; accent: AccentTokens
-  camp: { name: string; region?: string | null; surface?: string | null; courts?: number | null; board?: string | null; description?: string | null; start_date?: string | null; ages?: string | null; group_size?: number | null; intent?: string | null; capacity?: number | null }
+  camp: { id: string; name: string; audience?: string | null; region?: string | null; surface?: string | null; courts?: number | null; board?: string | null; description?: string | null; start_date?: string | null; ages?: string | null; group_size?: number | null; intent?: string | null; capacity?: number | null }
   days: number
   onClose: () => void
   onAccept: (plan: CampPlan, inputs: { ages: string; group_size: number | null; intent: string; board: string }) => Promise<void>
@@ -48,23 +49,123 @@ export function CampDesigner({
   const [stage, setStage] = useState<'form' | 'busy' | 'preview'>('form')
   const [plan, setPlan] = useState<CampPlan | null>(null)
   const [err, setErr] = useState('')
+  // Importing an existing document. Most coaches have already written this camp
+  // down somewhere; retyping it into six questions so the AI can design what
+  // they already designed is the product wasting their afternoon.
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [reading, setReading] = useState(false)
+  const [imported, setImported] = useState('')
   const [saving, setSaving] = useState(false)
+  const [prog, setProg] = useState({ day: 0, days: 0 })
 
+  const onFile = async (f: File) => {
+    setReading(true); setErr(''); setImported('')
+    try {
+      const fd = new FormData()
+      fd.append('file', f)
+      fd.append('campId', camp.id)
+      const res = await fetch('/api/coach/camp-import', { method: 'POST', body: fd })
+      // Read as text first: a 413 from nginx or a proxy error page is HTML, and
+      // "Unexpected token <" helps nobody.
+      const raw = await res.text()
+      let d: any = {}
+      try { d = raw ? JSON.parse(raw) : {} } catch { /* not JSON */ }
+      if (!res.ok) {
+        throw new Error(d.error || (res.status === 413
+          ? 'That file is too large for the server to accept.'
+          : `Could not read that file (HTTP ${res.status})`))
+      }
+
+      // Fill in the questions from whatever the document actually said. Only
+      // overwrite a box the coach has not already filled in himself.
+      const g = d.design || {}
+      if (g.ages) setAges(String(g.ages))
+      if (g.level && LEVELS.includes(String(g.level))) setLevel(String(g.level))
+      if (g.groupSize) setGroupSize(String(g.groupSize))
+      if (g.intent && !intent.trim()) setIntent(String(g.intent))
+      if (d.camp?.board) setBoard(String(d.camp.board))
+      if (d.camp?.courts) setCourts(String(d.camp.courts))
+
+      if (d.found === 'plan' && Array.isArray(d.itinerary) && d.itinerary.length) {
+        // Their plan, digitised. Straight to the preview — there is nothing for
+        // Lumio Coach to design, and offering to redesign it would be insulting.
+        setPlan({
+          itinerary: d.itinerary,
+          equipment: d.equipment || [],
+          objectives: d.objectives || [],
+          daily_rhythm: d.parent_brief?.dailyShape || '',
+          parent_brief: d.parent_brief || undefined,
+        } as CampPlan)
+        setStage('preview')
+        setImported(`Read ${d.itinerary.length} day${d.itinerary.length === 1 ? '' : 's'} straight out of your document. Check it over — nothing is saved until you accept.`)
+      } else {
+        setImported(d.notes
+          ? `Filled in what the file told us. ${d.notes}`
+          : 'Filled in what the file told us — check it, then let Lumio Coach plan the days.')
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Could not read that file.')
+    } finally {
+      setReading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  // The design arrives as a stream of newline-delimited JSON, so the coach sees
+  // days appear rather than a spinner, and so the connection is never idle long
+  // enough for nginx or Cloudflare to kill it. The abort is the backstop: this
+  // used to hang with no error at all, which is the worst possible failure.
   const generate = async () => {
-    setStage('busy'); setErr('')
+    setStage('busy'); setErr(''); setProg({ day: 0, days })
+    const ctrl = new AbortController()
+    const bail = setTimeout(() => ctrl.abort(), 4 * 60_000)
     try {
       const res = await fetch('/api/coach/camp-design', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        signal: ctrl.signal,
         body: JSON.stringify({
           name: camp.name, days, startDate: camp.start_date, region: camp.region,
           surface: camp.surface, courts: Number(courts) || camp.courts,
           board, ages, level, groupSize: Number(groupSize) || null, intent,
+          // Juniors or adults. Set on the camp itself so every AI call for this
+          // camp agrees about who it is for.
+          audience: camp.audience || 'junior',
         }),
       })
-      const d = await res.json()
-      if (!res.ok) throw new Error(d.error || 'Design failed')
-      setPlan(d); setStage('preview')
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Design failed'); setStage('form') }
+      if (!res.ok || !res.body) {
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error || `Design failed (${res.status})`)
+      }
+
+      const reader = res.body.getReader()
+      const dec = new TextDecoder()
+      let buf = ''
+      let finished = false
+
+      for (;;) {
+        const { value, done } = await reader.read()
+        if (done) break
+        buf += dec.decode(value, { stream: true })
+        const lines = buf.split('\n')
+        // The last piece may be half a line; keep it for the next chunk.
+        buf = lines.pop() || ''
+        for (const line of lines) {
+          if (!line.trim()) continue
+          let m: { t?: string; day?: number; days?: number; plan?: CampPlan; error?: string }
+          try { m = JSON.parse(line) } catch { continue }
+          if (m.t === 'tick') setProg({ day: Math.min(m.day || 0, m.days || days), days: m.days || days })
+          else if (m.t === 'error') throw new Error(m.error || 'Design failed')
+          else if (m.t === 'done' && m.plan) { setPlan(m.plan); setStage('preview'); finished = true }
+        }
+      }
+      if (!finished) throw new Error('The connection dropped before the plan finished. Try again.')
+    } catch (e) {
+      const aborted = e instanceof DOMException && e.name === 'AbortError'
+      setErr(aborted ? 'That took too long and was stopped. Try again, or design a shorter camp first.' : (e instanceof Error ? e.message : 'Design failed'))
+      setStage('form')
+    } finally {
+      clearTimeout(bail)
+    }
   }
 
   const accept = async () => {
@@ -97,6 +198,32 @@ export function CampDesigner({
         {/* ── FORM ── */}
         {stage !== 'preview' && (
           <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 13, opacity: stage === 'busy' ? 0.5 : 1, pointerEvents: stage === 'busy' ? 'none' : 'auto' }}>
+            {/* Already written down? Read it rather than ask for it again. */}
+            <div
+              onDragOver={e => { e.preventDefault() }}
+              onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) void onFile(f) }}
+              onClick={() => fileRef.current?.click()}
+              style={{
+                border: `1px dashed ${T.border}`, borderRadius: 10, padding: '13px 14px',
+                cursor: reading ? 'wait' : 'pointer', background: T.panel2, textAlign: 'center',
+              }}>
+              <input ref={fileRef} type="file" accept={UPLOAD_ACCEPT} style={{ display: 'none' }}
+                onChange={e => { const f = e.target.files?.[0]; if (f) void onFile(f) }} />
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>
+                {reading ? 'Reading your document…' : 'Already have this written down?'}
+              </div>
+              <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>
+                Drop in a PDF, spreadsheet, Word doc or a photo of it. If it has a day-by-day plan we&rsquo;ll
+                use yours; if not we&rsquo;ll fill in the questions below.
+              </div>
+            </div>
+
+            {imported && (
+              <div style={{ background: `${accent.hex}14`, border: `1px solid ${accent.border}`, borderRadius: 9, padding: '9px 12px', fontSize: 12, color: T.text2, lineHeight: 1.5 }}>
+                {imported}
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <div><label style={lbl}>Ages</label><input value={ages} onChange={e => setAges(e.target.value)} placeholder="e.g. 9–12" style={field} /></div>
               <div><label style={lbl}>Standard</label>
@@ -128,10 +255,21 @@ export function CampDesigner({
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               <button onClick={generate} disabled={stage === 'busy'} style={{ ...btn(accent.hex, T.btnText), flex: 1, opacity: stage === 'busy' ? 0.6 : 1 }}>
-                {stage === 'busy' ? '✦ Lumio Coach is designing your camp…' : '✦ Design my camp'}
+                {stage === 'busy'
+                  ? (prog.day > 0 ? `✦ Designing day ${prog.day} of ${prog.days}…` : '✦ Lumio Coach is designing your camp…')
+                  : '✦ Design my camp'}
               </button>
             </div>
-            {stage === 'busy' && <div style={{ fontSize: 11.5, color: T.text3, textAlign: 'center' }}>This takes 20–40 seconds — he is planning every day, not filling a template.</div>}
+            {stage === 'busy' && (
+              <div style={{ fontSize: 11.5, color: T.text3, textAlign: 'center', lineHeight: 1.5 }}>
+                Around ten seconds a day — he is planning every session, not filling a template.
+                {prog.days > 0 && (
+                  <div style={{ height: 4, borderRadius: 2, background: T.hover, marginTop: 8, overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.round(Math.min(1, prog.day / Math.max(1, prog.days)) * 100)}%`, height: '100%', background: accent.hex, transition: 'width .4s ease' }} />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAdult } from '@/lib/coach/camp-audience'
 
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { sendAsCoach } from '@/lib/coach/mail'
@@ -61,7 +62,7 @@ function buildHtml(o: {
   </div>
 </div>
 <div style="max-width:560px;margin:14px auto 0;text-align:center;font-size:11px;color:#9aa1b1;line-height:1.6">
-  You&rsquo;re getting this because your child trains with ${esc(o.academy)}.<br>
+  You&rsquo;re getting this because you&rsquo;re on the list at ${esc(o.academy)}.<br>
   If you&rsquo;d rather not hear about camps, just reply and say so — you&rsquo;ll be taken off the list.
 </div>
 </body></html>`
@@ -110,14 +111,17 @@ export async function POST(req: NextRequest) {
     const allowed = new Map<string, { name: string; greetName: string }>()
     for (const p of roster ?? []) {
       // Under-16s are reached through the parent, same rule as booking
-      // confirmations. An unknown age is treated as a minor.
-      const minor = p.age == null || Number(p.age) < 16
-      const addr = norm(minor ? p.parent_email : (p.email || p.parent_email))
+      // confirmations, and it now comes from one shared helper rather than a
+      // third private copy of `age < 16`. A blast goes to the whole roster
+      // rather than one camp, so there is no camp audience to consult here —
+      // age alone decides.
+      const adult = isAdult(null, p.age)
+      const addr = norm(adult ? (p.email || p.parent_email) : p.parent_email)
       if (!addr || !addr.includes('@')) continue
       if (!allowed.has(addr)) {
         allowed.set(addr, {
           name: p.name,
-          greetName: (minor ? (p.parent_name || '') : p.name).split(/\s+/)[0] || 'there',
+          greetName: (adult ? p.name : (p.parent_name || '')).split(/\s+/)[0] || 'there',
         })
       }
     }

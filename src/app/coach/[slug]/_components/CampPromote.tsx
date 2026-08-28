@@ -10,6 +10,7 @@
 // email — to the coach's own roster, which is the one channel we genuinely own.
 
 import { useState, useMemo, type CSSProperties } from 'react'
+import { isAdult } from '@/lib/coach/camp-audience'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 
@@ -30,12 +31,14 @@ type Contact = { email: string; label: string; via: string }
 function contactsFrom(players: PromoPlayer[]): Contact[] {
   const seen = new Map<string, Contact>()
   for (const p of players) {
-    const minor = p.age == null || Number(p.age) < 16
-    const raw = (minor ? p.parent_email : (p.email || p.parent_email)) || ''
+    // One shared rule, from camp-audience.ts. This used to be a third private
+    // copy of `age < 16`, so a fix in the cron left the Promote tab wrong.
+    const adult = isAdult(null, p.age)
+    const raw = (adult ? (p.email || p.parent_email) : p.parent_email) || ''
     const email = raw.trim().toLowerCase()
     if (!email.includes('@')) continue
     if (!seen.has(email)) {
-      seen.set(email, { email, label: p.name, via: minor ? (p.parent_name || 'parent') : 'player' })
+      seen.set(email, { email, label: p.name, via: adult ? 'player' : (p.parent_name || 'parent') })
     }
   }
   return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label))
@@ -118,7 +121,7 @@ export function CampPromote({ T, accent, campId, campName, players }: {
       <div style={{ ...card, textAlign: 'center', padding: '36px 20px' }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Tell people the camp is on</div>
         <p style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.6, margin: '6px auto 0', maxWidth: 460 }}>
-          Lumio Coach writes the announcement four ways — an email for your roster, a message parents can forward,
+          Lumio Coach writes the announcement four ways — an email for your roster, a message people can forward,
           a caption for Instagram or Facebook, and a headline for a poster. You edit anything you don&apos;t like before it goes anywhere.
         </p>
         {err && <div style={{ fontSize: 12, color: T.bad, marginTop: 12 }}>{err}</div>}
@@ -167,7 +170,7 @@ export function CampPromote({ T, accent, campId, campName, players }: {
 
         {contacts.length === 0 ? (
           <div style={{ fontSize: 12.5, color: T.warn, marginTop: 14 }}>
-            Nobody on your roster has an email address yet. Add parent emails on the Players page and they&apos;ll appear here.
+            Nobody on your roster has an email address yet. Add email addresses on the Players page and they&apos;ll appear here.
           </div>
         ) : (
           <>
@@ -205,7 +208,7 @@ export function CampPromote({ T, accent, campId, campName, players }: {
 
       {/* ── Paste-anywhere copy ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-        <Channel T={T} accent={accent} title="WhatsApp / text" hint="What a parent forwards to another parent."
+        <Channel T={T} accent={accent} title="WhatsApp / text" hint="What one person forwards to another."
           text={waFull} copied={copied === 'wa'} onCopy={() => copy('wa', waFull)} />
         <Channel T={T} accent={accent} title="Instagram / Facebook" hint="First line is the hook — the rest gets truncated."
           text={socialFull} copied={copied === 'social'} onCopy={() => copy('social', socialFull)} />

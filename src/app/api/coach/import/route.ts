@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import Anthropic from '@anthropic-ai/sdk'
+import { fileToContent, UnreadableFile } from '@/lib/coach/file-to-content'
 
 export const maxDuration = 60
 
@@ -47,39 +48,15 @@ export async function POST(req: NextRequest) {
   try { file = (await req.formData()).get('file') as File | null } catch { /* ignore */ }
   if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
 
-  const name = (file.name || '').toLowerCase()
-  const buf = Buffer.from(await file.arrayBuffer())
-
-  // Build the user content for Claude depending on file type.
+  // Reading the file is shared with the camp importer. It used to live here as
+  // the only copy, which meant the rest of the product could not accept a
+  // spreadsheet without reimplementing all of this.
   const content: any[] = []
   try {
-    if (name.endsWith('.csv') || name.endsWith('.tsv') || name.endsWith('.txt')) {
-      content.push({ type: 'text', text: `${SCHEMA_PROMPT}\n\n--- FILE: ${file.name} ---\n${buf.toString('utf-8').slice(0, 120000)}` })
-    } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-      const XLSX = await import('xlsx')
-      const wb = XLSX.read(buf, { type: 'buffer' })
-      const text = wb.SheetNames.map(sn => `# Sheet: ${sn}\n${XLSX.utils.sheet_to_csv(wb.Sheets[sn])}`).join('\n\n').slice(0, 120000)
-      content.push({ type: 'text', text: `${SCHEMA_PROMPT}\n\n--- FILE: ${file.name} ---\n${text}` })
-    } else if (name.endsWith('.docx')) {
-      try {
-        const mammoth: any = await import('mammoth')
-        const { value } = await mammoth.extractRawText({ buffer: buf })
-        content.push({ type: 'text', text: `${SCHEMA_PROMPT}\n\n--- FILE: ${file.name} ---\n${String(value).slice(0, 120000)}` })
-      } catch {
-        return NextResponse.json({ error: 'Word (.docx) import needs the "mammoth" package — run: npm install mammoth. Or export the document as PDF or CSV.' }, { status: 400 })
-      }
-    } else if (name.endsWith('.pdf')) {
-      content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: buf.toString('base64') } })
-      content.push({ type: 'text', text: SCHEMA_PROMPT })
-    } else if (/\.(png|jpe?g|webp|gif)$/.test(name)) {
-      const mt = name.endsWith('.png') ? 'image/png' : name.endsWith('.webp') ? 'image/webp' : name.endsWith('.gif') ? 'image/gif' : 'image/jpeg'
-      content.push({ type: 'image', source: { type: 'base64', media_type: mt, data: buf.toString('base64') } })
-      content.push({ type: 'text', text: SCHEMA_PROMPT })
-    } else {
-      // Unknown — try as plain text.
-      content.push({ type: 'text', text: `${SCHEMA_PROMPT}\n\n--- FILE: ${file.name} ---\n${buf.toString('utf-8').slice(0, 120000)}` })
-    }
+    const { blocks } = await fileToContent(file)
+    content.push(...blocks, { type: 'text', text: SCHEMA_PROMPT })
   } catch (e) {
+    if (e instanceof UnreadableFile) return NextResponse.json({ error: e.message }, { status: 400 })
     console.error('[coach/import] parse', e)
     return NextResponse.json({ error: 'Could not read that file. Try exporting it as CSV.' }, { status: 400 })
   }

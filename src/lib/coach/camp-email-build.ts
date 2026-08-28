@@ -13,6 +13,8 @@
 
 import { campEmailTask } from '@/lib/coach/agent-persona'
 import { STAGES, type Stage, type StageId } from '@/lib/coach/camp-lifecycle'
+import { isAdult, usesGuardians, audienceBrief } from '@/lib/coach/camp-audience'
+import { balanceOwed } from '@/lib/coach/camp-money'
 
 export type Camp = Record<string, any>
 export type Attendee = { id: string } & Record<string, any>
@@ -51,43 +53,48 @@ export const longDate = (d?: string | null) => {
 // always the first choice.
 //
 // Attendees the coach adds from the roster have no address of their own, only a
-// player_id. For those we fall back to the roster row and apply the same rule the
-// booking confirmations use: under-16 (or unknown age) is reached through the
-// parent, 16+ direct.
-export function recipientFor(a: Attendee, p?: Player | null): { to: string | null; toParent: boolean; greeting: string } {
-  const age = a.player_age ?? p?.age
-  const minor = age == null || Number(age) < 16
+// player_id. For those we fall back to the roster row.
+//
+// Whether somebody is written to directly is decided by isAdult(), which reads
+// the CAMP's audience first and the person's own age second. That order matters:
+// adults booking a tennis holiday do not fill in an age, and treating a blank as
+// "child" is what produced "Hi Sarah, we've got Sarah down for the camp".
+export function recipientFor(camp: Camp, a: Attendee, p?: Player | null): { to: string | null; toParent: boolean; greeting: string } {
+  const adult = isAdult(camp, a.player_age ?? p?.age)
 
-  const fromRoster = minor
-    ? [p?.parent_email, p?.email, p?.contact_email]
-    : [p?.email, p?.contact_email, p?.parent_email]
+  const fromRoster = adult
+    ? [p?.email, p?.contact_email, p?.parent_email]
+    : [p?.parent_email, p?.email, p?.contact_email]
   const to = [a.parent_email, ...fromRoster]
     .map(v => String(v ?? '').trim())
     .find(v => v.includes('@')) || null
 
-  const named = minor ? (a.parent_name || p?.parent_name || '') : (a.player_name || p?.name || '')
-  const greeting = String(named || a.parent_name || a.player_name || '').trim().split(/\s+/)[0] || 'there'
+  // An adult is greeted by their own name. A child's email is read by whoever
+  // is holding the phone, so it uses the parent's name where we have one.
+  const named = adult ? (a.player_name || p?.name || '') : (a.parent_name || p?.parent_name || '')
+  const greeting = String(named || a.player_name || a.parent_name || '').trim().split(/\s+/)[0] || 'there'
 
-  return { to, toParent: minor, greeting }
+  return { to, toParent: !adult, greeting }
 }
 
-export function balanceOwed(camp: Camp, a: Attendee): number {
-  const price = Number(camp.price) || 0
-  if (!price) return 0
-  if (a.paid) return 0
-  const paidPennies = Number(a.amount_pennies) || 0
-  const owed = price - paidPennies / 100
-  return owed > 0.5 ? owed : 0
-}
+// Re-exported rather than reimplemented. This used to be a private copy, which
+// meant the chase email and the Finance tab could disagree about what a family
+// owes — the one inconsistency guaranteed to be noticed, because one of them
+// arrives in a parent's inbox. Callers of this module keep importing it from
+// here; there is now only one implementation behind it.
+export { balanceOwed }
 
 /** Is there anything for the "two weeks out" email to actually chase? */
 export function chaseReasons(camp: Camp, a: Attendee): string[] {
   const out: string[] = []
   const owed = balanceOwed(camp, a)
   if (owed > 0) out.push(`Balance still to pay: ${money(owed)}${camp.balance_link ? '' : ' — the coach will be in touch about how to pay it'}`)
-  if (!a.consent_photo) out.push('Photo consent has not been given yet')
-  if (!a.consent_medical && a.medical_notes) out.push('Consent to hold their medical information has not been given yet')
-  if (!a.emergency_contact) out.push('No emergency contact on file yet')
+  // Consent is needed either way — an adult's photo still cannot be used without
+  // it — but who gives it, and how it is asked for, is not the same.
+  const guardians = usesGuardians(camp)
+  if (!a.consent_photo) out.push(guardians ? 'Photo consent has not been given yet' : 'Permission to use photos or video has not been given yet')
+  if (!a.consent_medical && a.medical_notes) out.push(guardians ? 'Consent to hold their medical information has not been given yet' : 'Permission to hold their medical information has not been given yet')
+  if (!a.emergency_contact) out.push(guardians ? 'No emergency contact on file yet' : 'No next of kin on file yet')
   if (camp.overseas) out.push('This trip is abroad — passport in date, and travel insurance sorted')
   return out
 }
@@ -140,6 +147,7 @@ export function buildTask(opts: {
     playerName: attendee.player_name || 'your player',
     greetingName: greeting,
     toParent,
+    audience: audienceBrief(camp),
     facts: [
       ...factsFor(camp, attendee, stage.id),
       // The coach's own line for this email. It goes in as a fact, not as a
@@ -187,6 +195,8 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;c
 export function renderCampEmail(opts: {
   camp: Camp; attendee: Attendee; profile: Profile
   stageId: StageId; draft: Draft; greeting: string
+  /** Absolute origin, so the trip link works in an inbox. */
+  origin?: string
   /** Appended after the draft's own bullets. Used when a saved draft replaces
    *  Lumio Coach on a conditional stage, so the per-family chase lines survive. */
   extraBullets?: string[]
@@ -208,6 +218,15 @@ export function renderCampEmail(opts: {
     // given somewhere to pay it.
     stageId === 'two_weeks' && owed > 0 && camp.balance_link
       ? `<div style="margin:18px 0"><a href="${esc(camp.balance_link)}" style="display:inline-block;background:#3A8EE0;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 20px;border-radius:10px">Pay the ${money(owed)} balance</a></div>`
+      : '',
+    // The trip hub. Once a coach has published one it is the single most useful
+    // link in any of these emails — the hotel, the transfers, who to ring — so
+    // every stage from the details email onwards carries it.
+    camp.trip_open && camp.trip_slug && opts.origin && stageId !== 'after'
+      ? `<div style="margin:18px 0;padding:14px 16px;background:#f7f9fc;border:1px solid #e6ebf3;border-radius:11px">
+           <div style="font-size:14px;color:#374151;margin-bottom:9px">Everything for the trip — where you are staying, how to get around and who to call — is on one page.</div>
+           <a href="${esc(opts.origin)}/trip/${esc(camp.trip_slug)}" style="display:inline-block;background:#3A8EE0;color:#fff;text-decoration:none;font-weight:700;font-size:14.5px;padding:11px 18px;border-radius:9px">Open your trip page</a>
+         </div>`
       : '',
     camp.location
       ? `<p style="margin:0;font-size:14px"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([camp.location, camp.region].filter(Boolean).join(', '))}" style="color:#3A8EE0">Directions to ${esc(camp.location)}</a></p>`

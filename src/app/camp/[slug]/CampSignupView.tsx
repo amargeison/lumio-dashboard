@@ -14,6 +14,7 @@ export type CampPublic = {
   startDate: string | null; endDate: string | null; location: string | null
   surface: string | null; ages: string | null
   price: number | null; paymentMode: string; depositAmount: number | null
+  audience: 'junior' | 'adult' | 'mixed'
   note: string | null; spacesLeft: number | null
   intro: string | null; whatTheyWorkOn: string[]; whatToBring: string[]
   dailyShape: string | null; whatTheyLeaveWith: string[]
@@ -25,6 +26,10 @@ const fmt = (d: string | null) => d ? new Date(`${d}T00:00:00`).toLocaleDateStri
 const money = (n: number) => `£${Number(n).toFixed(Number(n) % 1 ? 2 : 0)}`
 
 export default function CampSignupView({ camp }: { camp: CampPublic }) {
+  // An adult camp is somebody booking their own place. Asking them for "your
+  // name (parent or guardian)" above a box for their child's age is the moment
+  // a £1,500 booking starts to feel like it was built for somebody else.
+  const adult = camp.audience === 'adult'
   const [f, setF] = useState({ player_name: '', player_age: '', parent_name: '', parent_email: '', parent_phone: '', emergency_contact: '', medical_notes: '', consent_photo: false, consent_medical: false })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -45,7 +50,7 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
 
   const submit = async () => {
     if (busy) return
-    if (!f.player_name.trim() || !f.parent_email.trim()) { setErr('Please add the player’s name and your email address.'); return }
+    if (!f.player_name.trim() || !f.parent_email.trim()) { setErr(adult ? 'Please add your name and email address.' : 'Please add the player’s name and your email address.'); return }
     setBusy(true); setErr('')
     try {
       const res = await fetch('/api/camp/signup', {
@@ -97,7 +102,7 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
 
         {(camp.whatTheyWorkOn.length > 0 || camp.dailyShape) && (
           <div style={card}>
-            <div style={h2}>What your child will work on</div>
+            <div style={h2}>{adult ? 'What you’ll work on' : 'What your child will work on'}</div>
             <ul style={{ margin: 0, paddingLeft: 20 }}>{camp.whatTheyWorkOn.map((x, i) => <li key={i} style={{ fontSize: 14.5, lineHeight: 1.6, color: '#374151', marginBottom: 6 }}>{x}</li>)}</ul>
             {camp.dailyShape && <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, marginTop: 12, marginBottom: 0 }}><strong style={{ color: '#374151' }}>A typical day:</strong> {camp.dailyShape}</p>}
           </div>
@@ -158,20 +163,20 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
               <div style={h2}>Sign up</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
-                  <div><label style={lbl}>Player’s name *</label><input value={f.player_name} onChange={e => set('player_name', e.target.value)} style={field} /></div>
+                  <div><label style={lbl}>{adult ? 'Your name *' : 'Player’s name *'}</label><input value={f.player_name} onChange={e => set('player_name', e.target.value)} style={field} /></div>
                   <div><label style={lbl}>Age</label><input type="number" value={f.player_age} onChange={e => set('player_age', e.target.value)} style={field} /></div>
                 </div>
-                <div><label style={lbl}>Your name (parent or guardian)</label><input value={f.parent_name} onChange={e => set('parent_name', e.target.value)} style={field} /></div>
+                {!adult && <div><label style={lbl}>Your name (parent or guardian)</label><input value={f.parent_name} onChange={e => set('parent_name', e.target.value)} style={field} /></div>}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <div><label style={lbl}>Your email *</label><input type="email" value={f.parent_email} onChange={e => set('parent_email', e.target.value)} style={field} /></div>
                   <div><label style={lbl}>Your phone</label><input value={f.parent_phone} onChange={e => set('parent_phone', e.target.value)} style={field} /></div>
                 </div>
-                <div><label style={lbl}>Emergency contact (if different)</label><input value={f.emergency_contact} onChange={e => set('emergency_contact', e.target.value)} placeholder="Name and number" style={field} /></div>
+                <div><label style={lbl}>{adult ? 'Next of kin' : 'Emergency contact (if different)'}</label><input value={f.emergency_contact} onChange={e => set('emergency_contact', e.target.value)} placeholder="Name and number" style={field} /></div>
                 <div>
                   <label style={lbl}>Medical notes or allergies</label>
                   <textarea value={f.medical_notes} onChange={e => set('medical_notes', e.target.value)} rows={2} placeholder="Anything the coaches should know" style={{ ...field, resize: 'vertical' }} />
                 </div>
-                <Check checked={f.consent_photo} onChange={v => set('consent_photo', v)}>I’m happy for photos or video of my child to be used by the academy</Check>
+                <Check checked={f.consent_photo} onChange={v => set('consent_photo', v)}>{adult ? 'I’m happy for photos or video of me to be used by the academy' : 'I’m happy for photos or video of my child to be used by the academy'}</Check>
                 <Check checked={f.consent_medical} onChange={v => set('consent_medical', v)}>I consent to the coaches holding the medical information above</Check>
 
                 {due != null && (

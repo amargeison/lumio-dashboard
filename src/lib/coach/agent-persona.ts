@@ -24,7 +24,7 @@ Your coaching philosophy:
 - You are specific and prescriptive. You give named drills with clear setups, rep counts or time, success criteria, and a coaching cue the player can feel — never vague "work on your forehand".
 - You are honest but encouraging. You celebrate genuine progress, you are precise about the one thing that matters most next, and you never flatter or pad.
 - You diagnose, you do not merely describe. You name the fault, why it matters and what it is costing the player, then the correction, the drill and how the player will know they have got it.
-- You are safe and age-aware. With juniors you keep everything positive, age-appropriate, and framed for the parent who will read it too. You respect British coaching safeguarding norms.
+- You are safe and age-aware. With juniors you keep everything positive, age-appropriate, and framed for the parent who will read it too, and you respect British coaching safeguarding norms. With adults you write to the player directly — they booked it themselves and there is no parent in the picture at all.
 
 Your house style:
 - British English. Warm, clear, professional — the voice of a trusted head coach, not a hype machine.
@@ -116,6 +116,104 @@ RULES
 - kit: 3-6 items, specific to this plan.`
 }
 
+// Builds the task block for a camp's targets and outcomes.
+export function campTargetsTask(p: {
+  campName: string
+  days: number
+  surface: string | null
+  ages: string | null
+  intent: string | null
+  themes: string[]
+  dailyRhythm: string | null
+  audience: string
+  adult: boolean
+}): string {
+  const facts = [
+    `Camp: ${p.campName}`,
+    p.days ? `Length: ${p.days} day${p.days === 1 ? '' : 's'}` : '',
+    p.surface ? `Surface: ${p.surface}` : '',
+    p.ages ? `Ages: ${p.ages}` : '',
+    p.dailyRhythm ? `Shape of a day: ${p.dailyRhythm}` : '',
+    p.themes.length ? `Day themes: ${p.themes.join(' · ')}` : '',
+    p.intent ? `What the coach wants them to leave with: ${p.intent}` : '',
+  ].filter(Boolean).join('\n')
+
+  return `Set the targets for this camp.
+
+${p.audience}
+
+${facts}
+
+TWO LISTS, AND THEY ARE NOT THE SAME THING.
+
+"targets" — what the PLAYERS are working towards.
+1. COUNTABLE OR TICKABLE BY THE LAST AFTERNOON. "Every player adds a kick second serve they will use at 4-4" — not "improve serving". A target nobody can settle an argument about is not a target.
+2. TIED TO THE DAYS ABOVE. The themes tell you what is actually being coached. A target for work this camp does not do is a target that gets quietly dropped.
+3. RESPECT THE SURFACE AND THE LENGTH. ${p.days && p.days <= 4 ? 'This is a short camp — two or three real targets beat five hopeful ones.' : 'A long camp can carry a target that needs a week of repetition to land.'}${p.surface ? ` On ${p.surface}, say what that surface specifically demands.` : ''}
+4. 3-5 OF THEM. More than five and the week has no priorities.
+
+"outcomes" — what the COACH hands over by the end. Not aspirations; deliverables.
+5. THINGS THAT EITHER EXIST ON THE LAST DAY OR DO NOT. A written development report${p.adult ? '' : ' for each parent'}, a racket re-assessment for anyone who meets the criteria, a plan for the weeks after. 2-4 of them.
+6. ONLY WHAT THIS CAMP CAN ACTUALLY PRODUCE. Never promise video analysis if no day has a video session.
+
+7. NEVER INVENT A FACT. Only what is listed above.
+8. BRITISH ENGLISH. Plain and specific. No hype.
+
+Return ONLY valid JSON (no markdown):
+{
+  "targets": ["3-5 countable player targets"],
+  "outcomes": ["2-4 things the coach delivers by the end"]
+}`
+}
+
+// Builds the task block for a camp's kit list.
+export function campKitTask(p: {
+  campName: string
+  days: number
+  courts: number | null
+  surface: string | null
+  players: number | null
+  residential: boolean
+  board: string | null
+  overseas: boolean
+  location: string | null
+  themes: string[]
+  objectives: string[]
+  audience: string
+  adult: boolean
+}): string {
+  const facts = [
+    `Camp: ${p.campName}`,
+    p.days ? `Length: ${p.days} day${p.days === 1 ? '' : 's'}` : '',
+    p.players ? `Players: ${p.players}` : '',
+    p.courts ? `Courts: ${p.courts}` : '',
+    p.surface ? `Surface: ${p.surface}` : '',
+    p.location ? `Location: ${p.location}` : '',
+    `Type: ${p.residential ? `residential${p.board ? ` (${p.board})` : ''}` : 'day camp'}`,
+    p.overseas ? 'This camp is abroad, so kit has to be carried or bought locally.' : '',
+    p.themes.length ? `Day themes: ${p.themes.join(' · ')}` : '',
+    p.objectives.length ? `Camp objectives: ${p.objectives.join('; ')}` : '',
+  ].filter(Boolean).join('\n')
+
+  return `Work out the kit list for this camp.
+
+${p.audience}
+
+${facts}
+
+1. QUANTIFY EVERYTHING AGAINST THE NUMBERS ABOVE. "Ball baskets x4" for four courts, not "ball baskets". A coach should be able to pack from this list without doing arithmetic.
+2. ONLY WHAT THIS CAMP ACTUALLY NEEDS. The themes tell you what is being coached — a week with two video sessions needs a tripod, a week without one does not. Never pad the list to look thorough.
+3. THE BORING ITEMS ARE THE ONES PEOPLE FORGET. Spare grips, a first aid kit, sun cream, ice packs, a ball pump, spare strings, water. ${p.residential ? 'A residential camp also needs whatever makes the evenings work.' : ''}${p.overseas ? ' Abroad, say what is worth taking versus buying when you land — balls are heavy.' : ''}
+4. ${p.adult ? 'These are adults. No red or orange balls, no throw-down spots for beginners unless the standard given calls for it.' : 'These are juniors. Ball type matters — match it to the ages and standard given.'}
+5. GROUP IT BY THE ORDER SOMEBODY PACKS. Court equipment, then coaching aids, then welfare and medical, then admin.
+6. 8-14 ITEMS. A list nobody reads is worse than no list.
+
+Return ONLY valid JSON (no markdown):
+{
+  "equipment": ["one item per entry, with the quantity in the text, e.g. \"Ball baskets x4 (one per court)\""]
+}`
+}
+
 // Builds the task block for one stage of the camp countdown emails.
 export function campEmailTask(p: {
   stage: string; job: string
@@ -125,6 +223,11 @@ export function campEmailTask(p: {
   facts: string[]          // only what the camp record actually holds
   alreadySaid: string[]    // the jobs of the stages that already went out
   foldedIn?: string[]      // for a late sign-up: what this email has to cover too
+  // From audienceBrief() in camp-audience.ts. A camp is junior, adult or both,
+  // and that is the coach's setting rather than something inferred from the free
+  // text in `ages` — an adult on a £1,500 tennis holiday should never be sent
+  // anything about drop-off.
+  audience?: string
 }): string {
   return `Write the "${p.stage}" email for a camp.
 
@@ -135,7 +238,8 @@ Coach: ${p.coachName}
 Camp: ${p.campName}
 When: ${p.when}
 Where: ${p.where}
-Writing to: ${p.toParent ? `${p.greetingName}, the parent of ${p.playerName}` : p.playerName}
+Writing to: ${p.toParent ? `${p.greetingName}, the parent of ${p.playerName}` : `${p.playerName} — the player, directly`}
+${p.audience ? `${p.audience}\n` : ''}
 
 Everything true about this camp:
 ${p.facts.map(f => `- ${f}`).join('\n')}
@@ -145,7 +249,7 @@ ${p.alreadySaid.length ? `Emails they have ALREADY had covered: ${p.alreadySaid.
 2. NEVER INVENT A FACT. Only what is listed above. No price if none is given, no arrival time if none is set, no claim about the weather or the venue you were not told.
 3. SHORTER AS IT GETS CLOSER. The details email can breathe. The one the night before is read standing up in an airport.
 4. SAY THE THING FIRST. Most people read one line. Put the time, the change or the ask in it.
-5. NOTHING A CHILD WOULD MIND THEIR PARENT READING, and nothing a parent would mind their child seeing.
+5. ${p.toParent ? 'NOTHING A CHILD WOULD MIND THEIR PARENT READING, and nothing a parent would mind their child seeing.' : 'WRITE TO THEM AS AN ADULT. They booked this themselves and they are paying for it themselves. No parent, no guardian, no drop-off, no "your child" — and nothing that would read as patronising to an experienced club player.'}
 6. BRITISH ENGLISH. Warm and plain. No hype, no exclamation stacks.
 
 Return ONLY valid JSON (no markdown):

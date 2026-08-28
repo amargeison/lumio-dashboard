@@ -26,6 +26,10 @@ export type SignupMailInput = {
   playerAge?: number | null; medicalNotes?: string | null; emergencyContact?: string | null
   consentPhoto?: boolean; consentMedical?: boolean
   amountPennies?: number; paymentMode?: string; paid: boolean
+  // 'junior' | 'adult' | 'mixed'. On an adult camp the person reading this IS
+  // the player, so the whole email flips from third person to second.
+  audience?: string | null
+  toParent?: boolean
   // Set ONLY for a late sign-up — someone who booked after the "everything you
   // need" email had already gone out to everyone else. Rather than send them a
   // burst of countdown emails whose dates have passed, that email's contents are
@@ -95,11 +99,21 @@ export function parentHtml(i: SignupMailInput) {
       : `<div style="background:#fff7ed;border:1px solid #fcd9a8;border-radius:10px;padding:11px 13px;margin:16px 0;font-size:14px;color:#7c4a03">
            <strong>${money(i.amountPennies)} still to pay.</strong> The place is held for now — ${esc(i.coachName || 'your coach')} will be in touch with a payment link.
          </div>`
-  return shell(i.logoUrl, i.academy, `
-    <h1 style="margin:0 0 6px;font-size:21px;color:#1a1d29">${esc(i.playerName.split(' ')[0])} is signed up</h1>
+  // An adult booked this for themselves. "Sarah is signed up. Thanks, Sarah —
+  // we've got Sarah down for..." is the tell that software is writing to you.
+  const direct = i.toParent === false
+  const first = esc(i.playerName.split(' ')[0])
+  const head = direct
+    ? `<h1 style="margin:0 0 6px;font-size:21px;color:#1a1d29">You&rsquo;re in</h1>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151">
+      Thanks, ${first} — your place on <strong>${esc(i.campName)}</strong> is booked. Here&rsquo;s everything in one place.
+    </p>`
+    : `<h1 style="margin:0 0 6px;font-size:21px;color:#1a1d29">${first} is signed up</h1>
     <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151">
       Thanks${i.parentName ? ', ' + esc(i.parentName.split(' ')[0]) : ''} — we&rsquo;ve got ${esc(i.playerName)} down for <strong>${esc(i.campName)}</strong>. Here&rsquo;s everything in one place.
-    </p>
+    </p>`
+  return shell(i.logoUrl, i.academy, `
+    ${head}
     <table style="width:100%;border-collapse:collapse;border-top:1px solid #eef0f5">
       ${detailRows([['Camp', i.campName], ['When', when], ['Where', i.location || '']])}
     </table>
@@ -107,7 +121,7 @@ export function parentHtml(i: SignupMailInput) {
     ${payLine}
     ${essentialsBlock(i)}
     <p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#6b7280">
-      Anything we should know before the first morning — a change of collection arrangements, a new injury — just reply to this email and it comes straight to ${esc(i.coachName || 'the coaching team')}.
+      Anything we should know before the first morning — ${direct ? 'a niggle, a late arrival, a dietary requirement' : 'a change of collection arrangements, a new injury'} — just reply to this email and it comes straight to ${esc(i.coachName || 'the coaching team')}.
     </p>
     <p style="margin:14px 0 0;font-size:14px;color:#374151">See you on court.</p>`)
 }
@@ -125,7 +139,7 @@ export function coachHtml(i: SignupMailInput) {
       ${detailRows([
         ['Player', i.playerName],
         ['Age', i.playerAge ? String(i.playerAge) : ''],
-        ['Parent / guardian', i.parentName || ''],
+        [i.toParent === false ? 'Booked by' : 'Parent / guardian', i.parentName || ''],
         ['Email', i.parentEmail],
         ['Phone', i.parentPhone || ''],
         ['Emergency contact', i.emergencyContact || ''],
@@ -139,7 +153,9 @@ export function coachHtml(i: SignupMailInput) {
 
 // Fire-and-forget. A sign-up must never fail because an email did.
 export async function sendCampSignupEmails(coachId: string, i: SignupMailInput) {
-  const subjectParent = `${i.playerName} is signed up — ${i.campName}`
+  const subjectParent = i.toParent === false
+    ? `You're in — ${i.campName}`
+    : `${i.playerName} is signed up — ${i.campName}`
   const subjectCoach = `New camp sign-up — ${i.playerName} · ${i.campName}`
   try {
     const sent = await sendAsCoach(coachId, { to: i.parentEmail, subject: subjectParent, html: parentHtml(i) })

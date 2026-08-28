@@ -1,0 +1,21 @@
+-- Lumio Tennis Coach — who a camp is actually for.
+--
+-- Camps were built assuming juniors: the attendee is a child, the person being
+-- emailed is their parent, and the copy talks about "your child". Coaches also
+-- run adult camps — a week in the Algarve at £1,500 a head is not a place where
+-- anybody wants to read about drop-off arrangements.
+--
+-- A column rather than inference. `ages` is free text ("9-12", "Adults", "16+",
+-- "all levels") and reading intent out of it would be wrong often enough that a
+-- parent, or a 40-year-old club player, would notice. Same reasoning as the
+-- `overseas` checkbox: duller and correct.
+--
+--   junior — everyone is a child unless their own age says otherwise (16+ is
+--            addressed directly). Safeguarding language on. The default, because
+--            it is the conservative direction: a junior wrongly treated as an
+--            adult is a real problem, the reverse is only an awkward email.
+--   adult  — everyone is addressed directly. No parent framing anywhere, and an
+--            attendee with no age on file is an adult rather than a child.
+--   mixed  — a family camp or an open week. Each attendee's own age decides, and
+--            an unknown age is treated as a junior.
+alter table coach_camps add column if not exists audience text default 'junior';

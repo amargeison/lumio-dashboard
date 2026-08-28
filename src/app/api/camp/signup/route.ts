@@ -5,6 +5,7 @@ import { publicSiteOrigin } from '@/lib/public-origin'
 import { sendCampSignupEmails, type SignupMailInput } from '@/lib/coach/camp-signup-email'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { foldedIntoConfirmation, STAGES, dueAt } from '@/lib/coach/camp-lifecycle'
+import { isAdult } from '@/lib/coach/camp-audience'
 
 export const runtime = 'nodejs'
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
   const sb = db()
   try {
     const { data: camp } = await sb.from('coach_camps')
-      .select('id, coach_id, name, capacity, price, payment_mode, deposit_amount, signup_open, start_date, end_date, location, region, parent_brief, daily_rhythm, signup_note, overseas')
+      .select('id, coach_id, name, capacity, price, payment_mode, deposit_amount, signup_open, start_date, end_date, location, region, parent_brief, daily_rhythm, signup_note, overseas, audience')
       .ilike('signup_slug', slug).maybeSingle()
 
     // Same response whether the camp is missing or closed — a closed camp should
@@ -192,6 +193,10 @@ export async function POST(req: NextRequest) {
       emergencyContact: clean(b.emergency_contact, 160) || null,
       consentPhoto: !!b.consent_photo, consentMedical: !!b.consent_medical,
       amountPennies: needsPayment ? pennies : 0, paymentMode: mode, paid: false,
+      audience: camp.audience,
+      // An adult camp writes to the player; a junior camp writes to whoever
+      // signed them up. Their own age can still override on a mixed camp.
+      toParent: !isAdult(camp, Number(b.player_age) || null),
       essentials: folded.includes('details') ? {
         dailyShape: (brief.dailyShape as string) || camp.daily_rhythm || null,
         whatToBring: (brief.whatToBring as string[]) || null,

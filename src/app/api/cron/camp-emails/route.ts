@@ -4,6 +4,7 @@ import { runCoachAgent, extractJson } from '@/lib/coach/agent'
 import { sendAsCoach } from '@/lib/coach/mail'
 import { sendEmail } from '@/lib/emails/send'
 import { STAGES, decide, dueAt } from '@/lib/coach/camp-lifecycle'
+import { publicSiteOrigin } from '@/lib/public-origin'
 import {
   recipientFor, chaseReasons, buildTask, alreadySaidFor,
   renderCampEmail, usableDraft,
@@ -48,6 +49,10 @@ export async function POST(req: NextRequest) {
 
   const sb = db()
   const now = Date.now()
+  // The cron calls this on localhost (Cloudflare challenges curl on the public
+  // host), so the request origin is 127.0.0.1 and useless in an email. The
+  // configured public URL is the only thing that works in somebody's inbox.
+  const origin = publicSiteOrigin(new URL(req.url).origin)
   const result = { considered: 0, sent: 0, skipped: 0, failed: 0, notes: [] as string[] }
 
   try {
@@ -119,7 +124,7 @@ export async function POST(req: NextRequest) {
             continue
           }
 
-          const rec = recipientFor(a, a.player_id ? players.get(String(a.player_id)) : null)
+          const rec = recipientFor(camp, a, a.player_id ? players.get(String(a.player_id)) : null)
           if (!rec.to) {
             // Worth surfacing: a coach who adds their roster to a camp and has
             // never filled in contact details would otherwise see "0 sent" with
@@ -158,6 +163,7 @@ export async function POST(req: NextRequest) {
             const { subject, html } = renderCampEmail({
               camp, attendee: a, profile: profile ?? null,
               stageId: stage.id, draft, greeting: rec.greeting, extraBullets,
+              origin,
             })
 
             const sent = await sendAsCoach(camp.coach_id, { to: rec.to, subject, html })
