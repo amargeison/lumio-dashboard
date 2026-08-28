@@ -82,6 +82,10 @@ export async function POST(req: NextRequest) {
     // Founder signups reuse this route (branded OTP) but must NOT be treated as
     // demo users: keep their role, skip the demo welcome email and demo lead.
     let isFounder = purpose === 'founder'
+    // An invited coach or parent signing into their portal. They are a real
+    // account, not a demo lead — writing one would make identify-user greet them
+    // as a demo user on their NEXT sign-in and send them to the wrong place.
+    const isMember = purpose === 'member'
 
     const normalisedEmail = email.toLowerCase()
 
@@ -224,7 +228,7 @@ export async function POST(req: NextRequest) {
     // sends only { email, code, sport, slug }, so writing `userName || null`
     // wiped the saved name, club, nickname and role on EVERY sign-in — which is
     // why the returning-user restore below could never find a profile.
-    if (!isFounder) try {
+    if (!isFounder && !isMember) try {
       const prior = (leadProfile ?? {}) as Record<string, string | null>
       await anon.from('sports_demo_leads').upsert({
         email: normalisedEmail,

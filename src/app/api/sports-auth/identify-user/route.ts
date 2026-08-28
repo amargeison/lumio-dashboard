@@ -33,7 +33,22 @@ export async function POST(req: NextRequest) {
       founderDisplayName: founderProfile.display_name,
     } : {}
 
-    // Check 2: Is this a demo user? (exists in sports_demo_leads)
+    // Check 2: Is this an invited portal member? A coach, parent or student the
+    // head coach added. They have no sports_profiles row of their own, so
+    // without this they identify as 'unknown' and the sign-in dead-ends.
+    //
+    // Checked BEFORE the demo lead so somebody who once poked at a demo and was
+    // later invited as a real coach is treated as the coach.
+    const { data: member } = await supabase
+      .from('coach_members')
+      .select('role, status, academy_id')
+      .ilike('email', normalised)
+      .neq('status', 'revoked')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    // Check 3: Is this a demo user? (exists in sports_demo_leads)
     const { data: demoLead } = await supabase
       .from('sports_demo_leads')
       .select('sport, user_name, club_name, role')
@@ -55,8 +70,21 @@ export async function POST(req: NextRequest) {
       })
     }
 
+    // A founder owns their own academy, which is the stronger identity — a head
+    // coach invited to somebody else's academy still lands in their own portal.
     if (founderSport) {
       return NextResponse.json({ type: 'founder', sport: founderSport, ...founderFields })
+    }
+
+    if (member) {
+      const { data: academy } = await supabase
+        .from('sports_profiles').select('brand_name').eq('id', member.academy_id).maybeSingle()
+      return NextResponse.json({
+        type: 'member',
+        sport: 'coach',
+        memberRole: member.role,
+        clubName: academy?.brand_name || null,
+      })
     }
 
     if (demoLead) {

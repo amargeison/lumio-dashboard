@@ -10,7 +10,7 @@ function getSupabase() {
   return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 }
 
-type UserType = 'founder' | 'demo' | 'both' | 'unknown' | null
+type UserType = 'member' | 'founder' | 'demo' | 'both' | 'unknown' | null
 interface IdentifyResult {
   type: UserType
   sport?: string
@@ -22,6 +22,9 @@ interface IdentifyResult {
   userName?: string
   clubName?: string
   role?: string
+  // An invited coach, parent or student. They have no academy of their own, so
+  // they sign in here and land in the portal their membership scopes them to.
+  memberRole?: string
 }
 
 // Resolve a founder's portal destination from identify-user fields, without a
@@ -85,6 +88,19 @@ function SportsLoginForm() {
       } else if (data.type === 'both') {
         // Both accounts — let user choose
         setStep('choose')
+      } else if (data.type === 'member') {
+        // An invited coach or parent. Same OTP machinery as everyone else — which
+        // is the point of routing them here rather than at /portal, where
+        // Supabase's own email was sending a link while the page asked for a code.
+        const otpRes = await fetch('/api/sports-demo/send-otp', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), sport: 'coach', clubName: data.clubName || undefined }),
+        })
+        const otpData = await otpRes.json().catch(() => ({}))
+        if (!otpRes.ok || otpData.error) throw new Error(otpData.error || 'Failed to send code')
+        setStep('otp')
+        setResendCountdown(30)
+        setTimeout(() => inputRefs.current[0]?.focus(), 100)
       } else if (data.type === 'demo') {
         // Send demo OTP
         setChosenPath('demo')
@@ -147,6 +163,19 @@ function SportsLoginForm() {
         if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
         // Hard navigation so the portal reads the freshly-minted session cookie.
         window.location.href = intendedRedirect || founderDest(userInfo)
+        return
+      } else if (effectiveType === 'member') {
+        // purpose:'member' mints the Supabase session WITHOUT writing a demo lead
+        // — otherwise they would be greeted as a demo user next time and sent to
+        // the wrong place entirely.
+        const res = await fetch('/api/sports-demo/verify-otp', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), code, sport: 'coach', purpose: 'member' }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
+        // Hard navigation so the portal reads the freshly-minted session cookie.
+        window.location.href = intendedRedirect || '/portal'
         return
       } else if (effectiveType === 'demo') {
         const res = await fetch('/api/sports-demo/verify-otp', {
