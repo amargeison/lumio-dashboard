@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAdult } from '@/lib/coach/camp-audience'
 import { stripe, admin } from '../_stripe'
 import { sendCampSignupEmails } from '@/lib/coach/camp-signup-email'
 
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
 async function notifyCampSignup(db: ReturnType<typeof admin>, att: Record<string, any>) {
   try {
     const [{ data: camp }, { data: prof }] = await Promise.all([
-      db.from('coach_camps').select('name, start_date, end_date, location, region, payment_mode').eq('id', att.camp_id).maybeSingle(),
+      db.from('coach_camps').select('name, start_date, end_date, location, region, payment_mode, audience').eq('id', att.camp_id).maybeSingle(),
       db.from('sports_profiles').select('brand_name, brand_logo_url, display_name, contact_email').eq('id', att.coach_id).maybeSingle(),
     ])
     if (!camp || !att.parent_email) return
@@ -84,6 +85,11 @@ async function notifyCampSignup(db: ReturnType<typeof admin>, att: Record<string
       medicalNotes: att.medical_notes, emergencyContact: att.emergency_contact,
       consentPhoto: !!att.consent_photo, consentMedical: !!att.consent_medical,
       amountPennies: att.amount_pennies || 0, paymentMode: camp.payment_mode || 'full', paid: true,
+      // The paid-in-full confirmation goes out from here rather than the sign-up
+      // route, so it needs the same audience switch — otherwise the one email
+      // somebody gets after handing over £1,500 is the one still calling them a
+      // parent.
+      audience: camp.audience, toParent: !isAdult(camp, att.player_age),
     })
   } catch (e) { console.error('[pay/webhook] camp signup email', e) }
 }

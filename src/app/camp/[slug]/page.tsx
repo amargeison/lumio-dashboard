@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { campAudience } from '@/lib/coach/camp-audience'
 import { createClient } from '@supabase/supabase-js'
 import CampSignupView, { type CampPublic } from './CampSignupView'
 
@@ -32,6 +33,9 @@ function toPublic(camp: any, profile: any, taken: number): CampPublic {
     ages: camp.ages || null,
     price: camp.price ?? null,
     paymentMode: camp.payment_mode || 'none',
+    // Juniors or adults. Decides whether this page asks for a guardian and
+    // consents about a child, or simply signs an adult up for their own place.
+    audience: campAudience(camp),
     depositAmount: camp.deposit_amount ?? null,
     note: camp.signup_note || camp.description || null,
     spacesLeft: camp.capacity ? Math.max(0, camp.capacity - taken) : null,

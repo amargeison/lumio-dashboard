@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { sessionCoachId } from '@/lib/coach/oauth'
 import { COACH_METHODOLOGY } from '@/lib/coach/agent-persona'
-import { runCoachAgent } from '@/lib/coach/agent'
+import { runCoachAgentStream } from '@/lib/coach/agent'
+import { campAudience, audienceBrief } from '@/lib/coach/camp-audience'
 
 export const maxDuration = 120
 
@@ -21,13 +22,16 @@ export const maxDuration = 120
 const CAMP_STANDARD = `How you design a camp — this is an operational plan a coaching team will run from, not a brochure.
 
 1. SEQUENCE, DO NOT SPRINKLE. Each day must earn the next. Assessment before technical change; technical before tactical; tactical before competition. A camp that does "serve day, volley day, fitness day" in any order is a timetable, not a plan — say WHY the order is what it is in the daily rhythm.
-2. AGE AND STAGE DECIDE EVERYTHING. A 9-12 red/orange group and a 15-18 county group get different session lengths, different ball types, different language and different evening content. Never write a plan that would suit both.
+2. AGE AND STAGE DECIDE EVERYTHING. A 9-12 red/orange group, a 15-18 county group and a week of adult club players get different session lengths, different ball types, different language and different evening content. Never write a plan that would suit two of them. Adults recover slower than fourteen-year-olds, arrive with thirty years of grooved habits, and did not come to be shouted at — build the week accordingly.
 3. BE OPERATIONALLY REAL. Respect the court count and group size given: sixteen players on two courts cannot all be doing live-ball drills. Say how the group splits. Include rest, food and travel where a real day needs them.
 4. RESIDENTIAL AND DAY CAMPS ARE DIFFERENT PRODUCTS. A residential camp has evenings, transfers, downtime and social content that build the group. A day camp does not — never invent evening sessions for players who go home at 4pm.
 5. MEASURABLE OUTCOMES. Objectives must be things a coach could tick or count at the end of the week — "every player adds a kick second serve they will use under pressure", not "improve serving".
 6. A REST OR LIGHTER DAY on anything 6 days or longer. Coaches who plan seven full days produce tired players and injuries, and you have seen it.`
 
-const SHAPE = `Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:
+// The brief is written for whoever decides — a parent for a junior camp, the
+// player themselves for an adult one. The JSON key stays `parent_brief` because
+// that is the column name; what goes in it is not always for a parent.
+const shapeFor = (adult: boolean) => `Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:
 {
   "daily_rhythm": "one line describing the shape of a typical day AND why it is ordered that way",
   "objectives": ["3-5 measurable camp outcomes"],
@@ -44,10 +48,10 @@ const SHAPE = `Return ONLY valid JSON (no markdown, no commentary) in EXACTLY th
     }
   ],
   "parent_brief": {
-    "intro": "2-3 sentences to a parent about what this camp is and who it suits",
+    "intro": "2-3 sentences ${adult ? 'to the player about what this week is and who it suits' : 'to a parent about what this camp is and who it suits'}",
     "whatTheyWorkOn": ["4-6 plain-English points, no coaching jargon"],
     "whatToBring": ["6-8 practical items"],
-    "dailyShape": "one line a parent can picture",
+    "dailyShape": "one line ${adult ? 'they' : 'a parent'} can picture",
     "whatTheyLeaveWith": ["3-4 concrete things the player takes home"]
   }
 }
@@ -56,7 +60,7 @@ RULES
 - session "type" must be one of: Technical, Tactical, Physical, Match play, Video, Recovery, Social, Briefing, Logistics.
 - session "slot" must be one of: AM, PM, EVE. A DAY CAMP must have NO "EVE" sessions at all.
 - 2-4 sessions per day for a day camp; 3-4 for a residential.
-- parent_brief is written FOR A PARENT — warm, plain, no jargon, no drill names.
+- parent_brief is written ${adult ? 'FOR THE PLAYER — "you", never "your child". No parents, no guardians, no drop-off. Warm, plain, no jargon, no drill names.' : 'FOR A PARENT — warm, plain, no jargon, no drill names.'}
 - British English throughout.`
 
 export async function POST(req: NextRequest) {
@@ -66,54 +70,101 @@ export async function POST(req: NextRequest) {
   const b = (await req.json().catch(() => ({}))) as {
     name?: string; days?: number; startDate?: string; theme?: string; intent?: string
     level?: string; ages?: string; region?: string; surface?: string; courts?: number
-    board?: string; groupSize?: number
+    board?: string; groupSize?: number; audience?: string
   }
   const days = Math.max(1, Math.min(28, Number(b.days) || 5))
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'AI not configured (ANTHROPIC_API_KEY missing).' }, { status: 500 })
 
   const residential = /resid|full|half|board|b&b|hotel/i.test(b.board || '') && !/day/i.test(b.board || '')
+  const adult = campAudience({ audience: b.audience }) === 'adult'
 
-  try {
-    // Shared agent: persona + methodology come from one place.
-    const { text: txt } = await runCoachAgent({
-      apiKey,
-      extraSystem: `${COACH_METHODOLOGY}\n\n${CAMP_STANDARD}\n\n${SHAPE}`,
-      maxTokens: 8000,
-      temperature: 0.4,
-      task: [
+  const task = [
           `Design this camp.`,
           `Camp name: ${b.name || 'Training camp'}`,
           `Length: ${days} day${days === 1 ? '' : 's'}${b.startDate ? ` starting ${b.startDate}` : ''}`,
           `Type: ${residential ? 'RESIDENTIAL — players stay overnight, so evenings are yours' : 'DAY CAMP — players go home each afternoon, so there are NO evening sessions'}${b.board ? ` (${b.board})` : ''}`,
-          `Who it is for: ${[b.ages ? `ages ${b.ages}` : null, b.level].filter(Boolean).join(', ') || 'developing juniors'}`,
+          audienceBrief({ audience: b.audience, ages: b.ages }),
+          `Standard: ${b.level || 'mixed'}`,
           `Group size: ${b.groupSize || 'unspecified'}${b.courts ? ` across ${b.courts} court${b.courts === 1 ? '' : 's'}` : ''}`,
           `Surface: ${b.surface || 'hard'}`,
           b.region ? `Location: ${b.region}` : '',
           `What the coach wants them to leave with: ${b.intent || b.theme || 'measurable improvement and a reason to come back'}`,
           ``,
           `Return the JSON with exactly ${days} itinerary day${days === 1 ? '' : 's'}.`,
-        ].filter(Boolean).join('\n'),
-    })
+        ].filter(Boolean).join('\n')
 
-    const m = txt.replace(/```json\s*/gi, '').replace(/```/g, '').trim().match(/\{[\s\S]*\}/)
-    if (!m) return NextResponse.json({ error: 'The AI could not design this camp.' }, { status: 502 })
-    const plan = JSON.parse(m[0])
-
-    // Trust but verify: a day camp with evening sessions is the failure mode most
-    // likely to embarrass a coach in front of a parent, so strip them server-side
-    // rather than relying on the prompt alone.
-    if (!residential && Array.isArray(plan.itinerary)) {
-      for (const d of plan.itinerary) {
-        if (Array.isArray(d.sessions)) d.sessions = d.sessions.filter((s: any) => String(s.slot).toUpperCase() !== 'EVE')
+  // ── Streamed, as newline-delimited JSON ───────────────────────────────────
+  // Not for show. An eight-day plan is six or seven thousand output tokens and
+  // takes well over a minute, and a request that sends nothing for that long is
+  // killed by nginx at sixty seconds and by Cloudflare at a hundred — which is
+  // why this hung on longer camps while five-day ones got through. A stream that
+  // emits every second is never idle, so neither timer ever fires.
+  //
+  // Each line is one JSON object:
+  //   {"t":"start","days":8}
+  //   {"t":"tick","day":3,"days":8}     ← real progress, counted out of the JSON
+  //   {"t":"done","plan":{…}}  or  {"t":"error","error":"…"}
+  const encoder = new TextEncoder()
+  const body = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (o: unknown) => {
+        try { controller.enqueue(encoder.encode(JSON.stringify(o) + '\n')) } catch { /* client went away */ }
       }
-    }
-    // Guarantee the day count the coach asked for, whatever the model returned.
-    if (Array.isArray(plan.itinerary)) plan.itinerary = plan.itinerary.slice(0, days)
+      try {
+        send({ t: 'start', days })
+        let lastPing = 0
+        const { text: txt } = await runCoachAgentStream({
+          apiKey,
+          extraSystem: `${COACH_METHODOLOGY}\n\n${CAMP_STANDARD}\n\n${shapeFor(adult)}`,
+          maxTokens: 8000,
+          temperature: 0.4,
+          task,
+          onText: full => {
+            const now = Date.now()
+            if (now - lastPing < 900) return
+            lastPing = now
+            // How many days have actually been written so far. Counting `"day":`
+            // in the partial JSON is crude, but it is true — which beats a fake
+            // progress bar that always finishes at 90%.
+            send({ t: 'tick', day: (full.match(/"day"\s*:/g) || []).length, days })
+          },
+        })
 
-    return NextResponse.json(plan)
-  } catch (e) {
-    console.error('[coach/camp-design]', e)
-    return NextResponse.json({ error: e instanceof Error ? e.message : 'Design failed' }, { status: 500 })
-  }
+        const m = txt.replace(/```json\s*/gi, '').replace(/```/g, '').trim().match(/\{[\s\S]*\}/)
+        if (!m) { send({ t: 'error', error: 'Lumio Coach could not design this camp. Try again.' }); controller.close(); return }
+        const plan = JSON.parse(m[0])
+
+        // Trust but verify: a day camp with evening sessions is the failure mode
+        // most likely to embarrass a coach in front of a parent, so strip them
+        // server-side rather than relying on the prompt alone.
+        if (!residential && Array.isArray(plan.itinerary)) {
+          for (const d of plan.itinerary) {
+            if (Array.isArray(d.sessions)) d.sessions = d.sessions.filter((x: any) => String(x.slot).toUpperCase() !== 'EVE')
+          }
+        }
+        // Guarantee the day count the coach asked for, whatever the model returned.
+        if (Array.isArray(plan.itinerary)) plan.itinerary = plan.itinerary.slice(0, days)
+
+        send({ t: 'done', plan })
+      } catch (e) {
+        console.error('[coach/camp-design]', e)
+        send({ t: 'error', error: e instanceof Error ? e.message : 'Design failed' })
+      }
+      controller.close()
+    },
+  })
+
+  return new Response(body, {
+    headers: {
+      'Content-Type': 'application/x-ndjson; charset=utf-8',
+      // no-transform stops Cloudflare rewriting or buffering it, and
+      // X-Accel-Buffering tells nginx not to hold the response back — without
+      // that last header nginx buffers the whole stream and we are exactly
+      // where we started.
+      'Cache-Control': 'no-cache, no-store, no-transform',
+      'X-Accel-Buffering': 'no',
+      'Connection': 'keep-alive',
+    },
+  })
 }

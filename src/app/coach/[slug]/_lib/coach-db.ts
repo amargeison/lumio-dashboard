@@ -74,7 +74,26 @@ export async function dbInsert(table: CoachTable, row: Record<string, any>) {
 }
 
 export async function dbUpdate(table: CoachTable, id: string, row: Record<string, any>) {
-  const { data, error } = await sb().from(table).update({ ...clean(row), updated_at: new Date().toISOString() }).eq('id', id).select().single()
+  const patch = clean(row)
+
+  // `updated_at` is stamped on every write, but not every table has the column —
+  // and PostgREST rejects the WHOLE statement when one field is unknown, so a
+  // missing audit column silently killed real edits. The Finance tab's "tick
+  // when paid" checkbox did nothing for exactly this reason: coach_camp_attendees
+  // had no updated_at, the update threw, and the controlled checkbox snapped
+  // back looking like a dead button.
+  //
+  // Migration 162 adds the column where it was missing. This retry is the
+  // belt: the next table created without it degrades to "saved, not stamped"
+  // instead of "the button does nothing".
+  let { data, error } = await sb().from(table)
+    .update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id).select().single()
+
+  if (error && /updated_at/i.test(error.message)) {
+    console.warn('[coach-db] %s has no updated_at column — saving without it', table)
+    ;({ data, error } = await sb().from(table).update(patch).eq('id', id).select().single())
+  }
+
   if (error) { console.error('[coach-db] update', table, error.message); throw new Error(error.message) }
   if (table === 'coach_bookings') syncBookingCalendar(data)
   return data

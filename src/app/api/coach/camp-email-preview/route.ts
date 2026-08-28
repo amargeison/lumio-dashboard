@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { runCoachAgent, extractJson } from '@/lib/coach/agent'
 import { rateLimit } from '@/lib/rate-limit'
+import { publicSiteOrigin } from '@/lib/public-origin'
 import { STAGE_BY_ID, type StageId } from '@/lib/coach/camp-lifecycle'
 import { parentHtml } from '@/lib/coach/camp-signup-email'
 import {
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
   const { data: profile } = await db.from('sports_profiles')
     .select('brand_name, brand_logo_url, display_name, contact_email').eq('id', coachId).maybeSingle()
 
-  const rec = recipientFor(attendee, player)
+  const rec = recipientFor(camp, attendee, player)
 
   // The confirmation is the one email Lumio Coach does not write. It is a
   // receipt — fixed fields, an exact amount, a place held — and it is built and
@@ -95,10 +96,13 @@ export async function POST(req: NextRequest) {
       medicalNotes: attendee.medical_notes, emergencyContact: attendee.emergency_contact,
       consentPhoto: !!attendee.consent_photo, consentMedical: !!attendee.consent_medical,
       amountPennies: when, paymentMode: camp.payment_mode || 'none', paid: !!attendee.paid,
+      // So the preview flips to the direct, adult version exactly as the real
+      // confirmation does.
+      audience: camp.audience, toParent: rec.toParent,
     })
     return NextResponse.json({
       ok: true, fixed: true, html,
-      draft: { subject: `${attendee.player_name} is signed up — ${camp.name}` },
+      draft: { subject: attendee && rec.toParent === false ? `You're in — ${camp.name}` : `${attendee.player_name} is signed up — ${camp.name}` },
       recipient: { name: attendee.player_name || 'an attendee', to: rec.to, toParent: rec.toParent },
     })
   }
@@ -143,6 +147,7 @@ export async function POST(req: NextRequest) {
     const { subject, html } = renderCampEmail({
       camp, attendee, profile: profile ?? null,
       stageId: stage.id, draft, greeting: rec.greeting,
+      origin: publicSiteOrigin(new URL(req.url).origin),
     })
 
     return NextResponse.json({

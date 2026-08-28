@@ -17,7 +17,7 @@ export type ParentBrief = { intro?: string; whatTheyWorkOn?: string[]; whatToBri
 export type CampLike = {
   name: string; start_date?: string | null; end_date?: string | null; location?: string | null; region?: string | null
   surface?: string | null; courts?: number | null; board?: string | null; ages?: string | null; price?: number | null
-  daily_rhythm?: string | null; description?: string | null
+  daily_rhythm?: string | null; description?: string | null; audience?: string | null
   itinerary?: CampDay[] | null; equipment?: string[] | null; objectives?: string[] | null; parent_brief?: ParentBrief | null
 }
 export type PlayerReport = {
@@ -37,11 +37,17 @@ const fmtDate = (d?: string | null) => d ? new Date(`${d}T00:00:00`).toLocaleDat
 const dateRange = (c: CampLike) => [fmtDate(c.start_date), fmtDate(c.end_date)].filter(Boolean).join(' – ')
 const ul = (xs?: string[]) => xs?.length ? `<ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''
 
-// ── 1. Parent brief ─────────────────────────────────────────────────────────
+// ── 1. Camp brief ───────────────────────────────────────────────────────────
 // The thing that actually sells a camp. Most coaches send a paragraph and a bank
-// transfer request; this is deliberately written for a parent, not a coach.
+// transfer request; this is deliberately written for whoever decides — a parent
+// on a junior camp, the player themselves on an adult one.
+//
+// The function keeps its name, and the data keeps the column name `parent_brief`,
+// because both are load-bearing elsewhere. What is IN it is not always for a
+// parent, which is what `audience` settles.
 export function printParentBrief(camp: CampLike, org: PrintOrg): boolean {
   const b = camp.parent_brief || {}
+  const adultBrief = String((camp as { audience?: string | null }).audience || '') === 'adult'
   const days = camp.itinerary || []
   const body = `
     ${b.intro ? `<div class="diag" style="border-color:#3A8EE0;background:#3A8EE00e">
@@ -49,7 +55,7 @@ export function printParentBrief(camp: CampLike, org: PrintOrg): boolean {
 
     <div class="two" style="margin-top:6px">
       <div class="col">
-        <h2 style="color:#3A8EE0">What your child will work on</h2>
+        <h2 style="color:#3A8EE0">${adultBrief ? 'What you will work on' : 'What your child will work on'}</h2>
         ${ul(b.whatTheyWorkOn) || `<p>${esc(camp.description || 'A full programme of technical, tactical and match-play work.')}</p>`}
         ${b.dailyShape ? `<h2 style="color:#3A8EE0">A typical day</h2><p>${esc(b.dailyShape)}</p>` : ''}
       </div>
@@ -67,12 +73,12 @@ export function printParentBrief(camp: CampLike, org: PrintOrg): boolean {
     ${b.whatTheyLeaveWith?.length ? `<div class="succ"><div class="lbl">What they leave with</div>${ul(b.whatTheyLeaveWith)}</div>` : ''}
 
     <h2 style="color:#3A8EE0">Questions?</h2>
-    <p>Reply to the email this came with, or speak to us at the club. We would rather answer a question now than have your child arrive unsure about anything.</p>`
+    <p>Reply to the email this came with, or speak to us at the club. We would rather answer a question now than ${adultBrief ? 'arrive unsure about anything' : 'have your child arrive unsure about anything'}.</p>`
 
-  return openPrintDoc(`${camp.name} — parent brief`, printPage({
-    org, kicker: 'Camp brief for parents', title: camp.name, accent: '#3A8EE0',
+  return openPrintDoc(`${camp.name} — camp brief`, printPage({
+    org, kicker: adultBrief ? 'Camp brief' : 'Camp brief for parents', title: camp.name, accent: '#3A8EE0',
     chips: [dateRange(camp), camp.ages ? `Ages ${camp.ages}` : '', camp.location || camp.region || '', camp.board || ''].filter(Boolean),
-    body, footNote: 'Parent brief',
+    body, footNote: 'Camp brief',
   }))
 }
 

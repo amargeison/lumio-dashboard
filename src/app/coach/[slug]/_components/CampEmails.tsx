@@ -183,8 +183,8 @@ export function CampEmails({
           <input type="checkbox" checked={!!camp.overseas} onChange={e => onSave({ overseas: e.target.checked })} style={{ marginTop: 2 }} />
           <span style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.55 }}>
             <strong style={{ color: T.text }}>This camp is abroad.</strong> Adds passport and travel insurance to
-            the two-week email, and mentions travel in the details. Leave it off for a camp at home — a parent
-            driving to the club does not need a passport reminder.
+            the two-week email, and mentions travel in the details. Leave it off for a camp at home — nobody
+            driving to the club needs a passport reminder.
           </span>
         </label>
 
