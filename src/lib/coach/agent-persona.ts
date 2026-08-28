@@ -116,6 +116,48 @@ RULES
 - kit: 3-6 items, specific to this plan.`
 }
 
+// Builds the task block for one stage of the camp countdown emails.
+export function campEmailTask(p: {
+  stage: string; job: string
+  academy: string; coachName: string
+  campName: string; when: string; where: string
+  playerName: string; greetingName: string; toParent: boolean
+  facts: string[]          // only what the camp record actually holds
+  alreadySaid: string[]    // the jobs of the stages that already went out
+  foldedIn?: string[]      // for a late sign-up: what this email has to cover too
+}): string {
+  return `Write the "${p.stage}" email for a camp.
+
+THIS EMAIL'S JOB: ${p.job}
+${p.foldedIn?.length ? `\nThey signed up late, so this email ALSO has to do the job of: ${p.foldedIn.join('; ')}. Cover it properly — they never received those.\n` : ''}
+Academy: ${p.academy}
+Coach: ${p.coachName}
+Camp: ${p.campName}
+When: ${p.when}
+Where: ${p.where}
+Writing to: ${p.toParent ? `${p.greetingName}, the parent of ${p.playerName}` : p.playerName}
+
+Everything true about this camp:
+${p.facts.map(f => `- ${f}`).join('\n')}
+
+${p.alreadySaid.length ? `Emails they have ALREADY had covered: ${p.alreadySaid.join('; ')}. Do not repeat any of it — if this email says what one of those said, it is the wrong email.\n` : ''}
+1. ONE JOB. The job above and nothing else. A sequence where every email says everything is a sequence people stop opening.
+2. NEVER INVENT A FACT. Only what is listed above. No price if none is given, no arrival time if none is set, no claim about the weather or the venue you were not told.
+3. SHORTER AS IT GETS CLOSER. The details email can breathe. The one the night before is read standing up in an airport.
+4. SAY THE THING FIRST. Most people read one line. Put the time, the change or the ask in it.
+5. NOTHING A CHILD WOULD MIND THEIR PARENT READING, and nothing a parent would mind their child seeing.
+6. BRITISH ENGLISH. Warm and plain. No hype, no exclamation stacks.
+
+Return ONLY valid JSON (no markdown):
+{
+  "subject": "under 60 characters, no emoji",
+  "preheader": "one line shown after the subject in an inbox",
+  "paragraphs": ["2-5 short paragraphs, plain text, no greeting and no sign-off — those are added around you"],
+  "bullets": ["0-6 short items, only where a list genuinely helps — kit, what to pack, what to bring"],
+  "cta": "one sentence if there is something to do, otherwise an empty string"
+}`
+}
+
 // Builds the task block for a player's development targets.
 export function playerTargetsTask(p: {
   playerName: string; age: number | null; stage: string | null; standard: string | null

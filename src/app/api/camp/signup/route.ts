@@ -4,6 +4,7 @@ import Stripe from 'stripe'
 import { publicSiteOrigin } from '@/lib/public-origin'
 import { sendCampSignupEmails, type SignupMailInput } from '@/lib/coach/camp-signup-email'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
+import { foldedIntoConfirmation, STAGES, dueAt } from '@/lib/coach/camp-lifecycle'
 
 export const runtime = 'nodejs'
 
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
   const sb = db()
   try {
     const { data: camp } = await sb.from('coach_camps')
-      .select('id, coach_id, name, capacity, price, payment_mode, deposit_amount, signup_open, start_date, end_date, location, region')
+      .select('id, coach_id, name, capacity, price, payment_mode, deposit_amount, signup_open, start_date, end_date, location, region, parent_brief, daily_rhythm, signup_note, overseas')
       .ilike('signup_slug', slug).maybeSingle()
 
     // Same response whether the camp is missing or closed — a closed camp should
@@ -127,6 +128,7 @@ export async function POST(req: NextRequest) {
     const pennies = Math.round(due * 100)
     const needsPayment = mode !== 'none' && pennies >= 50
 
+    const signedUpAt = new Date().toISOString()
     const { data: attendee } = await sb.from('coach_camp_attendees').insert({
       coach_id: camp.coach_id, camp_id: camp.id, player_id: playerId, player_name: playerName,
       parent_name: parentName || null, parent_email: parentEmail,
@@ -144,8 +146,35 @@ export async function POST(req: NextRequest) {
       // so marking it paid here would inflate the Finance tab's collected total
       // for money nobody has received. The coach ticks it when it lands.
       paid: false,
-      source: 'signup', signed_up_at: new Date().toISOString(),
+      source: 'signup', signed_up_at: signedUpAt,
     }).select('id').single()
+
+    // ── The late sign-up ──────────────────────────────────────────────────────
+    // Someone who books a fortnight after the "everything you need" email went
+    // out must not receive it, the two-week email and the week-to-go email all
+    // at once. The countdown emails whose dates have already passed are written
+    // off here as skipped, and the one that still matters — the details — is
+    // folded into the confirmation below instead. The night-before email is
+    // deliberately NOT written off: it is logistics, and they still need it.
+    const folded = foldedIntoConfirmation(camp.start_date, Date.parse(signedUpAt))
+    if (attendee?.id) {
+      const past = STAGES.filter(st => {
+        if (st.id === 'signup' || st.lateStill) return false
+        const d = dueAt(st, camp.start_date)
+        return d != null && d < Date.parse(signedUpAt)
+      })
+      if (past.length) {
+        void sb.from('coach_camp_emails').insert(past.map(st => ({
+          coach_id: camp.coach_id, camp_id: camp.id, attendee_id: attendee.id,
+          stage: st.id, status: 'skipped',
+          error: folded.includes(st.id)
+            ? 'signed up late — folded into their confirmation'
+            : 'signed up after this was due',
+        }))).then(() => {}, () => {})
+      }
+    }
+
+    const brief = (camp.parent_brief || {}) as Record<string, unknown>
 
     // Built once and reused: sent now when nothing is owed, or by the Stripe
     // webhook once the money is in. Either way the coach hears about it.
@@ -163,6 +192,13 @@ export async function POST(req: NextRequest) {
       emergencyContact: clean(b.emergency_contact, 160) || null,
       consentPhoto: !!b.consent_photo, consentMedical: !!b.consent_medical,
       amountPennies: needsPayment ? pennies : 0, paymentMode: mode, paid: false,
+      essentials: folded.includes('details') ? {
+        dailyShape: (brief.dailyShape as string) || camp.daily_rhythm || null,
+        whatToBring: (brief.whatToBring as string[]) || null,
+        whatTheyWorkOn: (brief.whatTheyWorkOn as string[]) || null,
+        note: camp.signup_note || null,
+        overseas: !!camp.overseas,
+      } : null,
     }
 
     if (!needsPayment) {
