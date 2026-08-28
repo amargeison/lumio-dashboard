@@ -51,7 +51,11 @@ export async function POST(req: NextRequest) {
     if (process.env.RESEND_API_KEY) {
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
-      const portal = `https://lumiosports.com/portal`
+      // Everybody signs in at the same place. /portal is where a member ENDS UP,
+      // not where they sign in — sending them straight there used Supabase's own
+      // magic-link email, which is why the invite arrived as a link when the page
+      // was asking for a code.
+      const portal = `https://www.lumiosports.com/sports-login`
       const who = role === 'coach' ? 'as a coach' : 'to follow your player’s progress'
       await resend.emails.send({
         from: 'Lumio Sports <hello@lumiocms.com>',
