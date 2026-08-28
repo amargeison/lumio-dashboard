@@ -80,8 +80,15 @@ export function LiveStaff({ T, accent }: Common) {
   const todayISO = isoD(new Date())
   const weekStart = mondayOf(new Date()), weekStartISO = isoD(weekStart), weekEndISO = isoD(addD(weekStart, 7))
   const weekDays = Array.from({ length: 7 }, (_, i) => addD(weekStart, i))
-  const coachBookings = (c: any) => bookings.rows.filter((b: any) => b.status !== 'cancelled' && (b.assigned_coach === c.name || (c.isHead && !b.assigned_coach)))
-  const coachPlayers = (c: any) => players.rows.filter((p: any) => p.assigned_coach === c.name || (c.isHead && !p.assigned_coach))
+  // Match on staff_id where the row has one, falling back to the name for rows
+  // written before migration 165 or left unlinked by an ambiguous name. The head
+  // coach still picks up anything unassigned.
+  const isFor = (row: any, c: any) =>
+    row.staff_id ? row.staff_id === c.id
+      : row.assigned_coach ? row.assigned_coach === c.name
+      : !!c.isHead
+  const coachBookings = (c: any) => bookings.rows.filter((b: any) => b.status !== 'cancelled' && isFor(b, c))
+  const coachPlayers = (c: any) => players.rows.filter((p: any) => isFor(p, c))
   const statsFor = (c: any) => {
     const bk = coachBookings(c)
     const weekBk = bk.filter((b: any) => (b.booking_date || '') >= weekStartISO && (b.booking_date || '') < weekEndISO)
@@ -95,8 +102,18 @@ export function LiveStaff({ T, accent }: Common) {
   // Settings name once it's been set/seeded (i.e. no longer the demo default),
   // falling back to the account's display_name.
   const headName = (headS.name && headS.name !== COACH_ORG.coach ? headS.name : '') || profile.display_name || headS.name || 'Head Coach'
-  const head = { id: '__head__', name: headName, role: 'Head', email: headS.email || profile.contact_email, phone: headS.phone || profile.contact_phone, qualifications: headS.accreditation || 'Head Coach', home_venue: null, isHead: true, avatar_url: headS.avatarUrl, contracted_hours: headS.contractedHours, dbs_number: headS.dbsNumber, dbs_issued: headS.dbsIssued, dbs_expiry: headS.dbsExpiry, safeguarding_trained: headS.safeguardingTrained, safeguarding_date: headS.safeguardingDate }
-  const everyone = [head, ...staff.rows]
+  // The head coach now has a REAL coach_staff row (migration 165), so their card
+  // carries a usable id — which is what lets work be assigned to them and what
+  // the portal invite links against. Their displayed details still come from
+  // Settings, because that is where the head profile is edited.
+  //
+  // The row is filtered out of the list below so they appear once, not twice.
+  // The '__head__' fallback only survives for an academy created before the
+  // migration ran; nothing can be assigned to that id, which is the old
+  // behaviour rather than a new failure.
+  const headRow = staff.rows.find((r: any) => r.is_head)
+  const head = { id: headRow?.id || '__head__', name: headName, role: 'Head', email: headS.email || profile.contact_email, phone: headS.phone || profile.contact_phone, qualifications: headS.accreditation || 'Head Coach', home_venue: null, isHead: true, avatar_url: headS.avatarUrl, contracted_hours: headS.contractedHours, dbs_number: headS.dbsNumber, dbs_issued: headS.dbsIssued, dbs_expiry: headS.dbsExpiry, safeguarding_trained: headS.safeguardingTrained, safeguarding_date: headS.safeguardingDate }
+  const everyone = [head, ...staff.rows.filter((r: any) => !r.is_head)]
   const flagged = everyone.filter(s => { const st = dbsState(s.dbs_expiry); return st.label === 'Expired' || st.label.startsWith('Expires') || st.label.startsWith('No DBS') })
   const ROLES = ['All', 'Head', 'Senior', 'Coach', 'Assistant', 'Apprentice']
   const inRole = (s: any) => role === 'All' || (s.role || '').toLowerCase().includes(role.toLowerCase())
