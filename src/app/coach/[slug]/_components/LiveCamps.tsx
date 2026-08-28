@@ -35,7 +35,7 @@ type Camp = {
   // rewriting the week-to-go email for a Portugal trip must not change it for
   // next summer's day camp.
   emails_paused?: boolean | null; overseas?: boolean | null; balance_link?: string | null
-  email_overrides?: Record<string, { skip?: boolean; note?: string }> | null
+  email_overrides?: Record<string, { skip?: boolean; note?: string; draft?: Record<string, unknown> }> | null
 }
 export type CampSession = { slot?: string; time?: string; title?: string; type?: string; where?: string; detail?: string; cue?: string }
 export type CampDay = {
@@ -158,7 +158,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
           {TABS.map(([id, label]) => <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 14px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: FONT, background: tab === id ? T.panel : 'transparent', color: tab === id ? T.text : T.text2, fontWeight: tab === id ? 600 : 400, boxShadow: tab === id ? `0 0 0 1px ${T.border}` : 'none' }}>{label}</button>)}
         </div>
 
-        {tab === 'overview' && <Overview T={T} accent={accent} camp={sel} booked={campAttendees.length} signups={campAttendees.filter(a => a.source === 'signup').length} onSave={v => camps.edit(sel.id, v)} />}
+        {tab === 'overview' && <Overview T={T} accent={accent} camp={sel} booked={campAttendees.length} />}
         {tab === 'itinerary' && <Itinerary T={T} accent={accent} camp={sel} onSave={v => camps.edit(sel.id, v)} attendeeNames={campAttendees.map(a => a.player_name)} />}
         {tab === 'equipment' && <ListEditor T={T} accent={accent} title="Equipment & kit" items={sel.equipment || []} onSave={items => camps.edit(sel.id, { equipment: items })} placeholder="One kit item per line" />}
         {tab === 'targets' && (
@@ -170,7 +170,18 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
         {tab === 'attendees' && <Attendees T={T} accent={accent} camp={sel} attendees={campAttendees} players={players} reload={attendees.reload} remove={attendees.remove} />}
         {tab === 'packs' && <Packs T={T} accent={accent} camp={sel} attendees={campAttendees} players={players} skillMap={skillMap} skillDates={skillDates} attRows={attRows} />}
         {tab === 'emails' && <CampEmails T={T} accent={accent} camp={sel} attendees={campAttendees} onSave={v => camps.edit(sel.id, v)} />}
-        {tab === 'promote' && <CampPromote T={T} accent={accent} campId={sel.id} campName={sel.name} players={players} />}
+        {/* The sign-up page sits above the announcement writer on purpose: the
+            link is what every announcement points at, so you set it up first.
+            It used to live on Overview, where a coach reading camp facts had to
+            scroll past his own public URL. */}
+        {tab === 'promote' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <SignupPanel T={T} accent={accent} camp={sel} booked={campAttendees.length}
+              signups={campAttendees.filter(a => a.source === 'signup').length}
+              onSave={v => camps.edit(sel.id, v)} />
+            <CampPromote T={T} accent={accent} campId={sel.id} campName={sel.name} players={players} />
+          </div>
+        )}
         {tab === 'finance' && <Finance T={T} accent={accent} camp={sel} attendees={campAttendees} editAtt={attendees.edit} editCamp={v => camps.edit(sel.id, v)} />}
 
         <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -202,7 +213,7 @@ function card(T: ThemeTokens): CSSProperties { return { background: T.panel, bor
 function box(T: ThemeTokens): CSSProperties { return { background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' } }
 function lbl(T: ThemeTokens): CSSProperties { return { fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' } }
 
-function Overview({ T, accent, camp, booked, signups, onSave }: { T: ThemeTokens; accent: AccentTokens; camp: Camp; booked: number; signups: number; onSave: (v: Record<string, any>) => Promise<void> }) {
+function Overview({ T, accent, camp, booked }: { T: ThemeTokens; accent: AccentTokens; camp: Camp; booked: number }) {
   const revenue = (camp.price || 0) * booked
   const collected = camp.collected || 0
   const glance: [string, ReactNode][] = [
@@ -231,7 +242,6 @@ function Overview({ T, accent, camp, booked, signups, onSave }: { T: ThemeTokens
         </>}
       </div>
     </div>
-    <SignupPanel T={T} accent={accent} camp={camp} booked={booked} signups={signups} onSave={onSave} />
     </div>
   )
 }
