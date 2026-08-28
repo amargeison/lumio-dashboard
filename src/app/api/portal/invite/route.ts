@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
 
-  const { email, role, scopePlayerId = null, scopeCoachName = null, name = '' } =
-    (await req.json().catch(() => ({}))) as { email?: string; role?: string; scopePlayerId?: string | null; scopeCoachName?: string | null; name?: string }
+  const { email, role, scopePlayerId = null, scopeCoachName = null, staffId = null, name = '' } =
+    (await req.json().catch(() => ({}))) as { email?: string; role?: string; scopePlayerId?: string | null; scopeCoachName?: string | null; staffId?: string | null; name?: string }
 
   if (!email || !/.+@.+\..+/.test(email)) return NextResponse.json({ error: 'A valid email is required' }, { status: 400 })
   if (!['coach', 'parent', 'student'].includes(role || '')) return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
@@ -30,8 +30,18 @@ export async function POST(req: NextRequest) {
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
 
   // Upsert the membership (one per academy+email).
+  //
+  // staff_id is the real link and scope_coach_name is the legacy name string.
+  // Both are sent: a database trigger keeps whichever one is missing in step, so
+  // this works whether or not the caller knows the staff id yet. scope_coach_name
+  // is dropped once every caller sends staffId.
   const { error } = await admin.from('coach_members').upsert({
-    academy_id: user.id, email: emailLc, role, scope_player_id: scopePlayerId, scope_coach_name: scopeCoachName, status: 'invited', updated_at: new Date().toISOString(),
+    academy_id: user.id, email: emailLc, role,
+    scope_player_id: scopePlayerId,
+    scope_coach_name: scopeCoachName,
+    // '__head__' is the client-side fiction for the head coach, not a real row.
+    staff_id: staffId && staffId !== '__head__' ? staffId : null,
+    status: 'invited', updated_at: new Date().toISOString(),
   }, { onConflict: 'academy_id,email' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

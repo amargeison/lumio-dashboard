@@ -54,7 +54,13 @@ export function LiveStaff({ T, accent }: Common) {
     if (!c.email) { setInviteMsg('Add an email for this coach first.'); return }
     setInviteMsg('Sending…')
     try {
-      const r = await fetch('/api/portal/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: c.email, role: 'coach', scopeCoachName: c.name, name: c.name }) })
+      // staffId is the real link; scopeCoachName is the legacy name string kept
+      // in step by a trigger until every caller sends the id. Sending both means
+      // an invite survives the coach being renamed afterwards.
+      const r = await fetch('/api/portal/invite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: c.email, role: 'coach', staffId: c.id, scopeCoachName: c.name, name: c.name }),
+      })
       setInviteMsg(r.ok ? `✓ Portal invite sent to ${c.email}` : 'Could not send invite.')
     } catch { setInviteMsg('Could not send invite.') }
   }
