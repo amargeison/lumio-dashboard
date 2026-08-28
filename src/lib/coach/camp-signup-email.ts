@@ -26,6 +26,17 @@ export type SignupMailInput = {
   playerAge?: number | null; medicalNotes?: string | null; emergencyContact?: string | null
   consentPhoto?: boolean; consentMedical?: boolean
   amountPennies?: number; paymentMode?: string; paid: boolean
+  // Set ONLY for a late sign-up — someone who booked after the "everything you
+  // need" email had already gone out to everyone else. Rather than send them a
+  // burst of countdown emails whose dates have passed, that email's contents are
+  // folded into this one. See foldedIntoConfirmation() in camp-lifecycle.ts.
+  essentials?: {
+    dailyShape?: string | null
+    whatToBring?: string[] | null
+    whatTheyWorkOn?: string[] | null
+    note?: string | null
+    overseas?: boolean
+  } | null
 }
 
 function shell(logoUrl: string | null | undefined, academy: string, body: string) {
@@ -45,6 +56,31 @@ function detailRows(rows: [string, string][]) {
   return rows.filter(r => !!r[1]).map(([l, v]) =>
     `<tr><td style="padding:7px 0;font-size:13px;color:#6b7280;width:150px;vertical-align:top">${esc(l)}</td>
          <td style="padding:7px 0;font-size:14px;color:#1a1d29">${esc(v)}</td></tr>`).join('')
+}
+
+// The details email, folded in. Built from the camp record only — nothing here
+// is generated, because a confirmation is a receipt and a receipt that invents a
+// detail is worse than one that omits it.
+function essentialsBlock(i: SignupMailInput): string {
+  const e = i.essentials
+  if (!e) return ''
+  const bring = (e.whatToBring || []).filter(Boolean)
+  const work = (e.whatTheyWorkOn || []).filter(Boolean)
+  const parts = [
+    e.dailyShape ? `<p style="margin:0 0 12px;font-size:14.5px;line-height:1.65;color:#374151">${esc(e.dailyShape)}</p>` : '',
+    work.length ? `<div style="font-size:13px;color:#6b7280;margin:0 0 5px">What they&rsquo;ll work on</div>
+        <ul style="margin:0 0 13px;padding-left:19px">${work.map(x => `<li style="font-size:14px;line-height:1.6;color:#374151;margin-bottom:4px">${esc(x)}</li>`).join('')}</ul>` : '',
+    bring.length ? `<div style="font-size:13px;color:#6b7280;margin:0 0 5px">What to bring</div>
+        <ul style="margin:0 0 13px;padding-left:19px">${bring.map(x => `<li style="font-size:14px;line-height:1.6;color:#374151;margin-bottom:4px">${esc(x)}</li>`).join('')}</ul>` : '',
+    e.overseas ? `<p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#374151">This one is abroad, so check the passport is in date and that travel insurance is sorted before you travel.</p>` : '',
+    e.note ? `<p style="margin:0;font-size:14px;line-height:1.65;color:#374151">${esc(e.note)}</p>` : '',
+  ].filter(Boolean).join('')
+  if (!parts) return ''
+  return `<div style="margin:18px 0 0;padding:16px 16px 14px;background:#f7f9fc;border:1px solid #e6ebf3;border-radius:12px">
+    <div style="font-size:15px;font-weight:700;color:#1a1d29;margin:0 0 4px">Everything you need</div>
+    <p style="margin:0 0 12px;font-size:13px;color:#6b7280;line-height:1.55">You&rsquo;ve booked close to the start, so here it all is now rather than in a separate email.</p>
+    ${parts}
+  </div>`
 }
 
 export function parentHtml(i: SignupMailInput) {
@@ -69,6 +105,7 @@ export function parentHtml(i: SignupMailInput) {
     </table>
     ${mapLink}
     ${payLine}
+    ${essentialsBlock(i)}
     <p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#6b7280">
       Anything we should know before the first morning — a change of collection arrangements, a new injury — just reply to this email and it comes straight to ${esc(i.coachName || 'the coaching team')}.
     </p>

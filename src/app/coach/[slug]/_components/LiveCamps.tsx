@@ -14,6 +14,7 @@ import { avatarSrc } from '@/lib/avatar'
 import { CampDesigner, type CampPlan } from './CampDesigner'
 import { campOrg, printParentBrief, printRunSheet, printPlayerReport, printCertificate } from '../_lib/camp-printables'
 import { CampPromote } from './CampPromote'
+import { CampEmails } from './CampEmails'
 import { getSettings } from '../_lib/settings-store'
 
 type Camp = {
@@ -30,6 +31,11 @@ type Camp = {
   // Public sign-up page (/camp/[slug]). Closed until the coach opens it.
   signup_slug?: string | null; signup_open?: boolean | null
   payment_mode?: string | null; deposit_amount?: number | null; signup_note?: string | null
+  // The countdown emails (Emails tab). email_overrides is per-stage and per-camp:
+  // rewriting the week-to-go email for a Portugal trip must not change it for
+  // next summer's day camp.
+  emails_paused?: boolean | null; overseas?: boolean | null; balance_link?: string | null
+  email_overrides?: Record<string, { skip?: boolean; note?: string }> | null
 }
 export type CampSession = { slot?: string; time?: string; title?: string; type?: string; where?: string; detail?: string; cue?: string }
 export type CampDay = {
@@ -105,7 +111,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   }
 
   const booked = (c: Camp) => attendees.rows.filter(a => a.camp_id === c.id).length
-  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['promote', 'Promote'], ['finance', 'Finance']]
+  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['emails', 'Emails'], ['promote', 'Promote'], ['finance', 'Finance']]
 
   return (
     <div style={{ fontFamily: FONT }}>
@@ -163,6 +169,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
         )}
         {tab === 'attendees' && <Attendees T={T} accent={accent} camp={sel} attendees={campAttendees} players={players} reload={attendees.reload} remove={attendees.remove} />}
         {tab === 'packs' && <Packs T={T} accent={accent} camp={sel} attendees={campAttendees} players={players} skillMap={skillMap} skillDates={skillDates} attRows={attRows} />}
+        {tab === 'emails' && <CampEmails T={T} accent={accent} camp={sel} attendees={campAttendees} onSave={v => camps.edit(sel.id, v)} />}
         {tab === 'promote' && <CampPromote T={T} accent={accent} campId={sel.id} campName={sel.name} players={players} />}
         {tab === 'finance' && <Finance T={T} accent={accent} camp={sel} attendees={campAttendees} editAtt={attendees.edit} editCamp={v => camps.edit(sel.id, v)} />}
 
