@@ -30,7 +30,11 @@ export const COACH_VIEW_COACH_ID = 'rachel'
 // Nav items a 'coach' cannot see — academy-wide / head-only modules. Everything
 // else stays visible and is data-scoped by coachId. (Resource Centre stays
 // visible as a read-only shared library.)
-export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues', 'equipment', 'payments']
+// Settings added: it edits the ACADEMY — branding, integrations, the head
+// coach's own profile — none of which belongs to an assistant. Staff was already
+// here, and migration 167 makes that a real boundary rather than a hidden menu
+// item: coach_staff carries DBS numbers and safeguarding dates.
+export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues', 'equipment', 'payments', 'settings']
 
 // Normalise whatever the session carries (may be a legacy role like
 // 'assistant'/'manager', or undefined) to one of the three view roles.

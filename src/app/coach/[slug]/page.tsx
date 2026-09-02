@@ -31,6 +31,7 @@ import {
   normalizeRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole,
 } from './_lib/role-scope'
 import { coachById, coachStats } from './_lib/coaches-data'
+import { currentIdentity } from './_lib/coach-db'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
@@ -326,6 +327,24 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // survives reload. The active role drives (a) which coachId the data views
   // scope to and (b) which nav items are available.
   const [role, setRole] = useState<CoachViewRole>(normalizeRole(session?.role))
+  // Is the signed-in user actually the academy owner? Until this resolves we
+  // assume they are NOT, so an assistant never sees the head coach's nav flash
+  // up before being corrected.
+  const [isHeadUser, setIsHeadUser] = useState<boolean | null>(null)
+  useEffect(() => {
+    let alive = true
+    currentIdentity().then(me => {
+      if (!alive) return
+      const head = me ? me.isHead : true   // no membership → the old single-user behaviour
+      setIsHeadUser(head)
+      // An assistant coach is locked to the coach view. This is presentation
+      // only — row level security is what actually stops them reading anything
+      // — but a nav full of doors that all open onto empty rooms is its own
+      // kind of broken.
+      if (!head) setRole('coach')
+    })
+    return () => { alive = false }
+  }, [])
   // Mirror the role's coachId into the module-level scope the data views read.
   useEffect(() => { setScopeCoachId(coachIdForRole(role)); return () => setScopeCoachId(null) }, [role])
 
@@ -415,17 +434,18 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // If the active role is no longer available (data removed), drop back to Head.
   useEffect(() => {
     if (!isEmpty || liveStats.loading) return
-    if (role === 'coach' && liveStats.staff === 0) setRole('head')
-    if (role === 'student' && liveStats.players === 0) setRole('head')
+    if (role === 'coach' && liveStats.staff === 0) { if (isHeadUser !== false) setRole('head') }
+    if (role === 'student' && liveStats.players === 0) { if (isHeadUser !== false) setRole('head') }
   }, [isEmpty, role, liveStats.loading, liveStats.staff, liveStats.players])
   // Turning the student app off while viewing it must not strand the coach there.
   useEffect(() => {
-    if (role === 'student' && !settings.studentApp) setRole('head')
+    if (role === 'student' && !settings.studentApp) { if (isHeadUser !== false) setRole('head') }
   }, [role, settings.studentApp])
   // Switching view persists back into the demo session blob — the same key the
   // gate restores from — so the choice survives a reload. (This is what the shared
   // RoleSwitcher used to do before the switcher moved into the profile menu.)
   const changeRole = (roleId: string) => {
+    if (isHeadUser === false) return   // an assistant cannot switch out of their own view
     setRole(normalizeRole(roleId))
     const s = getDemoSession('coach')
     if (s) { try { saveDemoSession('coach', { ...s, role: roleId }) } catch { /* ignore */ } }
