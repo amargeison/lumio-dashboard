@@ -78,12 +78,16 @@ export async function POST(req: NextRequest) {
 
     if (member) {
       const { data: academy } = await supabase
-        .from('sports_profiles').select('brand_name').eq('id', member.academy_id).maybeSingle()
+        .from('sports_profiles').select('brand_name, portal_slug').eq('id', member.academy_id).maybeSingle()
       return NextResponse.json({
         type: 'member',
         sport: 'coach',
         memberRole: member.role,
         clubName: academy?.brand_name || null,
+        // The academy's portal, so a coach lands in the real one rather than the
+        // cut-down member view. Reuses founderSlug so the redirect helpers on the
+        // sign-in page need no new field.
+        founderSlug: academy?.portal_slug || null,
       })
     }
 
