@@ -25,6 +25,9 @@ interface IdentifyResult {
   // An invited coach, parent or student. They have no academy of their own, so
   // they sign in here and land in the portal their membership scopes them to.
   memberRole?: string
+  // Where a member belongs after sign-in, resolved server-side. A coach gets the
+  // real academy portal; a parent or player gets /portal.
+  memberDest?: string
 }
 
 // Resolve a founder's portal destination from identify-user fields, without a
@@ -174,11 +177,9 @@ function SportsLoginForm() {
         })
         const data = await res.json().catch(() => ({}))
         if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
-        // A coach uses the REAL portal, scoped by row level security. Parents and
-        // students keep the cut-down /portal, which is built for them.
-        const dest = userInfo.memberRole === 'coach' && userInfo.founderSlug
-          ? `/tennis/coach/${userInfo.founderSlug}`
-          : '/portal'
+        // A coach uses the REAL portal, scoped by row level security. Customers
+        // keep /portal, which is built for them.
+        const dest = userInfo.memberDest || '/portal'
         // Hard navigation so the portal reads the freshly-minted session cookie.
         window.location.href = intendedRedirect || dest
         return

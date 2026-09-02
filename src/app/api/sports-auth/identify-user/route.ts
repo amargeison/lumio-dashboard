@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { portalUrlFor } from '@/lib/sports-admin/portal-url'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -78,16 +79,25 @@ export async function POST(req: NextRequest) {
 
     if (member) {
       const { data: academy } = await supabase
-        .from('sports_profiles').select('brand_name, portal_slug').eq('id', member.academy_id).maybeSingle()
+        .from('sports_profiles')
+        .select('brand_name, display_name, portal_slug, sport')
+        .eq('id', member.academy_id).maybeSingle()
+
+      // Worked out HERE rather than on the sign-in page, using the same helper
+      // every other link to a portal uses. portal_slug is frequently null — it
+      // falls back to a slug of the brand or display name — so requiring it on
+      // the client silently dropped coaches back to the member portal.
+      const memberDest = member.role === 'coach' && academy
+        ? portalUrlFor({ ...academy, sport: 'coach' })
+        : '/portal'
+
       return NextResponse.json({
         type: 'member',
         sport: 'coach',
         memberRole: member.role,
         clubName: academy?.brand_name || null,
-        // The academy's portal, so a coach lands in the real one rather than the
-        // cut-down member view. Reuses founderSlug so the redirect helpers on the
-        // sign-in page need no new field.
         founderSlug: academy?.portal_slug || null,
+        memberDest,
       })
     }
 
