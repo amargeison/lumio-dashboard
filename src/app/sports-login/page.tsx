@@ -174,8 +174,13 @@ function SportsLoginForm() {
         })
         const data = await res.json().catch(() => ({}))
         if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
+        // A coach uses the REAL portal, scoped by row level security. Parents and
+        // students keep the cut-down /portal, which is built for them.
+        const dest = userInfo.memberRole === 'coach' && userInfo.founderSlug
+          ? `/tennis/coach/${userInfo.founderSlug}`
+          : '/portal'
         // Hard navigation so the portal reads the freshly-minted session cookie.
-        window.location.href = intendedRedirect || '/portal'
+        window.location.href = intendedRedirect || dest
         return
       } else if (effectiveType === 'demo') {
         const res = await fetch('/api/sports-demo/verify-otp', {

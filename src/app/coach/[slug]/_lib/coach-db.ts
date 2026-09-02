@@ -48,13 +48,57 @@ export function sb() {
   return _sb
 }
 
-let _uid: string | null = null
-export async function currentCoachId(): Promise<string | null> {
-  if (_uid) return _uid
-  const { data } = await sb().auth.getUser()
-  _uid = data.user?.id ?? null
-  return _uid
+// ── Whose academy am I working in? ──────────────────────────────────────────
+// NOT the same as "who am I", and the difference is the whole point of the
+// coach-identity work. A head coach IS their academy; an assistant coach belongs
+// to somebody else's. Every read and write in the portal funnels through here,
+// so resolving it correctly once is what lets an assistant use the real portal
+// rather than a cut-down copy of it.
+//
+// Row level security (migration 166) does the actual enforcing. This only picks
+// which academy to ask about — a lie here gets you an empty result, not access.
+export type CoachIdentity = {
+  academyId: string
+  staffId: string | null
+  isHead: boolean
+  role: 'head' | 'coach'
+  brandName: string | null
+  slug: string | null
 }
+
+let _me: CoachIdentity | null = null
+let _mePending: Promise<CoachIdentity | null> | null = null
+
+export async function currentIdentity(): Promise<CoachIdentity | null> {
+  if (_me) return _me
+  // De-duped: the portal mounts a dozen data hooks at once and they all ask.
+  if (!_mePending) {
+    _mePending = (async () => {
+      try {
+        const r = await fetch('/api/coach/whoami')
+        if (!r.ok) return null
+        const d = await r.json()
+        _me = d as CoachIdentity
+        return _me
+      } catch { return null }
+      finally { _mePending = null }
+    })()
+  }
+  return _mePending
+}
+
+/** The academy id every coach_* row is filed under. */
+export async function currentCoachId(): Promise<string | null> {
+  const me = await currentIdentity()
+  if (me?.academyId) return me.academyId
+  // Fallback for anything running before/without the whoami route — the old
+  // behaviour, which is correct for a head coach and harmless otherwise.
+  const { data } = await sb().auth.getUser()
+  return data.user?.id ?? null
+}
+
+/** Clear the cached identity — call on sign-out. */
+export function forgetIdentity() { _me = null; _mePending = null }
 
 export async function dbList<T = any>(table: CoachTable): Promise<T[]> {
   const { data, error } = await sb().from(table).select('*').order('created_at', { ascending: false })
@@ -62,10 +106,23 @@ export async function dbList<T = any>(table: CoachTable): Promise<T[]> {
   return (data ?? []) as T[]
 }
 
+// Tables where "which coach is this for" is a real question (migration 165).
+// Anything an assistant coach creates is theirs; the head coach creates rows for
+// the academy, which is what a null staff_id means.
+const ASSIGNABLE = new Set<CoachTable>([
+  'coach_players', 'coach_bookings', 'coach_sessions', 'coach_session_plans',
+  'coach_camps', 'coach_development', 'coach_attendance',
+])
+
 export async function dbInsert(table: CoachTable, row: Record<string, any>) {
-  const coach_id = await currentCoachId()
+  const me = await currentIdentity()
+  const coach_id = me?.academyId ?? await currentCoachId()
   if (!coach_id) throw new Error('Not signed in')
-  const { data, error } = await sb().from(table).insert({ ...clean(row), coach_id }).select().single()
+  // Without this an assistant would create rows they cannot then read back:
+  // the RLS policy needs staff_id to match their membership.
+  const stamp = (!me?.isHead && me?.staffId && ASSIGNABLE.has(table) && row.staff_id === undefined)
+    ? { staff_id: me.staffId } : {}
+  const { data, error } = await sb().from(table).insert({ ...clean(row), ...stamp, coach_id }).select().single()
   if (error) { console.error('[coach-db] insert', table, error.message); throw new Error(error.message) }
   // Confirmation email fires on CREATE only — dbUpdate deliberately does not call
   // it, because editing a booking should not re-thank somebody for making it.
