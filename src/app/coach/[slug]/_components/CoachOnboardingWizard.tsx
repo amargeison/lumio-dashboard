@@ -125,7 +125,16 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       // coach who follows an invite into a portal with no players, no courts and
       // no bookings assumes it is broken. The head coach invites them from the
       // Coaches page once there is something to see.
-      const staffToAdd = staff.filter(m => m.name.trim())
+      // Belt and braces: the same uncommitted-input flush, in case they got here
+      // by a route that skipped the Continue handler.
+      const team = sName.trim()
+        ? [...staff, { name: sName.trim(), role: sRole, accreditation: sAccred, email: sEmail.trim() }]
+        : staff
+      const roster = pName.trim()
+        ? [...players, { name: pName.trim(), level: pLevel.trim(), coach: pCoach }]
+        : players
+
+      const staffToAdd = team.filter(m => m.name.trim())
       let staffRows: { id: string; name: string; email: string | null }[] = []
       if (staffToAdd.length) {
         const { data: created, error: staffErr } = await sb().from('coach_staff').insert(staffToAdd.map(m => ({
@@ -147,7 +156,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       // is the academy's and is invisible to every coach. So if the head coach
       // said who coaches this player, that has to land here; assigning it later
       // is a step nobody knows they need to take.
-      const toAdd = players.filter(p => p.name.trim())
+      const toAdd = roster.filter(p => p.name.trim())
       if (toAdd.length) {
         await sb().from('coach_players').insert(toAdd.map(p => {
           const sid = p.coach ? staffIdByName.get(p.coach.trim().toLowerCase()) : undefined
@@ -324,6 +333,9 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                     <p style={{ color: '#9CA3AF', fontSize: 12, margin: '0 0 10px', lineHeight: 1.5 }}>
                       Add an email and they&apos;ll get their login as soon as you finish. Their portal is live from that moment — anything you add later just appears, so there&apos;s nothing for them to wait for.
                     </p>
+                    {staff.length === 0 && (
+                      <div style={{ fontSize: 12, color: '#4B5563', marginBottom: 10 }}>No coaches added yet — fill the row below and press <strong style={{ color: '#9CA3AF' }}>Add</strong>.</div>
+                    )}
                     {staff.length > 0 && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
                         {staff.map((m, i) => (
@@ -457,7 +469,19 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 30 }}>
           {step > 1 ? <button onClick={() => setStep(s => s - 1)} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 14, cursor: 'pointer' }}>← Back</button> : <div />}
           {step === 1 && (
-            <button onClick={() => { if (!academy.trim() || !name.trim()) { setErr('Add your academy name and your name'); return } setErr(''); setStep(2) }} style={primary(true)}>Continue →</button>
+            <button onClick={() => {
+              if (!academy.trim() || !name.trim()) { setErr('Add your academy name and your name'); return }
+              // Commit a coach whose details are typed but who was never "Add"ed.
+              // Losing them here is silent — the head coach finishes onboarding
+              // believing their team is in, and finds an empty Coaches page.
+              let team = staff
+              if (sName.trim()) {
+                team = [...staff, { name: sName.trim(), role: sRole, accreditation: sAccred, email: sEmail.trim() }]
+                setStaff(team); setSName(''); setSRole('Coach'); setSAccred(''); setSEmail('')
+              }
+              if (wantStaff === true && team.length === 0) { setErr('Add at least one coach — or choose “No — solo coach”.'); return }
+              setErr(''); setStep(2)
+            }} style={primary(true)}>Continue →</button>
           )}
           {step === 2 && (
             setupType === 'self'
