@@ -31,7 +31,7 @@ import {
   normalizeRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole,
 } from './_lib/role-scope'
 import { coachById, coachStats } from './_lib/coaches-data'
-import { currentIdentity } from './_lib/coach-db'
+import { currentIdentity, identityProblem, identityMessage } from './_lib/coach-db'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
@@ -331,12 +331,21 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // assume they are NOT, so an assistant never sees the head coach's nav flash
   // up before being corrected.
   const [isHeadUser, setIsHeadUser] = useState<boolean | null>(null)
+  // Set when somebody is signed in but whoami could not place them.
+  const [accessProblem, setAccessProblem] = useState<string | null>(null)
   useEffect(() => {
     let alive = true
     currentIdentity().then(me => {
       if (!alive) return
-      const head = me ? me.isHead : true   // no membership → the old single-user behaviour
+      // Only ANONYMOUS falls back to head. "Signed in but we could not work out
+      // your access" must never be read as "you own this academy" — that is what
+      // showed an invited coach the full admin nav over somebody else's club
+      // when their invite had not bound. Row level security meant they could not
+      // actually read anything, so every door opened onto an empty room, which
+      // is a worse experience than being told plainly.
+      const head = me ? me.isHead : identityProblem() === 'anon'
       setIsHeadUser(head)
+      if (!me) setAccessProblem(identityProblem() === 'anon' ? null : (identityMessage() || 'We could not work out your access to this academy.'))
       // An assistant coach is locked to the coach view. This is presentation
       // only — row level security is what actually stops them reading anything
       // — but a nav full of doors that all open onto empty rooms is its own
@@ -686,6 +695,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       {/* main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
         {ViewingAsBanner}
+        {accessProblem && (
+          // Said plainly, and it names the person who can fix it. The alternative
+          // was an apparently-working portal with nothing in it, which reads as
+          // "the product is broken" rather than "your invite needs finishing".
+          <div style={{ padding: '10px 24px', fontSize: 12.5, fontWeight: 500, background: '#7C2D12', color: '#FED7AA', flexShrink: 0, lineHeight: 1.6 }}>
+            <strong>We couldn&rsquo;t work out your access.</strong> {accessProblem} Ask your head coach to re-send your invite, then sign in again.
+          </div>
+        )}
         {showDemoBanner && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 24px', fontSize: 12, fontWeight: 500, background: accent.hex, color: '#fff', flexShrink: 0 }}>
             <span>This is a demo · sample data</span>
