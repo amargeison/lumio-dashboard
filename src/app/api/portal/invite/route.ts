@@ -45,24 +45,39 @@ export async function POST(req: NextRequest) {
   }, { onConflict: 'academy_id,email' })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Email the invite (Resend). The portal sign-in (email code) lands in Phase 2;
-  // for now the invite explains they'll get a code to sign in.
+  // Email the invite (Resend), in the same dark Lumio shell as every other email
+  // the product sends. Everybody signs in at the same place: /portal is where a
+  // member ENDS UP, not where they sign in — sending them straight there used
+  // Supabase's own magic-link email, which is why the invite once arrived as a
+  // link when the page was asking for a code.
   try {
     if (process.env.RESEND_API_KEY) {
+      // Who is inviting them, and to what. Without this the email arrives from a
+      // brand the recipient may never have heard of, asking them to sign in —
+      // which is indistinguishable from a phishing attempt.
+      const { data: academy } = await admin.from('sports_profiles')
+        .select('brand_name, display_name').eq('id', user.id).maybeSingle()
+
+      // A parent/student invite is about a specific player; name them.
+      let playerName: string | null = null
+      if (scopePlayerId) {
+        const { data: p } = await admin.from('coach_players')
+          .select('name').eq('id', scopePlayerId).maybeSingle()
+        playerName = p?.name ?? null
+      }
+
+      const { portalInviteEmail } = await import('@/lib/emails/portal-invite')
+      const { subject, html } = portalInviteEmail({
+        role: role as 'coach' | 'parent' | 'student',
+        inviteeName: name || scopeCoachName,
+        headCoachName: academy?.display_name ?? null,
+        academyName: academy?.brand_name ?? null,
+        playerName,
+      })
+
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
-      // Everybody signs in at the same place. /portal is where a member ENDS UP,
-      // not where they sign in — sending them straight there used Supabase's own
-      // magic-link email, which is why the invite arrived as a link when the page
-      // was asking for a code.
-      const portal = `https://www.lumiosports.com/sports-login`
-      const who = role === 'coach' ? 'as a coach' : 'to follow your player’s progress'
-      await resend.emails.send({
-        from: 'Lumio Sports <hello@lumiocms.com>',
-        to: email,
-        subject: 'You’ve been given access to your Lumio portal',
-        html: `<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#111">Hi${name ? ' ' + name : ''},<br><br>You’ve been invited ${who} on Lumio. Open <a href="${portal}">${portal}</a> and sign in with this email address (${email}) — you’ll get a one-time code to enter.<br><br>See you on court,<br>Lumio</div>`,
-      })
+      await resend.emails.send({ from: 'Lumio Sports <hello@lumiocms.com>', to: email, subject, html })
     }
   } catch (e) { console.warn('[portal/invite] email', e) }
 

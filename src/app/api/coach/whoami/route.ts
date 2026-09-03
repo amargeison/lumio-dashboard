@@ -58,6 +58,17 @@ export async function GET() {
   // Otherwise: an invited coach. Bound memberships only — an invite that has
   // never been signed into has no member_user_id and must not resolve to
   // anything, or an unclaimed invite would be a way into somebody's academy.
+  //
+  // Which is why the binding has to happen HERE, on the way in. This route is
+  // the coach portal's only door; /api/portal/* is the other one and is no
+  // longer on a coach's path at all. Without this the invite stays 'invited'
+  // for ever, the query below finds nothing, and the coach is refused from the
+  // portal they were invited to. Idempotent — a no-op once bound.
+  // user.email comes from auth.getUser(), which verifies against the auth server
+  // — it is the address they actually proved they control, not a client claim.
+  const { bindPendingInvites } = await import('@/lib/coach/membership')
+  await bindPendingInvites(user.id, user.email)
+
   const { data: rows } = await admin.from('coach_members')
     .select('academy_id, staff_id, role, status')
     .eq('member_user_id', user.id)
