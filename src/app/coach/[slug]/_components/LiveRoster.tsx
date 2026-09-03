@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { useCoachTable, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, RACKET_SKILLS, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore, useCoachProfile } from '../_lib/coach-db'
+import { useCoachTable, currentIdentity, type CoachIdentity, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, RACKET_SKILLS, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore, useCoachProfile } from '../_lib/coach-db'
 import { WatchConnectPanel } from './WatchConnectPanel'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
 import { getSettings } from '../_lib/settings-store'
@@ -67,6 +67,9 @@ export function LiveRoster({ T, accent, density }: Common) {
   const [group, setGroup] = useState<'All' | typeof CATEGORIES[number]>('All')
   const [sel, setSel] = useState<any | null>(null)
   const [editing, setEditing] = useState<any | null | undefined>(undefined) // undefined = closed
+  // Head coach or assistant — decides which "no players" story is the true one.
+  const [me, setMe] = useState<CoachIdentity | null>(null)
+  useEffect(() => { let alive = true; currentIdentity().then(v => { if (alive) setMe(v) }); return () => { alive = false } }, [])
 
   // Deep-link: another screen (e.g. dashboard "Needs attention") can ask the roster
   // to open straight onto a specific player's card.
@@ -118,6 +121,16 @@ export function LiveRoster({ T, accent, density }: Common) {
 
       {players.loading ? (
         <p style={{ color: T.text3, fontSize: 13, padding: '40px 0', textAlign: 'center' }}>Loading…</p>
+      ) : list.length === 0 && me && !me.isHead ? (
+        // An assistant coach sees only players assigned to them (migration 166).
+        // "No players yet — add your first" is the wrong story here: the academy
+        // may have three hundred, none of them theirs. Telling them to add one
+        // sends them to create a duplicate of a player who already exists.
+        <div style={{ border: `1px dashed ${T.border}`, borderRadius: 14, padding: 40, textAlign: 'center' }}>
+          <p style={{ color: T.text2, fontSize: 14, fontWeight: 600, margin: '0 0 4px' }}>No players assigned to you yet</p>
+          <p style={{ color: T.text3, fontSize: 13, margin: '0 0 16px', lineHeight: 1.6 }}>Your head coach decides which players are yours. Once they assign some,<br />they&rsquo;ll appear here straight away — no need to sign in again.</p>
+          <button onClick={() => setEditing(null)} style={{ padding: '9px 18px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Add a player of your own</button>
+        </div>
       ) : list.length === 0 ? (
         <div style={{ border: `1px dashed ${T.border}`, borderRadius: 14, padding: 40, textAlign: 'center' }}>
           <p style={{ color: T.text2, fontSize: 14, fontWeight: 600, margin: '0 0 4px' }}>No players yet</p>

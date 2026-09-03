@@ -27,7 +27,13 @@ function compress(file: File, size: number): Promise<string> {
 }
 
 type Props = { defaultName?: string; defaultAcademy?: string; defaultEmail?: string; onClose: () => void; onDone: () => void }
-type Player = { name: string; level: string }
+type Player = { name: string; level: string; coach: string }
+type StaffMember = { name: string; role: string; accreditation: string; email: string }
+
+// Roles the Coaches page filters on. Kept as a dropdown rather than free text so
+// the pills on that page actually match what was typed here — a head coach who
+// wrote "Asst." during setup would otherwise never appear under "Assistant".
+const STAFF_ROLES = ['Coach', 'Senior Coach', 'Assistant Coach', 'Apprentice']
 
 // Self-setup is the real founder journey: the coach enters their own academy and
 // lands straight in a working portal. "Set it up for me" stays available for
@@ -52,6 +58,11 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
   const [dbsExpiry, setDbsExpiry] = useState('')
   const [safeguarding, setSafeguarding] = useState('')
   const [wantStaff, setWantStaff] = useState<boolean | null>(null)
+  const [staff, setStaff] = useState<StaffMember[]>([])
+  const [sName, setSName] = useState('')
+  const [sRole, setSRole] = useState('Coach')
+  const [sAccred, setSAccred] = useState('')
+  const [sEmail, setSEmail] = useState('')
   const [homeCourt, setHomeCourt] = useState('')
   const [resourcesPreloaded, setResourcesPreloaded] = useState(true)
   const [setupType, setSetupType] = useState<'lumio' | 'self' | null>(null)
@@ -59,6 +70,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
   const [players, setPlayers] = useState<Player[]>([])
   const [pName, setPName] = useState('')
   const [pLevel, setPLevel] = useState('')
+  const [pCoach, setPCoach] = useState('')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   const logoRef = useRef<HTMLInputElement>(null)
@@ -105,10 +117,62 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       const { error } = await sb().from('sports_profiles').update(update).eq('id', uid)
       if (error) throw new Error(error.message)
 
+      // The coaching team, if they added one. Written before anything else that
+      // could fail so a coach who typed four names does not lose them to a
+      // downstream error.
+      //
+      // Rows only — no invite emails. At this moment the portal is empty, and a
+      // coach who follows an invite into a portal with no players, no courts and
+      // no bookings assumes it is broken. The head coach invites them from the
+      // Coaches page once there is something to see.
+      const staffToAdd = staff.filter(m => m.name.trim())
+      let staffRows: { id: string; name: string; email: string | null }[] = []
+      if (staffToAdd.length) {
+        const { data: created, error: staffErr } = await sb().from('coach_staff').insert(staffToAdd.map(m => ({
+          coach_id: uid,
+          name: m.name.trim(),
+          role: m.role || 'Coach',
+          qualifications: m.accreditation || null,
+          email: m.email.trim() || null,
+          is_head: false,
+        }))).select('id, name, email')
+        if (staffErr) throw new Error(staffErr.message)
+        staffRows = created || []
+      }
+      const staffIdByName = new Map(staffRows.map(r => [r.name.trim().toLowerCase(), r.id]))
+
       // Optional first players (self-setup path).
+      //
+      // staff_id is what the coach's own portal filters on — a player with none
+      // is the academy's and is invisible to every coach. So if the head coach
+      // said who coaches this player, that has to land here; assigning it later
+      // is a step nobody knows they need to take.
       const toAdd = players.filter(p => p.name.trim())
       if (toAdd.length) {
-        await sb().from('coach_players').insert(toAdd.map(p => ({ coach_id: uid, name: p.name.trim(), level: p.level.trim() || null })))
+        await sb().from('coach_players').insert(toAdd.map(p => {
+          const sid = p.coach ? staffIdByName.get(p.coach.trim().toLowerCase()) : undefined
+          return {
+            coach_id: uid,
+            name: p.name.trim(),
+            level: p.level.trim() || null,
+            ...(sid ? { staff_id: sid, assigned_coach: p.coach } : {}),
+          }
+        }))
+      }
+
+      // Invite the team to their own logins. Fired here rather than left to the
+      // Coaches page because the portal they land in is LIVE — it reads the same
+      // tables this wizard just wrote, so anything the head coach adds later
+      // simply appears. There is nothing to wait for.
+      //
+      // Fire and forget: a Resend hiccup must not fail onboarding, and the head
+      // coach can always re-send from the Coaches page.
+      for (const r of staffRows) {
+        if (!r.email) continue
+        fetch('/api/portal/invite', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: r.email, role: 'coach', staffId: r.id, scopeCoachName: r.name, name: r.name }),
+        }).catch(() => {})
       }
 
       // Coaches is always visible now (a solo coach simply sees themselves), so we
@@ -255,6 +319,45 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                   <button type="button" onClick={() => setWantStaff(true)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', padding: '11px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `2px solid ${wantStaff === true ? ACCENT : '#1F2937'}`, background: wantStaff === true ? ACCENT + '18' : '#111318', color: wantStaff === true ? '#fff' : '#9CA3AF' }}>Yes — I have a team</button>
                   <button type="button" onClick={() => setWantStaff(false)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', padding: '11px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `2px solid ${wantStaff === false ? ACCENT : '#1F2937'}`, background: wantStaff === false ? ACCENT + '18' : '#111318', color: wantStaff === false ? '#fff' : '#9CA3AF' }}>No — solo coach</button>
                 </div>
+                {wantStaff === true && (
+                  <div style={{ marginTop: 14, background: '#0B0E14', border: '1px solid #1F2937', borderRadius: 12, padding: 14 }}>
+                    <p style={{ color: '#9CA3AF', fontSize: 12, margin: '0 0 10px', lineHeight: 1.5 }}>
+                      Add an email and they&apos;ll get their login as soon as you finish. Their portal is live from that moment — anything you add later just appears, so there&apos;s nothing for them to wait for.
+                    </p>
+                    {staff.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                        {staff.map((m, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#111318', border: '1px solid #1F2937', borderRadius: 8, padding: '8px 12px' }}>
+                            <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{m.name}</span>
+                            <span style={{ color: ACCENT, fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{m.role}</span>
+                            <span style={{ flex: 1, minWidth: 0, color: '#6B7280', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[m.accreditation, m.email].filter(Boolean).join(' · ')}</span>
+                            <button type="button" onClick={() => setStaff(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', fontSize: 15, lineHeight: 1 }}>&times;</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input value={sName} onChange={e => setSName(e.target.value)} placeholder="Coach name" style={{ ...input, marginTop: 0, flex: 3 }} />
+                      <select value={sRole} onChange={e => setSRole(e.target.value)} style={{ ...input, marginTop: 0, flex: 2, cursor: 'pointer' }}>
+                        {STAFF_ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </div>
+                    <select value={sAccred} onChange={e => setSAccred(e.target.value)} style={{ ...input, marginTop: 8, cursor: 'pointer' }}>
+                      <option value="">— accreditation (optional) —</option>
+                      {ACCREDITATIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                      <input value={sEmail} onChange={e => setSEmail(e.target.value)} type="email" placeholder="Email (optional — needed to invite them later)" style={{ ...input, marginTop: 0, flex: 1 }} />
+                      <button type="button"
+                        onClick={() => {
+                          if (!sName.trim()) return
+                          setStaff(prev => [...prev, { name: sName.trim(), role: sRole, accreditation: sAccred, email: sEmail.trim() }])
+                          setSName(''); setSRole('Coach'); setSAccred(''); setSEmail('')
+                        }}
+                        style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 10, padding: '0 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Add</button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label style={lbl}>Home court <span style={{ color: '#4B5563', fontWeight: 400 }}>(where you do most of your coaching)</span></label>
@@ -317,6 +420,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                 <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#111318', border: '1px solid #1F2937', borderRadius: 8, padding: '8px 12px' }}>
                   <span style={{ flex: 1, color: '#fff', fontSize: 13, fontWeight: 600 }}>{p.name}</span>
                   {p.level && <span style={{ color: '#6B7280', fontSize: 11 }}>{p.level}</span>}
+                  <span style={{ color: p.coach ? ACCENT : '#4B5563', fontSize: 11 }}>{p.coach || 'You'}</span>
                   <button onClick={() => setPlayers(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: '#4B5563', cursor: 'pointer', fontSize: 15 }}>×</button>
                 </div>
               ))}
@@ -324,8 +428,19 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
             <div style={{ display: 'flex', gap: 8 }}>
               <input value={pName} onChange={e => setPName(e.target.value)} placeholder="Player name" style={{ ...input, marginTop: 0, flex: 2 }} />
               <input value={pLevel} onChange={e => setPLevel(e.target.value)} placeholder="Level (optional)" style={{ ...input, marginTop: 0, flex: 1 }} />
-              <button onClick={() => { if (pName.trim()) { setPlayers(prev => [...prev, { name: pName.trim(), level: pLevel.trim() }]); setPName(''); setPLevel('') } }} style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '0 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Add</button>
+              {staff.length > 0 && (
+                <select value={pCoach} onChange={e => setPCoach(e.target.value)} style={{ ...input, marginTop: 0, flex: 1.4, cursor: 'pointer' }}>
+                  <option value="">You</option>
+                  {staff.map((m, i) => <option key={i} value={m.name}>{m.name}</option>)}
+                </select>
+              )}
+              <button onClick={() => { if (pName.trim()) { setPlayers(prev => [...prev, { name: pName.trim(), level: pLevel.trim(), coach: pCoach }]); setPName(''); setPLevel('') } }} style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '0 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Add</button>
             </div>
+            {staff.length > 0 && (
+              <p style={{ color: '#6B7280', fontSize: 11.5, margin: '8px 0 0', lineHeight: 1.5 }}>
+                Whoever you pick sees that player in their own portal. Left as <strong style={{ color: '#9CA3AF' }}>You</strong>, the player stays with you and no other coach sees them — you can hand them over any time from the Player Roster.
+              </p>
+            )}
           </div>
         )}
 
