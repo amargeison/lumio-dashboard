@@ -71,6 +71,21 @@ export type CoachIdentity = {
 let _me: CoachIdentity | null = null
 let _mePending: Promise<CoachIdentity | null> | null = null
 
+// Why the last whoami produced no identity. The difference matters:
+//
+//   'anon'    — nobody is signed in. The demo shell. Old single-user behaviour
+//               is correct here.
+//   'denied'  — somebody IS signed in and we could not work out their access.
+//               Assuming "head coach" here is how an assistant ended up looking
+//               at a full admin nav over an academy that was not theirs.
+//   'error'   — the call itself failed. Also not a reason to grant anything.
+export type IdentityProblem = 'anon' | 'denied' | 'error' | null
+let _problem: IdentityProblem = null
+let _problemMessage: string | null = null
+
+export function identityProblem(): IdentityProblem { return _problem }
+export function identityMessage(): string | null { return _problemMessage }
+
 export async function currentIdentity(): Promise<CoachIdentity | null> {
   if (_me) return _me
   // De-duped: the portal mounts a dozen data hooks at once and they all ask.
@@ -78,11 +93,19 @@ export async function currentIdentity(): Promise<CoachIdentity | null> {
     _mePending = (async () => {
       try {
         const r = await fetch('/api/coach/whoami')
-        if (!r.ok) return null
+        if (!r.ok) {
+          _problem = r.status === 401 ? 'anon' : 'denied'
+          if (_problem === 'denied') {
+            const d = await r.json().catch(() => ({}))
+            _problemMessage = typeof d?.error === 'string' ? d.error : null
+          }
+          return null
+        }
         const d = await r.json()
+        _problem = null; _problemMessage = null
         _me = d as CoachIdentity
         return _me
-      } catch { return null }
+      } catch { _problem = 'error'; return null }
       finally { _mePending = null }
     })()
   }
@@ -100,7 +123,7 @@ export async function currentCoachId(): Promise<string | null> {
 }
 
 /** Clear the cached identity — call on sign-out. */
-export function forgetIdentity() { _me = null; _mePending = null }
+export function forgetIdentity() { _me = null; _mePending = null; _problem = null; _problemMessage = null }
 
 export async function dbList<T = any>(table: CoachTable): Promise<T[]> {
   const { data, error } = await sb().from(table).select('*').order('created_at', { ascending: false })
