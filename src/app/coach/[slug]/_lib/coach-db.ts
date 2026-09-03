@@ -64,6 +64,8 @@ export type CoachIdentity = {
   role: 'head' | 'coach'
   brandName: string | null
   slug: string | null
+  /** Has this coach set up their own kit list, or are they on the academy's? */
+  equipmentOwn?: boolean
 }
 
 let _me: CoachIdentity | null = null

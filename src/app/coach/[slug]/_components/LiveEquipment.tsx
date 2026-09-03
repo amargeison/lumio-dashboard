@@ -8,7 +8,7 @@
 import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, dbInsert } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, currentIdentity } from '../_lib/coach-db'
 import { seedLumioEquipment, EQUIPMENT_KIT_CHOICES, EQUIPMENT_CATEGORY_CHOICES } from '../_lib/lumio-equipment'
 import { SetupWizard } from './SetupWizard'
 import { getSettings, setSettings, isDemoPortal } from '../_lib/settings-store'
@@ -36,7 +36,50 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
   // The row check stays as the primary gate: it is RLS-scoped, so it is correct
   // per-account even before settings have hydrated from coach_settings.
   const [setupAnswered, setSetupAnswered] = useState(false)
+
+  // ── An assistant coach's own kit ──────────────────────────────────────────
+  // A coach with their own players and bookings but the club's uneditable kit
+  // list is half a product — they carry their own balls and cones in the boot of
+  // the car. So on first visit they choose: take a copy of the club's list, or
+  // start their own from scratch. Either way it becomes theirs to edit, and the
+  // club's disappears from their view.
+  //
+  // null while we are still finding out — the wizard must not flash up for a
+  // head coach before the answer arrives.
+  const [asCoach, setAsCoach] = useState<{ isHead: boolean; ownsKit: boolean } | null>(null)
+  const [kitBusy, setKitBusy] = useState<'copy' | 'blank' | null>(null)
+  const [kitErr, setKitErr] = useState('')
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      const me = await currentIdentity()
+      if (!alive) return
+      if (!me || me.isHead) { setAsCoach({ isHead: true, ownsKit: true }); return }
+      // equipmentOwn comes off their own staff row — it is the record of whether
+      // they have already chosen, so an empty list they built on purpose does
+      // not send them back through the wizard.
+      setAsCoach({ isHead: false, ownsKit: !!me.equipmentOwn })
+    })()
+    return () => { alive = false }
+  }, [])
+
+  const chooseKit = async (mode: 'copy' | 'blank') => {
+    setKitBusy(mode); setKitErr('')
+    try {
+      const r = await fetch('/api/coach/equipment-setup', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) throw new Error(d.error || 'Could not set up your kit list.')
+      setAsCoach(a => a ? { ...a, ownsKit: true } : a)
+      items.reload(); kits.reload()
+    } catch (e) { setKitErr(e instanceof Error ? e.message : 'Could not set up your kit list.') }
+    finally { setKitBusy(null) }
+  }
   const showSetup = !isDemoPortal()
+    && asCoach?.isHead !== false
     && !items.loading && !kits.loading
     && items.rows.length === 0 && kits.rows.length === 0
     && !setupAnswered && !getSettings().equipmentSeeded
@@ -61,6 +104,49 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
   const shown = (i: Item) => filter === 'all' || needsAttention(i.status)
   const sectOff = getSettings().sectionsOff?.equipment || []
   const showSec = (k: string) => !sectOff.includes(k)
+
+  // An assistant who has not chosen yet: the club's list is visible but read-only
+  // behind this, so the choice is informed rather than blind.
+  if (asCoach && !asCoach.isHead && !asCoach.ownsKit) {
+    const btn = (primary: boolean): CSSProperties => ({
+      appearance: 'none', cursor: kitBusy ? 'wait' : 'pointer', fontFamily: FONT,
+      fontSize: 13, fontWeight: primary ? 700 : 600, borderRadius: 10, padding: '11px 18px',
+      border: primary ? 0 : `1px solid ${T.border}`,
+      background: primary ? accent.hex : 'transparent',
+      color: primary ? T.btnText : T.text2, opacity: kitBusy ? 0.6 : 1,
+    })
+    return (
+      <div style={{ fontFamily: FONT }}>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Equipment &amp; Kit</h1>
+        <p style={{ margin: '4px 0 20px', fontSize: 13, color: T.text3 }}>Your own kit list — separate from the club&rsquo;s.</p>
+
+        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 24, maxWidth: 620 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Set up your kit list</div>
+          <p style={{ margin: '6px 0 0', fontSize: 13, color: T.text3, lineHeight: 1.65 }}>
+            At the moment you&rsquo;re looking at the club&rsquo;s list, which you can&rsquo;t edit. Take a copy
+            of it to change as you like, or start your own from scratch. Either way the club&rsquo;s list stays
+            exactly as it is for everyone else — you just stop seeing it here.
+          </p>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+            <button onClick={() => void chooseKit('copy')} disabled={!!kitBusy} style={btn(true)}>
+              {kitBusy === 'copy' ? 'Copying…' : 'Start from the club\u2019s list'}
+            </button>
+            <button onClick={() => void chooseKit('blank')} disabled={!!kitBusy} style={btn(false)}>
+              {kitBusy === 'blank' ? 'Setting up…' : 'Start empty'}
+            </button>
+          </div>
+          {kitErr && <div style={{ fontSize: 12.5, color: T.bad, marginTop: 12 }}>{kitErr}</div>}
+
+          <div style={{ fontSize: 11.5, color: T.text3, marginTop: 16, lineHeight: 1.55 }}>
+            {items.rows.length > 0
+              ? `The club currently lists ${items.rows.length} item${items.rows.length === 1 ? '' : 's'} and ${kits.rows.length} kit line${kits.rows.length === 1 ? '' : 's'}.`
+              : 'The club hasn\u2019t set up a kit list yet, so a copy would start empty either way.'}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ fontFamily: FONT }}>

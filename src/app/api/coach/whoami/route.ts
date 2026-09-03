@@ -49,6 +49,7 @@ export async function GET() {
       staffId: null,
       isHead: true,
       role: 'head',
+      equipmentOwn: true,
       brandName: own.brand_name,
       slug: own.portal_slug,
     })
@@ -81,8 +82,10 @@ export async function GET() {
     }, { status: 409 })
   }
 
-  const { data: academy } = await admin.from('sports_profiles')
-    .select('brand_name, portal_slug').eq('id', m.academy_id).maybeSingle()
+  const [{ data: academy }, { data: staff }] = await Promise.all([
+    admin.from('sports_profiles').select('brand_name, portal_slug').eq('id', m.academy_id).maybeSingle(),
+    admin.from('coach_staff').select('equipment_own').eq('id', m.staff_id).maybeSingle(),
+  ])
 
   return NextResponse.json({
     academyId: m.academy_id,
@@ -91,5 +94,7 @@ export async function GET() {
     role: 'coach',
     brandName: academy?.brand_name ?? null,
     slug: academy?.portal_slug ?? null,
+    // Have they set up their own kit list, or are they still on the club's?
+    equipmentOwn: !!staff?.equipment_own,
   })
 }
