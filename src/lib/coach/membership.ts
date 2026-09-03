@@ -50,15 +50,13 @@ export async function getMembership(): Promise<Membership | null> {
     .order('created_at', { ascending: false }).limit(1)
   let row: any = boundRows?.[0] ?? null
 
-  // Otherwise bind by the invited email (first sign-in) — only if not revoked.
+  // Otherwise bind by the invited email (first sign-in), then re-read.
   if (!row && user.email) {
-    const { data: pendingRows } = await db.from('coach_members').select('*')
-      .ilike('email', user.email).neq('status', 'revoked')
-      .order('created_at', { ascending: false }).limit(1)
-    const pending = pendingRows?.[0]
-    if (pending) {
-      await db.from('coach_members').update({ member_user_id: user.id, status: 'active', updated_at: new Date().toISOString() }).eq('id', pending.id)
-      row = { ...pending, member_user_id: user.id, status: 'active' }
+    if (await bindPendingInvites(user.id, user.email)) {
+      const { data: justBound } = await db.from('coach_members').select('*')
+        .eq('member_user_id', user.id).neq('status', 'revoked')
+        .order('created_at', { ascending: false }).limit(1)
+      row = justBound?.[0] ?? null
     }
   }
   if (!row) return null
@@ -67,6 +65,40 @@ export async function getMembership(): Promise<Membership | null> {
     scopePlayerId: row.scope_player_id, scopeCoachName: row.scope_coach_name,
     email: row.email, status: row.status,
   }
+}
+
+// Bind any invites addressed to this signed-in user's email.
+//
+// THIS IS WHAT MAKES AN INVITE REAL. A coach_members row starts life with
+// member_user_id = null and status = 'invited'; until it is bound, whoami and
+// every RLS policy correctly refuse to recognise the person.
+//
+// It used to happen only inside getMembership(), which is reached exclusively
+// through /api/portal/* — fine while every invited user landed on /portal. Once
+// coaches were sent straight to their own portal at /coach/[slug] they stopped
+// touching those routes entirely, so the binding never ran and every coach
+// invite silently stayed 'invited'. It lives here now, and whoami calls it, so
+// both doors bind.
+//
+// Binds EVERY pending row for the address, not just the newest: a coach invited
+// by two academies is two genuine invites, and binding one of them at random is
+// how somebody ends up unable to reach the club that invited them.
+export async function bindPendingInvites(userId: string, email?: string | null): Promise<number> {
+  if (!email) return 0
+  const db = admin()
+  // member_user_id must be null. A row already bound to a different auth user is
+  // never re-pointed by an email match — that would be a way to take over
+  // somebody else's membership by claiming their address.
+  const { data: pending } = await db.from('coach_members').select('id')
+    .ilike('email', email)
+    .is('member_user_id', null)
+    .neq('status', 'revoked')
+  if (!pending?.length) return 0
+  const { error } = await db.from('coach_members')
+    .update({ member_user_id: userId, status: 'active', updated_at: new Date().toISOString() })
+    .in('id', pending.map(r => r.id))
+  if (error) { console.error('[membership] bind', error.message); return 0 }
+  return pending.length
 }
 
 // Service-role DB handle for scoped reads — callers MUST apply the membership
