@@ -34,7 +34,10 @@ export const COACH_VIEW_COACH_ID = 'rachel'
 // coach's own profile — none of which belongs to an assistant. Staff was already
 // here, and migration 167 makes that a real boundary rather than a hidden menu
 // item: coach_staff carries DBS numbers and safeguarding dates.
-export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues', 'equipment', 'payments', 'settings']
+// Equipment is NOT hidden: migration 168 gives each coach their own kit list,
+// which is genuinely theirs to edit. Everything left here is the academy's —
+// money, config, other people's compliance records.
+export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues', 'payments', 'settings']
 
 // Normalise whatever the session carries (may be a legacy role like
 // 'assistant'/'manager', or undefined) to one of the three view roles.
