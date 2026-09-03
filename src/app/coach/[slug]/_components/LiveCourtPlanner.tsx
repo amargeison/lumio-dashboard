@@ -6,10 +6,10 @@
 // at each venue come from coach_staff.home_venue. Venues/courts are managed in
 // Settings → Venues (no Add-venue button here, by design).
 
-import { useState, type CSSProperties } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable } from '../_lib/coach-db'
+import { useCoachTable, sb, currentIdentity, type CoachIdentity } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 
 type Venue = { id: string; name: string; address?: string | null; contact_name?: string | null; contact_phone?: string | null; contact_email?: string | null; facilities?: string | null; access_note?: string | null; is_home?: boolean | null }
@@ -29,6 +29,39 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
   const { rows: staff } = useCoachTable<Staff>('coach_staff')
   const [reqVenue, setReqVenue] = useState<Venue | null>(null)
 
+  // Venue assignment (migration 169). Two things hang off it:
+  //   · which venue cards an assistant coach sees at all
+  //   · which coaches are listed on each card
+  // Both used to key off coach_staff.home_venue — a single venue, matched by
+  // NAME. A coach working two sites could only ever appear at one of them.
+  const [links, setLinks] = useState<{ staff_id: string; venue_id: string }[] | null>(null)
+  const [me, setMe] = useState<CoachIdentity | null | undefined>(undefined)
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      const [who, { data }] = await Promise.all([
+        currentIdentity(),
+        sb().from('coach_staff_venues').select('staff_id, venue_id'),
+      ])
+      if (!alive) return
+      setMe(who); setLinks(data || [])
+    })()
+    return () => { alive = false }
+  }, [])
+
+  const coachesAt = (venueId: string) => {
+    const ids = new Set((links || []).filter(l => l.venue_id === venueId).map(l => l.staff_id))
+    return staff.filter(s => ids.has(s.id))
+  }
+
+  // A head coach sees every site. An assistant sees the ones they work at —
+  // anything else would be a card with no courts under it, because RLS has
+  // already withheld those courts.
+  const mine = me && !me.isHead && links
+    ? venues.filter(v => (links || []).some(l => l.venue_id === v.id && l.staff_id === me.staffId))
+    : venues
+  const unassigned = !!me && !me.isHead && !!links && mine.length === 0 && venues.length > 0
+
   const sectOff = getSettings().sectionsOff?.venues || []
   const showSec = (k: string) => !sectOff.includes(k)
 
@@ -37,7 +70,7 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
   const lessonsToday = todaysBookings.length
 
   const tiles = [
-    { label: 'Sites', value: venues.length },
+    { label: 'Sites', value: mine.length },
     { label: 'Courts total', value: courts.length },
     { label: 'Your lessons today', value: lessonsToday },
     { label: 'Coaches', value: staff.length },
@@ -60,18 +93,25 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
         ))}
       </div>
 
-      {venues.length === 0 ? (
+      {unassigned ? (
+        // Says the true thing. "No venues yet" would be a lie an assistant coach
+        // cannot act on — the venues exist, they are just not assigned to any.
+        <div style={{ textAlign: 'center', padding: '48px 20px', background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>You&rsquo;re not assigned to a venue yet</div>
+          <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4, lineHeight: 1.6 }}>Your head coach sets which sites you work at, and the courts here follow from that.<br />Ask them to add you on the Coaches page and it&rsquo;ll appear straight away.</div>
+        </div>
+      ) : mine.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 20px', background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 12 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>No venues yet</div>
           <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Add the sites you coach across in <button onClick={() => onNavigate?.('settings')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 12.5, fontFamily: FONT }}>Settings → Venues</button>.</div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-          {venues.map(v => (
+          {mine.map(v => (
             <VenueCard key={v.id} T={T} accent={accent} venue={v} showSec={showSec}
               courts={courts.filter(c => c.venue_id === v.id)}
               todaysBookings={todaysBookings}
-              coaches={staff.filter(s => (s.home_venue || '').trim().toLowerCase() === v.name.trim().toLowerCase())}
+              coaches={coachesAt(v.id)}
               onRequest={() => setReqVenue(v)} />
           ))}
         </div>

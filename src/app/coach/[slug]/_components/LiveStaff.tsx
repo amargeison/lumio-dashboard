@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile, sb, currentCoachId } from '../_lib/coach-db'
 import { getHeadProfile, setHeadProfile, subscribe, ACCREDITATIONS, getSettings } from '../_lib/settings-store'
 import { COACH_ORG } from '../_lib/coach-data'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
@@ -337,6 +337,34 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
   const [err, setErr] = useState('')
   const isHead = !!initial?.isHead
   const { rows: venues } = useCoachTable<{ id: string; name: string }>('coach_venues')
+
+  // Venue assignment (migration 169). A coach works at any number of sites, and
+  // the courts they see follow from this — so an empty list here is why a coach
+  // signs in to an empty Court Planner, and the hint below says so.
+  const [venueIds, setVenueIds] = useState<string[]>([])
+  const [primaryVenue, setPrimaryVenue] = useState<string>('')
+  useEffect(() => {
+    if (!initial?.id || initial?.isHead) return
+    let alive = true
+    ;(async () => {
+      const { data } = await sb().from('coach_staff_venues')
+        .select('venue_id, is_primary').eq('staff_id', initial.id)
+      if (!alive || !data) return
+      setVenueIds(data.map((r: any) => r.venue_id))
+      setPrimaryVenue(data.find((r: any) => r.is_primary)?.venue_id || data[0]?.venue_id || '')
+    })()
+    return () => { alive = false }
+  }, [initial?.id, initial?.isHead])
+
+  const toggleVenue = (id: string) => setVenueIds(prev => {
+    const next = prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
+    // Dropping the primary promotes whatever is left, so "primary" is never a
+    // dangling id pointing at a venue they no longer work at.
+    if (!next.includes(primaryVenue)) setPrimaryVenue(next[0] || '')
+    else if (!primaryVenue && next.length) setPrimaryVenue(next[0])
+    return next
+  })
+
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
   const input: React.CSSProperties = { width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none', marginTop: 5 }
   const lbl: React.CSSProperties = { display: 'block', color: T.text3, fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }
@@ -352,8 +380,40 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
         setHeadProfile({ phone: d.phone || '', email: d.email || '', contractedHours: Number(d.contracted_hours) || null, dbsNumber: d.dbs_number || '', dbsIssued: d.dbs_issued || '', dbsExpiry: d.dbs_expiry || '', safeguardingTrained: !!d.safeguarding_trained, safeguardingDate: d.safeguarding_date || '', avatarUrl: d.avatar_url || '', accreditation: d.qualifications || getHeadProfile().accreditation })
         onSaved(); return
       }
-      const row = { name: d.name, role: d.role || null, email: d.email || null, phone: d.phone || null, qualifications: d.qualifications || null, home_venue: d.home_venue || null, contracted_hours: Number(d.contracted_hours) || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }
-      if (initial?.id) await dbUpdate('coach_staff', initial.id, row); else await dbInsert('coach_staff', row)
+      // home_venue is no longer written here — a database trigger derives it from
+      // the primary assignment below, so the name column and the join table can
+      // never disagree.
+      const row = { name: d.name, role: d.role || null, email: d.email || null, phone: d.phone || null, qualifications: d.qualifications || null, contracted_hours: Number(d.contracted_hours) || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }
+
+      // dbInsert returns the created row, which is the only way to get the id the
+      // venue assignment below has to hang off.
+      let staffId = initial?.id as string | undefined
+      if (staffId) await dbUpdate('coach_staff', staffId, row)
+      else staffId = (await dbInsert('coach_staff', row))?.id
+
+      // Reconcile venue assignment: remove what was unticked, add what was
+      // ticked. Done as a diff rather than delete-all-then-reinsert so an
+      // interrupted save cannot leave a coach assigned to nothing.
+      if (staffId) {
+        const uid = await currentCoachId()
+        const { data: existing } = await sb().from('coach_staff_venues')
+          .select('id, venue_id').eq('staff_id', staffId)
+        const have: string[] = (existing || []).map((r: any) => r.venue_id)
+        const gone = (existing || []).filter((r: any) => !venueIds.includes(r.venue_id)).map((r: any) => r.id)
+        const added = venueIds.filter(v => !have.includes(v))
+        if (gone.length) await sb().from('coach_staff_venues').delete().in('id', gone)
+        if (added.length) {
+          await sb().from('coach_staff_venues').insert(added.map(v => ({
+            coach_id: uid, staff_id: staffId, venue_id: v, is_primary: v === primaryVenue,
+          })))
+        }
+        // Primary may have moved between venues that were already assigned.
+        if (venueIds.length) {
+          await sb().from('coach_staff_venues').update({ is_primary: false }).eq('staff_id', staffId)
+          await sb().from('coach_staff_venues').update({ is_primary: true })
+            .eq('staff_id', staffId).eq('venue_id', primaryVenue || venueIds[0])
+        }
+      }
       onSaved()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Save failed'); setSaving(false) }
   }
@@ -375,11 +435,38 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
               {Array.from(new Set([d.qualifications, ...ACCREDITATIONS].filter(Boolean))).map((a: string) => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
-          <div><label style={lbl}>Home venue</label>
-            <select value={d.home_venue ?? ''} onChange={e => set('home_venue', e.target.value)} style={input}>
-              <option value="">{venues.length ? '— Select venue —' : 'Add venues in Settings → Venues'}</option>
-              {venues.map(v => <option key={v.id} value={v.name}>{v.name}</option>)}
-            </select>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={lbl}>Venues they work at</label>
+            {venues.length === 0 ? (
+              <div style={{ ...input, color: T.text3 }}>Add venues in Settings → Venues first.</div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                  {venues.map(v => {
+                    const on = venueIds.includes(v.id)
+                    return (
+                      <button key={v.id} type="button" onClick={() => toggleVenue(v.id)}
+                        style={{ appearance: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '6px 11px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? accent.hex : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text2 }}>
+                        {on ? '✓ ' : ''}{v.name}
+                      </button>
+                    )
+                  })}
+                </div>
+                {venueIds.length > 1 && (
+                  <div style={{ marginTop: 8 }}>
+                    <label style={{ ...lbl, fontSize: 10 }}>Home base</label>
+                    <select value={primaryVenue} onChange={e => setPrimaryVenue(e.target.value)} style={input}>
+                      {venueIds.map(id => <option key={id} value={id}>{venues.find(v => v.id === id)?.name || id}</option>)}
+                    </select>
+                  </div>
+                )}
+                <p style={{ color: T.text3, fontSize: 11, margin: '7px 0 0', lineHeight: 1.5 }}>
+                  {venueIds.length === 0
+                    ? 'Not assigned to a venue yet — their Court Planner will be empty until you tick at least one.'
+                    : `They'll see the courts at ${venueIds.length === 1 ? 'this site' : `these ${venueIds.length} sites`} in their own portal.`}
+                </p>
+              </>
+            )}
           </div>
           {fld('contracted_hours', 'Contracted h/wk', 'number', 'e.g. 24')}
           {fld('email', 'Email')}
