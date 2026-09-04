@@ -1275,7 +1275,7 @@ export function WorkflowsPage() {
 // 9. REPORTS (TOOLS SECTION)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function ReportsToolPage() {
+export function ReportsToolPage({ onGenerate }: { onGenerate?: (id: string) => void } = {}) {
   const [tab, setTab] = useState('all')
   const [filter, setFilter] = useState('all')
   const [generating, setGenerating] = useState<string | null>(null)
@@ -1300,7 +1300,10 @@ export function ReportsToolPage() {
   const filters = ['all', 'Assessment', 'Progress', 'Compliance', 'Communication']
   const filtered = filter === 'all' ? reports : reports.filter(r => r.cat === filter)
 
-  function handleGenerate(id: string) { setGenerating(id); setTimeout(() => setGenerating(null), 2000) }
+  function handleGenerate(id: string) {
+    if (onGenerate) { onGenerate(id); return }
+    setGenerating(id); setTimeout(() => setGenerating(null), 2000)
+  }
 
   return (
     <div className="space-y-4 p-4">
