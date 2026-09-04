@@ -118,7 +118,7 @@ export const Tab = ({label,active,onClick,icon:Icon}: {label: string, active: bo
 // ═══════════════════════════════════════════════════════════
 // PUPIL DETAIL
 // ═══════════════════════════════════════════════════════════
-export function PupilDetail({pupil, onBack}: {pupil: any, onBack: () => void}) {
+export function PupilDetail({pupil, onBack, onAssess}: {pupil: any, onBack: () => void, onAssess?: (pupil: any, assessment: string) => void}) {
   const [tab, setTab] = useState("overview");
   const [assessOpen, setAssessOpen] = useState(false);
   const [assessing, setAssessing] = useState<any>(null);
@@ -780,7 +780,7 @@ export function PupilDetail({pupil, onBack}: {pupil: any, onBack: () => void}) {
               {name:"EYFS Profile Update",desc:"Update individual Early Learning Goal judgements",badge:"Statutory",bc:T.green,bb:T.greenBg,live:false},
               {name:"Leuven Wellbeing Scale",desc:"Observe and rate emotional wellbeing and involvement (1–5)",badge:"Pastoral",bc:T.blue,bb:T.blueBg,live:false},
             ].map(a=>(
-              <button key={a.name} onClick={()=>{ if(!a.live){ alert('Coming soon'); } }}
+              <button key={a.name} onClick={()=>{ if(a.live && onAssess){ setAssessOpen(false); onAssess(pupil, a.name); } else if(!a.live){ alert('Coming soon'); } }}
                 style={{display:"flex",alignItems:"flex-start",gap:14,width:"100%",
                 padding:"14px 16px",border:`1px solid ${T.border}`,borderRadius:10,
                 background:"white",marginBottom:8,cursor:"pointer",textAlign:"left"}}>
