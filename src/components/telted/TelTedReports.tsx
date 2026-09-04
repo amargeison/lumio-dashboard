@@ -9,24 +9,24 @@ import {
 import { PUPILS, CLASSES, STAFF, neliPupils, neliAvgGain, classAvgI, classAvgE, getLight, lc, ll } from '@/components/neli/neliData'
 
 // ─── Theme (TEL TED dark) ────────────────────────────────────────────────────
-const C = {
+export const C = {
   bg: '#111318', panel: '#0A0B10', border: '#1F2937', text: '#F9FAFB', body: '#D1D5DB', muted: '#9CA3AF', dim: '#6B7280', faint: '#4B5563',
   teal: '#0D9488', tealSoft: 'rgba(13,148,136,0.12)', green: '#22C55E', amber: '#F59E0B', red: '#EF4444', blue: '#60A5FA', purple: '#A78BFA', gold: '#FBBF24',
   greenSoft: 'rgba(34,197,94,0.12)', amberSoft: 'rgba(245,158,11,0.12)', redSoft: 'rgba(239,68,68,0.12)', blueSoft: 'rgba(96,165,250,0.12)',
 }
-const bandColor = (s: number) => s < 85 ? C.red : s < 90 ? C.amber : C.green
-const bandSoft = (s: number) => s < 85 ? C.redSoft : s < 90 ? C.amberSoft : C.greenSoft
-const bandLabel = (s: number) => s < 85 ? 'Needs Support' : s < 90 ? 'Monitor' : 'On Track'
-const SCHOOL = 'Parkside Elementary'
-const DISTRICT = 'Oak Valley District'
-const GRADE = 'Kindergarten'
-const today = () => new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-const us = (s: string) => s.replace(/\bpupils?\b/gi, m => m[0] === 'P' ? (m.endsWith('s') ? 'Students' : 'Student') : (m.endsWith('s') ? 'students' : 'student'))
-const gain = (p: any) => p.es - p.is
-const avg = (arr: number[]) => arr.length ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length * 10) / 10 : 0
+export const bandColor = (s: number) => s < 85 ? C.red : s < 90 ? C.amber : C.green
+export const bandSoft = (s: number) => s < 85 ? C.redSoft : s < 90 ? C.amberSoft : C.greenSoft
+export const bandLabel = (s: number) => s < 85 ? 'Needs Support' : s < 90 ? 'Monitor' : 'On Track'
+export const SCHOOL = 'Parkside Elementary'
+export const DISTRICT = 'Oak Valley District'
+export const GRADE = 'Kindergarten'
+export const today = () => new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+export const us = (s: string) => s.replace(/\bpupils?\b/gi, m => m[0] === 'P' ? (m.endsWith('s') ? 'Students' : 'Student') : (m.endsWith('s') ? 'students' : 'student'))
+export const gain = (p: any) => p.es - p.is
+export const avg = (arr: number[]) => arr.length ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length * 10) / 10 : 0
 // Subtest scores in the shared dataset are September baselines; re-centre each student's profile on their current overall score
-const sub = (p: any, key: string) => { const vals = Object.values(p.subscores) as number[]; return Math.round(p.subscores[key] + (p.es - vals.reduce((a, b) => a + b, 0) / vals.length)) }
-const SUBTESTS = [
+export const sub = (p: any, key: string) => { const vals = Object.values(p.subscores) as number[]; return Math.round(p.subscores[key] + (p.es - vals.reduce((a, b) => a + b, 0) / vals.length)) }
+export const SUBTESTS = [
   { key: 'recVocab', name: 'Receptive Vocabulary', short: 'Rec. Vocab', desc: 'Understanding word meanings' },
   { key: 'expVocab', name: 'Expressive Vocabulary', short: 'Exp. Vocab', desc: 'Naming and describing' },
   { key: 'grammar', name: 'Sentence Repetition', short: 'Grammar', desc: 'Grammar and sentence structure' },
@@ -46,7 +46,7 @@ export const TELTED_REPORT_TYPES = [
 ]
 
 // ─── Shared primitives ───────────────────────────────────────────────────────
-function Card({ children, style, title, sub }: { children: React.ReactNode; style?: React.CSSProperties; title?: string; sub?: string }) {
+export function Card({ children, style, title, sub }: { children: React.ReactNode; style?: React.CSSProperties; title?: string; sub?: string }) {
   return (
     <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18, marginBottom: 16, ...style }}>
       {title && <h4 style={{ fontSize: 13, fontWeight: 700, color: C.text, margin: 0, marginBottom: sub ? 2 : 12 }}>{title}</h4>}
@@ -55,7 +55,7 @@ function Card({ children, style, title, sub }: { children: React.ReactNode; styl
     </div>
   )
 }
-function Stat({ l, v, c, s }: { l: string; v: string | number; c: string; s?: string }) {
+export function Stat({ l, v, c, s }: { l: string; v: string | number; c: string; s?: string }) {
   return (
     <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderTop: `3px solid ${c}`, borderRadius: 10, padding: '12px 10px', textAlign: 'center' }}>
       <p style={{ fontSize: 9, fontWeight: 700, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.04em', margin: '0 0 4px' }}>{l}</p>
@@ -64,20 +64,20 @@ function Stat({ l, v, c, s }: { l: string; v: string | number; c: string; s?: st
     </div>
   )
 }
-function Stats({ items, cols }: { items: { l: string; v: string | number; c: string; s?: string }[]; cols?: number }) {
+export function Stats({ items, cols }: { items: { l: string; v: string | number; c: string; s?: string }[]; cols?: number }) {
   return <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols || items.length}, 1fr)`, gap: 10, marginBottom: 16 }}>{items.map(k => <Stat key={k.l} {...k} />)}</div>
 }
-function Pill({ children, color, soft }: { children: React.ReactNode; color: string; soft?: string }) {
+export function Pill({ children, color, soft }: { children: React.ReactNode; color: string; soft?: string }) {
   return <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700, background: soft || `${color}22`, color, whiteSpace: 'nowrap' }}>{children}</span>
 }
-function Narrative({ children, accent }: { children: React.ReactNode; accent?: string }) {
+export function Narrative({ children, accent }: { children: React.ReactNode; accent?: string }) {
   return (
     <div style={{ background: C.bg, borderLeft: `4px solid ${accent || C.teal}`, border: `1px solid ${C.border}`, borderLeftWidth: 4, borderLeftColor: accent || C.teal, borderRadius: 12, padding: 20, marginBottom: 16 }}>
       <p style={{ fontSize: 13, color: C.body, margin: 0, lineHeight: 1.8, fontFamily: 'Georgia, serif' }}>{children}</p>
     </div>
   )
 }
-function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
+export function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
@@ -87,7 +87,7 @@ function Table({ head, rows }: { head: string[]; rows: React.ReactNode[][] }) {
     </div>
   )
 }
-function Actions({ items, title }: { items: string[]; title?: string }) {
+export function Actions({ items, title }: { items: string[]; title?: string }) {
   return (
     <Card title={title || 'Recommended actions'}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -101,7 +101,7 @@ function Actions({ items, title }: { items: string[]; title?: string }) {
     </Card>
   )
 }
-const ChartTip = ({ active, payload, label }: any) => {
+export const ChartTip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
     <div style={{ background: '#0A0B10', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', fontSize: 11 }}>
@@ -110,8 +110,8 @@ const ChartTip = ({ active, payload, label }: any) => {
     </div>
   )
 }
-const axis = { fontSize: 10, fill: C.dim }
-const trend = (from: number, to: number, months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar']) => months.map((m, i) => ({ month: m, v: Math.round((from + (to - from) * (i / (months.length - 1))) * 10) / 10 }))
+export const axis = { fontSize: 10, fill: C.dim }
+export const trend = (from: number, to: number, months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar']) => months.map((m, i) => ({ month: m, v: Math.round((from + (to - from) * (i / (months.length - 1))) * 10) / 10 }))
 
 // ─── 1. End of Term Summary ──────────────────────────────────────────────────
 function TermSummaryReport() {
