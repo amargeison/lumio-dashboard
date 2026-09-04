@@ -15,6 +15,7 @@ import { partnerForSlug } from '@/lib/partners/tenant-partner'
 import { RGRDashboard } from '@/components/telted/rgr/RGRDashboard'
 import TelTedResourceLibrary from '@/components/telted/TelTedResources'
 import TelTedReportsPanel from '@/components/telted/TelTedReports'
+import TelTedInspectionPage from '@/components/telted/TelTedInspection'
 import { useElevenLabsTTS } from '@/hooks/useElevenLabsTTS'
 import { useVoiceCommands } from '@/hooks/useVoiceCommands'
 import { T, PUPILS, ALERTS, TRUST, STAFF, neliPupils, neliAvgGain, classAvgI, classAvgE, getLight, lc, lb, ll } from '@/components/neli/neliData'
@@ -30,7 +31,7 @@ import {
 import DistrictDashboard from '@/components/neli/DistrictDashboard'
 import {
   StaffManagementPage, SendDslPage, SafeguardingPage, WraparoundPage,
-  InspectionModePage, RosteringPage, MisSyncPage, WorkflowsPage, ReportsToolPage,
+  RosteringPage, MisSyncPage, WorkflowsPage, ReportsToolPage,
 } from '@/components/neli/SidebarPages'
 
 const LanguageScreenApp = dynamic(() => import('@/components/neli/LanguageScreenApp'), { ssr: false })
@@ -1726,7 +1727,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
       case 'wraparound':
         return <WraparoundPage />
       case 'inspection':
-        return <InspectionModePage />
+        return <TelTedInspectionPage />
       case 'rostering':
         return <RosteringPage />
       case 'missync':
