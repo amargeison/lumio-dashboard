@@ -62,7 +62,7 @@ function DocViewer({ title, subtitle, cat, onClose, children }: { title: string;
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', overflowY: 'auto', padding: '24px 16px' }} onClick={onClose}>
       <style>{`@media print { .telted-doc-chrome { display:none !important } .telted-doc { position: static !important; background:#fff !important; } }`}</style>
-      <div className="telted-doc" style={{ width: 960, maxWidth: '100%', background: '#07080F', border: `1px solid ${C.border}`, borderRadius: 14, padding: 28, alignSelf: 'flex-start' }} onClick={e => e.stopPropagation()}>
+      <div className="telted-doc" style={{ width: 960, maxWidth: '100%', background: 'var(--tt-bg)', border: `1px solid ${C.border}`, borderRadius: 14, padding: 28, alignSelf: 'flex-start' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 18, paddingBottom: 14, borderBottom: `2px solid ${C.border}` }}>
           <div>
             <p style={{ fontSize: 10, fontWeight: 700, color: C.teal, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 4px' }}>🐻 TEL Ted · {cat}</p>
@@ -331,15 +331,15 @@ export default function TelTedInspectionPage() {
                 </div>
                 <span style={{ fontSize: 10, color: C.faint, whiteSpace: 'nowrap' }}>~{pack.pages} pp · Last: {pack.last}</span>
               </div>
-              <div className="flex flex-wrap gap-1.5 mb-4">{pack.contents.map(c => <span key={c} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: `1px solid ${C.border}`, color: C.muted }}>{c}</span>)}</div>
+              <div className="flex flex-wrap gap-1.5 mb-4">{pack.contents.map(c => <span key={c} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, background: 'var(--tt-hover)', border: `1px solid ${C.border}`, color: C.muted }}>{c}</span>)}</div>
               {generating === pack.id ? (
-                <div style={{ padding: '8px 12px', borderRadius: 8, background: '#0A0B10', border: `1px solid ${C.border}` }}>
+                <div style={{ padding: '8px 12px', borderRadius: 8, background: 'var(--tt-panel)', border: `1px solid ${C.border}` }}>
                   {steps.map((s, i) => <p key={s} style={{ fontSize: 11, margin: '2px 0', color: i < step ? C.green : i === step ? C.text : C.faint, display: 'flex', alignItems: 'center', gap: 6 }}>{i < step ? <CheckCircle2 size={12} /> : i === step ? <Loader2 size={12} className="animate-spin" /> : <ChevronRight size={12} />}{s}</p>)}
                 </div>
               ) : (
                 <div className="flex gap-2 mt-auto">
                   <button onClick={() => generate(pack.id)} className="flex-1 text-xs font-semibold py-2.5 rounded-lg flex items-center justify-center gap-1.5" style={{ backgroundColor: C.teal, color: '#fff', border: 'none', cursor: 'pointer' }}><Download size={12} /> Generate PDF</button>
-                  <button onClick={() => setDoc(pack.id)} className="text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5" style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: C.text, border: `1px solid ${C.border}`, cursor: 'pointer' }}><FileText size={12} /> Preview</button>
+                  <button onClick={() => setDoc(pack.id)} className="text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5" style={{ backgroundColor: 'var(--tt-hover)', color: C.text, border: `1px solid ${C.border}`, cursor: 'pointer' }}><FileText size={12} /> Preview</button>
                 </div>
               )}
             </div>
@@ -353,7 +353,7 @@ export default function TelTedInspectionPage() {
             <div className="flex items-center justify-between mb-4"><h4 className="text-sm font-bold" style={{ color: C.text }}>RAG Self-Assessment</h4><button onClick={() => setDoc('summary')} className="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5" style={{ backgroundColor: C.teal, color: '#fff', border: 'none', cursor: 'pointer' }}><Download size={12} /> Export self-assessment</button></div>
             <div className="space-y-2">
               {SELF_AREAS.map(a => { const r = ratings[a.area]; return (
-                <div key={a.area} className="rounded-lg p-3" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}`, borderLeft: `4px solid ${RAG_META[r].color}` }}>
+                <div key={a.area} className="rounded-lg p-3" style={{ backgroundColor: 'var(--tt-panel)', border: `1px solid ${C.border}`, borderLeft: `4px solid ${RAG_META[r].color}` }}>
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-bold" style={{ color: C.text, width: 150 }}>{a.area}</span>
                     <div className="flex gap-1.5">{(['red', 'amber', 'green'] as Rag[]).map(x => <button key={x} onClick={() => setRatings(p => ({ ...p, [a.area]: x }))} title={RAG_META[x].desc} className="w-6 h-6 rounded-full" style={{ backgroundColor: RAG_META[x].color, opacity: r === x ? 1 : 0.22, border: r === x ? '2px solid #fff' : '2px solid transparent', cursor: 'pointer' }} />)}</div>
@@ -393,7 +393,7 @@ export default function TelTedInspectionPage() {
             <div className="flex items-center justify-between mb-3"><h4 className="text-sm font-bold" style={{ color: C.text }}>Mock Inspection — lines of enquiry</h4><span className="text-xs" style={{ color: C.dim }}>{MOCK_QUESTIONS.length} questions · click to expand</span></div>
             <div className="space-y-2">
               {MOCK_QUESTIONS.map((m, i) => (
-                <div key={i} className="rounded-lg" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
+                <div key={i} className="rounded-lg" style={{ backgroundColor: 'var(--tt-panel)', border: `1px solid ${C.border}` }}>
                   <button onClick={() => setOpenQ(openQ === i ? null : i)} className="w-full flex items-center gap-3 p-3 text-left" style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
                     <ChevronDown size={14} style={{ color: C.dim, transform: openQ === i ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }} />
                     <span className="text-xs font-bold flex-1" style={{ color: C.text }}>Q{i + 1}: {m.q}</span>

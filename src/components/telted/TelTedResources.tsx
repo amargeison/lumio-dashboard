@@ -7,7 +7,7 @@ import {
   portalDoc, portalFolder, portalDownload, type ResourceItem, type ResourceFile,
 } from '@/data/telted/resources'
 
-const C = { bg: '#111318', border: '#1F2937', text: '#F9FAFB', muted: '#9CA3AF', dim: '#6B7280', faint: '#4B5563', teal: '#0D9488', green: '#15803D' }
+const C = { bg: 'var(--tt-card)', border: 'var(--tt-border)', text: 'var(--tt-text)', muted: 'var(--tt-muted)', dim: 'var(--tt-dim)', faint: 'var(--tt-faint)', teal: 'var(--tt-accent)', green: '#15803D' }
 
 function ResourceCard({ r, onOpen }: { r: ResourceItem; onOpen: (r: ResourceItem) => void }) {
   const isAudio = r.files.some(f => f.kind === 'audio')
@@ -19,17 +19,17 @@ function ResourceCard({ r, onOpen }: { r: ResourceItem; onOpen: (r: ResourceItem
         <p className="text-xs leading-relaxed mb-3" style={{ color: C.muted }}>{r.desc}</p>
         <div className="flex items-center gap-2 flex-wrap">
           <span className="inline-block text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: `${r.badgeColor}20`, color: r.badgeColor, border: `1px solid ${r.badgeColor}40` }}>{r.badge}</span>
-          <span className="inline-block text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: C.dim, border: `1px solid ${C.border}` }}>
+          <span className="inline-block text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: 'var(--tt-hover)', color: C.dim, border: `1px solid ${C.border}` }}>
             {r.files.length} {isAudio ? (r.files.length === 1 ? 'track' : 'tracks') : (r.files.length === 1 ? 'file' : 'files')}
           </span>
         </div>
       </div>
       <div className="flex" style={{ borderTop: `1px solid ${C.border}` }}>
-        <button onClick={() => onOpen(r)} className="flex-1 py-2.5 text-xs font-semibold" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: C.teal, border: 'none', cursor: 'pointer' }}>
+        <button onClick={() => onOpen(r)} className="flex-1 py-2.5 text-xs font-semibold" style={{ backgroundColor: 'var(--tt-accent-soft)', color: C.teal, border: 'none', cursor: 'pointer' }}>
           {r.actionLabel || 'View Resource'}
         </button>
         <a href={r.files.length === 1 ? portalDoc(r.files[0].code) : portalFolder(r.folder)} target="_blank" rel="noreferrer" title={r.files.length === 1 ? 'Open in viewer' : 'Open folder in resource portal'}
-          className="px-3 flex items-center justify-center" style={{ backgroundColor: 'rgba(13,148,136,0.06)', color: C.teal, borderLeft: `1px solid ${C.border}` }}>
+          className="px-3 flex items-center justify-center" style={{ backgroundColor: 'var(--tt-accent-soft)', color: C.teal, borderLeft: `1px solid ${C.border}` }}>
           <ExternalLink size={13} />
         </a>
       </div>
@@ -40,14 +40,14 @@ function ResourceCard({ r, onOpen }: { r: ResourceItem; onOpen: (r: ResourceItem
 function FileRow({ f }: { f: ResourceFile }) {
   const isAudio = f.kind === 'audio'
   return (
-    <div className="flex items-center gap-3 px-3 py-2 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: `1px solid ${C.border}` }}>
+    <div className="flex items-center gap-3 px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--tt-hover)', border: `1px solid ${C.border}` }}>
       <span style={{ color: isAudio ? '#A78BFA' : C.teal, display: 'flex' }}>{isAudio ? <Play size={14} /> : <FileText size={14} />}</span>
       <span className="text-xs flex-1 truncate" style={{ color: C.text }}>{f.title}</span>
       <a href={portalDoc(f.code)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-md" style={{ backgroundColor: C.teal, color: '#fff', textDecoration: 'none' }}>
         {isAudio ? <Play size={11} /> : <ExternalLink size={11} />} {isAudio ? 'Play' : 'Open'}
       </a>
       {!isAudio && (
-        <a href={portalDownload(f.code)} target="_blank" rel="noreferrer" title="Download PDF" className="inline-flex items-center justify-center w-7 h-7 rounded-md" style={{ backgroundColor: '#1F2937', color: C.text }}>
+        <a href={portalDownload(f.code)} target="_blank" rel="noreferrer" title="Download PDF" className="inline-flex items-center justify-center w-7 h-7 rounded-md" style={{ backgroundColor: 'var(--tt-border)', color: C.text }}>
           <Download size={12} />
         </a>
       )}
@@ -80,12 +80,12 @@ function ResourceModal({ r, onClose }: { r: ResourceItem; onClose: () => void })
 
         <div className="px-5 pt-4 pb-2 flex items-center gap-2">
           {r.files.length > 6 && (
-            <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#0A0B10', border: `1px solid ${C.border}` }}>
+            <div className="flex-1 flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'var(--tt-panel)', border: `1px solid ${C.border}` }}>
               <Search size={13} style={{ color: C.dim }} />
               <input value={q} onChange={e => setQ(e.target.value)} placeholder={`Search ${r.files.length} ${isAudio ? 'tracks' : 'files'}…`} className="flex-1 bg-transparent outline-none text-xs" style={{ color: C.text }} />
             </div>
           )}
-          <a href={portalFolder(r.folder)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#1F2937', color: C.text, textDecoration: 'none', marginLeft: 'auto' }}>
+          <a href={portalFolder(r.folder)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'var(--tt-border)', color: C.text, textDecoration: 'none', marginLeft: 'auto' }}>
             <FolderOpen size={12} /> Open folder in portal
           </a>
         </div>
@@ -138,7 +138,7 @@ export default function TelTedResourceLibrary() {
           <div className="flex items-center gap-2">
             <span>📁</span>
             <h3 className="text-sm font-bold" style={{ color: C.text }}>TEL Ted: NELI Intervention</h3>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(13,148,136,0.12)', color: C.teal }}>{neliCount} files</span>
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--tt-accent-soft)', color: C.teal }}>{neliCount} files</span>
           </div>
           <a href={portalFolder(TELTED_FOLDERS.neli)} target="_blank" rel="noreferrer" className="text-[11px] font-semibold inline-flex items-center gap-1" style={{ color: C.teal }}>Browse folder <ExternalLink size={11} /></a>
         </div>

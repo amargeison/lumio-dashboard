@@ -10,9 +10,9 @@ import { PUPILS, CLASSES, STAFF, neliPupils, neliAvgGain, classAvgI, classAvgE, 
 
 // ─── Theme (TEL TED dark) ────────────────────────────────────────────────────
 export const C = {
-  bg: '#111318', panel: '#0A0B10', border: '#1F2937', text: '#F9FAFB', body: '#D1D5DB', muted: '#9CA3AF', dim: '#6B7280', faint: '#4B5563',
-  teal: '#0D9488', tealSoft: 'rgba(13,148,136,0.12)', green: '#22C55E', amber: '#F59E0B', red: '#EF4444', blue: '#60A5FA', purple: '#A78BFA', gold: '#FBBF24',
-  greenSoft: 'rgba(34,197,94,0.12)', amberSoft: 'rgba(245,158,11,0.12)', redSoft: 'rgba(239,68,68,0.12)', blueSoft: 'rgba(96,165,250,0.12)',
+  bg: 'var(--tt-card)', panel: 'var(--tt-panel)', border: 'var(--tt-border)', text: 'var(--tt-text)', body: 'var(--tt-body)', muted: 'var(--tt-muted)', dim: 'var(--tt-dim)', faint: 'var(--tt-faint)',
+  teal: 'var(--tt-accent)', tealSoft: 'var(--tt-accent-soft)', green: 'var(--tt-green)', amber: 'var(--tt-amber)', red: 'var(--tt-red)', blue: 'var(--tt-blue)', purple: 'var(--tt-purple)', gold: 'var(--tt-gold)',
+  greenSoft: 'var(--tt-green-soft)', amberSoft: 'var(--tt-amber-soft)', redSoft: 'var(--tt-red-soft)', blueSoft: 'var(--tt-blue-soft)',
 }
 export const bandColor = (s: number) => s < 85 ? C.red : s < 90 ? C.amber : C.green
 export const bandSoft = (s: number) => s < 85 ? C.redSoft : s < 90 ? C.amberSoft : C.greenSoft
@@ -68,7 +68,7 @@ export function Stats({ items, cols }: { items: { l: string; v: string | number;
   return <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols || items.length}, 1fr)`, gap: 10, marginBottom: 16 }}>{items.map(k => <Stat key={k.l} {...k} />)}</div>
 }
 export function Pill({ children, color, soft }: { children: React.ReactNode; color: string; soft?: string }) {
-  return <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700, background: soft || `${color}22`, color, whiteSpace: 'nowrap' }}>{children}</span>
+  return <span style={{ display: 'inline-block', padding: '2px 9px', borderRadius: 20, fontSize: 10, fontWeight: 700, background: soft || `color-mix(in srgb, ${color} 14%, transparent)`, color, whiteSpace: 'nowrap' }}>{children}</span>
 }
 export function Narrative({ children, accent }: { children: React.ReactNode; accent?: string }) {
   return (
@@ -104,7 +104,7 @@ export function Actions({ items, title }: { items: string[]; title?: string }) {
 export const ChartTip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: '#0A0B10', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', fontSize: 11 }}>
+    <div style={{ background: 'var(--tt-panel)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', fontSize: 11 }}>
       {label !== undefined && <p style={{ margin: '0 0 4px', fontWeight: 700, color: C.text }}>{label}</p>}
       {payload.map((p: any, i: number) => <p key={i} style={{ margin: 0, color: p.color || p.fill || C.body }}>{p.name}: <strong>{p.value}</strong></p>)}
     </div>
@@ -176,7 +176,7 @@ function TermSummaryReport() {
       <Card title="Traffic-light summary" sub="Movement between bands since September">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           {[{ l: 'Needs Support (<85)', a: redI, b: red.length, c: C.red }, { l: 'Monitor (85–89)', a: amberI, b: amber.length, c: C.amber }, { l: 'On Track (90+)', a: greenI, b: green.length, c: C.green }].map(k => (
-            <div key={k.l} style={{ background: `${k.c}14`, borderRadius: 10, padding: 14, borderLeft: `4px solid ${k.c}` }}>
+            <div key={k.l} style={{ background: `color-mix(in srgb, ${k.c} 10%, transparent)`, borderRadius: 10, padding: 14, borderLeft: `4px solid ${k.c}` }}>
               <p style={{ fontSize: 10, fontWeight: 700, color: k.c, margin: '0 0 6px', textTransform: 'uppercase' }}>{k.l}</p>
               <p style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0, fontFamily: 'Georgia, serif' }}>{k.a} <span style={{ color: C.dim, fontSize: 14 }}>→</span> {k.b}</p>
               <p style={{ fontSize: 10, color: C.muted, margin: '4px 0 0' }}>{k.b - k.a > 0 ? '+' : ''}{k.b - k.a} students since September</p>
@@ -239,7 +239,7 @@ function StudentProgressReport() {
           {[...P].sort((a, b) => a.name.localeCompare(b.name)).map(x => <option key={x.id} value={x.id}>{x.name}{x.neli ? ' · TEL Ted' : ''}</option>)}
         </select>
         <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
-          {neliPupils.map((x: any) => <button key={x.id} onClick={() => setId(x.id)} style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 20, border: `1px solid ${x.id === id ? C.gold : C.border}`, background: x.id === id ? `${C.gold}22` : 'transparent', color: x.id === id ? C.gold : C.muted, cursor: 'pointer' }}>{x.name.split(' ')[0]}</button>)}
+          {neliPupils.map((x: any) => <button key={x.id} onClick={() => setId(x.id)} style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 20, border: `1px solid ${x.id === id ? C.gold : C.border}`, background: x.id === id ? `color-mix(in srgb, var(--tt-gold) 14%, transparent)` : 'transparent', color: x.id === id ? C.gold : C.muted, cursor: 'pointer' }}>{x.name.split(' ')[0]}</button>)}
         </div>
       </div>
 
@@ -489,7 +489,7 @@ function ParentReport() {
         </select>
         <span style={{ fontSize: 11, color: C.dim }}>· Language: English {p.eal ? '(Spanish version available)' : ''}</span>
       </div>
-      <Card style={{ background: 'linear-gradient(135deg, rgba(13,148,136,0.15), rgba(249,115,22,0.10))' }}>
+      <Card style={{ background: 'linear-gradient(135deg, var(--tt-accent-soft), rgba(249,115,22,0.10))' }}>
         <p style={{ fontSize: 11, color: C.muted, margin: '0 0 4px' }}>{SCHOOL} · {GRADE} · {today()}</p>
         <h3 style={{ fontSize: 20, fontWeight: 800, color: C.text, margin: '0 0 4px', fontFamily: 'Georgia, serif' }}>🐻 {first}’s Language Update</h3>
         <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>For the family of {p.name}</p>
@@ -533,7 +533,7 @@ const SVOR_ORDER: Record<string, number> = { 'Dual Risk': 0, 'Language Risk': 1,
 const SVOR_QC: Record<string, string> = { Typical: C.green, 'Language Risk': C.amber, 'Decoding Risk': C.amber, 'Dual Risk': C.red }
 const svorQuadrant = (d: { x: number; y: number }) => d.x >= 90 && d.y >= 90 ? 'Typical' : d.x < 90 && d.y < 90 ? 'Dual Risk' : d.y < 90 ? 'Language Risk' : 'Decoding Risk'
 const SvorTip = ({ active, payload }: any) => { if (!active || !payload?.length) return null; const d = payload[0].payload; return (
-  <div style={{ background: '#0A0B10', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', fontSize: 11 }}>
+  <div style={{ background: 'var(--tt-panel)', border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 12px', fontSize: 11 }}>
     <p style={{ fontWeight: 700, margin: '0 0 4px', color: C.text }}>{d.name}</p><p style={{ margin: 0, color: C.body }}>Language: {d.y} · Decoding: {d.x}</p><p style={{ margin: '4px 0 0', color: SVOR_QC[svorQuadrant(d)], fontWeight: 700 }}>{svorQuadrant(d)}</p>
   </div>) }
 function SvorReport() {
@@ -559,7 +559,7 @@ function SvorReport() {
               <ZAxis range={[200, 200]} />
               <ReferenceLine x={90} stroke={C.blue} strokeDasharray="6 3" /><ReferenceLine y={90} stroke={C.blue} strokeDasharray="6 3" /><ReferenceLine x={100} stroke={C.border} /><ReferenceLine y={100} stroke={C.border} />
               <Tooltip content={<SvorTip />} />
-              <Scatter data={data} shape={(props: any) => { const { cx, cy, payload } = props; const ini = payload.name.split(' ').map((w: string) => w[0]).join(''); return (<g><circle cx={cx} cy={cy} r={11} fill={SVOR_COLORS[payload.concern]} stroke={payload.neli ? C.gold : '#0A0B10'} strokeWidth={payload.neli ? 2.5 : 1.5} /><text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize={8} fontWeight={700}>{ini}</text></g>) }} />
+              <Scatter data={data} shape={(props: any) => { const { cx, cy, payload } = props; const ini = payload.name.split(' ').map((w: string) => w[0]).join(''); return (<g><circle cx={cx} cy={cy} r={11} fill={SVOR_COLORS[payload.concern]} stroke={payload.neli ? C.gold : 'var(--tt-panel)'} strokeWidth={payload.neli ? 2.5 : 1.5} /><text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize={8} fontWeight={700}>{ini}</text></g>) }} />
             </ScatterChart>
           </ResponsiveContainer>
           <div style={{ position: 'absolute', top: 26, left: 80, fontSize: 10, color: C.blue, fontStyle: 'italic' }}>Poor reading skills</div>
@@ -605,7 +605,7 @@ function ClassDashboardReport() {
         <select value={filter} onChange={e => setFilter(e.target.value)} style={{ fontSize: 11, padding: '6px 10px', borderRadius: 6, border: `1px solid ${C.border}`, background: C.bg, color: C.text }}>
           <option value="all">All students</option><option value="A">Kindergarten A</option><option value="B">Kindergarten B</option><option value="neli">TEL Ted only</option><option value="atrisk">Below 90 only</option>
         </select>
-        <button onClick={() => setShowInitial(v => !v)} style={{ fontSize: 11, fontWeight: 600, padding: '6px 12px', borderRadius: 6, border: `1px solid ${C.border}`, background: showInitial ? C.teal : C.bg, color: C.text, cursor: 'pointer' }}>{showInitial ? 'Showing Sept → Now' : 'Current only'}</button>
+        <button onClick={() => setShowInitial(v => !v)} style={{ fontSize: 11, fontWeight: 600, padding: '6px 12px', borderRadius: 6, border: `1px solid ${C.border}`, background: showInitial ? C.teal : C.bg, color: showInitial ? '#fff' : C.text, cursor: 'pointer' }}>{showInitial ? 'Showing Sept → Now' : 'Current only'}</button>
       </div>
       <Card>
         {list.map(p => { const g = gain(p); return (
@@ -618,7 +618,7 @@ function ClassDashboardReport() {
               <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pct(100)}%`, borderLeft: `1px dashed ${C.faint}` }} />
               {showInitial && g !== 0 && <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}><line x1={`${pct(p.is)}%`} y1="11" x2={`${pct(p.es)}%`} y2="11" stroke={g > 0 ? C.green : C.red} strokeWidth={2} /></svg>}
               {showInitial && <div title={`Sept: ${p.is}`} style={{ position: 'absolute', top: 7, left: `${pct(p.is)}%`, width: 8, height: 8, transform: 'translateX(-4px)', background: C.faint, borderRadius: 2 }} />}
-              <div title={`Now: ${p.es}`} style={{ position: 'absolute', top: 5, left: `${pct(p.es)}%`, width: 12, height: 12, transform: 'translateX(-6px)', background: bandColor(p.es), borderRadius: '50%', border: '2px solid #0A0B10' }} />
+              <div title={`Now: ${p.es}`} style={{ position: 'absolute', top: 5, left: `${pct(p.es)}%`, width: 12, height: 12, transform: 'translateX(-6px)', background: bandColor(p.es), borderRadius: '50%', border: '2px solid var(--tt-panel)' }} />
               <span style={{ position: 'absolute', top: 3, left: `calc(${pct(p.es)}% + 10px)`, fontSize: 9, fontWeight: 700, color: g > 0 ? C.green : C.red }}>{p.es} <span style={{ color: C.dim }}>({g > 0 ? '+' : ''}{g})</span></span>
             </div>
           </div>) })}
@@ -637,7 +637,7 @@ function ClassDashboardReport() {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
         {[{ t: '🔴 Immediate attention (<85)', c: C.red, ps: P.filter(p => p.es < 85) }, { t: '🟡 Monitor closely (85–89)', c: C.amber, ps: P.filter(p => p.es >= 85 && p.es < 90) }, { t: '🌟 Biggest gains', c: C.green, ps: [...P].sort((a, b) => gain(b) - gain(a)).slice(0, 4) }].map(k => (
-          <div key={k.t} style={{ borderLeft: `4px solid ${k.c}`, borderRadius: 8, padding: '12px 14px', background: `${k.c}12`, marginBottom: 16 }}>
+          <div key={k.t} style={{ borderLeft: `4px solid ${k.c}`, borderRadius: 8, padding: '12px 14px', background: `color-mix(in srgb, ${k.c} 9%, transparent)`, marginBottom: 16 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: k.c, margin: '0 0 6px' }}>{k.t}</p>
             {k.ps.length === 0 ? <p style={{ fontSize: 11, color: C.dim, margin: 0 }}>None</p> : k.ps.map(p => <p key={p.id} style={{ fontSize: 11, color: C.body, margin: '0 0 2px' }}>{p.name} — <strong style={{ color: k.c }}>{p.es}</strong> <span style={{ color: C.dim }}>(+{gain(p)})</span></p>)}
           </div>
@@ -684,19 +684,19 @@ export default function TelTedReportsPanel({ initialReportId }: { initialReportI
             <div key={r.id} onClick={() => generate(r)} style={{ background: C.bg, border: `1px solid ${selected?.id === r.id ? C.teal : C.border}`, borderRadius: 10, padding: 12, cursor: 'pointer' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                 <h4 style={{ fontSize: 12, fontWeight: 700, color: C.text, margin: 0 }}>{r.name}</h4>
-                <span style={{ fontSize: 9, fontWeight: 700, color: C.dim, background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{r.cat}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: C.dim, background: 'var(--tt-hover)', padding: '2px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>{r.cat}</span>
               </div>
               <p style={{ fontSize: 11, color: C.dim, margin: '4px 0 8px', lineHeight: 1.5 }}>{r.desc}</p>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: 10, color: C.faint }}>Last: {r.lastGen || '—'}</span>
-                <button onClick={e => { e.stopPropagation(); generate(r) }} style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 7, border: 'none', background: selected?.id === r.id ? C.teal : 'rgba(13,148,136,0.15)', color: selected?.id === r.id ? '#fff' : C.teal, cursor: 'pointer' }}>Generate</button>
+                <button onClick={e => { e.stopPropagation(); generate(r) }} style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 7, border: 'none', background: selected?.id === r.id ? C.teal : 'var(--tt-accent-soft)', color: selected?.id === r.id ? '#fff' : C.teal, cursor: 'pointer' }}>Generate</button>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="telted-report-body" style={{ flex: 1, overflowY: 'auto', padding: 24, background: '#07080F', minWidth: 0 }}>
+      <div className="telted-report-body" style={{ flex: 1, overflowY: 'auto', padding: 24, background: 'var(--tt-bg)', minWidth: 0 }}>
         {!preview && !generating && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: C.dim, textAlign: 'center' }}>
             <FileText size={48} style={{ color: C.border, marginBottom: 14 }} />
