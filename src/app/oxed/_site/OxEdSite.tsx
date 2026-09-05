@@ -11,16 +11,19 @@ import {
 } from 'lucide-react'
 
 // ─── Brand tokens ───────────────────────────────────────────────────────────
-const GREEN = '#1E6B2E'        // deep brand green (logo wordmark)
-const GREEN_DK = '#124A20'
-const LIME = '#5CA131'         // bright brand green (logo head)
-const LIME_LT = '#DDF0CF'
-const INK = '#0E1A12'          // near-black with a green cast
-const PAPER = '#F7F6F1'        // warm off-white page ground
+// Palette taken from the "Get ready for language!" rebrand artwork: brand blue
+// (#447EBB), sky blue (#8CB1F9), sunshine yellow (#F9DD4C) and charcoal (#333333).
+// Names kept from the first (green) pass so the layout code is unchanged.
+const GREEN = '#447EBB'        // primary brand blue
+const GREEN_DK = '#2E5F93'     // deep blue for dark sections
+const LIME = '#8CB1F9'         // sky-blue accent
+const LIME_LT = '#E4EDFB'      // pale blue tint
+const INK = '#2B2C30'          // charcoal (rebrand #333333, slightly deeper for contrast)
+const PAPER = '#F7F8FA'        // cool off-white page ground
 const CARD = '#FFFFFF'
-const LINE = '#E4E3DC'
-const MUTE = '#5D6660'
-const GOLD = '#E9B949'
+const LINE = '#E3E6EC'
+const MUTE = '#5F6673'
+const GOLD = '#F9DD4C'         // sunshine yellow highlight
 
 const NAV = [
   { label: 'Assessments', items: ['LanguageScreen', 'ReadingScreen', 'MathsScreen'], href: '#assessments' },
@@ -131,6 +134,22 @@ function Btn({ children, href = '#', kind = 'primary', Icon = ArrowRight }: { ch
   )
 }
 
+// Placeholder wordmark in the rebrand colours — swap for the new logo file when it exists
+function Wordmark({ height = 44 }: { height?: number }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+      <svg viewBox="0 0 48 44" width={height} height={height * 44 / 48} aria-hidden>
+        <path d="M24 3C12 3 3 10 3 20c0 6 3 11 9 14l-2 8 9-6c2 0 3 1 5 1 12 0 21-7 21-17S36 3 24 3z" fill={GREEN} />
+        <circle cx="16" cy="20" r="3" fill={GOLD} /><circle cx="24" cy="20" r="3" fill="#fff" /><circle cx="32" cy="20" r="3" fill={LIME} />
+      </svg>
+      <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+        <span className="ox-serif" style={{ fontSize: height * 0.62, fontWeight: 600, color: GREEN, letterSpacing: '-0.01em' }}>OxEd</span>
+        <span style={{ fontSize: height * 0.27, fontWeight: 700, color: INK, letterSpacing: '0.02em', marginTop: 2 }}>&amp; Assessment</span>
+      </span>
+    </span>
+  )
+}
+
 // Profile-head mark used for the three assessment cards (echoes the logo silhouette)
 function HeadMark({ color, Icon }: { color: string; Icon: React.ComponentType<any> }) {
   return (
@@ -191,7 +210,7 @@ export default function OxEdSite() {
       `}</style>
 
       {/* Preview ribbon */}
-      <div style={{ background: INK, color: '#B8C4BB', fontSize: 11.5, textAlign: 'center', padding: '7px 12px', fontWeight: 600, letterSpacing: '0.04em' }}>
+      <div style={{ background: INK, color: '#C3CBD8', fontSize: 11.5, textAlign: 'center', padding: '7px 12px', fontWeight: 600, letterSpacing: '0.04em' }}>
         NEW WEBSITE — DESIGN PREVIEW · concept for oxedandassessment.com · placeholder photography
       </div>
 
@@ -207,8 +226,7 @@ export default function OxEdSite() {
       <header style={{ position: 'sticky', top: 0, zIndex: 50, background: scrolled ? 'rgba(247,246,241,.86)' : PAPER, backdropFilter: 'blur(12px)', borderBottom: `1px solid ${scrolled ? LINE : 'transparent'}`, transition: 'all .25s' }}>
         <div className="ox-wrap" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: 84 }}>
           <a href="#top" style={{ display: 'flex', alignItems: 'center' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/oxed-site-logo.png" alt="OxEd & Assessment" style={{ height: 58, width: 'auto', display: 'block' }} />
+            <Wordmark height={46} />
           </a>
           <nav className="ox-nav-links">
             {NAV.map(n => (
@@ -244,7 +262,7 @@ export default function OxEdSite() {
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section style={{ position: 'relative', overflow: 'hidden', padding: '56px 0 40px' }}>
-        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(900px 500px at 85% 10%, ${LIME_LT} 0%, transparent 60%), radial-gradient(600px 400px at 5% 90%, #EAF2E4 0%, transparent 60%)` }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(900px 500px at 85% 10%, ${LIME_LT} 0%, transparent 60%), radial-gradient(600px 400px at 5% 90%, #EAF0FA 0%, transparent 60%)` }} />
         <div className="ox-wrap ox-hero" style={{ position: 'relative' }}>
           <div>
             <div data-reveal>
@@ -288,9 +306,9 @@ export default function OxEdSite() {
                 <span style={{ fontSize: 13, color: MUTE }}>standard score · 61st percentile</span>
               </div>
               <div style={{ display: 'flex', gap: 6, marginTop: 14 }}>
-                {[['Expressive', 96, '#5CA131'], ['Receptive', 84, '#5CA131'], ['Sentences', 62, GOLD], ['Listening', 91, '#5CA131']].map(([l, v, c]) => (
+                {[['Expressive', 96, GREEN], ['Receptive', 84, GREEN], ['Sentences', 62, GOLD], ['Listening', 91, GREEN]].map(([l, v, c]) => (
                   <div key={l as string} style={{ flex: 1 }}>
-                    <div style={{ height: 6, borderRadius: 3, background: '#EEF0EA', overflow: 'hidden' }}><div style={{ width: `${v}%`, height: '100%', background: c as string }} /></div>
+                    <div style={{ height: 6, borderRadius: 3, background: '#EDF0F5', overflow: 'hidden' }}><div style={{ width: `${v}%`, height: '100%', background: c as string }} /></div>
                     <div style={{ fontSize: 10, color: MUTE, marginTop: 4 }}>{l}</div>
                   </div>
                 ))}
@@ -338,7 +356,7 @@ export default function OxEdSite() {
             ].map((s, i) => (
               <div key={s.n} data-reveal data-delay={String(i)} style={{ padding: '32px 28px 32px 0', borderRight: i < 2 ? `1px solid ${LINE}` : 'none', paddingLeft: i ? 28 : 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span className="ox-serif" style={{ fontSize: 15, color: LIME, fontWeight: 600 }}>{s.n}</span>
+                  <span className="ox-serif" style={{ fontSize: 15, color: GREEN, fontWeight: 600 }}>{s.n}</span>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: LIME_LT, color: GREEN, display: 'grid', placeItems: 'center' }}><s.Icon size={20} /></div>
                 </div>
                 <h3 className="ox-serif" style={{ fontSize: 28, margin: '18px 0 10px', fontWeight: 500 }}>{s.t}</h3>
@@ -392,18 +410,18 @@ export default function OxEdSite() {
               <div style={{ position: 'relative' }}>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: LIME, color: INK, fontSize: 12, fontWeight: 800, padding: '6px 12px', borderRadius: 999, letterSpacing: '0.06em' }}><ShieldCheck size={14} /> EEF 5/5 EVIDENCE SECURITY</div>
                 <h3 className="ox-serif" style={{ fontSize: 40, margin: '20px 0 6px', fontWeight: 500, lineHeight: 1.05 }}>{PROGRAMMES[0].name}</h3>
-                <div style={{ fontSize: 13.5, color: '#B8C4BB', fontWeight: 600 }}>{PROGRAMMES[0].who}</div>
-                <p style={{ fontSize: 16, lineHeight: 1.6, color: '#D9E0DA', margin: '18px 0 24px' }}>{PROGRAMMES[0].blurb}</p>
+                <div style={{ fontSize: 13.5, color: '#C3CBD8', fontWeight: 600 }}>{PROGRAMMES[0].who}</div>
+                <p style={{ fontSize: 16, lineHeight: 1.6, color: '#DDE3EC', margin: '18px 0 24px' }}>{PROGRAMMES[0].blurb}</p>
                 <div className="ox-grid3" style={{ gap: 12 }}>
                   {[['+3–5', 'months’ progress in six months'], ['+7', 'months for disadvantaged pupils'], ['20', 'weeks · TA-led sessions']].map(([a, b]) => (
                     <div key={b} style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 16, padding: '16px 16px' }}>
                       <div className="ox-serif" style={{ fontSize: 34, fontWeight: 600, lineHeight: 1, color: '#fff' }}>{a}</div>
-                      <div style={{ fontSize: 12.5, color: '#B8C4BB', marginTop: 6 }}>{b}</div>
+                      <div style={{ fontSize: 12.5, color: '#C3CBD8', marginTop: 6 }}>{b}</div>
                     </div>
                   ))}
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0, margin: '24px 0 26px', display: 'grid', gap: 9 }}>
-                  {PROGRAMMES[0].includes!.map(p => <li key={p} style={{ display: 'flex', gap: 10, fontSize: 14.5, color: '#E8EDE8' }}><Check size={16} color={LIME} style={{ flexShrink: 0, marginTop: 2 }} />{p}</li>)}
+                  {PROGRAMMES[0].includes!.map(p => <li key={p} style={{ display: 'flex', gap: 10, fontSize: 14.5, color: '#EEF1F6' }}><Check size={16} color={LIME} style={{ flexShrink: 0, marginTop: 2 }} />{p}</li>)}
                 </ul>
                 <Btn href="#contact" kind="light">Find out about NELI</Btn>
               </div>
@@ -415,7 +433,7 @@ export default function OxEdSite() {
                   <h3 className="ox-serif" style={{ fontSize: 30, margin: '6px 0 10px', fontWeight: 500 }}>{p.name}</h3>
                   <p style={{ fontSize: 15, color: MUTE, lineHeight: 1.6, margin: '0 0 14px' }}>{p.blurb}</p>
                   <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'grid', gap: 7 }}>
-                    {p.proof.map(x => <li key={x} style={{ display: 'flex', gap: 10, fontSize: 14, fontWeight: 600 }}><Check size={15} color={LIME} style={{ flexShrink: 0, marginTop: 2 }} />{x}</li>)}
+                    {p.proof.map(x => <li key={x} style={{ display: 'flex', gap: 10, fontSize: 14, fontWeight: 600 }}><Check size={15} color={GREEN} style={{ flexShrink: 0, marginTop: 2 }} />{x}</li>)}
                   </ul>
                   <a href="#contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 15, fontWeight: 700, color: GREEN, textDecoration: 'none' }}>Learn more <ArrowRight size={16} /></a>
                 </div>
@@ -432,12 +450,12 @@ export default function OxEdSite() {
           <div data-reveal>
             <Eyebrow color={LIME}>Research & evidence</Eyebrow>
             <H2 light>Built in Oxford. Proven in randomised controlled trials. Used in 11,000 schools.</H2>
-            <p style={{ fontSize: 17, lineHeight: 1.6, color: '#CFE0D2', margin: '0 0 28px' }}>Our tools grow out of the research of Professor Charles Hulme and his team — the creators of NELI — and every claim we make is backed by independent evaluation.</p>
+            <p style={{ fontSize: 17, lineHeight: 1.6, color: '#D6E2F5', margin: '0 0 28px' }}>Our tools grow out of the research of Professor Charles Hulme and his team — the creators of NELI — and every claim we make is backed by independent evaluation.</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               {[['5/5', 'EEF evidence security rating for NELI'], ['RCTs', 'randomised controlled trials behind every claim'], ['+2 mo', 'NELI Preschool, EEF trial 2023–24'], ['Long-term', 'gains sustained after the programme ends']].map(([a, b]) => (
                 <div key={b} style={{ borderTop: `1px solid rgba(255,255,255,.2)`, paddingTop: 14 }}>
                   <div className="ox-serif" style={{ fontSize: 34, fontWeight: 600, lineHeight: 1 }}>{a}</div>
-                  <div style={{ fontSize: 13.5, color: '#B9D0BE', marginTop: 6 }}>{b}</div>
+                  <div style={{ fontSize: 13.5, color: '#BFD2EE', marginTop: 6 }}>{b}</div>
                 </div>
               ))}
             </div>
@@ -449,7 +467,7 @@ export default function OxEdSite() {
               “NELI is the closest an intervention has got to being an ‘education silver bullet’.”
             </p>
             <div style={{ fontWeight: 800 }}>Prof Becky Francis</div>
-            <div style={{ fontSize: 13.5, color: '#B9D0BE' }}>Chair of the Government’s Curriculum Review</div>
+            <div style={{ fontSize: 13.5, color: '#BFD2EE' }}>Chair of the Government’s Curriculum Review</div>
           </div>
         </div>
       </section>
@@ -467,7 +485,7 @@ export default function OxEdSite() {
           <div className="ox-grid3" style={{ marginTop: 40 }}>
             {STORIES.map((s, i) => (
               <div key={i} className="ox-card" data-reveal data-delay={String(i)} style={{ padding: 28, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ color: LIME }}>{'★★★★★'}</div>
+                <div style={{ color: GOLD, letterSpacing: 2 }}>{'★★★★★'}</div>
                 <p className="ox-serif" style={{ fontSize: 21, lineHeight: 1.35, margin: '14px 0 22px', flex: 1, fontWeight: 400 }}>“{s.q}”</p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 999, background: LIME_LT, color: GREEN, display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 13 }}>{s.who.split(' ').filter(w => /^[A-Z]/.test(w)).map(w => w[0]).slice(0, 2).join('')}</div>
@@ -552,13 +570,12 @@ export default function OxEdSite() {
       </section>
 
       {/* ── Footer ───────────────────────────────────────────────────────── */}
-      <footer style={{ background: INK, color: '#B8C4BB', padding: '56px 0 28px' }}>
+      <footer style={{ background: INK, color: '#C3CBD8', padding: '56px 0 28px' }}>
         <div className="ox-wrap">
           <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 28 }} className="ox-foot">
             <div>
-              <div style={{ background: '#fff', display: 'inline-block', padding: '8px 12px', borderRadius: 12 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/oxed-site-logo.png" alt="OxEd & Assessment" style={{ height: 44, width: 'auto', display: 'block' }} />
+              <div style={{ background: '#fff', display: 'inline-block', padding: '10px 14px', borderRadius: 12 }}>
+                <Wordmark height={40} />
               </div>
               <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: '16px 0 0', maxWidth: 300 }}>A University of Oxford spinout developing assessments and interventions shown to improve educational outcomes for children.</p>
               <div style={{ display: 'flex', gap: 8, marginTop: 18, flexWrap: 'wrap' }}>
@@ -572,7 +589,7 @@ export default function OxEdSite() {
             ].map(([h, items]) => (
               <div key={h as string}>
                 <div style={{ color: '#fff', fontWeight: 800, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>{h as string}</div>
-                {(items as string[]).map(it => <a key={it} href="#" style={{ display: 'block', fontSize: 14, color: '#B8C4BB', textDecoration: 'none', padding: '5px 0' }}>{it}</a>)}
+                {(items as string[]).map(it => <a key={it} href="#" style={{ display: 'block', fontSize: 14, color: '#C3CBD8', textDecoration: 'none', padding: '5px 0' }}>{it}</a>)}
               </div>
             ))}
           </div>
