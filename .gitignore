@@ -110,3 +110,8 @@ __pycache__/
 /tsconfig.check.json
 /_to_delete/
 .claude/
+
+# Scratch copies of source files and screenshots written by AI sessions before
+# being promoted into src/. Duplicates of committed code plus multi-MB PNGs —
+# never source, and a stray `git add .` would drag the lot into history.
+/Claude outputs/

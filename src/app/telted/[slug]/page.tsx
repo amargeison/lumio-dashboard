@@ -14,6 +14,8 @@ import {
   PenLine, BarChart3, School, UserPlus, Plus, FlaskConical, TriangleAlert, ChartLine, Mail, Image as ImageIcon, SlidersHorizontal,
 } from 'lucide-react'
 import { partnerForSlug } from '@/lib/partners/tenant-partner'
+import { TelTedWelcomePage, buildWelcomeCards, type WelcomeTarget, type WelcomeNotice, type WelcomeLast } from '@/components/telted/TelTedWelcome'
+import { TELTED_FILE_COUNT } from '@/data/telted/resources'
 import { RGRDashboard } from '@/components/telted/rgr/RGRDashboard'
 import TelTedResourceLibrary from '@/components/telted/TelTedResources'
 import TelTedReportsPanel from '@/components/telted/TelTedReports'
@@ -305,12 +307,11 @@ const SIDEBAR_NAV = [
   { section: null,     id: 'safeguarding', label: 'Safeguarding',       icon: Shield },
   { section: null,     id: 'wraparound',   label: 'Pre & After School', icon: Clock },
   { section: null,     id: 'inspection',   label: 'Inspection Mode',    icon: ClipboardList },
-  { section: null,     id: 'rostering',    label: 'Rostering',          icon: Calendar },
-  { section: null,     id: 'missync',      label: 'MIS Sync',           icon: Database },
   { section: 'Tools',  id: 'workflows',    label: 'Workflows',          icon: GitBranch },
   { section: null,     id: 'reports',      label: 'Reports',            icon: FileText },
+  { section: null,     id: 'rostering',    label: 'Rostering',          icon: Calendar },
+  { section: null,     id: 'missync',      label: 'MIS Sync',           icon: Database },
   { section: null,     id: 'settings',     label: 'Settings',           icon: Settings },
-  { section: 'Partners', id: 'rgr',        label: 'RGR',                icon: Briefcase, partner: 'RGR' as const },
 ]
 
 // ─── Tab definitions ─────────────────────────────────────────────────────────
@@ -330,13 +331,14 @@ const TABS = [
 ]
 
 // ─── Dashboard preferences (persisted; photo frame is opt-in) ────────────────
-type DashPrefs = { photoFrame: boolean }
+type DashPrefs = { photoFrame: boolean; welcomePage: boolean }
 const DASH_KEY = 'telted_dash_prefs'
-let dashPrefs: DashPrefs = { photoFrame: false }
+const DASH_DEFAULTS: DashPrefs = { photoFrame: false, welcomePage: true }
+let dashPrefs: DashPrefs = { ...DASH_DEFAULTS }
 if (typeof window !== 'undefined') { try { dashPrefs = { ...dashPrefs, ...JSON.parse(localStorage.getItem(DASH_KEY) || '{}') } } catch {} }
 const dashListeners = new Set<() => void>()
 function setDashPrefs(patch: Partial<DashPrefs>) { dashPrefs = { ...dashPrefs, ...patch }; try { localStorage.setItem(DASH_KEY, JSON.stringify(dashPrefs)) } catch {}; dashListeners.forEach(l => l()) }
-function useDashPrefs() { return useSyncExternalStore(cb => { dashListeners.add(cb); return () => { dashListeners.delete(cb) } }, () => dashPrefs, () => ({ photoFrame: false })) }
+function useDashPrefs() { return useSyncExternalStore(cb => { dashListeners.add(cb); return () => { dashListeners.delete(cb) } }, () => dashPrefs, () => DASH_DEFAULTS) }
 
 // ─── Quick actions ───────────────────────────────────────────────────────────
 
@@ -371,7 +373,7 @@ const TELTED_SCHEDULE = [
 
 const OVERVIEW_ITEMS = [
   { id: 'assessments', Icon: ClipboardList, label: 'LanguageScreen Assessments', count: 4, urgent: true, color: 'var(--tt-accent)', bg: 'var(--tt-accent-soft)', border: 'var(--tt-accent-border)',
-    messages: [{ id: 'a1', from: 'Assessment System', avatar: 'AS', subject: '4 students not yet assessed this term', preview: 'Students due for LanguageScreen reassessment: Ruby Taylor, Oscar Nguyen, Lily Green, Oliver Park.', time: 'Today', urgent: true, read: false }] },
+    messages: [{ id: 'a1', from: 'Assessment System', avatar: 'AS', subject: '4 students not yet assessed this term', preview: 'Students due for LanguageScreen reassessment: Ruby Taylor, Oliver Barnes, Lily Thompson, Samuel Green.', time: 'Today', urgent: true, read: false }] },
   { id: 'sessions', Icon: BookOpen, label: 'TEL TED Sessions', count: 12, urgent: false, color: 'var(--tt-accent2-deep)', bg: 'var(--tt-accent2-soft)', border: 'var(--tt-accent2-border)',
     messages: [{ id: 's1', from: 'Session Tracker', avatar: 'ST', subject: '12 of 15 expected sessions completed this week', preview: 'Group 1A: 4/5 sessions done. Group 1B: 3/5 done. Individual catch-ups: 5/5 done.', time: 'This week', urgent: false, read: false }] },
   { id: 'atrisk', Icon: TriangleAlert, label: 'At-Risk Students', count: 2, urgent: true, color: 'var(--tt-red)', bg: 'var(--tt-red-soft)', border: 'var(--tt-red-soft)',
@@ -650,10 +652,8 @@ function GreetingBanner({ onVoiceToast }: { onVoiceToast?: (toast: VoiceToastDat
   const { speak, stop, isPlaying } = useElevenLabsTTS()
   const { isListening, lastCommand, startListening, stopListening } = useVoiceCommands()
   const [quote, setQuote] = useState(QUOTES[0])
-  const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
 
   useEffect(() => { const start = new Date(new Date().getFullYear(), 0, 1).getTime(); const dayOfYear = Math.floor((Date.now() - start) / 86400000); setQuote(QUOTES[dayOfYear % QUOTES.length]) }, [])
-  useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
@@ -741,16 +741,6 @@ function GreetingBanner({ onVoiceToast }: { onVoiceToast?: (toast: VoiceToastDat
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--tt-muted)', marginTop: 2 }}>{item.label}</div>
             </div>
           ))}
-        </div>
-        <div className="flex items-start gap-3 flex-shrink-0">
-          <div className="flex items-center gap-3" style={{ backgroundColor: 'var(--tt-card)', border: '1px solid var(--tt-border)', borderRadius: 8, padding: '8px 14px' }}>
-            <span className="text-2xl">{weather.icon}</span>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--tt-text)' }}>{weather.temp}</div>
-              <div style={{ fontSize: 11, color: 'var(--tt-muted)' }}>{weather.condition}</div>
-            </div>
-          </div>
-          <WorldClock />
         </div>
       </div>
     </div>
@@ -1228,6 +1218,8 @@ function TelTedSettings() {
       <div className="space-y-6">
         <div><h2 className="text-lg font-bold" style={{ color: 'var(--tt-text)' }}>Dashboard</h2><p className="text-sm" style={{ color: 'var(--tt-dim)' }}>Choose what appears on the Today page</p></div>
         <div style={cardStyle}>
+          <Toggle on={prefs.welcomePage} onToggle={() => setDashPrefs({ welcomePage: !prefs.welcomePage })} label="Welcome page — show the portal landing page when you sign in" />
+          <p className="text-xs mt-2 mb-4" style={{ color: 'var(--tt-dim)' }}>On by default. Shows the five portal areas with live counts and today’s notices; “Go to my dashboard” skips it for the rest of the session. You can reopen it any time by clicking the school name in the sidebar.</p>
           <Toggle on={prefs.photoFrame} onToggle={() => setDashPrefs({ photoFrame: !prefs.photoFrame })} label="Photo Frame — show a classroom photo slideshow on the Today page" />
           <p className="text-xs mt-2" style={{ color: 'var(--tt-dim)' }}>Off by default. When on, it sits below the AI Summary and supports uploads, Google Photos and iCloud.</p>
         </div>
@@ -1635,6 +1627,58 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   const [insightsSubTab, setInsightsSubTab] = useState<'school' | 'network'>('school')
   const [voiceToast, setVoiceToast] = useState<VoiceToastData | null>(null)
 
+  // ── Welcome / landing page ──
+  // Shown once per browser session when the Settings → Dashboard toggle is on. Decided in an
+  // effect (not initial state) so the server and first client render agree.
+  const [welcomeLast, setWelcomeLast] = useState<WelcomeLast>(null)
+  useEffect(() => {
+    try {
+      if (dashPrefs.welcomePage && !sessionStorage.getItem('telted_welcome_seen')) {
+        setWelcomeLast(JSON.parse(localStorage.getItem('telted_last_page') || 'null'))
+        setSidebarPage('welcome')
+      }
+    } catch {}
+  }, [])
+  // Remember the last place the user worked so the welcome page can offer "continue where you left off"
+  useEffect(() => {
+    if (sidebarPage === 'welcome') return
+    const navLabel = SIDEBAR_NAV.find(n => n.id === sidebarPage)?.label
+    const tabLabel = TABS.find(t => t.id === activeTab)?.label
+    const entry: WelcomeLast = sidebarPage === 'overview'
+      ? (activeTab === 'today' ? null : { label: tabLabel || activeTab, target: { kind: 'tab', tab: activeTab }, at: Date.now() })
+      : navLabel ? { label: navLabel, target: { kind: 'page', page: sidebarPage }, at: Date.now() } : null
+    try { if (entry) localStorage.setItem('telted_last_page', JSON.stringify(entry)) } catch {}
+  }, [sidebarPage, activeTab])
+  function openWelcome() {
+    try { setWelcomeLast(JSON.parse(localStorage.getItem('telted_last_page') || 'null')) } catch {}
+    setSidebarPage('welcome')
+  }
+  function leaveWelcome() { try { sessionStorage.setItem('telted_welcome_seen', '1') } catch {} }
+  function handleWelcomeOpen(t: WelcomeTarget) {
+    leaveWelcome()
+    if (t.kind === 'assess') { setSidebarPage('overview'); setActiveTab('today'); setAssessingPupil(PUPILS[0]) }
+    else if (t.kind === 'tab') { setSidebarPage('overview'); setActiveTab(t.tab) }
+    else if (t.kind === 'page') { setSidebarPage(t.page) }
+    else if (t.kind === 'report') { setPendingReport(t.report); setSidebarPage('overview'); setActiveTab('reports') }
+  }
+  // Students flagged in the Overview as not yet assessed this term, minus any assessed live in this portal
+  const welcomeUnassessed = (PUPILS as any[]).filter(p => ['Ruby Taylor', 'Oliver Barnes', 'Lily Thompson', 'Samuel Green'].includes(p.name) && !(p.assessments || []).some((a: any) => String(a.date) >= '2026-08-01'))
+  const welcomeNotices: WelcomeNotice[] = (() => {
+    const unassessed = welcomeUnassessed
+    const atRisk = (PUPILS as any[]).filter(p => p.neli && p.es < 90)
+    const n: WelcomeNotice[] = []
+    if (unassessed.length) n.push({ tone: 'alert', text: `${unassessed.length} TEL TED students have not been assessed with LanguageScreen this term — ${unassessed.slice(0, 3).map(p => p.name.split(' ')[0]).join(', ')}${unassessed.length > 3 ? ' and more' : ''}.`, target: { kind: 'tab', tab: 'languagescreen' }, cta: 'See who' })
+    if (atRisk.length) n.push({ tone: 'due', text: `${atRisk.length} students are scoring below the age-expected standard (90). Progress reports for the district are due Friday, September 19.`, target: { kind: 'report', report: 'at-risk' }, cta: 'At-risk report' })
+    n.push({ tone: 'info', text: 'New this term: Sentence Repetition now listens to the student and scores automatically, and the assessor voice can be switched between Ms. Matilda and Mr. Brian.', target: { kind: 'tab', tab: 'languagescreen' }, cta: 'Try it' })
+    return n
+  })()
+  const welcomeCards = buildWelcomeCards({
+    assessmentsDue: welcomeUnassessed.length,
+    reportsDue: 3,
+    trainingPct: 68,
+    resources: TELTED_FILE_COUNT,
+  })
+
   // Shared NELI components read the mutable `T` theme object — point it at the theme variables
   T.bg = 'var(--tt-bg)'; T.card = 'var(--tt-card)'; T.border = 'var(--tt-border)'
   T.text = 'var(--tt-text)'; T.muted = 'var(--tt-muted)'; T.light = 'var(--tt-panel)'
@@ -1646,21 +1690,14 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   const expanded = pinned || hovered
   const sidebarW = expanded ? EXPANDED_W : COLLAPSED_W
 
-  // Partner-scoped nav items (e.g. Partners > RGR shows only for RGR tenants)
+  // Partner-scoped nav (RGR portfolio) was removed from the school sidebar — the page still renders
+  // it if navigated to directly, but there is no partner section for a school user.
   const partner = partnerForSlug(pathname?.split('/')[2])
-  const availableNav = SIDEBAR_NAV.filter(item => !('partner' in item) || partner === item.partner)
-
-  // Partner mode: on a partner nav page, collapse the sidebar down to just
-  // the partner section + a back-to-school button. The "Current School"
-  // card is swapped for a "Partner Portfolio" card.
+  const availableNav = SIDEBAR_NAV
   const activeNavItem = SIDEBAR_NAV.find(n => n.id === sidebarPage)
-  const isPartnerMode = !!(activeNavItem && 'partner' in activeNavItem)
-  const partnerName = isPartnerMode && activeNavItem && 'partner' in activeNavItem
-    ? activeNavItem.partner
-    : null
-  const visibleNav = isPartnerMode
-    ? availableNav.filter(item => 'partner' in item)
-    : availableNav
+  const isPartnerMode = sidebarPage === 'rgr'
+  const partnerName: string | null = isPartnerMode ? partner : null
+  const visibleNav = availableNav
 
   useEffect(() => {
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
@@ -1803,6 +1840,17 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   // ─── Render sidebar page content ─────────────────────────────────────────
 
   function renderContent() {
+    if (sidebarPage === 'welcome') {
+      return (
+        <TelTedWelcomePage
+          userName="Sarah Mitchell" school="Parkside Elementary" district="Oak Valley District"
+          cards={welcomeCards} notices={welcomeNotices} last={welcomeLast}
+          onOpen={handleWelcomeOpen}
+          onContinue={() => { leaveWelcome(); setSidebarPage('overview'); setActiveTab('today') }}
+          onDisable={() => { setDashPrefs({ welcomePage: false }); leaveWelcome(); setSidebarPage('overview'); setActiveTab('today') }}
+        />
+      )
+    }
     // Handle deep navigation states
     if (sidebarPage === 'pupil' && selectedPupil) {
       return <PupilDetail key={`${selectedPupil.id}-${dataVersion}`} pupil={selectedPupil} onBack={() => { setSidebarPage(selectedClass ? 'classdetail' : 'overview'); setSelectedPupil(null); setActiveTab('languagescreen') }} onAssess={(p) => setAssessingPupil(p)} />
@@ -1927,7 +1975,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
 
         {/* Tenant context card — School info in school mode, Partner portfolio in partner mode */}
         {expanded && !isPartnerMode && (
-          <div className="px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--tt-sidebar-border)' }}>
+          <div className="px-4 py-3 shrink-0" style={{ borderBottom: '1px solid var(--tt-sidebar-border)', cursor: 'pointer' }} onClick={openWelcome} title="Open the portal welcome page" role="button">
             <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--tt-sidebar-muted)' }}>Current School</p>
             <p className="text-xs font-bold mt-1" style={{ color: 'var(--tt-sidebar-active)' }}>Parkside Elementary</p>
             <p className="text-[10px]" style={{ color: 'var(--tt-sidebar-text)' }}>Oak Valley District · Kindergarten</p>
