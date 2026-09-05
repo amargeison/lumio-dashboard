@@ -34,7 +34,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { speak as lsSpeak, cancel as lsCancel, prefetch as lsPrefetch, useSpeechCommands, useVoicePrefs, useIsSpeaking, previewVoice, VOICE_PRESETS } from './lsVoice';
+import { speak as lsSpeak, cancel as lsCancel, prefetch as lsPrefetch, useSpeechCommands, useDictation, useVoicePrefs, useIsSpeaking, previewVoice, VOICE_PRESETS } from './lsVoice';
 import { Pic, picIdFor, TedBear, StoryScene, Backdrop } from './lsArt';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -940,24 +940,43 @@ function SRSubtest({ results, onScore, voiceOn }: any) {
   const [playing, setPlaying] = useState(false);
   const [busy,    setBusy]    = useState(false);
   const [flash,   setFlash]   = useState<any>(null);
+  // Auto-listen: after the sentence plays, listen to the child and score the repetition
+  const [autoListen, setAutoListen] = useState<boolean>(() => { try { return localStorage.getItem("nls-sr-autolisten") !== "off"; } catch { return true; } });
+  const [dictating, setDictating] = useState(false);
+  const [match, setMatch] = useState<any>(null);
+  const [verdict, setVerdict] = useState<string|null>(null);
+  const toggleAuto = () => setAutoListen(v => { try { localStorage.setItem("nls-sr-autolisten", v ? "off" : "on"); } catch {}; return !v; });
 
-  useEffect(()=>{ setPlayed(false); setPlaying(false); setBusy(false); setFlash(null); return()=>cancel(); }, [idx]);
+  useEffect(()=>{ setPlayed(false); setPlaying(false); setBusy(false); setFlash(null); setDictating(false); setMatch(null); setVerdict(null); return()=>cancel(); }, [idx]);
 
   const playAudio = useCallback(()=>{
     if (!item) return;
-    setPlaying(true); setPlayed(true);
-    speak(item.s, 0.92).then(()=>setPlaying(false));
-  }, [item, speak]);
+    setPlaying(true); setPlayed(true); setDictating(false); setMatch(null); setVerdict(null);
+    speak(item.s, 0.92).then(()=>{ setPlaying(false); if (autoListen) setTimeout(()=>setDictating(true), 250); });
+  }, [item, speak, autoListen]);
 
-  const doScore = useCallback((correct: any)=>{
+  const doScore = useCallback((correct: any, why?: string)=>{
     if (busy||!played) return;
-    setBusy(true); setFlash(correct?"g":"r"); cancel();
+    setBusy(true); setFlash(correct?"g":"r"); cancel(); setDictating(false);
+    if (why) setVerdict(why);
     onScore(correct);
     setTimeout(()=>{ setFlash(null); setBusy(false); }, 500);
   }, [busy, played, cancel, onScore]);
 
+  const { listening: dictListening, interim, error: dictErr } = useDictation({
+    target: item?.s || "", active: dictating && played && !busy,
+    onResult: (m: any) => {
+      setDictating(false); setMatch(m);
+      if (!m.heard) return; // heard nothing — leave it to the assessor
+      if (m.exact) doScore(true, "Word-for-word match ✓");
+      else if (m.similarity < 0.5) doScore(false, "Heard something quite different");
+      // 0.5–0.99: near miss — show the diff and let the assessor decide (ASR can mishear one word)
+    },
+  });
+
+  // Voice commands can't run at the same time as dictation (one recogniser per tab)
   const { listening, lastHeard, error: voiceErr, paused: voicePaused } = useVoiceCommands({
-    enabled:voiceOn,
+    enabled: voiceOn && !dictating,
     onCommand:(cmd: any)=>{ if(cmd==="correct")doScore(true); if(cmd==="incorrect")doScore(false); if(cmd==="repeat")playAudio(); },
   });
 
@@ -971,36 +990,72 @@ function SRSubtest({ results, onScore, voiceOn }: any) {
   }, [playAudio, doScore]);
 
   if (!item) return null;
+  const nearMiss = match && !match.exact && match.similarity >= 0.5 && !verdict;
   return (
     <div style={{ flex:1,display:"flex",flexDirection:"column",minHeight:0,background:C.surface }}>
       <SubtestHeader title="Sentence Repetition" icon="🔊" color={C.teal} results={results} total={SR_ITEMS.length} />
       <div style={{padding:"10px 22px",background:"white",borderBottom:`1px solid ${C.border}`}}>
         <StarProgress current={idx} total={SR_ITEMS.length}/>
       </div>
-      <Note color="#0e7490" bg="#ecfeff" text="Play the sentence. Ask the child to repeat it exactly. One error = incorrect." />
+      <Note color="#0e7490" bg="#ecfeff" text={autoListen ? "Play the sentence, then let the child repeat it — Ted listens and scores an exact repetition. One error = incorrect." : "Play the sentence. Ask the child to repeat it exactly. One error = incorrect."} />
       <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28,position:"relative",isolation:"isolate" }}>
         <Backdrop tone="teal" />
+        {/* Auto-listen toggle */}
+        <div style={{ display:"flex",alignItems:"center",gap:10,background:C.white,border:`1.5px solid ${autoListen?C.teal:C.border}`,borderRadius:24,padding:"6px 8px 6px 14px",marginBottom:18,boxShadow:"0 4px 14px rgba(0,0,0,.06)" }}>
+          <span style={{ fontSize:12.5,fontWeight:600,color:C.navy,fontFamily:F.body }}>🎧 Listen & score the child's repetition</span>
+          <button className="nls-btn" onClick={toggleAuto} style={{ width:42,height:22,borderRadius:11,flexShrink:0,background:autoListen?C.teal:"#cbd5e1",position:"relative" }}>
+            <div style={{ position:"absolute",top:2,left:autoListen?22:2,width:18,height:18,borderRadius:"50%",background:C.white,transition:"left .2s",boxShadow:"0 1px 4px rgba(0,0,0,.22)" }} />
+          </button>
+        </div>
         {/* Play button */}
         <button className="nls-btn" onClick={playAudio} disabled={playing} style={{
           width:120,height:120,borderRadius:"50%",
           background:playing?C.amberLt:`linear-gradient(135deg,${C.teal},#0e7490)`,
           color:playing?C.amberDk:C.white,fontSize:44,
           boxShadow:playing?"none":`0 14px 40px ${C.teal}55`,
-          marginBottom:22,display:"flex",alignItems:"center",justifyContent:"center",
+          marginBottom:18,display:"flex",alignItems:"center",justifyContent:"center",
           transition:"all .22s",border:playing?`2.5px solid ${C.amber}`:"none",
         }}>
           {playing?"⏸":"▶"}
         </button>
-        {played && (
+        {/* Listening state */}
+        {dictListening && (
+          <div className="nls-glow" style={{ display:"flex",alignItems:"center",gap:10,background:C.white,border:`2px solid ${C.teal}`,borderRadius:18,padding:"10px 18px",marginBottom:14,maxWidth:460,width:"100%" }}>
+            <div className="nls-pulse" style={{ width:12,height:12,borderRadius:"50%",background:C.teal,flexShrink:0 }} />
+            <div style={{ flex:1,minWidth:0 }}>
+              <div style={{ fontSize:12,fontWeight:700,color:C.teal,fontFamily:F.body }}>Ted is listening — let the child repeat the sentence</div>
+              <div style={{ fontSize:14,color:C.navy,fontFamily:F.body,fontStyle:"italic",marginTop:2,minHeight:18 }}>{interim ? `“${interim}”` : "…"}</div>
+            </div>
+            <button className="nls-btn" onClick={()=>setDictating(false)} style={{ padding:"6px 10px",borderRadius:8,border:`1px solid ${C.border}`,background:C.slateLt,fontSize:11.5,color:C.slate,cursor:"pointer" }}>Stop</button>
+          </div>
+        )}
+        {dictErr && <div style={{ fontSize:12,color:"#9f1239",fontFamily:F.body,marginBottom:12 }}>🎤 {dictErr}</div>}
+        {/* Result of listening */}
+        {match && !dictListening && (
+          <div className="nls-pop" style={{ background:C.white,border:`2px solid ${verdict?(match.exact?C.green:C.red):C.amber}`,borderRadius:18,padding:"12px 18px",marginBottom:14,maxWidth:460,width:"100%" }}>
+            <div style={{ fontSize:12,fontWeight:700,color:verdict?(match.exact?C.green:C.red):C.amberDk2,fontFamily:F.body,marginBottom:6 }}>
+              {verdict ? verdict : match.heard ? `Close, but not exact — ${match.errors} word${match.errors===1?"":"s"} differ. You decide:` : "Ted didn't catch anything — score it yourself or play again."}
+            </div>
+            {match.heard && <div style={{ fontSize:13,color:C.slate,fontFamily:F.body,marginBottom:6 }}>Heard: <em style={{ color:C.navy }}>“{match.heard}”</em></div>}
+            <div style={{ display:"flex",flexWrap:"wrap",gap:5 }}>
+              {match.wordFlags.map((w: any,i: number)=>(
+                <span key={i} style={{ fontSize:13,fontWeight:600,fontFamily:F.body,padding:"2px 8px",borderRadius:8,background:w.ok?C.greenLt:C.redLt,color:w.ok?C.green:C.red }}>{w.word}</span>
+              ))}
+            </div>
+            {nearMiss && <button className="nls-btn" onClick={()=>setDictating(true)} style={{ marginTop:10,padding:"6px 12px",borderRadius:8,border:`1px solid ${C.border}`,background:C.slateLt,fontSize:12,color:C.slate,cursor:"pointer" }}>🎧 Listen again</button>}
+          </div>
+        )}
+        {played && !dictListening && !match && (
           <p style={{ color:C.slate,fontSize:13,margin:"0 0 6px",fontFamily:F.body }}>
             Sentence played ·{" "}
             <button className="nls-btn" onClick={playAudio} style={{ background:"transparent",color:C.teal,fontFamily:F.body,fontSize:13,fontWeight:600,textDecoration:"underline" }}>play again</button>
+            {autoListen && <> · <button className="nls-btn" onClick={()=>setDictating(true)} style={{ background:"transparent",color:C.teal,fontFamily:F.body,fontSize:13,fontWeight:600,textDecoration:"underline" }}>listen now</button></>}
             <span style={{ color:"#cbd5e1",marginLeft:8 }}>or <KBD>R</KBD></span>
           </p>
         )}
-        {!played && <p style={{ color:C.slate,fontSize:13.5,margin:"0 0 22px",textAlign:"center",fontFamily:F.body,maxWidth:280 }}>Press ▶ then ask the child to repeat the sentence exactly.</p>}
+        {!played && <p style={{ color:C.slate,fontSize:13.5,margin:"0 0 22px",textAlign:"center",fontFamily:F.body,maxWidth:300 }}>{autoListen ? "Press ▶ — after the sentence, Ted listens for the child's repetition and scores it." : "Press ▶ then ask the child to repeat the sentence exactly."}</p>}
         {/* Hidden sentence */}
-        <div style={{ background:C.navy,borderRadius:14,padding:"14px 22px",maxWidth:460,width:"100%",marginBottom:28,marginTop:10,position:"relative",overflow:"hidden" }}>
+        <div style={{ background:C.navy,borderRadius:14,padding:"14px 22px",maxWidth:460,width:"100%",marginBottom:24,marginTop:10,position:"relative",overflow:"hidden" }}>
           <div style={{ fontSize:12,color:"#64748b",fontFamily:F.body,marginBottom:6 }}>Assessor reference:</div>
           <div style={{
             fontFamily:F.body,fontSize:15,color:played?C.white:"transparent",
