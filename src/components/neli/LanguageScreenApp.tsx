@@ -34,6 +34,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { speak as lsSpeak, cancel as lsCancel, prefetch as lsPrefetch, useSpeechCommands, useVoicePrefs, useIsSpeaking, previewVoice, VOICE_PRESETS } from './lsVoice';
+import { Pic, picIdFor, TedBear, StoryScene, Backdrop } from './lsArt';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
@@ -233,62 +235,17 @@ function checkDisc(results: any) {
 }
 
 /* ─── Hooks ────────────────────────────────────────────────────────────────── */
+/* ─── Voice layer (ElevenLabs warm voices + forgiving listener — see lsVoice.ts) ── */
 function useTTS() {
-  const sy = useRef(window.speechSynthesis||null);
-  useEffect(() => { sy.current?.getVoices(); }, []);
-  function bestVoice() {
-    const vs = sy.current?.getVoices()||[];
-    return vs.find(v=>v.lang==="en-GB"&&/female|woman|kate|amy|serena|karen/i.test(v.name))
-        || vs.find(v=>v.lang==="en-GB")
-        || vs.find(v=>v.lang.startsWith("en-"))
-        || null;
-  }
-  const speak = useCallback((text: any, rate=0.84) => {
-    if (!sy.current) return;
-    sy.current.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang="en-GB"; u.rate=rate; u.pitch=1;
-    const v = bestVoice(); if (v) u.voice=v;
-    sy.current.speak(u);
-  }, []);
-  const cancel = useCallback(() => sy.current?.cancel(), []);
-  return { speak, cancel };
+  const speakFn = useCallback((text: any, rate=0.92) => lsSpeak(text, { rate, kind:"child" }), []);
+  const cancel  = useCallback(() => lsCancel(), []);
+  return { speak: speakFn, cancel };
 }
-
-function useVoiceCommands({ enabled, onCommand }: any) {
-  const recRef = useRef<any>(null);
-  const cbRef  = useRef<any>(onCommand);
-  const [listening, setListening] = useState(false);
-  const [lastHeard, setLastHeard] = useState("");
-  cbRef.current = onCommand;
-  useEffect(() => {
-    if (!enabled) { try { recRef.current?.stop(); } catch {} setListening(false); return; }
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
-    let alive = true;
-    function boot() {
-      if (!alive) return;
-      const r = new SR();
-      r.continuous=true; r.interimResults=false; r.lang="en-GB";
-      r.onstart  = () => setListening(true);
-      r.onend    = () => { setListening(false); if (alive) setTimeout(boot, 500); };
-      r.onerror  = (e: any) => { if (e.error!=="no-speech") setListening(false); };
-      r.onresult = (e: any) => {
-        const t = e.results[e.results.length-1][0].transcript.toLowerCase().trim();
-        setLastHeard(t);
-        const m = (pats: any, cmd: any) => pats.some((p: any)=>new RegExp(`\\b${p}\\b`).test(t)) && cbRef.current(cmd);
-        m(["correct","right","yes","tick","good"],          "correct");
-        m(["wrong","incorrect","no","cross","error","nope"],"incorrect");
-        m(["repeat","again","re-read","play again"],        "repeat");
-        m(["skip","next","pass"],                           "skip");
-      };
-      try { r.start(); recRef.current=r; } catch {}
-    }
-    boot();
-    return () => { alive=false; try{recRef.current?.stop();}catch{} setListening(false); };
-  }, [enabled]);
-  return { listening, lastHeard };
+function useVoiceCommands({ enabled, onCommand, allowed }: any) {
+  return useSpeechCommands({ enabled, onCommand, allowed });
 }
+function speakAutoTTS(text: any) { return lsSpeak(text, { kind:"child" }); }
+function speakAssessor(text: any) { return lsSpeak(text, { kind:"assessor", rate:1 }); }
 
 /* ─── Shared UI atoms ──────────────────────────────────────────────────────── */
 const KBD = ({ children }: any) => (
@@ -298,171 +255,60 @@ const KBD = ({ children }: any) => (
   }}>{children}</kbd>
 );
 
-function VoiceBar({ listening, lastHeard }: any) {
+function VoiceBar({ listening, lastHeard, error, paused }: any) {
+  if (error) return (
+    <div style={{ display:"flex", alignItems:"center", gap:8, background:"#fff1f2", border:"1.5px solid #fda4af", borderRadius:24, padding:"6px 14px" }}>
+      <span style={{ fontSize:11.5, fontWeight:600, color:"#9f1239", fontFamily:F.body }}>🎤 {error}</span>
+    </div>
+  );
   if (!listening) return null;
   return (
-    <div className="nls-glow" style={{
+    <div className={paused?"":"nls-glow"} style={{
       display:"flex", alignItems:"center", gap:8,
-      background:C.amberLt, border:`1.5px solid ${C.amber}`,
+      background:paused?C.slateLt:C.amberLt, border:`1.5px solid ${paused?C.border:C.amber}`,
       borderRadius:24, padding:"6px 14px",
     }}>
-      <div className="nls-pulse" style={{ width:8,height:8,borderRadius:"50%",background:C.amber,flexShrink:0 }} />
-      <span style={{ fontSize:11.5, fontWeight:600, color:C.amberDk2, fontFamily:F.body }}>
-        Listening{lastHeard ? ` · "${lastHeard}"` : ' · "correct" / "wrong" / "repeat"'}
+      <div className={paused?"":"nls-pulse"} style={{ width:8,height:8,borderRadius:"50%",background:paused?C.slate:C.amber,flexShrink:0 }} />
+      <span style={{ fontSize:11.5, fontWeight:600, color:paused?C.slate:C.amberDk2, fontFamily:F.body }}>
+        {paused ? "Paused while speaking" : `Listening${lastHeard ? ` · "${lastHeard}"` : ' · say "correct" / "wrong" / "repeat"'}`}
       </span>
     </div>
   );
 }
 
-/* ─── Speaker button for assessor TTS ─────────────────────────────────────── */
-function SpeakButton({ text, label="Replay" }: any) {
-  const doSpeak = () => {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = "en-GB"; u.rate = 0.9; u.pitch = 1.0; u.volume = 1.0;
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(v => v.lang === "en-GB" && /female|woman/i.test(v.name))
-      || voices.find(v => v.lang === "en-GB")
-      || voices.find(v => v.lang.startsWith("en"))
-      || voices[0];
-    if (preferred) u.voice = preferred;
-    window.speechSynthesis.speak(u);
-  };
+/* ─── Assessor read controls (Read / Stop / Off — Off persists for the whole assessment) ── */
+function SpeakButton({ text, label="Read" }: any) {
+  const { assessorVoice, setAssessorVoice } = useVoicePrefs();
+  const speaking = useIsSpeaking();
+  if (!assessorVoice) return (
+    <button className="nls-btn" onClick={()=>setAssessorVoice(true)} title="Assessor voice guidance is off — click to turn back on" style={{
+      display:"inline-flex",alignItems:"center",gap:5,padding:"4px 10px",
+      borderRadius:8,background:C.slateLt,border:`1px solid ${C.border}`,
+      fontSize:11,fontWeight:600,color:C.slate,fontFamily:F.body,cursor:"pointer",whiteSpace:"nowrap",
+    }}>🔇 Voice off · turn on</button>
+  );
   return (
     <div style={{display:"inline-flex",gap:6,alignItems:"center"}}>
-      <button className="nls-btn" onClick={doSpeak} style={{
+      <button className="nls-btn" onClick={()=>speakAssessor(text)} style={{
         display:"inline-flex",alignItems:"center",gap:4,padding:"4px 10px",
         borderRadius:8,background:C.amberLt,border:`1px solid ${C.amber}40`,
-        fontSize:11,fontWeight:600,color:C.amberDk2,fontFamily:F.body,cursor:"pointer",
+        fontSize:11,fontWeight:600,color:C.amberDk2,fontFamily:F.body,cursor:"pointer",whiteSpace:"nowrap",
       }}>🔊 {label}</button>
-      <button className="nls-btn" onClick={()=>window.speechSynthesis.cancel()} style={{
+      <button className="nls-btn" onClick={()=>lsCancel()} title="Stop reading" style={{
+        display:"inline-flex",alignItems:"center",padding:"4px 8px",
+        borderRadius:8,background:speaking?C.amberLt:C.slateLt,border:`1px solid ${C.border}`,
+        fontSize:11,color:C.slate,fontFamily:F.body,cursor:"pointer",
+      }}>⏹</button>
+      <button className="nls-btn" onClick={()=>setAssessorVoice(false)} title="Turn assessor voice off for the rest of this assessment" style={{
         display:"inline-flex",alignItems:"center",padding:"4px 8px",
         borderRadius:8,background:C.slateLt,border:`1px solid ${C.border}`,
         fontSize:11,color:C.slate,fontFamily:F.body,cursor:"pointer",
-      }}>⏹</button>
+      }}>✕</button>
     </div>
   );
 }
 
-function speakAutoTTS(text: any) {
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "en-GB"; u.rate = 0.9; u.pitch = 1.0;
-  const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(v => v.lang === "en-GB" && /female|woman/i.test(v.name))
-    || voices.find(v => v.lang === "en-GB")
-    || voices.find(v => v.lang.startsWith("en"))
-    || voices[0];
-  if (preferred) u.voice = preferred;
-  window.speechSynthesis.speak(u);
-}
-
-/* ─── Ted the Bear character ──────────────────────────────────────────────── */
-function TedBear({ size=200, mood="happy", className="" }: any) {
-  return (
-    <svg width={size} height={size*1.2} viewBox="0 0 200 240" className={className} style={{display:"block"}}>
-      {/* Orange podium base */}
-      <rect x="50" y="200" width="100" height="35" rx="8" fill="#E8650A" stroke="#C45508" strokeWidth="2"/>
-      {/* Body */}
-      <ellipse cx="100" cy="155" rx="55" ry="50" fill="#8B5E3C" stroke="#2C1810" strokeWidth="2.5"/>
-      {/* Belly */}
-      <ellipse cx="100" cy="160" rx="38" ry="34" fill="#D4956A"/>
-      {/* Left arm raised */}
-      <ellipse cx="50" cy="130" rx="18" ry="30" fill="#8B5E3C" stroke="#2C1810" strokeWidth="2.5" transform="rotate(-25 50 130)"/>
-      <ellipse cx="50" cy="115" rx="12" ry="12" fill="#8B5E3C" stroke="#2C1810" strokeWidth="2"/>
-      {/* Right arm raised */}
-      <ellipse cx="150" cy="130" rx="18" ry="30" fill="#8B5E3C" stroke="#2C1810" strokeWidth="2.5" transform="rotate(25 150 130)"/>
-      <ellipse cx="150" cy="115" rx="12" ry="12" fill="#8B5E3C" stroke="#2C1810" strokeWidth="2"/>
-      {/* Feet */}
-      <ellipse cx="78" cy="202" rx="16" ry="10" fill="#8B5E3C" stroke="#2C1810" strokeWidth="2"/>
-      <ellipse cx="122" cy="202" rx="16" ry="10" fill="#8B5E3C" stroke="#2C1810" strokeWidth="2"/>
-      {/* Head */}
-      <circle cx="100" cy="75" r="45" fill="#8B5E3C" stroke="#2C1810" strokeWidth="2.5"/>
-      {/* Face centre */}
-      <ellipse cx="100" cy="82" rx="32" ry="28" fill="#D4956A"/>
-      {/* Ears */}
-      <circle cx="62" cy="42" r="18" fill="#8B5E3C" stroke="#2C1810" strokeWidth="2.5"/>
-      <circle cx="62" cy="42" r="10" fill="#C4805A"/>
-      <circle cx="138" cy="42" r="18" fill="#8B5E3C" stroke="#2C1810" strokeWidth="2.5"/>
-      <circle cx="138" cy="42" r="10" fill="#C4805A"/>
-      {/* Eyes */}
-      <circle cx="82" cy="70" r="10" fill="#2C1810"/>
-      <circle cx="118" cy="70" r="10" fill="#2C1810"/>
-      <circle cx="85" cy="67" r="3.5" fill="white"/>
-      <circle cx="121" cy="67" r="3.5" fill="white"/>
-      {/* Nose */}
-      <ellipse cx="100" cy="85" rx="8" ry="6" fill="#2C1810"/>
-      <ellipse cx="100" cy="84" rx="3" ry="2" fill="#5A3A1A" opacity="0.4"/>
-      {/* Mouth */}
-      {mood==="happy" && <path d="M88 95 Q100 108 112 95" fill="none" stroke="#2C1810" strokeWidth="2.5" strokeLinecap="round"/>}
-      {mood==="encouraging" && <path d="M90 98 Q100 104 110 98" fill="none" stroke="#2C1810" strokeWidth="2" strokeLinecap="round"/>}
-      {/* Eyebrows */}
-      {mood==="happy" && <>
-        <path d="M72 58 Q82 52 92 58" fill="none" stroke="#2C1810" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M108 58 Q118 52 128 58" fill="none" stroke="#2C1810" strokeWidth="2" strokeLinecap="round"/>
-      </>}
-      {mood==="encouraging" && <>
-        <path d="M72 60 Q82 56 92 59" fill="none" stroke="#2C1810" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M108 59 Q118 56 128 60" fill="none" stroke="#2C1810" strokeWidth="2" strokeLinecap="round"/>
-      </>}
-    </svg>
-  );
-}
-
-/* ─── SVG Scenes for vocabulary items ─────────────────────────────────────── */
-const SVG_SCENES: any = {
-  ball: (
-    <svg viewBox="0 0 400 300" style={{width:"100%",height:"100%"}}>
-      <rect width="400" height="200" fill="#87CEEB"/><rect y="200" width="400" height="100" fill="#4CAF50"/>
-      <circle cx="320" cy="50" r="30" fill="#FFD700" opacity="0.9"/>
-      <circle cx="200" cy="190" r="50" fill="#E53935" stroke="#B71C1C" strokeWidth="3"/>
-      <path d="M160 170 Q200 140 240 170" fill="none" stroke="white" strokeWidth="4" opacity="0.8"/>
-      <path d="M160 210 Q200 240 240 210" fill="none" stroke="white" strokeWidth="4" opacity="0.8"/>
-      <path d="M155 190 L245 190" stroke="white" strokeWidth="3" opacity="0.6"/>
-      {/* Butterfly */}
-      <g transform="translate(280,160)"><ellipse cx="-8" cy="-5" rx="8" ry="5" fill="#FF69B4" opacity="0.8"/><ellipse cx="8" cy="-5" rx="8" ry="5" fill="#FF69B4" opacity="0.8"/><ellipse cx="-6" cy="4" rx="6" ry="4" fill="#FFB6C1" opacity="0.7"/><ellipse cx="6" cy="4" rx="6" ry="4" fill="#FFB6C1" opacity="0.7"/><line x1="0" y1="-8" x2="-3" y2="-14" stroke="#333" strokeWidth="1"/><line x1="0" y1="-8" x2="3" y2="-14" stroke="#333" strokeWidth="1"/></g>
-      <circle cx="100" cy="45" r="20" fill="white" opacity="0.7"/><circle cx="120" cy="40" r="15" fill="white" opacity="0.6"/>
-    </svg>
-  ),
-  umbrella: (
-    <svg viewBox="0 0 400 300" style={{width:"100%",height:"100%"}}>
-      <rect width="400" height="300" fill="#607D8B"/>
-      <path d="M120 140 Q200 40 280 140" fill="#E53935" stroke="#B71C1C" strokeWidth="3"/>
-      <line x1="200" y1="140" x2="200" y2="250" stroke="#5D4037" strokeWidth="4"/>
-      <path d="M200 250 Q200 270 180 270" fill="none" stroke="#5D4037" strokeWidth="4" strokeLinecap="round"/>
-      {/* Raindrops */}
-      {[50,120,180,250,310,360,80,150,220,290].map((x,i)=><line key={i} x1={x} y1={30+i*8} x2={x-5} y2={50+i*8} stroke="#90CAF9" strokeWidth="2" opacity="0.7"/>)}
-      <rect y="270" width="400" height="30" fill="#455A64"/>
-    </svg>
-  ),
-  bicycle: (
-    <svg viewBox="0 0 400 300" style={{width:"100%",height:"100%"}}>
-      <rect width="400" height="220" fill="#87CEEB"/><rect y="220" width="400" height="80" fill="#8BC34A"/>
-      <circle cx="130" cy="200" r="40" fill="none" stroke="#333" strokeWidth="5"/>
-      <circle cx="270" cy="200" r="40" fill="none" stroke="#333" strokeWidth="5"/>
-      <path d="M130 200 L200 150 L270 200 M200 150 L200 120 M185 120 L215 120" fill="none" stroke="#E53935" strokeWidth="4" strokeLinejoin="round"/>
-      <circle cx="200" cy="120" r="5" fill="#333"/>
-      <line x1="200" y1="150" x2="165" y2="155" stroke="#E53935" strokeWidth="3"/>
-      <circle cx="320" cy="50" r="28" fill="#FFD700" opacity="0.9"/>
-    </svg>
-  ),
-  telescope: (
-    <svg viewBox="0 0 400 300" style={{width:"100%",height:"100%"}}>
-      <rect width="400" height="300" fill="#1a1a2e"/>
-      {[40,90,150,220,300,350,60,180,260,330,120,280].map((x,i)=><circle key={i} cx={x} cy={20+i*18} r="1.5" fill="white" opacity={0.5+Math.random()*0.5}/>)}
-      <circle cx="320" cy="60" r="25" fill="#FFE082" opacity="0.9"/>
-      <rect x="140" y="120" width="150" height="25" rx="5" fill="#5D4037" transform="rotate(-25 215 132)"/>
-      <circle cx="145" cy="145" r="18" fill="#37474F" stroke="#455A64" strokeWidth="3"/>
-      <rect x="260" y="180" width="6" height="80" fill="#795548"/>
-      <rect x="240" y="180" width="6" height="80" fill="#795548" transform="rotate(15 243 220)"/>
-    </svg>
-  ),
-};
-
-function SceneSVG({ word }: any) {
-  const key = word?.toLowerCase();
-  return SVG_SCENES[key] || null;
-}
+/* Ted the Bear + picture illustrations live in lsArt.tsx */
 
 /* ─── Star Progress Bar ───────────────────────────────────────────────────── */
 function StarProgress({ current, total }: any) {
@@ -572,10 +418,11 @@ function OwlIntro({ onDismiss }: any) {
   const [showBtn, setShowBtn] = useState(false);
 
   useEffect(()=>{
-    speakAutoTTS("Hi! I'm Ted the Bear! Let's play a word game together!");
-    const t1 = setTimeout(()=>{setBubble(1);speakAutoTTS("I'll show you some pictures. Just tell me what you see!");}, 2500);
+    lsPrefetch(["I'll show you some pictures. Just tell me what you see!", "Amazing!", "Let's try the next one!"]);
+    let t1: any = null;
+    speakAutoTTS("Hi! I'm Ted the Bear! Let's play a word game together!").then(()=>{ setBubble(1); t1 = speakAutoTTS("I'll show you some pictures. Just tell me what you see!"); });
     const t2 = setTimeout(()=>setShowBtn(true), 4000);
-    return ()=>{ clearTimeout(t1); clearTimeout(t2); window.speechSynthesis.cancel(); };
+    return ()=>{ clearTimeout(t1); clearTimeout(t2); lsCancel(); };
   }, []);
 
   return (
@@ -611,7 +458,7 @@ function OwlIntro({ onDismiss }: any) {
 
       {/* Ted */}
       <div className="nls-hopIn" style={{marginBottom:20}}>
-        <TedBear size={150} mood="happy"/>
+        <TedBear size={170} mood="wave"/>
       </div>
 
       {/* Speech bubble */}
@@ -782,6 +629,10 @@ function Setup({ prefill, onConfirm, onBack }: any) {
 /* ─── Screen 3: Ready ───────────────────────────────────────────────────────── */
 function Ready({ child, ageYears, voiceOn, setVoiceOn, onBegin }: any) {
   const use4 = ageYears >= 5;
+  const { gender, setGender, assessorVoice, setAssessorVoice } = useVoicePrefs();
+  const [previewing, setPreviewing] = useState<string|null>(null);
+  const doPreview = (g: "female"|"male") => { setPreviewing(g); previewVoice(g).finally(()=>setPreviewing(null)); };
+  useEffect(()=>{ lsPrefetch(["Amazing!", "Let's try the next one!", `Question 1 of ${EV_ITEMS.length}. Show the child this picture and ask: What is this called?`]); }, [gender]);
   const tests = use4
     ? [
         { name:"Expressive Vocabulary",  desc:"Child names pictures",               color:C.amber,  icon:"🖼️" },
@@ -828,18 +679,59 @@ function Ready({ child, ageYears, voiceOn, setVoiceOn, onBegin }: any) {
               </div>
             ))}
           </div>
+          {/* Ted's voice */}
+          <div style={{ border:`1.5px solid ${C.border}`,borderRadius:13,padding:"13px 16px",marginBottom:12,background:C.white }}>
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10 }}>
+              <div>
+                <div style={{ fontWeight:600,fontSize:14,color:C.navy }}>🐻 Ted's voice</div>
+                <div style={{ fontSize:12,color:C.slate,marginTop:2 }}>Warm, natural voice for the child-facing lines, sentences and story</div>
+              </div>
+            </div>
+            <div style={{ display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",gap:10 }}>
+              {(["female","male"] as const).map(g => {
+                const v = VOICE_PRESETS[g]; const on = gender===g;
+                return (
+                  <div key={g} onClick={()=>setGender(g)} style={{ border:`2px solid ${on?C.amber:C.border}`,background:on?"#fef9ee":C.white,borderRadius:12,padding:"10px 12px",cursor:"pointer",transition:"all .18s" }}>
+                    <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                      <div style={{ width:32,height:32,borderRadius:"50%",background:g==="female"?"linear-gradient(135deg,#FF8FB1,#E0608A)":"linear-gradient(135deg,#4F9DE8,#2E6FBF)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0 }}>{g==="female"?"👩‍🏫":"👨‍🏫"}</div>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <div style={{ fontSize:13.5,fontWeight:700,color:C.navy }}>{v.label}</div>
+                        <div style={{ fontSize:11,color:C.slate,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis" }}>{v.desc}</div>
+                      </div>
+                      <div style={{ width:16,height:16,borderRadius:"50%",border:`2px solid ${on?C.amber:C.border}`,background:on?C.amber:"transparent",flexShrink:0 }} />
+                    </div>
+                    <button className="nls-btn" onClick={(e)=>{ e.stopPropagation(); doPreview(g); }} style={{ marginTop:8,width:"100%",padding:"6px 10px",borderRadius:8,border:`1px solid ${C.border}`,background:previewing===g?C.amberLt:C.slateLt,fontSize:11.5,fontWeight:600,color:previewing===g?C.amberDk2:C.slate,cursor:"pointer" }}>
+                      {previewing===g ? "🔊 Playing…" : "▶ Preview voice"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {/* Assessor guidance toggle */}
+          <div style={{ border:`1.5px solid ${assessorVoice?C.teal:C.border}`,borderRadius:13,padding:"13px 16px",marginBottom:12,background:assessorVoice?"#ecfeff":C.white,transition:"all .22s" }}>
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+              <div>
+                <div style={{ fontWeight:600,fontSize:14,color:C.navy }}>📋 Assessor voice guidance</div>
+                <div style={{ fontSize:12,color:C.slate,marginTop:2 }}>Reads each instruction aloud to you · turn off once you know the routine</div>
+              </div>
+              <button className="nls-btn" onClick={()=>setAssessorVoice(!assessorVoice)} style={{ width:50,height:26,borderRadius:13,flexShrink:0,background:assessorVoice?C.teal:"#cbd5e1",position:"relative" }}>
+                <div style={{ position:"absolute",top:3,left:assessorVoice?25:3,width:20,height:20,borderRadius:"50%",background:C.white,transition:"left .2s",boxShadow:"0 1px 4px rgba(0,0,0,.22)" }} />
+              </button>
+            </div>
+          </div>
           {/* Voice toggle */}
           <div style={{ border:`1.5px solid ${voiceOn?C.amber:C.border}`,borderRadius:13,padding:"13px 16px",marginBottom:14,background:voiceOn?"#fef9ee":C.white,transition:"all .22s" }}>
             <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between" }}>
               <div>
                 <div style={{ fontWeight:600,fontSize:14,color:C.navy }}>🎤 Voice Commands</div>
-                <div style={{ fontSize:12,color:C.slate,marginTop:2 }}>"correct" · "wrong" · "repeat" · "skip"</div>
+                <div style={{ fontSize:12,color:C.slate,marginTop:2 }}>"correct" / "yes" · "wrong" / "no" · "repeat" · "one–four" to pick a picture</div>
               </div>
               <button className="nls-btn" onClick={()=>setVoiceOn((v: any)=>!v)} style={{ width:50,height:26,borderRadius:13,flexShrink:0,background:voiceOn?C.amber:"#cbd5e1",position:"relative" }}>
                 <div style={{ position:"absolute",top:3,left:voiceOn?25:3,width:20,height:20,borderRadius:"50%",background:C.white,transition:"left .2s",boxShadow:"0 1px 4px rgba(0,0,0,.22)" }} />
               </button>
             </div>
-            {voiceOn && <div style={{ marginTop:9,fontSize:12,color:C.amberDk2,fontWeight:500 }}>✓ Works best in Chrome — allow microphone when prompted</div>}
+            {voiceOn && <div style={{ marginTop:9,fontSize:12,color:C.amberDk2,fontWeight:500 }}>✓ Works best in Chrome — allow the microphone when prompted. Listening pauses automatically while Ted is speaking.</div>}
           </div>
           {/* KB hints */}
           <div style={{ padding:"10px 14px",background:C.slateLt,borderRadius:10,fontSize:12,color:C.slate,marginBottom:26,display:"flex",gap:18,flexWrap:"wrap",alignItems:"center" }}>
@@ -879,7 +771,7 @@ function EVSubtest({ results, onScore, voiceOn }: any) {
     setTimeout(()=>{ setFlash(null); setBusy(false); setCelebration(false); setFeedback(null); }, 1200);
   }, [busy, item, onScore]);
 
-  const { listening, lastHeard } = useVoiceCommands({
+  const { listening, lastHeard, error: voiceErr, paused: voicePaused } = useVoiceCommands({
     enabled:voiceOn,
     onCommand:(cmd: any)=>{ if(cmd==="correct")doScore(true); if(cmd==="incorrect")doScore(false); },
   });
@@ -891,12 +783,12 @@ function EVSubtest({ results, onScore, voiceOn }: any) {
 
   useEffect(()=>{
     if (!item) return;
-    speakAutoTTS(`Question ${idx+1} of ${EV_ITEMS.length}. Show the child this picture and ask: What is this called?`);
-    return ()=>window.speechSynthesis.cancel();
+    speakAssessor(`Question ${idx+1} of ${EV_ITEMS.length}. Show the child this picture and ask: What is this called?`);
+    lsPrefetch([`Question ${idx+2} of ${EV_ITEMS.length}. Show the child this picture and ask: What is this called?`]);
+    return ()=>lsCancel();
   }, [idx]);
 
   if (!item) return null;
-  const scene = SceneSVG({word:item.word});
 
   return (
     <div style={{ flex:1,display:"flex",flexDirection:"column",minHeight:0,background:"linear-gradient(180deg,#f0f7ff 0%,#fefefe 100%)" }}>
@@ -906,20 +798,17 @@ function EVSubtest({ results, onScore, voiceOn }: any) {
         <StarProgress current={idx} total={EV_ITEMS.length}/>
       </div>
       <Note color="#9a3412" bg="#fff7ed" text={`Show the child this picture and ask: "What is this called?" Do not name the picture.`} />
-      <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28 }}>
+      <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28,position:"relative",isolation:"isolate" }}>
+        <Backdrop tone="warm" />
         {/* Picture frame */}
         <div key={idx} className={`nls-pop ${flash==="g"?"nls-correctGlow":flash==="r"?"nls-gentleShake":""}`} style={{
-          width:280,height:280,borderRadius:28,background:C.white,
-          border:`4px solid ${flash==="g"?"#10b981":flash==="r"?"#f43f5e":"#fde68a"}`,
+          width:300,height:300,borderRadius:28,background:C.white,
+          border:`5px solid ${flash==="g"?"#10b981":flash==="r"?"#f43f5e":"#ffffff"}`,
           boxShadow:"0 16px 48px rgba(0,0,0,.12)",
           display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
           marginBottom:22,position:"relative",overflow:"hidden",
         }}>
-          {scene ? (
-            <div style={{width:"100%",height:"100%",padding:8,boxSizing:"border-box"}}>{scene}</div>
-          ) : (
-            <div style={{ fontSize:120 }}>{item.emoji}</div>
-          )}
+          <Pic id={item.emoji} />
           <div style={{ position:"absolute",top:12,right:16,fontSize:12,fontWeight:700,color:C.slate,fontFamily:F.body,background:"rgba(255,255,255,0.9)",padding:"2px 10px",borderRadius:20 }}>#{idx+1}</div>
           <CelebrationBurst show={celebration}/>
         </div>
@@ -932,7 +821,7 @@ function EVSubtest({ results, onScore, voiceOn }: any) {
         )}
         {feedback==="incorrect" && (
           <div className="nls-bubblePop" style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-            <TedBear size={40} mood="encouraging"/>
+            <TedBear size={44} mood="encouraging"/>
             <span style={{fontSize:14,fontWeight:600,color:C.slate,fontFamily:F.body}}>Let's try the next one! 💪</span>
           </div>
         )}
@@ -962,7 +851,7 @@ function EVSubtest({ results, onScore, voiceOn }: any) {
             cursor:busy?"not-allowed":"pointer",
           }}>✗ Incorrect</button>
         </div>
-        <div style={{ marginTop:16 }}><VoiceBar listening={listening} lastHeard={lastHeard} /></div>
+        <div style={{ marginTop:16 }}><VoiceBar listening={listening} lastHeard={lastHeard} error={voiceErr} paused={voicePaused} /></div>
       </div>
     </div>
   );
@@ -986,9 +875,15 @@ function RVSubtest({ results, onScore, voiceOn }: any) {
     setTimeout(()=>{ onScore(correct); setBusy(false); }, 600);
   }, [busy, item, onScore]);
 
-  const { listening, lastHeard } = useVoiceCommands({
+  const { listening, lastHeard, error: voiceErr, paused: voicePaused } = useVoiceCommands({
     enabled:voiceOn,
-    onCommand:(cmd: any)=>{ if(cmd==="correct"&&item) doScore(item.correctDisplayIdx); },
+    onCommand:(cmd: any)=>{
+      if(!item) return;
+      if(cmd==="correct") doScore(item.correctDisplayIdx);
+      if(cmd==="incorrect") doScore((item.correctDisplayIdx+1)%4);
+      const n = ["one","two","three","four"].indexOf(cmd); if(n>=0) doScore(n);
+    },
+    allowed:["correct","incorrect","one","two","three","four","repeat"],
   });
 
   if (!item) return null;
@@ -999,7 +894,8 @@ function RVSubtest({ results, onScore, voiceOn }: any) {
         <StarProgress current={idx} total={RV_ITEMS.length}/>
       </div>
       <Note color="#5b21b6" bg="#f5f3ff" text="Say the word and ask the child to point to or say the number of the matching picture." />
-      <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28 }}>
+      <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28,position:"relative",isolation:"isolate" }}>
+        <Backdrop tone="violet" />
         {/* Word */}
         <div key={idx} className="nls-pop" style={{
           background:C.violet,color:C.white,borderRadius:20,
@@ -1007,7 +903,7 @@ function RVSubtest({ results, onScore, voiceOn }: any) {
           boxShadow:`0 8px 28px ${C.violet}50`,letterSpacing:-.5,
         }}>{item.word}</div>
         {/* 2×2 grid */}
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,width:"100%",maxWidth:360 }}>
+        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,width:"100%",maxWidth:440 }}>
           {item.displayOpts.map((emoji: any,i: any)=>{
             const isChosen = chosen===i;
             const isCorrect = i===item.correctDisplayIdx;
@@ -1020,16 +916,16 @@ function RVSubtest({ results, onScore, voiceOn }: any) {
               <div key={i} className={!revealed?"nls-card-opt":""} onClick={()=>!busy&&!revealed&&doScore(i)} style={{
                 background:bg,border,borderRadius:18,
                 display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-                gap:8,padding:"20px 10px",boxShadow:"0 4px 14px rgba(0,0,0,.07)",
+                gap:8,padding:"10px 10px 12px",boxShadow:"0 4px 14px rgba(0,0,0,.07)",
                 cursor:revealed?"default":"pointer",
               }}>
-                <div style={{ fontSize:52 }}>{emoji}</div>
+                <div style={{ width:"100%",aspectRatio:"1",borderRadius:12,overflow:"hidden",boxShadow:"inset 0 0 0 1px rgba(0,0,0,.05)" }}><Pic id={picIdFor(emoji, item.word)} /></div>
                 <div style={{ width:26,height:26,borderRadius:"50%",background:C.border,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:F.body,fontWeight:700,fontSize:13,color:C.slate }}>{i+1}</div>
               </div>
             );
           })}
         </div>
-        <div style={{ marginTop:20 }}><VoiceBar listening={listening} lastHeard={lastHeard} /></div>
+        <div style={{ marginTop:20 }}><VoiceBar listening={listening} lastHeard={lastHeard} error={voiceErr} paused={voicePaused} /></div>
       </div>
     </div>
   );
@@ -1049,8 +945,8 @@ function SRSubtest({ results, onScore, voiceOn }: any) {
 
   const playAudio = useCallback(()=>{
     if (!item) return;
-    setPlaying(true); speak(item.s, 0.82); setPlayed(true);
-    setTimeout(()=>setPlaying(false), item.s.length*62+1200);
+    setPlaying(true); setPlayed(true);
+    speak(item.s, 0.92).then(()=>setPlaying(false));
   }, [item, speak]);
 
   const doScore = useCallback((correct: any)=>{
@@ -1060,7 +956,7 @@ function SRSubtest({ results, onScore, voiceOn }: any) {
     setTimeout(()=>{ setFlash(null); setBusy(false); }, 500);
   }, [busy, played, cancel, onScore]);
 
-  const { listening, lastHeard } = useVoiceCommands({
+  const { listening, lastHeard, error: voiceErr, paused: voicePaused } = useVoiceCommands({
     enabled:voiceOn,
     onCommand:(cmd: any)=>{ if(cmd==="correct")doScore(true); if(cmd==="incorrect")doScore(false); if(cmd==="repeat")playAudio(); },
   });
@@ -1082,7 +978,8 @@ function SRSubtest({ results, onScore, voiceOn }: any) {
         <StarProgress current={idx} total={SR_ITEMS.length}/>
       </div>
       <Note color="#0e7490" bg="#ecfeff" text="Play the sentence. Ask the child to repeat it exactly. One error = incorrect." />
-      <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28 }}>
+      <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28,position:"relative",isolation:"isolate" }}>
+        <Backdrop tone="teal" />
         {/* Play button */}
         <button className="nls-btn" onClick={playAudio} disabled={playing} style={{
           width:120,height:120,borderRadius:"50%",
@@ -1113,7 +1010,7 @@ function SRSubtest({ results, onScore, voiceOn }: any) {
           {!played && <div style={{ position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12.5,color:"#64748b",fontFamily:F.body }}>🔒 Play sentence to reveal</div>}
         </div>
         <ScoreBtns onCorrect={()=>doScore(true)} onIncorrect={()=>doScore(false)} disabled={!played||busy} />
-        <div style={{ marginTop:16 }}><VoiceBar listening={listening} lastHeard={lastHeard} /></div>
+        <div style={{ marginTop:16 }}><VoiceBar listening={listening} lastHeard={lastHeard} error={voiceErr} paused={voicePaused} /></div>
       </div>
     </div>
   );
@@ -1130,9 +1027,19 @@ function NarrSubtest({ results, onScore, voiceOn }: any) {
 
   useEffect(()=>()=>cancel(), [cancel]);
 
-  function readStory() {
-    setReading(true); speak(STORY, 0.8); setStoryDone(true);
-    setTimeout(()=>setReading(false), STORY.length*52+2000);
+  const [page, setPage] = useState(0);
+  const PARAS = STORY.split("\n\n");
+  const runRef = useRef(0);
+  async function readStory() {
+    const run = ++runRef.current;
+    setReading(true); setStoryDone(true);
+    lsPrefetch(PARAS.slice(1));
+    for (let i = 0; i < PARAS.length; i++) {
+      if (runRef.current !== run) return;
+      setPage(i);
+      await speak(PARAS[i], 0.9);
+    }
+    if (runRef.current === run) setReading(false);
   }
 
   const doScore = useCallback((correct: any)=>{
@@ -1146,14 +1053,14 @@ function NarrSubtest({ results, onScore, voiceOn }: any) {
     }, 500);
   }, [busy, onScore, qIdx]);
 
-  const { listening, lastHeard } = useVoiceCommands({
+  const { listening, lastHeard, error: voiceErr, paused: voicePaused } = useVoiceCommands({
     enabled:voiceOn,
     onCommand:(cmd: any)=>{
       if(phase==="story"&&cmd==="repeat") readStory();
       if(phase==="questions"){
         if(cmd==="correct")   doScore(true);
         if(cmd==="incorrect") doScore(false);
-        if(cmd==="repeat")    speak(NQ_ITEMS[qIdx]?.q, 0.86);
+        if(cmd==="repeat")    speak(NQ_ITEMS[qIdx]?.q, 0.95);
       }
     },
   });
@@ -1163,7 +1070,7 @@ function NarrSubtest({ results, onScore, voiceOn }: any) {
       if(phase==="questions"){
         if(e.key==="Enter")     doScore(true);
         if(e.key==="Backspace") doScore(false);
-        if(e.key==="r"||e.key==="R") speak(NQ_ITEMS[qIdx]?.q, 0.86);
+        if(e.key==="r"||e.key==="R") speak(NQ_ITEMS[qIdx]?.q, 0.95);
       }
     }
     window.addEventListener("keydown",h); return()=>window.removeEventListener("keydown",h);
@@ -1178,13 +1085,21 @@ function NarrSubtest({ results, onScore, voiceOn }: any) {
         <StarProgress current={results.length} total={NQ_ITEMS.length}/>
       </div>
       <Note color="#9f1239" bg="#fff1f2" text="Read or play the story to the child. Child should NOT see the text. Then click 'Begin Questions'." />
-      <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28 }}>
-        {/* Story text */}
-        <div style={{ background:C.white,borderRadius:20,padding:"22px 26px",boxShadow:"0 8px 32px rgba(0,0,0,.1)",maxWidth:500,width:"100%",border:`1px solid ${C.border}`,marginBottom:24,maxHeight:280,overflowY:"auto" }}>
-          <div style={{ fontSize:14,fontWeight:700,color:C.slate,marginBottom:12,fontFamily:F.body }}>📚 The Story of Ember the Fox</div>
-          {STORY.split("\n\n").map((para,i)=>(
-            <p key={i} style={{ fontSize:14.5,lineHeight:1.75,color:C.navy,fontFamily:F.body,margin:"0 0 12px" }}>{para}</p>
-          ))}
+      <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28,position:"relative",isolation:"isolate" }}>
+        <Backdrop tone="rose" />
+        {/* Picture-book page */}
+        <div style={{ background:C.white,borderRadius:22,boxShadow:"0 12px 40px rgba(0,0,0,.12)",maxWidth:620,width:"100%",border:`1px solid ${C.border}`,marginBottom:20,overflow:"hidden",position:"relative",zIndex:1 }}>
+          <div style={{ aspectRatio:"400/220",width:"100%",overflow:"hidden" }}><StoryScene index={page} /></div>
+          <div style={{ padding:"16px 22px 18px" }}>
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8 }}>
+              <div style={{ fontSize:12.5,fontWeight:700,color:C.slate,fontFamily:F.body }}>📚 The Story of Ember the Fox · page {page+1} of {PARAS.length}</div>
+              <div style={{ display:"flex",gap:6 }}>
+                <button className="nls-btn" onClick={()=>{ runRef.current++; lsCancel(); setReading(false); setPage(p=>Math.max(0,p-1)); }} style={{ padding:"4px 10px",borderRadius:8,border:`1px solid ${C.border}`,background:C.slateLt,fontSize:12,color:C.slate,cursor:"pointer" }}>‹</button>
+                <button className="nls-btn" onClick={()=>{ runRef.current++; lsCancel(); setReading(false); setPage(p=>Math.min(PARAS.length-1,p+1)); }} style={{ padding:"4px 10px",borderRadius:8,border:`1px solid ${C.border}`,background:C.slateLt,fontSize:12,color:C.slate,cursor:"pointer" }}>›</button>
+              </div>
+            </div>
+            <p key={page} className="nls-fadeup" style={{ fontSize:15.5,lineHeight:1.75,color:C.navy,fontFamily:F.body,margin:0,minHeight:84 }}>{PARAS[page]}</p>
+          </div>
         </div>
         <div style={{ display:"flex",gap:12,flexWrap:"wrap",justifyContent:"center" }}>
           <button className="nls-btn" onClick={readStory} disabled={reading} style={{
@@ -1193,7 +1108,7 @@ function NarrSubtest({ results, onScore, voiceOn }: any) {
             color:reading?C.slate:C.white,borderRadius:12,fontSize:14,fontWeight:700,fontFamily:F.body,
             boxShadow:reading?"none":`0 6px 22px ${C.teal}44`,
           }}>
-            {reading?"🔊 Reading aloud…":"🔊 Read story aloud"}
+            {reading?"🔊 Reading aloud…":storyDone?"🔊 Read again":"🔊 Read story aloud"}
           </button>
           <button className="nls-btn" onClick={()=>{ cancel(); setPhase("questions"); }} disabled={!storyDone&&!reading} style={{
             padding:"13px 28px",
@@ -1215,7 +1130,8 @@ function NarrSubtest({ results, onScore, voiceOn }: any) {
         <StarProgress current={results.length} total={NQ_ITEMS.length}/>
       </div>
       <Note color="#9f1239" bg="#fff1f2" text="Ask each question. For inference questions accept any reasonable answer." />
-      <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28 }}>
+      <div style={{ flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:28,position:"relative",isolation:"isolate" }}>
+        <Backdrop tone="rose" />
         {question && (
           <>
             <div key={`badge-${qIdx}`} className="nls-slide" style={{
@@ -1240,7 +1156,7 @@ function NarrSubtest({ results, onScore, voiceOn }: any) {
             <ScoreBtns onCorrect={()=>doScore(true)} onIncorrect={()=>doScore(false)} disabled={busy} />
           </>
         )}
-        <div style={{ marginTop:16 }}><VoiceBar listening={listening} lastHeard={lastHeard} /></div>
+        <div style={{ marginTop:16 }}><VoiceBar listening={listening} lastHeard={lastHeard} error={voiceErr} paused={voicePaused} /></div>
       </div>
     </div>
   );
@@ -1456,7 +1372,7 @@ export default function LanguageScreenApp({
   const [screen,   setScreen]   = useState("intro");
   const [child,    setChild]    = useState<any>(null);
   const [voiceOn,  setVoiceOn]  = useState(false);
-  useEffect(()=>()=>window.speechSynthesis.cancel(),[]);
+  useEffect(()=>()=>lsCancel(),[]);
   const [subtests, setSubtests] = useState<any[]>([]);
   const [curTest,  setCurTest]  = useState(0);
 
