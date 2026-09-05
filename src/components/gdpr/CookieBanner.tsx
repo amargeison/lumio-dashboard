@@ -12,6 +12,8 @@ export default function CookieBanner() {
   const [marketing, setMarketing] = useState(false)
 
   useEffect(() => {
+    // Client website previews (e.g. /oxed) carry their own branding — the Lumio banner must not appear there.
+    if (/^\/oxed(\/|$)/.test(window.location.pathname)) return
     const consent = localStorage.getItem('lumio_cookie_consent')
     if (!consent) setShow(true)
   }, [])
