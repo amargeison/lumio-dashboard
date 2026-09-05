@@ -305,12 +305,11 @@ const SIDEBAR_NAV = [
   { section: null,     id: 'safeguarding', label: 'Safeguarding',       icon: Shield },
   { section: null,     id: 'wraparound',   label: 'Pre & After School', icon: Clock },
   { section: null,     id: 'inspection',   label: 'Inspection Mode',    icon: ClipboardList },
-  { section: null,     id: 'rostering',    label: 'Rostering',          icon: Calendar },
-  { section: null,     id: 'missync',      label: 'MIS Sync',           icon: Database },
   { section: 'Tools',  id: 'workflows',    label: 'Workflows',          icon: GitBranch },
   { section: null,     id: 'reports',      label: 'Reports',            icon: FileText },
+  { section: null,     id: 'rostering',    label: 'Rostering',          icon: Calendar },
+  { section: null,     id: 'missync',      label: 'MIS Sync',           icon: Database },
   { section: null,     id: 'settings',     label: 'Settings',           icon: Settings },
-  { section: 'Partners', id: 'rgr',        label: 'RGR',                icon: Briefcase, partner: 'RGR' as const },
 ]
 
 // ─── Tab definitions ─────────────────────────────────────────────────────────
@@ -650,10 +649,8 @@ function GreetingBanner({ onVoiceToast }: { onVoiceToast?: (toast: VoiceToastDat
   const { speak, stop, isPlaying } = useElevenLabsTTS()
   const { isListening, lastCommand, startListening, stopListening } = useVoiceCommands()
   const [quote, setQuote] = useState(QUOTES[0])
-  const [weather, setWeather] = useState({ temp: '--', condition: 'Loading...', icon: '🌤️' })
 
   useEffect(() => { const start = new Date(new Date().getFullYear(), 0, 1).getTime(); const dayOfYear = Math.floor((Date.now() - start) / 86400000); setQuote(QUOTES[dayOfYear % QUOTES.length]) }, [])
-  useEffect(() => { fetch('/api/home/weather').then(r => r.json()).then(setWeather).catch(() => {}) }, [])
 
   function handleBriefing() {
     if (isPlaying) { stop(); return }
@@ -741,16 +738,6 @@ function GreetingBanner({ onVoiceToast }: { onVoiceToast?: (toast: VoiceToastDat
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--tt-muted)', marginTop: 2 }}>{item.label}</div>
             </div>
           ))}
-        </div>
-        <div className="flex items-start gap-3 flex-shrink-0">
-          <div className="flex items-center gap-3" style={{ backgroundColor: 'var(--tt-card)', border: '1px solid var(--tt-border)', borderRadius: 8, padding: '8px 14px' }}>
-            <span className="text-2xl">{weather.icon}</span>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--tt-text)' }}>{weather.temp}</div>
-              <div style={{ fontSize: 11, color: 'var(--tt-muted)' }}>{weather.condition}</div>
-            </div>
-          </div>
-          <WorldClock />
         </div>
       </div>
     </div>
@@ -1646,21 +1633,14 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   const expanded = pinned || hovered
   const sidebarW = expanded ? EXPANDED_W : COLLAPSED_W
 
-  // Partner-scoped nav items (e.g. Partners > RGR shows only for RGR tenants)
+  // Partner-scoped nav (RGR portfolio) was removed from the school sidebar — the page still renders
+  // it if navigated to directly, but there is no partner section for a school user.
   const partner = partnerForSlug(pathname?.split('/')[2])
-  const availableNav = SIDEBAR_NAV.filter(item => !('partner' in item) || partner === item.partner)
-
-  // Partner mode: on a partner nav page, collapse the sidebar down to just
-  // the partner section + a back-to-school button. The "Current School"
-  // card is swapped for a "Partner Portfolio" card.
+  const availableNav = SIDEBAR_NAV
   const activeNavItem = SIDEBAR_NAV.find(n => n.id === sidebarPage)
-  const isPartnerMode = !!(activeNavItem && 'partner' in activeNavItem)
-  const partnerName = isPartnerMode && activeNavItem && 'partner' in activeNavItem
-    ? activeNavItem.partner
-    : null
-  const visibleNav = isPartnerMode
-    ? availableNav.filter(item => 'partner' in item)
-    : availableNav
+  const isPartnerMode = sidebarPage === 'rgr'
+  const partnerName: string | null = isPartnerMode ? partner : null
+  const visibleNav = availableNav
 
   useEffect(() => {
     setPinned(localStorage.getItem('lumio_sidebar_pinned') === 'true')
