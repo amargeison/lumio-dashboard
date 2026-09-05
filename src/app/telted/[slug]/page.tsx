@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
+import { Public_Sans } from 'next/font/google'
 import Link from 'next/link'
 import {
   LayoutDashboard, TrendingUp, Building2, Users, UserCheck, Shield, Clock,
@@ -34,6 +35,8 @@ import {
   StaffManagementPage, SendDslPage, SafeguardingPage, WraparoundPage,
   RosteringPage, MisSyncPage, WorkflowsPage, ReportsToolPage,
 } from '@/components/neli/SidebarPages'
+
+const publicSans = Public_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], display: 'swap' })
 
 const LanguageScreenApp = dynamic(() => import('@/components/neli/LanguageScreenApp'), { ssr: false })
 
@@ -182,23 +185,75 @@ function VoiceToast({ toast, onDismiss }: { toast: VoiceToastData | null; onDism
 // ─── US Market text replacements ──────────────────────────────────────────────
 function usify(text: string): string {
   return text
+    .replace(/\bNELI Programme Status\b/g, 'TEL TED Program Status')
+    .replace(/\bNELI Programme\b/g, 'TEL TED: NELI Intervention')
+    .replace(/\bNuffield Early Language Intervention\b/g, 'TEL TED: NELI Intervention')
+    .replace(/\bNELI Lead\b/g, 'TEL TED Coordinator')
+    .replace(/\bNELI Pupils\b/g, 'TEL TED Students')
+    .replace(/\bNELI Pupil\b/g, 'TEL TED Student')
+    .replace(/\bNELI Tracker\b/g, 'TEL TED Tracker')
+    .replace(/\bNELI (Intervention|sessions?|group|students?|programme|program)\b/gi, (m: string) => m.replace(/NELI/, 'TEL TED'))
+    .replace(/\bEYFS Profile Update\b/g, 'Early Learning Profile Update')
+    .replace(/\bEYFS Profile\b/g, 'Early Learning Profile')
+    .replace(/\bEYFS\b/g, 'Early Learning')
+    .replace(/\bEarly Learning Goals?\b/g, 'Early Learning Standards')
+    .replace(/\bELGs? Expected\b/g, 'Standards Expected')
+    .replace(/\bELGs\b/g, 'Standards')
+    .replace(/\bELG\b/g, 'Standard')
+    .replace(/\bGLD Projection\b/g, 'Readiness Projection')
+    .replace(/\bGLD\b/g, 'Readiness')
+    .replace(/\bSEN & SEND Overview\b/g, 'Special Education Overview')
+    .replace(/\bSEN & SEND\b/g, 'Special Education')
+    .replace(/\bSEN & Support Needs\b/g, 'Special Education & Support Needs')
+    .replace(/\bSEN Support\b/g, 'Special Ed Support')
+    .replace(/\bSEN Status\b/gi, (m: string) => m.replace(/SEN/, 'Support'))
+    .replace(/\bSEND\b/g, 'Special Education')
+    .replace(/\bSENCO\b/g, 'Special Education Coordinator')
+    .replace(/\bEHCP\b/g, 'IEP')
+    .replace(/\bRefer to SALT\b/g, 'Refer to SLP')
+    .replace(/\bSALT referral\b/gi, (m: string) => m.replace(/SALT/, 'SLP'))
+    .replace(/\bSALT\b/g, 'Speech-Language Pathologist')
+    .replace(/\bReception A & B\b/g, 'Kindergarten A & B')
     .replace(/\bReception\b/g, 'Kindergarten')
     .replace(/\bYear 1\b/g, '1st Grade')
+    .replace(/\bYear 2\b/g, '2nd Grade')
     .replace(/\bTeaching Assistant\b/g, 'Paraprofessional')
-    .replace(/\bSENCO\b/g, 'Special Education Coordinator')
+    .replace(/\bHeadteacher\b/g, 'Principal')
     .replace(/\bOfsted\b/g, 'State Inspection')
-    .replace(/\bELG\b/g, 'Early Learning Standards')
     .replace(/\bParkside Primary\b/g, 'Parkside Elementary')
     .replace(/\bOak Valley MAT\b/g, 'Oak Valley District')
     .replace(/\bMrs S\. Mitchell\b/g, 'Ms S. Mitchell')
-    .replace(/\bNELI Lead\b/g, 'TEL TED Coordinator')
-    .replace(/\bNELI Pupil/g, 'TEL TED Student')
-    .replace(/\bNELI Tracker\b/g, 'TEL TED Tracker')
-    .replace(/\bNELI Programme\b/g, 'TEL TED: NELI Intervention')
-    .replace(/\bNuffield Early Language Intervention\b/g, 'TEL TED: NELI Intervention')
     .replace(/\bDfE Funded\b/g, 'EEF 5/5 Evidence Rating')
-    .replace(/\bFSM\b/g, 'FRL')
     .replace(/\bFree School Meals\b/g, 'Free & Reduced Lunch')
+    .replace(/\bFSM\b/g, 'FRL')
+    .replace(/\bPupils\b/g, 'Students')
+    .replace(/\bpupils\b/g, 'students')
+    .replace(/\bPupil\b/g, 'Student')
+    .replace(/\bpupil\b/g, 'student')
+    .replace(/\bProgramme\b/g, 'Program')
+    .replace(/\bprogramme\b/g, 'program')
+    .replace(/\bAutumn term\b/gi, 'Fall semester')
+    .replace(/\bSummer term\b/gi, 'Spring semester')
+}
+
+/** Apply usify() to every text node under `root` and keep doing so as the tree changes
+ *  (the shared NELI components render UK terminology; this keeps the US demo consistent). */
+function useUsTerminology(root: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const el = root.current
+    if (!el) return
+    const SKIP = new Set(['SCRIPT', 'STYLE', 'INPUT', 'TEXTAREA', 'SELECT', 'OPTION'])
+    const fix = (node: Node) => {
+      const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement && SKIP.has(n.parentElement.tagName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT })
+      let t: Node | null
+      while ((t = walker.nextNode())) { const v = t.nodeValue || ''; if (v.length > 2) { const u = usify(v); if (u !== v) t.nodeValue = u } }
+    }
+    fix(el)
+    let scheduled = false
+    const mo = new MutationObserver(() => { if (scheduled) return; scheduled = true; requestAnimationFrame(() => { scheduled = false; mo.disconnect(); fix(el); mo.observe(el, { childList: true, subtree: true, characterData: true }) }) })
+    mo.observe(el, { childList: true, subtree: true, characterData: true })
+    return () => mo.disconnect()
+  }, [root])
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -1535,6 +1590,8 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   const [hovered, setHovered] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const mainRef = useRef<HTMLElement | null>(null)
+  useUsTerminology(mainRef)
 
   // NELI portal state
   const [selectedPupil, setSelectedPupil] = useState<any>(null)
@@ -1822,7 +1879,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" data-tt-theme={theme} style={{ ...(TT_THEMES[theme] as any), backgroundColor: 'var(--tt-bg)', colorScheme: theme }}>
+    <div className={`flex h-screen overflow-hidden ${publicSans.className}`} data-tt-theme={theme} style={{ ...(TT_THEMES[theme] as any), backgroundColor: 'var(--tt-bg)', colorScheme: theme }}>
       {mobileOpen && <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={() => setMobileOpen(false)} />}
 
       {/* LanguageScreen Assessment Overlay */}
@@ -2008,7 +2065,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
         </div>
 
         {/* Main content */}
-        <main className={`${theme === 'dark' ? 'telted-neli-dark' : 'telted-neli-light'} flex-1 overflow-y-auto p-4 md:p-6`}>
+        <main ref={mainRef} className={`${theme === 'dark' ? 'telted-neli-dark' : 'telted-neli-light'} flex-1 overflow-y-auto p-4 md:p-6`}>
           {renderContent()}
         </main>
       </div>
