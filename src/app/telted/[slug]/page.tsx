@@ -1499,6 +1499,39 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   const [selectedClass, setSelectedClass] = useState<any>(null)
   const [assessingPupil, setAssessingPupil] = useState<any>(null)
   const [assessingDemo, setAssessingDemo] = useState(false)
+  // Recorded LanguageScreen results — applied onto the demo PUPILS data and persisted per tenant
+  const [dataVersion, setDataVersion] = useState(0)
+  const storageKey = `telted-assessments:${pathname?.split('/')[2] || 'demo'}`
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || '{}')
+      let touched = false
+      for (const p of PUPILS as any[]) { const r = saved[p.id]; if (r) { applyResult(p, r); touched = true } }
+      if (touched) setDataVersion(v => v + 1)
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey])
+  function applyResult(p: any, r: any) {
+    p.es = r.standardScore
+    if (r.subscores) p.subscores = { ...p.subscores, ...r.subscores }
+    p.lastAssessed = r.date
+    p.assessments = [...(p.assessments || []).filter((a: any) => a.date !== r.date), r]
+  }
+  function recordAssessment(report: any) {
+    if (!assessingPupil) return
+    const pct = (id: string) => { const st = (report.subtestScores || []).find((x: any) => x.id === id); return st ? st.pctRaw : null }
+    // Map subtest % correct onto a standard-score scale around the overall score
+    const toSS = (v: number | null) => v == null ? null : Math.round(report.standardScore + (v - 50) * 0.3)
+    const subscores: Record<string, number> = {}
+    const map: Record<string, string> = { rv: 'recVocab', ev: 'expVocab', sr: 'grammar', narr: 'listening' }
+    for (const [id, key] of Object.entries(map)) { const v = toSS(pct(id)); if (v != null) subscores[key] = v }
+    const r = { date: report.date || new Date().toISOString().slice(0, 10), standardScore: report.standardScore, percentile: report.percentile, band: report.band, totalRaw: report.totalRaw, assessor: report.assessor, subscores }
+    const p = (PUPILS as any[]).find(x => x.id === assessingPupil.id)
+    if (p) applyResult(p, r)
+    try { const saved = JSON.parse(localStorage.getItem(storageKey) || '{}'); saved[assessingPupil.id] = r; localStorage.setItem(storageKey, JSON.stringify(saved)) } catch {}
+    setDataVersion(v => v + 1)
+    setVoiceToast({ text: `LanguageScreen recorded for ${assessingPupil.name}: standard score ${report.standardScore} (${report.percentile}th percentile, ${report.band}). Profile, class dashboard and reports updated.` })
+  }
   const [neliSubTab, setNeliSubTab] = useState<'dashboard' | 'languagescreen' | 'tracker'>('dashboard')
   const [insightsSubTab, setInsightsSubTab] = useState<'school' | 'network'>('school')
   const [voiceToast, setVoiceToast] = useState<VoiceToastData | null>(null)
@@ -1672,7 +1705,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
   function renderContent() {
     // Handle deep navigation states
     if (sidebarPage === 'pupil' && selectedPupil) {
-      return <PupilDetail pupil={selectedPupil} onBack={() => { setSidebarPage(selectedClass ? 'classdetail' : 'overview'); setSelectedPupil(null); setActiveTab('languagescreen') }} />
+      return <PupilDetail key={`${selectedPupil.id}-${dataVersion}`} pupil={selectedPupil} onBack={() => { setSidebarPage(selectedClass ? 'classdetail' : 'overview'); setSelectedPupil(null); setActiveTab('languagescreen') }} onAssess={(p) => setAssessingPupil(p)} />
     }
     if (sidebarPage === 'classdetail' && selectedClass) {
       return <ClassDetail cls={selectedClass} onBack={() => { setSidebarPage('overview'); setSelectedClass(null); setActiveTab('classes') }} onSelectPupil={handleSelectPupil} />
@@ -1758,6 +1791,7 @@ export default function TelTedPortal({ params }: { params: Promise<{ slug: strin
             schoolName="Parkside Elementary"
             assessorName="Sarah Mitchell"
             onClose={() => { setAssessingPupil(null); setAssessingDemo(false) }}
+            onComplete={recordAssessment}
           />
         </div>
       )}

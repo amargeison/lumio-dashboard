@@ -1448,7 +1448,10 @@ export default function LanguageScreenApp({
   schoolName    = "",
   assessorName  = "",
   onClose       = () => {},
-  onComplete    = () => {},
+  onComplete    = (_report: any) => {},
+}: {
+  studentName?: string; studentDob?: string; schoolName?: string; assessorName?: string;
+  onClose?: () => void; onComplete?: (report: any) => void;
 }) {
   const [screen,   setScreen]   = useState("intro");
   const [child,    setChild]    = useState<any>(null);
