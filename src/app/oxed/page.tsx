@@ -20,7 +20,9 @@ export const metadata: Metadata = {
   icons: { icon: '/oxed-site-logo.png', apple: '/oxed-site-logo.png' },
 }
 
-export const viewport: Viewport = { themeColor: '#1E6B2E' }
+export const viewport: Viewport = { themeColor: '#447EBB' }
+// Evaluated per request so the OXED_PREVIEW switch works without a rebuild
+export const dynamic = 'force-dynamic'
 
 export default function OxEdSitePage() {
   if (process.env.NODE_ENV === 'production' && process.env.OXED_PREVIEW !== '1') notFound()
