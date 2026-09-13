@@ -15,7 +15,7 @@
 import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { ACCREDITATIONS } from '../_lib/settings-store'
-import { fileToAvatarDataUrl, avatarSrc } from '@/lib/avatar'
+import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
 import { forgetIdentity } from '../_lib/coach-db'
 
 type Staff = {
@@ -58,10 +58,24 @@ export function CoachMyProfile({ T, accent, mode, onDone }: {
 
   const set = (k: string, v: unknown) => { setD(p => ({ ...p, [k]: v })); setSaved(false) }
 
+  const [photoBusy, setPhotoBusy] = useState(false)
   const pickPhoto = async (file: File | null) => {
-    if (!file) return
-    try { const url = await fileToAvatarDataUrl(file, 256); setPhoto(url); set('avatar_url', url) }
-    catch { setErr('Could not read that image.') }
+    if (!file || !staff) return
+    setPhotoBusy(true); setErr('')
+    try {
+      // Shown immediately from the local data URL so the face appears the moment
+      // they pick it, then REPLACED by the stored path once the upload lands.
+      // Only the path is ever saved: a base64 JPEG on the row travels in every
+      // whoami response and every staff query, which is how a profile photo
+      // turns into a few hundred KB on every page load.
+      const dataUrl = await fileToAvatarDataUrl(file, 256)
+      setPhoto(dataUrl)
+      const url = await uploadAvatar('/api/coach/staff-avatar', { staffId: staff.id, dataUrl })
+      if (!url) { setErr('Could not upload that photo — please try again.'); setPhoto(staff.avatar_url ?? null); return }
+      setPhoto(url); set('avatar_url', url)
+      forgetIdentity()
+    } catch { setErr('Could not read that image.') }
+    finally { setPhotoBusy(false) }
   }
 
   const save = async () => {
@@ -70,7 +84,10 @@ export function CoachMyProfile({ T, accent, mode, onDone }: {
       const r = await fetch('/api/coach/my-profile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          avatar_url: photo ?? null,
+          // Never a data: URL — the upload above has already turned it into a
+          // stored path. If it is somehow still inline, send null rather than
+          // writing the image into the database row.
+          avatar_url: photo && !photo.startsWith('data:') ? photo : null,
           phone: d.phone ?? null,
           email: d.email ?? null,
           qualifications: d.qualifications ?? null,
@@ -140,7 +157,7 @@ export function CoachMyProfile({ T, accent, mode, onDone }: {
             {[staff.role || 'Coach', venues.map(v => v.name).filter(Boolean).join(' · ') || null].filter(Boolean).join(' — ')}
           </div>
           <label style={{ display: 'inline-block', marginTop: 8, fontSize: 12, fontWeight: 600, color: accent.hex, cursor: 'pointer' }}>
-            {photo ? 'Change photo' : 'Add a photo'}
+            {photoBusy ? 'Uploading…' : photo ? 'Change photo' : 'Add a photo'}
             <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => pickPhoto(e.target.files?.[0] ?? null)} />
           </label>
           {photo && <button onClick={() => { setPhoto(null); set('avatar_url', null) }} style={{ marginLeft: 12, appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>Remove</button>}
