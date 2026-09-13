@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FlaskConical, Clock, Trophy, Layers, Eye } from 'lucide-react'
+import { FlaskConical, Clock, Trophy, Layers, Eye, Trash2 } from 'lucide-react'
 
 const SE: Record<string, string> = { tennis:'🎾', golf:'⛳', darts:'🎯', boxing:'🥊', cricket:'🏏', rugby:'🏉', football:'⚽', nonleague:'⚽', grassroots:'⚽', womens:'⚽', coach:'🎾' }
 function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('sports_admin_token') || '' : '' }
@@ -32,6 +32,26 @@ export default function SportsAdminDemo() {
       .then(d => { setLeads(d.leads || []); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
+
+  // Deleting a lead removes the lead-capture row and nothing else — no auth user
+  // is touched, unlike the delete on the live accounts page. The confirm says so,
+  // because "delete" on an admin screen usually means something far heavier.
+  const [busy, setBusy] = useState('')
+  const handleDelete = async (l: Lead) => {
+    if (!confirm(`Remove ${l.email} from the ${l.sport} demo signups?\n\nThis only clears the lead record — their sign-in and any real portal they own are left alone.`)) return
+    const k = l.email + l.sport
+    setBusy(k)
+    try {
+      const res = await fetch('/api/sports-admin/demo-leads', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
+        body: JSON.stringify({ email: l.email, sport: l.sport }),
+      })
+      if (!res.ok) { alert('Delete failed — check the console'); return }
+      setLeads(prev => prev.filter(x => !(x.email === l.email && x.sport === l.sport)))
+    } catch { alert('Delete failed — check the console') }
+    finally { setBusy('') }
+  }
 
   const sports = Array.from(new Set(leads.map(l => l.sport)))
   const rows = sport === 'all' ? leads : leads.filter(l => l.sport === sport)
@@ -83,9 +103,17 @@ export default function SportsAdminDemo() {
                   <td className="px-5 py-3" style={{ color: '#6B7280' }}>{new Date(l.first_seen).toLocaleDateString('en-GB')}</td>
                   <td className="px-5 py-3" style={{ color: '#6B7280' }}>{new Date(l.last_seen).toLocaleDateString('en-GB')}</td>
                   <td className="px-5 py-3 text-right">
-                    <button onClick={() => window.open(demoUrl(l.sport), '_blank')} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
-                      <Eye size={12} /> View demo
-                    </button>
+                    <div className="inline-flex items-center gap-2">
+                      <button onClick={() => window.open(demoUrl(l.sport), '_blank')} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{ backgroundColor: 'rgba(245,166,35,0.1)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.3)' }}>
+                        <Eye size={12} /> View demo
+                      </button>
+                      <button onClick={() => handleDelete(l)} disabled={busy === l.email + l.sport}
+                        title={`Remove ${l.email} from demo signups`}
+                        className="inline-flex items-center justify-center p-1.5 rounded-lg transition-colors hover:bg-white/5"
+                        style={{ color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', opacity: busy === l.email + l.sport ? 0.5 : 1 }}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
