@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { uploadAvatar } from '../avatar/route'
 
 export const runtime = 'nodejs'
 
@@ -58,8 +59,30 @@ export async function GET() {
       .eq('staff_id', who.staffId),
   ])
 
+  // Self-healing migration for photos saved before they went to the bucket.
+  //
+  // Those rows hold a base64 JPEG inline, which whoami withholds — so the coach
+  // sees their photo here and NOWHERE ELSE, which is the confusing half-state.
+  // Rather than ask them to re-pick it, move it the first time they open this
+  // page and rewrite the row. One upload, once, and then the face appears in the
+  // sidebar, the rail and the head coach's Coaches page like any other.
+  let row = staff as Record<string, unknown> | null
+  if (row && typeof row.avatar_url === 'string' && row.avatar_url.startsWith('data:')) {
+    const moved = await uploadAvatar(who.admin, who.academyId, `staff-${who.staffId}`, row.avatar_url)
+    if (moved) {
+      await who.admin.from('coach_staff')
+        .update({ avatar_url: moved, updated_at: new Date().toISOString() })
+        .eq('id', who.staffId).eq('coach_id', who.academyId)
+      row = { ...row, avatar_url: moved }
+    } else {
+      // Could not move it (unreadable, or over the size cap). Withhold it rather
+      // than hand back a payload this route would then carry on every visit.
+      row = { ...row, avatar_url: null }
+    }
+  }
+
   return NextResponse.json({
-    staff: staff ?? null,
+    staff: row,
     // Read-only here: which sites they work at is the head coach's call, and
     // showing it as text is kinder than a control that silently does nothing.
     venues: (venues ?? []).map((v: Record<string, unknown>) => ({

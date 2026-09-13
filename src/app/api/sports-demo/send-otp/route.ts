@@ -13,6 +13,10 @@ export async function POST(req: NextRequest) {
   try {
     const { email, sport, clubName, purpose } = await req.json()
     const isFounder = purpose === 'founder'
+    // Members get sign-in wording, never "demo code" / "Demo access". Read from
+    // the membership table as well as the request, so a coach arriving by a page
+    // that does not know them still gets the right email.
+    let isMember = purpose === 'member'
 
     if (!email || !sport) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -20,10 +24,11 @@ export async function POST(req: NextRequest) {
 
     // Barred addresses get no code. Checked here rather than at verify so a
     // blocked person never receives an email from us at all.
-    const { isEmailBlocked, BLOCKED_MESSAGE } = await import('@/lib/blocked-emails')
+    const { isEmailBlocked, BLOCKED_MESSAGE, isAcademyMember } = await import('@/lib/blocked-emails')
     if (await isEmailBlocked(email)) {
       return NextResponse.json({ error: BLOCKED_MESSAGE }, { status: 403 })
     }
+    if (!isMember && !isFounder && await isAcademyMember(email)) isMember = true
 
     // Generate 6-digit OTP (dev always returns 000000 for bypass)
     const code = process.env.NODE_ENV !== 'production'
@@ -90,16 +95,16 @@ export async function POST(req: NextRequest) {
       await resend.emails.send({
         from: 'Lumio Sports <hello@lumiocms.com>',
         to: email,
-        subject: isFounder ? `Your ${cfg.name} sign-in code — ${code}` : `Your ${cfg.name} demo code — ${code}`,
+        subject: (isFounder || isMember) ? `Your ${cfg.name} sign-in code — ${code}` : `Your ${cfg.name} demo code — ${code}`,
         html: `<!DOCTYPE html><html><body style="background:#07080F;font-family:DM Sans,Arial,sans-serif;margin:0;padding:40px 20px;">
           <div style="max-width:480px;margin:0 auto;background:#0d1117;border:1px solid #1f2937;border-radius:16px;padding:40px;">
             <div style="text-align:center;margin-bottom:32px;">
               <img src="${cfg.logo}" width="64" height="64" style="display:block;margin:0 auto 12px;object-fit:contain;" alt="${cfg.name}" />
               <div style="font-size:20px;font-weight:700;color:#ffffff;">${cfg.name}</div>
-              <div style="font-size:13px;color:#6b7280;margin-top:4px;">${isFounder ? 'Founding member sign-in' : 'Demo access'}</div>
+              <div style="font-size:13px;color:#6b7280;margin-top:4px;">${isFounder ? 'Founding member sign-in' : isMember ? 'Portal sign-in' : 'Demo access'}</div>
             </div>
             <p style="color:#9ca3af;font-size:14px;margin-bottom:24px;text-align:center;">
-              Your ${isFounder ? 'sign-in' : 'verification'} code for ${clubName ? `<strong style="color:#fff">${clubName}</strong>` : isFounder ? 'your portal' : 'the demo'} is:
+              Your ${(isFounder || isMember) ? 'sign-in' : 'verification'} code for ${clubName ? `<strong style="color:#fff">${clubName}</strong>` : (isFounder || isMember) ? 'your portal' : 'the demo'} is:
             </p>
             <div style="background:#0a0b12;border:2px solid ${cfg.color}40;border-radius:12px;padding:24px;text-align:center;margin-bottom:24px;">
               <div style="font-size:40px;font-weight:800;letter-spacing:12px;color:${cfg.color};">${code}</div>
@@ -114,7 +119,9 @@ export async function POST(req: NextRequest) {
 
     // Notify Arron of new demo signup (fire and forget). Founders sign up
     // through the founding-member flow which has its own notifications.
-    if (process.env.RESEND_API_KEY && !isFounder) {
+    // Not for members either: a coach signing into their club's portal is not a
+    // new demo lead, and reporting them as one misreads the funnel.
+    if (process.env.RESEND_API_KEY && !isFounder && !isMember) {
       try {
         const { Resend: R2 } = await import('resend')
         const notifier = new R2(process.env.RESEND_API_KEY)

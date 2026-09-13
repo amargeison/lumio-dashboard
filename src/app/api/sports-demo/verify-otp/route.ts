@@ -85,17 +85,22 @@ export async function POST(req: NextRequest) {
     // An invited coach or parent signing into their portal. They are a real
     // account, not a demo lead — writing one would make identify-user greet them
     // as a demo user on their NEXT sign-in and send them to the wrong place.
-    const isMember = purpose === 'member'
+    // Set below from the membership table as well as the request — purpose is a
+    // hint from whichever page they used, and a coach can arrive by a page that
+    // does not know them.
+    let isMember = purpose === 'member'
 
     const normalisedEmail = email.toLowerCase()
 
     // Checked again here: somebody blocked between asking for a code and
     // entering it must not be let in on a code that was valid when issued.
     {
-      const { isEmailBlocked, BLOCKED_MESSAGE } = await import('@/lib/blocked-emails')
+      const { isEmailBlocked, BLOCKED_MESSAGE, isAcademyMember } = await import('@/lib/blocked-emails')
       if (await isEmailBlocked(normalisedEmail)) {
         return NextResponse.json({ error: BLOCKED_MESSAGE }, { status: 403 })
       }
+      // The authority on "is this a real member" is the membership table.
+      if (!isMember && await isAcademyMember(normalisedEmail)) isMember = true
     }
 
     // Dev bypass
