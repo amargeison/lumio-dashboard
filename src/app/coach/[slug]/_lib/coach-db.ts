@@ -66,6 +66,11 @@ export type CoachIdentity = {
   slug: string | null
   /** Has this coach set up their own kit list, or are they on the academy's? */
   equipmentOwn?: boolean
+  /** The signed-in coach's own name/photo, so the shell can greet the right person. */
+  displayName?: string | null
+  avatarUrl?: string | null
+  staffRole?: string | null
+  accreditation?: string | null
 }
 
 let _me: CoachIdentity | null = null
