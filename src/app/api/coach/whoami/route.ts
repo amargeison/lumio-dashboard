@@ -113,7 +113,13 @@ export async function GET() {
     // coach and fell back to the DEMO persona — which is how an invited coach
     // ended up being greeted as Rachel Adeyemi inside their own portal.
     displayName: staff?.name ?? null,
-    avatarUrl: staff?.avatar_url ?? null,
+    // A stored path only. Rows written before photos went to the avatars bucket
+    // hold a base64 JPEG inline, and this route runs on EVERY portal page load —
+    // returning one would drag a few hundred KB through the hot path, on a phone,
+    // on club wifi. Withheld rather than deleted: the full row is still served by
+    // /api/coach/my-profile, so the coach can see their photo and re-upload it,
+    // which quietly migrates them to the bucket.
+    avatarUrl: staff?.avatar_url?.startsWith('data:') ? null : (staff?.avatar_url ?? null),
     staffRole: staff?.role ?? null,
     accreditation: staff?.qualifications ?? null,
   })
