@@ -5,7 +5,7 @@
 // known to exist on sports_profiles, plus optional first players to coach_players.
 
 import { useState, useRef } from 'react'
-import { sb, currentCoachId } from '../_lib/coach-db'
+import { sb } from '../_lib/coach-db'
 import { CoachImport, IMPORT_TEMPLATE_URL } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
 import { setSettings, getSettings, ACCREDITATIONS } from '../_lib/settings-store'
@@ -85,7 +85,19 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
     if (!name.trim()) { setErr('Add your name'); setStep(1); return }
     setSaving(true); setErr('')
     try {
-      const uid = await currentCoachId()
+      // THE SIGNED-IN USER'S OWN ID, deliberately not currentCoachId().
+      //
+      // currentCoachId() answers "which academy am I working in", which for
+      // somebody who also holds a coach membership somewhere can be a DIFFERENT
+      // academy. This wizard is a head coach setting up their own academy, so
+      // the only correct answer is their own user id — and every row below is
+      // written with coach_id = auth.uid(), which is exactly what the row level
+      // security policy checks. Getting this wrong wrote rows nobody could own:
+      // the sports_profiles update silently matched zero rows and the first
+      // insert with a real policy on it failed with "new row violates row-level
+      // security policy for table coach_staff".
+      const { data: auth } = await sb().auth.getUser()
+      const uid = auth.user?.id
       if (!uid) throw new Error('Not signed in')
       const finalSlug = slug.trim() || slugify(academy)
       const update: Record<string, any> = {
@@ -114,7 +126,21 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       if (dbsExpiry) update.head_coach_dbs_expiry = dbsExpiry
       if (safeguarding) update.head_coach_safeguarding_date = safeguarding
       if (dpa) update.dpa_accepted_at = new Date().toISOString()
-      const { error } = await sb().from('sports_profiles').update(update).eq('id', uid)
+      // UPSERT, not update.
+      //
+      // An update against a row that does not exist matches nothing and reports
+      // no error — so a head coach who arrived without a sports_profiles row
+      // finished onboarding with their academy silently unsaved. Worse, they
+      // then had no coach profile for whoami to find, so it fell through to the
+      // membership branch and answered with somebody ELSE's academy. That is
+      // what "new row violates row-level security policy for table coach_staff"
+      // was: rows being written into an academy the writer does not own.
+      //
+      // sport is pinned to 'coach' because that is the flag whoami reads to
+      // decide somebody owns a coaching academy. Without it the row exists but
+      // is invisible to the very check it is meant to satisfy.
+      const { error } = await sb().from('sports_profiles')
+        .upsert({ id: uid, sport: 'coach', ...update }, { onConflict: 'id' })
       if (error) throw new Error(error.message)
 
       // The coaching team, if they added one. Written before anything else that
@@ -206,8 +232,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         setSettings({ primaryVenueId: venueId, syncedVenues: [...new Set([...(cur.syncedVenues || []), venueId])] })
         // Seed the live Court Planner venue too, so it's selectable for staff home venue etc.
         try {
-          const uid = await currentCoachId()
-          if (uid) await sb().from('coach_venues').insert({ coach_id: uid, name: homeCourt.trim(), contact_name: name.trim() || null, contact_phone: phone.trim() || null, contact_email: email.trim() || null, is_home: true })
+          await sb().from('coach_venues').insert({ coach_id: uid, name: homeCourt.trim(), contact_name: name.trim() || null, contact_phone: phone.trim() || null, contact_email: email.trim() || null, is_home: true })
         } catch { /* non-blocking */ }
       }
 
