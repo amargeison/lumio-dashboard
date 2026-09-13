@@ -36,7 +36,7 @@ import { CoachMobileShell } from './_components/CoachMobileShell'
 import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
 import { clearDemoSession, wipeDemoSurvivors, markDemoSignedOut } from '@/lib/demo-session/clear'
-import { useCoachStats, RACKET_STAGES } from './_lib/coach-db'
+import { useCoachStats, RACKET_STAGES, dbList, setPreviewStaff } from './_lib/coach-db'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags } from './_lib/feature-flags'
 
 // ── Lazy-loaded modules ─────────────────────────────────────────────────────
@@ -72,6 +72,7 @@ const StaffView = lazyNamed(() => import('./_components/StaffView'), 'StaffView'
 // Live (real-coach) views
 const LiveCoachDashboard = lazyNamed(() => import('./_components/LiveCoachDashboard'), 'LiveCoachDashboard')
 const CoachMyProfile = lazyNamed(() => import('./_components/CoachMyProfile'), 'CoachMyProfile')
+const CoachSettings = lazyNamed(() => import('./_components/CoachSettings'), 'CoachSettings')
 const LiveMessages = lazyNamed(() => import('./_components/LiveMessages'), 'LiveMessages')
 const LiveRoster = lazyNamed(() => import('./_components/LiveRoster'), 'LiveRoster')
 const LiveSessionPlanner = lazyNamed(() => import('./_components/LiveSessionPlanner'), 'LiveSessionPlanner')
@@ -369,6 +370,45 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // academy's name and the head's qualification on their own profile card.
   const [myIdentity, setMyIdentity] = useState<CoachIdentity | null>(null)
   const [profileDone, setProfileDone] = useState<boolean | null>(null)
+  // The academy's REAL coaches, for the head coach's "Switch view". The switcher
+  // used to offer one generic "Coach" that resolved to the demo's Rachel Adeyemi
+  // — on a live portal that is a person who does not exist, with a headshot and
+  // statistics belonging to nobody.
+  const [liveStaff, setLiveStaff] = useState<{ id: string; name: string; qualifications?: string | null; avatar_url?: string | null }[]>([])
+  const [viewStaffId, setViewStaffId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!isEmpty) return
+    let alive = true
+    dbList('coach_staff').then(rows => {
+      if (!alive) return
+      setLiveStaff((rows as Record<string, unknown>[])
+        .filter(r => !r.is_head)
+        .map(r => ({ id: String(r.id), name: String(r.name ?? ''), qualifications: (r.qualifications as string) ?? null, avatar_url: (r.avatar_url as string) ?? null })))
+    }).catch(() => {})
+    return () => { alive = false }
+  }, [isEmpty])
+  const viewStaff = viewStaffId ? liveStaff.find(c => c.id === viewStaffId) ?? null : null
+
+  // That coach's own numbers. Without this the card carried their face and the
+  // ACADEMY's totals underneath — a coach with two players appearing to have
+  // forty, which is worse than showing nothing.
+  const [viewStats, setViewStats] = useState<{ players: number; week: number } | null>(null)
+  useEffect(() => {
+    if (!viewStaffId) { setViewStats(null); return }
+    let alive = true
+    ;(async () => {
+      const [players, bookings] = await Promise.all([dbList('coach_players'), dbList('coach_bookings')])
+      if (!alive) return
+      const weekAgo = Date.now() - 7 * 86400000
+      setViewStats({
+        players: (players as Record<string, unknown>[]).filter(p => p.staff_id === viewStaffId).length,
+        week: (bookings as Record<string, unknown>[]).filter(b =>
+          b.staff_id === viewStaffId && b.status !== 'cancelled' &&
+          b.booking_date && new Date(String(b.booking_date)).getTime() > weekAgo).length,
+      })
+    })()
+    return () => { alive = false }
+  }, [viewStaffId])
   useEffect(() => {
     let alive = true
     currentIdentity().then(me => {
@@ -400,6 +440,10 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
     })
     return () => { alive = false }
   }, [])
+  // Mirror the previewed coach into the data layer, so "view as Freya" shows
+  // Freya's players rather than the whole academy's. Cleared on exit and on
+  // unmount — leaving it set would silently hide rows from the head coach.
+  useEffect(() => { setPreviewStaff(viewStaffId); return () => setPreviewStaff(null) }, [viewStaffId])
   // Mirror the role's coachId into the module-level scope the data views read.
   useEffect(() => { setScopeCoachId(coachIdForRole(role)); return () => setScopeCoachId(null) }, [role])
 
@@ -465,7 +509,10 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
 
   // impersonatedCoach names the coach the Coach role is viewing as, for the
   // "viewing as" banner.
-  const impersonatedCoach = role === 'coach' ? (coachById(coachIdForRole(role) ?? '')?.name ?? null) : null
+  const impersonatedCoach = role !== 'coach' ? null
+    // Live portal: whichever real coach was picked in the switcher.
+    : isEmpty ? (viewStaff?.name ?? null)
+    : (coachById(coachIdForRole(role) ?? '')?.name ?? null)
   // ─── Right-rail profile follows the ACTIVE role ───────────────────────────
   // The rail used to be hardwired to the head coach, so impersonating Rachel
   // left the page saying "Viewing as Rachel Adeyemi" while the rail still
@@ -477,6 +524,9 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // head-coach card — a live portal must never render Rachel.
   const railCoach = !isEmpty && role === 'coach' ? coachById(coachIdForRole(role) ?? '') : undefined
   const railStats = railCoach ? coachStats(railCoach.id) : null
+  // Live portal equivalent: the card follows the coach being viewed rather than
+  // staying on the head coach, which made "Viewing as Freya" sit above Arron's
+  // photo, qualification and numbers.
   const roleLabel = COACH_ROLES.find(r => r.id === role)?.label ?? 'Head Coach'
   // Real coach portal: Head Coach is the only view until data unlocks the others —
   // adding a staff member unlocks Coach; adding a player unlocks Student. The demo
@@ -501,9 +551,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // RoleSwitcher used to do before the switcher moved into the profile menu.)
   const changeRole = (roleId: string) => {
     if (isHeadUser === false) return   // an assistant cannot switch out of their own view
-    setRole(normalizeRole(roleId))
+    // "coach:<staff id>" — a live portal's switcher names real people, so the id
+    // carries WHICH coach as well as which role. normalizeRole only understands
+    // the bare role, so split it here rather than teaching it about staff ids.
+    const [base, staffId] = roleId.split(':')
+    setViewStaffId(base === 'coach' ? (staffId ?? null) : null)
+    setRole(normalizeRole(base))
     const s = getDemoSession('coach')
-    if (s) { try { saveDemoSession('coach', { ...s, role: roleId }) } catch { /* ignore */ } }
+    if (s) { try { saveDemoSession('coach', { ...s, role: base }) } catch { /* ignore */ } }
   }
   // THE profile control: identity + Switch view + Log out, in one bottom-left
   // block (see CoachProfileMenu). Switch view is offered only to a head coach
@@ -516,13 +571,27 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // impersonating anybody, so there is nothing to switch to and nothing to exit
   // back to — offering "Exit to Head Coach" to someone who is not the head coach
   // is both confusing and a lie about what they can do.
-  const switchableRoles = isHeadUser !== false && role === 'head' && availableRoles.length > 1 ? availableRoles : undefined
+  // On a live portal the "Coach" entry becomes one entry PER REAL COACH, named.
+  // "Switch to Coach" is meaningless in an academy with four of them, and it was
+  // the reason the generic entry had to resolve to a hardcoded demo person.
+  const switchableRoles = isHeadUser === false ? undefined
+    : isEmpty
+      ? (() => {
+          const head = availableRoles.find(r => r.id === 'head')
+          const student = availableRoles.find(r => r.id === 'student')
+          const coaches = liveStaff.map(c => ({ id: `coach:${c.id}`, label: c.name, icon: '🧑‍🏫', description: [c.qualifications, 'their players & sessions'].filter(Boolean).join(' — ') }))
+          const list = [...(head ? [head] : []), ...coaches, ...(student ? [student] : [])]
+          return list.length > 1 ? list : undefined
+        })()
+      : (role === 'head' && availableRoles.length > 1 ? availableRoles : undefined)
   const profileMenu = (variant: 'sidebar' | 'compact', avatarSize: number) => (
     <CoachProfileMenu
       T={T} accent={accent} variant={variant} expanded={expanded}
       avatar={<CoachAvatar size={avatarSize} />}
       coachName={coachName} roleLabel={roleLabel}
-      roles={switchableRoles} activeRole={role} onSelectRole={changeRole}
+      roles={switchableRoles}
+      activeRole={isEmpty && role === 'coach' && viewStaffId ? `coach:${viewStaffId}` : role}
+      onSelectRole={changeRole}
       onLogout={() => { void signOutCoach(isEmpty) }}
       logoutLabel={isEmpty ? 'Log out' : 'Exit demo'}
     />
@@ -564,7 +633,10 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'equipment':   return <LiveEquipment T={T} accent={accent} />
         case 'resources':   return <LiveResources T={T} accent={accent} density={density} />
         case 'messages':    return <LiveMessages T={T} accent={accent} onConfigure={() => setActive('settings')} />
-        case 'settings':    if (isHeadUser === false) return <CoachMyProfile T={T} accent={accent} mode="settings" />
+        // viewStaffId as well as isHeadUser: the head coach previewing a coach must
+        // see the COACH's settings, not their own academy page with a coach's name
+        // on the banner above it.
+        case 'settings':    if (isHeadUser === false || viewStaffId) return <CoachSettings T={T} accent={accent} onNavigate={setActive} />
                             return (
           <>
             <SettingsView T={T} accent={accent} density={density} demo={!isEmpty} />
@@ -786,7 +858,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
                 otherwise the account's own head coach (see railCoach above). */}
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, textAlign: 'center' }}>
               <div style={{ width: 72, margin: '0 auto' }}>
-                {myIdentity && !myIdentity.isHead && myIdentity.avatarUrl
+                {viewStaff
+                  ? (viewStaff.avatar_url
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={avatarSrc(viewStaff.avatar_url)} alt={viewStaff.name} width={72} height={72} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
+                      : <div style={{ width: 72, height: 72, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700 }}>
+                          {viewStaff.name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('')}
+                        </div>)
+                  : myIdentity && !myIdentity.isHead && myIdentity.avatarUrl
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={avatarSrc(myIdentity.avatarUrl)} alt={myIdentity.displayName || ''} width={72} height={72} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
                   : railCoach
@@ -802,8 +881,10 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
                 // a third case, and without it their own card showed the club's
                 // name and the head coach's qualification.
                 const asCoach = myIdentity && !myIdentity.isHead ? myIdentity : null
-                const name = asCoach ? (asCoach.displayName || coachName) : (railCoach ? railCoach.name : coachName)
-                const cert = asCoach ? asCoach.accreditation : (railCoach ? railCoach.accreditation : settings.cert)
+                // viewStaff wins: the head coach has explicitly asked to look
+                // through this person's eyes, so the card must be theirs.
+                const name = viewStaff ? viewStaff.name : asCoach ? (asCoach.displayName || coachName) : (railCoach ? railCoach.name : coachName)
+                const cert = viewStaff ? viewStaff.qualifications : asCoach ? asCoach.accreditation : (railCoach ? railCoach.accreditation : settings.cert)
                 return (
                   <>
                     <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{name}</div>
@@ -813,7 +894,13 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
                 )
               })()}
               <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
-                {railStats ? (
+                {viewStats ? (
+                  <>
+                    <RailStat T={T} label="Players" value={viewStats.players} />
+                    <RailStat T={T} label="Lessons/wk" value={viewStats.week} />
+                    <RailStat T={T} label="Retention" value="—" />
+                  </>
+                ) : railStats ? (
                   <>
                     {/* This coach's own week — retention is an academy-wide figure,
                         so utilisation (hours booked vs contracted) takes its slot. */}
