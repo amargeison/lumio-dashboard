@@ -128,7 +128,16 @@ export async function currentCoachId(): Promise<string | null> {
 }
 
 /** Clear the cached identity — call on sign-out. */
-export function forgetIdentity() { _me = null; _mePending = null; _problem = null; _problemMessage = null }
+export const IDENTITY_CHANGED = 'lumio-identity-changed'
+
+export function forgetIdentity() {
+  _me = null; _mePending = null; _problem = null; _problemMessage = null
+  // The portal shell holds the identity (name, photo) in React state, so
+  // clearing the cache alone repaints nothing until the next full load — which
+  // is why a coach's new photo appeared on the settings page and nowhere else
+  // until they reloaded.
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(IDENTITY_CHANGED))
+}
 
 // Tables where "which coach is this for" is a real question (migration 165).
 // Anything an assistant coach creates is theirs; the head coach creates rows for

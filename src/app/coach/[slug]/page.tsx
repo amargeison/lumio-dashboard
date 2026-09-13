@@ -31,7 +31,7 @@ import {
   normalizeRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole,
 } from './_lib/role-scope'
 import { coachById, coachStats } from './_lib/coaches-data'
-import { currentIdentity, identityProblem, identityMessage, type CoachIdentity } from './_lib/coach-db'
+import { currentIdentity, identityProblem, identityMessage, IDENTITY_CHANGED, type CoachIdentity } from './_lib/coach-db'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
@@ -471,6 +471,12 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       if (!head) setRole('coach')
     })
     return () => { alive = false }
+  }, [])
+  // Repaint when the coach changes their own photo or details.
+  useEffect(() => {
+    const onChange = () => { currentIdentity().then(me => { if (me) setMyIdentity(me) }) }
+    window.addEventListener(IDENTITY_CHANGED, onChange)
+    return () => window.removeEventListener(IDENTITY_CHANGED, onChange)
   }, [])
   // Mirror the previewed coach into the data layer, so "view as Freya" shows
   // Freya's players rather than the whole academy's. Cleared on exit and on
