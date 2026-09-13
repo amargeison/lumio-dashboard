@@ -84,6 +84,9 @@ export async function middleware(request: NextRequest) {
   const devPin = process.env.DEV_ACCESS_PIN
   if (!isProductionDomain && devPin) {
     const isExcluded = pathname === '/dev-login'
+      // /oxed is a public site preview shown to OxEd — no PIN, matching how it
+      // already behaves on the production domains (the gate is non-prod only).
+      || pathname === '/oxed' || pathname.startsWith('/oxed/')
       || pathname.startsWith('/api/')
       || pathname.startsWith('/_next/')
       || /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json|html|woff2?|ttf)$/i.test(pathname)
