@@ -130,12 +130,6 @@ export async function currentCoachId(): Promise<string | null> {
 /** Clear the cached identity — call on sign-out. */
 export function forgetIdentity() { _me = null; _mePending = null; _problem = null; _problemMessage = null }
 
-export async function dbList<T = any>(table: CoachTable): Promise<T[]> {
-  const { data, error } = await sb().from(table).select('*').order('created_at', { ascending: false })
-  if (error) { console.error('[coach-db] list', table, error.message); return [] }
-  return (data ?? []) as T[]
-}
-
 // Tables where "which coach is this for" is a real question (migration 165).
 // Anything an assistant coach creates is theirs; the head coach creates rows for
 // the academy, which is what a null staff_id means.
@@ -143,6 +137,34 @@ const ASSIGNABLE = new Set<CoachTable>([
   'coach_players', 'coach_bookings', 'coach_sessions', 'coach_session_plans',
   'coach_camps', 'coach_development', 'coach_attendance',
 ])
+
+// ── "View as coach" preview scope ───────────────────────────────────────────
+// When the HEAD COACH looks through a coach's eyes, the portal must show what
+// that coach would actually see. It is presentation only — the head coach's row
+// level security genuinely permits every row, so this is a filter, not a
+// boundary, and it is the reason a preview is not a substitute for signing in as
+// the coach to verify access.
+//
+// For a REAL coach nothing here is load-bearing: migration 166 means the rows
+// never leave the database in the first place.
+let _previewStaffId: string | null = null
+export function setPreviewStaff(id: string | null) {
+  if (_previewStaffId === id) return
+  _previewStaffId = id
+  invalidateCoachTable()   // cached rows were fetched under the previous scope
+}
+export function getPreviewStaff() { return _previewStaffId }
+
+export async function dbList<T = any>(table: CoachTable): Promise<T[]> {
+  let q = sb().from(table).select('*')
+  // Only the tables that carry an assignment. Venues, resources and the kit list
+  // are academy-wide by design, so filtering them would show the coach less than
+  // they really get.
+  if (_previewStaffId && ASSIGNABLE.has(table)) q = q.eq('staff_id', _previewStaffId)
+  const { data, error } = await q.order('created_at', { ascending: false })
+  if (error) { console.error('[coach-db] list', table, error.message); return [] }
+  return (data ?? []) as T[]
+}
 
 export async function dbInsert(table: CoachTable, row: Record<string, any>) {
   const me = await currentIdentity()
