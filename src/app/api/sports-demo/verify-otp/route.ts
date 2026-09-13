@@ -89,6 +89,15 @@ export async function POST(req: NextRequest) {
 
     const normalisedEmail = email.toLowerCase()
 
+    // Checked again here: somebody blocked between asking for a code and
+    // entering it must not be let in on a code that was valid when issued.
+    {
+      const { isEmailBlocked, BLOCKED_MESSAGE } = await import('@/lib/blocked-emails')
+      if (await isEmailBlocked(normalisedEmail)) {
+        return NextResponse.json({ error: BLOCKED_MESSAGE }, { status: 403 })
+      }
+    }
+
     // Dev bypass
     const isDev = process.env.NODE_ENV !== 'production' ||
       code === process.env.DEV_ACCESS_PIN ||

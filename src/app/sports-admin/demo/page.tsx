@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { FlaskConical, Clock, Trophy, Layers, Eye, Trash2 } from 'lucide-react'
+import { FlaskConical, Clock, Trophy, Layers, Eye, Trash2, Ban } from 'lucide-react'
 
 const SE: Record<string, string> = { tennis:'🎾', golf:'⛳', darts:'🎯', boxing:'🥊', cricket:'🏏', rugby:'🏉', football:'⚽', nonleague:'⚽', grassroots:'⚽', womens:'⚽', coach:'🎾' }
 function getToken() { return typeof window !== 'undefined' ? localStorage.getItem('sports_admin_token') || '' : '' }
@@ -38,18 +38,36 @@ export default function SportsAdminDemo() {
   // because "delete" on an admin screen usually means something far heavier.
   const [busy, setBusy] = useState('')
   const handleDelete = async (l: Lead) => {
-    if (!confirm(`Remove ${l.email} from the ${l.sport} demo signups?\n\nThis only clears the lead record — their sign-in and any real portal they own are left alone.`)) return
+    if (!confirm(`Remove ${l.email} from the ${l.sport} demo signups?\n\nThis only tidies this list. It does NOT stop them signing in — use Block for that.`)) return
+    await run(l, false)
+  }
+
+  // Block is the one that actually keeps somebody out. Worth spelling out what it
+  // does, because "delete the account" is the intuition and deleting an account
+  // achieves nothing here — sign-up is self-service, so the next code recreates it.
+  const handleBlock = async (l: Lead) => {
+    if (!confirm(`Block ${l.email}?\n\n• They can no longer request or use a sign-in code — on any sport\n• Their sign-in account is deleted and any live session ends\n• Every demo lead for this address is removed\n\nSigning up again with this address will not work. Continue?`)) return
+    const reason = prompt('Reason (optional — for your own records):') ?? ''
+    await run(l, true, reason)
+  }
+
+  const run = async (l: Lead, block: boolean, reason?: string) => {
     const k = l.email + l.sport
     setBusy(k)
     try {
       const res = await fetch('/api/sports-admin/demo-leads', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json', 'x-admin-token': getToken() },
-        body: JSON.stringify({ email: l.email, sport: l.sport }),
+        body: JSON.stringify({ email: l.email, sport: l.sport, block, reason }),
       })
-      if (!res.ok) { alert('Delete failed — check the console'); return }
-      setLeads(prev => prev.filter(x => !(x.email === l.email && x.sport === l.sport)))
-    } catch { alert('Delete failed — check the console') }
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { alert(d.error || 'Failed — check the console'); return }
+      // A block clears every sport for that address, not just this row.
+      setLeads(prev => prev.filter(x => block ? x.email !== l.email : !(x.email === l.email && x.sport === l.sport)))
+      if (block && d.authDeleted === false) {
+        alert(`${l.email} is blocked and can no longer sign in.\n\nNote: no sign-in account was found to delete — they had not signed in yet, or it was already removed. The block still applies.`)
+      }
+    } catch { alert('Failed — check the console') }
     finally { setBusy('') }
   }
 
@@ -108,10 +126,16 @@ export default function SportsAdminDemo() {
                         <Eye size={12} /> View demo
                       </button>
                       <button onClick={() => handleDelete(l)} disabled={busy === l.email + l.sport}
-                        title={`Remove ${l.email} from demo signups`}
+                        title={`Remove ${l.email} from this list — does not stop them signing in`}
                         className="inline-flex items-center justify-center p-1.5 rounded-lg transition-colors hover:bg-white/5"
-                        style={{ color: '#EF4444', border: '1px solid rgba(239,68,68,0.3)', opacity: busy === l.email + l.sport ? 0.5 : 1 }}>
+                        style={{ color: '#9CA3AF', border: '1px solid #1F2937', opacity: busy === l.email + l.sport ? 0.5 : 1 }}>
                         <Trash2 size={13} />
+                      </button>
+                      <button onClick={() => handleBlock(l)} disabled={busy === l.email + l.sport}
+                        title={`Block ${l.email} — no further sign-in, on any sport`}
+                        className="inline-flex items-center justify-center p-1.5 rounded-lg transition-colors hover:bg-white/5"
+                        style={{ color: '#EF4444', border: '1px solid rgba(239,68,68,0.35)', opacity: busy === l.email + l.sport ? 0.5 : 1 }}>
+                        <Ban size={13} />
                       </button>
                     </div>
                   </td>

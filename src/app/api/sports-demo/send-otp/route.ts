@@ -18,6 +18,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Barred addresses get no code. Checked here rather than at verify so a
+    // blocked person never receives an email from us at all.
+    const { isEmailBlocked, BLOCKED_MESSAGE } = await import('@/lib/blocked-emails')
+    if (await isEmailBlocked(email)) {
+      return NextResponse.json({ error: BLOCKED_MESSAGE }, { status: 403 })
+    }
+
     // Generate 6-digit OTP (dev always returns 000000 for bypass)
     const code = process.env.NODE_ENV !== 'production'
       ? '000000'
