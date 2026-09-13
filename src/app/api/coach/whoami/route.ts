@@ -95,7 +95,9 @@ export async function GET() {
 
   const [{ data: academy }, { data: staff }] = await Promise.all([
     admin.from('sports_profiles').select('brand_name, portal_slug').eq('id', m.academy_id).maybeSingle(),
-    admin.from('coach_staff').select('equipment_own').eq('id', m.staff_id).maybeSingle(),
+    admin.from('coach_staff')
+      .select('equipment_own, name, avatar_url, role, qualifications')
+      .eq('id', m.staff_id).maybeSingle(),
   ])
 
   return NextResponse.json({
@@ -107,5 +109,12 @@ export async function GET() {
     slug: academy?.portal_slug ?? null,
     // Have they set up their own kit list, or are they still on the club's?
     equipmentOwn: !!staff?.equipment_own,
+    // Who they actually are. The portal shell had nothing to show for a signed-in
+    // coach and fell back to the DEMO persona — which is how an invited coach
+    // ended up being greeted as Rachel Adeyemi inside their own portal.
+    displayName: staff?.name ?? null,
+    avatarUrl: staff?.avatar_url ?? null,
+    staffRole: staff?.role ?? null,
+    accreditation: staff?.qualifications ?? null,
   })
 }

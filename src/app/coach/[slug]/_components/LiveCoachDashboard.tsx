@@ -11,6 +11,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { dbList, dbInsert, dbUpdate, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 import { EmptyCoachDashboard } from './EmptyCoachDashboard'
+import { EmptyCoachHome } from './EmptyCoachHome'
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 import { PayModal } from './LivePayments'
 import { avatarSrc } from '@/lib/avatar'
@@ -21,7 +22,7 @@ const fmtDate = (d?: string) => { if (!d) return ''; try { return new Date(d).to
 // WMO weather code → short label (Open-Meteo current weather).
 const wmo = (c: number): string => c === 0 ? 'clear' : c <= 3 ? 'cloudy' : c <= 48 ? 'fog' : c <= 67 ? 'rain' : c <= 77 ? 'snow' : c <= 82 ? 'showers' : c <= 86 ? 'snow' : 'storms'
 
-export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void }) {
+export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard, asCoach }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void; asCoach?: { name: string; profileDone: boolean } | null }) {
   const profile = useCoachProfile()
   const [d, setD] = useState<{ players: any[]; bookings: any[]; lessons: any[]; payments: any[]; attendance: any[]; skills: any[]; messages: any[]; equipment: any[]; staff: any[]; venues: any[]; loading: boolean }>({ players: [], bookings: [], lessons: [], payments: [], attendance: [], skills: [], messages: [], equipment: [], staff: [], venues: [], loading: true })
   const [weather, setWeather] = useState<{ temp: number; desc: string; wind: number } | null>(null)
@@ -70,6 +71,9 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   if (d.loading) return <div style={{ fontFamily: FONT, color: T.text3, fontSize: 13, padding: '60px 0', textAlign: 'center' }}>Loading your portal…</div>
 
   const total = d.players.length + d.bookings.length + d.lessons.length + d.payments.length
+  // An assistant coach gets a different empty state: the head coach's setup grid
+  // is a list of things they cannot do.
+  if (total === 0 && asCoach) return <EmptyCoachHome T={T} accent={accent} coachName={asCoach.name} clubName={clubName} onNavigate={onNavigate} profileDone={asCoach.profileDone} />
   if (total === 0) return <EmptyCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={onNavigate} onStartWizard={onStartWizard} />
 
   const today = new Date().toLocaleDateString('en-CA') // local YYYY-MM-DD

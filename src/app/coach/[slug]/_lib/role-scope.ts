@@ -37,7 +37,10 @@ export const COACH_VIEW_COACH_ID = 'rachel'
 // Equipment is NOT hidden: migration 168 gives each coach their own kit list,
 // which is genuinely theirs to edit. Everything left here is the academy's —
 // money, config, other people's compliance records.
-export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues', 'payments', 'settings']
+// Settings is NOT hidden: a coach gets their OWN settings page (CoachMyProfile)
+// rather than the academy's — photo, accreditation, DBS, safeguarding. Hiding it
+// left them with no way to add a photo or record a DBS number at all.
+export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues', 'payments']
 
 // Normalise whatever the session carries (may be a legacy role like
 // 'assistant'/'manager', or undefined) to one of the three view roles.

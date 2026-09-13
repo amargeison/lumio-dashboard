@@ -156,7 +156,10 @@ export async function POST(req: NextRequest) {
           const priorMeta = (linkUser.app_metadata ?? {}) as Record<string, unknown>
           const priorRole = typeof priorMeta.role === 'string' ? priorMeta.role : null
           if (priorRole === 'founder') isFounder = true
-          if (priorRole !== 'founder' && !isFounder) {
+          // …and never for a member. Writing role:'demo' onto an invited coach's
+          // auth user marks a real account as a demo one, which then steers
+          // identify-user down the demo path on their NEXT sign-in.
+          if (priorRole !== 'founder' && !isFounder && !isMember) {
             const nowIso = new Date().toISOString()
             const nextMeta: Record<string, unknown> = {
               ...priorMeta,
@@ -265,7 +268,10 @@ export async function POST(req: NextRequest) {
     }
     // Demo welcome email — founders already received their founding-member
     // welcome from create-profile, so don't double-send.
-    if (process.env.RESEND_API_KEY && !isFounder) {
+    // !isMember as well as !isFounder: an invited coach never asked to see the
+    // demo, and telling them "your demo is ready" right after their head coach
+    // gave them a real login is confusing and looks like a mix-up.
+    if (process.env.RESEND_API_KEY && !isFounder && !isMember) {
       try {
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
@@ -280,9 +286,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Internal signup notification to support — fires for EVERY demo and founding
+    // Internal signup notification to support — fires for every demo and founding
     // signup (both come through this route) so the team sees who's coming in.
-    if (process.env.RESEND_API_KEY) {
+    // NOT for members: an invited coach signing into their club's portal is not a
+    // new lead, and logging them as "New Demo signup" misreports the funnel.
+    if (process.env.RESEND_API_KEY && !isMember) {
       try {
         const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
         const kind = isFounder ? 'Founding access' : 'Demo'

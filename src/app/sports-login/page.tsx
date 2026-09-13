@@ -97,7 +97,7 @@ function SportsLoginForm() {
         // Supabase's own email was sending a link while the page asked for a code.
         const otpRes = await fetch('/api/sports-demo/send-otp', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), sport: 'coach', clubName: data.clubName || undefined }),
+          body: JSON.stringify({ email: email.trim(), sport: 'coach', clubName: data.clubName || undefined, purpose: 'member' }),
         })
         const otpData = await otpRes.json().catch(() => ({}))
         if (!otpRes.ok || otpData.error) throw new Error(otpData.error || 'Failed to send code')

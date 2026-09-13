@@ -31,7 +31,7 @@ import {
   normalizeRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole,
 } from './_lib/role-scope'
 import { coachById, coachStats } from './_lib/coaches-data'
-import { currentIdentity, identityProblem, identityMessage } from './_lib/coach-db'
+import { currentIdentity, identityProblem, identityMessage, type CoachIdentity } from './_lib/coach-db'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
@@ -71,6 +71,7 @@ const HeatmapsView = lazyNamed(() => import('./_components/CoachHeatmaps'), 'Hea
 const StaffView = lazyNamed(() => import('./_components/StaffView'), 'StaffView')
 // Live (real-coach) views
 const LiveCoachDashboard = lazyNamed(() => import('./_components/LiveCoachDashboard'), 'LiveCoachDashboard')
+const CoachMyProfile = lazyNamed(() => import('./_components/CoachMyProfile'), 'CoachMyProfile')
 const LiveMessages = lazyNamed(() => import('./_components/LiveMessages'), 'LiveMessages')
 const LiveRoster = lazyNamed(() => import('./_components/LiveRoster'), 'LiveRoster')
 const LiveSessionPlanner = lazyNamed(() => import('./_components/LiveSessionPlanner'), 'LiveSessionPlanner')
@@ -193,6 +194,36 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
               setupType: profile.setup_type ?? null,
               setupComplete: !!profile.setup_complete,
             })
+          } else {
+            // An INVITED COACH. They own no academy, so they have no
+            // sports_profiles row at all — and this branch used to end here,
+            // dropping them through to the public demo gate. That gate asked for
+            // their email a second time and then let them in wearing a demo
+            // persona, which is why a signed-in coach was greeted as the demo
+            // coach and handed the demo view-switcher.
+            //
+            // whoami is the same question asked of the right table.
+            const me = await currentIdentity()
+            if (me && !me.isHead) {
+              setAuthSession({
+                email: user.email ?? '',
+                userName: me.displayName ?? '',
+                clubName: me.brandName ?? '',
+                role: 'coach',
+                photoDataUrl: me.avatarUrl ?? null,
+                logoDataUrl: null,
+                sport: 'coach',
+                verifiedAt: new Date().toISOString(),
+                isDemoShell: false,
+                enabledFeatures: [],
+                nickname: null,
+                // A coach never owns the academy's setup, so these must not put
+                // them behind the head coach's setup-pending lock.
+                onboardingComplete: true,
+                setupType: null,
+                setupComplete: true,
+              })
+            }
           }
         }
       } catch { /* fall through to demo gate */ } finally {
@@ -333,6 +364,11 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const [isHeadUser, setIsHeadUser] = useState<boolean | null>(null)
   // Set when somebody is signed in but whoami could not place them.
   const [accessProblem, setAccessProblem] = useState<string | null>(null)
+  // The signed-in coach's own record — name, photo, accreditation. The rail used
+  // to read these from the head coach's Settings, which is why a coach saw the
+  // academy's name and the head's qualification on their own profile card.
+  const [myIdentity, setMyIdentity] = useState<CoachIdentity | null>(null)
+  const [profileDone, setProfileDone] = useState<boolean | null>(null)
   useEffect(() => {
     let alive = true
     currentIdentity().then(me => {
@@ -345,6 +381,16 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       // is a worse experience than being told plainly.
       const head = me ? me.isHead : identityProblem() === 'anon'
       setIsHeadUser(head)
+      setMyIdentity(me)
+      // Has this coach been through their own first-run setup? Asked of the
+      // server rather than guessed from whether a photo exists, so a coach who
+      // deliberately skipped it is not asked again at every sign-in.
+      if (me && !me.isHead) {
+        fetch('/api/coach/my-profile')
+          .then(r => r.ok ? r.json() : null)
+          .then(j => { if (alive) setProfileDone(j?.staff ? !!j.staff.profile_complete : true) })
+          .catch(() => { if (alive) setProfileDone(true) })
+      }
       if (!me) setAccessProblem(identityProblem() === 'anon' ? null : (identityMessage() || 'We could not work out your access to this academy.'))
       // An assistant coach is locked to the coach view. This is presentation
       // only — row level security is what actually stops them reading anything
@@ -466,7 +512,11 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // session on a shared club device. isEmpty — a real academy slug — is the
   // live/demo switch for signOutCoach, so it holds whether the coach arrived on
   // a pre-existing Supabase session or by signing in through the gate.
-  const switchableRoles = role === 'head' && availableRoles.length > 1 ? availableRoles : undefined
+  // isHeadUser === false means a real signed-in assistant coach. They are not
+  // impersonating anybody, so there is nothing to switch to and nothing to exit
+  // back to — offering "Exit to Head Coach" to someone who is not the head coach
+  // is both confusing and a lie about what they can do.
+  const switchableRoles = isHeadUser !== false && role === 'head' && availableRoles.length > 1 ? availableRoles : undefined
   const profileMenu = (variant: 'sidebar' | 'compact', avatarSize: number) => (
     <CoachProfileMenu
       T={T} accent={accent} variant={variant} expanded={expanded}
@@ -477,7 +527,10 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       logoutLabel={isEmpty ? 'Log out' : 'Exit demo'}
     />
   )
-  const ViewingAsBanner = role === 'head' ? null : (
+  // Shown only when the ACADEMY OWNER is looking through somebody else's eyes.
+  // isHeadUser starts null while whoami resolves, and null is not true, so the
+  // banner stays hidden until we know — no orange flash for a real coach.
+  const ViewingAsBanner = (isHeadUser !== true || role === 'head') ? null : (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 24px', fontSize: 12, fontWeight: 600, background: 'rgba(245,158,11,0.14)', color: '#B45309', borderBottom: '1px solid rgba(245,158,11,0.3)', flexShrink: 0 }}>
       <span style={{ fontSize: 13 }}>👁</span>
       <span>Viewing as {roleLabel}{impersonatedCoach ? ` — ${impersonatedCoach}` : ''}</span>
@@ -511,12 +564,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'equipment':   return <LiveEquipment T={T} accent={accent} />
         case 'resources':   return <LiveResources T={T} accent={accent} density={density} />
         case 'messages':    return <LiveMessages T={T} accent={accent} onConfigure={() => setActive('settings')} />
-        case 'settings':    return (
+        case 'settings':    if (isHeadUser === false) return <CoachMyProfile T={T} accent={accent} mode="settings" />
+                            return (
           <>
             <SettingsView T={T} accent={accent} density={density} demo={!isEmpty} />
           </>
         )
-        case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)} />
+        case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)}
+          asCoach={isHeadUser === false ? { name: myIdentity?.displayName || coachName, profileDone: profileDone !== false } : null} />
       }
       const activeItem = COACH_SIDEBAR.find(i => i.id === active)
       const title = (activeItem ? navLabel(activeItem) : null) ?? 'This section'
@@ -695,6 +750,16 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       {/* main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: '100vh' }}>
         {ViewingAsBanner}
+        {/* First sign-in: a coach sets up their own photo, accreditation and DBS.
+            Shown once — profile_complete records that they have seen it, so a
+            coach with no DBS yet is not asked again every time they sign in. */}
+        {isHeadUser === false && profileDone === false && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(4,6,12,0.86)', zIndex: 9998, overflowY: 'auto', display: 'flex', justifyContent: 'center', padding: '6vh 16px 40px' }}>
+            <div style={{ width: '100%', maxWidth: 680, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 18, padding: 30, height: 'fit-content' }}>
+              <CoachMyProfile T={T} accent={accent} mode="wizard" onDone={() => setProfileDone(true)} />
+            </div>
+          </div>
+        )}
         {accessProblem && (
           // Said plainly, and it names the person who can fix it. The alternative
           // was an apparently-working portal with nothing in it, which reads as
@@ -721,15 +786,32 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
                 otherwise the account's own head coach (see railCoach above). */}
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, textAlign: 'center' }}>
               <div style={{ width: 72, margin: '0 auto' }}>
-                {railCoach
+                {myIdentity && !myIdentity.isHead && myIdentity.avatarUrl
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={avatarSrc(myIdentity.avatarUrl)} alt={myIdentity.displayName || ''} width={72} height={72} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
+                  : railCoach
                   // Same avatar source as the Staff page, so a coach's face is the
                   // same one wherever they appear in the demo.
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={demoAvatarUrl(railCoach.name)} alt={railCoach.name} width={72} height={72} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
                   : <CoachAvatar size={72} />}
               </div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{railCoach ? railCoach.name : coachName}</div>
-              {(railCoach ? railCoach.accreditation : settings.cert) && <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{railCoach ? railCoach.accreditation : settings.cert}</div>}
+              {(() => {
+                // A signed-in coach is neither the demo's impersonated coach nor
+                // the head coach whose name and cert live in Settings — they are
+                // a third case, and without it their own card showed the club's
+                // name and the head coach's qualification.
+                const asCoach = myIdentity && !myIdentity.isHead ? myIdentity : null
+                const name = asCoach ? (asCoach.displayName || coachName) : (railCoach ? railCoach.name : coachName)
+                const cert = asCoach ? asCoach.accreditation : (railCoach ? railCoach.accreditation : settings.cert)
+                return (
+                  <>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{name}</div>
+                    {cert && <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{cert}</div>}
+                    {asCoach && myIdentity?.brandName && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 4, opacity: 0.8 }}>{myIdentity.brandName}</div>}
+                  </>
+                )
+              })()}
               <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
                 {railStats ? (
                   <>
