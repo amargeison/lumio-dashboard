@@ -59,17 +59,61 @@ export async function POST(req: NextRequest) {
       app_metadata: { role: 'founder', sport },
     })
 
+    // An existing address is not necessarily a mistake.
+    //
+    //   · Already has a coach profile  → they have an account; send them to sign in.
+    //   · Auth user but NO profile     → adopt it. This is the coach who was
+    //     invited to somebody else's academy (which created their auth user) and
+    //     is now starting their own, and the demo lead who later signs up
+    //     properly. Refusing them meant the only way forward was a second email
+    //     address, which then splits one person across two accounts for ever.
+    let userId: string
     if (authError || !authData?.user) {
-      return NextResponse.json(
-        { error: authError?.message ?? 'Could not create account.' },
-        { status: 400 },
-      )
+      const already = /already been registered|already exists|duplicate/i.test(authError?.message || '')
+      if (!already) {
+        // Not a conflict — a real failure. "fetch failed" here means this server
+        // could not reach Supabase at all, which is worth saying plainly rather
+        // than dressing up as a signup problem.
+        const raw = authError?.message ?? 'Could not create account.'
+        const network = /fetch failed|ECONNREFUSED|ENOTFOUND|timeout/i.test(raw)
+        console.error('[sports-auth] createUser failed:', raw)
+        return NextResponse.json({
+          error: network
+            ? 'We could not reach our servers just now. Please try again in a moment.'
+            : raw,
+        }, { status: network ? 503 : 400 })
+      }
+
+      const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 })
+      const existing = list?.users?.find(u => (u.email || '').toLowerCase() === email.toLowerCase())
+      if (!existing) {
+        return NextResponse.json({ error: 'That email is already registered. Please sign in instead.' }, { status: 409 })
+      }
+
+      const { data: prior } = await supabase.from('sports_profiles')
+        .select('id, sport').eq('id', existing.id).maybeSingle()
+      if (prior) {
+        return NextResponse.json({
+          error: 'You already have a Lumio account with this email. Please sign in instead.',
+        }, { status: 409 })
+      }
+
+      // Adopt them. NOT assigned to createdUserId — the rollback below deletes
+      // that id, and deleting a pre-existing user because a later step failed
+      // would destroy an account we did not create.
+      userId = existing.id
+      await supabase.auth.admin.updateUserById(existing.id, {
+        user_metadata: { ...(existing.user_metadata ?? {}), display_name: displayName, sport, plan: 'founding' },
+        app_metadata: { ...(existing.app_metadata ?? {}), role: 'founder', sport },
+      }).catch(() => {})
+    } else {
+      userId = authData.user.id
+      createdUserId = userId
     }
-    createdUserId = authData.user.id
 
     // 2. Insert the sports profile row
     const { error: profileError } = await supabase.from('sports_profiles').insert({
-      id: authData.user.id,
+      id: userId,
       sport,
       display_name: displayName,
       nickname: nickname ?? null,
@@ -83,10 +127,15 @@ export async function POST(req: NextRequest) {
     if (profileError) {
       // Don't leave a zombie auth user behind
       console.error('[sports-auth] Profile insert failed, rolling back auth user:', profileError)
-      try {
-        await supabase.auth.admin.deleteUser(authData.user.id)
-      } catch (cleanupErr) {
-        console.error('[sports-auth] Could not delete orphan auth user:', cleanupErr)
+      // Only an auth user WE created. Adopting an existing one and then deleting
+      // it because the profile insert failed would take out an account that was
+      // working fine before this request.
+      if (createdUserId) {
+        try {
+          await supabase.auth.admin.deleteUser(createdUserId)
+        } catch (cleanupErr) {
+          console.error('[sports-auth] Could not delete orphan auth user:', cleanupErr)
+        }
       }
       return NextResponse.json(
         {
@@ -116,7 +165,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      userId: authData.user.id,
+      userId,
       sport,
       redirectTo,
     })

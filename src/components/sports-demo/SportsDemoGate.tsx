@@ -754,7 +754,7 @@ export default function SportsDemoGate({
     try {
       const res = await fetch('/api/sports-demo/send-otp', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, sport, clubName: defaultClubName }),
+        body: JSON.stringify({ email, sport, clubName: defaultClubName, ...(liveSignIn ? { purpose: 'member' } : {}) }),
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
@@ -777,7 +777,12 @@ export default function SportsDemoGate({
       }
       const res = await fetch('/api/sports-demo/verify-otp', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code, sport, slug: postSlug }),
+        // liveSignIn means this gate is standing in front of a REAL academy
+        // portal, so anyone reaching it is a member signing in — not a visitor
+        // trying the demo. Without this they are logged as a demo lead, sent the
+        // "your demo is ready" email, and stamped role:'demo' on their auth user,
+        // which then mis-steers their NEXT sign-in.
+        body: JSON.stringify({ email, code, sport, slug: postSlug, ...(liveSignIn ? { purpose: 'member' } : {}) }),
       })
       const data = await res.json()
       if (!data.verified && !data.success) throw new Error(data.error ?? 'Invalid code')
