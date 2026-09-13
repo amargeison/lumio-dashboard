@@ -160,6 +160,9 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
   // has always dropped a founder straight into the working portal, so completing
   // it must never leave them with less access — they can always continue through.
   const [enterAnyway, setEnterAnyway] = useState(false)
+  // Signed in, but whoami will not place them here. Held separately from
+  // authSession so the gate can be skipped entirely rather than re-prompting.
+  const [signedInDenied, setSignedInDenied] = useState<{ email: string; reason: string } | null>(null)
 
   useEffect(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -205,7 +208,17 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
             //
             // whoami is the same question asked of the right table.
             const me = await currentIdentity()
-            if (me && !me.isHead) {
+            if (!me) {
+              // Signed in, but we cannot place them in this academy. DO NOT fall
+              // through to the gate: the gate asks for their email, signs them
+              // in again, lands them back here, and denies them again — a loop
+              // with no exit, which is what a coach hit after following the
+              // invite. Better to stop and say why.
+              setSignedInDenied({
+                email: user.email ?? '',
+                reason: identityMessage() || 'We could not work out your access to this academy.',
+              })
+            } else if (!me.isHead) {
               setAuthSession({
                 email: user.email ?? '',
                 userName: me.displayName ?? '',
@@ -249,6 +262,25 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
   }
 
   if (isEmpty && authSession) return <CoachPortalInner session={authSession} isEmpty={isEmpty} slugClubName={slugClubName} />
+
+  // Dead end rather than a loop. Signing in again cannot fix this, so do not
+  // offer it as though it could — name the problem and who resolves it.
+  if (isEmpty && signedInDenied) return (
+    <div style={{ minHeight: '100vh', background: '#07080F', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ maxWidth: 460, width: '100%', background: '#0d1117', border: '1px solid #1F2937', borderRadius: 18, padding: 30, textAlign: 'center' }}>
+        <img src="/tennis_coach_logo.png" alt="Lumio Tennis Coach" style={{ height: 44, objectFit: 'contain', margin: '0 auto 20px', display: 'block' }} />
+        <h1 style={{ color: '#fff', fontSize: 19, fontWeight: 800, margin: '0 0 10px' }}>You&rsquo;re signed in, but not set up here yet</h1>
+        <p style={{ color: '#9CA3AF', fontSize: 13.5, lineHeight: 1.7, margin: '0 0 6px' }}>{signedInDenied.reason}</p>
+        <p style={{ color: '#6B7280', fontSize: 12.5, lineHeight: 1.7, margin: '0 0 22px' }}>
+          Signed in as <strong style={{ color: '#D1D5DB' }}>{signedInDenied.email}</strong>. Signing in again won&rsquo;t change this &mdash; your head coach needs to finish adding you, then it&rsquo;ll work straight away.
+        </p>
+        <button onClick={() => { void signOutCoach(true) }}
+          style={{ appearance: 'none', border: '1px solid #1F2937', background: 'transparent', color: '#9CA3AF', borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          Sign out
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <SportsDemoGate
