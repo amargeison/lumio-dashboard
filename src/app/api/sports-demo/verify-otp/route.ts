@@ -154,10 +154,37 @@ export async function POST(req: NextRequest) {
       console.error('[sports-demo/verify-otp] SUPABASE_SERVICE_ROLE_KEY missing — cannot provision demo user')
     } else {
       try {
-        const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        let { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
           type: 'magiclink',
           email: normalisedEmail,
         })
+
+        // A magic link can only be generated for a user that EXISTS. Depending on
+        // the Supabase version, a first-ever sign-in either auto-creates them or
+        // fails with "user not found" — and when it fails, no session cookie is
+        // minted, the portal sees nobody signed in, and the person is asked for
+        // their email a second time. The second attempt then works, because the
+        // first one created the user on its way past.
+        //
+        // That is the two-round sign-in loop. Create the user explicitly and
+        // retry, so the FIRST attempt lands.
+        if (linkErr || !linkData?.user) {
+          console.warn('[sports-demo/verify-otp] generateLink miss, creating user:', linkErr?.message)
+          const { error: createErr } = await admin.auth.admin.createUser({
+            email: normalisedEmail,
+            email_confirm: true,   // the OTP they just passed IS the verification
+          })
+          // "already registered" is fine — it means a parallel request won the
+          // race, and the retry below will find them.
+          if (createErr && !/already|registered|exists/i.test(createErr.message)) {
+            console.error('[sports-demo/verify-otp] createUser failed:', createErr.message)
+          }
+          ;({ data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+            type: 'magiclink',
+            email: normalisedEmail,
+          }))
+        }
+
         if (linkErr || !linkData?.properties?.hashed_token || !linkData?.user) {
           console.error('[sports-demo/verify-otp] generateLink failed:', linkErr)
         } else {
@@ -211,6 +238,10 @@ export async function POST(req: NextRequest) {
           })
           if (!verifyErr) sessionMinted = true
           else console.error('[sports-demo/verify-otp] verifyOtp session mint failed:', verifyErr)
+          // One decisive line per sign-in. If a person is ever asked for their
+          // email twice again, this says immediately whether the cookie was
+          // minted (a client problem) or not (a server one).
+          console.log(`[verify-otp] ${normalisedEmail} member=${isMember} founder=${isFounder} sessionMinted=${sessionMinted}`)
         }
       } catch (provisionErr) {
         // Non-fatal — OTP flow succeeds, the client still gets the demo
