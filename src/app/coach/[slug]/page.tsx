@@ -600,9 +600,17 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
     if (role === 'student' && liveStats.players === 0) { if (isHeadUser !== false) setRole('head') }
   }, [isEmpty, role, liveStats.loading, liveStats.staff, liveStats.players])
   // Turning the student app off while viewing it must not strand the coach there.
+  //
+  // LIVE PORTALS ONLY. On the demo this fired the instant Student was selected —
+  // settings.studentApp is false there, inherited from a live portal through the
+  // shared localStorage bucket — so the role was set and snapped straight back to
+  // head. From the outside: clicking Student did nothing at all. The demo offers
+  // all three views unconditionally (see availableRoles), so the guard that can
+  // withdraw one has to be scoped the same way.
   useEffect(() => {
+    if (!isEmpty) return
     if (role === 'student' && !settings.studentApp) { if (isHeadUser !== false) setRole('head') }
-  }, [role, settings.studentApp])
+  }, [isEmpty, role, settings.studentApp])
   // Switching view persists back into the demo session blob — the same key the
   // gate restores from — so the choice survives a reload. (This is what the shared
   // RoleSwitcher used to do before the switcher moved into the profile menu.)
