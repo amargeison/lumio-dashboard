@@ -56,6 +56,15 @@ function write(flags: FeatureFlags) {
   window.dispatchEvent(new CustomEvent(EVT))
 }
 
+// The DEMO's flags. Fixed, not read from storage.
+//
+// Feature flags live in one localStorage bucket per browser, shared with every
+// portal on the origin. So opening a live academy on Pro Lite quietly switched
+// Video, Audio and Effort & Rewards OFF in the demo too — and the demo is the
+// one place that must always show the whole product, because the coach looking
+// at it has not chosen a plan yet.
+export const DEMO_FLAGS: FeatureFlags = { effort: true, video: true, audio: true, racket: true }
+
 export function getFlags(fallback: TierKey = 'elite'): FeatureFlags { return read(fallback) }
 export function setFlag(key: FeatureKey, on: boolean) { write({ ...read(), [key]: on }) }
 export function applyTier(key: TierKey) {
