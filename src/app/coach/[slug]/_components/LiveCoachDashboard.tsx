@@ -151,7 +151,19 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
-  const firstName = (profile.display_name || '').split(' ')[0] || clubName
+  // WHO is being greeted, not which club they work for.
+  //
+  // profile.display_name is the ACADEMY's profile — for an invited coach there
+  // is no such row of their own, so it fell back to the club name and the line
+  // read "Good morning, Penrith Tennis Club · Penrith Tennis Club". asCoach
+  // carries the signed-in coach's own name and wins when present.
+  const personName = (asCoach?.name || profile.display_name || '').trim()
+  const firstName = personName.split(/\s+/)[0] || ''
+  // If the only name we have IS the club, greet without a name rather than
+  // saying it twice. "Good morning · Penrith Tennis Club" reads fine; the
+  // duplicate reads like a bug, because it was one.
+  const greetName = firstName && firstName.toLowerCase() !== (clubName || '').trim().toLowerCase().split(/\s+/)[0]
+    ? firstName : ''
   const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad }
   // Match the demo SectionHead: white, sentence-case, 13/600 (not muted uppercase).
   const sectionTitle: React.CSSProperties = { fontSize: 13, fontWeight: 600, color: T.text, margin: '0 0 12px' }
@@ -175,7 +187,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
               </div>
             )}
           </div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{greeting}, {firstName} · {clubName}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.12em' }}>{greeting}{greetName ? `, ${greetName}` : ''} · {clubName}</div>
           <h1 style={{ margin: '10px 0 0', fontSize: 24, fontWeight: 800, color: T.text }}>{todays.length} session{todays.length === 1 ? '' : 's'} today{racketsReady.length ? `, ${racketsReady.length} racket assessment${racketsReady.length === 1 ? '' : 's'} due` : ''}</h1>
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
             <button onClick={() => setBooking(true)} style={btn(accent, T)}>+ Add booking</button>
