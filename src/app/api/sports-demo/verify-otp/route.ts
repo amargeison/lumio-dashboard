@@ -159,26 +159,46 @@ export async function POST(req: NextRequest) {
           email: normalisedEmail,
         })
 
-        // A magic link can only be generated for a user that EXISTS. Depending on
-        // the Supabase version, a first-ever sign-in either auto-creates them or
-        // fails with "user not found" — and when it fails, no session cookie is
-        // minted, the portal sees nobody signed in, and the person is asked for
-        // their email a second time. The second attempt then works, because the
-        // first one created the user on its way past.
+        // THE TWO-ROUND SIGN-IN LOOP LIVES HERE.
         //
-        // That is the two-round sign-in loop. Create the user explicitly and
-        // retry, so the FIRST attempt lands.
-        if (linkErr || !linkData?.user) {
-          console.warn('[sports-demo/verify-otp] generateLink miss, creating user:', linkErr?.message)
-          const { error: createErr } = await admin.auth.admin.createUser({
-            email: normalisedEmail,
-            email_confirm: true,   // the OTP they just passed IS the verification
-          })
-          // "already registered" is fine — it means a parallel request won the
-          // race, and the retry below will find them.
-          if (createErr && !/already|registered|exists/i.test(createErr.message)) {
-            console.error('[sports-demo/verify-otp] createUser failed:', createErr.message)
+        // A magic link generates happily for an auth user whose email is NOT
+        // confirmed — and then refuses to verify, with "Email link is invalid or
+        // has expired". So on a first-ever sign-in the mint failed, no cookie was
+        // written, the portal saw nobody signed in and asked for the email again.
+        // The failed attempt left the user confirmed behind it, which is why the
+        // second round always worked and the third was never needed.
+        //
+        // Two cases, both settled BEFORE the link is generated:
+        //   · no user at all   → create them, already confirmed
+        //   · user unconfirmed → confirm them
+        // Then generate a fresh link against a user that can actually verify.
+        //
+        // Confirming is legitimate here: they have just entered a code we emailed
+        // to that address, which is what confirmation means. The OTP is the proof.
+        const linkUserPre = linkData?.user
+        const needsCreate = !!linkErr || !linkUserPre
+        const needsConfirm = !!linkUserPre && !linkUserPre.email_confirmed_at
+
+        if (needsCreate || needsConfirm) {
+          if (needsCreate) {
+            console.warn('[verify-otp] no auth user, creating:', linkErr?.message)
+            const { error: createErr } = await admin.auth.admin.createUser({
+              email: normalisedEmail,
+              email_confirm: true,
+            })
+            // "already registered" means a parallel request won the race — the
+            // regenerate below will find them.
+            if (createErr && !/already|registered|exists/i.test(createErr.message)) {
+              console.error('[verify-otp] createUser failed:', createErr.message)
+            }
+          } else if (linkUserPre) {
+            console.warn('[verify-otp] auth user unconfirmed, confirming:', normalisedEmail)
+            const { error: confErr } = await admin.auth.admin.updateUserById(linkUserPre.id, { email_confirm: true })
+            if (confErr) console.error('[verify-otp] confirm failed:', confErr.message)
           }
+
+          // A fresh link. The one generated above was issued against a user that
+          // could not verify it, and regenerating invalidates it anyway.
           ;({ data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
             type: 'magiclink',
             email: normalisedEmail,
