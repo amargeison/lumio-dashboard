@@ -21,7 +21,7 @@
 // Columns match coach_resources: title, category, format, level, duration,
 // racket, tags, url, notes(description).
 
-import { sb, currentCoachId } from './coach-db'
+import { sb } from './coach-db'
 
 const yt = (id: string) => `https://www.youtube.com/watch?v=${id}`
 const p = (slug: string) => `lumio:${slug}`
@@ -136,9 +136,22 @@ export const LUMIO_RESOURCES: Record<string, any>[] = [
   { title: 'Coaching yourself in practice', category: 'Books', level: 'Advanced', format: 'PDF', duration: null, racket: 'black', tags: 'self-coaching, practice', notes: 'Independent players improve between lessons; dependent ones only improve during them. How to run your own session.', url: p('black-self-coaching') },
 ]
 
-// Insert the library for the current coach (skips titles they already have).
-export async function seedLumioResources(): Promise<number> {
-  const uid = await currentCoachId()
+// Insert the library for the academy (skips titles they already have).
+//
+// ownerId is the ACADEMY's id, and the caller passes it when it already knows —
+// onboarding does, because it is creating that academy in the same breath.
+// Otherwise it falls back to the signed-in user, who owns the academy whenever
+// this can be reached: only a head coach loads the starter library, since for a
+// coach the resources are the club's and read-only.
+//
+// NOT currentCoachId(), which answers "which academy am I working in" and can
+// name a DIFFERENT academy for anyone holding a coach membership. During
+// onboarding it could also resolve before the profile row existed, and the
+// insert then failed row level security — silently, because the wizard fires
+// this and forgets. That is why "Preload Lumio resources" produced an empty
+// Resource Centre: 90 rows refused, no error anybody could see.
+export async function seedLumioResources(ownerId?: string): Promise<number> {
+  const uid = ownerId || (await sb().auth.getUser()).data.user?.id
   if (!uid) return 0
   const existing = await sb().from('coach_resources').select('title').eq('coach_id', uid)
   const have = new Set((existing.data ?? []).map((r: any) => (r.title || '').toLowerCase()))

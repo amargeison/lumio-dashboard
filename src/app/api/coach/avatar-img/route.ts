@@ -23,13 +23,25 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
 
-  // The coach may only view avatars directly under their own {uid}/ prefix.
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
+
+  // Which folders may this user read from?
+  //
+  // The bucket is keyed by ACADEMY: every player and staff photo lives under
+  // {academyId}/. For a head coach that is their own uid, which is why checking
+  // `user.id` alone worked — right up until an invited coach asked for a photo.
+  // Their uid is not the academy id, so every avatar 403'd and rendered as a
+  // broken image: uploaded fine, saved fine, impossible to look at.
+  const allowed = new Set<string>([user.id])
+  const { data: memberships } = await admin.from('coach_members')
+    .select('academy_id').eq('member_user_id', user.id).eq('status', 'active')
+  for (const m of memberships ?? []) if (m.academy_id) allowed.add(String(m.academy_id))
+
   // Reject path traversal and empty segments so `{uid}/../otherUid/x` can't escape.
-  if (path.includes('..') || !path.startsWith(`${user.id}/`) || path.split('/').some(seg => !seg)) {
+  const prefix = path.split('/')[0]
+  if (path.includes('..') || path.split('/').some(seg => !seg) || !allowed.has(prefix)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
-
-  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
   const { data, error } = await admin.storage.from('avatars').createSignedUrl(path, 3600)
   if (error || !data?.signedUrl) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.redirect(data.signedUrl, 302)
