@@ -11,7 +11,7 @@ import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-da
 import { getAddedVenues } from '../_lib/venues-store'
 import { AddVenueModal } from './AddVenueModal'
 import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
-import { getFlags, setFlag, subscribe as subscribeFeatures } from '../_lib/feature-flags'
+import { getFlags, setFlag, subscribe as subscribeFeatures, DEMO_FLAGS } from '../_lib/feature-flags'
 import { IntegrationsPanel } from './IntegrationsPanel'
 import { CoachContactSettings } from './CoachContactSettings'
 import { CoachVenuesSettings } from './CoachVenuesSettings'
@@ -426,9 +426,14 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
   const [ordered, setOrdered] = useState<string[]>([])
   // Feature flags — Video & Audio each toggle their half of the module. Fallback
   // matches page.tsx (demo = elite/all-on, live founder = prolite).
+  // Pinned on the demo, so the tier reads Elite and every feature shows ON —
+  // matching the portal, which also ignores stored flags there.
   const featFallback = demo ? 'elite' : 'prolite'
-  const [feat, setFeat] = useState(() => getFlags(featFallback))
-  useEffect(() => { const r = () => setFeat(getFlags(featFallback)); r(); return subscribeFeatures(r) }, [featFallback])
+  const [feat, setFeat] = useState(() => demo ? DEMO_FLAGS : getFlags(featFallback))
+  useEffect(() => {
+    if (demo) { setFeat(DEMO_FLAGS); return }
+    const r = () => setFeat(getFlags(featFallback)); r(); return subscribeFeatures(r)
+  }, [featFallback, demo])
 
   // Per-area settings — persisted via the same localStorage store as the rest of
   // Settings (survives reload, applies across the portal). Each value reads from

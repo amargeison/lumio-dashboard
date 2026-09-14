@@ -37,7 +37,7 @@ import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
 import { clearDemoSession, wipeDemoSurvivors, markDemoSignedOut } from '@/lib/demo-session/clear'
 import { useCoachStats, RACKET_STAGES, dbList, setPreviewStaff } from './_lib/coach-db'
-import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags } from './_lib/feature-flags'
+import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, DEMO_FLAGS, type FeatureFlags } from './_lib/feature-flags'
 
 // ── Lazy-loaded modules ─────────────────────────────────────────────────────
 // Each module is code-split so only the one you're viewing is downloaded — the
@@ -371,13 +371,22 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const clubName = session?.clubName || slugClubName || (isEmpty ? '' : settings.academy)
   const showDemoBanner = !isEmpty && session?.isDemoShell !== false
 
-  const CoachAvatar = ({ size }: { size: number }) => (
-    <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: size * 0.36, fontWeight: 700 }}>
-      {coachPhoto
-        ? <img src={avatarSrc(coachPhoto)} alt={coachName} width={size} height={size} style={{ width: size, height: size, objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />
-        : coachInitials}
-    </div>
-  )
+  // The avatar takes an override so the sidebar can show whoever is being
+  // VIEWED. Without it the switcher changed the banner and the right-hand rail
+  // while the profile block in the corner still showed the head coach — the one
+  // control you just used to switch, insisting nothing had happened.
+  const CoachAvatar = ({ size, src, name }: { size: number; src?: string | null; name?: string }) => {
+    const photo = src !== undefined ? src : coachPhoto
+    const label = name ?? coachName
+    const initials = (label || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || coachInitials
+    return (
+      <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: size * 0.36, fontWeight: 700 }}>
+        {photo
+          ? <img src={avatarSrc(photo)} alt={label} width={size} height={size} style={{ width: size, height: size, objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none' }} />
+          : initials}
+      </div>
+    )
+  }
 
   const [active, setActive] = useState('dashboard')
   const [pinned, setPinned] = useState(false)
@@ -517,9 +526,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // Feature flags (admin/plan) — a disabled feature removes its whole module.
   // New founder (live) portals default to Pro Lite (Racket Progression only);
   // the demo defaults to Elite so it keeps showing Video/Audio + Effort & Rewards.
+  // The demo is pinned to Elite with everything on and ignores stored flags
+  // entirely — see DEMO_FLAGS. A live portal reads the coach's own plan.
   const featFallback = isEmpty ? 'prolite' : 'elite'
-  const [feat, setFeat] = useState<FeatureFlags>(getFeatureFlags(featFallback))
-  useEffect(() => { const r = () => setFeat(getFeatureFlags(featFallback)); r(); return subscribeFeatures(r) }, [featFallback])
+  const [feat, setFeat] = useState<FeatureFlags>(isEmpty ? getFeatureFlags(featFallback) : DEMO_FLAGS)
+  useEffect(() => {
+    if (!isEmpty) { setFeat(DEMO_FLAGS); return }
+    const r = () => setFeat(getFeatureFlags(featFallback)); r(); return subscribeFeatures(r)
+  }, [featFallback, isEmpty])
   const featureHidden = (id: string) =>
     (id === 'gpsheatmaps' && !feat.effort) ||
     (id === 'belts' && !feat.racket) ||
@@ -573,7 +587,12 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const availableRoles = (isEmpty
     ? COACH_ROLES.filter(r => r.id === 'head' || (r.id === 'coach' && liveStats.staff > 0) || (r.id === 'student' && liveStats.players > 0))
     : COACH_ROLES
-  ).filter(r => r.id !== 'student' || settings.studentApp)
+    // The parent & student app is opt-in for a REAL academy (Settings → Parent &
+    // student app). The DEMO is not an academy — it exists to show the whole
+    // product, and settings live in one localStorage bucket per browser, so
+    // opening a live portal first was quietly switching Student off in the demo
+    // too. The demo always offers all three.
+  ).filter(r => r.id !== 'student' || !isEmpty || settings.studentApp)
   // If the active role is no longer available (data removed), drop back to Head.
   useEffect(() => {
     if (!isEmpty || liveStats.loading) return
@@ -622,11 +641,20 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
           return list.length > 1 ? list : undefined
         })()
       : (role === 'head' && availableRoles.length > 1 ? availableRoles : undefined)
+  // Who the profile block is showing RIGHT NOW. Follows the switcher on a live
+  // portal (viewStaff), the impersonated demo coach otherwise, and falls back to
+  // the signed-in person.
+  const shownName = viewStaff?.name || railCoach?.name || coachName
+  const shownRole = viewStaff ? (viewStaff.qualifications || 'Coach') : roleLabel
+  const shownPhoto = viewStaff ? (viewStaff.avatar_url ?? null)
+    : railCoach ? demoAvatarUrl(railCoach.name)
+    : coachPhoto
+
   const profileMenu = (variant: 'sidebar' | 'compact', avatarSize: number) => (
     <CoachProfileMenu
       T={T} accent={accent} variant={variant} expanded={expanded}
-      avatar={<CoachAvatar size={avatarSize} />}
-      coachName={coachName} roleLabel={roleLabel}
+      avatar={<CoachAvatar size={avatarSize} src={shownPhoto} name={shownName} />}
+      coachName={shownName} roleLabel={shownRole}
       roles={switchableRoles}
       activeRole={isEmpty && role === 'coach' && viewStaffId ? `coach:${viewStaffId}` : role}
       onSelectRole={changeRole}
