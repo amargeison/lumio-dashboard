@@ -220,7 +220,12 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
 
       // Resource Centre: preload Lumio's library (live), or start empty for own content.
       setSettings({ resourcesPreloaded })
-      if (resourcesPreloaded) seedLumioResources().catch(() => {})
+      // uid, explicitly: this is the academy being created right now. Still
+      // non-blocking — a failed seed must not fail onboarding — but it is logged
+      // rather than swallowed, so a repeat of the silent-refusal bug is visible.
+      if (resourcesPreloaded) {
+        seedLumioResources(uid).catch(e => console.error('[onboarding] resource seed failed', e))
+      }
       // Always preload the default package price list — the coach edits/prices it.
       seedLumioPackages().catch(() => {})
 
