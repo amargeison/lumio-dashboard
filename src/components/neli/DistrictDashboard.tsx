@@ -26,9 +26,9 @@ import { PupilDetail } from './NELIComponents'
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const SCHOOL_COLORS: Record<string, string> = {
-  PE: '#0D9488', RA: '#3B82F6', GS: '#8B5CF6', HI: '#EF4444',
+  PE: 'var(--tt-accent, #0D9488)', RA: 'var(--tt-blue, #3B82F6)', GS: 'var(--tt-purple, #8B5CF6)', HI: 'var(--tt-red, #EF4444)',
 }
-const SCHOOL_LINE_COLORS = ['#0D9488', '#3B82F6', '#8B5CF6', '#F59E0B']
+const SCHOOL_LINE_COLORS = ['var(--tt-accent, #0D9488)', 'var(--tt-blue, #3B82F6)', 'var(--tt-purple, #8B5CF6)', 'var(--tt-amber, #F59E0B)']
 
 // District schools — using TRUST data but with US naming
 const DISTRICT_SCHOOLS = [
@@ -158,9 +158,9 @@ const SCHOOL_STAFF: Record<string, any[]> = {
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const statusColor = (s: string) => s === 'good' ? '#22C55E' : s === 'warning' ? '#F59E0B' : '#EF4444'
+const statusColor = (s: string) => s === 'good' ? 'var(--tt-green, #22C55E)' : s === 'warning' ? 'var(--tt-amber, #F59E0B)' : 'var(--tt-red, #EF4444)'
 const statusLabel = (s: string) => s === 'good' ? 'On Track' : s === 'warning' ? 'Monitor' : 'Needs Attention'
-const statusBg = (s: string) => s === 'good' ? 'rgba(34,197,94,0.1)' : s === 'warning' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)'
+const statusBg = (s: string) => s === 'good' ? 'var(--tt-green-soft, rgba(34,197,94,0.1))' : s === 'warning' ? 'var(--tt-amber-soft, rgba(245,158,11,0.1))' : 'var(--tt-red-soft, rgba(239,68,68,0.1))'
 
 function avg(arr: number[]): number {
   if (!arr.length) return 0
@@ -202,12 +202,12 @@ function getScoreDistribution(short: string) {
   const pupils = SCHOOL_PUPILS[short] || []
   const scores = pupils.map((p: any) => p.es ?? p.is)
   const bins = [
-    { range: '<75', min: 0, max: 74, count: 0, color: '#EF4444' },
-    { range: '75-84', min: 75, max: 84, count: 0, color: '#F59E0B' },
-    { range: '85-89', min: 85, max: 89, count: 0, color: '#F59E0B' },
-    { range: '90-94', min: 90, max: 94, count: 0, color: '#84CC16' },
-    { range: '95-99', min: 95, max: 99, count: 0, color: '#22C55E' },
-    { range: '100+', min: 100, max: 999, count: 0, color: '#15803D' },
+    { range: '<75', min: 0, max: 74, count: 0, color: 'var(--tt-red, #EF4444)' },
+    { range: '75-84', min: 75, max: 84, count: 0, color: 'var(--tt-amber, #F59E0B)' },
+    { range: '85-89', min: 85, max: 89, count: 0, color: 'var(--tt-amber, #F59E0B)' },
+    { range: '90-94', min: 90, max: 94, count: 0, color: 'var(--tt-green, #84CC16)' },
+    { range: '95-99', min: 95, max: 99, count: 0, color: 'var(--tt-green, #22C55E)' },
+    { range: '100+', min: 100, max: 999, count: 0, color: 'var(--tt-green-deep, #15803D)' },
   ]
   scores.forEach(s => {
     const bin = bins.find(b => s >= b.min && s <= b.max)
@@ -220,8 +220,8 @@ function getScoreDistribution(short: string) {
 // SHARED STYLES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const cardStyle: React.CSSProperties = { backgroundColor: '#111318', border: '1px solid #1F2937', borderRadius: 16, padding: 20 }
-const darkBg: React.CSSProperties = { backgroundColor: '#0A0B10', border: '1px solid #1F2937', borderRadius: 12 }
+const cardStyle: React.CSSProperties = { backgroundColor: 'var(--tt-card, #111318)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 16, padding: 20 }
+const darkBg: React.CSSProperties = { backgroundColor: 'var(--tt-panel, #0A0B10)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 12 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // LEVEL 1 — DISTRICT HEADER
@@ -234,28 +234,28 @@ function DistrictHeader() {
   const avgWeek = Math.round(DISTRICT_SCHOOLS.reduce((s, sc) => s + sc.weeks, 0) / DISTRICT_SCHOOLS.length)
 
   return (
-    <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, #0C1A2E 0%, #111827 50%, #0C1A2E 100%)', border: '1px solid #1F2937' }}>
+    <div className="rounded-2xl p-6" style={{ background: 'var(--tt-card, var(--tt-card, #111318))', border: '1px solid var(--tt-border, #1F2937)' }}>
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(200,150,12,0.15)', border: '1px solid rgba(200,150,12,0.3)' }}>
-            <Building2 size={24} style={{ color: '#C8960C' }} />
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'var(--tt-accent2-soft, rgba(200,150,12,0.15))', border: '1px solid var(--tt-accent2-border, rgba(200,150,12,0.3))' }}>
+            <Building2 size={24} style={{ color: 'var(--tt-accent2, #C8960C)' }} />
           </div>
           <div>
-            <h1 className="text-xl font-black" style={{ color: '#F9FAFB' }}>Oak Valley District</h1>
-            <p className="text-sm" style={{ color: '#9CA3AF' }}>TEL TED Programme — District Intelligence Dashboard</p>
+            <h1 className="text-xl font-black" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Oak Valley District</h1>
+            <p className="text-sm" style={{ color: 'var(--tt-muted, #9CA3AF)' }}>TEL TED Programme — District Intelligence Dashboard</p>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {[
-            { label: 'Total Schools', value: 4, color: '#3B82F6' },
-            { label: 'Total Students', value: totalStudents, color: '#0D9488' },
-            { label: 'TEL TED Students', value: totalNeli, color: '#C8960C' },
-            { label: 'District Avg Score', value: districtAvg || '—', color: '#22C55E' },
-            { label: 'Programme Week', value: `${avgWeek} (avg)`, color: '#8B5CF6' },
+            { label: 'Total Schools', value: 4, color: 'var(--tt-blue, #3B82F6)' },
+            { label: 'Total Students', value: totalStudents, color: 'var(--tt-accent, #0D9488)' },
+            { label: 'TEL TED Students', value: totalNeli, color: 'var(--tt-accent2, #C8960C)' },
+            { label: 'District Avg Score', value: districtAvg || '—', color: 'var(--tt-green, #22C55E)' },
+            { label: 'Programme Week', value: `${avgWeek} (avg)`, color: 'var(--tt-purple, #8B5CF6)' },
           ].map(pill => (
             <div key={pill.label} className="flex flex-col items-center px-3 py-2 rounded-xl" style={{ backgroundColor: `${pill.color}15`, border: `1px solid ${pill.color}30`, minWidth: 80 }}>
               <span className="text-lg font-black" style={{ color: pill.color }}>{pill.value}</span>
-              <span className="text-[10px] font-medium" style={{ color: '#9CA3AF' }}>{pill.label}</span>
+              <span className="text-[10px] font-medium" style={{ color: 'var(--tt-muted, #9CA3AF)' }}>{pill.label}</span>
             </div>
           ))}
         </div>
@@ -273,12 +273,12 @@ function DistrictAlertStrip() {
       {alertSchools.map(school => (
         <div key={school.id} className="flex items-center gap-3 rounded-xl px-4 py-3"
           style={{
-            backgroundColor: school.status === 'alert' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)',
-            border: `1px solid ${school.status === 'alert' ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.25)'}`,
-            borderLeft: `4px solid ${school.status === 'alert' ? '#EF4444' : '#F59E0B'}`,
+            backgroundColor: school.status === 'alert' ? 'var(--tt-red-soft, rgba(239,68,68,0.08))' : 'var(--tt-amber-soft, rgba(245,158,11,0.08))',
+            border: `1px solid ${school.status === 'alert' ? 'color-mix(in srgb, var(--tt-red, #EF4444) 35%, transparent)' : 'color-mix(in srgb, var(--tt-amber, #F59E0B) 35%, transparent)'}`,
+            borderLeft: `4px solid ${school.status === 'alert' ? 'var(--tt-red, #EF4444)' : 'var(--tt-amber, #F59E0B)'}`,
           }}>
-          <AlertTriangle size={16} style={{ color: school.status === 'alert' ? '#EF4444' : '#F59E0B', flexShrink: 0 }} />
-          <p className="text-sm" style={{ color: '#F9FAFB' }}>
+          <AlertTriangle size={16} style={{ color: school.status === 'alert' ? 'var(--tt-red, #EF4444)' : 'var(--tt-amber, #F59E0B)', flexShrink: 0 }} />
+          <p className="text-sm" style={{ color: 'var(--tt-text, #F9FAFB)' }}>
             {school.status === 'alert'
               ? `${school.name} is behind schedule — Week ${school.weeks} of 20, no end-of-term scores recorded`
               : `${school.name} requires monitoring — ${100 - school.assessed}% of students not yet assessed this term`}
@@ -338,34 +338,34 @@ function DistrictChartsRow() {
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
       {/* Chart 1 */}
       <div style={cardStyle}>
-        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Assessment Scores by School</h3>
+        <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Assessment Scores by School</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={perfData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
-            <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-            <YAxis domain={[80, 110]} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-            <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--tt-border, #1F2937)" />
+            <XAxis dataKey="name" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+            <YAxis domain={[80, 110]} tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+            <Tooltip contentStyle={{ backgroundColor: 'var(--tt-border, #1F2937)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 8, color: 'var(--tt-text, #F9FAFB)', fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="initial" name="Avg Initial" fill="#1B3060" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="current" name="Avg Current" fill="#C8960C" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="initial" name="Avg Initial" fill="var(--tt-accent-border, #1B3060)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="current" name="Avg Current" fill="var(--tt-accent2, #C8960C)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       {/* Chart 2 — Progress Ring */}
       <div style={cardStyle}>
-        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Programme Completion</h3>
+        <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Programme Completion</h3>
         <ResponsiveContainer width="100%" height={200}>
           <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="90%" data={progressData} startAngle={180} endAngle={0}>
-            <RadialBar background dataKey="value" label={{ fill: '#F9FAFB', fontSize: 10, position: 'insideStart' }} />
-            <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }} formatter={(v: any) => `${v}%`} />
+            <RadialBar background dataKey="value" label={{ fill: 'var(--tt-text, #F9FAFB)', fontSize: 10, position: 'insideStart' }} />
+            <Tooltip contentStyle={{ backgroundColor: 'var(--tt-border, #1F2937)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 8, color: 'var(--tt-text, #F9FAFB)', fontSize: 12 }} formatter={(v: any) => `${v}%`} />
           </RadialBarChart>
         </ResponsiveContainer>
         <div className="flex justify-center gap-3 mt-1">
           {progressData.map(d => (
             <div key={d.name} className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.fill }} />
-              <span className="text-[10px]" style={{ color: '#9CA3AF' }}>{d.name} {d.value}%</span>
+              <span className="text-[10px]" style={{ color: 'var(--tt-muted, #9CA3AF)' }}>{d.name} {d.value}%</span>
             </div>
           ))}
         </div>
@@ -373,14 +373,14 @@ function DistrictChartsRow() {
 
       {/* Chart 3 — Score Trend */}
       <div style={cardStyle}>
-        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Score Trajectory — All Schools</h3>
+        <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Score Trajectory — All Schools</h3>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={trendData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
-            <XAxis dataKey="month" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-            <YAxis domain={[80, 105]} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-            <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }} />
-            <ReferenceLine y={90} stroke="#EF4444" strokeDasharray="5 5" label={{ value: 'Threshold', fill: '#EF4444', fontSize: 10 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--tt-border, #1F2937)" />
+            <XAxis dataKey="month" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+            <YAxis domain={[80, 105]} tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+            <Tooltip contentStyle={{ backgroundColor: 'var(--tt-border, #1F2937)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 8, color: 'var(--tt-text, #F9FAFB)', fontSize: 12 }} />
+            <ReferenceLine y={90} stroke="var(--tt-red, #EF4444)" strokeDasharray="5 5" label={{ value: 'Threshold', fill: 'var(--tt-red, #EF4444)', fontSize: 10 }} />
             {DISTRICT_SCHOOLS.map((s, i) => (
               <Line key={s.short} type="monotone" dataKey={s.short} stroke={SCHOOL_LINE_COLORS[i]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
             ))}
@@ -390,17 +390,17 @@ function DistrictChartsRow() {
 
       {/* Chart 4 — At-Risk Students */}
       <div style={cardStyle}>
-        <h3 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Student Band Distribution</h3>
+        <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Student Band Distribution</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={bandData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
-            <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-            <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-            <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--tt-border, #1F2937)" />
+            <XAxis dataKey="name" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+            <YAxis tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+            <Tooltip contentStyle={{ backgroundColor: 'var(--tt-border, #1F2937)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 8, color: 'var(--tt-text, #F9FAFB)', fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="onTrack" name="On Track" stackId="a" fill="#22C55E" />
-            <Bar dataKey="monitor" name="Monitor" stackId="a" fill="#F59E0B" />
-            <Bar dataKey="needsSupport" name="Needs Support" stackId="a" fill="#EF4444" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="onTrack" name="On Track" stackId="a" fill="var(--tt-green, #22C55E)" />
+            <Bar dataKey="monitor" name="Monitor" stackId="a" fill="var(--tt-amber, #F59E0B)" />
+            <Bar dataKey="needsSupport" name="Needs Support" stackId="a" fill="var(--tt-red, #EF4444)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -451,17 +451,17 @@ function DistrictSummaryTab() {
       {/* ROW 1 — KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {[
-          { label: 'Schools On Track', value: schoolsOnTrack, color: '#22C55E', icon: '✅' },
-          { label: 'Schools Monitoring', value: schoolsMonitor, color: '#F59E0B', icon: '👁️' },
-          { label: 'Needs Attention', value: schoolsAlert, color: '#EF4444', icon: '🔴' },
-          { label: 'Sessions Delivered', value: totalSessions, color: '#0D9488', icon: '📖' },
-          { label: 'District Avg Gain', value: distGain > 0 ? `+${distGain}` : distGain, color: '#3B82F6', icon: '📈' },
-          { label: 'Staff Trained', value: allStaff.length, color: '#8B5CF6', icon: '🎓' },
+          { label: 'Schools On Track', value: schoolsOnTrack, color: 'var(--tt-green, #22C55E)', icon: '✅' },
+          { label: 'Schools Monitoring', value: schoolsMonitor, color: 'var(--tt-amber, #F59E0B)', icon: '👁️' },
+          { label: 'Needs Attention', value: schoolsAlert, color: 'var(--tt-red, #EF4444)', icon: '🔴' },
+          { label: 'Sessions Delivered', value: totalSessions, color: 'var(--tt-accent, #0D9488)', icon: '📖' },
+          { label: 'District Avg Gain', value: distGain > 0 ? `+${distGain}` : distGain, color: 'var(--tt-blue, #3B82F6)', icon: '📈' },
+          { label: 'Staff Trained', value: allStaff.length, color: 'var(--tt-purple, #8B5CF6)', icon: '🎓' },
         ].map(k => (
           <div key={k.label} className="rounded-xl p-4 text-center" style={{ ...darkBg }}>
             <span className="text-lg">{k.icon}</span>
             <p className="text-2xl font-black mt-1" style={{ color: k.color }}>{k.value}</p>
-            <p className="text-[10px] font-medium mt-1" style={{ color: '#6B7280' }}>{k.label}</p>
+            <p className="text-[10px] font-medium mt-1" style={{ color: 'var(--tt-dim, #6B7280)' }}>{k.label}</p>
           </div>
         ))}
       </div>
@@ -469,34 +469,34 @@ function DistrictSummaryTab() {
       {/* ROW 2 — League Table + Radar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 rounded-xl overflow-hidden" style={{ ...darkBg }}>
-          <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-            <h3 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>School League Table</h3>
+          <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--tt-border, #1F2937)' }}>
+            <h3 className="text-sm font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>School League Table</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr style={{ backgroundColor: '#0D0E14' }}>
+                <tr style={{ backgroundColor: 'var(--tt-panel, #0D0E14)' }}>
                   {['Rank', 'School', 'Students', 'TEL TED', 'Avg Initial', 'Avg Current', 'Gain', 'Weeks', 'Status'].map(h => (
-                    <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                    <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: 'var(--tt-dim, #6B7280)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {leagueData.map((s, i) => (
-                  <tr key={s.id} style={{ backgroundColor: statusBg(s.status), borderBottom: '1px solid #1F293740' }}>
-                    <td className="px-3 py-2.5 font-bold" style={{ color: '#F9FAFB' }}>{i + 1}</td>
-                    <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>
+                  <tr key={s.id} style={{ backgroundColor: statusBg(s.status), borderBottom: '1px solid var(--tt-rule, var(--tt-border, #1F2937)40)' }}>
+                    <td className="px-3 py-2.5 font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{i + 1}</td>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: SCHOOL_COLORS[s.short] + '25', color: SCHOOL_COLORS[s.short] }}>{s.short}</div>
                         {s.name}
                       </div>
                     </td>
-                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{s.totalPupils}</td>
-                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{s.neliCount}</td>
-                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{s.aI}</td>
-                    <td className="px-3 py-2.5 font-semibold" style={{ color: s.aE ? '#22C55E' : '#6B7280' }}>{s.aE ?? '—'}</td>
-                    <td className="px-3 py-2.5 font-semibold" style={{ color: s.gain && s.gain > 0 ? '#22C55E' : '#6B7280' }}>{s.gain != null ? (s.gain > 0 ? `+${s.gain}` : s.gain) : '—'}</td>
-                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{s.weeks}/20</td>
+                    <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{s.totalPupils}</td>
+                    <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{s.neliCount}</td>
+                    <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{s.aI}</td>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: s.aE ? 'var(--tt-green, #22C55E)' : 'var(--tt-dim, #6B7280)' }}>{s.aE ?? '—'}</td>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: s.gain && s.gain > 0 ? 'var(--tt-green, #22C55E)' : 'var(--tt-dim, #6B7280)' }}>{s.gain != null ? (s.gain > 0 ? `+${s.gain}` : s.gain) : '—'}</td>
+                    <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{s.weeks}/20</td>
                     <td className="px-3 py-2.5">
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: statusColor(s.status) + '20', color: statusColor(s.status) }}>{statusLabel(s.status)}</span>
                     </td>
@@ -508,25 +508,25 @@ function DistrictSummaryTab() {
         </div>
 
         <div className="rounded-xl p-4" style={{ ...darkBg }}>
-          <h3 className="text-sm font-bold mb-2" style={{ color: '#F9FAFB' }}>District Subtest Profile</h3>
+          <h3 className="text-sm font-bold mb-2" style={{ color: 'var(--tt-text, #F9FAFB)' }}>District Subtest Profile</h3>
           <ResponsiveContainer width="100%" height={240}>
             <RadarChart data={radarData}>
-              <PolarGrid stroke="#1F2937" />
-              <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-              <PolarRadiusAxis angle={30} tick={{ fill: '#6B7280', fontSize: 10 }} />
-              <Radar name="District Avg" dataKey="value" stroke="#C8960C" fill="#C8960C" fillOpacity={0.25} strokeWidth={2} />
+              <PolarGrid stroke="var(--tt-border, #1F2937)" />
+              <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+              <PolarRadiusAxis angle={30} tick={{ fill: 'var(--tt-dim, #6B7280)', fontSize: 10 }} />
+              <Radar name="District Avg" dataKey="value" stroke="var(--tt-accent2, #C8960C)" fill="var(--tt-accent2, #C8960C)" fillOpacity={0.25} strokeWidth={2} />
             </RadarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* ROW 3 — AI District Summary */}
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: '2px solid rgba(200,150,12,0.3)', borderRadius: 16 }}>
+      <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--tt-card, #111318)', border: '2px solid var(--tt-accent2-border, rgba(200,150,12,0.3))', borderRadius: 16 }}>
         <div className="flex items-center gap-2 mb-3">
           <span className="text-base">🤖</span>
-          <h3 className="text-sm font-bold" style={{ color: '#C8960C' }}>District AI Summary — Oak Valley District</h3>
+          <h3 className="text-sm font-bold" style={{ color: 'var(--tt-accent2, #C8960C)' }}>District AI Summary — Oak Valley District</h3>
         </div>
-        <p className="text-sm leading-relaxed" style={{ color: '#D1D5DB' }}>
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--tt-body, #D1D5DB)' }}>
           Oak Valley District has {DISTRICT_SCHOOLS.reduce((s, sc) => s + sc.pupils, 0)} students across 4 schools completing the TEL TED programme.{' '}
           {schoolsOnTrack} schools are on track, {schoolsMonitor} requires monitoring, and Hillside Primary School needs immediate attention — currently at Week 8 with no end-of-term scores recorded.{' '}
           The district average score has improved from {distAvgI} to {distAvgE}, a gain of {distGain > 0 ? `+${distGain}` : distGain} standard score points.{' '}
@@ -536,15 +536,15 @@ function DistrictSummaryTab() {
 
       {/* ROW 4 — Training Compliance */}
       <div className="rounded-xl overflow-hidden" style={{ ...darkBg }}>
-        <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-          <h3 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Training Compliance</h3>
+        <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--tt-border, #1F2937)' }}>
+          <h3 className="text-sm font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Training Compliance</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr style={{ backgroundColor: '#0D0E14' }}>
+              <tr style={{ backgroundColor: 'var(--tt-panel, #0D0E14)' }}>
                 {['School', 'Staff Member', 'Role', 'Course 1', 'Course 2', 'Course 3', 'Status'].map(h => (
-                  <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                  <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: 'var(--tt-dim, #6B7280)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -554,15 +554,15 @@ function DistrictSummaryTab() {
                   const complete = staff.c1 && staff.c2 && staff.c3
                   const inProgress = staff.c1 || staff.c2 || staff.c3
                   return (
-                    <tr key={`${school.short}-${si}`} style={{ borderBottom: '1px solid #1F293740' }}>
-                      {si === 0 && <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }} rowSpan={(SCHOOL_STAFF[school.short] || []).length}>{school.name}</td>}
-                      <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{staff.name}</td>
-                      <td className="px-3 py-2.5" style={{ color: '#9CA3AF' }}>{staff.role}</td>
-                      <td className="px-3 py-2.5">{staff.c1 ? <span style={{ color: '#22C55E' }}>&#10003;</span> : <span style={{ color: '#EF4444' }}>&#10007;</span>}</td>
-                      <td className="px-3 py-2.5">{staff.c2 ? <span style={{ color: '#22C55E' }}>&#10003;</span> : <span style={{ color: '#EF4444' }}>&#10007;</span>}</td>
-                      <td className="px-3 py-2.5">{staff.c3 ? <span style={{ color: '#22C55E' }}>&#10003;</span> : <span style={{ color: '#EF4444' }}>&#10007;</span>}</td>
+                    <tr key={`${school.short}-${si}`} style={{ borderBottom: '1px solid var(--tt-rule, var(--tt-border, #1F2937)40)' }}>
+                      {si === 0 && <td className="px-3 py-2.5 font-semibold" style={{ color: 'var(--tt-text, #F9FAFB)' }} rowSpan={(SCHOOL_STAFF[school.short] || []).length}>{school.name}</td>}
+                      <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{staff.name}</td>
+                      <td className="px-3 py-2.5" style={{ color: 'var(--tt-muted, #9CA3AF)' }}>{staff.role}</td>
+                      <td className="px-3 py-2.5">{staff.c1 ? <span style={{ color: 'var(--tt-green, #22C55E)' }}>&#10003;</span> : <span style={{ color: 'var(--tt-red, #EF4444)' }}>&#10007;</span>}</td>
+                      <td className="px-3 py-2.5">{staff.c2 ? <span style={{ color: 'var(--tt-green, #22C55E)' }}>&#10003;</span> : <span style={{ color: 'var(--tt-red, #EF4444)' }}>&#10007;</span>}</td>
+                      <td className="px-3 py-2.5">{staff.c3 ? <span style={{ color: 'var(--tt-green, #22C55E)' }}>&#10003;</span> : <span style={{ color: 'var(--tt-red, #EF4444)' }}>&#10007;</span>}</td>
                       <td className="px-3 py-2.5">
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: complete ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)', color: complete ? '#22C55E' : '#F59E0B' }}>
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: complete ? 'var(--tt-green-soft, rgba(34,197,94,0.15))' : 'var(--tt-amber-soft, rgba(245,158,11,0.15))', color: complete ? 'var(--tt-green, #22C55E)' : 'var(--tt-amber, #F59E0B)' }}>
                           {complete ? 'Fully Trained' : 'In Progress'}
                         </span>
                       </td>
@@ -613,7 +613,7 @@ function SchoolTabContent({ school }: { school: typeof DISTRICT_SCHOOLS[0] }) {
   return (
     <div className="space-y-4">
       {/* School Header */}
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#111318', border: `1px solid ${statusColor(school.status)}40` }}>
+      <div className="rounded-xl p-5" style={{ backgroundColor: 'var(--tt-card, #111318)', border: `1px solid ${statusColor(school.status)}40` }}>
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold" style={{ backgroundColor: SCHOOL_COLORS[school.short] + '20', color: SCHOOL_COLORS[school.short], border: `2px solid ${SCHOOL_COLORS[school.short]}40` }}>
@@ -621,11 +621,11 @@ function SchoolTabContent({ school }: { school: typeof DISTRICT_SCHOOLS[0] }) {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold" style={{ color: '#F9FAFB' }}>{school.name}</h2>
+                <h2 className="text-lg font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{school.name}</h2>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: statusColor(school.status) + '20', color: statusColor(school.status) }}>{statusLabel(school.status)}</span>
               </div>
-              <p className="text-xs" style={{ color: '#9CA3AF' }}>Principal: {school.principal} · TEL TED Coordinator: {school.coordinator}</p>
-              <p className="text-xs" style={{ color: '#6B7280' }}>Programme Week: {school.weeks} of 20</p>
+              <p className="text-xs" style={{ color: 'var(--tt-muted, #9CA3AF)' }}>Principal: {school.principal} · TEL TED Coordinator: {school.coordinator}</p>
+              <p className="text-xs" style={{ color: 'var(--tt-dim, #6B7280)' }}>Programme Week: {school.weeks} of 20</p>
             </div>
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -637,8 +637,8 @@ function SchoolTabContent({ school }: { school: typeof DISTRICT_SCHOOLS[0] }) {
               { label: 'Avg Gain', value: schoolGain != null ? (schoolGain > 0 ? `+${schoolGain}` : schoolGain) : '—' },
             ].map(c => (
               <div key={c.label} className="px-3 py-1.5 rounded-lg text-center" style={{ ...darkBg, minWidth: 64 }}>
-                <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{c.value}</p>
-                <p className="text-[10px]" style={{ color: '#6B7280' }}>{c.label}</p>
+                <p className="text-sm font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{c.value}</p>
+                <p className="text-[10px]" style={{ color: 'var(--tt-dim, #6B7280)' }}>{c.label}</p>
               </div>
             ))}
           </div>
@@ -651,9 +651,9 @@ function SchoolTabContent({ school }: { school: typeof DISTRICT_SCHOOLS[0] }) {
           <button key={t.id} onClick={() => setInnerTab(t.id)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap"
             style={{
-              backgroundColor: innerTab === t.id ? '#C8960C' : '#111318',
-              color: innerTab === t.id ? '#fff' : '#6B7280',
-              border: innerTab === t.id ? '1px solid #C8960C' : '1px solid #1F2937',
+              backgroundColor: innerTab === t.id ? 'var(--tt-accent2, #C8960C)' : 'var(--tt-card, #111318)',
+              color: innerTab === t.id ? '#fff' : 'var(--tt-dim, #6B7280)',
+              border: innerTab === t.id ? '1px solid var(--tt-accent2, #C8960C)' : '1px solid var(--tt-border, #1F2937)',
             }}>
             <span>{t.icon}</span>{t.label}
           </button>
@@ -709,13 +709,13 @@ function SchoolOverviewTab({ school, pupils, neliStudents }: { school: any; pupi
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Score Distribution */}
         <div style={cardStyle}>
-          <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Score Distribution</h4>
+          <h4 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Score Distribution</h4>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={dist} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
-              <XAxis dataKey="range" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--tt-border, #1F2937)" />
+              <XAxis dataKey="range" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+              <YAxis tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--tt-border, #1F2937)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 8, color: 'var(--tt-text, #F9FAFB)', fontSize: 12 }} />
               <Bar dataKey="count" name="Students" radius={[4, 4, 0, 0]}>
                 {dist.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Bar>
@@ -725,46 +725,46 @@ function SchoolOverviewTab({ school, pupils, neliStudents }: { school: any; pupi
 
         {/* Intervention Impact */}
         <div style={cardStyle}>
-          <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Intervention Impact</h4>
+          <h4 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Intervention Impact</h4>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={impactData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
-              <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 10 }} />
-              <YAxis domain={[50, 110]} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--tt-border, #1F2937)" />
+              <XAxis dataKey="name" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 10 }} />
+              <YAxis domain={[50, 110]} tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--tt-border, #1F2937)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 8, color: 'var(--tt-text, #F9FAFB)', fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="initial" name="Initial" fill="#C8960C" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="current" name="Current" fill="#0D9488" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="initial" name="Initial" fill="var(--tt-accent2, #C8960C)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="current" name="Current" fill="var(--tt-accent, #0D9488)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Progress Over Year */}
         <div style={cardStyle}>
-          <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Progress Over Year</h4>
+          <h4 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Progress Over Year</h4>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={areaData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
-              <XAxis dataKey="month" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-              <YAxis domain={[60, 110]} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }} />
-              <ReferenceLine y={85} stroke="#EF444480" strokeDasharray="5 5" />
-              <ReferenceLine y={100} stroke="#22C55E80" strokeDasharray="5 5" />
-              <Area type="monotone" dataKey="classAvg" name="Whole Class" stroke="#1B3060" fill="#1B3060" fillOpacity={0.2} />
-              {neliStudents.length > 0 && <Area type="monotone" dataKey="neliAvg" name="TEL TED" stroke="#C8960C" fill="#C8960C" fillOpacity={0.2} />}
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--tt-border, #1F2937)" />
+              <XAxis dataKey="month" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+              <YAxis domain={[60, 110]} tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--tt-border, #1F2937)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 8, color: 'var(--tt-text, #F9FAFB)', fontSize: 12 }} />
+              <ReferenceLine y={85} stroke="color-mix(in srgb, var(--tt-red, var(--tt-red, #EF4444)) 50%, transparent)" strokeDasharray="5 5" />
+              <ReferenceLine y={100} stroke="color-mix(in srgb, var(--tt-green, var(--tt-green, #22C55E)) 50%, transparent)" strokeDasharray="5 5" />
+              <Area type="monotone" dataKey="classAvg" name="Whole Class" stroke="var(--tt-accent-border, #1B3060)" fill="var(--tt-accent-border, #1B3060)" fillOpacity={0.2} />
+              {neliStudents.length > 0 && <Area type="monotone" dataKey="neliAvg" name="TEL TED" stroke="var(--tt-accent2, #C8960C)" fill="var(--tt-accent2, #C8960C)" fillOpacity={0.2} />}
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
         {/* Subtest Radar */}
         <div style={cardStyle}>
-          <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Subtest Profile</h4>
+          <h4 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Subtest Profile</h4>
           <ResponsiveContainer width="100%" height={200}>
             <RadarChart data={radarData}>
-              <PolarGrid stroke="#1F2937" />
-              <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-              <PolarRadiusAxis angle={30} tick={{ fill: '#6B7280', fontSize: 10 }} />
-              <Radar name="School Avg" dataKey="value" stroke="#0D9488" fill="#0D9488" fillOpacity={0.25} strokeWidth={2} />
+              <PolarGrid stroke="var(--tt-border, #1F2937)" />
+              <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+              <PolarRadiusAxis angle={30} tick={{ fill: 'var(--tt-dim, #6B7280)', fontSize: 10 }} />
+              <Radar name="School Avg" dataKey="value" stroke="var(--tt-accent, #0D9488)" fill="var(--tt-accent, #0D9488)" fillOpacity={0.25} strokeWidth={2} />
             </RadarChart>
           </ResponsiveContainer>
         </div>
@@ -772,8 +772,8 @@ function SchoolOverviewTab({ school, pupils, neliStudents }: { school: any; pupi
 
       {/* School Notes */}
       <div className="rounded-xl p-4" style={{ ...darkBg }}>
-        <h4 className="text-sm font-bold mb-2" style={{ color: '#F9FAFB' }}>School Notes</h4>
-        <p className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>
+        <h4 className="text-sm font-bold mb-2" style={{ color: 'var(--tt-text, #F9FAFB)' }}>School Notes</h4>
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--tt-muted, #9CA3AF)' }}>
           Week {school.weeks} of 20. {school.status === 'good' ? 'Programme on track.' : school.status === 'warning' ? 'Programme requires monitoring — some students not yet assessed.' : 'Programme behind schedule — immediate attention required.'}{' '}
           {neliStudents.length} students receiving TEL TED support.{' '}
           {neliStudents[0] && `${neliStudents[0].name} due for reassessment.`}{' '}
@@ -807,14 +807,14 @@ function SchoolLanguageScreenTab({ school, pupils, onSelectPupil }: { school: an
       {/* Summary stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: '% Assessed', value: `${pctAssessed}%`, color: '#0D9488' },
-          { label: 'Avg Score', value: avgScore ?? '—', color: '#3B82F6' },
-          { label: 'Below Threshold (<85)', value: belowThreshold, color: '#EF4444' },
-          { label: 'Score Range', value: scoreRange, color: '#8B5CF6' },
+          { label: '% Assessed', value: `${pctAssessed}%`, color: 'var(--tt-accent, #0D9488)' },
+          { label: 'Avg Score', value: avgScore ?? '—', color: 'var(--tt-blue, #3B82F6)' },
+          { label: 'Below Threshold (<85)', value: belowThreshold, color: 'var(--tt-red, #EF4444)' },
+          { label: 'Score Range', value: scoreRange, color: 'var(--tt-purple, #8B5CF6)' },
         ].map(s => (
           <div key={s.label} className="rounded-xl p-3 text-center" style={{ ...darkBg }}>
             <p className="text-lg font-bold" style={{ color: s.color }}>{s.value}</p>
-            <p className="text-[10px]" style={{ color: '#6B7280' }}>{s.label}</p>
+            <p className="text-[10px]" style={{ color: 'var(--tt-dim, #6B7280)' }}>{s.label}</p>
           </div>
         ))}
       </div>
@@ -824,9 +824,9 @@ function SchoolLanguageScreenTab({ school, pupils, onSelectPupil }: { school: an
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr style={{ backgroundColor: '#0D0E14' }}>
+              <tr style={{ backgroundColor: 'var(--tt-panel, #0D0E14)' }}>
                 {['Student', 'Rec Vocab', 'Exp Vocab', 'Grammar', 'Listening', 'Total', 'Band', 'vs Initial', 'Action'].map(h => (
-                  <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                  <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: 'var(--tt-dim, #6B7280)' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -836,33 +836,33 @@ function SchoolLanguageScreenTab({ school, pupils, onSelectPupil }: { school: an
                 const light = getLight(score)
                 const gain = p.es ? p.es - p.is : null
                 return (
-                  <tr key={p.id} style={{ borderBottom: '1px solid #1F293740' }}>
-                    <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>
+                  <tr key={p.id} style={{ borderBottom: '1px solid var(--tt-rule, var(--tt-border, #1F2937)40)' }}>
+                    <td className="px-3 py-2.5 font-semibold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold" style={{ backgroundColor: lc(light) + '20', color: lc(light) }}>
                           {p.name.split(' ').map((w: string) => w[0]).join('')}
                         </div>
                         {p.name}
-                        {p.neli && <span className="text-[9px] px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(200,150,12,0.15)', color: '#C8960C' }}>TEL TED</span>}
+                        {p.neli && <span className="text-[9px] px-1 py-0.5 rounded" style={{ backgroundColor: 'var(--tt-accent2-soft, rgba(200,150,12,0.15))', color: 'var(--tt-accent2, #C8960C)' }}>TEL TED</span>}
                       </div>
                     </td>
-                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{p.subscores?.recVocab ?? '—'}</td>
-                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{p.subscores?.expVocab ?? '—'}</td>
-                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{p.subscores?.grammar ?? '—'}</td>
-                    <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{p.subscores?.listening ?? '—'}</td>
+                    <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{p.subscores?.recVocab ?? '—'}</td>
+                    <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{p.subscores?.expVocab ?? '—'}</td>
+                    <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{p.subscores?.grammar ?? '—'}</td>
+                    <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{p.subscores?.listening ?? '—'}</td>
                     <td className="px-3 py-2.5 font-bold" style={{ color: lc(light) }}>{score}</td>
                     <td className="px-3 py-2.5">
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: lb(light), color: lc(light) }}>{ll(light)}</span>
                     </td>
                     <td className="px-3 py-2.5">
                       {gain != null ? (
-                        <span style={{ color: gain > 0 ? '#22C55E' : gain < 0 ? '#EF4444' : '#6B7280', fontWeight: 600 }}>
+                        <span style={{ color: gain > 0 ? 'var(--tt-green, #22C55E)' : gain < 0 ? 'var(--tt-red, #EF4444)' : 'var(--tt-dim, #6B7280)', fontWeight: 600 }}>
                           {gain > 0 ? `↑ +${gain}` : gain < 0 ? `↓ ${gain}` : '—'}
                         </span>
-                      ) : <span style={{ color: '#6B7280' }}>—</span>}
+                      ) : <span style={{ color: 'var(--tt-dim, #6B7280)' }}>—</span>}
                     </td>
                     <td className="px-3 py-2.5">
-                      <button onClick={() => onSelectPupil(p)} className="text-[10px] font-semibold px-2 py-1 rounded-lg" style={{ backgroundColor: '#0D9488', color: '#F9FAFB' }}>View Report</button>
+                      <button onClick={() => onSelectPupil(p)} className="text-[10px] font-semibold px-2 py-1 rounded-lg" style={{ backgroundColor: 'var(--tt-accent, #0D9488)', color: 'var(--tt-text, #F9FAFB)' }}>View Report</button>
                     </td>
                   </tr>
                 )
@@ -874,17 +874,17 @@ function SchoolLanguageScreenTab({ school, pupils, onSelectPupil }: { school: an
 
       {/* Simple View of Reading Scatter */}
       <div style={cardStyle}>
-        <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Simple View of Reading (SVoR)</h4>
+        <h4 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Simple View of Reading (SVoR)</h4>
         <ResponsiveContainer width="100%" height={260}>
           <ScatterChart margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
-            <XAxis type="number" dataKey="x" name="Decoding Proxy" tick={{ fill: '#9CA3AF', fontSize: 10 }} label={{ value: 'Decoding (Rec Vocab + Grammar)', fill: '#6B7280', fontSize: 10, position: 'insideBottom', offset: -5 }} />
-            <YAxis type="number" dataKey="y" name="Language Comprehension" tick={{ fill: '#9CA3AF', fontSize: 10 }} label={{ value: 'Comprehension', fill: '#6B7280', fontSize: 10, angle: -90, position: 'insideLeft' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--tt-border, #1F2937)" />
+            <XAxis type="number" dataKey="x" name="Decoding Proxy" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 10 }} label={{ value: 'Decoding (Rec Vocab + Grammar)', fill: 'var(--tt-dim, #6B7280)', fontSize: 10, position: 'insideBottom', offset: -5 }} />
+            <YAxis type="number" dataKey="y" name="Language Comprehension" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 10 }} label={{ value: 'Comprehension', fill: 'var(--tt-dim, #6B7280)', fontSize: 10, angle: -90, position: 'insideLeft' }} />
             <ZAxis dataKey="score" range={[40, 200]} />
-            <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }} formatter={(v: any, name: any) => [v, name === 'x' ? 'Decoding' : 'Comprehension']} />
-            <ReferenceArea x1={0} x2={170} y1={0} y2={170} fill="#EF4444" fillOpacity={0.05} />
-            <ReferenceArea x1={170} x2={300} y1={170} y2={300} fill="#22C55E" fillOpacity={0.05} />
-            <Scatter data={svorData} fill="#C8960C" />
+            <Tooltip contentStyle={{ backgroundColor: 'var(--tt-border, #1F2937)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 8, color: 'var(--tt-text, #F9FAFB)', fontSize: 12 }} formatter={(v: any, name: any) => [v, name === 'x' ? 'Decoding' : 'Comprehension']} />
+            <ReferenceArea x1={0} x2={170} y1={0} y2={170} fill="var(--tt-red, #EF4444)" fillOpacity={0.05} />
+            <ReferenceArea x1={170} x2={300} y1={170} y2={300} fill="var(--tt-green, #22C55E)" fillOpacity={0.05} />
+            <Scatter data={svorData} fill="var(--tt-accent2, #C8960C)" />
           </ScatterChart>
         </ResponsiveContainer>
       </div>
@@ -909,23 +909,23 @@ function SchoolProgressTab({ school, pupils, neliStudents }: { school: any; pupi
     <div className="space-y-4">
       {/* Class-wide progress chart */}
       <div style={cardStyle}>
-        <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Class-Wide Progress</h4>
+        <h4 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Class-Wide Progress</h4>
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={trajectory} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" />
-            <XAxis dataKey="month" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-            <YAxis domain={[75, 105]} tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-            <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: 8, color: '#F9FAFB', fontSize: 12 }} />
-            <ReferenceLine y={85} stroke="#EF4444" strokeDasharray="5 5" label={{ value: 'Support', fill: '#EF4444', fontSize: 10 }} />
-            <ReferenceLine y={100} stroke="#22C55E" strokeDasharray="5 5" label={{ value: 'Age Expected', fill: '#22C55E', fontSize: 10 }} />
-            <Line type="monotone" dataKey="score" stroke="#0D9488" strokeWidth={2} dot={{ r: 4, fill: '#0D9488' }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--tt-border, #1F2937)" />
+            <XAxis dataKey="month" tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+            <YAxis domain={[75, 105]} tick={{ fill: 'var(--tt-muted, #9CA3AF)', fontSize: 11 }} />
+            <Tooltip contentStyle={{ backgroundColor: 'var(--tt-border, #1F2937)', border: '1px solid var(--tt-border, #1F2937)', borderRadius: 8, color: 'var(--tt-text, #F9FAFB)', fontSize: 12 }} />
+            <ReferenceLine y={85} stroke="var(--tt-red, #EF4444)" strokeDasharray="5 5" label={{ value: 'Support', fill: 'var(--tt-red, #EF4444)', fontSize: 10 }} />
+            <ReferenceLine y={100} stroke="var(--tt-green, #22C55E)" strokeDasharray="5 5" label={{ value: 'Age Expected', fill: 'var(--tt-green, #22C55E)', fontSize: 10 }} />
+            <Line type="monotone" dataKey="score" stroke="var(--tt-accent, #0D9488)" strokeWidth={2} dot={{ r: 4, fill: 'var(--tt-accent, #0D9488)' }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
       {/* Individual progress bars */}
       <div style={cardStyle}>
-        <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Individual Student Progress</h4>
+        <h4 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Individual Student Progress</h4>
         <div className="space-y-3">
           {progressStudents.map((p: any) => {
             const minVal = Math.min(p.is, p.current) - 10
@@ -938,21 +938,21 @@ function SchoolProgressTab({ school, pupils, neliStudents }: { school: any; pupi
             return (
               <div key={p.id} className="flex items-center gap-3">
                 <div className="w-28 flex-shrink-0 text-right">
-                  <p className="text-xs font-semibold truncate" style={{ color: '#F9FAFB' }}>{p.name.split(' ')[0]}</p>
+                  <p className="text-xs font-semibold truncate" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{p.name.split(' ')[0]}</p>
                 </div>
-                <div className="flex-1 relative h-6 rounded-lg" style={{ backgroundColor: '#1F2937' }}>
+                <div className="flex-1 relative h-6 rounded-lg" style={{ backgroundColor: 'var(--tt-border, #1F2937)' }}>
                   {/* Zone bands */}
-                  <div className="absolute inset-y-0 rounded-l-lg" style={{ left: 0, width: `${((85 - minVal) / range) * 100}%`, backgroundColor: 'rgba(239,68,68,0.1)' }} />
-                  <div className="absolute inset-y-0" style={{ left: `${((85 - minVal) / range) * 100}%`, width: `${((96 - 85) / range) * 100}%`, backgroundColor: 'rgba(245,158,11,0.1)' }} />
+                  <div className="absolute inset-y-0 rounded-l-lg" style={{ left: 0, width: `${((85 - minVal) / range) * 100}%`, backgroundColor: 'var(--tt-red-soft, rgba(239,68,68,0.1))' }} />
+                  <div className="absolute inset-y-0" style={{ left: `${((85 - minVal) / range) * 100}%`, width: `${((96 - 85) / range) * 100}%`, backgroundColor: 'var(--tt-amber-soft, rgba(245,158,11,0.1))' }} />
                   {/* Arrow */}
-                  <div className="absolute top-1/2 h-0.5" style={{ left: `${Math.min(initialPct, currentPct)}%`, width: `${Math.abs(currentPct - initialPct)}%`, backgroundColor: p.gain > 0 ? '#22C55E' : '#EF4444', transform: 'translateY(-50%)' }} />
+                  <div className="absolute top-1/2 h-0.5" style={{ left: `${Math.min(initialPct, currentPct)}%`, width: `${Math.abs(currentPct - initialPct)}%`, backgroundColor: p.gain > 0 ? 'var(--tt-green, #22C55E)' : 'var(--tt-red, #EF4444)', transform: 'translateY(-50%)' }} />
                   {/* Initial square */}
                   <div className="absolute top-1/2 w-3 h-3 rounded-sm" style={{ left: `${initialPct}%`, backgroundColor: lc(lightI), transform: 'translate(-50%,-50%)', border: '1px solid rgba(255,255,255,0.3)' }} />
                   {/* Current circle */}
                   <div className="absolute top-1/2 w-3.5 h-3.5 rounded-full" style={{ left: `${currentPct}%`, backgroundColor: lc(lightE), transform: 'translate(-50%,-50%)', border: '2px solid rgba(255,255,255,0.5)' }} />
                 </div>
                 <div className="w-16 flex-shrink-0 text-right">
-                  <span className="text-xs font-bold" style={{ color: p.gain > 0 ? '#22C55E' : p.gain < 0 ? '#EF4444' : '#6B7280' }}>
+                  <span className="text-xs font-bold" style={{ color: p.gain > 0 ? 'var(--tt-green, #22C55E)' : p.gain < 0 ? 'var(--tt-red, #EF4444)' : 'var(--tt-dim, #6B7280)' }}>
                     {p.gain > 0 ? `+${p.gain}` : p.gain || '—'}
                   </span>
                 </div>
@@ -966,23 +966,23 @@ function SchoolProgressTab({ school, pupils, neliStudents }: { school: any; pupi
       <div className="rounded-xl overflow-hidden" style={{ ...darkBg }}>
         <table className="w-full text-xs">
           <thead>
-            <tr style={{ backgroundColor: '#0D0E14' }}>
+            <tr style={{ backgroundColor: 'var(--tt-panel, #0D0E14)' }}>
               {['Student', 'Initial', 'Current', 'Gain', 'Sessions', '% Complete', 'On Track', 'Interventionist'].map(h => (
-                <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: 'var(--tt-dim, #6B7280)' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {progressStudents.map((p: any) => (
-              <tr key={p.id} style={{ borderBottom: '1px solid #1F293740', backgroundColor: p.pctSessions < 85 ? 'rgba(245,158,11,0.05)' : 'transparent' }}>
-                <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</td>
-                <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{p.is}</td>
-                <td className="px-3 py-2.5 font-semibold" style={{ color: p.es ? lc(getLight(p.es)) : '#6B7280' }}>{p.es ?? '—'}</td>
-                <td className="px-3 py-2.5 font-bold" style={{ color: p.gain > 0 ? '#22C55E' : '#6B7280' }}>{p.gain > 0 ? `+${p.gain}` : p.gain || '—'}</td>
-                <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{p.neliSessions ?? '—'}/{p.neliExpected ?? '—'}</td>
-                <td className="px-3 py-2.5" style={{ color: p.pctSessions < 85 ? '#F59E0B' : '#D1D5DB' }}>{p.pctSessions}%</td>
-                <td className="px-3 py-2.5">{p.pctSessions >= 85 ? <span style={{ color: '#22C55E' }}>&#10003;</span> : <span style={{ color: '#F59E0B' }}>⚠</span>}</td>
-                <td className="px-3 py-2.5" style={{ color: '#9CA3AF' }}>{p.interventionist ?? '—'}</td>
+              <tr key={p.id} style={{ borderBottom: '1px solid var(--tt-rule, var(--tt-border, #1F2937)40)', backgroundColor: p.pctSessions < 85 ? 'var(--tt-amber-soft, rgba(245,158,11,0.05))' : 'transparent' }}>
+                <td className="px-3 py-2.5 font-semibold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{p.name}</td>
+                <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{p.is}</td>
+                <td className="px-3 py-2.5 font-semibold" style={{ color: p.es ? lc(getLight(p.es)) : 'var(--tt-dim, #6B7280)' }}>{p.es ?? '—'}</td>
+                <td className="px-3 py-2.5 font-bold" style={{ color: p.gain > 0 ? 'var(--tt-green, #22C55E)' : 'var(--tt-dim, #6B7280)' }}>{p.gain > 0 ? `+${p.gain}` : p.gain || '—'}</td>
+                <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{p.neliSessions ?? '—'}/{p.neliExpected ?? '—'}</td>
+                <td className="px-3 py-2.5" style={{ color: p.pctSessions < 85 ? 'var(--tt-amber, #F59E0B)' : 'var(--tt-body, #D1D5DB)' }}>{p.pctSessions}%</td>
+                <td className="px-3 py-2.5">{p.pctSessions >= 85 ? <span style={{ color: 'var(--tt-green, #22C55E)' }}>&#10003;</span> : <span style={{ color: 'var(--tt-amber, #F59E0B)' }}>⚠</span>}</td>
+                <td className="px-3 py-2.5" style={{ color: 'var(--tt-muted, #9CA3AF)' }}>{p.interventionist ?? '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -1018,7 +1018,7 @@ function SchoolStudentsTab({ school, pupils, filter, onFilterChange, onSelectPup
         {filters.map(f => (
           <button key={f.id} onClick={() => onFilterChange(f.id)}
             className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-            style={{ backgroundColor: filter === f.id ? '#0D9488' : '#111318', color: filter === f.id ? '#F9FAFB' : '#6B7280', border: filter === f.id ? '1px solid #0D9488' : '1px solid #1F2937' }}>
+            style={{ backgroundColor: filter === f.id ? 'var(--tt-accent, #0D9488)' : 'var(--tt-card, #111318)', color: filter === f.id ? 'var(--tt-text, #F9FAFB)' : 'var(--tt-dim, #6B7280)', border: filter === f.id ? '1px solid var(--tt-accent, #0D9488)' : '1px solid var(--tt-border, #1F2937)' }}>
             {f.label}
           </button>
         ))}
@@ -1038,22 +1038,22 @@ function SchoolStudentsTab({ school, pupils, filter, onFilterChange, onSelectPup
                   {p.name.split(' ').map((w: string) => w[0]).join('')}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{p.name}</p>
-                  <p className="text-[10px]" style={{ color: '#6B7280' }}>{p.dob} · Class {p.class}</p>
+                  <p className="text-sm font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{p.name}</p>
+                  <p className="text-[10px]" style={{ color: 'var(--tt-dim, #6B7280)' }}>{p.dob} · Class {p.class}</p>
                   <div className="flex gap-1 mt-1 flex-wrap">
-                    {p.eal && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60A5FA' }}>EAL</span>}
-                    {p.fsm && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(139,92,246,0.15)', color: '#A78BFA' }}>FRL</span>}
-                    {p.neli && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(200,150,12,0.15)', color: '#C8960C' }}>TEL TED</span>}
-                    {p.sen?.status && p.sen.status !== 'None' && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#F59E0B' }}>SEN</span>}
+                    {p.eal && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--tt-blue-soft, rgba(59,130,246,0.15))', color: 'var(--tt-blue, #60A5FA)' }}>EAL</span>}
+                    {p.fsm && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'color-mix(in srgb, var(--tt-purple, #8B5CF6) 14%, transparent)', color: 'var(--tt-purple, #A78BFA)' }}>FRL</span>}
+                    {p.neli && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--tt-accent2-soft, rgba(200,150,12,0.15))', color: 'var(--tt-accent2, #C8960C)' }}>TEL TED</span>}
+                    {p.sen?.status && p.sen.status !== 'None' && <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--tt-amber-soft, rgba(245,158,11,0.15))', color: 'var(--tt-amber, #F59E0B)' }}>SEN</span>}
                   </div>
                 </div>
               </div>
 
               <div className="mt-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs" style={{ color: '#6B7280' }}>{p.is}</span>
-                  <span style={{ color: '#6B7280' }}>→</span>
-                  <span className="text-xs font-bold" style={{ color: p.es ? lc(light) : '#6B7280' }}>{p.es ?? '—'}</span>
+                  <span className="text-xs" style={{ color: 'var(--tt-dim, #6B7280)' }}>{p.is}</span>
+                  <span style={{ color: 'var(--tt-dim, #6B7280)' }}>→</span>
+                  <span className="text-xs font-bold" style={{ color: p.es ? lc(light) : 'var(--tt-dim, #6B7280)' }}>{p.es ?? '—'}</span>
                   <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: lb(light), color: lc(light) }}>{ll(light)}</span>
                 </div>
               </div>
@@ -1061,22 +1061,22 @@ function SchoolStudentsTab({ school, pupils, filter, onFilterChange, onSelectPup
               {sessions && (
                 <div className="mt-2">
                   <div className="flex justify-between text-[10px] mb-1">
-                    <span style={{ color: '#6B7280' }}>Sessions: {sessions}</span>
-                    <span style={{ color: '#6B7280' }}>{sessionPct}%</span>
+                    <span style={{ color: 'var(--tt-dim, #6B7280)' }}>Sessions: {sessions}</span>
+                    <span style={{ color: 'var(--tt-dim, #6B7280)' }}>{sessionPct}%</span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: '#1F2937' }}>
-                    <div className="h-full rounded-full" style={{ width: `${Math.min(sessionPct || 0, 100)}%`, backgroundColor: (sessionPct || 0) >= 85 ? '#22C55E' : '#F59E0B' }} />
+                  <div className="w-full h-1.5 rounded-full" style={{ backgroundColor: 'var(--tt-border, #1F2937)' }}>
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(sessionPct || 0, 100)}%`, backgroundColor: (sessionPct || 0) >= 85 ? 'var(--tt-green, #22C55E)' : 'var(--tt-amber, #F59E0B)' }} />
                   </div>
                 </div>
               )}
 
               {p.leuven && (
                 <div className="mt-2 flex gap-2">
-                  <span className="text-[10px]" style={{ color: '#6B7280' }}>Wellbeing: {'●'.repeat(p.leuven.wellbeing)}{'○'.repeat(5 - p.leuven.wellbeing)}</span>
+                  <span className="text-[10px]" style={{ color: 'var(--tt-dim, #6B7280)' }}>Wellbeing: {'●'.repeat(p.leuven.wellbeing)}{'○'.repeat(5 - p.leuven.wellbeing)}</span>
                 </div>
               )}
 
-              <button onClick={() => onSelectPupil(p)} className="mt-3 w-full text-xs font-semibold py-2 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.2)' }}>
+              <button onClick={() => onSelectPupil(p)} className="mt-3 w-full text-xs font-semibold py-2 rounded-lg" style={{ backgroundColor: 'var(--tt-accent-soft, rgba(13,148,136,0.1))', color: 'var(--tt-accent, #0D9488)', border: '1px solid var(--tt-accent-soft, rgba(13,148,136,0.2))' }}>
                 View Full Profile
               </button>
             </div>
@@ -1100,27 +1100,27 @@ function SchoolAtRiskTab({ school, pupils, onSelectPupil }: { school: any; pupil
     const score = pupil.es ?? pupil.is
     const light = getLight(score)
     return (
-      <div className="rounded-xl p-4" style={{ ...darkBg, borderLeft: `3px solid ${severity === 'red' ? '#EF4444' : '#F59E0B'}` }}>
+      <div className="rounded-xl p-4" style={{ ...darkBg, borderLeft: `3px solid ${severity === 'red' ? 'var(--tt-red, #EF4444)' : 'var(--tt-amber, #F59E0B)'}` }}>
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ backgroundColor: lc(light) + '20', color: lc(light) }}>
               {pupil.name.split(' ').map((w: string) => w[0]).join('')}
             </div>
             <div>
-              <p className="text-sm font-bold" style={{ color: '#F9FAFB' }}>{pupil.name}</p>
-              <p className="text-[10px]" style={{ color: '#6B7280' }}>Score: {score} · Week {pupil.neliWeek ?? '—'}</p>
+              <p className="text-sm font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{pupil.name}</p>
+              <p className="text-[10px]" style={{ color: 'var(--tt-dim, #6B7280)' }}>Score: {score} · Week {pupil.neliWeek ?? '—'}</p>
             </div>
           </div>
           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: lb(light), color: lc(light) }}>{ll(light)}</span>
         </div>
-        <p className="text-xs mt-2" style={{ color: '#9CA3AF' }}>
+        <p className="text-xs mt-2" style={{ color: 'var(--tt-muted, #9CA3AF)' }}>
           {severity === 'red' ? `Scoring below 85 — needs targeted intervention support. ${pupil.sen?.plan || 'Review intervention plan.'}` : `Scoring in monitor range (85-89). Continue current support and track closely.`}
         </p>
         <div className="flex gap-2 mt-3">
-          <button className="text-[10px] font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: severity === 'red' ? '#EF4444' : '#F59E0B', color: '#fff' }}>
+          <button className="text-[10px] font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: severity === 'red' ? 'var(--tt-red, #EF4444)' : 'var(--tt-amber, #F59E0B)', color: '#fff' }}>
             {severity === 'red' ? 'Schedule Session' : 'Check In'}
           </button>
-          <button onClick={() => onSelectPupil(pupil)} className="text-[10px] font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'rgba(13,148,136,0.1)', color: '#0D9488', border: '1px solid rgba(13,148,136,0.2)' }}>
+          <button onClick={() => onSelectPupil(pupil)} className="text-[10px] font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: 'var(--tt-accent-soft, rgba(13,148,136,0.1))', color: 'var(--tt-accent, #0D9488)', border: '1px solid var(--tt-accent-soft, rgba(13,148,136,0.2))' }}>
             View Profile
           </button>
         </div>
@@ -1133,7 +1133,7 @@ function SchoolAtRiskTab({ school, pupils, onSelectPupil }: { school: any; pupil
       {/* Red Section */}
       {redStudents.length > 0 && (
         <div>
-          <h4 className="text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#EF4444' }}>
+          <h4 className="text-sm font-bold mb-2 flex items-center gap-2" style={{ color: 'var(--tt-red, #EF4444)' }}>
             <span className="w-2 h-2 rounded-full bg-red-500" /> Immediate Action — Score Below 85 ({redStudents.length})
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1145,7 +1145,7 @@ function SchoolAtRiskTab({ school, pupils, onSelectPupil }: { school: any; pupil
       {/* Amber Section */}
       {amberStudents.length > 0 && (
         <div>
-          <h4 className="text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#F59E0B' }}>
+          <h4 className="text-sm font-bold mb-2 flex items-center gap-2" style={{ color: 'var(--tt-amber, #F59E0B)' }}>
             <span className="w-2 h-2 rounded-full bg-amber-500" /> Monitor Closely — Score 85-89 ({amberStudents.length})
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1157,13 +1157,13 @@ function SchoolAtRiskTab({ school, pupils, onSelectPupil }: { school: any; pupil
       {/* Sessions Behind */}
       {sessionsBehind.length > 0 && (
         <div style={cardStyle}>
-          <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#F59E0B' }}>
+          <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--tt-amber, #F59E0B)' }}>
             <Clock size={14} /> Sessions Behind Schedule ({sessionsBehind.length})
           </h4>
           {sessionsBehind.map((p: any) => (
-            <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid #1F293740' }}>
-              <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</span>
-              <span className="text-xs" style={{ color: '#F59E0B' }}>{p.neliSessions}/{p.neliExpected} sessions ({Math.round((p.neliSessions / p.neliExpected) * 100)}%)</span>
+            <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--tt-rule, var(--tt-border, #1F2937)40)' }}>
+              <span className="text-xs font-semibold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{p.name}</span>
+              <span className="text-xs" style={{ color: 'var(--tt-amber, #F59E0B)' }}>{p.neliSessions}/{p.neliExpected} sessions ({Math.round((p.neliSessions / p.neliExpected) * 100)}%)</span>
             </div>
           ))}
         </div>
@@ -1172,13 +1172,13 @@ function SchoolAtRiskTab({ school, pupils, onSelectPupil }: { school: any; pupil
       {/* Low Attendance */}
       {lowAttendance.length > 0 && (
         <div style={cardStyle}>
-          <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#EF4444' }}>
+          <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--tt-red, #EF4444)' }}>
             <AlertTriangle size={14} /> Attendance Concern — Below 90% ({lowAttendance.length})
           </h4>
           {lowAttendance.map((p: any) => (
-            <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid #1F293740' }}>
-              <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</span>
-              <span className="text-xs" style={{ color: '#EF4444' }}>{p.attendance}%</span>
+            <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--tt-rule, var(--tt-border, #1F2937)40)' }}>
+              <span className="text-xs font-semibold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{p.name}</span>
+              <span className="text-xs" style={{ color: 'var(--tt-red, #EF4444)' }}>{p.attendance}%</span>
             </div>
           ))}
         </div>
@@ -1187,16 +1187,16 @@ function SchoolAtRiskTab({ school, pupils, onSelectPupil }: { school: any; pupil
       {/* EAL Support */}
       {ealStudents.length > 0 && (
         <div style={cardStyle}>
-          <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#3B82F6' }}>
+          <h4 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--tt-blue, #3B82F6)' }}>
             <GraduationCap size={14} /> EAL Support ({ealStudents.length})
           </h4>
           {ealStudents.map((p: any) => (
-            <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid #1F293740' }}>
+            <div key={p.id} className="flex items-center justify-between py-2" style={{ borderBottom: '1px solid var(--tt-rule, var(--tt-border, #1F2937)40)' }}>
               <div>
-                <span className="text-xs font-semibold" style={{ color: '#F9FAFB' }}>{p.name}</span>
-                <span className="text-[10px] ml-2" style={{ color: '#6B7280' }}>{(p as any).homeLanguage || 'EAL'}</span>
+                <span className="text-xs font-semibold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{p.name}</span>
+                <span className="text-[10px] ml-2" style={{ color: 'var(--tt-dim, #6B7280)' }}>{(p as any).homeLanguage || 'EAL'}</span>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#60A5FA' }}>{(p as any).ealStage || 'Developing'}</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--tt-blue-soft, rgba(59,130,246,0.15))', color: 'var(--tt-blue, #60A5FA)' }}>{(p as any).ealStage || 'Developing'}</span>
             </div>
           ))}
         </div>
@@ -1204,9 +1204,9 @@ function SchoolAtRiskTab({ school, pupils, onSelectPupil }: { school: any; pupil
 
       {redStudents.length === 0 && amberStudents.length === 0 && (
         <div className="text-center py-12">
-          <CheckCircle2 size={48} style={{ color: '#22C55E', margin: '0 auto 12px' }} />
-          <p className="text-sm font-semibold" style={{ color: '#F9FAFB' }}>No at-risk students</p>
-          <p className="text-xs" style={{ color: '#6B7280' }}>All students are scoring above threshold</p>
+          <CheckCircle2 size={48} style={{ color: 'var(--tt-green, #22C55E)', margin: '0 auto 12px' }} />
+          <p className="text-sm font-semibold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>No at-risk students</p>
+          <p className="text-xs" style={{ color: 'var(--tt-dim, #6B7280)' }}>All students are scoring above threshold</p>
         </div>
       )}
     </div>
@@ -1223,14 +1223,14 @@ function SchoolTrainingTab({ school, staff }: { school: any; staff: any[] }) {
     <div className="space-y-4">
       {/* Staff Training Table */}
       <div className="rounded-xl overflow-hidden" style={{ ...darkBg }}>
-        <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-          <h4 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Staff Training Status</h4>
+        <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--tt-border, #1F2937)' }}>
+          <h4 className="text-sm font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Staff Training Status</h4>
         </div>
         <table className="w-full text-xs">
           <thead>
-            <tr style={{ backgroundColor: '#0D0E14' }}>
+            <tr style={{ backgroundColor: 'var(--tt-panel, #0D0E14)' }}>
               {['Staff Member', 'Role', 'Course 1', 'Course 2', 'Course 3', 'Status'].map(h => (
-                <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: 'var(--tt-dim, #6B7280)' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -1238,14 +1238,14 @@ function SchoolTrainingTab({ school, staff }: { school: any; staff: any[] }) {
             {staff.map((s: any, i: number) => {
               const complete = s.c1 && s.c2 && s.c3
               return (
-                <tr key={i} style={{ borderBottom: '1px solid #1F293740' }}>
-                  <td className="px-3 py-2.5 font-semibold" style={{ color: '#F9FAFB' }}>{s.name}</td>
-                  <td className="px-3 py-2.5" style={{ color: '#9CA3AF' }}>{s.role}</td>
-                  <td className="px-3 py-2.5">{s.c1 ? <span style={{ color: '#22C55E' }}>&#10003;</span> : <span style={{ color: '#EF4444' }}>&#10007;</span>}</td>
-                  <td className="px-3 py-2.5">{s.c2 ? <span style={{ color: '#22C55E' }}>&#10003;</span> : <span style={{ color: '#EF4444' }}>&#10007;</span>}</td>
-                  <td className="px-3 py-2.5">{s.c3 ? <span style={{ color: '#22C55E' }}>&#10003;</span> : <span style={{ color: '#EF4444' }}>&#10007;</span>}</td>
+                <tr key={i} style={{ borderBottom: '1px solid var(--tt-rule, var(--tt-border, #1F2937)40)' }}>
+                  <td className="px-3 py-2.5 font-semibold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{s.name}</td>
+                  <td className="px-3 py-2.5" style={{ color: 'var(--tt-muted, #9CA3AF)' }}>{s.role}</td>
+                  <td className="px-3 py-2.5">{s.c1 ? <span style={{ color: 'var(--tt-green, #22C55E)' }}>&#10003;</span> : <span style={{ color: 'var(--tt-red, #EF4444)' }}>&#10007;</span>}</td>
+                  <td className="px-3 py-2.5">{s.c2 ? <span style={{ color: 'var(--tt-green, #22C55E)' }}>&#10003;</span> : <span style={{ color: 'var(--tt-red, #EF4444)' }}>&#10007;</span>}</td>
+                  <td className="px-3 py-2.5">{s.c3 ? <span style={{ color: 'var(--tt-green, #22C55E)' }}>&#10003;</span> : <span style={{ color: 'var(--tt-red, #EF4444)' }}>&#10007;</span>}</td>
                   <td className="px-3 py-2.5">
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: complete ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)', color: complete ? '#22C55E' : '#F59E0B' }}>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: complete ? 'var(--tt-green-soft, rgba(34,197,94,0.15))' : 'var(--tt-amber-soft, rgba(245,158,11,0.15))', color: complete ? 'var(--tt-green, #22C55E)' : 'var(--tt-amber, #F59E0B)' }}>
                       {complete ? 'Fully Trained' : 'In Progress'}
                     </span>
                   </td>
@@ -1261,15 +1261,15 @@ function SchoolTrainingTab({ school, staff }: { school: any; staff: any[] }) {
         {FL_COURSES.slice(0, 3).map(course => (
           <div key={course.id} className="rounded-xl p-4" style={{ ...darkBg }}>
             <div className="text-2xl mb-2">{course.imgEmoji}</div>
-            <h5 className="text-xs font-bold mb-1" style={{ color: '#F9FAFB' }}>{course.title}</h5>
-            <p className="text-[10px] mb-2" style={{ color: '#6B7280' }}>{course.duration} · {course.level}</p>
+            <h5 className="text-xs font-bold mb-1" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{course.title}</h5>
+            <p className="text-[10px] mb-2" style={{ color: 'var(--tt-dim, #6B7280)' }}>{course.duration} · {course.level}</p>
             <div className="space-y-1">
               {staff.map((s: any, i: number) => {
                 const done = course.id === 1 ? s.c1 : course.id === 2 ? s.c2 : s.c3
                 return (
                   <div key={i} className="flex items-center justify-between text-[10px]">
-                    <span style={{ color: '#D1D5DB' }}>{s.name}</span>
-                    {done ? <span style={{ color: '#22C55E' }}>Complete</span> : <span style={{ color: '#6B7280' }}>Not started</span>}
+                    <span style={{ color: 'var(--tt-body, #D1D5DB)' }}>{s.name}</span>
+                    {done ? <span style={{ color: 'var(--tt-green, #22C55E)' }}>Complete</span> : <span style={{ color: 'var(--tt-dim, #6B7280)' }}>Not started</span>}
                   </div>
                 )
               })}
@@ -1280,23 +1280,23 @@ function SchoolTrainingTab({ school, staff }: { school: any; staff: any[] }) {
 
       {/* CPD Hours */}
       <div style={cardStyle}>
-        <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>CPD Hours Tracker</h4>
+        <h4 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>CPD Hours Tracker</h4>
         <div className="flex items-center gap-3 mb-2">
-          <div className="flex-1 h-3 rounded-full" style={{ backgroundColor: '#1F2937' }}>
-            <div className="h-full rounded-full" style={{ width: `${Math.min((totalHrs / targetHrs) * 100, 100)}%`, backgroundColor: '#0D9488' }} />
+          <div className="flex-1 h-3 rounded-full" style={{ backgroundColor: 'var(--tt-border, #1F2937)' }}>
+            <div className="h-full rounded-full" style={{ width: `${Math.min((totalHrs / targetHrs) * 100, 100)}%`, backgroundColor: 'var(--tt-accent, #0D9488)' }} />
           </div>
-          <span className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{totalHrs}/{targetHrs} hrs</span>
+          <span className="text-xs font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{totalHrs}/{targetHrs} hrs</span>
         </div>
         <div className="space-y-2">
           {staff.map((s: any, i: number) => {
             const hrs = (s.c1 ? 5 : 0) + (s.c2 ? 5 : 0) + (s.c3 ? 3 : 0)
             return (
               <div key={i} className="flex items-center gap-2">
-                <span className="text-xs w-32 truncate" style={{ color: '#D1D5DB' }}>{s.name}</span>
-                <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: '#1F2937' }}>
-                  <div className="h-full rounded-full" style={{ width: `${(hrs / 48) * 100}%`, backgroundColor: hrs >= 13 ? '#22C55E' : '#F59E0B' }} />
+                <span className="text-xs w-32 truncate" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{s.name}</span>
+                <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: 'var(--tt-border, #1F2937)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${(hrs / 48) * 100}%`, backgroundColor: hrs >= 13 ? 'var(--tt-green, #22C55E)' : 'var(--tt-amber, #F59E0B)' }} />
                 </div>
-                <span className="text-[10px] w-10 text-right" style={{ color: '#6B7280' }}>{hrs} hrs</span>
+                <span className="text-[10px] w-10 text-right" style={{ color: 'var(--tt-dim, #6B7280)' }}>{hrs} hrs</span>
               </div>
             )
           })}
@@ -1305,17 +1305,17 @@ function SchoolTrainingTab({ school, staff }: { school: any; staff: any[] }) {
 
       {/* TEL TED Learning Progress */}
       <div style={cardStyle}>
-        <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>TEL TED E-Learning Progress</h4>
+        <h4 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>TEL TED E-Learning Progress</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {['Week 1', 'Week 2', 'Week 3'].map((week, wi) => (
-            <div key={week} className="rounded-lg p-3" style={{ backgroundColor: '#0D0E14' }}>
-              <p className="text-xs font-bold mb-2" style={{ color: '#C8960C' }}>{week}</p>
+            <div key={week} className="rounded-lg p-3" style={{ backgroundColor: 'var(--tt-panel, #0D0E14)' }}>
+              <p className="text-xs font-bold mb-2" style={{ color: 'var(--tt-accent2, #C8960C)' }}>{week}</p>
               {staff.map((s: any, si: number) => {
                 const completed = wi === 0 ? s.c1 : wi === 1 ? s.c2 : s.c3
                 return (
                   <div key={si} className="flex items-center justify-between py-1 text-[10px]">
-                    <span style={{ color: '#D1D5DB' }}>{s.name.split(' ')[0]}</span>
-                    {completed ? <span style={{ color: '#22C55E' }}>&#10003;</span> : <span style={{ color: '#6B7280' }}>—</span>}
+                    <span style={{ color: 'var(--tt-body, #D1D5DB)' }}>{s.name.split(' ')[0]}</span>
+                    {completed ? <span style={{ color: 'var(--tt-green, #22C55E)' }}>&#10003;</span> : <span style={{ color: 'var(--tt-dim, #6B7280)' }}>—</span>}
                   </div>
                 )
               })}
@@ -1340,7 +1340,7 @@ function SchoolSessionsTab({ school, neliStudents }: { school: any; neliStudents
     <div className="space-y-4">
       {/* Week Grid */}
       <div style={cardStyle}>
-        <h4 className="text-sm font-bold mb-3" style={{ color: '#F9FAFB' }}>Programme Week Grid</h4>
+        <h4 className="text-sm font-bold mb-3" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Programme Week Grid</h4>
         <div className="grid grid-cols-10 gap-1.5">
           {Array.from({ length: 20 }, (_, i) => {
             const weekNum = i + 1
@@ -1350,9 +1350,9 @@ function SchoolSessionsTab({ school, neliStudents }: { school: any; neliStudents
             return (
               <div key={i} className="flex items-center justify-center rounded-lg text-xs font-bold py-2"
                 style={{
-                  backgroundColor: completed ? 'rgba(34,197,94,0.15)' : current ? 'rgba(200,150,12,0.2)' : 'rgba(31,41,55,0.5)',
-                  color: completed ? '#22C55E' : current ? '#C8960C' : '#4B5563',
-                  border: current ? '2px solid #C8960C' : '1px solid transparent',
+                  backgroundColor: completed ? 'var(--tt-green-soft, rgba(34,197,94,0.15))' : current ? 'var(--tt-accent2-soft, rgba(200,150,12,0.2))' : 'var(--tt-panel, rgba(31,41,55,0.5))',
+                  color: completed ? 'var(--tt-green, #22C55E)' : current ? 'var(--tt-accent2, #C8960C)' : 'var(--tt-faint, #4B5563)',
+                  border: current ? '2px solid var(--tt-accent2, #C8960C)' : '1px solid transparent',
                 }}>
                 {weekNum}
               </div>
@@ -1360,22 +1360,22 @@ function SchoolSessionsTab({ school, neliStudents }: { school: any; neliStudents
           })}
         </div>
         <div className="flex gap-4 mt-3">
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(34,197,94,0.15)' }} /><span className="text-[10px]" style={{ color: '#6B7280' }}>Completed</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(200,150,12,0.2)', border: '1px solid #C8960C' }} /><span className="text-[10px]" style={{ color: '#6B7280' }}>Current Week</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: 'rgba(31,41,55,0.5)' }} /><span className="text-[10px]" style={{ color: '#6B7280' }}>Upcoming</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: 'var(--tt-green-soft, rgba(34,197,94,0.15))' }} /><span className="text-[10px]" style={{ color: 'var(--tt-dim, #6B7280)' }}>Completed</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: 'var(--tt-accent2-soft, rgba(200,150,12,0.2))', border: '1px solid var(--tt-accent2, #C8960C)' }} /><span className="text-[10px]" style={{ color: 'var(--tt-dim, #6B7280)' }}>Current Week</span></div>
+          <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded" style={{ backgroundColor: 'var(--tt-panel, rgba(31,41,55,0.5))' }} /><span className="text-[10px]" style={{ color: 'var(--tt-dim, #6B7280)' }}>Upcoming</span></div>
         </div>
       </div>
 
       {/* Session Schedule */}
       <div className="rounded-xl overflow-hidden" style={{ ...darkBg }}>
-        <div className="px-4 py-3" style={{ borderBottom: '1px solid #1F2937' }}>
-          <h4 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>This Week&apos;s Sessions</h4>
+        <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--tt-border, #1F2937)' }}>
+          <h4 className="text-sm font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>This Week&apos;s Sessions</h4>
         </div>
         <table className="w-full text-xs">
           <thead>
-            <tr style={{ backgroundColor: '#0D0E14' }}>
+            <tr style={{ backgroundColor: 'var(--tt-panel, #0D0E14)' }}>
               {['Day', 'Type', 'Students', 'Duration', 'Interventionist', 'Status'].map(h => (
-                <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: '#6B7280' }}>{h}</th>
+                <th key={h} className="px-3 py-2.5 text-left font-semibold" style={{ color: 'var(--tt-dim, #6B7280)' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -1387,16 +1387,16 @@ function SchoolSessionsTab({ school, neliStudents }: { school: any; neliStudents
               { day: 'Thursday', type: 'Individual Session', students: 2, duration: '10 min each', status: 'upcoming' },
               { day: 'Friday', type: 'Group Session + Assessment', students: neliStudents.length, duration: '30 min', status: 'upcoming' },
             ].map((row, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid #1F293740', opacity: row.status === 'done' ? 0.5 : 1 }}>
-                <td className="px-3 py-2.5" style={{ color: '#F9FAFB' }}>{row.day}</td>
-                <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{row.type}</td>
-                <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{row.students}</td>
-                <td className="px-3 py-2.5" style={{ color: '#D1D5DB' }}>{row.duration}</td>
-                <td className="px-3 py-2.5" style={{ color: '#9CA3AF' }}>{school.coordinator}</td>
+              <tr key={i} style={{ borderBottom: '1px solid var(--tt-rule, var(--tt-border, #1F2937)40)', opacity: row.status === 'done' ? 0.5 : 1 }}>
+                <td className="px-3 py-2.5" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{row.day}</td>
+                <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{row.type}</td>
+                <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{row.students}</td>
+                <td className="px-3 py-2.5" style={{ color: 'var(--tt-body, #D1D5DB)' }}>{row.duration}</td>
+                <td className="px-3 py-2.5" style={{ color: 'var(--tt-muted, #9CA3AF)' }}>{school.coordinator}</td>
                 <td className="px-3 py-2.5">
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{
-                    backgroundColor: row.status === 'done' ? 'rgba(34,197,94,0.15)' : row.status === 'current' ? 'rgba(200,150,12,0.15)' : 'rgba(31,41,55,0.5)',
-                    color: row.status === 'done' ? '#22C55E' : row.status === 'current' ? '#C8960C' : '#6B7280',
+                    backgroundColor: row.status === 'done' ? 'var(--tt-green-soft, rgba(34,197,94,0.15))' : row.status === 'current' ? 'var(--tt-accent2-soft, rgba(200,150,12,0.15))' : 'var(--tt-panel, rgba(31,41,55,0.5))',
+                    color: row.status === 'done' ? 'var(--tt-green, #22C55E)' : row.status === 'current' ? 'var(--tt-accent2, #C8960C)' : 'var(--tt-dim, #6B7280)',
                   }}>{row.status === 'done' ? 'Complete' : row.status === 'current' ? 'In Progress' : 'Upcoming'}</span>
                 </td>
               </tr>
@@ -1408,15 +1408,15 @@ function SchoolSessionsTab({ school, neliStudents }: { school: any; neliStudents
       {/* Session Statistics */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {[
-          { label: 'Total Delivered', value: totalDelivered, color: '#0D9488' },
-          { label: 'Expected at Week', value: totalExpected, color: '#3B82F6' },
-          { label: 'Per Week Avg', value: avgPerWeek, color: '#8B5CF6' },
-          { label: 'Most Consistent', value: mostConsistent?.name?.split(' ')[0] ?? '—', color: '#22C55E' },
-          { label: 'Attendance Rate', value: `${avgAttendance}%`, color: '#F59E0B' },
+          { label: 'Total Delivered', value: totalDelivered, color: 'var(--tt-accent, #0D9488)' },
+          { label: 'Expected at Week', value: totalExpected, color: 'var(--tt-blue, #3B82F6)' },
+          { label: 'Per Week Avg', value: avgPerWeek, color: 'var(--tt-purple, #8B5CF6)' },
+          { label: 'Most Consistent', value: mostConsistent?.name?.split(' ')[0] ?? '—', color: 'var(--tt-green, #22C55E)' },
+          { label: 'Attendance Rate', value: `${avgAttendance}%`, color: 'var(--tt-amber, #F59E0B)' },
         ].map(s => (
           <div key={s.label} className="rounded-xl p-3 text-center" style={{ ...darkBg }}>
             <p className="text-lg font-bold" style={{ color: s.color }}>{s.value}</p>
-            <p className="text-[10px]" style={{ color: '#6B7280' }}>{s.label}</p>
+            <p className="text-[10px]" style={{ color: 'var(--tt-dim, #6B7280)' }}>{s.label}</p>
           </div>
         ))}
       </div>
@@ -1446,8 +1446,8 @@ function SchoolReportsTab({ school }: { school: any }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-bold" style={{ color: '#F9FAFB' }}>Reports — {school.name}</h4>
-        <button className="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5" style={{ backgroundColor: '#C8960C', color: '#fff' }}>
+        <h4 className="text-sm font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>Reports — {school.name}</h4>
+        <button className="text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5" style={{ backgroundColor: 'var(--tt-accent2, #C8960C)', color: '#fff' }}>
           <Download size={12} /> Download All as ZIP
         </button>
       </div>
@@ -1457,11 +1457,11 @@ function SchoolReportsTab({ school }: { school: any }) {
           <div key={r.id} className="rounded-xl p-4" style={{ ...darkBg }}>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg">{r.icon}</span>
-              <h5 className="text-xs font-bold" style={{ color: '#F9FAFB' }}>{r.name}</h5>
+              <h5 className="text-xs font-bold" style={{ color: 'var(--tt-text, #F9FAFB)' }}>{r.name}</h5>
             </div>
-            <p className="text-[10px] mb-3" style={{ color: '#6B7280' }}>Pre-filtered to {school.name}</p>
+            <p className="text-[10px] mb-3" style={{ color: 'var(--tt-dim, #6B7280)' }}>Pre-filtered to {school.name}</p>
             <button onClick={() => handleGenerate(r.id)} disabled={generating === r.id}
-              className="w-full text-xs font-semibold py-2 rounded-lg" style={{ backgroundColor: generating === r.id ? '#1F2937' : '#0D9488', color: '#F9FAFB' }}>
+              className="w-full text-xs font-semibold py-2 rounded-lg" style={{ backgroundColor: generating === r.id ? 'var(--tt-border, #1F2937)' : 'var(--tt-accent, #0D9488)', color: 'var(--tt-text, #F9FAFB)' }}>
               {generating === r.id ? 'Generating...' : 'Generate Report'}
             </button>
           </div>
@@ -1488,13 +1488,13 @@ export default function DistrictDashboard() {
       <DistrictChartsRow />
 
       {/* Level 3 — School Tabs */}
-      <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none" style={{ borderBottom: '2px solid #1F2937' }}>
+      <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none" style={{ borderBottom: '2px solid var(--tt-border, #1F2937)' }}>
         <button onClick={() => setActiveSchoolTab('summary')}
           className="flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap rounded-t-lg"
           style={{
-            backgroundColor: activeSchoolTab === 'summary' ? '#111318' : 'transparent',
-            color: activeSchoolTab === 'summary' ? '#C8960C' : '#6B7280',
-            borderBottom: activeSchoolTab === 'summary' ? '3px solid #C8960C' : '3px solid transparent',
+            backgroundColor: activeSchoolTab === 'summary' ? 'var(--tt-card, #111318)' : 'transparent',
+            color: activeSchoolTab === 'summary' ? 'var(--tt-accent2, #C8960C)' : 'var(--tt-dim, #6B7280)',
+            borderBottom: activeSchoolTab === 'summary' ? '3px solid var(--tt-accent2, #C8960C)' : '3px solid transparent',
           }}>
           <span>🏫</span> District Summary
         </button>
@@ -1502,9 +1502,9 @@ export default function DistrictDashboard() {
           <button key={school.short} onClick={() => setActiveSchoolTab(school.short)}
             className="flex items-center gap-2 px-4 py-3 text-sm font-semibold whitespace-nowrap rounded-t-lg"
             style={{
-              backgroundColor: activeSchoolTab === school.short ? '#111318' : 'transparent',
-              color: activeSchoolTab === school.short ? '#F9FAFB' : '#6B7280',
-              borderBottom: activeSchoolTab === school.short ? '3px solid #C8960C' : '3px solid transparent',
+              backgroundColor: activeSchoolTab === school.short ? 'var(--tt-card, #111318)' : 'transparent',
+              color: activeSchoolTab === school.short ? 'var(--tt-text, #F9FAFB)' : 'var(--tt-dim, #6B7280)',
+              borderBottom: activeSchoolTab === school.short ? '3px solid var(--tt-accent2, #C8960C)' : '3px solid transparent',
             }}>
             <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ backgroundColor: statusColor(school.status) + '25', color: statusColor(school.status) }}>
               {school.short}
