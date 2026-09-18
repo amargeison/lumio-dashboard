@@ -45,13 +45,17 @@ const FAMILY_FEATURES = [
   feature('💬', 'A direct line', 'messages from the coaching team, in one place instead of scattered across texts.'),
 ].join('')
 
-export function portalInviteEmail({ role, inviteeName, headCoachName, academyName, playerName }: {
+export function portalInviteEmail({ role, inviteeName, headCoachName, academyName, playerName, signInUrl }: {
   role: 'coach' | 'parent' | 'student'
   inviteeName?: string | null
   headCoachName?: string | null
   academyName?: string | null
   playerName?: string | null
+  /** The academy's own portal. A coach signs in there directly; everyone else
+   *  goes through the shared sign-in page. Falls back to it either way. */
+  signInUrl?: string | null
 }): { subject: string; html: string } {
+  const SIGN_IN = signInUrl || LOGIN_URL
   const hi = inviteeName?.trim() ? `Hi ${inviteeName.trim().split(/\s+/)[0]},` : 'Hi,'
   const club = academyName?.trim() || 'their coaching academy'
   const head = headCoachName?.trim() || 'Your head coach'
@@ -74,7 +78,7 @@ ${logoHtml}
   It&rsquo;s the same portal they use, showing your side of it: your players, your sessions, your bookings and your kit. What you write stays yours. You won&rsquo;t see the academy&rsquo;s finances or another coach&rsquo;s players.
 </p>
 
-${ctaButton('Sign in to your portal &rarr;', LOGIN_URL)}
+${ctaButton('Sign in to your portal &rarr;', SIGN_IN)}
 
 <p style="margin:0 0 28px;font-size:13px;color:rgba(255,255,255,0.4);line-height:1.6;">
   Sign in with this email address and we&rsquo;ll send you a one-time code &mdash; there&rsquo;s no password to remember.
@@ -120,7 +124,7 @@ ${logoHtml}
   <strong style="color:#ffffff;">${head}</strong> at <strong style="color:#ffffff;">${club}</strong> uses Lumio Tennis Coach to plan sessions and track progress &mdash; and has invited you to ${about}.
 </p>
 
-${ctaButton('Open your portal &rarr;', LOGIN_URL)}
+${ctaButton('Open your portal &rarr;', SIGN_IN)}
 
 <p style="margin:0 0 28px;font-size:13px;color:rgba(255,255,255,0.4);line-height:1.6;">
   Sign in with this email address and we&rsquo;ll send you a one-time code &mdash; there&rsquo;s no password to remember.

@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       // brand the recipient may never have heard of, asking them to sign in —
       // which is indistinguishable from a phishing attempt.
       const { data: academy } = await admin.from('sports_profiles')
-        .select('brand_name, display_name').eq('id', user.id).maybeSingle()
+        .select('brand_name, display_name, portal_slug, sport').eq('id', user.id).maybeSingle()
 
       // A parent/student invite is about a specific player; name them.
       let playerName: string | null = null
@@ -66,6 +66,19 @@ export async function POST(req: NextRequest) {
         playerName = p?.name ?? null
       }
 
+      // Send a COACH straight to the academy's own portal, not to the generic
+      // sign-in page. /sports-login works — it identifies them and forwards — but
+      // it is an extra hop that asks for their email on a page branded for
+      // somebody else's product before the one they were invited to. Their portal
+      // asks for the same email and signs them in where they belong.
+      //
+      // Parents and students keep /sports-login: /portal is their destination and
+      // it is not addressed by an academy slug.
+      const { portalUrlFor } = await import('@/lib/sports-admin/portal-url')
+      const signInUrl = role === 'coach' && academy
+        ? `https://www.lumiosports.com${portalUrlFor({ ...academy, sport: 'coach' })}`
+        : null
+
       const { portalInviteEmail } = await import('@/lib/emails/portal-invite')
       const { subject, html } = portalInviteEmail({
         role: role as 'coach' | 'parent' | 'student',
@@ -73,6 +86,7 @@ export async function POST(req: NextRequest) {
         headCoachName: academy?.display_name ?? null,
         academyName: academy?.brand_name ?? null,
         playerName,
+        signInUrl,
       })
 
       const { Resend } = await import('resend')
