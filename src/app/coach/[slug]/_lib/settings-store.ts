@@ -28,6 +28,27 @@ export const ACCREDITATIONS: string[] = [
   'Coaching apprentice (in training)',
 ]
 
+// Player levels for the roster and onboarding dropdowns. Free text produced
+// "Red", "red ball", "RED BALL" and "beginner" for what is one group, which
+// makes the roster impossible to filter or report on. A fixed list fixes that;
+// an existing value that is not on the list is kept and shown rather than
+// silently rewritten, so nothing already recorded is lost.
+//
+// This is the LTA ball-colour pathway plus the adult grades a club actually
+// uses. Edit to match how your academy groups players.
+export const PLAYER_LEVELS: string[] = [
+  'Red ball (5–8)',
+  'Orange ball (8–9)',
+  'Green ball (9–10)',
+  'Yellow ball — junior',
+  'Adult beginner',
+  'Adult improver',
+  'Adult intermediate',
+  'Adult advanced',
+  'Performance / county',
+  'Social / cardio',
+]
+
 export type CoachSettings = {
   theme: 'dark' | 'light'
   accentKey: AccentKey

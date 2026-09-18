@@ -11,7 +11,7 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, currentIdentity, type CoachIdentity, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, RACKET_SKILLS, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore, useCoachProfile } from '../_lib/coach-db'
 import { WatchConnectPanel } from './WatchConnectPanel'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
-import { getSettings } from '../_lib/settings-store'
+import { getSettings, PLAYER_LEVELS } from '../_lib/settings-store'
 
 // v1: Effort & Rewards is manual-only — smartwatch QR pairing is hidden until v2.
 const SHOW_WATCH_PAIRING: boolean = false
@@ -255,7 +255,15 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
           {field('parent_name', 'Parent / guardian')}
           <div><label style={lbl}>Racket stage</label><select value={d.racket_stage ?? ''} onChange={e => set('racket_stage', e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
           <div><label style={lbl}>Coach</label><select value={d.assigned_coach ?? ''} onChange={e => set('assigned_coach', e.target.value)} style={input}><option value="">Head coach (you)</option>{coaches.slice(1).map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-          {field('level', 'Level', 'text', 'e.g. Red ball')}
+          <div><label style={lbl}>Level</label>
+            <select value={d.level ?? ''} onChange={e => set('level', e.target.value)} style={input}>
+              <option value="">—</option>
+              {/* Whatever is already on the row stays selectable even if it predates
+                  the fixed list, so opening an old player and saving cannot quietly
+                  wipe or rewrite their level. */}
+              {Array.from(new Set([d.level, ...PLAYER_LEVELS].filter(Boolean))).map((l: string) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
           {field('email', 'Email')}
           {field('phone', 'Phone')}
         </div>
