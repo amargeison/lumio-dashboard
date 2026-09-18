@@ -5,10 +5,10 @@
 // known to exist on sports_profiles, plus optional first players to coach_players.
 
 import { useState, useRef } from 'react'
-import { sb } from '../_lib/coach-db'
+import { sb, forgetIdentity } from '../_lib/coach-db'
 import { CoachImport, IMPORT_TEMPLATE_URL } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
-import { setSettings, getSettings, ACCREDITATIONS } from '../_lib/settings-store'
+import { setSettings, getSettings, ACCREDITATIONS, PLAYER_LEVELS } from '../_lib/settings-store'
 import { seedLumioResources } from '../_lib/lumio-resources'
 import { seedLumioPackages } from '../_lib/lumio-packages'
 import { applyTier } from '../_lib/feature-flags'
@@ -54,6 +54,8 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
   const [email, setEmail] = useState(defaultEmail)
   const [phone, setPhone] = useState('')
   const [calendar, setCalendar] = useState('')
+  const [syncOn, setSyncOn] = useState<boolean | null>(null)
+  const [syncEmail, setSyncEmail] = useState('')
   const [dbsNumber, setDbsNumber] = useState('')
   const [dbsExpiry, setDbsExpiry] = useState('')
   const [safeguarding, setSafeguarding] = useState('')
@@ -113,6 +115,21 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       // coach who completed onboarding and never opened Settings had no
       // qualification shown anywhere, and the rail line silently rendered nothing.
       if (accreditation) setSettings({ cert: accreditation })
+      // Calendar & email sync. Nothing is connected here — that needs the
+      // provider's own consent screen, which would navigate away mid-wizard and
+      // lose everything typed so far. What IS recorded is the choice and the
+      // address, so Settings → Connected accounts opens already pointing at the
+      // right provider and the coach clicks Connect once.
+      if (syncOn) {
+        const s0 = getSettings()
+        setSettings({
+          conn: { ...s0.conn, emailProvider: calendar || s0.conn.emailProvider, calendarSync: true },
+          messaging: { ...s0.messaging, senderEmail: syncEmail.trim() || email.trim() || s0.messaging.senderEmail },
+        })
+      } else if (syncOn === false) {
+        const s0 = getSettings()
+        setSettings({ conn: { ...s0.conn, calendarSync: false } })
+      }
       // Self-setup portals are live the moment onboarding finishes — nothing is
       // pending from the Lumio team, so they must not sit behind the
       // setup-pending screen (and they read as "live", not "pending", in admin).
@@ -121,7 +138,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       if (logo) update.brand_logo_url = logo
       if (email.trim()) update.contact_email = email.trim()
       if (phone.trim()) update.contact_phone = phone.trim()
-      if (calendar) update.calendar_provider = calendar
+      if (syncOn && calendar) update.calendar_provider = calendar
       if (dbsNumber.trim()) update.head_coach_dbs_number = dbsNumber.trim()
       if (dbsExpiry) update.head_coach_dbs_expiry = dbsExpiry
       if (safeguarding) update.head_coach_safeguarding_date = safeguarding
@@ -231,14 +248,25 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
 
       // Home court → seed it into the Court Planner as the home/main site.
       if (homeCourt.trim()) {
-        const venueId = `venue-home-${Date.now()}`
+        // The DATABASE row is created first and its real id is what everything
+        // else points at.
+        //
+        // Before, a local record was minted with a `venue-home-<timestamp>` id
+        // and settings.primaryVenueId named THAT, while the live Court Planner
+        // reads coach_venues — where the site sat under a uuid the settings had
+        // never heard of. So the venue existed twice, the home flag pointed at
+        // nothing, and the promise under this field ("we'll set this as your home
+        // site") quietly went unkept. One id now, and the write is logged rather
+        // than swallowed: supabase-js REPORTS errors, it does not throw them, so
+        // the old try/catch caught nothing and hid everything.
+        const { data: venueRow, error: venueErr } = await sb().from('coach_venues')
+          .insert({ coach_id: uid, name: homeCourt.trim(), contact_name: name.trim() || null, contact_phone: phone.trim() || null, contact_email: email.trim() || null, is_home: true })
+          .select('id').single()
+        if (venueErr) console.error('[onboarding] home venue insert failed', venueErr)
+        const venueId = venueRow?.id || `venue-home-${Date.now()}`
         addVenue({ id: venueId, name: homeCourt.trim(), type: 'Home court', address: '', distance: 'Home base', manager: name.trim() || 'You', managerPhone: phone.trim() || '', managerEmail: email.trim() || '', access: '', facilities: [], courts: [] })
         const cur = getSettings()
         setSettings({ primaryVenueId: venueId, syncedVenues: [...new Set([...(cur.syncedVenues || []), venueId])] })
-        // Seed the live Court Planner venue too, so it's selectable for staff home venue etc.
-        try {
-          await sb().from('coach_venues').insert({ coach_id: uid, name: homeCourt.trim(), contact_name: name.trim() || null, contact_phone: phone.trim() || null, contact_email: email.trim() || null, is_home: true })
-        } catch { /* non-blocking */ }
       }
 
       // "Set it up for me" — notify the Lumio team (fire and forget).
@@ -253,6 +281,11 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       if (typeof window !== 'undefined') {
         try { window.history.replaceState(null, '', `/tennis/coach/${finalSlug}`) } catch {}
       }
+      // whoami's answer changed under us — academy name, slug, logo and photo all
+      // arrived in this function. The identity cache still holds whatever was true
+      // before onboarding, so clear it: the shell repaints from the new profile
+      // instead of needing a manual refresh.
+      forgetIdentity()
       onDone()
       onClose()
     } catch (e) {
@@ -328,13 +361,34 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                 </div>
               </div>
               <div>
-                <label style={lbl}>Calendar sync <span style={{ color: '#4B5563', fontWeight: 400 }}>(connect Google/Outlook in Settings after setup)</span></label>
-                <select value={calendar} onChange={e => setCalendar(e.target.value)} style={input}>
-                  <option value="">Not connected</option>
-                  <option value="google">Google Calendar</option>
-                  <option value="outlook">Outlook / Microsoft</option>
-                  <option value="apple">Apple Calendar</option>
-                </select>
+                <label style={lbl}>Calendar &amp; email sync</label>
+                <p style={{ color: '#6B7280', fontSize: 11.5, margin: '4px 0 8px', lineHeight: 1.5 }}>Your Lumio bookings get written into your own calendar, and emails to players go out from your address rather than a generic one.</p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" onClick={() => setSyncOn(true)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', padding: '11px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `2px solid ${syncOn === true ? ACCENT : '#1F2937'}`, background: syncOn === true ? ACCENT + '18' : '#111318', color: syncOn === true ? '#fff' : '#9CA3AF' }}>Yes — turn sync on</button>
+                  <button type="button" onClick={() => setSyncOn(false)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', padding: '11px 12px', borderRadius: 10, fontSize: 13, fontWeight: 600, border: `2px solid ${syncOn === false ? ACCENT : '#1F2937'}`, background: syncOn === false ? ACCENT + '18' : '#111318', color: syncOn === false ? '#fff' : '#9CA3AF' }}>Not now</button>
+                </div>
+                {syncOn && (
+                  <div style={{ marginTop: 10, display: 'flex', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ ...lbl, fontSize: 10 }}>Provider</label>
+                      <select value={calendar} onChange={e => setCalendar(e.target.value)} style={input}>
+                        <option value="">Choose…</option>
+                        <option value="google">Google (Gmail &amp; Calendar)</option>
+                        <option value="microsoft">Outlook / Microsoft 365</option>
+                        <option value="icloud">Apple iCloud</option>
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ ...lbl, fontSize: 10 }}>Account to sync</label>
+                      <input type="email" value={syncEmail} onChange={e => setSyncEmail(e.target.value)} placeholder={email.trim() || 'you@gmail.com'} style={input} />
+                    </div>
+                  </div>
+                )}
+                {syncOn && (
+                  <p style={{ color: '#6B7280', fontSize: 11.5, margin: '8px 0 0', lineHeight: 1.5 }}>
+                    We won&apos;t ask for that password. When you finish setup, <strong style={{ color: '#9CA3AF' }}>Settings → Connected accounts</strong> will be waiting on {calendar === 'microsoft' ? 'Outlook' : calendar === 'icloud' ? 'iCloud' : calendar === 'google' ? 'Google' : 'your provider'} — one click and you approve it on their own sign-in screen.
+                  </p>
+                )}
               </div>
               <div style={{ borderTop: '1px solid #1F2937', paddingTop: 16, marginTop: 2 }}>
                 <label style={lbl}>Safeguarding &amp; DBS <span style={{ color: '#4B5563', fontWeight: 400 }}>(optional — add now or later in Settings)</span></label>
@@ -469,7 +523,10 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <input value={pName} onChange={e => setPName(e.target.value)} placeholder="Player name" style={{ ...input, marginTop: 0, flex: 2 }} />
-              <input value={pLevel} onChange={e => setPLevel(e.target.value)} placeholder="Level (optional)" style={{ ...input, marginTop: 0, flex: 1 }} />
+              <select value={pLevel} onChange={e => setPLevel(e.target.value)} style={{ ...input, marginTop: 0, flex: 1.3, cursor: 'pointer', color: pLevel ? '#fff' : '#6B7280' }}>
+                <option value="">Level (optional)</option>
+                {PLAYER_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
               {staff.length > 0 && (
                 <select value={pCoach} onChange={e => setPCoach(e.target.value)} style={{ ...input, marginTop: 0, flex: 1.4, cursor: 'pointer' }}>
                   <option value="">You</option>
