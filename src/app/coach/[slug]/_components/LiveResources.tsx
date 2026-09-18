@@ -18,7 +18,7 @@ const TABS: [string, string][] = [['all', 'All'], ['Drill Library', 'Drill Libra
 const fmtIcon = (f?: string | null) => f === 'Video' ? '▶' : f === 'Plan' ? '📅' : f === 'Worksheet' ? '📝' : '📄'
 const actionLabel = (f?: string | null) => f === 'Video' ? 'Watch video' : f === 'Plan' ? 'Open plan' : f === 'Worksheet' ? 'Open worksheet' : 'Open pdf'
 
-export function LiveResources({ T, accent, density }: { T: ThemeTokens; accent: AccentTokens; density: Density }) {
+export function LiveResources({ T, accent, density, asCoach = false }: { T: ThemeTokens; accent: AccentTokens; density: Density; asCoach?: boolean }) {
   const resources = useCoachTable<Res>('coach_resources')
   const [tab, setTab] = useState('all')
   const [edit, setEdit] = useState<Res | 'new' | null>(null)
@@ -83,8 +83,15 @@ export function LiveResources({ T, accent, density }: { T: ThemeTokens; accent: 
 
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '44px 20px', background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 12 }}>
+          {/* The Resource Centre is the ACADEMY's, shared by everyone in it. A coach
+              cannot load the Lumio library or reach Settings → Resource Centre, so
+              pointing them there is an instruction they cannot follow. */}
           <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text }}>{resources.rows.length === 0 ? 'No resources yet' : 'Nothing in this category yet'}</div>
-          <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>{resources.rows.length === 0 ? 'Add your own, or load the Lumio starter library in Settings → Resource Centre.' : 'Add a resource to this category.'}</div>
+          <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4, lineHeight: 1.6 }}>
+            {resources.rows.length > 0 ? 'Add a resource to this category.'
+              : asCoach ? 'Your head coach hasn\u2019t added the academy\u2019s library yet. Anything they load appears here straight away \u2014 and you can still add your own.'
+              : 'Add your own, or load the Lumio starter library in Settings \u2192 Resource Centre.'}
+          </div>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>

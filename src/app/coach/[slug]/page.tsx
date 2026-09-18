@@ -225,7 +225,7 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
                 clubName: me.brandName ?? '',
                 role: 'coach',
                 photoDataUrl: me.avatarUrl ?? null,
-                logoDataUrl: null,
+                logoDataUrl: me.brandLogoUrl ?? null,
                 sport: 'coach',
                 verifiedAt: new Date().toISOString(),
                 isDemoShell: false,
@@ -722,7 +722,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'venues':      return <LiveCourtPlanner T={T} accent={accent} onNavigate={setActive} />
         case 'development': return <LiveDevelopment T={T} accent={accent} />
         case 'equipment':   return <LiveEquipment T={T} accent={accent} />
-        case 'resources':   return <LiveResources T={T} accent={accent} density={density} />
+        case 'resources':   return <LiveResources T={T} accent={accent} density={density} asCoach={isHeadUser === false || !!viewStaffId} />
         case 'messages':    return <LiveMessages T={T} accent={accent} onConfigure={() => setActive('settings')} />
         // viewStaffId as well as isHeadUser: the head coach previewing a coach must
         // see the COACH's settings, not their own academy page with a coach's name

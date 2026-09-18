@@ -366,6 +366,42 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
   })
 
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
+
+  // Profile photo, set by the head coach on anyone's behalf. Three cases, because
+  // the destination differs: the head's own photo lives in local settings, an
+  // existing staff member's goes straight to their row, and a member being
+  // created has no id yet — so that one is held and uploaded the moment the
+  // insert returns an id, rather than being silently dropped.
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const [photoErr, setPhotoErr] = useState('')
+  const [pendingPhoto, setPendingPhoto] = useState<string | null>(null)
+
+  const pickPhoto = async (file?: File | null) => {
+    if (!file) return
+    setPhotoErr(''); setPhotoBusy(true)
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file)
+      if (isHead) {
+        const url = await uploadAvatar('/api/coach/staff-avatar', { head: true, dataUrl })
+        if (url) { setHeadProfile({ avatarUrl: url }); set('avatar_url', url) }
+        else setPhotoErr('Upload failed — try a different image.')
+      } else if (initial?.id) {
+        const url = await uploadAvatar('/api/coach/staff-avatar', { staffId: initial.id, dataUrl })
+        if (url) set('avatar_url', url)
+        else setPhotoErr('Upload failed — try a different image.')
+      } else {
+        setPendingPhoto(dataUrl); set('avatar_url', dataUrl)
+      }
+    } catch { setPhotoErr('Could not read that image.') }
+    setPhotoBusy(false)
+  }
+
+  const clearPhoto = async () => {
+    setPhotoErr('')
+    if (isHead) { setHeadProfile({ avatarUrl: '' }); set('avatar_url', ''); return }
+    setPendingPhoto(null); set('avatar_url', '')
+    if (initial?.id) { try { await dbUpdate('coach_staff', initial.id, { avatar_url: null }) } catch { /* saved on Save anyway */ } }
+  }
   const input: React.CSSProperties = { width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none', marginTop: 5 }
   const lbl: React.CSSProperties = { display: 'block', color: T.text3, fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }
   const fld = (k: string, label: string, type = 'text', ph?: string) => <div><label style={lbl}>{label}</label><input type={type} value={d[k] ?? ''} onChange={e => set(k, e.target.value)} placeholder={ph} style={input} /></div>
@@ -394,6 +430,11 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
       // Reconcile venue assignment: remove what was unticked, add what was
       // ticked. Done as a diff rather than delete-all-then-reinsert so an
       // interrupted save cannot leave a coach assigned to nothing.
+      // A photo chosen before the row existed: now it has an id, file it.
+      if (staffId && pendingPhoto) {
+        await uploadAvatar('/api/coach/staff-avatar', { staffId, dataUrl: pendingPhoto })
+      }
+
       if (staffId) {
         const uid = await currentCoachId()
         const { data: existing } = await sb().from('coach_staff_venues')
@@ -422,6 +463,27 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
       <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>
         <h3 style={{ color: T.text, fontSize: 18, fontWeight: 700, margin: '0 0 16px' }}>{isHead ? 'Your details (head coach)' : initial?.id ? 'Edit staff member' : 'Add staff member'}</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
+          {d.avatar_url
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={avatarSrc(d.avatar_url)} alt="" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            : <div style={{ width: 56, height: 56, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, flexShrink: 0 }}>{initialsOf(String(d.name || '?'))}</div>}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <label style={{ fontSize: 12.5, fontWeight: 600, color: accent.hex, cursor: photoBusy ? 'wait' : 'pointer' }}>
+                {photoBusy ? 'Uploading…' : d.avatar_url ? 'Change photo' : 'Add photo'}
+                <input type="file" accept="image/*" disabled={photoBusy} style={{ display: 'none' }} onChange={e => pickPhoto(e.target.files?.[0])} />
+              </label>
+              {d.avatar_url && !photoBusy && (
+                <button type="button" onClick={clearPhoto} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Remove</button>
+              )}
+            </div>
+            <p style={{ color: T.text3, fontSize: 11, margin: '4px 0 0', lineHeight: 1.5 }}>
+              Shown on their portal, the players&rsquo; app and anything they send. Square crop, any size — it is resized for you.
+            </p>
+            {photoErr && <p style={{ color: '#EF4444', fontSize: 11.5, margin: '4px 0 0' }}>{photoErr}</p>}
+          </div>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {isHead
             ? <div><label style={lbl}>Name</label><input value={d.name ?? ''} readOnly title="Set under Settings → Head coach profile" style={{ ...input, opacity: 0.65, cursor: 'not-allowed' }} /></div>

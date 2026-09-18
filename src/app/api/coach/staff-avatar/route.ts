@@ -28,32 +28,33 @@ export async function POST(req: NextRequest) {
 
   if (!staffId) return NextResponse.json({ error: 'Missing coach' }, { status: 400 })
 
-  // Who owns the academy this staff row belongs to?
+  // Find the row FIRST, then ask whether this caller may touch it.
   //
-  // Two callers, and only one of them used to work. The HEAD COACH is the
-  // academy (coach_id = their user id), which is what the original check
-  // assumed. An INVITED COACH is not — their user id matches no coach_id at all,
-  // so uploading their own photo 404'd, and the coach profile page fell back to
-  // storing the image as a base64 data URL on the row. That put a few hundred KB
-  // of JPEG into every whoami response and every staff query.
-  let ownerId: string | null = null
+  // The previous order — guess the academy from the caller, then look for the row
+  // inside it — meant a caller with more than one membership, or whose newest
+  // membership was not the relevant one, was refused with a bare 404 even though
+  // the row was plainly theirs. Deriving the academy from the row itself removes
+  // the guess: there is exactly one academy that owns a given staff id.
+  const { data: staffRow } = await admin.from('coach_staff')
+    .select('id, coach_id').eq('id', staffId).maybeSingle()
+  if (!staffRow) return NextResponse.json({ error: 'Coach not found' }, { status: 404 })
 
-  const { data: asHead } = await admin.from('coach_staff')
-    .select('id').eq('id', staffId).eq('coach_id', user.id).maybeSingle()
-  if (asHead) {
-    ownerId = user.id
-  } else {
-    // A coach may change their OWN photo and nobody else's — the membership is
-    // what says which row is theirs, never anything in the request.
+  const ownerId = staffRow.coach_id as string
+
+  // Two people may set this photo: the head coach of that academy, and the coach
+  // it belongs to. Nobody else — a coach may change their OWN photo and no
+  // colleague's, which is why the membership must name this exact staff row.
+  let allowed = ownerId === user.id
+  if (!allowed) {
     const { data: rows } = await admin.from('coach_members')
-      .select('academy_id, staff_id, role, status')
-      .eq('member_user_id', user.id).eq('status', 'active')
-      .order('created_at', { ascending: false }).limit(1)
-    const m = rows?.[0]
-    if (m && m.role === 'coach' && m.staff_id === staffId) ownerId = m.academy_id as string
+      .select('staff_id, role, status')
+      .eq('member_user_id', user.id).eq('academy_id', ownerId).eq('status', 'active')
+    allowed = !!rows?.some(m => m.role === 'coach' && m.staff_id === staffId)
   }
-
-  if (!ownerId) return NextResponse.json({ error: 'Coach not found' }, { status: 404 })
+  if (!allowed) {
+    console.warn('[staff-avatar] refused', { user: user.id, staffId, ownerId })
+    return NextResponse.json({ error: 'You cannot change that photo.' }, { status: 403 })
+  }
 
   // Stored under the ACADEMY's folder, not the uploader's — the bucket is keyed
   // by academy, and filing a coach's photo under their own user id would put it

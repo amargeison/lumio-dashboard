@@ -69,6 +69,7 @@ export type CoachIdentity = {
   /** The signed-in coach's own name/photo, so the shell can greet the right person. */
   displayName?: string | null
   avatarUrl?: string | null
+  brandLogoUrl?: string | null
   staffRole?: string | null
   accreditation?: string | null
 }
@@ -145,6 +146,11 @@ export function forgetIdentity() {
 const ASSIGNABLE = new Set<CoachTable>([
   'coach_players', 'coach_bookings', 'coach_sessions', 'coach_session_plans',
   'coach_camps', 'coach_development', 'coach_attendance',
+  // Equipment joined this list with migration 168, which gave a coach their own
+  // kit. Their rows are only visible — and only writable — when they carry their
+  // staff_id, so without the stamp every "Add item" was refused by row level
+  // security and vanished without a word.
+  'coach_equipment', 'coach_kit_items',
 ])
 
 // ── "View as coach" preview scope ───────────────────────────────────────────
