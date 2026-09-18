@@ -28,7 +28,7 @@ import { startSettingsSync } from './_lib/settings-sync'
 import { getHidden, subscribe as subscribeMenu, ALWAYS_VISIBLE } from './_lib/menu-visibility'
 import { getSession as getDemoSession, saveSession as saveDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import {
-  normalizeRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole,
+  normalizeRole, viewFromRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole, type CoachView,
 } from './_lib/role-scope'
 import { coachById, coachStats } from './_lib/coaches-data'
 import { currentIdentity, identityProblem, identityMessage, IDENTITY_CHANGED, type CoachIdentity } from './_lib/coach-db'
@@ -399,7 +399,19 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // changeRole (below) persists the choice back into the session blob so it
   // survives reload. The active role drives (a) which coachId the data views
   // scope to and (b) which nav items are available.
-  const [role, setRole] = useState<CoachViewRole>(normalizeRole(session?.role))
+  // ONE piece of state for "whose portal am I looking at".
+  //
+  // This was two — `role` and `viewStaffId` — and every bug in the switcher came
+  // from something setting one and not the other: Exit left the staff id behind,
+  // the demo guard set the role while the id stayed, the nav and the profile card
+  // disagreed with the banner above them. Two variables that must always agree
+  // are one variable with extra steps.
+  //
+  // `role` and `viewStaffId` still exist below, derived — so every read in this
+  // file keeps working — but nothing can write one without the other.
+  const [view, setView] = useState<CoachView>(() => viewFromRole(normalizeRole(session?.role)))
+  const role: CoachViewRole = view.kind
+  const setRole = (r: CoachViewRole) => setView(viewFromRole(r))
   // Is the signed-in user actually the academy owner? Until this resolves we
   // assume they are NOT, so an assistant never sees the head coach's nav flash
   // up before being corrected.
@@ -416,7 +428,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // — on a live portal that is a person who does not exist, with a headshot and
   // statistics belonging to nobody.
   const [liveStaff, setLiveStaff] = useState<{ id: string; name: string; qualifications?: string | null; avatar_url?: string | null }[]>([])
-  const [viewStaffId, setViewStaffId] = useState<string | null>(null)
+  // Derived, never set on its own. Null unless a specific coach is being viewed.
+  const viewStaffId = view.kind === 'coach' ? view.staffId : null
   useEffect(() => {
     if (!isEmpty) return
     let alive = true
@@ -620,8 +633,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
     // carries WHICH coach as well as which role. normalizeRole only understands
     // the bare role, so split it here rather than teaching it about staff ids.
     const [base, staffId] = roleId.split(':')
-    setViewStaffId(base === 'coach' ? (staffId ?? null) : null)
-    setRole(normalizeRole(base))
+    const next = normalizeRole(base)
+    setView(next === 'coach' ? { kind: 'coach', staffId: staffId ?? null } : viewFromRole(next))
     const s = getDemoSession('coach')
     if (s) { try { saveDemoSession('coach', { ...s, role: base }) } catch { /* ignore */ } }
   }
@@ -677,7 +690,11 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 24px', fontSize: 12, fontWeight: 600, background: 'rgba(245,158,11,0.14)', color: '#B45309', borderBottom: '1px solid rgba(245,158,11,0.3)', flexShrink: 0 }}>
       <span style={{ fontSize: 13 }}>👁</span>
       <span>Viewing as {roleLabel}{impersonatedCoach ? ` — ${impersonatedCoach}` : ''}</span>
-      <button onClick={() => setRole('head')} style={{ marginLeft: 'auto', appearance: 'none', border: '1px solid rgba(245,158,11,0.5)', background: 'transparent', color: '#B45309', borderRadius: 7, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Exit to Head Coach</button>
+      {/* changeRole, not setRole. setRole changed the ROLE and left viewStaffId
+          pointing at the coach — so the nav, the data scope and the profile block
+          all stayed on them while the banner claimed you were back. Exit has to be
+          the exact inverse of the switch that got you here. */}
+      <button onClick={() => changeRole('head')} style={{ marginLeft: 'auto', appearance: 'none', border: '1px solid rgba(245,158,11,0.5)', background: 'transparent', color: '#B45309', borderRadius: 7, padding: '3px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Exit to Head Coach</button>
     </div>
   )
 
@@ -717,7 +734,9 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
           </>
         )
         case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)}
-          asCoach={isHeadUser === false ? { name: myIdentity?.displayName || coachName, profileDone: profileDone !== false } : null} />
+          asCoach={viewStaff ? { name: viewStaff.name, profileDone: true }
+            : isHeadUser === false ? { name: myIdentity?.displayName || coachName, profileDone: profileDone !== false }
+            : null} />
       }
       const activeItem = COACH_SIDEBAR.find(i => i.id === active)
       const title = (activeItem ? navLabel(activeItem) : null) ?? 'This section'

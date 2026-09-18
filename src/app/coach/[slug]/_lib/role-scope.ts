@@ -44,6 +44,25 @@ export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues', 'payments']
 
 // Normalise whatever the session carries (may be a legacy role like
 // 'assistant'/'manager', or undefined) to one of the three view roles.
+// Which portal is on screen, as ONE value.
+//
+// The shell used to hold the role and the viewed coach's id in two separate
+// pieces of state that were required to agree. They repeatedly did not: exiting
+// a preview cleared one, a guard set the other, and the sidebar, the data scope
+// and the "viewing as" banner could each believe something different at the same
+// moment. A coach id only means anything in the coach view, so it belongs inside
+// it rather than alongside it.
+export type CoachView =
+  | { kind: 'head' }
+  | { kind: 'coach'; staffId: string | null }   // null = the generic demo coach
+  | { kind: 'student' }
+
+export function viewFromRole(role: CoachViewRole): CoachView {
+  return role === 'coach' ? { kind: 'coach', staffId: null }
+    : role === 'student' ? { kind: 'student' }
+    : { kind: 'head' }
+}
+
 export function normalizeRole(role: string | undefined | null): CoachViewRole {
   return role === 'coach' || role === 'student' ? role : 'head'
 }
