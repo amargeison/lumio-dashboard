@@ -17,6 +17,7 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { getSettings, setSettings } from '../_lib/settings-store'
 import { CoachMyProfile } from './CoachMyProfile'
+import { IntegrationsPanel } from './IntegrationsPanel'
 
 export function CoachSettings({ T, accent, onNavigate }: {
   T: ThemeTokens; accent: AccentTokens; onNavigate?: (id: string) => void
@@ -38,6 +39,14 @@ export function CoachSettings({ T, accent, onNavigate }: {
       <div style={card}>
         <div style={head}>You</div>
         <CoachMyProfile T={T} accent={accent} mode="settings" />
+      </div>
+
+      <div style={card}>
+        <div style={head}>Connected accounts</div>
+        <p style={{ color: T.text3, fontSize: 13, margin: '0 0 14px', lineHeight: 1.6 }}>
+          Connect your own mailbox and calendar. Your bookings are written out to your calendar, and email can go out from your address rather than a generic one. This is yours alone — your head coach connects theirs separately, and neither of you sees the other’s inbox.
+        </p>
+        <IntegrationsPanel T={T} accent={accent} />
       </div>
 
       <div style={card}>
