@@ -663,7 +663,7 @@ export default function TennisCoachPage() {
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 12, color: MUTED, textAlign: 'center', margin: '0 0 40px' }}>Founding access — free for 3 months on any tier. Kit sold separately; Standard needs no kit.</p>
+          <p style={{ fontSize: 12, color: MUTED, textAlign: 'center', margin: '0 0 40px' }}>Founding members: free for three months. In return we ask for a fortnightly feedback call, a short case study at the end, and permission to use your name. After three months, £9/month. Kit sold separately; Standard needs no kit.</p>
 
           {/* A — Student add-on (second revenue stream) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 24 }}>
