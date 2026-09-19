@@ -312,9 +312,6 @@ export default function FootballProPage() {
             Squad management, PSR compliance, GPS load monitoring, tactics & set pieces, Directors Suite, fan engagement, and a world-first AI half-time brief. Everything your club needs. One platform.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=football" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/football/oakridge-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Try the demo →
             </Link>
@@ -436,9 +433,6 @@ export default function FootballProPage() {
             Explore the live demo with Lumio Sports FC — no signup, no account needed. Or book a 30-minute walkthrough with the Lumio team.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
-            <Link href="/sports-signup?sport=football" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/football/oakridge-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Try the demo →
             </Link>
