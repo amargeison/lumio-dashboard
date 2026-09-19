@@ -493,9 +493,6 @@ export default function WomensLandingPage() {
             Purpose-built sections across every area of a women&apos;s professional club. FSR compliance, Karen Carney welfare standards, cycle tracking + GPS integration, ACL intelligence, AI Performance Brief (Half-Time / Full-Time / Training), Lumio Data analytics, travel logistics, academy pathway — built for WSL and WSL 2 clubs.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=womens" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PINK, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PINK}55` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/womens/oakridge-women" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Try the demo →
             </Link>
@@ -672,9 +669,6 @@ export default function WomensLandingPage() {
             ))}
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sports-signup?sport=womens" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PINK, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PINK}55` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/womens/oakridge-women" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Try the demo →
             </Link>
