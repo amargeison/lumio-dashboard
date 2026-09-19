@@ -9865,11 +9865,8 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
           <div className="text-4xl mb-4">🔒</div>
           <h2 className="text-xl font-medium text-white mb-2">Pro feature</h2>
           <p className="text-gray-400 text-sm text-center max-w-xs mb-6">
-            {activeSection.replace(/-/g, ' ')} is available on the Premier League plan (£279/mo).
+            {activeSection.replace(/-/g, ' ')} is available on the Premier League plan.
           </p>
-          <button className="px-6 py-3 bg-red-600/20 border border-red-500/40 text-red-300 text-sm rounded-xl hover:bg-red-600/30 transition-colors">
-            Upgrade to Premier League &rarr;
-          </button>
           <p className="text-gray-600 text-xs mt-3">Currently on: {player.plan || 'Essentials'}</p>
         </div>
       );
@@ -10208,7 +10205,6 @@ export function DartsPortalInner({ slug, session, onSignOut }: { slug: string; s
         {session.isDemoShell !== false && (
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
             <span>This is a demo · sample data</span>
-            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>Get founding access →</a>
           </div>
         )}
         {currentRole !== 'player' && !isSponsor && roleConfig.message && (

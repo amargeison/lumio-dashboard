@@ -99,69 +99,6 @@ const TIERS: RoleCard[] = [
   },
 ]
 
-interface PricingTier { name: string; price: string; priceSub?: string; features: string[]; highlight?: boolean }
-
-const CLUB_PRICING: PricingTier[] = [
-  {
-    name: 'Junior Club — Starter',
-    price: 'Free',
-    priceSub: 'up to 3 teams',
-    features: [
-      'Safeguarding & Consent Hub',
-      'GDPR-safe by design — built around the Safeguarding & Consent Hub',
-      'Fixtures & Results — pluggable FA Full-Time / league / manual',
-      'Squad lists & registration',
-      'Volunteer Roles — the web of jobs that runs your team',
-      'Matchday Operations checklist',
-      'Club Profile',
-      'FA Charter Standard evidence pack',
-    ],
-  },
-  {
-    name: 'Junior Club — Pro',
-    price: '£49',
-    priceSub: '/month',
-    highlight: true,
-    features: [
-      'Everything in Starter',
-      'Unlimited teams across all age bands',
-      'Coach Toolkit — sessions, drills, FIFA-style player cards',
-      'Tactics, Training & Set Pieces — age-appropriate formations + drills',
-      'Match Video library — auto-clipped per-child highlights',
-      'Video & Analysis — coach-side tactical breakdowns',
-      'Player Development Tracker (FA four-corner)',
-      'GPS, Performance & Heatmaps — junior-conservative',
-      'Referees — booking, regional pool, develop, protect',
-      'Tournaments, Travel & Car-Share, Tours & Camps, Fundraising',
-    ],
-  },
-  {
-    name: 'Junior Academy',
-    price: '£149',
-    priceSub: '/month',
-    features: [
-      'Everything in Pro',
-      'Academy Lead role with termly review sign-off',
-      'Cross-age-band development pathway view',
-      'AI Match Recap + AI Performance Brief',
-      'Committee Suite + Insights — chair\'s club-health view',
-      'Revenue & Funding dashboard with parent-app revenue share',
-      'Dedicated onboarding + priority support',
-    ],
-  },
-]
-
-const PARENT_TIER = {
-  name: 'Parent App',
-  price: '£8.99',
-  priceSub: '/month per child',
-  features: [
-    'Per-child match recap, every Sunday',
-    'Your own child\'s highlight reel + GPS',
-    'Season timeline and keepsake archive',
-    'Fixtures, RSVPs, fees in one place',
-  ],
-}
 
 // ── Shared mockup chrome ────────────────────────────────────────────────────
 
@@ -463,9 +400,6 @@ function ParentAppFlagshipSection() {
             >
               Try the parent view →
             </Link>
-            <div style={{ display: 'inline-flex', alignItems: 'center', padding: '16px 18px', borderRadius: 12, backgroundColor: 'rgba(241,196,15,0.10)', border: `1px solid ${GOLD}55`, color: GOLD, fontSize: 13, fontWeight: 700 }}>
-              £8.99 / month · per child
-            </div>
           </div>
         </div>
         <div>
@@ -530,24 +464,6 @@ export default function FootballJuniorPage() {
             Log in on a Sunday afternoon and watch your child&apos;s highlights from that morning&apos;s match — their stats, their heatmap, their season. Junior football&apos;s first platform built for the club, the coach and the parent.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link
-              href="/sports-signup?sport=junior"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '18px 32px',
-                borderRadius: 12,
-                backgroundColor: GREEN,
-                color: '#000',
-                fontSize: 16,
-                fontWeight: 800,
-                textDecoration: 'none',
-                boxShadow: `0 20px 50px ${GREEN}55`,
-              }}
-            >
-              Apply for founding access →
-            </Link>
             <Link
               href="/junior/oakridge-juniors"
               style={{
@@ -699,126 +615,18 @@ export default function FootballJuniorPage() {
         roles={JUNIOR_ROLES}
       />
 
-      {/* ─── Pricing ──────────────────────────────────────────────────────── */}
-      {/* Junior has FOUR tiers: three club tiers + a parent-funded tier. The
-          parent strip below the three club cards is the commercial
-          differentiator — the platform is funded by parents, not billed to
-          the club. */}
+      {/* ─── Commercial model ─────────────────────────────────────────────── */}
+      {/* Junior is parent-funded: the club pays nothing. The tier cards and the
+          parent-app price that used to sit here are gone while the product is
+          demo-only — the model is stated, nothing is offered for sale. */}
       <section style={{ padding: '96px 24px', backgroundColor: BG }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
             Free for the club. Funded by the parents.
           </h2>
           <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 48 }}>
-            Junior club tiers are optional upgrades for clubs that want the full toolkit. The flagship Parent App is billed per child to the parent — not to the club — so volunteer-run clubs pay nothing and parents get the experience they care about.
+            The Parent App is billed per child to the parent — not to the club — so volunteer-run clubs pay nothing and parents get the experience they care about.
           </p>
-
-          {/* Three club tiers — standard 3-column grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18, marginBottom: 32 }}>
-            {CLUB_PRICING.map(p => (
-              <div
-                key={p.name}
-                style={{
-                  backgroundColor: CARD,
-                  border: p.highlight ? `2px solid ${GREEN}` : `1px solid ${BORDER}`,
-                  borderRadius: 16,
-                  padding: 26,
-                  position: 'relative',
-                }}
-              >
-                {p.highlight && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: -12,
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      padding: '4px 12px',
-                      borderRadius: 999,
-                      backgroundColor: GREEN,
-                      color: '#000',
-                      fontSize: 10,
-                      fontWeight: 900,
-                      letterSpacing: '0.1em',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Most popular
-                  </div>
-                )}
-                <h3 style={{ fontSize: 18, fontWeight: 900, color: TEXT, marginBottom: 6 }}>{p.name}</h3>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 18 }}>
-                  <span style={{ fontSize: 26, fontWeight: 900, color: GOLD }}>{p.price}</span>
-                  {p.priceSub && <span style={{ fontSize: 13, color: MUTED, fontWeight: 600 }}>{p.priceSub}</span>}
-                </div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {p.features.map(f => (
-                    <li key={f} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#D1D5DB' }}>
-                      <span style={{ color: GOLD, fontWeight: 900, flexShrink: 0 }}>✓</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          {/* Parent App strip — visually distinct, full-width, parent-funded tier */}
-          <div
-            style={{
-              position: 'relative',
-              borderRadius: 18,
-              padding: 28,
-              background: `linear-gradient(135deg, rgba(22,101,52,0.22) 0%, rgba(22,163,74,0.10) 60%, transparent 100%)`,
-              border: `2px solid ${GREEN_LIGHT}`,
-              boxShadow: `0 20px 50px rgba(22,163,74,0.18)`,
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                top: -12,
-                left: 24,
-                padding: '4px 12px',
-                borderRadius: 999,
-                backgroundColor: GREEN_LIGHT,
-                color: '#0A0C14',
-                fontSize: 10,
-                fontWeight: 900,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Parent-funded · the commercial model
-            </div>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)',
-                gap: 28,
-                alignItems: 'center',
-              }}
-            >
-              <div>
-                <h3 style={{ fontSize: 22, fontWeight: 900, color: TEXT, marginBottom: 6 }}>{PARENT_TIER.name}</h3>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 12 }}>
-                  <span style={{ fontSize: 30, fontWeight: 900, color: GOLD }}>{PARENT_TIER.price}</span>
-                  <span style={{ fontSize: 14, color: MUTED, fontWeight: 600 }}>{PARENT_TIER.priceSub}</span>
-                </div>
-                <p style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.5, marginBottom: 0 }}>
-                  The platform is funded by parents, not billed to the club. Volunteer-run clubs on the Starter tier give every parent the Parent App without paying a penny themselves — Lumio bills the parents who opt in, the club gets the toolkit at no cost.
-                </p>
-              </div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {PARENT_TIER.features.map(f => (
-                  <li key={f} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#D1D5DB' }}>
-                    <span style={{ color: GREEN_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -832,24 +640,6 @@ export default function FootballJuniorPage() {
             Try the Oakridge Juniors FC live demo — a Charter Standard development club running a full season on Lumio Junior, including the U11 Lions and the canonical Parent App view. Or apply for founding access to bring your own club on.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link
-              href="/sports-signup?sport=junior"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '18px 32px',
-                borderRadius: 12,
-                backgroundColor: GREEN,
-                color: '#000',
-                fontSize: 16,
-                fontWeight: 800,
-                textDecoration: 'none',
-                boxShadow: `0 20px 50px ${GREEN}55`,
-              }}
-            >
-              Apply for founding access →
-            </Link>
             <Link
               href="/junior/oakridge-juniors"
               style={{

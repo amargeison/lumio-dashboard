@@ -83,12 +83,6 @@ const INTEGRATIONS: Array<{ icon: string; name: string; desc: string; status?: '
   { icon: '🤖', name: 'Claude AI', desc: 'Intelligence and briefings' },
 ]
 
-const TIERS: { name: string; price: string; desc: string; badge?: string }[] = [
-  { name: 'WSL', price: '£499/mo', desc: 'The complete Club OS. FSR compliance, Karen Carney welfare, cycle tracking + GPS, ACL intelligence, AI Performance Brief (Half-Time / Full-Time / Training), Lumio Data analytics, academy, transfers, travel logistics, board suite.' },
-  { name: 'WSL 2', price: '£299/mo', desc: 'FSR-lite compliance, Karen Carney standards, basic GPS, welfare tracking, squad management, dual registration, morning briefings.', badge: "For WSL 2 women's clubs meeting professionalisation standards" },
-  { name: "Women's National League", price: '£149/mo', desc: 'Everything a growing club needs. Welfare standards, compliance tracking, squad management — affordable and built for football people.' },
-]
-
 // ── Mockup chrome ───────────────────────────────────────────────────────────
 function MockupFrame({ children }: { children: React.ReactNode }) {
   return (
@@ -493,9 +487,6 @@ export default function WomensLandingPage() {
             Purpose-built sections across every area of a women&apos;s professional club. FSR compliance, Karen Carney welfare standards, cycle tracking + GPS integration, ACL intelligence, AI Performance Brief (Half-Time / Full-Time / Training), Lumio Data analytics, travel logistics, academy pathway — built for WSL and WSL 2 clubs.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=womens" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PINK, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PINK}55` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/womens/oakridge-women" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Try the demo →
             </Link>
@@ -637,26 +628,6 @@ export default function WomensLandingPage() {
         </div>
       </section>
 
-      {/* ── TIERS ── */}
-      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
-            Built for every level of women&apos;s professional football.
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 56 }}>
-            {TIERS.map(t => (
-              <div key={t.name} style={{ backgroundColor: CARD, border: `1px solid ${PINK}55`, borderRadius: 16, padding: 32 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: PINK, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>TIER</div>
-                <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 8 }}>{t.name}</h3>
-                <div style={{ fontSize: 32, fontWeight: 900, color: PINK, marginBottom: 16 }}>{t.price}</div>
-                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6, marginBottom: t.badge ? 16 : 0 }}>{t.desc}</p>
-                {t.badge && <div style={{ fontSize: 11, color: '#F59E0B', padding: '8px 12px', borderRadius: 8, backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>{t.badge}</div>}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── EARLY ACCESS CTA ── */}
       <section style={{ padding: '120px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
@@ -672,9 +643,6 @@ export default function WomensLandingPage() {
             ))}
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sports-signup?sport=womens" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PINK, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PINK}55` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/womens/oakridge-women" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Try the demo →
             </Link>

@@ -23,12 +23,6 @@ const FEATURES = [
   { icon: '🏆', title: 'Tournament & Trophy Day', desc: 'Run a 5-a-side or age-group tournament without three spreadsheets. Fixture generator, live scores on a shared link, and a final standings PDF at full time.' },
 ]
 
-const PRICING = [
-  { name: 'Club Free', price: 'Free', features: ['Team chat & announcements', 'Fixture tracker + RSVPs', 'Training attendance', 'Subs & fees (manual reconcile)', '1 team, unlimited players'] },
-  { name: 'Club Plus', price: '£9/mo', highlight: true, features: ['Everything in Free', 'Multi-team (up to 5 teams)', 'Auto-payment via Stripe', 'Tournament generator', 'AI social post drafts', 'Branded club page'] },
-  { name: 'Academy', price: '£29/mo', features: ['Everything in Plus', 'Unlimited teams', 'Academy reports (parent-friendly)', 'Player development notes', 'Coach roster + qualifications', 'Dedicated WhatsApp support'] },
-]
-
 export default function FootballGrassrootsPage() {
   return (
     <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
@@ -45,9 +39,6 @@ export default function FootballGrassrootsPage() {
             For grassroots clubs, Sunday League sides, and youth / academy setups. Fixtures, RSVPs, subs, attendance, match-day sharing, tournaments — all in a phone-first app your coaches and parents actually open. Free for every club, forever.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=grassroots" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: GREEN, color: '#000', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${GREEN}55` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/grassroots/sunday-rovers-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the demo →
             </Link>
@@ -80,48 +71,18 @@ export default function FootballGrassrootsPage() {
         </div>
       </section>
 
-      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
-            Free for every grassroots club.
-          </h2>
-          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 48 }}>
-            Paid tiers only if you run multiple teams or want Stripe subs collection.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
-            {PRICING.map(p => (
-              <div key={p.name} style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${GREEN}` : `1px solid ${BORDER}`, borderRadius: 16, padding: 26, position: 'relative' }}>
-                {p.highlight && (
-                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '4px 12px', borderRadius: 999, backgroundColor: GREEN, color: '#000', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Most popular</div>
-                )}
-                <h3 style={{ fontSize: 18, fontWeight: 900, color: TEXT, marginBottom: 6 }}>{p.name}</h3>
-                <div style={{ fontSize: 26, fontWeight: 900, color: GOLD, marginBottom: 18 }}>{p.price}</div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {p.features.map(f => (
-                    <li key={f} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#D1D5DB' }}>
-                      <span style={{ color: GOLD, fontWeight: 900, flexShrink: 0 }}>✓</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section style={{ padding: '120px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: GOLD, textTransform: 'uppercase', marginBottom: 16 }}>
+            FREE FOR EVERY GRASSROOTS CLUB
+          </div>
           <h2 style={{ fontSize: 44, fontWeight: 900, color: TEXT, marginBottom: 20, lineHeight: 1.1 }}>
             Give your Sunday coach their weekends back.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            Try the Sunday Rovers FC live demo — a fictional U14s club running a full season on Lumio. Or sign up your own club and run it all day one, free.
+            Try the Sunday Rovers FC live demo — a fictional U14s club running a full season on Lumio.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sports-signup?sport=grassroots" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: GREEN, color: '#000', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${GREEN}55` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/grassroots/sunday-rovers-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the demo →
             </Link>

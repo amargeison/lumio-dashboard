@@ -49,11 +49,6 @@ const TIERS = [
   { name: 'Top 50 / Ryder Cup',          desc: 'Advanced SG analytics, exemption tracking, career planning, Major preparation, tax-ready financials. Trusted by players at the highest level.' },
 ]
 
-const PRICING = [
-  { tier: 'Lumio Tour Pro',  price: '£199/mo', features: ['Individual dashboard', 'OWGR + Race to Dubai tracker', 'Strokes Gained analytics', 'Tournament schedule', 'Sponsorship manager', 'AI morning briefing'] },
-  { tier: 'Lumio Tour Pro+', price: '£349/mo', highlight: true, features: ['Everything in Pro', 'Full team access (8 roles)', 'Caddie workflow + printable sheet', 'Financial dashboard + tax tracker', 'Course fit AI + scenario modeller', 'Priority account manager'] },
-]
-
 // ── Spotlight wrapper ────────────────────────────────────────────────────────
 function Spotlight({ eyebrow, title, bullets, mockup, reverse }: {
   eyebrow: string
@@ -283,9 +278,6 @@ export default function GolfPage() {
             OWGR tracker, Race to Dubai, strokes gained, caddie workflow, course fit, sponsorship manager — and an AI morning briefing that knows your week before you do.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=golf" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: ACCENT, color: '#07080F', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${ACCENT}66` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/golf/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: '#F9FAFB', fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the demo →
             </Link>
@@ -407,27 +399,6 @@ export default function GolfPage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="max-w-4xl mx-auto px-6 py-20">
-        <h2 className="text-3xl md:text-4xl font-black text-center mb-12" style={{ color: '#F9FAFB' }}>Simple pricing</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {PRICING.map((p, i) => (
-            <div key={i} className="rounded-2xl p-6" style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${ACCENT}` : `1px solid ${BORDER}` }}>
-              <h3 className="text-lg font-bold mb-1" style={{ color: '#F9FAFB' }}>{p.tier}</h3>
-              <div className="text-2xl font-black mb-4" style={{ color: ACCENT }}>{p.price}</div>
-              <ul className="space-y-2">
-                {p.features.map((f, j) => (
-                  <li key={j} className="flex items-start gap-2 text-sm" style={{ color: '#D1D5DB' }}>
-                    <span className="mt-0.5" style={{ color: ACCENT }}>✓</span>
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Early Access */}
       <section className="max-w-4xl mx-auto px-6 py-20">
         <div className="rounded-2xl p-8 md:p-12 text-center" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
@@ -445,7 +416,7 @@ export default function GolfPage() {
               Apply for early access →
             </a>
             <Link href="/golf/demo" className="px-6 py-3 rounded-xl text-sm font-bold" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB', textDecoration: 'none' }}>
-              Or try the demo →
+              Try the demo →
             </Link>
           </div>
         </div>

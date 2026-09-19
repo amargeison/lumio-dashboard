@@ -639,12 +639,12 @@ export default function TennisCoachPage() {
           {/* Plan tiers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16, marginBottom: 20 }}>
             {[
-              { name: 'Standard', price: 9, popular: false, available: true, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Messages to players & parents', 'Mobile coach app'], off: ['No video or audio', 'No parent & student app', 'No training camps', 'No Racket Progression'] },
-              { name: 'Pro', price: 19, popular: true, available: false, tag: 'Most popular', feats: ['Everything in Standard', 'Video & audio (BETA) + AI session reviews', 'Parent & student app to resell', 'Training camps'], off: ['No Racket Progression or Effort & Rewards'] },
+              { name: 'Standard', price: 9, popular: true,  available: true, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Messages to players & parents', 'Mobile coach app'], off: ['No video or audio', 'No parent & student app', 'No training camps', 'No Racket Progression'] },
+              { name: 'Pro', price: 19, popular: false, available: false, tag: 'Adds video, audio & AI reviews', feats: ['Everything in Standard', 'Video & audio (BETA) + AI session reviews', 'Parent & student app to resell', 'Training camps'], off: ['No Racket Progression or Effort & Rewards'] },
               { name: 'Academy', price: 29, popular: false, available: false, tag: 'The full system', feats: ['Everything in Pro', 'Racket Progression reward system', 'Effort & Rewards + squad leaderboard', 'Buy trophy-racket sets & certificates — or just use the software'], off: [] },
             ].map(t => (
               <div key={t.name} style={{ backgroundColor: CARD, border: `${t.popular ? 2 : 1}px solid ${t.popular ? PURPLE : BORDER}`, borderRadius: 16, padding: 24, position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                {t.popular && <div style={{ position: 'absolute', top: -11, left: 24, background: PURPLE, color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Most popular</div>}
+                {t.popular && <div style={{ position: 'absolute', top: -11, left: 24, background: PURPLE, color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Available now</div>}
                 <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{t.name}</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, margin: '8px 0 2px' }}>
                   <span style={{ fontSize: 40, fontWeight: 900, color: TEXT, lineHeight: 1 }}>£{t.price}</span>
@@ -663,7 +663,7 @@ export default function TennisCoachPage() {
               </div>
             ))}
           </div>
-          <p style={{ fontSize: 12, color: MUTED, textAlign: 'center', margin: '0 0 40px' }}>Founding access — free for 3 months on any tier. Kit sold separately; Standard needs no kit.</p>
+          <p style={{ fontSize: 12, color: MUTED, textAlign: 'center', margin: '0 0 40px' }}>Founding members: free for three months. In return we ask for a fortnightly feedback call, a short case study at the end, and permission to use your name. After three months, £9/month. Kit sold separately; Standard needs no kit.</p>
 
           {/* A — Student add-on (second revenue stream) */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24, marginBottom: 24 }}>

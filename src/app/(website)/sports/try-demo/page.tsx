@@ -90,12 +90,6 @@ export default function TryDemoPage() {
             <SportCard key={sport.id} sport={sport} />
           ))}
         </div>
-        <div style={{ textAlign: 'center', marginTop: 48 }}>
-          <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 16 }}>Ready to get your own portal?</p>
-          <Link href="/sports-signup" style={{ display: 'inline-block', background: '#6C3FC5', color: '#fff', padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
-            Apply for founding access →
-          </Link>
-        </div>
       </div>
     </div>
   )

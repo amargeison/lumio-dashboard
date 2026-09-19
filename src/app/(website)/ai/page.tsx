@@ -20,8 +20,8 @@ export default function AIFeaturesPage() {
             Your personal AI chief of staff — match prep, sponsorship, travel, media. All handled. So you can focus on performing.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16 }}>
-            <Link href="/sports-signup" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, backgroundColor: '#8B5CF6', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-              Apply for free founding access &rarr;
+            <Link href="/sports/try-demo" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, backgroundColor: '#8B5CF6', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+              Try the demo &rarr;
             </Link>
             <a href="#ai-features" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.2)', color: '#F9FAFB', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
               See it in action &darr;
@@ -156,31 +156,12 @@ export default function AIFeaturesPage() {
         </div>
       </section>
 
-      {/* ═══ FOUNDING MEMBER CTA ═══ */}
+      {/* ═══ CLOSING CTA ═══ */}
       <section style={{ padding: '80px 24px', borderTop: '1px solid #1F2937', background: 'linear-gradient(180deg, transparent, rgba(139,92,246,0.06))' }}>
         <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
-          <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, letterSpacing: '0.15em', color: '#8B5CF6', backgroundColor: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 999, padding: '6px 16px', marginBottom: 24, textTransform: 'uppercase' }}>
-            FOUNDING MEMBER &middot; 20 SPOTS
-          </span>
-          <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.2rem)', fontWeight: 900, color: '#F9FAFB', marginBottom: 16 }}>
-            We&apos;re onboarding our first 20 athletes completely free.
-          </h2>
-          <p style={{ fontSize: 16, color: '#9CA3AF', marginBottom: 24, lineHeight: 1.7 }}>
-            No card. No commitment. Honest feedback and a case study.
-          </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginBottom: 32 }}>
-            {['3 months free', 'We build what you ask for', 'No lock-in'].map(pill => (
-              <span key={pill} style={{ fontSize: 12, fontWeight: 600, color: '#8B5CF6', backgroundColor: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 999, padding: '6px 14px' }}>
-                {pill}
-              </span>
-            ))}
-          </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16 }}>
-            <Link href="/sports-signup" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, backgroundColor: '#8B5CF6', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-              Apply for founding access &rarr;
-            </Link>
             <Link href="/sports/try-demo" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.2)', color: '#F9FAFB', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-              Or try a demo first &rarr;
+              Try the demo &rarr;
             </Link>
           </div>
         </div>

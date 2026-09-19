@@ -255,9 +255,6 @@ export default function RugbyLandingPage() {
             Salary cap intelligence. GPS-powered performance analytics. AI Halftime Brief. Franchise readiness tracking. Everything a Championship or Premiership club needs — in one platform.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=rugby" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/rugby/hartfield" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               View demo →
             </Link>
@@ -413,53 +410,12 @@ export default function RugbyLandingPage() {
               <h3 style={{ fontSize: 28, fontWeight: 900, color: TEXT, marginBottom: 8 }}>Hartfield RFC</h3>
               <div style={{ fontSize: 14, color: MUTED, lineHeight: 1.7 }}>
                 Championship Rugby · Round 18 · #4 in league<br />
-                The Grange · 4,800 capacity<br />
-                Club Pro+ · £599/mo
+                The Grange · 4,800 capacity
               </div>
             </div>
             <Link href="/rugby/hartfield" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '16px 28px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 15, fontWeight: 800, boxShadow: `0 16px 40px ${PURPLE}55`, whiteSpace: 'nowrap', textDecoration: 'none' }}>
               Explore the live demo →
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ── PRICING ── */}
-      <section style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 56, lineHeight: 1.1 }}>
-            Simple pricing for rugby clubs.
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, maxWidth: 900, margin: '0 auto' }}>
-            {/* Club Pro+ */}
-            <div style={{ backgroundColor: CARD, border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 32 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>CLUB PRO+</div>
-              <div style={{ fontSize: 40, fontWeight: 900, color: TEXT, marginBottom: 4 }}>£599<span style={{ fontSize: 16, color: MUTED }}>/mo</span></div>
-              <div style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>Championship clubs</div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {['All 53 sections', 'GPS & Player Heatmaps', 'AI Halftime Brief', 'Salary cap dashboard', 'Franchise readiness tracker', 'Lumio Vision set-piece tagging', 'Lumio Health readiness sync', 'Claude API (DoR brief + rotation)', 'Up to 45 players'].map(f => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: TEXT }}>
-                    <span style={{ color: PURPLE_LIGHT }}>✓</span>{f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/contact" style={{ display: 'block', textAlign: 'center', marginTop: 24, padding: '14px 24px', borderRadius: 10, backgroundColor: PURPLE, color: '#fff', fontSize: 14, fontWeight: 800, textDecoration: 'none' }}>Start free trial</Link>
-            </div>
-            {/* Club Elite */}
-            <div style={{ backgroundColor: CARD, border: `2px solid ${PURPLE}`, borderRadius: 16, padding: 32, position: 'relative' }}>
-              <div style={{ position: 'absolute', top: -12, right: 24 }}><Badge color="#fff" bg={PURPLE}>Most popular</Badge></div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>CLUB ELITE</div>
-              <div style={{ fontSize: 40, fontWeight: 900, color: TEXT, marginBottom: 4 }}>£799<span style={{ fontSize: 16, color: MUTED }}>/mo</span></div>
-              <div style={{ fontSize: 13, color: MUTED, marginBottom: 20 }}>Premiership-track clubs</div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {['Everything in Pro+', 'GPS vest fleet (18 vests included)', 'Full FrameSports integration (all matches)', 'Advanced analytics suite', "Women's Rugby module", 'Academy GPS profiles', 'Multi-club parent access', 'Dedicated onboarding manager', 'SLA support'].map(f => (
-                  <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: TEXT }}>
-                    <span style={{ color: PURPLE_LIGHT }}>✓</span>{f}
-                  </li>
-                ))}
-              </ul>
-              <Link href="/contact" style={{ display: 'block', textAlign: 'center', marginTop: 24, padding: '14px 24px', borderRadius: 10, backgroundColor: PURPLE, color: '#fff', fontSize: 14, fontWeight: 800, textDecoration: 'none', boxShadow: `0 12px 32px ${PURPLE}55` }}>Book a demo</Link>
-            </div>
           </div>
         </div>
       </section>
@@ -479,15 +435,12 @@ export default function RugbyLandingPage() {
             ))}
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sports-signup?sport=rugby" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/rugby/hartfield" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               View Hartfield RFC demo →
             </Link>
-            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+            <a href="mailto:hello@lumiosports.com?subject=Lumio%20Rugby%20Walkthrough" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Book a walkthrough
-            </Link>
+            </a>
           </div>
         </div>
       </section>

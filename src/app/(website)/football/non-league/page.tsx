@@ -23,12 +23,6 @@ const FEATURES = [
   { icon: '🏟️', title: 'Volunteers & Roster', desc: 'Matchday volunteer roster — bar staff, turnstile, programmes, stewards. One click pings the group chat when gaps appear. No more 6-text chases on a Saturday morning.' },
 ]
 
-const PRICING = [
-  { name: 'Club Free', price: 'Free', features: ['Fixtures, results & registration', 'Squad sheet + FA return export', 'Matchday finance lite', 'Volunteer roster', '5 staff accounts'] },
-  { name: 'Club Plus', price: '£49/mo', highlight: true, features: ['Everything in Free', 'GPS CSV upload + load flags', 'AI match-prep brief', 'Sponsor pipeline', 'Email + social generator', 'Unlimited staff accounts'] },
-  { name: 'Club Pro', price: '£129/mo', features: ['Everything in Plus', 'White-label club branding', 'Multi-team (reserves, U18s, women)', 'Priority WhatsApp support', 'Dedicated onboarding call'] },
-]
-
 export default function FootballNonLeaguePage() {
   return (
     <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
@@ -45,12 +39,9 @@ export default function FootballNonLeaguePage() {
             Built for National League, Steps 1&ndash;6, and everything in between. Squad registration, matchday finance, volunteer roster, fixtures &amp; results, FA returns, and AI-drafted social posts. Volunteer-run clubs run Lumio; it fits the way you already work.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=nonleague" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: TEAL, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${TEAL}55` }}>
-              Apply for founding access →
+            <Link href="/nonleague/harfield-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
+              Try the demo →
             </Link>
-            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
-              Try the demo
-            </span>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {PILLS.map(p => (
@@ -80,51 +71,18 @@ export default function FootballNonLeaguePage() {
         </div>
       </section>
 
-      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
-            Priced for a volunteer committee.
-          </h2>
-          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 48 }}>
-            Free tier for every non-league club, forever. Paid tiers stay in the hundreds, not thousands.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
-            {PRICING.map(p => (
-              <div key={p.name} style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${TEAL}` : `1px solid ${BORDER}`, borderRadius: 16, padding: 26, position: 'relative' }}>
-                {p.highlight && (
-                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '4px 12px', borderRadius: 999, backgroundColor: TEAL, color: '#000', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Most popular</div>
-                )}
-                <h3 style={{ fontSize: 18, fontWeight: 900, color: TEXT, marginBottom: 6 }}>{p.name}</h3>
-                <div style={{ fontSize: 26, fontWeight: 900, color: GOLD, marginBottom: 18 }}>{p.price}</div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {p.features.map(f => (
-                    <li key={f} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#D1D5DB' }}>
-                      <span style={{ color: GOLD, fontWeight: 900, flexShrink: 0 }}>✓</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section style={{ padding: '120px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
           <h2 style={{ fontSize: 44, fontWeight: 900, color: TEXT, marginBottom: 20, lineHeight: 1.1 }}>
             Your secretary will thank you.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            Try the Harfield FC live demo — a fictional Vanarama South club with a full season loaded. Or book 20 minutes with Lumio and we&apos;ll walk through your club&apos;s specific setup.
+            Try the Harfield FC live demo — a fictional Vanarama South club with a full season loaded.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sports-signup?sport=nonleague" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: TEAL, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${TEAL}55` }}>
-              Apply for founding access →
-            </Link>
-            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
+            <Link href="/nonleague/harfield-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the demo →
-            </span>
+            </Link>
           </div>
         </div>
       </section>

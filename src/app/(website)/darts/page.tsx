@@ -414,9 +414,6 @@ export default function DartsLandingPage() {
             Order of Merit, match prep, travel, finance, sponsorship, team briefings — everything your team needs, in one place. Built for PDC Tour Card holders.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=darts" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/darts/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the demo →
             </Link>
@@ -562,7 +559,7 @@ export default function DartsLandingPage() {
               Apply for early access →
             </a>
             <Link href="/darts/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
-              Or try the demo →
+              Try the demo →
             </Link>
           </div>
         </div>

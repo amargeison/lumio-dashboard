@@ -31,11 +31,6 @@ const TIERS = [
   { name: 'Manager / Agent', desc: 'Manager dashboard, world rankings, mandatory tracker, purse bid calculator, sponsorship pipeline, and fight earnings ledger. The business side of boxing, organised.' },
 ]
 
-const PRICING = [
-  { name: 'Lumio Fight Pro', price: '£199/mo', features: ['Fight camp management', 'World rankings + mandatory tracker', 'Weight cut tracker', 'AI morning briefing', 'Up to 3 team accounts'] },
-  { name: 'Lumio Fight Elite', price: '£499/mo', highlight: true, features: ['Everything in Pro', 'GPS Vest integration (vest sold separately)', 'Ring heatmap + ACWR monitoring', 'Purse bid calculator + undisputed tracker', 'Punch analytics + GPS fusion', 'Priority account manager + Jim Bevan onboarding'] },
-]
-
 // ── Mockup chrome ───────────────────────────────────────────────────────────
 function MockupFrame({ children }: { children: React.ReactNode }) {
   return (
@@ -261,12 +256,9 @@ export default function BoxingLandingPage() {
             No tool like this exists for professional boxing anywhere else.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=boxing" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
-              Apply for founding access →
+            <Link href="/boxing/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
+              Try the demo →
             </Link>
-            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
-              Try the demo
-            </span>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {STAT_PILLS.map(p => (
@@ -353,35 +345,6 @@ export default function BoxingLandingPage() {
         </div>
       </section>
 
-      {/* ── PRICING ── */}
-      <section style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
-            Simple pricing. Two tiers.
-          </h2>
-          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 48 }}>Pick the tier that fits your camp. Upgrade when you&apos;re ready.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
-            {PRICING.map(p => (
-              <div key={p.name} style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${RED}` : `1px solid ${BORDER}`, borderRadius: 16, padding: 32, position: 'relative' }}>
-                {p.highlight && (
-                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '4px 12px', borderRadius: 999, backgroundColor: RED, color: '#fff', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Most popular</div>
-                )}
-                <h3 style={{ fontSize: 20, fontWeight: 900, color: TEXT, marginBottom: 8 }}>{p.name}</h3>
-                <div style={{ fontSize: 32, fontWeight: 900, color: RED_LIGHT, marginBottom: 20 }}>{p.price}</div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {p.features.map(f => (
-                    <li key={f} style={{ display: 'flex', gap: 10, fontSize: 14, color: '#D1D5DB' }}>
-                      <span style={{ color: RED_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── BOTTOM CTA ── */}
       <section style={{ padding: '120px 24px', backgroundColor: BG, borderTop: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
@@ -389,17 +352,11 @@ export default function BoxingLandingPage() {
             The complete platform for professional boxers.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 40 }}>
-            Try the demo with the Marcus Cole sample profile, or set up your own portal in 5 steps.
+            Try the demo with the Marcus Cole sample profile.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sports-signup?sport=boxing" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/boxing/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the live demo →
-            </Link>
-            <Link href="/boxing/onboarding" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
-              Set up your portal →
             </Link>
           </div>
         </div>

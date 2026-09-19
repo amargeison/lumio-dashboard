@@ -1086,7 +1086,6 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
   const [taskFilter, setTaskFilter] = useState<'all'|'critical'|'high'|'medium'|'low'>('all')
   const [tourStep, setTourStep] = useState(0)
   const [showGpsModal, setShowGpsModal] = useState(false)
-  const [gpsRequested, setGpsRequested] = useState(false)
   const profileNameLive = useTennisProfileName()
   const profilePhotoLive = useTennisProfilePhoto()
   const isDemoShellDash = session.isDemoShell !== false
@@ -1498,7 +1497,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                         <div className="text-2xl mb-2">📡</div>
                         <div className="text-sm font-bold text-white mb-1">Lumio GPS Tracker</div>
                         <div className="text-[10px] mb-3" style={{ color: '#6B7280' }}>Court heatmaps · sprint load · AI coaching brief</div>
-                        <button onClick={() => setShowGpsModal(true)} className="w-full py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#0ea5e9', color: '#fff' }}>Order Lumio GPS Tracker →</button>
+                        <button onClick={() => setShowGpsModal(true)} className="w-full py-2 rounded-lg text-xs font-semibold" style={{ backgroundColor: '#0ea5e9', color: '#fff' }}>About Lumio GPS Tracker →</button>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
@@ -1511,7 +1510,7 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
                     <div className="rounded-xl p-3 text-xs" style={{ backgroundColor: 'rgba(14,165,233,0.08)', border: '1px solid rgba(14,165,233,0.2)', color: '#93C5FD' }}>📊 Match GPS data with shot-by-shot video to spot which patterns leak points — and which win them. Coach-ready in one click.</div>
                   </div>)}
 
-                  {step.preview === 'cta' && (<div className="space-y-4"><div className="grid grid-cols-2 gap-3">{[{ icon:'🎾', label:'Live ATP rankings', color:'#0ea5e9' },{ icon:'📬', label:'Gmail + Outlook sync', color:'#22C55E' },{ icon:'📡', label:'GPS load tracking', color:'#F59E0B' },{ icon:'🤖', label:'AI for every workflow', color:'#8B5CF6' },{ icon:'✈️', label:'Smart travel booking', color:'#0ea5e9' },{ icon:'🤝', label:'Sponsor management', color:'#F59E0B' }].map((f, i) => (<div key={i} className="flex items-center gap-2 text-xs rounded-xl p-2.5" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-base">{f.icon}</span><span style={{ color: f.color }}>{f.label}</span></div>))}</div><div className="rounded-xl p-4 text-center" style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.2), rgba(0,0,0,0.4))', border: '1px solid rgba(14,165,233,0.4)' }}><div className="text-sm font-bold text-white mb-1">3-month free trial — no card required</div><div className="text-xs mb-3" style={{ color: '#6B7280' }}>Connect your real data in under 10 minutes. Cancel anytime.</div><a href="/sports-signup?sport=tennis" className="inline-block px-6 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#0ea5e9' }}>Start free trial →</a></div></div>)}
+                  {step.preview === 'cta' && (<div className="space-y-4"><div className="grid grid-cols-2 gap-3">{[{ icon:'🎾', label:'Live ATP rankings', color:'#0ea5e9' },{ icon:'📬', label:'Gmail + Outlook sync', color:'#22C55E' },{ icon:'📡', label:'GPS load tracking', color:'#F59E0B' },{ icon:'🤖', label:'AI for every workflow', color:'#8B5CF6' },{ icon:'✈️', label:'Smart travel booking', color:'#0ea5e9' },{ icon:'🤝', label:'Sponsor management', color:'#F59E0B' }].map((f, i) => (<div key={i} className="flex items-center gap-2 text-xs rounded-xl p-2.5" style={{ backgroundColor: '#0a0c14', border: '1px solid #1F2937' }}><span className="text-base">{f.icon}</span><span style={{ color: f.color }}>{f.label}</span></div>))}</div></div>)}
                 </div>
 
                 <div className="flex items-center justify-between px-6 pb-6 pt-2" style={{ borderTop: '1px solid #1F2937' }}>
@@ -2185,31 +2184,16 @@ function DashboardView({ player, session, photos, setPhotos, dismissedWins, onDi
             <p className="text-sm mb-4" style={{ color: '#9CA3AF' }}>The only GPS tracker built specifically for tennis players. Lightweight vest or clip-on. Real-time court coverage, sprint load, and recovery data — all inside your Lumio portal.</p>
             <div className="space-y-2 mb-5">
               {[
-                { icon: '📦', text: '£299 one-off hardware + included in your plan' },
                 { icon: '📡', text: 'Pairs automatically with your portal' },
                 { icon: '🎾', text: 'Combines with Lumio Vision for AI post-session briefs' },
               ].map((f, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs" style={{ color: '#D1D5DB' }}><span>{f.icon}</span>{f.text}</div>
               ))}
             </div>
-            {gpsRequested ? (
-              <div className="text-center py-4">
-                <div className="text-3xl mb-2">✅</div>
-                <div className="text-sm font-bold text-white mb-1">You&apos;re on the list!</div>
-                <div className="text-xs" style={{ color: '#6B7280' }}>We&apos;ll be in touch shortly.</div>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <button onClick={() => setGpsRequested(true)}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white" style={{ backgroundColor: '#7C3AED' }}>
-                  Request Early Access
-                </button>
-                <button onClick={() => setShowGpsModal(false)}
-                  className="flex-1 py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
-                  Learn More
-                </button>
-              </div>
-            )}
+            <button onClick={() => setShowGpsModal(false)}
+              className="w-full py-2.5 rounded-xl text-sm" style={{ backgroundColor: '#1F2937', color: '#9CA3AF' }}>
+              Close
+            </button>
           </div>
         </div>
       )}
@@ -12969,9 +12953,6 @@ function TennisIntegrationsHub({ player, session }: { player: TennisPlayer; sess
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
             style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
             <span>This is a demo · sample data</span>
-            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
-              Get founding access →
-            </a>
           </div>
         )}
         {!isPlayer && !isSponsor && (
