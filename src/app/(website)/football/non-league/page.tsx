@@ -48,9 +48,9 @@ export default function FootballNonLeaguePage() {
             <Link href="/sports-signup?sport=nonleague" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: TEAL, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${TEAL}55` }}>
               Apply for founding access →
             </Link>
-            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
-              Try the demo
-            </span>
+            <Link href="/nonleague/harfield-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
+              Try the demo →
+            </Link>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {PILLS.map(p => (
@@ -122,9 +122,9 @@ export default function FootballNonLeaguePage() {
             <Link href="/sports-signup?sport=nonleague" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: TEAL, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${TEAL}55` }}>
               Apply for founding access →
             </Link>
-            <span role="button" aria-disabled="true" title="Coming soon" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, opacity: 0.5, cursor: 'not-allowed' }}>
+            <Link href="/nonleague/harfield-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the demo →
-            </span>
+            </Link>
           </div>
         </div>
       </section>
