@@ -63,8 +63,10 @@ const SCHOOLS_EXTRA_LINKS = [
 // count — removing a link silently moved the next one into the wrong column.
 // Named per column instead, mirroring BUSINESS_FOOTER_COL_A/B below.
 const SPORTS_FOOTER_COMPANY = [
-  { label: 'Product',  href: '/product'  },
-  { label: 'About',    href: '/about'    },
+  // /sports-product, not /product — the latter is the business product page,
+  // and it is what the sports nav's Product points at too.
+  { label: 'Product',  href: '/sports-product' },
+  { label: 'About',    href: '/about'          },
 ]
 const SPORTS_FOOTER_RESOURCES = [
   { label: 'Docs',     href: '#'         },
