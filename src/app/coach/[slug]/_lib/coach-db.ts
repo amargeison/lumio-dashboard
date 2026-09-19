@@ -465,6 +465,11 @@ export interface CoachProfile {
   // It was stored but never selected back, so the coach's own logo existed in the
   // database and nothing could read it — the printed welcome pack came out unbranded.
   brand_logo_url: string | null
+  // The head coach's own photo. Written by onboarding and by the Coaches page;
+  // selected back because the head's face lives HERE, not in coach_staff — so a
+  // form reading only the local settings copy showed initials for a coach who
+  // plainly had a photo on every other screen.
+  avatar_url: string | null
   contact_email: string | null
   contact_phone: string | null
   calendar_provider: string | null
@@ -473,18 +478,19 @@ export interface CoachProfile {
 }
 
 export function useCoachProfile(): CoachProfile & { reload: () => void } {
-  const [p, setP] = useState<CoachProfile>({ display_name: null, brand_name: null, brand_logo_url: null, contact_email: null, contact_phone: null, calendar_provider: null, dpa_accepted_at: null, loading: true })
+  const [p, setP] = useState<CoachProfile>({ display_name: null, brand_name: null, brand_logo_url: null, avatar_url: null, contact_email: null, contact_phone: null, calendar_provider: null, dpa_accepted_at: null, loading: true })
 
   const reload = useCallback(async () => {
     const uid = await currentCoachId()
     if (!uid) { setP(v => ({ ...v, loading: false })); return }
     const { data } = await sb().from('sports_profiles')
-      .select('display_name, brand_name, brand_logo_url, contact_email, contact_phone, calendar_provider, dpa_accepted_at')
+      .select('display_name, brand_name, brand_logo_url, avatar_url, contact_email, contact_phone, calendar_provider, dpa_accepted_at')
       .eq('id', uid).maybeSingle()
     setP({
       display_name: (data as any)?.display_name ?? null,
       brand_name: (data as any)?.brand_name ?? null,
       brand_logo_url: (data as any)?.brand_logo_url ?? null,
+      avatar_url: (data as any)?.avatar_url ?? null,
       contact_email: (data as any)?.contact_email ?? null,
       contact_phone: (data as any)?.contact_phone ?? null,
       calendar_provider: (data as any)?.calendar_provider ?? null,

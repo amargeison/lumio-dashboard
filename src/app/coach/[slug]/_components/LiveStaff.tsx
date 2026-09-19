@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile, sb, currentCoachId } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile, sb, saveCoachProfile, forgetIdentity } from '../_lib/coach-db'
 import { getHeadProfile, setHeadProfile, subscribe, ACCREDITATIONS, getSettings } from '../_lib/settings-store'
 import { COACH_ORG } from '../_lib/coach-data'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
@@ -64,14 +64,27 @@ export function LiveStaff({ T, accent }: Common) {
       setInviteMsg(r.ok ? `✓ Portal invite sent to ${c.email}` : 'Could not send invite.')
     } catch { setInviteMsg('Could not send invite.') }
   }
-  // Coach profile photo upload (head → settings; sub-coach → coach_staff).
+  // The head coach's photo lives in TWO places and both have to move together:
+  // sports_profiles.avatar_url is what the portal shell reads at sign-in (and what
+  // onboarding wrote), while settings.head.avatarUrl is what the Coaches page and
+  // the right-hand rail read live. Writing only the settings copy left the old
+  // photo on the rail until the next sign-in; writing only the profile left the
+  // Coaches page showing initials. forgetIdentity repaints the shell.
+  const saveHeadPhoto = async (url: string) => {
+    setHeadProfile({ avatarUrl: url })
+    try { await saveCoachProfile({ avatar_url: url }) } catch { /* settings copy still shows it */ }
+    profile.reload()
+    forgetIdentity()
+  }
+
+  // Coach profile photo upload (head → settings + profile; sub-coach → coach_staff).
   const onCoachPhoto = async (c: any, file?: File | null) => {
     if (!file) return
     try {
       const dataUrl = await fileToAvatarDataUrl(file)
       const url = await uploadAvatar('/api/coach/staff-avatar', c.isHead ? { head: true, dataUrl } : { staffId: c.id, dataUrl })
       if (!url) return
-      if (c.isHead) setHeadProfile({ avatarUrl: url }); else staff.reload()
+      if (c.isHead) await saveHeadPhoto(url); else staff.reload()
     } catch { /* ignore */ }
   }
 
@@ -112,7 +125,7 @@ export function LiveStaff({ T, accent }: Common) {
   // migration ran; nothing can be assigned to that id, which is the old
   // behaviour rather than a new failure.
   const headRow = staff.rows.find((r: any) => r.is_head)
-  const head = { id: headRow?.id || '__head__', name: headName, role: 'Head', email: headS.email || profile.contact_email, phone: headS.phone || profile.contact_phone, qualifications: headS.accreditation || 'Head Coach', home_venue: null, isHead: true, avatar_url: headS.avatarUrl, contracted_hours: headS.contractedHours, dbs_number: headS.dbsNumber, dbs_issued: headS.dbsIssued, dbs_expiry: headS.dbsExpiry, safeguarding_trained: headS.safeguardingTrained, safeguarding_date: headS.safeguardingDate }
+  const head = { id: headRow?.id || '__head__', name: headName, role: 'Head', email: headS.email || profile.contact_email, phone: headS.phone || profile.contact_phone, qualifications: headS.accreditation || 'Head Coach', home_venue: null, isHead: true, avatar_url: headS.avatarUrl || profile.avatar_url, contracted_hours: headS.contractedHours, dbs_number: headS.dbsNumber, dbs_issued: headS.dbsIssued, dbs_expiry: headS.dbsExpiry, safeguarding_trained: headS.safeguardingTrained, safeguarding_date: headS.safeguardingDate }
   const everyone = [head, ...staff.rows.filter((r: any) => !r.is_head)]
   const flagged = everyone.filter(s => { const st = dbsState(s.dbs_expiry); return st.label === 'Expired' || st.label.startsWith('Expires') || st.label.startsWith('No DBS') })
   const ROLES = ['All', 'Head', 'Senior', 'Coach', 'Assistant', 'Apprentice']
@@ -344,7 +357,10 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
   const [venueIds, setVenueIds] = useState<string[]>([])
   const [primaryVenue, setPrimaryVenue] = useState<string>('')
   useEffect(() => {
-    if (!initial?.id || initial?.isHead) return
+    // The head coach has a real coach_staff row (migration 165), so their venues
+    // load and save exactly like anyone else's. Only the pre-migration
+    // '__head__' placeholder has nothing to hang an assignment off.
+    if (!initial?.id || initial.id === '__head__') return
     let alive = true
     ;(async () => {
       const { data } = await sb().from('coach_staff_venues')
@@ -383,8 +399,12 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
       const dataUrl = await fileToAvatarDataUrl(file)
       if (isHead) {
         const url = await uploadAvatar('/api/coach/staff-avatar', { head: true, dataUrl })
-        if (url) { setHeadProfile({ avatarUrl: url }); set('avatar_url', url) }
-        else setPhotoErr('Upload failed — try a different image.')
+        if (url) {
+          // Both homes of the head's photo, together — see saveHeadPhoto above.
+          setHeadProfile({ avatarUrl: url }); set('avatar_url', url)
+          try { await saveCoachProfile({ avatar_url: url }) } catch { /* settings copy still shows it */ }
+          forgetIdentity()
+        } else setPhotoErr('Upload failed — try a different image.')
       } else if (initial?.id) {
         const url = await uploadAvatar('/api/coach/staff-avatar', { staffId: initial.id, dataUrl })
         if (url) set('avatar_url', url)
@@ -398,13 +418,74 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
 
   const clearPhoto = async () => {
     setPhotoErr('')
-    if (isHead) { setHeadProfile({ avatarUrl: '' }); set('avatar_url', ''); return }
+    if (isHead) {
+      setHeadProfile({ avatarUrl: '' }); set('avatar_url', '')
+      try { await saveCoachProfile({ avatar_url: null }) } catch { /* non-blocking */ }
+      forgetIdentity(); return
+    }
     setPendingPhoto(null); set('avatar_url', '')
     if (initial?.id) { try { await dbUpdate('coach_staff', initial.id, { avatar_url: null }) } catch { /* saved on Save anyway */ } }
   }
   const input: React.CSSProperties = { width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none', marginTop: 5 }
   const lbl: React.CSSProperties = { display: 'block', color: T.text3, fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }
   const fld = (k: string, label: string, type = 'text', ph?: string) => <div><label style={lbl}>{label}</label><input type={type} value={d[k] ?? ''} onChange={e => set(k, e.target.value)} placeholder={ph} style={input} /></div>
+
+  // Reconcile venue assignment: remove what was unticked, add what was ticked.
+  // Done as a diff rather than delete-all-then-reinsert so an interrupted save
+  // cannot leave a coach assigned to nothing.
+  const syncVenues = async (staffId: string) => {
+    // THE SIGNED-IN USER'S OWN ID, not currentCoachId().
+    //
+    // The row level security check on coach_staff_venues is literally
+    // `coach_id = auth.uid()`, so that is the only value that can satisfy it.
+    // currentCoachId() answers a different question — "which academy am I
+    // working in" — and for anyone who also holds a coach membership somewhere
+    // it can return that OTHER academy. The insert was then refused, and because
+    // the result was never checked the refusal went nowhere: the chip lit up,
+    // Save closed the form, and the assignment had never been written. Same
+    // mistake, same cause, as the onboarding inserts.
+    const { data: authData } = await sb().auth.getUser()
+    const uid = authData.user?.id
+    if (!uid) throw new Error('Not signed in')
+
+    const { data: existing, error: readErr } = await sb().from('coach_staff_venues')
+      .select('id, venue_id').eq('staff_id', staffId)
+    if (readErr) throw new Error(`Could not read venue assignment: ${readErr.message}`)
+
+    const have: string[] = (existing || []).map((r: any) => r.venue_id)
+    const gone = (existing || []).filter((r: any) => !venueIds.includes(r.venue_id)).map((r: any) => r.id)
+    const added = venueIds.filter(v => !have.includes(v))
+
+    // Every write below is CHECKED and thrown on, so a refusal reaches the coach
+    // as a message in this form instead of dying in the console. supabase-js
+    // returns errors rather than throwing them, which is what made the old
+    // version look like it had worked.
+    if (gone.length) {
+      const { error } = await sb().from('coach_staff_venues').delete().in('id', gone)
+      if (error) throw new Error(`Could not remove a venue: ${error.message}`)
+    }
+    if (added.length) {
+      const { error } = await sb().from('coach_staff_venues').insert(added.map(v => ({
+        coach_id: uid, staff_id: staffId, venue_id: v, is_primary: v === primaryVenue,
+      })))
+      if (error) throw new Error(`Could not assign the venue: ${error.message}`)
+    }
+    // Primary may have moved between venues that were already assigned.
+    if (venueIds.length) {
+      await sb().from('coach_staff_venues').update({ is_primary: false }).eq('staff_id', staffId)
+      await sb().from('coach_staff_venues').update({ is_primary: true })
+        .eq('staff_id', staffId).eq('venue_id', primaryVenue || venueIds[0])
+    }
+
+    // Read it back. An assignment that reports success and then is not there is
+    // exactly the failure this form kept shipping, so it is worth one round trip
+    // to be sure rather than telling the coach it saved.
+    const { data: after } = await sb().from('coach_staff_venues')
+      .select('venue_id').eq('staff_id', staffId)
+    const saved = new Set((after || []).map((r: any) => r.venue_id))
+    const missing = venueIds.filter(v => !saved.has(v))
+    if (missing.length) throw new Error('The venue did not save. Your sign-in may not have permission to assign staff here — send this to support if it keeps happening.')
+  }
 
   const save = async () => {
     if (!String(d.name ?? '').trim()) { setErr('Name is required'); return }
@@ -414,6 +495,12 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
       // same record Settings → Head coach profile edits.
       if (initial?.isHead) {
         setHeadProfile({ phone: d.phone || '', email: d.email || '', contractedHours: Number(d.contracted_hours) || null, dbsNumber: d.dbs_number || '', dbsIssued: d.dbs_issued || '', dbsExpiry: d.dbs_expiry || '', safeguardingTrained: !!d.safeguarding_trained, safeguardingDate: d.safeguarding_date || '', avatarUrl: d.avatar_url || '', accreditation: d.qualifications || getHeadProfile().accreditation })
+        // ...and then fall through to the venue reconcile below rather than
+        // returning. Returning here is why ticking a venue on the head coach's
+        // own card lit the chip up and saved nothing: the details were written,
+        // the assignment was dropped on the floor, and reopening the form showed
+        // "not assigned to a venue yet" again.
+        if (initial.id && initial.id !== '__head__') await syncVenues(initial.id as string)
         onSaved(); return
       }
       // home_venue is no longer written here — a database trigger derives it from
@@ -435,26 +522,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
         await uploadAvatar('/api/coach/staff-avatar', { staffId, dataUrl: pendingPhoto })
       }
 
-      if (staffId) {
-        const uid = await currentCoachId()
-        const { data: existing } = await sb().from('coach_staff_venues')
-          .select('id, venue_id').eq('staff_id', staffId)
-        const have: string[] = (existing || []).map((r: any) => r.venue_id)
-        const gone = (existing || []).filter((r: any) => !venueIds.includes(r.venue_id)).map((r: any) => r.id)
-        const added = venueIds.filter(v => !have.includes(v))
-        if (gone.length) await sb().from('coach_staff_venues').delete().in('id', gone)
-        if (added.length) {
-          await sb().from('coach_staff_venues').insert(added.map(v => ({
-            coach_id: uid, staff_id: staffId, venue_id: v, is_primary: v === primaryVenue,
-          })))
-        }
-        // Primary may have moved between venues that were already assigned.
-        if (venueIds.length) {
-          await sb().from('coach_staff_venues').update({ is_primary: false }).eq('staff_id', staffId)
-          await sb().from('coach_staff_venues').update({ is_primary: true })
-            .eq('staff_id', staffId).eq('venue_id', primaryVenue || venueIds[0])
-        }
-      }
+      if (staffId) await syncVenues(staffId)
       onSaved()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Save failed'); setSaving(false) }
   }
@@ -498,7 +566,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
             </select>
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={lbl}>Venues they work at</label>
+            <label style={lbl}>{isHead ? 'Venues you work at' : 'Venues they work at'}</label>
             {venues.length === 0 ? (
               <div style={{ ...input, color: T.text3 }}>Add venues in Settings → Venues first.</div>
             ) : (
@@ -524,8 +592,12 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
                 )}
                 <p style={{ color: T.text3, fontSize: 11, margin: '7px 0 0', lineHeight: 1.5 }}>
                   {venueIds.length === 0
-                    ? 'Not assigned to a venue yet — their Court Planner will be empty until you tick at least one.'
-                    : `They'll see the courts at ${venueIds.length === 1 ? 'this site' : `these ${venueIds.length} sites`} in their own portal.`}
+                    ? (isHead
+                        ? 'Not assigned to a venue yet — tick the sites you coach at and you appear on them in the Court Planner.'
+                        : 'Not assigned to a venue yet — their Court Planner will be empty until you tick at least one.')
+                    : isHead
+                      ? `You'll show as based at ${venueIds.length === 1 ? 'this site' : `these ${venueIds.length} sites`}.`
+                      : `They'll see the courts at ${venueIds.length === 1 ? 'this site' : `these ${venueIds.length} sites`} in their own portal.`}
                 </p>
               </>
             )}
