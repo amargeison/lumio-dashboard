@@ -57,11 +57,17 @@ export async function POST(req: NextRequest) {
       if (!sent.ok) {
         // Fallback: Lumio's transport. Reply-to is the coach so a parent replying
         // still reaches a human, even though the from-address is not theirs.
+        // sendEmail resolves with { data, error } and only rejects on a thrown
+        // fault, so the result object is truthy even when Resend refused the
+        // send. Testing truthiness reported playerSent: true for a failed send —
+        // telling a parent their confirmation went out when it had not. Read the
+        // error.
         const fb = await sendEmail({
           from: 'Lumio Tennis <noreply@lumiosports.com>', to: [rec.to], subject, html,
           replyTo: profile?.contact_email || undefined,
+          context: 'coach/bookings/confirm player-fallback',
         }).catch(() => null)
-        results.playerSent = !!fb; results.via = 'lumio-fallback'
+        results.playerSent = !!fb && !fb.error; results.via = 'lumio-fallback'
       } else { results.playerSent = true; results.via = sent.provider }
     } else {
       results.playerSent = false
