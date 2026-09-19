@@ -367,7 +367,13 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const coachInitials = coachName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   // Live: the head coach's uploaded photo (settings). Demo: a name-seeded avatar
   // so the top-right rail matches the coach cards in the grid.
-  const coachPhoto = session?.photoDataUrl || (isEmpty ? (settings.head?.avatarUrl || null) : demoAvatarUrl(coachName))
+  // Settings first, session second. session.photoDataUrl is a snapshot taken at
+  // sign-in, so while it won the head coach could change their photo on the
+  // Coaches page and watch the rail keep the old one until they signed in again.
+  // The settings copy is written the moment the upload succeeds and repaints
+  // straight away; the session value stays as the fallback for a coach who has
+  // only ever set a photo during onboarding.
+  const coachPhoto = (isEmpty ? settings.head?.avatarUrl || null : null) || session?.photoDataUrl || (isEmpty ? null : demoAvatarUrl(coachName))
   const clubName = session?.clubName || slugClubName || (isEmpty ? '' : settings.academy)
   const showDemoBanner = !isEmpty && session?.isDemoShell !== false
 
