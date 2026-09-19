@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
       nonleague:  { logo: 'https://www.lumiosports.com/football_logo.png',   name: 'Lumio Non League',  color: '#D97706' },
       grassroots: { logo: 'https://www.lumiosports.com/football_logo.png',   name: 'Lumio Grassroots',  color: '#16a34a' },
       womens:     { logo: 'https://www.lumiosports.com/womens_fc_logo.png',  name: "Lumio Women's FC",  color: '#DB2777' },
+      junior:     { logo: 'https://www.lumiosports.com/junior_logo.png',     name: 'Lumio Junior Football', color: '#16A34A' },
       golf:       { logo: 'https://www.lumiosports.com/golf_logo.png',       name: 'Lumio Golf',        color: '#15803D' },
       tennis:     { logo: 'https://www.lumiosports.com/tennis_logo.png',     name: 'Lumio Tennis',      color: '#0ea5e9' },
       coach:      { logo: 'https://www.lumiosports.com/tennis_coach_logo.png', name: 'Lumio Tennis Coach', color: '#7C3AED' },
