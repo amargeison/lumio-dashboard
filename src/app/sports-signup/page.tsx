@@ -23,8 +23,10 @@ const SPORTS: { id: SportId; label: string; logo: string; color: string }[] = [
   { id: 'darts', label: 'Darts', logo: '/darts_logo.png', color: '#dc2626' },
 ]
 
-// Women's FC and Tennis Coach are live for sign-up; the rest show as coming soon.
-const LIVE_SPORTS = new Set<SportId>(['womens', 'tenniscoach'])
+// Tennis Coach is the only product live for sign-up; the rest show as coming
+// soon. Women's FC came out of this set when its marketing CTAs moved to the
+// demo — it is demo-only until the product ships.
+const LIVE_SPORTS = new Set<SportId>(['tenniscoach'])
 
 export default function SportsSignupPage() {
 
