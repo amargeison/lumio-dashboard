@@ -58,10 +58,15 @@ const SCHOOLS_EXTRA_LINKS = [
   { label: 'Integrations', href: '/schools/integrations' },
 ]
 
-const FOOTER_LINKS = [
+// Sports footer columns. Previously one array split by index
+// (slice(0,3) / slice(3)), which coupled the column boundary to the entry
+// count — removing a link silently moved the next one into the wrong column.
+// Named per column instead, mirroring BUSINESS_FOOTER_COL_A/B below.
+const SPORTS_FOOTER_COMPANY = [
   { label: 'Product',  href: '/product'  },
-  { label: 'Pricing',  href: '/pricing'  },
   { label: 'About',    href: '/about'    },
+]
+const SPORTS_FOOTER_RESOURCES = [
   { label: 'Docs',     href: '#'         },
   { label: 'Status',   href: '#'         },
 ]
@@ -449,7 +454,7 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
           <div className="md:col-span-2 grid grid-cols-2 gap-8">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>Company</p>
-              {(isSports ? FOOTER_LINKS.slice(0, 3) : BUSINESS_FOOTER_COL_A).map(l => {
+              {(isSports ? SPORTS_FOOTER_COMPANY : BUSINESS_FOOTER_COL_A).map(l => {
                 if ((l as { external?: boolean }).external) {
                   return (
                     <a key={l.label} href={l.href} target="_blank" rel="noreferrer"
@@ -475,7 +480,7 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
               <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>
                 {isSports ? 'Resources' : 'Products'}
               </p>
-              {(isSports ? FOOTER_LINKS.slice(3) : BUSINESS_FOOTER_COL_B).map(l => (
+              {(isSports ? SPORTS_FOOTER_RESOURCES : BUSINESS_FOOTER_COL_B).map(l => (
                 <Link key={l.label} href={l.href} className="block mb-3 text-sm transition-colors"
                   style={{ color: '#6B7280' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
