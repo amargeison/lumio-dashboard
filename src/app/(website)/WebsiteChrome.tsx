@@ -5,28 +5,35 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Menu, X, Twitter, Linkedin, Github, ArrowUpRight } from 'lucide-react'
-import { FootballNavDropdown, FOOTBALL_TIERS } from '@/app/(website)/components/FootballNavDropdown'
 import { NavDropdown } from '@/app/(website)/components/NavDropdown'
 
 const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
-  { label: 'Product',    href: '/sports-product' },
-  { label: 'Our AI',     href: '/ai' },
-  { label: 'Football',   href: '/football' },
-  { label: 'Womens FC',  href: '/womens-football' },
-  { label: 'Rugby',      href: '/rugby' },
-  { label: 'Cricket',    href: '/cricket' },
-  { label: 'Tennis',     href: '/tennis' },
-  { label: 'Golf',       href: '/golf' },
-  { label: 'Boxing',     href: '/boxing' },
-  { label: 'Darts',      href: '/darts' },
-  { label: 'Pricing',    href: '/pricing-sports' },
-  { label: 'About',      href: '/about' },
+  { label: 'Product',      href: '/sports-product' },
+  { label: 'Our AI',       href: '/ai' },
+  { label: 'Tennis Coach', href: '/tennis-coach' },
+  { label: 'Impact',       href: '/impact' },
+  // Rendered as the Sports dropdown, not a link — href is the fallback the
+  // mobile tree and the active-route check read.
+  { label: 'Sports',       href: '/sports' },
+  { label: 'About',        href: '/about' },
 ]
 
-// Tennis nav dropdown tiers (player/club page + the new coach page).
-const TENNIS_TIERS = [
-  { href: '/tennis',       label: 'Tennis Club / Player', subtitle: 'Players · clubs · academies' },
-  { href: '/tennis-coach', label: 'Tennis Coach',         subtitle: 'Coaches · academies · session tools' },
+// Every sport portal behind one "Sports" menu — a single flat list, no
+// sub-headings and no nested dropdowns. Order follows the demo grid in
+// marketing-sports.ts, minus Impact and Tennis Coach which are top level.
+// Subtitles are deliberately omitted so NavDropdown renders it compact.
+const SPORTS_TIERS = [
+  { href: '/tennis',               label: 'Tennis' },
+  { href: '/football/pro',         label: 'Football Pro' },
+  { href: '/womens-football',      label: "Women's FC" },
+  { href: '/football/junior',      label: 'Junior Football' },
+  { href: '/football/non-league',  label: 'Non-League' },
+  { href: '/football/grassroots',  label: 'Grassroots' },
+  { href: '/cricket',              label: 'Cricket' },
+  { href: '/rugby',                label: 'Rugby' },
+  { href: '/golf',                 label: 'Golf' },
+  { href: '/boxing',               label: 'Boxing' },
+  { href: '/darts',                label: 'Darts' },
 ]
 
 const BUSINESS_NAV: { label: string; href: string; badge?: string; external?: boolean }[] = [
@@ -59,10 +66,17 @@ const SCHOOLS_EXTRA_LINKS = [
   { label: 'Integrations', href: '/schools/integrations' },
 ]
 
-const FOOTER_LINKS = [
-  { label: 'Product',  href: '/product'  },
-  { label: 'Pricing',  href: '/pricing'  },
-  { label: 'About',    href: '/about'    },
+// Sports footer columns. Previously one array split by index
+// (slice(0,3) / slice(3)), which coupled the column boundary to the entry
+// count — removing a link silently moved the next one into the wrong column.
+// Named per column instead, mirroring BUSINESS_FOOTER_COL_A/B below.
+const SPORTS_FOOTER_COMPANY = [
+  // /sports-product, not /product — the latter is the business product page,
+  // and it is what the sports nav's Product points at too.
+  { label: 'Product',  href: '/sports-product' },
+  { label: 'About',    href: '/about'          },
+]
+const SPORTS_FOOTER_RESOURCES = [
   { label: 'Docs',     href: '#'         },
   { label: 'Status',   href: '#'         },
 ]
@@ -212,22 +226,13 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
         {/* Desktop nav */}
         <nav className={`hidden md:flex items-center ${isSports ? 'gap-2' : ''}`} style={isSports ? {} : isSchools ? { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 1, overflow: 'hidden' } : { display: 'flex', alignItems: 'center', gap: 16, flexShrink: 1, overflow: 'hidden' }}>
           {navLinks.map(l => {
-            if (l.label === 'Football') {
-              return (
-                <FootballNavDropdown
-                  key="football-dropdown"
-                  scrolled={scrolled}
-                  className={isSports ? 'px-2 py-2 text-sm font-semibold' : 'px-2 py-2 font-medium text-sm'}
-                />
-              )
-            }
-            if (l.label === 'Tennis') {
+            if (l.label === 'Sports') {
               return (
                 <NavDropdown
-                  key="tennis-dropdown"
-                  label="Tennis"
-                  tiers={TENNIS_TIERS}
-                  accentHover="rgba(124, 58, 237, 0.08)"
+                  key="sports-dropdown"
+                  label="Sports"
+                  tiers={SPORTS_TIERS}
+                  accentHover="rgba(20, 184, 166, 0.10)"
                   scrolled={scrolled}
                   className={isSports ? 'px-2 py-2 text-sm font-semibold' : 'px-2 py-2 font-medium text-sm'}
                 />
@@ -319,36 +324,17 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
         <div className="md:hidden border-t px-6 py-4 flex flex-col gap-4"
           style={{ backgroundColor: '#07080F', borderColor: '#1F2937', maxHeight: 'calc(100dvh - 88px)', overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
           {navLinks.map(l => {
-            if (l.label === 'Football') {
+            if (l.label === 'Sports') {
               return (
-                <div key="football-mobile">
+                <div key="sports-mobile">
                   <div className="flex items-center gap-2 text-sm font-medium py-2" style={{ color: '#9CA3AF' }}>
-                    Football
+                    Sports
                   </div>
                   <div className="flex flex-col gap-1 pl-3">
-                    {FOOTBALL_TIERS.map(t => (
+                    {SPORTS_TIERS.map(t => (
                       <Link key={t.href} href={t.href} onClick={() => setMobileOpen(false)}
                         className="py-2 flex flex-col" style={{ color: '#D1D5DB' }}>
                         <span style={{ fontSize: 13, fontWeight: 700 }}>{t.label}</span>
-                        <span style={{ fontSize: 11, color: '#6B7280' }}>{t.subtitle}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )
-            }
-            if (l.label === 'Tennis') {
-              return (
-                <div key="tennis-mobile">
-                  <div className="flex items-center gap-2 text-sm font-medium py-2" style={{ color: '#9CA3AF' }}>
-                    Tennis
-                  </div>
-                  <div className="flex flex-col gap-1 pl-3">
-                    {TENNIS_TIERS.map(t => (
-                      <Link key={t.href} href={t.href} onClick={() => setMobileOpen(false)}
-                        className="py-2 flex flex-col" style={{ color: '#D1D5DB' }}>
-                        <span style={{ fontSize: 13, fontWeight: 700 }}>{t.label}</span>
-                        <span style={{ fontSize: 11, color: '#6B7280' }}>{t.subtitle}</span>
                       </Link>
                     ))}
                   </div>
@@ -450,7 +436,7 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
           <div className="md:col-span-2 grid grid-cols-2 gap-8">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>Company</p>
-              {(isSports ? FOOTER_LINKS.slice(0, 3) : BUSINESS_FOOTER_COL_A).map(l => {
+              {(isSports ? SPORTS_FOOTER_COMPANY : BUSINESS_FOOTER_COL_A).map(l => {
                 if ((l as { external?: boolean }).external) {
                   return (
                     <a key={l.label} href={l.href} target="_blank" rel="noreferrer"
@@ -476,7 +462,7 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
               <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>
                 {isSports ? 'Resources' : 'Products'}
               </p>
-              {(isSports ? FOOTER_LINKS.slice(3) : BUSINESS_FOOTER_COL_B).map(l => (
+              {(isSports ? SPORTS_FOOTER_RESOURCES : BUSINESS_FOOTER_COL_B).map(l => (
                 <Link key={l.label} href={l.href} className="block mb-3 text-sm transition-colors"
                   style={{ color: '#6B7280' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
