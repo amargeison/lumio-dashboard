@@ -85,7 +85,7 @@ export default function FootballGrassrootsPage() {
             Give your Sunday coach their weekends back.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            Try the Sunday Rovers FC live demo — a fictional U14s club running a full season on Lumio. Or sign up your own club and run it all day one, free.
+            Try the Sunday Rovers FC live demo — a fictional U14s club running a full season on Lumio.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/grassroots/sunday-rovers-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
