@@ -11,7 +11,7 @@ const DEMO_SLUGS: Record<string, string> = {
   tennis: 'demo', coach: 'demo', golf: 'demo', darts: 'demo',
   boxing: 'lumio-demo', cricket: 'cricket-demo', rugby: 'rugby-demo',
   football: 'lumio-dev', nonleague: 'harfield-fc',
-  grassroots: 'sunday-rovers-fc', womens: 'oakridge-women-fc',
+  grassroots: 'sunday-rovers-fc', womens: 'oakridge-women',
   junior: 'oakridge-juniors',
 }
 
