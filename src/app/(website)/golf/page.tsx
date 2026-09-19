@@ -283,9 +283,6 @@ export default function GolfPage() {
             OWGR tracker, Race to Dubai, strokes gained, caddie workflow, course fit, sponsorship manager — and an AI morning briefing that knows your week before you do.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=golf" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: ACCENT, color: '#07080F', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${ACCENT}66` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/golf/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: '#F9FAFB', fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the demo →
             </Link>
@@ -445,7 +442,7 @@ export default function GolfPage() {
               Apply for early access →
             </a>
             <Link href="/golf/demo" className="px-6 py-3 rounded-xl text-sm font-bold" style={{ border: `1px solid ${BORDER}`, color: '#D1D5DB', textDecoration: 'none' }}>
-              Or try the demo →
+              Try the demo →
             </Link>
           </div>
         </div>
