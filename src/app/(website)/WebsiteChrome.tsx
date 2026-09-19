@@ -19,7 +19,6 @@ const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Golf',       href: '/golf' },
   { label: 'Boxing',     href: '/boxing' },
   { label: 'Darts',      href: '/darts' },
-  { label: 'Pricing',    href: '/pricing-sports' },
   { label: 'About',      href: '/about' },
 ]
 
