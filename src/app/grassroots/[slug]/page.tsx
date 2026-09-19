@@ -2647,7 +2647,6 @@ function GrassrootsPortalInner({ session }: { session: SportsDemoSession }) {
           {/* Demo workspace banner */}
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#F97316', color: '#ffffff' }}>
             <span>This is a demo &middot; sample data</span>
-            <a href="/sports-signup" className="hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access &rarr; lumiosports.com/sports-signup</a>
           </div>
 
           <div className="flex-1 overflow-y-auto">
