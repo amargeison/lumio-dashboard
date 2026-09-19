@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { isSportsHost } from '@/lib/config/hosts'
 
 const RESERVED_SLUGS = new Set([
   'demo', 'master', 'neli', 'telted', 'schools', 'school', 'trial-ended', 'website', 'demobusiness', 'dev-login',
@@ -108,8 +109,7 @@ export async function middleware(request: NextRequest) {
   // redirect), bounce them to /sports. This also stops a signed-in
   // business user accidentally ending up on the business dashboard while
   // they're on the sports domain.
-  const isSportsDomain =
-    hostname === 'lumiosports.com' || hostname === 'www.lumiosports.com' || hostname === 'app.lumiosports.com'
+  const isSportsDomain = isSportsHost(hostname)
   if (isSportsDomain) {
     const BUSINESS_ONLY_PREFIXES = [
       '/overview', '/hr', '/accounts', '/sales', '/crm', '/marketing',
