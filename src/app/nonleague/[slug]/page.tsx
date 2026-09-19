@@ -216,7 +216,6 @@ function NonLeaguePortalInner({ session }: { session: SportsDemoSession }) {
               stays full-height (mirrors the Women's flagship). */}
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0" style={{ backgroundColor: '#0D9488', color: '#ffffff', paddingRight: 110 }}>
             <span>This is a demo · sample data</span>
-            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>Apply for your free founding access → lumiosports.com/sports-signup</a>
           </div>
           <main className="flex-1 p-4 sm:p-5">
             {activeDept !== 'nl-overview' && (

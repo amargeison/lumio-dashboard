@@ -45,9 +45,6 @@ export default function FootballNonLeaguePage() {
             Built for National League, Steps 1&ndash;6, and everything in between. Squad registration, matchday finance, volunteer roster, fixtures &amp; results, FA returns, and AI-drafted social posts. Volunteer-run clubs run Lumio; it fits the way you already work.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=nonleague" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: TEAL, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${TEAL}55` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/nonleague/harfield-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the demo →
             </Link>
@@ -116,12 +113,9 @@ export default function FootballNonLeaguePage() {
             Your secretary will thank you.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            Try the Harfield FC live demo — a fictional Vanarama South club with a full season loaded. Or book 20 minutes with Lumio and we&apos;ll walk through your club&apos;s specific setup.
+            Try the Harfield FC live demo — a fictional Vanarama South club with a full season loaded.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sports-signup?sport=nonleague" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: TEAL, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${TEAL}55` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/nonleague/harfield-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the demo →
             </Link>
