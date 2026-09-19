@@ -430,7 +430,7 @@ export default function FootballProPage() {
             The complete platform for professional football clubs.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            Explore the live demo with Lumio Sports FC — no signup, no account needed. Or book a 30-minute walkthrough with the Lumio team.
+            Explore the live demo with Lumio Sports FC — no signup, no account needed.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
             <Link href="/football/oakridge-fc" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
