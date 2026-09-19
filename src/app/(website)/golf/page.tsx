@@ -404,13 +404,8 @@ export default function GolfPage() {
         <div className="rounded-2xl p-8 md:p-12 text-center" style={{ backgroundColor: CARD, border: `1px solid ${BORDER}` }}>
           <h2 className="text-3xl md:text-4xl font-black mb-4" style={{ color: '#F9FAFB' }}>Be one of the first players on Lumio Golf.</h2>
           <p className="text-sm max-w-2xl mx-auto mb-6" style={{ color: MUTED }}>
-            We&apos;re working with a small number of professional players and their teams to shape the product. 6 months free. No commitment. All we ask for at the end is an honest case study.
+            We&apos;re working with a small number of professional players and their teams to shape the product.
           </p>
-          <div className="flex items-center justify-center gap-2 flex-wrap mb-8">
-            {['6 months free', 'We build what you ask for', 'No lock-in'].map(p => (
-              <span key={p} className="text-[10px] font-semibold px-3 py-1.5 rounded-full" style={{ backgroundColor: `${ACCENT}10`, color: ACCENT, border: `1px solid ${ACCENT}30` }}>{p}</span>
-            ))}
-          </div>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <a href="mailto:hello@lumiosports.com?subject=Golf%20Early%20Access" className="px-6 py-3 rounded-xl text-sm font-bold transition-all hover:opacity-90" style={{ backgroundColor: ACCENT, color: '#07080F' }}>
               Apply for early access →

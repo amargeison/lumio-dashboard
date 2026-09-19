@@ -635,13 +635,8 @@ export default function WomensLandingPage() {
             Be one of the first women&apos;s clubs on Lumio.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            We&apos;re looking for a small number of clubs to help us build this properly. 6 months free. No commitment. At the end, all we ask is an honest case study.
+            We&apos;re looking for a small number of clubs to help us build this properly.
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
-            {['6 months free', 'We build what you ask for', 'No lock-in'].map(p => (
-              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(236,72,153,0.08)', border: `1px solid ${PINK}55`, color: PINK, fontSize: 13, fontWeight: 700 }}>{p}</span>
-            ))}
-          </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link href="/womens/oakridge-women" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Try the demo →
