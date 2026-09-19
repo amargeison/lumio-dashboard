@@ -32,6 +32,13 @@ const nextConfig: NextConfig = {
     // still in the tree while we confirm nothing points at it; make this
     // permanent when the file is deleted.
     { source: '/pricing-sports', destination: '/sports', permanent: false },
+    // /join was a "Choose your sport" sign-up grid pushing
+    // /sports-signup?sport=<id> for ten demo-only sports, under a "Founding
+    // Member — Free for 3 months · No card needed · 20 spots remaining"
+    // banner. Nothing in src/ linked to it, but it was live and indexable, so
+    // the page is deleted and inbound links land on the demo index instead.
+    // Temporary (307) to match /pricing-sports.
+    { source: '/join', destination: '/sports/try-demo', permanent: false },
   ],
   headers: async () => [
     {
