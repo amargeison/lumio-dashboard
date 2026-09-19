@@ -23,12 +23,6 @@ const FEATURES = [
   { icon: '🏟️', title: 'Volunteers & Roster', desc: 'Matchday volunteer roster — bar staff, turnstile, programmes, stewards. One click pings the group chat when gaps appear. No more 6-text chases on a Saturday morning.' },
 ]
 
-const PRICING = [
-  { name: 'Club Free', price: 'Free', features: ['Fixtures, results & registration', 'Squad sheet + FA return export', 'Matchday finance lite', 'Volunteer roster', '5 staff accounts'] },
-  { name: 'Club Plus', price: '£49/mo', highlight: true, features: ['Everything in Free', 'GPS CSV upload + load flags', 'AI match-prep brief', 'Sponsor pipeline', 'Email + social generator', 'Unlimited staff accounts'] },
-  { name: 'Club Pro', price: '£129/mo', features: ['Everything in Plus', 'White-label club branding', 'Multi-team (reserves, U18s, women)', 'Priority WhatsApp support', 'Dedicated onboarding call'] },
-]
-
 export default function FootballNonLeaguePage() {
   return (
     <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
@@ -71,36 +65,6 @@ export default function FootballNonLeaguePage() {
                 <div style={{ fontSize: 30, marginBottom: 12 }}>{f.icon}</div>
                 <h3 style={{ fontSize: 17, fontWeight: 800, color: TEXT, marginBottom: 8 }}>{f.title}</h3>
                 <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
-            Priced for a volunteer committee.
-          </h2>
-          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 48 }}>
-            Free tier for every non-league club, forever. Paid tiers stay in the hundreds, not thousands.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
-            {PRICING.map(p => (
-              <div key={p.name} style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${TEAL}` : `1px solid ${BORDER}`, borderRadius: 16, padding: 26, position: 'relative' }}>
-                {p.highlight && (
-                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '4px 12px', borderRadius: 999, backgroundColor: TEAL, color: '#000', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Most popular</div>
-                )}
-                <h3 style={{ fontSize: 18, fontWeight: 900, color: TEXT, marginBottom: 6 }}>{p.name}</h3>
-                <div style={{ fontSize: 26, fontWeight: 900, color: GOLD, marginBottom: 18 }}>{p.price}</div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {p.features.map(f => (
-                    <li key={f} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#D1D5DB' }}>
-                      <span style={{ color: GOLD, fontWeight: 900, flexShrink: 0 }}>✓</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             ))}
           </div>

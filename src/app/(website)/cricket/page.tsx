@@ -45,12 +45,6 @@ const INTEGRATIONS = [
   { icon: '🎬', name: 'YouTube', desc: 'Content and highlights' },
 ]
 
-const TIERS = [
-  { name: 'Pro — £249/mo', desc: 'For county clubs running a professional squad. Full squad manager across all four formats, ECB compliance hub, performance analytics, injury logs and AI morning briefing.' },
-  { name: 'Pro+ — £449/mo', desc: 'Everything in Pro, plus GPS vest integration, bowling load ACWR monitoring, AI toss advisor, contract renewal AI and match report generator. Dedicated onboarding.' },
-  { name: 'Enterprise — Contact us', desc: 'Multi-team deployments, custom integrations, academy and pathway programmes, board-level reporting and dedicated account management.' },
-]
-
 // ── Mockup chrome ───────────────────────────────────────────────────────────
 function MockupFrame({ children }: { children: React.ReactNode }) {
   return (
@@ -367,24 +361,6 @@ export default function CricketLandingPage() {
                   <div style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>{i.name}</div>
                   <div style={{ fontSize: 12, color: MUTED }}>{i.desc}</div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TIERS ── */}
-      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
-            Simple pricing for every county club.
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 56 }}>
-            {TIERS.map(t => (
-              <div key={t.name} style={{ backgroundColor: CARD, border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 32 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>TIER</div>
-                <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 12 }}>{t.name}</h3>
-                <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{t.desc}</p>
               </div>
             ))}
           </div>

@@ -31,11 +31,6 @@ const TIERS = [
   { name: 'Manager / Agent', desc: 'Manager dashboard, world rankings, mandatory tracker, purse bid calculator, sponsorship pipeline, and fight earnings ledger. The business side of boxing, organised.' },
 ]
 
-const PRICING = [
-  { name: 'Lumio Fight Pro', price: '£199/mo', features: ['Fight camp management', 'World rankings + mandatory tracker', 'Weight cut tracker', 'AI morning briefing', 'Up to 3 team accounts'] },
-  { name: 'Lumio Fight Elite', price: '£499/mo', highlight: true, features: ['Everything in Pro', 'GPS Vest integration (vest sold separately)', 'Ring heatmap + ACWR monitoring', 'Purse bid calculator + undisputed tracker', 'Punch analytics + GPS fusion', 'Priority account manager + Jim Bevan onboarding'] },
-]
-
 // ── Mockup chrome ───────────────────────────────────────────────────────────
 function MockupFrame({ children }: { children: React.ReactNode }) {
   return (
@@ -344,35 +339,6 @@ export default function BoxingLandingPage() {
                 <div style={{ fontSize: 13, fontWeight: 800, color: RED_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>ROLE</div>
                 <h3 style={{ fontSize: 22, fontWeight: 900, color: TEXT, marginBottom: 12 }}>{t.name}</h3>
                 <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{t.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PRICING ── */}
-      <section style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
-            Simple pricing. Two tiers.
-          </h2>
-          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 48 }}>Pick the tier that fits your camp. Upgrade when you&apos;re ready.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
-            {PRICING.map(p => (
-              <div key={p.name} style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${RED}` : `1px solid ${BORDER}`, borderRadius: 16, padding: 32, position: 'relative' }}>
-                {p.highlight && (
-                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '4px 12px', borderRadius: 999, backgroundColor: RED, color: '#fff', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Most popular</div>
-                )}
-                <h3 style={{ fontSize: 20, fontWeight: 900, color: TEXT, marginBottom: 8 }}>{p.name}</h3>
-                <div style={{ fontSize: 32, fontWeight: 900, color: RED_LIGHT, marginBottom: 20 }}>{p.price}</div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {p.features.map(f => (
-                    <li key={f} style={{ display: 'flex', gap: 10, fontSize: 14, color: '#D1D5DB' }}>
-                      <span style={{ color: RED_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             ))}
           </div>

@@ -70,13 +70,6 @@ const TIERS = [
   { name: 'Manager / Coaching Staff', desc: 'Match prep, AI opposition report, AI half-time GPS brief, post-match analysis, press conference briefing, and tactical planning tools. From pre-match prep to the final whistle.' },
 ]
 
-const PRICING = [
-  { name: 'Starter', price: 'Free', features: ['Squad & contract management', 'Fixtures & results (live data)', 'Match Report Builder', 'GPS CSV upload', 'Fan Hub KPI strip', '3 staff accounts'] },
-  { name: 'Professional', price: '£199/mo', highlight: true, features: ['Everything in Starter', 'Directors Suite & PSR tracker', 'Opposition Report + AI Performance Brief', 'AI Post-Match Analysis', 'Training Load Planner', 'GPS pitch heatmaps', 'AI half-time GPS brief', 'Full Fan Engagement Dashboard', 'PDF export across all dashboards', '10 staff accounts'] },
-  { name: 'Elite', price: '£499/mo', features: ['Everything in Professional', 'GPS vest direct API', 'Lumio Scout video integration', 'Lumio Data feed', 'AI Club Comparison Analysis', 'White-label club branding', 'Unlimited staff accounts', 'Priority support'] },
-  { name: 'Enterprise', price: 'Custom', features: ['Everything in Elite', 'Custom integrations', 'Multi-club portfolio management', 'Dedicated account manager + SLA', 'Contact us for pricing'] },
-]
-
 function MockupFrame({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER_ALT}`, borderRadius: 12, overflow: 'hidden', boxShadow: `0 30px 80px ${NAVY}55` }}>
@@ -391,33 +384,6 @@ export default function FootballProPage() {
                 <div style={{ fontSize: 13, fontWeight: 800, color: GOLD, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>ROLE</div>
                 <h3 style={{ fontSize: 20, fontWeight: 900, color: TEXT, marginBottom: 12 }}>{t.name}</h3>
                 <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{t.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section style={{ padding: '96px 24px', backgroundColor: '#0A0C14' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
-            Simple pricing. No contracts.
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, marginTop: 56 }}>
-            {PRICING.map(p => (
-              <div key={p.name} style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${RED}` : `1px solid ${BORDER}`, borderRadius: 16, padding: 24, position: 'relative' }}>
-                {p.highlight && (
-                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '4px 12px', borderRadius: 999, backgroundColor: RED, color: '#fff', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Most popular</div>
-                )}
-                <h3 style={{ fontSize: 18, fontWeight: 900, color: TEXT, marginBottom: 6 }}>{p.name}</h3>
-                <div style={{ fontSize: 24, fontWeight: 900, color: GOLD, marginBottom: 18 }}>{p.price}</div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {p.features.map(f => (
-                    <li key={f} style={{ display: 'flex', gap: 8, fontSize: 12, color: '#D1D5DB' }}>
-                      <span style={{ color: GOLD, fontWeight: 900, flexShrink: 0 }}>✓</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             ))}
           </div>

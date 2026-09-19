@@ -23,12 +23,6 @@ const FEATURES = [
   { icon: '🏆', title: 'Tournament & Trophy Day', desc: 'Run a 5-a-side or age-group tournament without three spreadsheets. Fixture generator, live scores on a shared link, and a final standings PDF at full time.' },
 ]
 
-const PRICING = [
-  { name: 'Club Free', price: 'Free', features: ['Team chat & announcements', 'Fixture tracker + RSVPs', 'Training attendance', 'Subs & fees (manual reconcile)', '1 team, unlimited players'] },
-  { name: 'Club Plus', price: '£9/mo', highlight: true, features: ['Everything in Free', 'Multi-team (up to 5 teams)', 'Auto-payment via Stripe', 'Tournament generator', 'AI social post drafts', 'Branded club page'] },
-  { name: 'Academy', price: '£29/mo', features: ['Everything in Plus', 'Unlimited teams', 'Academy reports (parent-friendly)', 'Player development notes', 'Coach roster + qualifications', 'Dedicated WhatsApp support'] },
-]
-
 export default function FootballGrassrootsPage() {
   return (
     <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
@@ -82,28 +76,6 @@ export default function FootballGrassrootsPage() {
           <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
             Free for every grassroots club.
           </h2>
-          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 48 }}>
-            Paid tiers only if you run multiple teams or want Stripe subs collection.
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
-            {PRICING.map(p => (
-              <div key={p.name} style={{ backgroundColor: CARD, border: p.highlight ? `2px solid ${GREEN}` : `1px solid ${BORDER}`, borderRadius: 16, padding: 26, position: 'relative' }}>
-                {p.highlight && (
-                  <div style={{ position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)', padding: '4px 12px', borderRadius: 999, backgroundColor: GREEN, color: '#000', fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Most popular</div>
-                )}
-                <h3 style={{ fontSize: 18, fontWeight: 900, color: TEXT, marginBottom: 6 }}>{p.name}</h3>
-                <div style={{ fontSize: 26, fontWeight: 900, color: GOLD, marginBottom: 18 }}>{p.price}</div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {p.features.map(f => (
-                    <li key={f} style={{ display: 'flex', gap: 8, fontSize: 13, color: '#D1D5DB' }}>
-                      <span style={{ color: GOLD, fontWeight: 900, flexShrink: 0 }}>✓</span>
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
