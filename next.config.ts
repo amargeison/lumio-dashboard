@@ -26,6 +26,12 @@ const nextConfig: NextConfig = {
     { source: '/demo/football-amateur/:slug', destination: '/football/grassroots/:slug', permanent: true },
     { source: '/football/nonleague/:slug', destination: '/nonleague/:slug', permanent: true },
     { source: '/football/grassroots/:slug', destination: '/grassroots/:slug', permanent: true },
+    // The sports pricing page is retired: its nav entry and every in-app link
+    // are gone, but inbound links and bookmarks still exist, so send them to
+    // /sports rather than a 404. Temporary (307) on purpose — the page file is
+    // still in the tree while we confirm nothing points at it; make this
+    // permanent when the file is deleted.
+    { source: '/pricing-sports', destination: '/sports', permanent: false },
   ],
   headers: async () => [
     {
