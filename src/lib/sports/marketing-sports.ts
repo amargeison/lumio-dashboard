@@ -35,6 +35,9 @@ export type Sport = {
 }
 
 export const SPORTS: Sport[] = [
+  { id: 'impact',     label: 'Impact',          logo: '/impact_logo.png',    href: '/impact/tenproject',                   accent: '#a855f7', desc: 'Digital registers, funder reporting, fundraising, parent app',                  available: true  },
+  { id: 'tenniscoach', label: 'Tennis Coach',   logo: '/tennis_coach_logo.png', href: '/tennis/coach/demo',                accent: '#3A8EE0', desc: 'Session planner, AI reviews, Racket Progression, GPS heatmaps',                  available: true  },
+  { id: 'tennis',     label: 'Tennis',          logo: '/tennis_logo.png',    href: '/tennis/demo',                         accent: '#14B8A6', desc: 'ATP/WTA rankings, match prep, AI briefing, GPS heatmaps',                        available: true  },
   { id: 'football',   label: 'Football Pro',    logo: '/football_logo.png',  href: '/football/oakridge-fc',                accent: '#3b82f6', desc: 'PSR compliance, FIFA pitch view, set pieces, board suite',                       available: true  },
   { id: 'womens',     label: "Women's FC",      logo: '/womens_fc_logo.png', href: '/womens/oakridge-women',               accent: '#be185d', desc: 'FSR compliance, player welfare, dual registration, demerger tracker',           available: true  },
   { id: 'junior',     label: 'Junior Football', logo: '/football_logo.png',  href: '/junior/oakridge-juniors',             accent: '#16A34A', desc: 'Parent app, FA Charter Standard, junior development tracking, referee module',  available: true  },
@@ -42,9 +45,7 @@ export const SPORTS: Sport[] = [
   { id: 'grassroots', label: 'Grassroots',      logo: '/football_logo.png',  href: '/grassroots/sunday-rovers-fc',         accent: '#84cc16', desc: 'AI team selection, subs collection, safeguarding, parent portal',               available: true  },
   { id: 'cricket',    label: 'Cricket',         logo: '/cricket_logo.png',   href: '/cricket/cricket-demo',                accent: '#10b981', desc: 'GPS bowling load, batting analytics, D/L calculator, camp mode',                available: true  },
   { id: 'rugby',      label: 'Rugby',           logo: '/rugby_logo.png',     href: '/rugby/hartfield',                     accent: '#f97316', desc: 'Salary cap, GPS, pre-season camp, set pieces, board suite',                     available: true  },
-  { id: 'tennis',     label: 'Tennis',          logo: '/tennis_logo.png',    href: '/tennis/demo',                         accent: '#a855f7', desc: 'ATP/WTA rankings, match prep, AI briefing, GPS heatmaps',                        available: true  },
-  { id: 'tenniscoach', label: 'Tennis Coach',   logo: '/tennis_coach_logo.png', href: '/tennis/coach/demo',                accent: '#3A8EE0', desc: 'Session planner, AI reviews, Racket Progression, GPS heatmaps',                  available: true  },
-  { id: 'boxing',     label: 'Boxing',          logo: '/boxing_logo.png',    href: '/boxing/demo',                         accent: '#ef4444', desc: 'Fight camp, weight tracker, opponent scout, purse simulator',                   available: true  },
   { id: 'golf',       label: 'Golf',            logo: '/golf_logo.png',      href: '/golf/demo',                           accent: '#EAB308', desc: 'OWGR ranking, strokes gained, course fit, caddie hub',                          available: true  },
+  { id: 'boxing',     label: 'Boxing',          logo: '/boxing_logo.png',    href: '/boxing/demo',                         accent: '#ef4444', desc: 'Fight camp, weight tracker, opponent scout, purse simulator',                   available: true  },
   { id: 'darts',      label: 'Darts',           logo: '/darts_logo.png',     href: '/darts/demo',                          accent: '#22c55e', desc: 'PDC rankings, practice tracker, match prep, opponent intel',                    available: true  },
 ]

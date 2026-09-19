@@ -458,6 +458,11 @@ export default function ImpactPortal({ params }: { params: Promise<{ slug: strin
       sportEmoji="🏫"
       sportLabel="Lumio Impact"
       roles={IMPACT_ROLES}
+      // Straight from OTP into the portal. The wizard's profile step renders a
+      // six-attribute FIFA-style player card (SPORT_STATS), which is the wrong
+      // artefact for a programme platform — and with no 'impact' entry it would
+      // fall back to football's. The portal has its own role picker anyway.
+      skipWizard
     >
       {(session) => <ImpactPortalInner session={session} />}
     </SportsDemoGate>

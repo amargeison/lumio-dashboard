@@ -4,8 +4,8 @@ import Link from 'next/link'
 import SportRoleTabs from '../components/SportRoleTabs'
 import { TENNIS_ROLES } from '../components/sportRoles'
 
-const PURPLE = '#7C3AED'
-const PURPLE_LIGHT = '#A855F7'
+const ACCENT = '#0F766E'
+const ACCENT_LIGHT = '#14B8A6'
 const BG = '#07080F'
 const CARD = '#0D1117'
 const CARD_ALT = '#111827'
@@ -56,7 +56,7 @@ const TIERS = [
 // ── Mockup chrome ───────────────────────────────────────────────────────────
 function MockupFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER_ALT}`, borderRadius: 12, overflow: 'hidden', boxShadow: `0 30px 80px ${PURPLE}22` }}>
+    <div style={{ backgroundColor: CARD_ALT, border: `1px solid ${BORDER_ALT}`, borderRadius: 12, overflow: 'hidden', boxShadow: `0 30px 80px ${ACCENT}22` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderBottom: `1px solid ${BORDER_ALT}`, backgroundColor: '#0B1020' }}>
         <div style={{ display: 'flex', gap: 6 }}>
           <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#EF4444' }} />
@@ -94,11 +94,11 @@ function DashboardMockup() {
     { label: 'Clay', pct: 65, color: '#F97316' },
     { label: 'Hard', pct: 65, color: '#3B82F6' },
     { label: 'Grass', pct: 72, color: '#10B981' },
-    { label: 'Indoor', pct: 60, color: PURPLE },
+    { label: 'Indoor', pct: 60, color: ACCENT },
   ]
   return (
     <MockupFrame>
-      <div style={{ background: `linear-gradient(135deg, ${PURPLE}, ${PURPLE_LIGHT})`, borderRadius: 10, padding: 10, marginBottom: 10, color: '#fff' }}>
+      <div style={{ background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_LIGHT})`, borderRadius: 10, padding: 10, marginBottom: 10, color: '#fff' }}>
         <div style={{ fontSize: 10, fontWeight: 900 }}>Today&apos;s match — vs Martinez, 13:00, Court 4</div>
         <div style={{ display: 'flex', gap: 10, fontSize: 8, marginTop: 4, opacity: 0.9 }}>
           <span>London 12:00</span><span>New York 07:00</span><span>Melbourne 21:00</span><span>Dubai 15:00</span>
@@ -106,13 +106,13 @@ function DashboardMockup() {
       </div>
       <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
         {['Log Practice', 'Book Stringing', 'Log Injury', 'Add Sponsor Post', 'View Draw', 'Match Notes'].map(a => (
-          <span key={a} style={{ fontSize: 8, padding: '4px 8px', borderRadius: 999, backgroundColor: 'rgba(124,58,237,0.15)', color: PURPLE_LIGHT, border: `1px solid ${PURPLE}55` }}>{a}</span>
+          <span key={a} style={{ fontSize: 8, padding: '4px 8px', borderRadius: 999, backgroundColor: 'rgba(15,118,110,0.15)', color: ACCENT_LIGHT, border: `1px solid ${ACCENT}55` }}>{a}</span>
         ))}
       </div>
       <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Good morning, Alex.</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 10 }}>
-        <KPI value="#67" label="ATP" color={PURPLE} />
-        <KPI value="#54" label="Race" color={PURPLE_LIGHT} />
+        <KPI value="#67" label="ATP" color={ACCENT} />
+        <KPI value="#54" label="Race" color={ACCENT_LIGHT} />
         <KPI value="1,847" label="Points" color="#3B82F6" />
         <KPI value="#44" label="CH" color="#10B981" />
       </div>
@@ -148,7 +148,7 @@ function DashboardMockup() {
       <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         <Badge color="#EF4444" bg="rgba(239,68,68,0.15)">LIVE · vs C. Martinez</Badge>
         <Badge color="#F59E0B" bg="rgba(245,158,11,0.15)">Meridian Watches renewal 47d</Badge>
-        <Badge color={PURPLE_LIGHT} bg="rgba(168,85,247,0.15)">Apex Performance post due</Badge>
+        <Badge color={ACCENT_LIGHT} bg="rgba(20,184,166,0.15)">Apex Performance post due</Badge>
       </div>
     </MockupFrame>
   )
@@ -167,25 +167,25 @@ function BriefingMockup() {
       <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Voice-powered daily briefings — delivered before first session</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 10 }}>
         {roles.map(r => (
-          <div key={r.label} style={{ backgroundColor: r.active ? 'rgba(124,58,237,0.2)' : '#0A0B10', border: `1px solid ${r.active ? PURPLE : BORDER_ALT}`, borderRadius: 8, padding: 8, textAlign: 'center' }}>
+          <div key={r.label} style={{ backgroundColor: r.active ? 'rgba(15,118,110,0.2)' : '#0A0B10', border: `1px solid ${r.active ? ACCENT : BORDER_ALT}`, borderRadius: 8, padding: 8, textAlign: 'center' }}>
             <div style={{ fontSize: 14 }}>{r.icon}</div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: r.active ? PURPLE_LIGHT : TEXT, marginTop: 2 }}>{r.label}</div>
+            <div style={{ fontSize: 9, fontWeight: 800, color: r.active ? ACCENT_LIGHT : TEXT, marginTop: 2 }}>{r.label}</div>
             <div style={{ fontSize: 8, color: MUTED }}>{r.time}</div>
           </div>
         ))}
       </div>
-      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${PURPLE}55`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${ACCENT}55`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <span style={{ fontSize: 10, fontWeight: 800, color: TEXT }}>Today&apos;s briefing — Player</span>
-          <button style={{ fontSize: 9, fontWeight: 800, padding: '5px 10px', borderRadius: 6, backgroundColor: PURPLE, color: '#fff', border: 'none' }}>▶ Play Briefing</button>
+          <button style={{ fontSize: 9, fontWeight: 800, padding: '5px 10px', borderRadius: 6, backgroundColor: ACCENT, color: '#fff', border: 'none' }}>▶ Play Briefing</button>
         </div>
         <p style={{ fontSize: 9, color: MUTED, lineHeight: 1.6, margin: 0 }}>
           &ldquo;Good morning, Alex. You&apos;re ranked 67th in the ATP rankings, up two places this week. Your serve percentage on clay is 61% over the last 10 matches — 4 points below your season average. Martinez has a strong backhand return but struggles against kick serves out wide...&rdquo;
         </p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-        <KPI value="2m 14s" label="Briefing Time" color={PURPLE} />
-        <KPI value="Rachel" label="Voice" sub="ElevenLabs TTS" color={PURPLE_LIGHT} />
+        <KPI value="2m 14s" label="Briefing Time" color={ACCENT} />
+        <KPI value="Rachel" label="Voice" sub="ElevenLabs TTS" color={ACCENT_LIGHT} />
         <KPI value="07:30" label="Delivery" sub="Auto-send daily" color="#3B82F6" />
       </div>
     </MockupFrame>
@@ -203,8 +203,8 @@ function RankingsMockup() {
       <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>Ranking Points Forecaster</div>
       <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Madrid Open — Masters 1000 · Clay</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, marginBottom: 10 }}>
-        <KPI value="#67" label="Current" color={PURPLE} />
-        <KPI value="#18" label="Race to Turin" color={PURPLE_LIGHT} />
+        <KPI value="#67" label="Current" color={ACCENT} />
+        <KPI value="#18" label="Race to Turin" color={ACCENT_LIGHT} />
         <KPI value="90 pts" label="Defending" sub="Madrid QF last year" color="#F59E0B" />
       </div>
       <div style={{ fontSize: 10, fontWeight: 800, color: TEXT, marginBottom: 6 }}>If Alex reaches...</div>
@@ -212,7 +212,7 @@ function RankingsMockup() {
         {['R32', 'R16', 'QF', 'SF', 'Final', 'Winner'].map(r => {
           const active = r === 'R16'
           return (
-            <span key={r} style={{ fontSize: 9, fontWeight: 800, padding: '5px 10px', borderRadius: 999, backgroundColor: active ? PURPLE : '#0A0B10', color: active ? '#fff' : MUTED, border: `1px solid ${active ? PURPLE : BORDER_ALT}` }}>{r}</span>
+            <span key={r} style={{ fontSize: 9, fontWeight: 800, padding: '5px 10px', borderRadius: 999, backgroundColor: active ? ACCENT : '#0A0B10', color: active ? '#fff' : MUTED, border: `1px solid ${active ? ACCENT : BORDER_ALT}` }}>{r}</span>
           )
         })}
       </div>
@@ -255,10 +255,10 @@ function SponsorshipMockup() {
     <MockupFrame>
       <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 10 }}>💛 Sponsorship Manager</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 12 }}>
-        <KPI value="GBP 285k+" label="Total Value" color={PURPLE} />
+        <KPI value="GBP 285k+" label="Total Value" color={ACCENT} />
         <KPI value="6" label="Active Deals" color="#10B981" />
         <KPI value="47 days" label="Meridian Renewal" color="#F59E0B" />
-        <KPI value="1 today" label="Obligations Due" sub="Apex Performance post" color={PURPLE_LIGHT} />
+        <KPI value="1 today" label="Obligations Due" sub="Apex Performance post" color={ACCENT_LIGHT} />
       </div>
       {deals.map(d => (
         <div key={d.name} style={{ backgroundColor: '#0A0B10', border: `1px solid ${d.statusColor}55`, borderRadius: 10, padding: 12, marginBottom: 8 }}>
@@ -273,7 +273,7 @@ function SponsorshipMockup() {
             </div>
           )}
           {d.bonuses && (
-            <div style={{ fontSize: 9, color: PURPLE_LIGHT, marginTop: 4 }}>
+            <div style={{ fontSize: 9, color: ACCENT_LIGHT, marginTop: 4 }}>
               <span style={{ color: TEXT, fontWeight: 700 }}>Performance bonuses:</span> {d.bonuses.join(' | ')}
             </div>
           )}
@@ -290,7 +290,7 @@ function TeamHubMockup() {
     { name: 'Luis Santos', role: 'Fitness Trainer', status: 'Remote', statusColor: '#3B82F6', note: 'Weekly conditioning plan uploaded' },
     { name: 'James Whitfield', role: 'Agent', status: 'Apex Performance post pending', statusColor: '#F59E0B', note: 'Caption drafted for Apex Performance post' },
     { name: 'Carlos Mendez', role: 'Stringer', status: 'Confirmed 11:45', statusColor: '#10B981', note: 'Clay setup sheet received' },
-    { name: 'Dr. Aisha Patel', role: 'Mental Performance Coach', status: 'Session tonight', statusColor: PURPLE_LIGHT, note: 'Post-match session booked' },
+    { name: 'Dr. Aisha Patel', role: 'Mental Performance Coach', status: 'Session tonight', statusColor: ACCENT_LIGHT, note: 'Post-match session booked' },
   ]
   return (
     <MockupFrame>
@@ -301,7 +301,7 @@ function TeamHubMockup() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 800, color: TEXT }}>{t.name}</div>
-                <div style={{ fontSize: 9, color: PURPLE_LIGHT }}>{t.role}</div>
+                <div style={{ fontSize: 9, color: ACCENT_LIGHT }}>{t.role}</div>
               </div>
               <Badge color={t.statusColor} bg={`${t.statusColor}22`}>{t.status}</Badge>
             </div>
@@ -318,7 +318,7 @@ function PerformanceMockup() {
     { label: 'Clay', pct: 61, color: '#F97316' },
     { label: 'Hard', pct: 68, color: '#3B82F6' },
     { label: 'Grass', pct: 72, color: '#10B981' },
-    { label: 'Indoor', pct: 65, color: PURPLE },
+    { label: 'Indoor', pct: 65, color: ACCENT },
   ]
   return (
     <MockupFrame>
@@ -328,10 +328,10 @@ function PerformanceMockup() {
         {/* Left — stats */}
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 5, marginBottom: 10 }}>
-            <KPI value="50" label="Matches" color={PURPLE} />
+            <KPI value="50" label="Matches" color={ACCENT} />
             <KPI value="68%" label="Win Rate" color="#10B981" />
             <KPI value="6.1" label="Aces/match" color="#3B82F6" />
-            <KPI value="63%" label="1st Serve %" color={PURPLE_LIGHT} />
+            <KPI value="63%" label="1st Serve %" color={ACCENT_LIGHT} />
           </div>
           <KPI value="41%" label="Break Point Conv." color="#F59E0B" />
           <div style={{ fontSize: 9, fontWeight: 800, color: TEXT, margin: '10px 0 6px' }}>1st Serve % by Surface</div>
@@ -363,7 +363,7 @@ function PerformanceMockup() {
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: MUTED, marginTop: 6 }}>
             <span>T <span style={{ color: '#F59E0B', fontWeight: 800 }}>42%</span></span>
             <span>Wide <span style={{ color: '#14B8A6', fontWeight: 800 }}>38%</span></span>
-            <span>Body <span style={{ color: PURPLE_LIGHT, fontWeight: 800 }}>20%</span></span>
+            <span>Body <span style={{ color: ACCENT_LIGHT, fontWeight: 800 }}>20%</span></span>
           </div>
         </div>
       </div>
@@ -379,13 +379,13 @@ function Spotlight({ eyebrow, title, body, bullets, mockup, reverse, altBg }: {
     <section style={{ padding: '96px 24px', backgroundColor: altBg ? '#0A0C14' : BG }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
         <div style={{ order: reverse ? 2 : 1 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: ACCENT_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>{eyebrow}</div>
           <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, marginBottom: 16, lineHeight: 1.1 }}>{title}</h2>
           <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.6, marginBottom: 24 }}>{body}</p>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {bullets.map(b => (
               <li key={b} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 15, color: TEXT }}>
-                <span style={{ color: PURPLE_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>
+                <span style={{ color: ACCENT_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>
                 <span>{b}</span>
               </li>
             ))}
@@ -403,9 +403,9 @@ export default function TennisLandingPage() {
     <div style={{ backgroundColor: BG, color: TEXT, minHeight: '100vh' }}>
       {/* ── HERO ── */}
       <section style={{ padding: '128px 24px 64px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${PURPLE}33, transparent 50%), radial-gradient(circle at 80% 60%, ${PURPLE_LIGHT}22, transparent 55%)`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 20% 10%, ${ACCENT}33, transparent 50%), radial-gradient(circle at 80% 60%, ${ACCENT_LIGHT}22, transparent 55%)`, pointerEvents: 'none' }} />
         <div style={{ position: 'relative', maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: PURPLE_LIGHT, textTransform: 'uppercase', marginBottom: 24 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: ACCENT_LIGHT, textTransform: 'uppercase', marginBottom: 24 }}>
             LUMIO TOUR
           </div>
           <h1 style={{ fontSize: 'clamp(44px, 7vw, 80px)', fontWeight: 900, lineHeight: 1.05, color: TEXT, marginBottom: 24, maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto' }}>
@@ -417,11 +417,11 @@ export default function TennisLandingPage() {
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', margin: '16px 0 32px' }}>
             <span style={{ background: '#06b6d418', border: '1px solid #06b6d4', color: '#06b6d4', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🏆 ATP &amp; WTA Intelligence</span>
-            <span style={{ background: '#a855f718', border: '1px solid #a855f7', color: '#a855f7', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎬 Lumio Vision</span>
+            <span style={{ background: '#14B8A618', border: '1px solid #14B8A6', color: '#14B8A6', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🎬 Lumio Vision</span>
             <span style={{ background: '#10b98118', border: '1px solid #10b981', color: '#10b981', padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 600 }}>🤖 AI Coaching Briefs</span>
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
+            <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: ACCENT, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${ACCENT}66` }}>
               Apply for free access →
             </Link>
             <Link href="/tennis/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
@@ -430,7 +430,7 @@ export default function TennisLandingPage() {
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {STAT_PILLS.map(p => (
-              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(124,58,237,0.1)', border: `1px solid ${PURPLE}66`, color: PURPLE_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
+              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(15,118,110,0.1)', border: `1px solid ${ACCENT}66`, color: ACCENT_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
             ))}
           </div>
         </div>
@@ -441,7 +441,7 @@ export default function TennisLandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <h2 style={{ fontSize: 44, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
             Everything your team needs.<br />
-            <span style={{ color: PURPLE_LIGHT }}>In one place.</span>
+            <span style={{ color: ACCENT_LIGHT }}>In one place.</span>
           </h2>
           <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 56 }}>
             Built with ATP and WTA professionals. Not adapted from a general sports app.
@@ -540,8 +540,8 @@ export default function TennisLandingPage() {
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 56 }}>
             {TIERS.map(t => (
-              <div key={t.name} style={{ backgroundColor: CARD, border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 32 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>TIER</div>
+              <div key={t.name} style={{ backgroundColor: CARD, border: `1px solid ${ACCENT}55`, borderRadius: 16, padding: 32 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: ACCENT_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>TIER</div>
                 <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 12 }}>{t.name}</h3>
                 <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.6 }}>{t.desc}</p>
               </div>
@@ -555,7 +555,7 @@ export default function TennisLandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <section style={{
             background: 'linear-gradient(135deg, #0c1a2e 0%, #0a1628 100%)',
-            border: '1px solid #a855f730',
+            border: '1px solid #14B8A630',
             borderRadius: '24px',
             padding: '56px 48px',
             margin: '32px 0',
@@ -565,13 +565,13 @@ export default function TennisLandingPage() {
             <div style={{
               position: 'absolute', top: '-80px', left: '-80px',
               width: '300px', height: '300px',
-              background: 'radial-gradient(circle, #a855f720 0%, transparent 70%)',
+              background: 'radial-gradient(circle, #14B8A620 0%, transparent 70%)',
               pointerEvents: 'none'
             }} />
 
             <div style={{ marginBottom: '20px' }}>
               <span style={{
-                background: '#a855f7', color: '#fff',
+                background: '#14B8A6', color: '#fff',
                 padding: '5px 14px', borderRadius: '999px',
                 fontSize: '11px', fontWeight: 800, letterSpacing: '0.1em',
                 textTransform: 'uppercase'
@@ -582,7 +582,7 @@ export default function TennisLandingPage() {
 
             <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#fff', marginBottom: '16px', lineHeight: 1.2 }}>
               Scout opponents. Find hitting partners.<br/>
-              <span style={{ color: '#a855f7' }}>Hire your next coach.</span>
+              <span style={{ color: '#14B8A6' }}>Hire your next coach.</span>
             </h2>
 
             <p style={{ color: '#94a3b8', fontSize: '17px', maxWidth: '620px', lineHeight: 1.7, marginBottom: '40px' }}>
@@ -594,9 +594,9 @@ export default function TennisLandingPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginBottom: '40px' }}>
 
-              <div style={{ background: '#a855f710', border: '1px solid #a855f730', borderRadius: '16px', padding: '28px' }}>
+              <div style={{ background: '#14B8A610', border: '1px solid #14B8A630', borderRadius: '16px', padding: '28px' }}>
                 <div style={{ fontSize: '28px', marginBottom: '12px' }}>👥</div>
-                <h3 style={{ color: '#a855f7', fontWeight: 700, fontSize: '17px', marginBottom: '10px' }}>
+                <h3 style={{ color: '#14B8A6', fontWeight: 700, fontSize: '17px', marginBottom: '10px' }}>
                   Player Directory
                 </h3>
                 <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: 1.6, marginBottom: '16px' }}>
@@ -611,7 +611,7 @@ export default function TennisLandingPage() {
                     '🤝 Hitting partner search',
                     '📋 Personal contact list'
                   ].map(f => (
-                    <div key={f} style={{ color: '#a855f7', fontSize: '13px', fontWeight: 500 }}>{f}</div>
+                    <div key={f} style={{ color: '#14B8A6', fontSize: '13px', fontWeight: 500 }}>{f}</div>
                   ))}
                 </div>
               </div>
@@ -655,14 +655,14 @@ export default function TennisLandingPage() {
                 { stat: '1-click', label: 'Draft approach email to any coach' },
               ].map(({ stat, label }) => (
                 <div key={stat}>
-                  <div style={{ color: '#a855f7', fontSize: '26px', fontWeight: 800 }}>{stat}</div>
+                  <div style={{ color: '#14B8A6', fontSize: '26px', fontWeight: 800 }}>{stat}</div>
                   <div style={{ color: '#64748b', fontSize: '13px', maxWidth: '160px' }}>{label}</div>
                 </div>
               ))}
             </div>
 
             <button style={{
-              background: '#a855f7', color: '#fff',
+              background: '#14B8A6', color: '#fff',
               padding: '14px 32px', borderRadius: '999px',
               fontWeight: 700, fontSize: '15px', border: 'none', cursor: 'pointer'
             }}>
@@ -684,11 +684,11 @@ export default function TennisLandingPage() {
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
             {['3 months free', 'We build what you ask for', 'No lock-in'].map(p => (
-              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(124,58,237,0.1)', border: `1px solid ${PURPLE}66`, color: PURPLE_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
+              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(15,118,110,0.1)', border: `1px solid ${ACCENT}66`, color: ACCENT_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
             ))}
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
+            <Link href="/sports-signup?sport=tennis" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: ACCENT, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${ACCENT}66` }}>
               Apply for free founding access →
             </Link>
             <Link href="/tennis/demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>

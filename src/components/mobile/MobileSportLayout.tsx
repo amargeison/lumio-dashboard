@@ -117,7 +117,7 @@ const SPORT_TOKENS: Record<MobileSportLayoutProps['sport'], Record<string, strin
 // iOS / Chrome chrome colour when the PWA is open. Overrides the manifest
 // theme_color at runtime — keep in sync with the primary accent per sport.
 const SPORT_THEME_COLOR: Record<MobileSportLayoutProps['sport'], string> = {
-  tennis: '#A855F7',
+  tennis: '#14B8A6',
   darts:  '#A855F7',
   golf:   '#16A34A',
   boxing: '#DC2626',

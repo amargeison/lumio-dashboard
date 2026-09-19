@@ -330,6 +330,7 @@ export async function POST(req: NextRequest) {
       grassroots: 'Grassroots', womens: "Women's FC",
       junior: 'Junior Football',
       golf: 'Golf', tennis: 'Tennis', cricket: 'Cricket', darts: 'Darts',
+      boxing: 'Boxing', coach: 'Tennis Coach', impact: 'Impact',
     }
     // Demo welcome email — founders already received their founding-member
     // welcome from create-profile, so don't double-send.
@@ -341,7 +342,7 @@ export async function POST(req: NextRequest) {
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
         await resend.emails.send({
-          from: 'Lumio Sports <hello@lumiocms.com>',
+          from: 'Lumio Sports <hello@lumiosports.com>',
           to: email,
           subject: `Your Lumio ${sportNames[sport] ?? 'Sports'} demo is ready — here's what you're about to see`,
           html: generateSportsWelcomeEmail(userName || 'there', sport, 'demo', email),
@@ -363,8 +364,8 @@ export async function POST(req: NextRequest) {
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
         const r = (label: string, value: string) => `<tr><td style="padding:6px 14px 6px 0;color:#6B7280;font-size:13px">${label}</td><td style="padding:6px 0;color:#111;font-size:13px">${value || '—'}</td></tr>`
-        await resend.emails.send({
-          from: 'Lumio Sports <hello@lumiocms.com>',
+        const { error: notifyErr } = await resend.emails.send({
+          from: 'Lumio Sports <hello@lumiosports.com>',
           to: 'support@lumiosports.com',
           subject: `New ${kind} signup — ${sportLabel} — ${userName || normalisedEmail}`,
           html: `<div style="font-family:Arial,sans-serif;max-width:560px">
@@ -380,8 +381,12 @@ export async function POST(req: NextRequest) {
             </table>
           </div>`,
         })
-      } catch (notifyErr) {
-        console.error('[sports-demo/verify-otp] support notify failed (non-fatal):', notifyErr)
+        // send() resolves with { error } instead of throwing, so a rejected
+        // send is invisible unless the result is read. Checking it is what
+        // would have surfaced the old send-otp notification's silent death.
+        if (notifyErr) console.error('[sports-demo/verify-otp] support notify rejected:', notifyErr)
+      } catch (thrownErr) {
+        console.error('[sports-demo/verify-otp] support notify failed (non-fatal):', thrownErr)
       }
     }
 

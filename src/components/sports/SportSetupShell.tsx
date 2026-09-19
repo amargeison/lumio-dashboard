@@ -7,7 +7,7 @@ import OnboardingWizard from './OnboardingWizard'
 type Sport = 'tennis' | 'golf' | 'boxing' | 'darts'
 
 const ACCENT: Record<Sport, string> = {
-  tennis: '#a855f7',
+  tennis: '#14B8A6',
   golf:   '#16a34a',
   boxing: '#dc2626',
   darts:  '#22c55e',

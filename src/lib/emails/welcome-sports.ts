@@ -4,15 +4,15 @@ const SPORT_LABELS: Record<string, string> = {
   tennis: 'Tennis', coach: 'Tennis Coach', golf: 'Golf', darts: 'Darts', boxing: 'Boxing',
   cricket: 'Cricket', rugby: 'Rugby', football: 'Football',
   nonleague: 'Non-League Football', grassroots: 'Grassroots Football', womens: "Women's Football",
-  junior: 'Junior Football',
+  junior: 'Junior Football', impact: 'Impact',
 }
 
 const DEMO_SLUGS: Record<string, string> = {
   tennis: 'demo', coach: 'demo', golf: 'demo', darts: 'demo',
   boxing: 'lumio-demo', cricket: 'cricket-demo', rugby: 'rugby-demo',
   football: 'lumio-dev', nonleague: 'harfield-fc',
-  grassroots: 'sunday-rovers-fc', womens: 'oakridge-women-fc',
-  junior: 'oakridge-juniors',
+  grassroots: 'sunday-rovers-fc', womens: 'oakridge-women',
+  junior: 'oakridge-juniors', impact: 'tenproject',
 }
 
 // Coach (Tennis Coach) portals live under /tennis/coach/{slug}; every other
@@ -32,6 +32,7 @@ const SPORT_LOGOS: Record<string, string> = {
   grassroots: 'https://www.lumiosports.com/football_logo.png',
   womens: 'https://www.lumiosports.com/womens_fc_logo.png',
   junior: 'https://www.lumiosports.com/junior_logo.png',
+  impact: 'https://www.lumiosports.com/impact_logo.png',
 }
 
 const SPORT_FEATURES_EMAIL: Record<string, string[]> = {
@@ -111,6 +112,13 @@ const SPORT_FEATURES_EMAIL: Record<string, string[]> = {
     '👨‍👧 <strong>Parent App with AI Match Recap</strong> &mdash; every parent sees their own child&rsquo;s match, training, performance and development. AI turns the weekend&rsquo;s footage into a 60-second update.',
     '🎽 <strong>Coach Toolkit</strong> &mdash; squad selection, session plans, FIFA-style player cards, video clipping. The tools a lead coach needs to run a session, in one place.',
   ],
+  impact: [
+    '📲 <strong>Digital Registers</strong> &mdash; one tap in school, offline QR scan-in at weekend venues, syncs when signal returns.',
+    '📊 <strong>Funder Reporting</strong> &mdash; AI-drafted branded packs per school, per borough, whole programme.',
+    '💷 <strong>Fundraising Engine</strong> &mdash; campaigns, thermometers, sponsored events, Stripe donations.',
+    '📱 <strong>Parent App</strong> &mdash; this week&rsquo;s skill, session times, map and QR, every message in one place.',
+    '🛡️ <strong>Safeguarding</strong> &mdash; consent, medical, photo permissions and audit trails built in.',
+  ],
 }
 SPORT_FEATURES_EMAIL.nonleague = SPORT_FEATURES_EMAIL.football
 SPORT_FEATURES_EMAIL.grassroots = SPORT_FEATURES_EMAIL.football
@@ -139,6 +147,15 @@ export function generateSportsWelcomeEmail(
   const loginUrl = `https://www.lumiosports.com/sports-login?email=${encodeURIComponent(email || '')}`
   const logoHtml = `<img src="${SPORT_LOGOS[sport] || SPORT_LOGOS.tennis}" width="48" height="48" style="object-fit:contain;margin-bottom:16px;" alt="${sportLabel}" />`
 
+  // Who the portal belongs to. Every sport here is an individual athlete or a
+  // club, so the stock line says "a professional {sport} player". Impact is a
+  // programme platform — a schools-and-community delivery org, not a player —
+  // so it gets its own sentence. It also skips the "add your name and photo"
+  // prompt, because the Impact gate runs skipWizard and never asks for either.
+  const audienceLine = sport === 'impact'
+    ? 'This isn&rsquo;t a slideshow or a product tour. It&rsquo;s a fully working portal &mdash; the same one a programme team, its coaches and its parents would use every day.'
+    : `This isn&rsquo;t a slideshow or a product tour. It&rsquo;s a fully working portal &mdash; the same one a professional ${sportLabel.toLowerCase()} player would use every day. Add your name and photo and it becomes yours.`
+
   if (emailType === 'demo') {
     return emailLayout({
       preheader: `Your Lumio ${sportLabel} demo is ready — here's what you're about to see`,
@@ -149,7 +166,7 @@ ${logoHtml}
   Hi ${firstName}, your interactive portal is live and waiting.
 </p>
 <p style="margin:0 0 20px;font-size:14px;color:rgba(255,255,255,0.55);line-height:1.7;">
-  This isn&rsquo;t a slideshow or a product tour. It&rsquo;s a fully working portal &mdash; the same one a professional ${sportLabel.toLowerCase()} player would use every day. Add your name and photo and it becomes yours.
+  ${audienceLine}
 </p>
 
 <h2 style="margin:0 0 12px;font-size:16px;font-weight:700;color:#a855f7;">Here&rsquo;s what&rsquo;s inside:</h2>
