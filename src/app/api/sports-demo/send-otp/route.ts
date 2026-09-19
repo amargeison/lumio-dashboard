@@ -119,36 +119,13 @@ export async function POST(req: NextRequest) {
       console.log(`[EMAIL SUPPRESSED — dev] To: ${email} | Code: ${code} | Sport: ${sport}`)
     }
 
-    // Notify Arron of new demo signup (fire and forget). Founders sign up
-    // through the founding-member flow which has its own notifications.
-    // Not for members either: a coach signing into their club's portal is not a
-    // new demo lead, and reporting them as one misreads the funnel.
-    if (process.env.RESEND_API_KEY && !isFounder && !isMember) {
-      try {
-        const { Resend: R2 } = await import('resend')
-        const notifier = new R2(process.env.RESEND_API_KEY)
-        await notifier.emails.send({
-          from: 'Lumio Sports <noreply@lumiosports.com>',
-          to: 'tennis@lumiosports.com',
-          subject: `New ${cfg.name} Demo Signup — ${email}`,
-          html: `<div style="font-family:Arial,sans-serif;max-width:600px;padding:24px;background:#0f0f1a;color:#fff;border-radius:12px;">
-            <h2 style="color:${cfg.color};margin-bottom:8px;">New Demo Signup — ${cfg.name}</h2>
-            <p style="color:#94a3b8;margin-bottom:24px;">Someone just signed up for the ${cfg.name} demo.</p>
-            <table style="width:100%;border-collapse:collapse;">
-              <tr><td style="padding:10px 0;border-bottom:1px solid #1e1e2e;color:#94a3b8;width:140px;">Email</td><td style="padding:10px 0;border-bottom:1px solid #1e1e2e;color:#fff;font-weight:bold;">${email}</td></tr>
-              <tr><td style="padding:10px 0;border-bottom:1px solid #1e1e2e;color:#94a3b8;">Sport</td><td style="padding:10px 0;border-bottom:1px solid #1e1e2e;color:#fff;">${cfg.name}</td></tr>
-              <tr><td style="padding:10px 0;border-bottom:1px solid #1e1e2e;color:#94a3b8;">Club</td><td style="padding:10px 0;border-bottom:1px solid #1e1e2e;color:#fff;">${clubName || '—'}</td></tr>
-              <tr><td style="padding:10px 0;color:#94a3b8;">Time</td><td style="padding:10px 0;color:#fff;">${new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' })}</td></tr>
-            </table>
-            <div style="margin-top:24px;padding:16px;background:#1e1e2e;border-radius:8px;border-left:3px solid ${cfg.color};">
-              <p style="color:#94a3b8;margin:0;font-size:14px;">Reply to this email to reach them directly.</p>
-            </div>
-          </div>`,
-        })
-      } catch (notifyErr) {
-        console.error('[sports-demo/send-otp] Notify error (non-blocking):', notifyErr)
-      }
-    }
+    // The new-signup notification lives in verify-otp, not here. A requested
+    // code is a weaker signal than a completed verification, and this one
+    // duplicated it with strictly less detail (no name, role or signup type).
+    // It had also been failing silently since it was written: it sent from
+    // noreply@lumiosports.com, a domain Resend did not verify until
+    // 2026-09-19, and resend.emails.send() resolves with { error } rather
+    // than throwing, so the catch never fired and nothing was ever logged.
 
     return NextResponse.json({ success: true })
   } catch (err) {
