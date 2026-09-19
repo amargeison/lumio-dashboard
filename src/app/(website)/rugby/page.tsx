@@ -479,9 +479,9 @@ export default function RugbyLandingPage() {
             <Link href="/rugby/hartfield" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               View Hartfield RFC demo →
             </Link>
-            <Link href="/contact" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
+            <a href="mailto:hello@lumiosports.com?subject=Lumio%20Rugby%20Walkthrough" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
               Book a walkthrough
-            </Link>
+            </a>
           </div>
         </div>
       </section>

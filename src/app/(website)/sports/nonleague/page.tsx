@@ -65,11 +65,8 @@ export default function NonLeaguePage() {
             The operating platform for semi-professional football clubs.
           </p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <span role="button" aria-disabled="true" title="Coming soon" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#475569', color: '#fff', opacity: 0.5, cursor: 'not-allowed' }}>
+            <Link href="/nonleague/harfield-fc" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: '#475569', color: '#fff' }}>
               See the demo <ArrowRight size={14} />
-            </span>
-            <Link href="/contact" className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid #1F2937', textDecoration: 'none' }}>
-              Book a demo
             </Link>
           </div>
         </div>
@@ -167,21 +164,8 @@ export default function NonLeaguePage() {
             Join the non-league clubs already using Lumio to replace the spreadsheet chaos and focus on results.
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
-            <span
-              role="button"
-              aria-disabled="true"
-              title="Coming soon"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold"
-              style={{ backgroundColor: '#F9FAFB', color: '#07080F', opacity: 0.5, cursor: 'not-allowed' }}
-            >
+            <Link href="/nonleague/harfield-fc" className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold" style={{ backgroundColor: '#F9FAFB', color: '#07080F' }}>
               See the demo <ArrowRight size={16} />
-            </span>
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl font-semibold"
-              style={{ border: '1px solid #475569', color: '#94A3B8' }}
-            >
-              Book a demo
             </Link>
           </div>
         </div>

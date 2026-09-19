@@ -217,9 +217,9 @@ export default function SportsProductPage() {
             ))}
           </div>
           <div className="flex gap-3 justify-center flex-wrap">
-            <Link href="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', color: '#fff', textDecoration: 'none' }}>
+            <a href="mailto:hello@lumiosports.com?subject=Lumio%20Sports%20Demo" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold" style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', color: '#fff', textDecoration: 'none' }}>
               Book a demo <ArrowRight size={14} />
-            </Link>
+            </a>
             <button onClick={() => tabsRef.current?.scrollIntoView({ behavior: 'smooth' })} className="px-6 py-3 rounded-xl text-sm font-bold" style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#9CA3AF', border: '1px solid #1F2937' }}>
               Explore all portals
             </button>
@@ -638,12 +638,12 @@ export default function SportsProductPage() {
             Whether you are a Premier League club, a Championship rugby franchise, a PDC professional or a Sunday morning manager — Lumio gives you the same intelligence advantage that was previously only available to elite organisations with six-figure tech budgets.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link
-              href="/contact"
+            <a
+              href="mailto:hello@lumiosports.com?subject=Lumio%20Sports%20Demo"
               className="inline-flex items-center gap-2 px-7 py-4 rounded-xl text-sm font-bold"
               style={{ background: 'linear-gradient(135deg, #8B5CF6, #06B6D4)', color: '#fff', textDecoration: 'none' }}>
               Book a demo <ArrowRight size={16} />
-            </Link>
+            </a>
             <button onClick={() => tabsRef.current?.scrollIntoView({ behavior: 'smooth' })} className="inline-flex items-center gap-2 px-7 py-4 rounded-xl text-sm font-bold" style={{ border: '1px solid #1F2937', color: '#9CA3AF', backgroundColor: 'transparent' }}>
               Explore all portals <ArrowRight size={16} />
             </button>
