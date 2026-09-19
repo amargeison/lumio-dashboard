@@ -637,7 +637,7 @@ export default function FootballJuniorPage() {
             The platform youth football has been waiting for.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            Try the Oakridge Juniors FC live demo — a Charter Standard development club running a full season on Lumio Junior, including the U11 Lions and the canonical Parent App view. Or apply for founding access to bring your own club on.
+            Try the Oakridge Juniors FC live demo — a Charter Standard development club running a full season on Lumio Junior, including the U11 Lions and the canonical Parent App view.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link
