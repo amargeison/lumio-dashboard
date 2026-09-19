@@ -52,6 +52,8 @@ function lazyNamed<M, K extends keyof M>(loader: () => Promise<M>, key: K): M[K]
 
 // Demo views
 const StudentView = lazyNamed(() => import('./_components/StudentView'), 'StudentView')
+// ...and its live counterpart, the page a real family actually gets.
+const LiveStudentPreview = lazyNamed(() => import('./_components/LiveStudentPreview'), 'LiveStudentPreview')
 const DashboardView = lazyNamed(() => import('./_components/CoachModules'), 'DashboardView')
 const LessonsView = lazyNamed(() => import('./_components/CoachModules'), 'LessonsView')
 const DevelopmentView = lazyNamed(() => import('./_components/CoachModules'), 'DevelopmentView')
@@ -808,17 +810,11 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ maxWidth: 1080, margin: '0 auto', padding: isMobile ? '14px 12px 36px' : '24px 24px 44px' }}>
             {isEmpty ? (
-              // Real portal — never show demo student data. The live player/parent
-              // view ships with the Player Roster module.
-              <div style={{ display: 'grid', placeItems: 'center', minHeight: '60vh' }}>
-                <div style={{ textAlign: 'center', maxWidth: 440, background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 16, padding: '36px 28px' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>Student view</div>
-                  <p style={{ fontSize: 13, color: T.text3, lineHeight: 1.6, marginTop: 8 }}>
-                    This is the player &amp; parent view of your academy. Add players in the Player Roster, then open a player to preview their portal. The full live student view is on the way.
-                  </p>
-                  <button onClick={() => { setRole('head'); setActive('roster') }} style={{ marginTop: 16, padding: '10px 16px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Go to Player Roster</button>
-                </div>
-              </div>
+              // Real portal: the real page, read from this academy's own data —
+              // never the demo's. The demo keeps its own richer version because
+              // it is showing features (heatmaps, GPS blocks) that a live
+              // academy has no data for yet.
+              <LiveStudentPreview T={T} accent={accent} density={density} onNavigate={id => { setRole('head'); setActive(id) }} />
             ) : (
               <StudentView T={T} accent={accent} density={density} playerId="p1" />
             )}
