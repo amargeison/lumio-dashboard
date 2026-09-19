@@ -21,6 +21,7 @@ const SPORT_LOGOS: Record<string, string> = {
   grassroots: '/football_logo.png',
   womens: '/womens_fc_logo.png',
   junior: '/junior_logo.png',
+  impact: '/impact_logo.png',
 }
 
 // ── TYPES ──────────────────────────────────────────────────────────────────

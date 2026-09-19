@@ -4,7 +4,7 @@ const SPORT_LABELS: Record<string, string> = {
   tennis: 'Tennis', coach: 'Tennis Coach', golf: 'Golf', darts: 'Darts', boxing: 'Boxing',
   cricket: 'Cricket', rugby: 'Rugby', football: 'Football',
   nonleague: 'Non-League Football', grassroots: 'Grassroots Football', womens: "Women's Football",
-  junior: 'Junior Football',
+  junior: 'Junior Football', impact: 'Impact',
 }
 
 const DEMO_SLUGS: Record<string, string> = {
@@ -12,7 +12,7 @@ const DEMO_SLUGS: Record<string, string> = {
   boxing: 'lumio-demo', cricket: 'cricket-demo', rugby: 'rugby-demo',
   football: 'lumio-dev', nonleague: 'harfield-fc',
   grassroots: 'sunday-rovers-fc', womens: 'oakridge-women',
-  junior: 'oakridge-juniors',
+  junior: 'oakridge-juniors', impact: 'tenproject',
 }
 
 // Coach (Tennis Coach) portals live under /tennis/coach/{slug}; every other
@@ -32,6 +32,7 @@ const SPORT_LOGOS: Record<string, string> = {
   grassroots: 'https://www.lumiosports.com/football_logo.png',
   womens: 'https://www.lumiosports.com/womens_fc_logo.png',
   junior: 'https://www.lumiosports.com/junior_logo.png',
+  impact: 'https://www.lumiosports.com/impact_logo.png',
 }
 
 const SPORT_FEATURES_EMAIL: Record<string, string[]> = {
@@ -110,6 +111,13 @@ const SPORT_FEATURES_EMAIL: Record<string, string[]> = {
     '📈 <strong>Four-corner Player Development Tracker</strong> &mdash; Technical, Physical, Social, Psychological. Termly reviews authored by coaches, signed off by the Academy Lead, surfaced to parents. Same scheme as the Coach Toolkit player cards.',
     '👨‍👧 <strong>Parent App with AI Match Recap</strong> &mdash; every parent sees their own child&rsquo;s match, training, performance and development. AI turns the weekend&rsquo;s footage into a 60-second update.',
     '🎽 <strong>Coach Toolkit</strong> &mdash; squad selection, session plans, FIFA-style player cards, video clipping. The tools a lead coach needs to run a session, in one place.',
+  ],
+  impact: [
+    '📲 <strong>Digital Registers</strong> &mdash; one tap in school, offline QR scan-in at weekend venues, syncs when signal returns.',
+    '📊 <strong>Funder Reporting</strong> &mdash; AI-drafted branded packs per school, per borough, whole programme.',
+    '💷 <strong>Fundraising Engine</strong> &mdash; campaigns, thermometers, sponsored events, Stripe donations.',
+    '📱 <strong>Parent App</strong> &mdash; this week&rsquo;s skill, session times, map and QR, every message in one place.',
+    '🛡️ <strong>Safeguarding</strong> &mdash; consent, medical, photo permissions and audit trails built in.',
   ],
 }
 SPORT_FEATURES_EMAIL.nonleague = SPORT_FEATURES_EMAIL.football

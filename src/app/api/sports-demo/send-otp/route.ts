@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
       cricket:    { logo: 'https://www.lumiosports.com/cricket_logo.png',    name: 'Lumio Cricket',     color: '#b45309' },
       darts:      { logo: 'https://www.lumiosports.com/darts_logo.png',      name: 'Lumio Darts',       color: '#dc2626' },
       boxing:     { logo: 'https://www.lumiosports.com/boxing_logo.png',     name: 'Lumio Boxing',      color: '#dc2626' },
+      impact:     { logo: 'https://www.lumiosports.com/impact_logo.png',     name: 'Lumio Impact',      color: '#a855f7' },
     }
     const cfg = sportConfig[sport] ?? { logo: 'https://www.lumiosports.com/Lumio_Sports_logo.png', name: 'Lumio Sports', color: '#7C3AED' }
 

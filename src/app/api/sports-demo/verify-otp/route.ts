@@ -330,7 +330,7 @@ export async function POST(req: NextRequest) {
       grassroots: 'Grassroots', womens: "Women's FC",
       junior: 'Junior Football',
       golf: 'Golf', tennis: 'Tennis', cricket: 'Cricket', darts: 'Darts',
-      boxing: 'Boxing', coach: 'Tennis Coach',
+      boxing: 'Boxing', coach: 'Tennis Coach', impact: 'Impact',
     }
     // Demo welcome email — founders already received their founding-member
     // welcome from create-profile, so don't double-send.

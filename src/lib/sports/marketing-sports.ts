@@ -35,6 +35,7 @@ export type Sport = {
 }
 
 export const SPORTS: Sport[] = [
+  { id: 'impact',     label: 'Impact',          logo: '/impact_logo.png',    href: '/impact/tenproject',                   accent: '#a855f7', desc: 'Digital registers, funder reporting, fundraising, parent app',                  available: true  },
   { id: 'football',   label: 'Football Pro',    logo: '/football_logo.png',  href: '/football/oakridge-fc',                accent: '#3b82f6', desc: 'PSR compliance, FIFA pitch view, set pieces, board suite',                       available: true  },
   { id: 'womens',     label: "Women's FC",      logo: '/womens_fc_logo.png', href: '/womens/oakridge-women',               accent: '#be185d', desc: 'FSR compliance, player welfare, dual registration, demerger tracker',           available: true  },
   { id: 'junior',     label: 'Junior Football', logo: '/football_logo.png',  href: '/junior/oakridge-juniors',             accent: '#16A34A', desc: 'Parent app, FA Charter Standard, junior development tracking, referee module',  available: true  },
