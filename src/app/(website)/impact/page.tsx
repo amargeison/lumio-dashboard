@@ -54,7 +54,7 @@ export default function ImpactPage() {
       `}</style>
 
       {/* Hero — centred, matching the other lumiosports.com product pages */}
-      <section style={{ padding: '70px 0 66px', borderBottom: `1px solid ${BORDER}`, background: '#121C34' }}>
+      <section className="pb-[66px] pt-[110px] md:pt-[180px] lg:pt-[230px]" style={{ borderBottom: `1px solid ${BORDER}`, background: '#121C34' }}>
         <div className="li-wrap" style={{ textAlign: 'center' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/lumio-impact-logo-web.png" alt="Lumio Impact" style={{ width: 'min(560px, 90%)', height: 'auto', display: 'block', margin: '0 auto 28px' }} />
