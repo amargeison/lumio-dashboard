@@ -7900,9 +7900,6 @@ function RugbyPortalInner({ session }: { session: SportsDemoSession }) {
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
             style={{ backgroundColor: '#0D9488', color: '#ffffff' }}>
             <span>This is a demo · sample data</span>
-            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
-              Apply for your free founding access → lumiosports.com/sports-signup
-            </a>
           </div>
         )}
 
