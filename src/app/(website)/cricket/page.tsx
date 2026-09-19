@@ -282,9 +282,6 @@ export default function CricketLandingPage() {
             Squad management across all four formats, GPS-integrated bowling load monitoring, ECB compliance, AI-powered match day decisions and commercial governance — the full stack for county and franchise cricket.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
-            <Link href="/sports-signup?sport=cricket" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/cricket/cricket-demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the live demo →
             </Link>
@@ -401,7 +398,7 @@ export default function CricketLandingPage() {
             Ready to run your club on Lumio?
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            See the full platform in under five minutes. Then set up your club&apos;s portal and invite your coaching, medical and commercial teams.
+            See the full platform in under five minutes — the squad, medical and commercial workspaces your club would use.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
             {['ECB compliant', '6 months free', 'Bring your own data'].map(p => (
@@ -409,14 +406,8 @@ export default function CricketLandingPage() {
             ))}
           </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/sports-signup?sport=cricket" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: PURPLE, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${PURPLE}66` }}>
-              Apply for founding access →
-            </Link>
             <Link href="/cricket/cricket-demo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, border: `1px solid ${BORDER}`, textDecoration: 'none' }}>
               Try the live demo →
-            </Link>
-            <Link href="/cricket/onboarding" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: 'transparent', color: TEXT, fontSize: 16, fontWeight: 800, textDecoration: 'none', border: `1px solid ${BORDER}` }}>
-              Set up your portal
             </Link>
           </div>
         </div>
