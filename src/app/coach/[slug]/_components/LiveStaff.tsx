@@ -356,6 +356,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
   // signs in to an empty Court Planner, and the hint below says so.
   const [venueIds, setVenueIds] = useState<string[]>([])
   const [primaryVenue, setPrimaryVenue] = useState<string>('')
+  const [venuesLoaded, setVenuesLoaded] = useState(false)
   useEffect(() => {
     // The head coach has a real coach_staff row (migration 165), so their venues
     // load and save exactly like anyone else's. Only the pre-migration
@@ -368,18 +369,34 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
       if (!alive || !data) return
       setVenueIds(data.map((r: any) => r.venue_id))
       setPrimaryVenue(data.find((r: any) => r.is_primary)?.venue_id || data[0]?.venue_id || '')
+      setVenuesLoaded(true)
     })()
     return () => { alive = false }
   }, [initial?.id, initial?.isHead])
 
-  const toggleVenue = (id: string) => setVenueIds(prev => {
-    const next = prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
+  // One site: tick it, don't ask.
+  //
+  // Derived at render rather than written into state, so it is a DEFAULT and not
+  // an edit — the moment the head coach touches the picker their choice wins,
+  // including unticking the only site. The database does the same thing
+  // (migration 172) for coaches added by any other route — onboarding, import —
+  // so this is the form agreeing with what is about to happen rather than
+  // showing "not assigned to a venue yet" under the single obvious answer.
+  const onlyVenueId = venues.length === 1 ? venues[0].id : ''
+  const [touchedVenues, setTouchedVenues] = useState(false)
+  const assignmentKnown = !initial?.id || initial.id === '__head__' || venuesLoaded
+  const autoSingle = !!onlyVenueId && !touchedVenues && assignmentKnown && venueIds.length === 0
+  const shownVenueIds = autoSingle ? [onlyVenueId] : venueIds
+  const shownPrimary = primaryVenue || shownVenueIds[0] || ''
+
+  const toggleVenue = (id: string) => {
+    setTouchedVenues(true)
+    const next = shownVenueIds.includes(id) ? shownVenueIds.filter(v => v !== id) : [...shownVenueIds, id]
+    setVenueIds(next)
     // Dropping the primary promotes whatever is left, so "primary" is never a
     // dangling id pointing at a venue they no longer work at.
     if (!next.includes(primaryVenue)) setPrimaryVenue(next[0] || '')
-    else if (!primaryVenue && next.length) setPrimaryVenue(next[0])
-    return next
-  })
+  }
 
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
 
@@ -453,8 +470,8 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
     if (readErr) throw new Error(`Could not read venue assignment: ${readErr.message}`)
 
     const have: string[] = (existing || []).map((r: any) => r.venue_id)
-    const gone = (existing || []).filter((r: any) => !venueIds.includes(r.venue_id)).map((r: any) => r.id)
-    const added = venueIds.filter(v => !have.includes(v))
+    const gone = (existing || []).filter((r: any) => !shownVenueIds.includes(r.venue_id)).map((r: any) => r.id)
+    const added = shownVenueIds.filter(v => !have.includes(v))
 
     // Every write below is CHECKED and thrown on, so a refusal reaches the coach
     // as a message in this form instead of dying in the console. supabase-js
@@ -466,15 +483,15 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
     }
     if (added.length) {
       const { error } = await sb().from('coach_staff_venues').insert(added.map(v => ({
-        coach_id: uid, staff_id: staffId, venue_id: v, is_primary: v === primaryVenue,
+        coach_id: uid, staff_id: staffId, venue_id: v, is_primary: v === shownPrimary,
       })))
       if (error) throw new Error(`Could not assign the venue: ${error.message}`)
     }
     // Primary may have moved between venues that were already assigned.
-    if (venueIds.length) {
+    if (shownVenueIds.length) {
       await sb().from('coach_staff_venues').update({ is_primary: false }).eq('staff_id', staffId)
       await sb().from('coach_staff_venues').update({ is_primary: true })
-        .eq('staff_id', staffId).eq('venue_id', primaryVenue || venueIds[0])
+        .eq('staff_id', staffId).eq('venue_id', shownPrimary)
     }
 
     // Read it back. An assignment that reports success and then is not there is
@@ -483,7 +500,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
     const { data: after } = await sb().from('coach_staff_venues')
       .select('venue_id').eq('staff_id', staffId)
     const saved = new Set((after || []).map((r: any) => r.venue_id))
-    const missing = venueIds.filter(v => !saved.has(v))
+    const missing = shownVenueIds.filter(v => !saved.has(v))
     if (missing.length) throw new Error('The venue did not save. Your sign-in may not have permission to assign staff here — send this to support if it keeps happening.')
   }
 
@@ -573,7 +590,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
               <>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
                   {venues.map(v => {
-                    const on = venueIds.includes(v.id)
+                    const on = shownVenueIds.includes(v.id)
                     return (
                       <button key={v.id} type="button" onClick={() => toggleVenue(v.id)}
                         style={{ appearance: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '6px 11px', borderRadius: 8, fontSize: 12, fontWeight: 600, border: `1px solid ${on ? accent.hex : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text2 }}>
@@ -582,22 +599,22 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
                     )
                   })}
                 </div>
-                {venueIds.length > 1 && (
+                {shownVenueIds.length > 1 && (
                   <div style={{ marginTop: 8 }}>
                     <label style={{ ...lbl, fontSize: 10 }}>Home base</label>
-                    <select value={primaryVenue} onChange={e => setPrimaryVenue(e.target.value)} style={input}>
-                      {venueIds.map(id => <option key={id} value={id}>{venues.find(v => v.id === id)?.name || id}</option>)}
+                    <select value={shownPrimary} onChange={e => setPrimaryVenue(e.target.value)} style={input}>
+                      {shownVenueIds.map(id => <option key={id} value={id}>{venues.find(v => v.id === id)?.name || id}</option>)}
                     </select>
                   </div>
                 )}
                 <p style={{ color: T.text3, fontSize: 11, margin: '7px 0 0', lineHeight: 1.5 }}>
-                  {venueIds.length === 0
+                  {shownVenueIds.length === 0
                     ? (isHead
                         ? 'Not assigned to a venue yet — tick the sites you coach at and you appear on them in the Court Planner.'
                         : 'Not assigned to a venue yet — their Court Planner will be empty until you tick at least one.')
                     : isHead
-                      ? `You'll show as based at ${venueIds.length === 1 ? 'this site' : `these ${venueIds.length} sites`}.`
-                      : `They'll see the courts at ${venueIds.length === 1 ? 'this site' : `these ${venueIds.length} sites`} in their own portal.`}
+                      ? `You'll show as based at ${shownVenueIds.length === 1 ? 'this site' : `these ${shownVenueIds.length} sites`}.`
+                      : `They'll see the courts at ${shownVenueIds.length === 1 ? 'this site' : `these ${shownVenueIds.length} sites`} in their own portal.`}
                 </p>
               </>
             )}
