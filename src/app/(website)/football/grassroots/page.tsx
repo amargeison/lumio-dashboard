@@ -71,16 +71,11 @@ export default function FootballGrassrootsPage() {
         </div>
       </section>
 
-      <section style={{ padding: '96px 24px', backgroundColor: BG }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
-            Free for every grassroots club.
-          </h2>
-        </div>
-      </section>
-
       <section style={{ padding: '120px 24px', backgroundColor: '#0A0C14', borderTop: `1px solid ${BORDER}` }}>
         <div style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '0.2em', color: GOLD, textTransform: 'uppercase', marginBottom: 16 }}>
+            FREE FOR EVERY GRASSROOTS CLUB
+          </div>
           <h2 style={{ fontSize: 44, fontWeight: 900, color: TEXT, marginBottom: 20, lineHeight: 1.1 }}>
             Give your Sunday coach their weekends back.
           </h2>
