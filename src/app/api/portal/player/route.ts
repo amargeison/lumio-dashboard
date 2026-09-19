@@ -59,13 +59,68 @@ export async function GET() {
     return { id: c.id, title: c.title, shot_type: c.shot_type, duration_seconds: c.duration_seconds, clip_start: c.clip_start, created_at: c.created_at, url }
   }))
 
+  // Voice notes need a playable link, and the media bucket is private — so the
+  // audio recordings get the same short-lived signing the highlight clips get.
+  // Without it the portal shows a coach's voice note it cannot play.
+  const mediaSigned = await Promise.all((media as any[]).map(async (mm) => {
+    if (mm.kind !== 'audio' || !mm.storage_path) return mm
+    let url: string | null = null
+    try { const { data } = await db.storage.from('coach-media').createSignedUrl(mm.storage_path, 3600); url = data?.signedUrl ?? null } catch { /* skip */ }
+    return { ...mm, url }
+  }))
+
+  // Drills and guides for the racket they are on — a recommendation, never the
+  // academy's whole library.
+  const stage = (player.racket_stage || '') as string
+  const allRes = await safe(db.from('coach_resources')
+    .select('id, title, category, format, racket, level, duration, notes, url')
+    .eq('coach_id', m.academyId).limit(300))
+  const resources = (allRes as any[])
+    .filter(r => (stage && r.racket === stage) || (!r.racket && String(r.level || '').toLowerCase().startsWith('all')))
+    .slice(0, 9)
+
+  // Camps the child actually holds a place on, and the coach's own display
+  // choices. Both are read with the SAME academy scope as everything above:
+  // a camp is only theirs if an attendee row ties this player to it, and the
+  // settings come from the academy this membership belongs to and no other.
+  const attendees = await safe(db.from('coach_camp_attendees')
+    .select('camp_id, paid, status').eq('coach_id', m.academyId).eq('player_id', m.scopePlayerId))
+  const campIds = (attendees as any[]).filter(a => (a.status || 'confirmed') !== 'cancelled').map(a => a.camp_id)
+  let camps: any[] = []
+  if (campIds.length) {
+    camps = await safe(db.from('coach_camps')
+      .select('id, name, start_date, end_date, location, region, audience, board, daily_rhythm, description, overseas, itinerary, equipment, parent_brief, balance_link')
+      .eq('coach_id', m.academyId).in('id', campIds))
+    const byId = new Map((attendees as any[]).map(a => [a.camp_id, a]))
+    camps = camps.map(c => ({ ...c, paid: byId.get(c.id)?.paid ?? null, status: byId.get(c.id)?.status ?? 'confirmed' }))
+  }
+
+  // Which sections this academy shows a family, and what counts as a mastered
+  // skill. The parent's browser has none of the coach's settings, so they have
+  // to travel with the bundle or the toggles would silently do nothing here.
+  let sectionsOff: string[] = []
+  let awardThreshold = 3
+  try {
+    const { data: cfg } = await db.from('coach_settings').select('data').eq('coach_id', m.academyId).maybeSingle()
+    const d = (cfg?.data || {}) as Record<string, any>
+    sectionsOff = Array.isArray(d?.sectionsOff?.student) ? d.sectionsOff.student : []
+    if (typeof d?.awardThreshold === 'number') awardThreshold = d.awardThreshold
+  } catch { /* defaults are a complete page, not a broken one */ }
+
   // The `avatars` bucket is private — sign the child's photo for the parent/student
   // (they can't use the coach-side signing proxy). Handles a bare path or a legacy
   // full public URL; leaves data/external URLs alone.
   const avatarUrl = await signAvatar(db, player.avatar_url, m.academyId)
 
   return NextResponse.json({
-    player: { id: player.id, name: player.name, racket_stage: player.racket_stage, level: player.level, goal: player.goal, category: player.category, age: player.age, avatar_url: avatarUrl, watch_token: player.watch_token },
-    skills, lessons, bookings, media, messages, watch, highlights,
+    player: {
+      id: player.id, name: player.name, nickname: player.nickname,
+      racket_stage: player.racket_stage, level: player.level, goal: player.goal,
+      category: player.category, age: player.age, avatar_url: avatarUrl,
+      parent_name: player.parent_name, parent_email: player.parent_email,
+      xp_total: player.xp_total, watch_token: player.watch_token,
+    },
+    skills, lessons, bookings, messages, watch, highlights,
+    media: mediaSigned, resources, camps, sectionsOff, awardThreshold,
   })
 }

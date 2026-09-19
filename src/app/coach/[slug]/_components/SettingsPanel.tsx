@@ -7,6 +7,7 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
 import { useCoachProfile, saveCoachProfile, sb, currentCoachId, invalidateCoachTable } from '../_lib/coach-db'
 import { setSettings, resetSettings, getHeadProfile, setHeadProfile, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, LIVE_DEFAULT_SETTINGS, MODULE_SECTIONS, setSectionOff, type AccentKey } from '../_lib/settings-store'
+import { STUDENT_TOGGLEABLE } from '@/lib/student/sections'
 import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-data'
 import { getAddedVenues } from '../_lib/venues-store'
 import { AddVenueModal } from './AddVenueModal'
@@ -800,7 +801,23 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
         <Modal T={T} accent={accent} title="Parent & student app" sub="The player & parent view of your academy" onClose={() => setOpen(null)}>
           <Toggle T={T} accent={accent} on={!!s.studentApp} onChange={v => setSettings({ studentApp: v })}
             label="Student app" desc="On: your profile menu gains a Student view so you can see the academy as a player or parent does. Off: coach views only." />
-          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>
+          {!!s.studentApp && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '18px 0 4px' }}>Sections</div>
+              <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, margin: '0 0 10px' }}>
+                What a player or parent sees on their page. A section with nothing in it stays hidden whether or not it is switched on here — so turning one on does not put an empty panel in front of a family.
+              </div>
+              {STUDENT_TOGGLEABLE.map(sec => {
+                const hidden = (s.sectionsOff?.student || []).includes(sec.key)
+                return (
+                  <Toggle key={sec.key} T={T} accent={accent} on={!hidden}
+                    onChange={v => setSectionOff('student', sec.key, !v)}
+                    label={sec.label} desc={sec.blurb} />
+                )
+              })}
+            </>
+          )}
+          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5, marginTop: 14 }}>
             The parent &amp; student app is a <strong style={{ color: T.text2 }}>Pro / Academy</strong> feature. It&rsquo;s yours to switch on or off here for now — no billing attached yet.
           </div>
         </Modal>
