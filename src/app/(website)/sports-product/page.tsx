@@ -83,7 +83,7 @@ const PORTALS: Portal[] = [
     ],
     integrations: ['Lumio Health', 'WSL Football', 'FA registration tracking', 'PFA', 'Stripe', 'Xero'],
     checks: ['FSR headroom tracked in real time', 'Maternity and ACL welfare log — Karen Carney compliant', 'Bundled sponsorship attribution for FSR revenue', 'Dual registration expiry alerts', 'AI morning briefing — FSR, welfare, commercial, squad'],
-    cta: "Book a Women's Football demo", href: '/contact',
+    cta: "See Women's FC live in a demo", href: '/womens/oakridge-women',
   },
   {
     id: 'tennis', icon: '🎾', label: 'Tennis', color: '#A3E635',
@@ -363,9 +363,10 @@ export default function SportsProductPage() {
             </div>
 
             {/* CTA button — gated when the matching marketing-sports
-                entry is not available. Women's portal CTA is a
-                /contact link (not a sport demo) so isPortalDemoGated
-                returns false for it and it stays clickable. */}
+                entry is not available. The women's portal uses a
+                different id here ('womensfootball') than in
+                marketing-sports ('womens'); MARKETING_SPORT_ID bridges
+                the two, so its demo resolves and stays clickable. */}
             {isPortalDemoGated(portal.id) ? (
               <span
                 role="button"
