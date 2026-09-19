@@ -531,24 +531,6 @@ export default function FootballJuniorPage() {
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 48 }}>
             <Link
-              href="/sports-signup?sport=junior"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '18px 32px',
-                borderRadius: 12,
-                backgroundColor: GREEN,
-                color: '#000',
-                fontSize: 16,
-                fontWeight: 800,
-                textDecoration: 'none',
-                boxShadow: `0 20px 50px ${GREEN}55`,
-              }}
-            >
-              Apply for founding access →
-            </Link>
-            <Link
               href="/junior/oakridge-juniors"
               style={{
                 display: 'inline-flex',
@@ -832,24 +814,6 @@ export default function FootballJuniorPage() {
             Try the Oakridge Juniors FC live demo — a Charter Standard development club running a full season on Lumio Junior, including the U11 Lions and the canonical Parent App view. Or apply for founding access to bring your own club on.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link
-              href="/sports-signup?sport=junior"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '18px 32px',
-                borderRadius: 12,
-                backgroundColor: GREEN,
-                color: '#000',
-                fontSize: 16,
-                fontWeight: 800,
-                textDecoration: 'none',
-                boxShadow: `0 20px 50px ${GREEN}55`,
-              }}
-            >
-              Apply for founding access →
-            </Link>
             <Link
               href="/junior/oakridge-juniors"
               style={{
