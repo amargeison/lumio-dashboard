@@ -296,7 +296,7 @@ export default function SportsLandingPage() {
             <button onClick={scrollToPortals} className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{background:'linear-gradient(135deg, #8B5CF6, #06B6D4)',color:'white'}}>
               Explore all portals ↑
             </button>
-            <Link href="/contact" className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{border:'1px solid rgba(255,255,255,0.2)',color:'white'}}>
+            <Link href="mailto:hello@lumiosports.com?subject=Lumio%20Sports" className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{border:'1px solid rgba(255,255,255,0.2)',color:'white'}}>
               Book a walkthrough →
             </Link>
           </div>
