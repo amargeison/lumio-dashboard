@@ -20,8 +20,8 @@ export default function AIFeaturesPage() {
             Your personal AI chief of staff — match prep, sponsorship, travel, media. All handled. So you can focus on performing.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16 }}>
-            <Link href="/sports-signup" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, backgroundColor: '#8B5CF6', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-              Apply for free founding access &rarr;
+            <Link href="/sports/try-demo" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, backgroundColor: '#8B5CF6', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+              Try the demo &rarr;
             </Link>
             <a href="#ai-features" style={{ display: 'inline-block', padding: '16px 32px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.2)', color: '#F9FAFB', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
               See it in action &darr;
