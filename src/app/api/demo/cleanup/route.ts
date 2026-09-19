@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     await Promise.allSettled(
       toWarn.map(async tenant => {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.lumiocms.com'
-        await resend.emails.send({
+        const { error: sendErr } = await resend.emails.send({
           from: 'Lumio <hello@lumiocms.com>',
           to: [tenant.owner_email],
           subject: `⚠️ Your Lumio demo expires in 2 days`,
@@ -85,6 +85,7 @@ export async function POST(req: NextRequest) {
             </html>
           `,
         })
+        if (sendErr) console.error('[demo/cleanup expiry-warning] send rejected → @' + tenant.owner_email.split('@')[1] + ':', sendErr)
         await supabase
           .from('demo_tenants')
           .update({ warned_at: now.toISOString() })
@@ -110,8 +111,8 @@ export async function POST(req: NextRequest) {
 
     // Send deletion confirmation emails
     await Promise.allSettled(
-      toDelete.map(tenant =>
-        resend.emails.send({
+      toDelete.map(async tenant => {
+        const { error: sendErr } = await resend.emails.send({
           from: 'Lumio <hello@lumiocms.com>',
           to: [tenant.owner_email],
           subject: `Your Lumio demo workspace has been deleted`,
@@ -122,7 +123,8 @@ export async function POST(req: NextRequest) {
             <p style="color:#999;font-size:12px;">Lumio Ltd · privacy@lumiocms.com · UK GDPR compliant</p>
           `,
         })
-      )
+        if (sendErr) console.error('[demo/cleanup deletion-confirmation] send rejected → @' + tenant.owner_email.split('@')[1] + ':', sendErr)
+      })
     )
 
     deleted = toDelete.length

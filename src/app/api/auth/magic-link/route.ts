@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     const magicLinkUrl = `${appUrl}/demo/auth?token=${token}&slug=${slug}`
 
     await sendEmail({
+      context: 'auth/magic-link',
       from: 'Lumio <hello@lumiocms.com>',
       to: [email],
       subject: type === 'demo'

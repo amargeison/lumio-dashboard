@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
   // Send new activation email
   const firstName = business.owner_name?.split(' ')[0] || 'there'
   sendEmail({
+    context: 'resend-activation',
     from: 'Lumio <hello@lumiocms.com>',
     to: [body.email],
     subject: 'Welcome to Lumio — activate your account',

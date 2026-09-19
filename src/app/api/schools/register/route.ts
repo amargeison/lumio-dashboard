@@ -186,6 +186,7 @@ export async function POST(req: NextRequest) {
 
     // Send OTP email
     await sendEmail({
+      context: 'schools/register otp',
       from: 'Lumio for Schools <schools@lumiocms.com>',
       to: [yourEmail],
       subject: `Your Lumio for Schools sign-in code: ${code}`,

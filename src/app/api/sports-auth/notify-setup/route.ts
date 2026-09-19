@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
     }
 
     // EMAIL 1 — Internal notification to support
-    await resend.emails.send({
+    const { error: sendErr } = await resend.emails.send({
       from: 'Lumio Sports <hello@lumiocms.com>',
       to: 'support@lumiosports.com',
       subject: `New onboarding request — ${sport} — ${name}`,
@@ -156,11 +156,12 @@ export async function POST(req: NextRequest) {
         </div>
       `
     })
+    if (sendErr) console.error('[sports-auth/notify-setup internal] send rejected → @' + 'lumiosports.com' + ':', sendErr)
 
     // EMAIL 2 — User email with what we need from them
     const credentials = SPORT_CREDENTIALS[sport] || []
     if (credentials.length > 0) {
-      await resend.emails.send({
+      const { error: sendErr } = await resend.emails.send({
         from: 'Lumio Sports <hello@lumiocms.com>',
         to: email,
         subject: `Getting your ${sport} portal ready — here's what we need from you`,
@@ -189,6 +190,7 @@ export async function POST(req: NextRequest) {
           </div>
         `
       })
+      if (sendErr) console.error('[sports-auth/notify-setup club-confirmation] send rejected → @' + email.split('@')[1] + ':', sendErr)
     }
 
     // EMAIL 2b — Coach portal ("Set it up for me"): send the coach the data
@@ -196,7 +198,7 @@ export async function POST(req: NextRequest) {
     // payments and reply with it. Same file as Settings → Import → template.
     if (sport === 'coach' && email && String(email).includes('@')) {
       const templateUrl = 'https://www.lumiosports.com/templates/lumio-coach-import-template.xlsx'
-      await resend.emails.send({
+      const { error: sendErr } = await resend.emails.send({
         from: 'Lumio Sports <hello@lumiocms.com>',
         to: email,
         subject: `Getting ${clubName || 'your academy'} set up — your data template`,
@@ -217,6 +219,7 @@ export async function POST(req: NextRequest) {
           </div>
         `,
       })
+      if (sendErr) console.error('[sports-auth/notify-setup data-request] send rejected → @' + email.split('@')[1] + ':', sendErr)
     }
 
     return NextResponse.json({ ok: true })

@@ -169,6 +169,7 @@ export async function POST(req: NextRequest) {
             const sent = await sendAsCoach(camp.coach_id, { to: rec.to, subject, html })
             if (!sent.ok) {
               await sendEmail({
+                context: 'cron/camp-emails reminder',
                 from: 'Lumio Tennis <noreply@lumiosports.com>', to: [rec.to], subject, html,
                 replyTo: profile?.contact_email || undefined,
               })

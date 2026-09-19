@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
   })
 
   await sendEmail({
+    context: 'admin/login code',
     from: 'Lumio Admin <hello@lumiocms.com>',
     to: [email],
     subject: `Lumio Admin login code: ${code}`,

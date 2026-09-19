@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         greeting: 'Hi there,', paragraphs, cta: b.cta, signupUrl,
       })
       const sent = await sendAsCoach(coachId, { to, subject: `[TEST] ${subject}`, html })
-      if (!sent.ok) await sendEmail({ from: 'Lumio Tennis <noreply@lumiosports.com>', to: [to], subject: `[TEST] ${subject}`, html, replyTo: to })
+      if (!sent.ok) await sendEmail({ context: 'coach/camp-blast test', from: 'Lumio Tennis <noreply@lumiosports.com>', to: [to], subject: `[TEST] ${subject}`, html, replyTo: to })
       return NextResponse.json({ ok: true, test: true, to })
     }
 

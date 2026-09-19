@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
     }
 
     await sendEmail({
+      context: 'onboarding/notify-it',
       from: 'Lumio <hello@lumiocms.com>',
       to: recipients,
       subject: `Lumio setup instructions for ${companyName}`,

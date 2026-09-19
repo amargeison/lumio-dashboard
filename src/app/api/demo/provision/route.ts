@@ -105,6 +105,7 @@ async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name
   // Schedule 48-hour follow-up email
   try {
     const { data: followupData } = await sendEmail({
+      context: 'demo/provision followup-48h',
       from: 'Arron at Lumio <hello@lumiocms.com>',
       to: [tenant.owner_email],
       subject: `Did you get a chance to explore, ${firstName}?`,
@@ -122,6 +123,7 @@ async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name
   // Schedule 14-day win-back email
   try {
     const { data: winbackData } = await sendEmail({
+      context: 'demo/provision winback-14d',
       from: 'Arron at Lumio <hello@lumiocms.com>',
       to: [tenant.owner_email],
       subject: `Your Lumio workspace is paused, ${firstName}`,
@@ -143,6 +145,7 @@ async function sendInviteEmails(emails: string[], companyName: string, slug: str
   await Promise.allSettled(
     emails.map(email =>
       sendEmail({
+        context: 'demo/provision team-invite',
         from: 'Lumio <hello@lumiocms.com>',
         to: [email],
         subject: `${companyName} has invited you to their Lumio workspace`,

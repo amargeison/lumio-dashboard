@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
     // Notify Arron of new signup
     const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' })
     await sendEmail({
+      context: 'auth/signup internal-notification',
       from: 'Lumio Notifications <hello@lumiocms.com>',
       to: ['hello@lumiocms.com'],
       subject: `🚀 New Lumio sign-up — ${firstName} ${lastName || ''} from ${companyName}`,

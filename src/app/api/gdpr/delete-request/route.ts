@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Send confirmation to requester
     await sendEmail({
+      context: 'gdpr/delete-request acknowledgement',
       from: 'Lumio Privacy <privacy@lumiocms.com>',
       to: [email],
       subject: `Data request received — Reference ${reference}`,
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Notify DPO
     await sendEmail({
+      context: 'gdpr/delete-request internal',
       from: 'Lumio System <privacy@lumiocms.com>',
       to: ['privacy@lumiocms.com'],
       subject: `[GDPR] ${reference} — ${requestType} — ${email}`,

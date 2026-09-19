@@ -9,6 +9,7 @@ export async function POST(req: NextRequest) {
 
   // Send email notification
   await sendEmail({
+    context: 'notify/absence',
     from: 'Lumio <hello@lumiocms.com>',
     to: [managerEmail],
     subject: `${name || 'A team member'} is absent today`,

@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       const firstName = (display_name || 'there').split(' ')[0]
       const sportLabel = sport.charAt(0).toUpperCase() + sport.slice(1)
 
-      await resend.emails.send({
+      const { error: sendErr } = await resend.emails.send({
         from: 'Lumio Sports <hello@lumiocms.com>',
         to: email,
         subject: `Your Lumio ${sportLabel} portal is ready 🎯`,
@@ -49,6 +49,7 @@ ${ctaButton('Open my portal &rarr;', portalUrl)}
 </p>`,
         }),
       })
+      if (sendErr) console.error('[sports-admin/send-portal-ready] send rejected → @' + email.split('@')[1] + ':', sendErr)
     } catch (e) {
       console.error('[send-portal-ready] Email error:', e)
     }
