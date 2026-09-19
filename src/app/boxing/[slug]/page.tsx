@@ -10625,9 +10625,6 @@ export function BoxingPortalInner({ session, onSignOut }: { session: SportsDemoS
           <div className="flex items-center justify-between px-6 py-2 text-xs font-medium flex-shrink-0"
             style={{ backgroundColor: '#dc2626', color: '#ffffff' }}>
             <span>This is a demo · sample data</span>
-            <a href="/sports-signup" className="flex items-center gap-1 hover:underline font-semibold" style={{ color: '#ffffff' }}>
-              Get founding access →
-            </a>
           </div>
         )}
         {(() => {
