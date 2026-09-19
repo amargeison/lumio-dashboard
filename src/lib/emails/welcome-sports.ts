@@ -147,6 +147,15 @@ export function generateSportsWelcomeEmail(
   const loginUrl = `https://www.lumiosports.com/sports-login?email=${encodeURIComponent(email || '')}`
   const logoHtml = `<img src="${SPORT_LOGOS[sport] || SPORT_LOGOS.tennis}" width="48" height="48" style="object-fit:contain;margin-bottom:16px;" alt="${sportLabel}" />`
 
+  // Who the portal belongs to. Every sport here is an individual athlete or a
+  // club, so the stock line says "a professional {sport} player". Impact is a
+  // programme platform — a schools-and-community delivery org, not a player —
+  // so it gets its own sentence. It also skips the "add your name and photo"
+  // prompt, because the Impact gate runs skipWizard and never asks for either.
+  const audienceLine = sport === 'impact'
+    ? 'This isn&rsquo;t a slideshow or a product tour. It&rsquo;s a fully working portal &mdash; the same one a programme team, its coaches and its parents would use every day.'
+    : `This isn&rsquo;t a slideshow or a product tour. It&rsquo;s a fully working portal &mdash; the same one a professional ${sportLabel.toLowerCase()} player would use every day. Add your name and photo and it becomes yours.`
+
   if (emailType === 'demo') {
     return emailLayout({
       preheader: `Your Lumio ${sportLabel} demo is ready — here's what you're about to see`,
@@ -157,7 +166,7 @@ ${logoHtml}
   Hi ${firstName}, your interactive portal is live and waiting.
 </p>
 <p style="margin:0 0 20px;font-size:14px;color:rgba(255,255,255,0.55);line-height:1.7;">
-  This isn&rsquo;t a slideshow or a product tour. It&rsquo;s a fully working portal &mdash; the same one a professional ${sportLabel.toLowerCase()} player would use every day. Add your name and photo and it becomes yours.
+  ${audienceLine}
 </p>
 
 <h2 style="margin:0 0 12px;font-size:16px;font-weight:700;color:#a855f7;">Here&rsquo;s what&rsquo;s inside:</h2>
