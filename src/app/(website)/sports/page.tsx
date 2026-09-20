@@ -70,7 +70,12 @@ const PILLARS: Array<{icon:string;accent:string;heading:string;body:string;extra
     body:'Log a session, a match or a contract and Lumio turns it into a finished, shareable write-up. AI session reviews for coaches, match recaps for parents, board-ready summaries for clubs — written in your voice, from your real data. The reporting that used to eat your evening, done in seconds.',
     tags:['Football','Rugby','Cricket',"Women's FC",'Tennis Coach','Junior']},
   {icon:'📡',accent:'#06B6D4',heading:'GPS that syncs itself.',
-    body:'GPS units sync session load, ACWR readiness scores, sprint counts, heat maps and fatigue flags directly into your portal — automatically, after every session. No export. No copy-paste. No manual entry.'},
+    // JOHAN Sports is named because the partnership is agreed. The original
+    // wording described units syncing into the portal after every session,
+    // which claimed a built and running integration — that is the part the
+    // brand rule forbids, so the tense moves and `extra` states the status.
+    body:'Our partnership with JOHAN Sports will bring session load, ACWR readiness scores, sprint counts, heat maps and fatigue flags straight from the unit into your portal after every session — no export, no copy-paste, no manual entry.',
+    extra:'Partnership agreed with JOHAN Sports. Integration in build — not live yet.'},
   {icon:'💰',accent:'#10B981',heading:'Every pound. Every contract. Every clause.',
     body:'The purse simulator that shows a boxer their exact take-home. The FSR dashboard that shows a women\'s club where they stand. The salary cap meter that tracks a rugby club to the pound. Financial transparency is not a feature. It is the foundation every portal is built on.'},
   {icon:'👥',accent:'#8B5CF6',heading:'Every role sees exactly what they need.',
