@@ -82,7 +82,7 @@ export default function SportsLandingPage() {
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           {/* Eyebrow */}
           <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full mb-8 text-sm font-medium" style={{border:'1px solid rgba(139,92,246,0.3)',background:'rgba(139,92,246,0.08)',color:'#D1D5DB'}}>
-            🏆 Twelve portals. One platform. Built for sport.
+            🏆 Two products live. Eleven more in development.
           </div>
 
           {/* Headline */}
@@ -249,7 +249,7 @@ export default function SportsLandingPage() {
         <div className="absolute bottom-[-60px] right-[-60px] w-[400px] h-[400px] rounded-full" style={{background:'radial-gradient(circle, #06B6D4, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite 4s'}}/>
         <div className="relative z-10 max-w-3xl mx-auto text-center">
           <h2 className="font-black leading-tight mb-4" style={{fontSize:'clamp(2.5rem, 6vw, 5rem)'}}>
-            Twelve portals.<br/>One platform.
+            Thirteen portals.<br/>One platform.
           </h2>
           <p className="text-2xl md:text-3xl font-bold mb-6" style={{background:'linear-gradient(135deg, #8B5CF6 0%, #06B6D4 50%, #EC4899 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
             Professional sport finally has infrastructure.
