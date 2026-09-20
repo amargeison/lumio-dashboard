@@ -1,11 +1,21 @@
 'use client'
 
-// Live (founder portal) Player Development — the demo DevelopmentView over real
-// data. Master-detail: pick a player, see their current racket, the live 1–4
-// skill grading for that racket (which writes coach_player_skills and therefore
-// drives the Racket Progression % + Squad matrix + Dashboard), the racket
-// journey, GPS-watch effort stats and their recent lessons. Stats are limited to
-// what we can actually measure today — no fabricated 1st-serve %/win-rate.
+// Live (founder portal) Player Development — and the source of truth for every
+// player's level.
+//
+// THE SPLIT. Grading happens here and only here: this screen writes
+// coach_player_skills and coach_players.racket_stage, and Racket Progression
+// reads them. That is the whole relationship — one place where a coach says how
+// a player is doing, one place where that turns into a keyring and a
+// certificate.
+//
+// Which is why this screen talks in COLOURS, not rackets. Every academy has
+// players to develop; only the ones running Lumio's reward ladder have rackets
+// to award. A coach who has never bought a keyring should not be reading
+// "current racket" on a page about a fifteen-year-old's backhand. The colours
+// are the LTA-mapped stages either way, so nothing about the data changes — only
+// what we call it. Where the reward language genuinely belongs (the certificate,
+// "ready to award"), it appears only when the Racket Progression module is on.
 
 import { useState, useEffect, useMemo, type ReactNode, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
@@ -16,6 +26,7 @@ import {
 } from '../_lib/coach-db'
 import { printRacketCertificate, certOrg } from './LiveRacketProgression'
 import { getSettings } from '../_lib/settings-store'
+import { getFlags, subscribe as subscribeFlags } from '../_lib/feature-flags'
 import { avatarSrc } from '@/lib/avatar'
 
 type Target = { target: string; why?: string; measure?: string; by?: string }
@@ -25,6 +36,14 @@ type Player = {
   // Set by Lumio Coach, persisted so they are still there next week.
   targets?: Target[] | null; targets_note?: string | null; targets_by?: string | null; targets_set_at?: string | null
 }
+// Is the reward ladder switched on for this academy? It is what decides whether
+// a colour is also a racket you can award, and nothing else on this screen.
+function useRacketModule(): boolean {
+  const [on, setOn] = useState(() => getFlags().racket)
+  useEffect(() => { const r = () => setOn(getFlags().racket); r(); return subscribeFlags(r) }, [])
+  return on
+}
+
 const THEME: Record<string, string> = { white: 'Foundations', yellow: 'Rallying', orange: 'Net & Touch', green: 'The Serve', blue: 'Spin & Shape', purple: 'Specialty Shots', brown: 'Weapons', red: 'Tactics', black: 'Mastery' }
 const TOTAL_SKILLS = RACKET_STAGES.reduce((n, s) => n + (RACKET_SKILLS[s.id]?.length || 0), 0)
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
@@ -55,7 +74,7 @@ export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentT
         <Head T={T} />
         <div style={{ textAlign: 'center', padding: '48px 20px', background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 12 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>No players yet</div>
-          <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Add players in the Player Roster, then track their racket journey and grade skills here.</div>
+          <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Add players in the Player Roster, then grade their skills and track where they are here.</div>
         </div>
       </div>
     )
@@ -80,7 +99,7 @@ export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentT
                   <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                     <span style={{ width: 10, height: 10, borderRadius: 3, background: st?.colour ?? T.border, border: '1px solid rgba(128,128,128,0.4)' }} />
-                    <span style={{ fontSize: 10.5, color: T.text3 }}>{st ? st.name : 'No racket'}{p.category || p.level ? ` · ${p.category || p.level}` : ''}</span>
+                    <span style={{ fontSize: 10.5, color: T.text3 }}>{st ? st.name : 'Not started'}{p.category || p.level ? ` · ${p.category || p.level}` : ''}</span>
                   </div>
                 </div>
               </div>
@@ -103,7 +122,7 @@ function Head({ T }: { T: ThemeTokens }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Player Development</h1>
-      <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Track every player’s journey — current racket, skill mastery, goals and trajectory.</p>
+      <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Every player’s journey — the colour they’re on, skill mastery, goals and trajectory.</p>
     </div>
   )
 }
@@ -119,6 +138,7 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
   // Same coach identity as the Racket Progression tab — an identical
   // certificate must not be signed differently depending on which tab printed it.
   const profile = useCoachProfile()
+  const racketOn = useRacketModule()
   const rawIdx = RACKET_STAGES.findIndex(s => s.id === p.racket_stage)
   const hasStage = rawIdx >= 0
   const cur = hasStage ? rawIdx : 0
@@ -136,10 +156,10 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
 
   const nextStage = hasStage && cur < RACKET_STAGES.length - 1 ? RACKET_STAGES[cur + 1] : null
   const tiles: { label: string; value: ReactNode; sub?: string; colour?: string }[] = [
-    { label: 'Current racket', value: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 14, height: 14, borderRadius: 4, background: curStage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />{hasStage ? curStage.name : '—'}</span> },
-    { label: 'Racket progress', value: `${progress}%`, sub: nextStage ? `to ${nextStage.name}` : 'top racket', colour: accent.hex },
+    { label: 'Current colour', value: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 14, height: 14, borderRadius: 4, background: curStage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />{hasStage ? curStage.name : 'Not started'}</span> },
+    { label: 'Colour progress', value: `${progress}%`, sub: nextStage ? `to ${nextStage.name}` : 'top colour', colour: accent.hex },
     { label: 'Attendance', value: attPct === null ? '—' : `${attPct}%`, sub: attPct === null ? 'no data' : `${attRows.length} logged`, colour: attPct === null ? T.text3 : attPct >= 90 ? T.good : attPct >= 80 ? T.warn : T.bad },
-    { label: 'Skills earned', value: `${skillsEarned}/${TOTAL_SKILLS}`, sub: 'all rackets' },
+    { label: 'Skills mastered', value: `${skillsEarned}/${TOTAL_SKILLS}`, sub: 'all colours' },
     { label: 'Lessons', value: String(lessons.length), sub: 'logged' },
     { label: 'Distance', value: distanceKm === null ? '—' : `${distanceKm.toFixed(1)} km`, sub: 'GPS · all sessions' },
     { label: 'Effort (avg HR)', value: avgHr ? `${avgHr} bpm` : '—', sub: 'GPS watch' },
@@ -162,9 +182,13 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
             <div style={{ fontSize: 19, fontWeight: 600, color: T.text }}>{p.name}</div>
             <div style={{ fontSize: 12, color: T.text3 }}>{p.category || p.level || 'Player'}{p.age ? ` · Age ${p.age}` : ''}{p.parent_name ? ` · Parent: ${p.parent_name}` : ''}</div>
           </div>
-          <button onClick={() => hasStage && printRacketCertificate(p.name, curStage, curSkills.map(s => s.name), certOrg(profile))}
-            disabled={!hasStage}
-            style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: hasStage ? 'pointer' : 'not-allowed', opacity: hasStage ? 1 : 0.5, fontFamily: FONT }}>🏆 Racket certificate</button>
+          {/* A certificate is a reward, and rewards belong to the racket ladder.
+              An academy that does not run it has nothing to print here. */}
+          {racketOn && (
+            <button onClick={() => hasStage && printRacketCertificate(p.name, curStage, curSkills.map(s => s.name), certOrg(profile))}
+              disabled={!hasStage}
+              style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: hasStage ? 'pointer' : 'not-allowed', opacity: hasStage ? 1 : 0.5, fontFamily: FONT }}>🏆 Racket certificate</button>
+          )}
         </div>
         <PlayerTargets T={T} accent={accent} p={p} />
 
@@ -185,12 +209,13 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
         </div>
       </div>
 
-      {/* Working racket — live grading */}
+      {/* The colour they are working on — live grading, and the source of
+          truth for Racket Progression. */}
       <div style={{ ...card, display: showSec('racket') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
           <span style={{ width: 14, height: 14, borderRadius: 4, background: curStage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Working racket · {curStage.name} — {THEME[curStage.id]}</div>
-          <div style={{ marginLeft: 'auto', fontSize: 11, color: accent.hex, fontWeight: 700 }}>{progress}% to award</div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Working on · {curStage.name} — {THEME[curStage.id]}</div>
+          <div style={{ marginLeft: 'auto', fontSize: 11, color: accent.hex, fontWeight: 700 }}>{progress}% {racketOn ? 'to award' : 'mastered'}</div>
         </div>
         {curSkills.map(s => {
           const score = skillScores[s.name] || 0
@@ -210,13 +235,20 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
             </div>
           )
         })}
-        <p style={{ fontSize: 10.5, color: T.text3, marginTop: 4 }}>Tap a bar to set mastery. Four bars (Consistent) = mastered — when all four skills are mastered the racket is ready to award in Racket Progression.</p>
+        <p style={{ fontSize: 10.5, color: T.text3, marginTop: 4, lineHeight: 1.55 }}>
+          Tap a bar to set mastery. Four bars (Consistent) = mastered.
+          {racketOn ? ' Once all four skills are mastered the racket is ready to award in Racket Progression.' : ''}
+          {!hasStage ? ' This player has no colour set yet — grade the foundation skills here, or set their colour when you edit them in the Roster.' : ''}
+        </p>
       </div>
 
-      {/* Racket journey + recent lessons */}
+      {/* Colour journey + recent lessons */}
       <div style={{ display: showSec('journey') ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={card}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 10 }}>Racket journey</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Colour journey</div>
+            {racketOn && <div style={{ fontSize: 10.5, color: T.text3 }}>awarded in Racket Progression</div>}
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {RACKET_STAGES.map((st, i) => {
               const state = !hasStage ? 'locked' : i < cur ? 'done' : i === cur ? 'current' : 'locked'

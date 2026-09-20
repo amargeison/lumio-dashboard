@@ -1,7 +1,17 @@
 'use client'
 
-// Live (founder portal) Racket Progression — the full demo Racket Progression
-// System rendered over real data. LTA-aligned ladder, the Racket Reward System,
+// Live (founder portal) Racket Progression — the reward ladder, over real data.
+//
+// It OWNS NO DATA. Every percentage, tick and "ready to award" on this screen is
+// read from the grading a coach did in Player Development (coach_player_skills)
+// and the colour that sits on the player (coach_players.racket_stage). Awarding
+// writes racket_stage back, which is the one thing this screen does change — and
+// Player Development picks it up immediately, because it is the same column.
+//
+// So the split is: Development is where a coach says how a player is doing.
+// This is where that becomes a keyring, a dampener and a certificate. An academy
+// that does not run the ladder simply never opens this module, and nothing they
+// do in Development depends on it. LTA-aligned ladder, the Racket Reward System,
 // an expandable stage detail and the Squad racket matrix. Player progress per
 // stage is computed from coach_player_skills (a skill counts once it's Consistent
 // = 4). "Award reward" advances the player to the next racket (coach_players
@@ -92,7 +102,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
     <div style={{ fontFamily: FONT }}>
       <div style={{ marginBottom: 14 }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Racket Progression System</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>A Kyu-Dan style ranking adapted for tennis. Nine rackets, each unlocking a cluster of skills — earn a racket when every skill is Consistent or better.</p>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>A Kyu-Dan style ranking adapted for tennis. Nine rackets, each unlocking a cluster of skills — earn a racket when every skill is Consistent or better. Grading happens in Player Development; this is where it turns into a reward.</p>
       </div>
 
       {/* LTA alignment */}

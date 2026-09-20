@@ -202,8 +202,8 @@ export const MODULE_SECTIONS: Record<string, { key: string; label: string }[]> =
   development: [
     { key: 'goal',    label: 'Goal' },
     { key: 'stats',   label: 'Stat tiles' },
-    { key: 'racket',  label: 'Working racket' },
-    { key: 'journey', label: 'Racket journey & lessons' },
+    { key: 'racket',  label: 'Working colour & skill grading' },
+    { key: 'journey', label: 'Colour journey & lessons' },
   ],
   roster: [
     { key: 'stats', label: 'Player stat tiles' },
