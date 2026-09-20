@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
     // Send welcome email to user
     console.log(`[signup] Sending welcome email to ${email} for ${companyName} (${portalType})`)
     const welcomeResult = await sendEmail({
+      context: 'auth/signup welcome',
       from: 'Arron at Lumio <hello@lumiocms.com>',
       to: [email],
       subject: `Your Lumio workspace is ready, ${firstName}! 🚀`,
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
     // Notify Arron of new signup
     const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'Europe/London' })
     await sendEmail({
+      context: 'auth/signup internal-notification',
       from: 'Lumio Notifications <hello@lumiocms.com>',
       to: ['hello@lumiocms.com'],
       subject: `🚀 New Lumio sign-up — ${firstName} ${lastName || ''} from ${companyName}`,

@@ -96,6 +96,7 @@ async function sendWelcomeEmail(id: string, slug: string, ownerName: string, own
   console.log('[workspace/buy] sendWelcomeEmail called for:', ownerEmail, 'ENV:', process.env.NEXT_PUBLIC_ENV, 'NODE_ENV:', process.env.NODE_ENV)
   const firstName = ownerName?.split(' ')[0] || 'there'
   const { error } = await sendEmail({
+    context: 'workspace/buy welcome',
     from: 'Lumio <hello@lumiocms.com>',
     to: [ownerEmail],
     subject: "You're live on Lumio — here's everything you need 🎉",

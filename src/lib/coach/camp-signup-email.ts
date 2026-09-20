@@ -161,6 +161,7 @@ export async function sendCampSignupEmails(coachId: string, i: SignupMailInput) 
     const sent = await sendAsCoach(coachId, { to: i.parentEmail, subject: subjectParent, html: parentHtml(i) })
     if (!sent.ok) {
       await sendEmail({
+        context: 'coach/camp-signup parent-confirmation',
         from: 'Lumio Tennis <noreply@lumiosports.com>', to: [i.parentEmail],
         subject: subjectParent, html: parentHtml(i),
         // So a parent replying reaches the coach, not a noreply address.
@@ -174,6 +175,7 @@ export async function sendCampSignupEmails(coachId: string, i: SignupMailInput) 
     const sent = await sendAsCoach(coachId, { to: i.coachEmail, subject: subjectCoach, html: coachHtml(i), replyTo: i.parentEmail })
     if (!sent.ok) {
       await sendEmail({
+        context: 'coach/camp-signup coach-notification',
         from: 'Lumio Tennis <noreply@lumiosports.com>', to: [i.coachEmail],
         subject: subjectCoach, html: coachHtml(i), replyTo: i.parentEmail,
       })

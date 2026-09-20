@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         greeting: 'Hi there,', paragraphs, cta: b.cta, signupUrl,
       })
       const sent = await sendAsCoach(coachId, { to, subject: `[TEST] ${subject}`, html })
-      if (!sent.ok) await sendEmail({ from: 'Lumio Tennis <noreply@lumiosports.com>', to: [to], subject: `[TEST] ${subject}`, html, replyTo: to })
+      if (!sent.ok) await sendEmail({ context: 'coach/camp-blast test', from: 'Lumio Tennis <noreply@lumiosports.com>', to: [to], subject: `[TEST] ${subject}`, html, replyTo: to })
       return NextResponse.json({ ok: true, test: true, to })
     }
 
@@ -148,10 +148,13 @@ export async function POST(req: NextRequest) {
           const r = await sendAsCoach(coachId, { to, subject, html })
           if (r.ok) { sent++; continue }
           const fb = await sendEmail({
+            context: 'coach/camp-blast fallback',
             from: 'Lumio Tennis <noreply@lumiosports.com>', to: [to], subject, html,
             replyTo: profile?.contact_email || undefined,
           }).catch(() => null)
-          if (fb) sent++; else failed++
+          // sendEmail resolves with { data, error } and is truthy even when the
+          // send was refused, so `if (fb)` counted a rejection as delivered.
+          if (fb && !fb.error) sent++; else failed++
         } catch { failed++ }
       }
     }

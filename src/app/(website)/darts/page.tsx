@@ -547,13 +547,8 @@ export default function DartsLandingPage() {
             Be one of the first players on Lumio Tour Darts.
           </h2>
           <p style={{ fontSize: 17, color: MUTED, lineHeight: 1.6, marginBottom: 32 }}>
-            We&apos;re working with a small number of PDC professionals and their teams to shape the product. 6 months free. No commitment. All we ask for at the end is an honest case study.
+            We&apos;re working with a small number of PDC professionals and their teams to shape the product.
           </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
-            {['6 months free', 'We build what you ask for', 'No lock-in'].map(p => (
-              <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: 'rgba(196,30,58,0.1)', border: `1px solid ${RED}66`, color: RED_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
-            ))}
-          </div>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
             <a href="mailto:hello@lumiosports.com?subject=Darts%20Early%20Access" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '18px 32px', borderRadius: 12, backgroundColor: RED, color: '#fff', fontSize: 16, fontWeight: 800, textDecoration: 'none', boxShadow: `0 20px 50px ${RED}66` }}>
               Apply for early access →

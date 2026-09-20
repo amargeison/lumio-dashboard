@@ -66,21 +66,15 @@ const SCHOOLS_EXTRA_LINKS = [
   { label: 'Integrations', href: '/schools/integrations' },
 ]
 
-// Sports footer columns. Previously one array split by index
-// (slice(0,3) / slice(3)), which coupled the column boundary to the entry
-// count — removing a link silently moved the next one into the wrong column.
-// Named per column instead, mirroring BUSINESS_FOOTER_COL_A/B below.
+// Sports footer links. There is one column: the Resources column held only
+// Docs and Status, both href '#', and neither a docs site nor a status page
+// exists. Two dead links are worse than no column.
 const SPORTS_FOOTER_COMPANY = [
   // /sports-product, not /product — the latter is the business product page,
   // and it is what the sports nav's Product points at too.
   { label: 'Product',  href: '/sports-product' },
   { label: 'About',    href: '/about'          },
 ]
-const SPORTS_FOOTER_RESOURCES = [
-  { label: 'Docs',     href: '#'         },
-  { label: 'Status',   href: '#'         },
-]
-
 const LEGAL_LINKS = [
   { label: 'Privacy Policy',  href: '/privacy' },
   { label: 'Terms of Service',href: '/terms'   },
@@ -458,19 +452,19 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
                 )
               })}
             </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>
-                {isSports ? 'Resources' : 'Products'}
-              </p>
-              {(isSports ? SPORTS_FOOTER_RESOURCES : BUSINESS_FOOTER_COL_B).map(l => (
-                <Link key={l.label} href={l.href} className="block mb-3 text-sm transition-colors"
-                  style={{ color: '#6B7280' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#6B7280' }}>
-                  {l.label}
-                </Link>
-              ))}
-            </div>
+            {!isSports && (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#4B5563' }}>Products</p>
+                {BUSINESS_FOOTER_COL_B.map(l => (
+                  <Link key={l.label} href={l.href} className="block mb-3 text-sm transition-colors"
+                    style={{ color: '#6B7280' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#6B7280' }}>
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* CTA */}

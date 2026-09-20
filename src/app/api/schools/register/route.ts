@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const { error: welcomeErr } = await sendEmail({
+        context: 'schools/register welcome',
         from: 'Lumio for Schools <schools@lumiocms.com>',
         to: [yourEmail],
         subject: `Welcome to Lumio, ${schoolName}!`,
@@ -186,6 +187,7 @@ export async function POST(req: NextRequest) {
 
     // Send OTP email
     await sendEmail({
+      context: 'schools/register otp',
       from: 'Lumio for Schools <schools@lumiocms.com>',
       to: [yourEmail],
       subject: `Your Lumio for Schools sign-in code: ${code}`,

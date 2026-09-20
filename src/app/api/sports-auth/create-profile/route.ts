@@ -149,12 +149,13 @@ export async function POST(req: NextRequest) {
     // Send welcome email (non-blocking — don't fail signup if email fails)
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
-      await resend.emails.send({
+      const { error: sendErr } = await resend.emails.send({
         from: 'Lumio Sports <hello@lumiocms.com>',
         to: email,
         subject: `Welcome to Lumio Sports, ${displayName.split(' ')[0]} 🎉`,
         html: generateSportsWelcomeEmail(displayName, sport, 'founder', email),
       })
+      if (sendErr) console.error('[sports-auth/create-profile welcome] send rejected → @' + email.split('@')[1] + ':', sendErr)
     } catch (emailErr) {
       console.error('[sports-auth] Welcome email failed (non-fatal):', emailErr)
     }

@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
   // Send OTP email
   const firstName = business.owner_name?.split(' ')[0] || 'there'
   const { error: emailError } = await sendEmail({
+    context: 'workspace/send-otp code',
     from: 'Lumio <hello@lumiocms.com>',
     to: [email],
     subject: `Your Lumio sign-in code: ${otp}`,

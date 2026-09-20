@@ -377,7 +377,7 @@ export default function CricketLandingPage() {
             See the full platform in under five minutes — the squad, medical and commercial workspaces your club would use.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
-            {['ECB compliant', '6 months free', 'Bring your own data'].map(p => (
+            {['ECB compliant', 'Bring your own data'].map(p => (
               <span key={p} style={{ padding: '10px 18px', borderRadius: 999, backgroundColor: `${PURPLE}1A`, border: `1px solid ${PURPLE}66`, color: PURPLE_LIGHT, fontSize: 13, fontWeight: 700 }}>{p}</span>
             ))}
           </div>

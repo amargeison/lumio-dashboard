@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     if (process.env.RESEND_API_KEY) {
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
-      await resend.emails.send({
+      const { error: sendErr } = await resend.emails.send({
         from: 'Lumio Sports <hello@lumiosports.com>',
         to: email,
         subject: (isFounder || isMember) ? `Your ${cfg.name} sign-in code — ${code}` : `Your ${cfg.name} demo code — ${code}`,
@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
           </div>
         </body></html>`,
       })
+      if (sendErr) console.error('[sports-demo/send-otp code] send rejected → @' + email.split('@')[1] + ':', sendErr)
     } else {
       console.log(`[EMAIL SUPPRESSED — dev] To: ${email} | Code: ${code} | Sport: ${sport}`)
     }

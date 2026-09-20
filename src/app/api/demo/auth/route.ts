@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     // Fire new-signup notification to Arron — never block signup on failure.
     if (isNewUser) {
       try {
-        await getResend().emails.send({
+        const { error: sendErr } = await getResend().emails.send({
           from: 'Lumio <notifications@lumiocms.com>',
           to: 'hello@lumiocms.com',
           subject: '🚀 New Demo Signup',
@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
             <p><a href="https://lumiocms.com/admin">View in Admin Centre</a></p>
           `,
         })
+        if (sendErr) console.error('[demo/auth new-signup-notification] send rejected → @lumiocms.com:', sendErr)
       } catch (notifyErr) {
         console.error('New signup notification failed:', notifyErr)
       }

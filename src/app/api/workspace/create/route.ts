@@ -110,6 +110,7 @@ async function sendWelcomeEmail(id: string, slug: string, ownerName: string, own
   const firstName = ownerName?.split(' ')[0] || 'there'
 
   const { error } = await sendEmail({
+    context: 'workspace/create welcome',
     from: 'Lumio <hello@lumiocms.com>',
     to: [ownerEmail],
     subject: "You're live on Lumio — here's everything you need 🎉",

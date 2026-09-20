@@ -341,12 +341,13 @@ export async function POST(req: NextRequest) {
       try {
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
-        await resend.emails.send({
+        const { error: sendErr } = await resend.emails.send({
           from: 'Lumio Sports <hello@lumiosports.com>',
           to: email,
           subject: `Your Lumio ${sportNames[sport] ?? 'Sports'} demo is ready — here's what you're about to see`,
           html: generateSportsWelcomeEmail(userName || 'there', sport, 'demo', email),
         })
+        if (sendErr) console.error('[sports-demo/verify-otp welcome] send rejected → @' + email.split('@')[1] + ':', sendErr)
       } catch (emailErr) {
         console.error('[sports-demo/verify-otp] Welcome email error:', emailErr)
       }
