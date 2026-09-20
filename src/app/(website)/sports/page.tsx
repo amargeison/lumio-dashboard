@@ -230,13 +230,18 @@ export default function SportsLandingPage() {
       {/* ═══ SECTION 6: CREDIBILITY ═══ */}
       <section className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
         <div className="max-w-6xl mx-auto">
-          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-10" style={{color:'#64748B'}}>BUILT ON REAL INTELLIGENCE</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>WHAT THE COMPLIANCE TOOLING DOES</p>
+          <h2 className="text-2xl md:text-3xl font-black text-center mb-10">Three of the hardest problems, handled.</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {QUOTES.map((q:{border:string;text:string;label:string},i:number)=>(
               <div key={i} className="rounded-xl p-6" style={{background:'#0D1117',borderLeft:`4px solid ${q.border}`}}>
-                <span className="text-6xl font-serif leading-none block mb-2" style={{color:q.border,opacity:0.3}}>&ldquo;</span>
-                <p className="text-sm leading-relaxed mb-4" style={{color:'#CBD5E1'}}>{q.text}</p>
-                <p className="text-[10px]" style={{color:'#64748B'}}>{q.label}</p>
+                {/* Feature statements, not endorsements. These were previously
+                    rendered with a 6xl serif quotation mark under a "BUILT ON
+                    REAL INTELLIGENCE" heading, which read as third-party
+                    testimony — nobody said any of it. Same copy, presented as
+                    what it is: a labelled description of what the tool does. */}
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{color:q.border}}>{q.label}</p>
+                <p className="text-sm leading-relaxed" style={{color:'#CBD5E1'}}>{q.text}</p>
               </div>
             ))}
           </div>
