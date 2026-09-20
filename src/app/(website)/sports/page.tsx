@@ -9,7 +9,28 @@ import { SPORTS } from '@/lib/sports/marketing-sports'
 // The local PORTALS array had drifted: no Impact, a different order, and
 // accents that disagreed with the cards on /sports/try-demo (Tennis #A3E635
 // vs #14B8A6, Football #10B981 vs #3b82f6, Cricket #FBBF24 vs #10b981).
-const DEMO_PORTALS = SPORTS.filter(sp => sp.id !== 'impact' && sp.id !== 'tenniscoach')
+// marketing-sports.ts holds DEMO-portal hrefs, which /sports/try-demo needs —
+// so the marketing destinations are mapped here rather than changing that array
+// or adding a field to it. Label, blurb and accent still come from the shared
+// source, so the only thing that can drift is the URL. Keep in step with
+// SPORTS_TIERS in WebsiteChrome.tsx, which is the same eleven in this order.
+const MARKETING_HREF: Record<string, string> = {
+  tennis:     '/tennis',
+  football:   '/football/pro',        // the tier page, not the /football hub
+  womens:     '/womens-football',
+  junior:     '/football/junior',
+  nonleague:  '/football/non-league',
+  grassroots: '/football/grassroots',
+  cricket:    '/cricket',
+  rugby:      '/rugby',
+  golf:       '/golf',
+  boxing:     '/boxing',
+  darts:      '/darts',
+}
+
+const DEMO_PORTALS = SPORTS
+  .filter(sp => sp.id !== 'impact' && sp.id !== 'tenniscoach')
+  .map(sp => ({ ...sp, href: MARKETING_HREF[sp.id] ?? sp.href }))
 
 // The two products that are actually live. Kept here rather than pulled from
 // marketing-sports because these carry a logo and a longer line than the demo
@@ -211,8 +232,8 @@ export default function SportsLandingPage() {
       <section ref={portalRef} className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
         <div className="max-w-6xl mx-auto">
           <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>IN DEVELOPMENT</p>
-          <h2 className="text-3xl md:text-5xl font-black text-center mb-3">Eleven more portals you can explore today.</h2>
-          <p className="text-center text-sm mb-12 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>Each one is a working demo with sample data seeded in — not yet a product you can buy. Tennis Coach and Impact, above, are the two that are.</p>
+          <h2 className="text-3xl md:text-5xl font-black text-center mb-3">Eleven more sports, in development.</h2>
+          <p className="text-center text-sm mb-12 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>Each has a portal built and a demo you can try from its page — none is a product you can buy yet. Tennis Coach and Impact, above, are the two that are.</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {DEMO_PORTALS.map(d=>(
@@ -220,7 +241,7 @@ export default function SportsLandingPage() {
                 style={{background:'#0D1117',border:'1px solid #1E293B',borderLeft:`3px solid ${d.accent}`,textDecoration:'none'}}>
                 <div className="text-base font-bold text-white mb-1">{d.label}</div>
                 <div className="text-xs leading-relaxed mb-4 flex-1" style={{color:'#94A3B8'}}>{d.desc}</div>
-                <span className="text-xs font-bold" style={{color:d.accent}}>Try the demo &rarr;</span>
+                <span className="text-xs font-bold" style={{color:d.accent}}>Explore &rarr;</span>
               </Link>
             ))}
           </div>
