@@ -136,7 +136,7 @@ export default function SportsLandingPage() {
           {/* Stats */}
           <div className="flex flex-wrap justify-center gap-8 mb-10">
             {[
-              {n:'12',l:'Portals live'},{n:'0',l:'Dedicated sport OS platforms that existed before this'},{n:'£500m',l:"Women's football global revenue with zero dedicated software"},{n:'56',l:'Pages of Premiership salary cap regulations tracked in Excel'},
+              {n:'2',l:'Products live — Tennis Coach and Impact'},{n:'0',l:'Dedicated sport OS platforms that existed before this'},{n:'£500m',l:"Women's football global revenue with zero dedicated software"},{n:'56',l:'Pages of Premiership salary cap regulations tracked in Excel'},
             ].map((s:{n:string;l:string},i:number)=>(
               <div key={i} className="text-center">
                 <div className="font-black text-3xl md:text-4xl" style={{background:'linear-gradient(135deg, #8B5CF6, #06B6D4)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>{s.n}</div>
@@ -147,8 +147,11 @@ export default function SportsLandingPage() {
 
           {/* CTAs */}
           <div className="flex flex-wrap justify-center gap-4 mb-14">
-            <Link href="/sports/try-demo" className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{border:'1px solid rgba(255,255,255,0.2)',color:'white',textDecoration:'none'}}>
-              Try a demo
+            <Link href="/sports/try-demo" className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{background:'linear-gradient(135deg, #8B5CF6, #06B6D4)',color:'white',textDecoration:'none'}}>
+              Try a demo &rarr;
+            </Link>
+            <Link href="mailto:hello@lumiosports.com?subject=Lumio%20Sports" className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{border:'1px solid rgba(255,255,255,0.2)',color:'white',textDecoration:'none'}}>
+              Talk to us
             </Link>
           </div>
 
