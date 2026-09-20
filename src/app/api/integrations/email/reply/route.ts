@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { error } = await sendEmail({
+    context: 'integrations/email reply',
     from: `${from_name ?? 'Lumio'} <hello@lumiocms.com>`,
     to: [to],
     subject: subject ? `Re: ${subject}` : 'Reply from Lumio',

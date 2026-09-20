@@ -148,6 +148,7 @@ export async function POST(req: NextRequest) {
           const r = await sendAsCoach(coachId, { to, subject, html })
           if (r.ok) { sent++; continue }
           const fb = await sendEmail({
+            context: 'coach/camp-blast fallback',
             from: 'Lumio Tennis <noreply@lumiosports.com>', to: [to], subject, html,
             replyTo: profile?.contact_email || undefined,
           }).catch(() => null)

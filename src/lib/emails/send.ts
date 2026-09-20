@@ -7,6 +7,13 @@
  * rather than throwing, so a try/catch around a call site never fires and a
  * rejected send looks exactly like a successful one. That is how six senders
  * stayed dead for months. Logging here means a caller cannot forget it.
+ *
+ * No log line carries the subject. Several subjects interpolate a live one-time
+ * sign-in code — schools/signup, schools/register, admin/login, demo/signup,
+ * workspace/send-otp — which put working credentials into production logs, and
+ * into a terminal and scroll buffer in dev. The `context` identifier names the
+ * send instead, which is what the subject was there for. Redacting digit runs
+ * was considered and rejected: it only catches the formats we thought of.
  */
 
 const IS_PRODUCTION = process.env.NEXT_PUBLIC_ENV === 'production' || process.env.NODE_ENV === 'production'
@@ -33,33 +40,35 @@ export async function sendEmail(params: {
   replyTo?: string
   /**
    * Short identifier for the logs, e.g. 'schools/signup otp' or
-   * 'demo/provision followup-48h'. Names which send failed without putting the
-   * recipient's address in the log. Falls back to the subject when omitted.
-   * Never forwarded to Resend.
+   * 'demo/provision followup-48h'. It is the ONLY thing naming the send in the
+   * logs — the subject is never logged — so a call site without one is
+   * anonymous. Never forwarded to Resend.
    */
   context?: string
 }) {
   const { context, ...mail } = params
+  // Never the subject: it may carry a live sign-in code.
+  const label = context || '(unlabelled send)'
 
   // Send if production OR if RESEND_API_KEY is explicitly set (allows dev/preview sending)
   if (!IS_PRODUCTION && !HAS_RESEND_KEY) {
-    console.log(`[EMAIL SUPPRESSED — dev mode, no RESEND_API_KEY] To: ${mail.to.join(', ')} | Subject: ${mail.subject}`)
+    console.log(`[EMAIL SUPPRESSED — dev mode, no RESEND_API_KEY] To: ${recipientDomains(mail.to)} | Send: ${label}`)
     return { data: { id: 'dev-suppressed' }, error: null }
   }
 
   if (!HAS_RESEND_KEY) {
-    console.log(`[EMAIL SKIPPED — no RESEND_API_KEY] To: ${mail.to.join(', ')} | Subject: ${mail.subject}`)
+    console.log(`[EMAIL SKIPPED — no RESEND_API_KEY] To: ${recipientDomains(mail.to)} | Send: ${label}`)
     return { data: { id: 'no-key' }, error: null }
   }
 
-  console.log(`[EMAIL SENDING] To: ${recipientDomains(mail.to)} | Subject: ${mail.subject}`)
+  console.log(`[EMAIL SENDING] To: ${recipientDomains(mail.to)} | Send: ${label}`)
   const { Resend } = await import('resend')
   const resend = new Resend(process.env.RESEND_API_KEY)
   const result = await resend.emails.send(mail)
 
   if (result.error) {
     console.error(
-      `[emails] send rejected — ${context || mail.subject} → ${recipientDomains(mail.to)}:`,
+      `[emails] send rejected — ${label} → ${recipientDomains(mail.to)}:`,
       result.error,
     )
   }

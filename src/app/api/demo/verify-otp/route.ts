@@ -113,6 +113,7 @@ export async function POST(req: NextRequest) {
       const isSchool = tenant.tenant_type === 'schools'
       try {
         const { error: emailErr } = await sendEmail({
+          context: 'demo/verify-otp welcome-trial',
           from: 'Lumio <hello@lumiocms.com>',
           to: [email],
           subject: isSchool

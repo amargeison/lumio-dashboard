@@ -84,6 +84,7 @@ async function sendWelcomeEmail(tenant: { id: string; slug: string; company_name
   const isSchool = tenant.tenant_type === 'schools'
 
   const { error } = await sendEmail({
+    context: 'demo/provision welcome-trial',
     from: 'Lumio <hello@lumiocms.com>',
     to: [tenant.owner_email],
     subject: isSchool

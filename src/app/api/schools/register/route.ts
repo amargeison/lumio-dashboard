@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const { error: welcomeErr } = await sendEmail({
+        context: 'schools/register welcome',
         from: 'Lumio for Schools <schools@lumiocms.com>',
         to: [yourEmail],
         subject: `Welcome to Lumio, ${schoolName}!`,

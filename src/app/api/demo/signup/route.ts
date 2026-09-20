@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to store verification code — please try again.' }, { status: 500 })
     }
     const { error: emailError } = await sendEmail({
+      context: 'demo/signup otp',
       from: 'Lumio <hello@lumiocms.com>',
       to: [email],
       subject: `Your Lumio sign-in code: ${code}`,

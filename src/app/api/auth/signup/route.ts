@@ -77,6 +77,7 @@ export async function POST(req: NextRequest) {
     // Send welcome email to user
     console.log(`[signup] Sending welcome email to ${email} for ${companyName} (${portalType})`)
     const welcomeResult = await sendEmail({
+      context: 'auth/signup welcome',
       from: 'Arron at Lumio <hello@lumiocms.com>',
       to: [email],
       subject: `Your Lumio workspace is ready, ${firstName}! 🚀`,
