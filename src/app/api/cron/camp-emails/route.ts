@@ -168,11 +168,17 @@ export async function POST(req: NextRequest) {
 
             const sent = await sendAsCoach(camp.coach_id, { to: rec.to, subject, html })
             if (!sent.ok) {
-              await sendEmail({
+              const fb = await sendEmail({
                 context: 'cron/camp-emails reminder',
                 from: 'Lumio Tennis <noreply@lumiosports.com>', to: [rec.to], subject, html,
                 replyTo: profile?.contact_email || undefined,
               })
+              // sendEmail resolves with { data, error } rather than throwing, so
+              // a refused fallback used to fall straight through to the 'sent'
+              // insert below. Route it into the catch — the same way this block
+              // already reports a failure (see 'empty email' above) — so it is
+              // recorded as 'failed' with the reason rather than as delivered.
+              if (fb.error) throw new Error(`fallback send refused: ${fb.error.message || 'unknown'}`)
             }
 
             await sb.from('coach_camp_emails').insert({
