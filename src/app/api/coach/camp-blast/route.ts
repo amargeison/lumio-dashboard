@@ -152,7 +152,9 @@ export async function POST(req: NextRequest) {
             from: 'Lumio Tennis <noreply@lumiosports.com>', to: [to], subject, html,
             replyTo: profile?.contact_email || undefined,
           }).catch(() => null)
-          if (fb) sent++; else failed++
+          // sendEmail resolves with { data, error } and is truthy even when the
+          // send was refused, so `if (fb)` counted a rejection as delivered.
+          if (fb && !fb.error) sent++; else failed++
         } catch { failed++ }
       }
     }
