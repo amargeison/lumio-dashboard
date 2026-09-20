@@ -12,11 +12,13 @@
 const IS_PRODUCTION = process.env.NEXT_PUBLIC_ENV === 'production' || process.env.NODE_ENV === 'production'
 const HAS_RESEND_KEY = !!process.env.RESEND_API_KEY
 
-/** Recipient domain only — the log should identify the send, not the person. */
-function recipientDomain(to: string[]): string {
-  const first = to[0] ?? ''
-  const at = first.lastIndexOf('@')
-  return at === -1 ? 'unknown' : first.slice(at)
+/** Recipient domains only — a log should identify the send, not the person. */
+function recipientDomains(to: string[]): string {
+  const domains = [...new Set(to.map(addr => {
+    const at = addr.lastIndexOf('@')
+    return at === -1 ? 'unknown' : addr.slice(at)
+  }))]
+  return to.length > 1 ? `${to.length} × ${domains.join(', ')}` : domains.join(', ')
 }
 
 export async function sendEmail(params: {
@@ -50,14 +52,14 @@ export async function sendEmail(params: {
     return { data: { id: 'no-key' }, error: null }
   }
 
-  console.log(`[EMAIL SENDING] To: ${mail.to.join(', ')} | Subject: ${mail.subject}`)
+  console.log(`[EMAIL SENDING] To: ${recipientDomains(mail.to)} | Subject: ${mail.subject}`)
   const { Resend } = await import('resend')
   const resend = new Resend(process.env.RESEND_API_KEY)
   const result = await resend.emails.send(mail)
 
   if (result.error) {
     console.error(
-      `[emails] send rejected — ${context || mail.subject} → ${recipientDomain(mail.to)}:`,
+      `[emails] send rejected — ${context || mail.subject} → ${recipientDomains(mail.to)}:`,
       result.error,
     )
   }
