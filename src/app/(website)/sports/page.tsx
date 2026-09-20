@@ -260,7 +260,7 @@ export default function SportsLandingPage() {
             Professional sport finally has infrastructure.
           </p>
           <p className="text-sm leading-relaxed mb-10 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>
-            Every demo is live. Every portal has real data seeded in. No sales call required to see it working — just click any portal above and explore.
+            Every demo has real sample data seeded in, so you can explore any of them yourself — or talk to us and we&rsquo;ll walk you through it.
           </p>
           <div className="flex flex-wrap justify-center gap-4 mb-6">
             <button onClick={scrollToPortals} className="px-8 py-4 rounded-full text-sm font-bold transition-all hover:opacity-90" style={{background:'linear-gradient(135deg, #8B5CF6, #06B6D4)',color:'white'}}>
