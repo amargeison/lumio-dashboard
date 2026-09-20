@@ -2,58 +2,14 @@
 
 import { useRef } from 'react'
 import Link from 'next/link'
+import { SPORTS } from '@/lib/sports/marketing-sports'
 
 // ─── Portal Data ──────────────────────────────────────────────────────────────
-const PORTALS: Array<{emoji:string;name:string;pill:string;accent:string;features:string[];hook:string;url:string;href:string}> = [
-  {emoji:'⚽',name:'Football Pro Club',pill:'Pro · National League System',accent:'#10B981',
-    features:['Squad management with GPS load data — Lumio GPS integrated','Player welfare hub — injury log, medical conditions, return-to-play','Pre-Season Camp mode — periodisation, fitness testing, friendlies','PSR financial compliance — live headroom tracking to the pound','FIFA-style pitch view, transfer pipeline, agent contacts, scouting','AI Manager Briefing — GPS readiness, welfare, compliance in one view'],
-    hook:'The first platform where the manager\'s morning briefing includes GPS readiness, transfer headroom and compliance status — before the first training session of the day.',
-    url:'lumiosports.com/football/pro',href:'/football/pro'},
-  {emoji:'⚽',name:'Non-League Football',pill:'Steps 3–7 · National League System',accent:'#F59E0B',
-    features:['Squad management with Lumio GPS — pitch tracking for steps 3–7','Player welfare dashboard — injury log, medical, return-to-play','Pre-Season Camp mode — friendlies, fitness baseline, periodisation','FA Ground Grading + registration deadline tracking','Player contracts and wage bill — live vs budget, to the pound','Board portal — sponsorship pipeline, match day revenue, all commercial views'],
-    hook:'1,800+ clubs across Steps 3–7 of the English football pyramid. Zero dedicated platforms existed for them before this one.',
-    url:'lumiosports.com/football/non-league',href:'/football/non-league'},
-  {emoji:'⚽',name:'Grassroots Football',pill:'45,000 UK clubs · AI-native',accent:'#F97316',
-    features:['AI voice briefing — training tonight, subs outstanding, safeguarding','Player welfare dashboard — injury log, DBS tracker, medical conditions','Pre-Season mode — friendlies, fitness baseline, parent comms','Lumio GPS-ready — optional load tracking when your club levels up','Subs collection via Stripe direct debit + parent portal','Safeguarding compliance log + AI team selection'],
-    hook:'89% of UK grassroots clubs currently use no software at all. The voice briefing alone — "Training tonight, 3 players unavailable, subs outstanding for 6" — changes how Sunday football is run.',
-    url:'lumiosports.com/football/grassroots',href:'/football/grassroots'},
-  {emoji:'⚽',name:'Junior Football',pill:'U7–U16 · FA Charter Standard',accent:'#16A34A',
-    features:['Parent App + AI Match Recap — Sunday-afternoon, plain English, per-child','Safeguarding & Consent Hub — DBS register, photography consent, automatic imagery exclusion','Coach Toolkit — session brief, drill library by age band, drag-and-drop team selection','Match Video & Highlights — per-child auto-clipped reels, consent-gated','Junior GPS & Performance — distance, sprints, heatmap, plain-English parent view','Player Development Tracker — FA four-corner model, termly reviews, milestone badges'],
-    hook:"The platform is funded by parents, not billed to the club — volunteer-run clubs get the full toolkit free while parents pay for the Parent App that lets them watch their child's morning on Sunday afternoon. The first junior platform that aligns commercial model with who actually values the product.",
-    url:'lumiosports.com/football/junior',href:'/football/junior'},
-  {emoji:'⚽',name:"Women's Football",pill:'WSL · WSL2 · Standalone clubs',accent:'#EC4899',
-    features:['Squad management with Lumio GPS — match & training load','Player Welfare Hub — maternity, ACL risk, mental health, medical','Pre-Season Camp mode — periodisation, fitness, friendlies','FSR Compliance Dashboard — real-time 80% salary cap vs Revenue','Standalone commercial pipeline + dual registration management','AI Club Director briefing — GPS, welfare, FSR, squad in one view'],
-    hook:'The first club management platform built specifically for professional women\'s football. FSR compliance, maternity welfare, standalone commercial — none of it existed in any platform before this.',
-    url:'lumiosports.com/womens-football',href:'/womens-football'},
-  {emoji:'🏏',name:'Cricket',pill:'County · International · Franchise',accent:'#FBBF24',
-    features:['Squad management with GPS load data — Lumio GPS for fielding & fitness','Contract tracker — county, central, franchise (IPL, Hundred, BBL, SA20)','Player welfare hub — injury log, workload monitoring, mental health','Batting & bowling analytics — Lumio Vision + Lumio Track for ball tracking','Sponsorship & commercial pipeline — live deals, matchday revenue','AI Cricket Briefing — fitness readiness, schedule conflicts, selection in one view'],
-    hook:'The first cricket platform to combine GPS load data, ball tracking and central contract management — built for county professionals through international squads.',
-    url:'lumiosports.com/cricket',href:'/cricket'},
-  {emoji:'🏉',name:'Rugby',pill:'NL1 · Champ Rugby · Premiership',accent:'#8B5CF6',
-    features:['Salary cap manager — ceiling AND floor, live to the pound','Squad availability — Lumio GPS for match & training load','Player welfare — Lumio Health, concussion & HIA legal-grade audit','Pre-Season Camp mode — periodisation, fitness testing, friendlies','Franchise readiness dashboard — 6 RFU criteria + recruitment pipeline','AI Director of Rugby briefing — GPS, welfare, cap, availability'],
-    hook:'The only platform built around the RFU salary cap year — every contract decision modelled against ceiling, floor and franchise readiness before it\'s signed.',
-    url:'lumiosports.com/rugby',href:'/rugby'},
-  {emoji:'🎾',name:'Tennis Coach',pill:'Academies · Coaches · One platform, two revenue streams',accent:'#3A8EE0',
-    features:['Session Planner, bookings & player roster — your whole academy in one place','Player Development Tracker — four-corner reviews and lesson summaries','AI session reviews — log a lesson, get a shareable write-up in seconds','Racket Progression reward system — a nine-stage pathway parents fund','Lumio GPS & Vision — on-court load and video analysis per session','Payments, packages & camps — your second revenue stream, built in'],
-    hook:'The platform that runs your whole tennis academy — and pays you back through the Racket Progression reward system, where players collect the journey and parents fund it. One platform, two revenue streams.',
-    url:'lumiosports.com/tennis-coach',href:'/tennis-coach'},
-  {emoji:'🎾',name:'Tennis',pill:'ATP · WTA · Touring professionals',accent:'#A3E635',
-    features:['ATP/WTA ranking tracker with points expiry calendar','Tournament scheduling — surface load and travel distance','Match analytics — Lumio Vision for serve, return & rally patterns','Workload management — Lumio Wear across hard, clay and grass','Prize money & sponsorship pipeline — live earnings','AI Tour Briefing — ranking trajectory, fitness, opponent draw'],
-    hook:'Built for the realities of touring — points expiry, surface transitions and travel load modelled together, not in three separate spreadsheets.',
-    url:'lumiosports.com/tennis',href:'/tennis'},
-  {emoji:'⛳',name:'Golf',pill:'PGA · DP World · LIV · Touring',accent:'#38BDF8',
-    features:['Tour schedule planner — cuts, FedEx points, Race to Dubai','Swing analysis — Lumio Vision for capture, motion & impact data','Practice & range data — Lumio Range for shot dispersion and trends','Physical conditioning — Lumio Wear for mobility and load','Sponsorship & equipment deal pipeline','AI Caddie Briefing — course fit, recent form, scheduling conflicts'],
-    hook:'The first golf platform that connects swing data, range practice and tour scheduling — so a player\'s morning briefing reflects what they actually worked on yesterday.',
-    url:'lumiosports.com/golf',href:'/golf'},
-  {emoji:'🎯',name:'Darts',pill:'PDC · WDF · Pro Tour',accent:'#EF4444',
-    features:['Tournament calendar — PDC Pro Tour, Premier League, World Series','Throw analytics — Lumio Vision for averages, checkouts and 180s','Practice tracking — session targets, leg outcomes, finishing patterns','Fitness & recovery — Lumio Wear for travel and tournament load','Sponsorship & appearance fee pipeline','AI Pro Briefing — form trajectory, opponent stats, schedule'],
-    hook:'Darts has been underserved by software — this is the first platform that gives a Pro Tour player the same operational tools a top footballer takes for granted.',
-    url:'lumiosports.com/darts',href:'/darts'},
-  {emoji:'🥊',name:'Boxing',pill:'Pro fighters · Camps · Promoters',accent:'#DC2626',
-    features:['Fight Camp mode — sparring, roadwork, weight phases through fight night','Lumio GPS in-ring — corner beacons track footwork, position & movement','Weight cut tracker — Lumio Wear with daily targets and red flags','Concussion & medical audit — Lumio Health, sanctioning-body ready','Punch analytics & opponent study — Lumio Vision for fight breakdowns','AI Camp Briefing — weight progress, sparring load, fight readiness'],
-    hook:'The first boxing platform with in-ring GPS — corner beacons track footwork efficiency, ring position and movement patterns through every round of every spar and every fight. No other software in boxing does this.',
-    url:'lumiosports.com/boxing',href:'/boxing'},
-]
+// The demo gallery reads from marketing-sports.ts rather than a local copy.
+// The local PORTALS array had drifted: no Impact, a different order, and
+// accents that disagreed with the cards on /sports/try-demo (Tennis #A3E635
+// vs #14B8A6, Football #10B981 vs #3b82f6, Cricket #FBBF24 vs #10b981).
+const DEMO_PORTALS = SPORTS.filter(sp => sp.id !== 'impact' && sp.id !== 'tenniscoach')
 
 // The two products that are actually live. Kept here rather than pulled from
 // marketing-sports because these carry a logo and a longer line than the demo
@@ -227,42 +183,6 @@ export default function SportsLandingPage() {
         </div>
       </section>
 
-      {/* ═══ SECTION 3: PORTAL GRID ═══ */}
-      <section ref={portalRef} className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
-        <div className="max-w-6xl mx-auto">
-          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>THE PORTALS</p>
-          <h2 className="text-3xl md:text-5xl font-black text-center mb-3">Twelve portals. Every sport covered.</h2>
-          <p className="text-center text-sm mb-14 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>Each portal is a complete club management platform for that sport — not a generic admin tool with a sports logo.</p>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {PORTALS.map((p:{emoji:string;name:string;pill:string;accent:string;features:string[];hook:string;url:string;href:string},i:number)=>(
-              <div key={i} className="rounded-2xl p-8 flex flex-col" style={{background:'#0D1117',border:'1px solid #1E293B',borderTop:`4px solid ${p.accent}`,minHeight:380}}>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-3">
-                    <span className="text-3xl">{p.emoji}</span>
-                    <span className="text-2xl font-bold text-white">{p.name}</span>
-                  </div>
-                  <span className="text-[10px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap" style={{background:`${p.accent}15`,color:p.accent}}>{p.pill}</span>
-                </div>
-                <div className="my-4" style={{height:1,background:'#1E293B'}}/>
-                <div className="space-y-2 mb-4 flex-1">
-                  {p.features.map((f:string,j:number)=>(
-                    <div key={j} className="flex items-start gap-2 text-sm" style={{color:'#CBD5E1'}}>
-                      <span className="flex-shrink-0 mt-0.5" style={{color:p.accent}}>✓</span>{f}
-                    </div>
-                  ))}
-                </div>
-                <div className="text-sm italic pl-4 mb-6" style={{color:p.accent,borderLeft:`2px solid ${p.accent}`}}>{p.hook}</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px]" style={{color:'#475569'}}>{p.url}</span>
-                  <Link href={p.href} className="px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90" style={{background:p.accent,color:p.accent==='#A3E635'||p.accent==='#FBBF24'||p.accent==='#F59E0B'||p.accent==='#F97316'?'#0A0B10':'#FFFFFF'}}>Explore →</Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ═══ SECTION 4: PLATFORM PILLARS ═══ */}
       <section className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
         <div className="max-w-6xl mx-auto">
@@ -284,7 +204,30 @@ export default function SportsLandingPage() {
         </div>
       </section>
 
-      {/* ═══ SECTION 5: CREDIBILITY ═══ */}
+      {/* ═══ SECTION 5: DEMO GALLERY ═══ */}
+      {/* Sourced from marketing-sports.ts, the single source the try-demo grid
+          and the nav already use, so this list cannot drift again. Impact and
+          Tennis Coach are excluded — they are the live products, above. */}
+      <section ref={portalRef} className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
+        <div className="max-w-6xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>IN DEVELOPMENT</p>
+          <h2 className="text-3xl md:text-5xl font-black text-center mb-3">Eleven more portals you can explore today.</h2>
+          <p className="text-center text-sm mb-12 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>Each one is a working demo with sample data seeded in — not yet a product you can buy. Tennis Coach and Impact, above, are the two that are.</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {DEMO_PORTALS.map(d=>(
+              <Link key={d.id} href={d.href} className="rounded-xl p-5 flex flex-col transition-all hover:opacity-90"
+                style={{background:'#0D1117',border:'1px solid #1E293B',borderLeft:`3px solid ${d.accent}`,textDecoration:'none'}}>
+                <div className="text-base font-bold text-white mb-1">{d.label}</div>
+                <div className="text-xs leading-relaxed mb-4 flex-1" style={{color:'#94A3B8'}}>{d.desc}</div>
+                <span className="text-xs font-bold" style={{color:d.accent}}>Try the demo &rarr;</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SECTION 6: CREDIBILITY ═══ */}
       <section className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
         <div className="max-w-6xl mx-auto">
           <p className="text-xs font-semibold uppercase tracking-widest text-center mb-10" style={{color:'#64748B'}}>BUILT ON REAL INTELLIGENCE</p>
@@ -300,7 +243,7 @@ export default function SportsLandingPage() {
         </div>
       </section>
 
-      {/* ═══ SECTION 6: FINAL CTA ═══ */}
+      {/* ═══ SECTION 7: FINAL CTA ═══ */}
       <section className="relative overflow-hidden px-6 py-32" style={{borderTop:'1px solid #1E293B'}}>
         <div className="absolute top-[-80px] left-[-60px] w-[500px] h-[500px] rounded-full" style={{background:'radial-gradient(circle, #8B5CF6, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite'}}/>
         <div className="absolute bottom-[-60px] right-[-60px] w-[400px] h-[400px] rounded-full" style={{background:'radial-gradient(circle, #06B6D4, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite 4s'}}/>
