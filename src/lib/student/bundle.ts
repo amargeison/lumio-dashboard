@@ -103,6 +103,27 @@ export type StudentCamp = {
   balance_link?: string | null
 }
 
+// A book the coach has put in this player's hands. Denormalised on purpose —
+// see migration 174.
+export type StudentBook = {
+  id: string
+  title: string
+  author?: string | null
+  note?: string | null
+  topic?: string | null
+  spine?: string | null
+}
+
+export type StudentMessage = {
+  id: string
+  body: string
+  subject?: string | null
+  /** 'in' = from the player/parent, anything else = from the coach. */
+  direction?: string | null
+  from_name?: string | null
+  created_at?: string | null
+}
+
 export type StudentBundle = {
   player: StudentPlayer
   skills: StudentSkill[]
@@ -112,6 +133,10 @@ export type StudentBundle = {
   watch: StudentWatchSession[]
   resources: StudentResource[]
   camps: StudentCamp[]
+  /** Books the coach recommended to this player specifically. */
+  books: StudentBook[]
+  /** The conversation with the coach, newest first. */
+  messages: StudentMessage[]
   /** Section keys the coach has switched off (settings.sectionsOff.student). */
   sectionsOff: string[]
   /** Mastery score that counts as "earned" (settings.awardThreshold, 3 or 4). */

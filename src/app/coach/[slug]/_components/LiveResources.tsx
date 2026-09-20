@@ -12,9 +12,14 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, RACKET_STAGES } from '../_lib/coach-db'
 import { isPrintable, openPrintable } from '../_lib/resource-printables'
 import { DrillLibrary } from './DrillLibrary'
+import { BookShelf } from './BookShelf'
 
 type Res = { id: string; title: string; category?: string | null; format?: string | null; level?: string | null; duration?: string | null; racket?: string | null; tags?: string | null; url?: string | null; notes?: string | null }
-const TABS: [string, string][] = [['all', 'All'], ['Drill Library', 'Drill Library'], ['Drill', 'Drill'], ['Technique', 'Technique'], ['Training plan', 'Training plan'], ['Fitness', 'Fitness'], ['Mental', 'Mental'], ['Books', 'Books']]
+// "Guides" is Lumio's own written material — the parent guides, the cheat
+// sheets, the reading notes. "Books" is a shelf of real published books, which
+// is what a coach means when they say "read this". They were the same tab, and
+// the result was a Books tab full of worksheets.
+const TABS: [string, string][] = [['all', 'All'], ['Drill Library', 'Drill Library'], ['Drill', 'Drill'], ['Technique', 'Technique'], ['Training plan', 'Training plan'], ['Fitness', 'Fitness'], ['Mental', 'Mental'], ['Guides', 'Guides'], ['Books', 'Books']]
 const fmtIcon = (f?: string | null) => f === 'Video' ? '▶' : f === 'Plan' ? '📅' : f === 'Worksheet' ? '📝' : '📄'
 const actionLabel = (f?: string | null) => f === 'Video' ? 'Watch video' : f === 'Plan' ? 'Open plan' : f === 'Worksheet' ? 'Open worksheet' : 'Open pdf'
 
@@ -53,7 +58,7 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 14 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Resource Centre</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Your drill library, technique videos, training plans, worksheets and reading — tagged to the racket system.</p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the racket system.</p>
         </div>
         <button onClick={() => setEdit('new')} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ Add resource</button>
       </div>
@@ -63,7 +68,10 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
         {TABS.map(([id, label]) => <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: `1px solid ${tab === id ? accent.border : T.border}`, padding: '6px 13px', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontFamily: FONT, background: tab === id ? accent.dim : 'transparent', color: tab === id ? accent.hex : T.text2, fontWeight: tab === id ? 600 : 400 }}>{id === 'Drill Library' ? '🎾 ' : ''}{label}</button>)}
       </div>
 
-      {tab === 'Drill Library' ? (
+      {tab === 'Books' ? (
+        // A shelf, not a file list — covers, who each book is for, and why.
+        <BookShelf T={T} accent={accent} density={density} />
+      ) : tab === 'Drill Library' ? (
         // The flagship Lumio drill library — search, racket filter, grouped sections, printable drill sheets.
         <DrillLibrary T={T} accent={accent} density={density} />
       ) : (
@@ -152,7 +160,7 @@ function ResourceForm({ T, accent, res, onClose, onSave, onDelete }: { T: ThemeT
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><label style={lab}>Title *</label><input value={d.title} onChange={e => set('title', e.target.value)} style={field} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div><label style={lab}>Category</label><select value={d.category} onChange={e => set('category', e.target.value)} style={{ ...field, cursor: 'pointer' }}>{['Drill', 'Technique', 'Training plan', 'Fitness', 'Mental', 'Books'].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div><label style={lab}>Category</label><select value={d.category} onChange={e => set('category', e.target.value)} style={{ ...field, cursor: 'pointer' }}>{['Drill', 'Technique', 'Training plan', 'Fitness', 'Mental', 'Guides'].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
             <div><label style={lab}>Format</label><select value={d.format} onChange={e => set('format', e.target.value)} style={{ ...field, cursor: 'pointer' }}>{['Video', 'PDF', 'Plan', 'Worksheet'].map(f => <option key={f} value={f}>{f}</option>)}</select></div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>

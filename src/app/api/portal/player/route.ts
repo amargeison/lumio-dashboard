@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getMembership, scopedDb, signAvatar } from '@/lib/coach/membership'
+import { bookById } from '@/lib/coach/books'
 
 export const runtime = 'nodejs'
 
@@ -79,6 +80,18 @@ export async function GET() {
     .filter(r => (stage && r.racket === stage) || (!r.racket && String(r.level || '').toLowerCase().startsWith('all')))
     .slice(0, 9)
 
+  // Books the coach put in this player's hands. The shelf lives in code, so the
+  // row's own title/author is trusted and only the cover colour is looked up —
+  // a book recommended last year still reads correctly if the shelf changes.
+  const bookRows = await safe(db.from('coach_player_resources')
+    .select('id, ref_id, title, author, note, created_at')
+    .eq('coach_id', m.academyId).eq('player_id', m.scopePlayerId).eq('kind', 'book')
+    .order('created_at', { ascending: false }).limit(12))
+  const books = (bookRows as any[]).map(b => {
+    const shelf = bookById(String(b.ref_id))
+    return { id: b.id, title: b.title, author: b.author, note: b.note, topic: shelf?.topic ?? null, spine: shelf?.spine ?? null }
+  })
+
   // Camps the child actually holds a place on, and the coach's own display
   // choices. Both are read with the SAME academy scope as everything above:
   // a camp is only theirs if an attendee row ties this player to it, and the
@@ -121,6 +134,6 @@ export async function GET() {
       xp_total: player.xp_total, watch_token: player.watch_token,
     },
     skills, lessons, bookings, messages, watch, highlights,
-    media: mediaSigned, resources, camps, sectionsOff, awardThreshold,
+    media: mediaSigned, resources, books, camps, sectionsOff, awardThreshold,
   })
 }

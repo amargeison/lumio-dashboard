@@ -81,6 +81,8 @@ export function buildConfirmationHtml(o: {
   venue?: { name?: string | null; address?: string | null; access_note?: string | null } | null
   last?: SessionRow | null
   forCoach?: boolean
+  /** Add-to-calendar buttons, prebuilt by the caller (it knows the origin). */
+  calendarHtml?: string | null
 }): string {
   const accent = o.accent || '#3A8EE0'
   const { day, time } = whenLine(o.booking.booking_date, o.booking.start_time, o.booking.duration_min)
@@ -148,6 +150,11 @@ export function buildConfirmationHtml(o: {
             </td></tr>
           </table>
         </td></tr>
+
+        ${o.calendarHtml ? `<tr><td style="padding:16px 26px 0">
+          <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:${accent};font-weight:700;padding-bottom:10px">Put it in the diary</div>
+          ${o.calendarHtml}
+        </td></tr>` : ''}
 
         ${lastBlock}
         ${nextBlock}

@@ -36,6 +36,7 @@ export type CoachTable =
   | 'coach_stripe'
   | 'coach_charges'
   | 'coach_camp_emails'
+  | 'coach_player_resources'
 
 let _sb: ReturnType<typeof createBrowserClient> | null = null
 export function sb() {

@@ -681,6 +681,15 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
 
       {open === 'kit' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Lumio Coach Kit & rewards" sub="Order your capture kit and Racket Progression rewards" onClose={() => setOpen(null)}>
+          {/* Not every academy wants Lumio's merchandise, and the ladder works
+              perfectly well without it. Switching this on changes what the
+              Racket Progression screen says a reward IS — nothing else. */}
+          <Toggle T={T} accent={accent} on={!!s.ownRewards} onChange={v => setSettings({ ownRewards: v })}
+            label="I supply my own rewards"
+            desc={s.ownRewards
+              ? 'Racket Progression talks about your reward, not Lumio keyrings. Certificates still print from here.'
+              : 'On: use your own badges, wristbands or club trophies instead of the Lumio keyring and dampener sets.'} />
+          <div style={{ height: 14 }} />
           {/* Read-only plan line */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
             <Icon name="shield" size={15} stroke={1.7} style={{ color: accent.hex }} />

@@ -29,9 +29,9 @@ async function pushEquipmentToKit(kind: string, equipment: string) {
 
 type Pkg = { id: string; name: string; kind?: string | null; price?: number | null; sessions?: number | null; period?: string | null; description?: string | null; features?: string | null }
 type Pay = { id: string; player_name?: string | null; item?: string | null; amount?: number | null; status?: string | null; sessions_used?: number | null; sessions_total?: number | null; renews_date?: string | null; paid?: boolean | null; paid_at?: string | null }
-type Player = { id: string; name: string }
+type Player = { id: string; name: string; payment_method?: string | null }
 type Sess = { id: string; player_name?: string | null; session_date?: string | null; focus?: string | null; rating?: number | null }
-type RosterRow = { name: string; assign: Pay | null; used: number; sessions: Sess[] }
+type RosterRow = { name: string; assign: Pay | null; used: number; sessions: Sess[]; paysBy?: string | null }
 
 const KINDS = ['Private', 'Performance', 'Adult', 'Group', 'Cardio', 'Junior']
 const DAY = 86400000
@@ -101,11 +101,11 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const rosterRows: RosterRow[] = players.map(pl => {
     const assign = payments.rows.find(p => nameKey(p.player_name) === nameKey(pl.name)) || null
     const ss = sessionsFor(pl.name)
-    return { name: pl.name, assign, used: ss.length, sessions: ss }
+    return { name: pl.name, assign, used: ss.length, sessions: ss, paysBy: pl.payment_method || null }
   })
   const extraRows: RosterRow[] = payments.rows
     .filter(p => !players.some(pl => nameKey(pl.name) === nameKey(p.player_name)))
-    .map(p => { const ss = sessionsFor(p.player_name); return { name: p.player_name || '—', assign: p, used: ss.length, sessions: ss } })
+    .map(p => { const ss = sessionsFor(p.player_name); return { name: p.player_name || '—', assign: p, used: ss.length, sessions: ss, paysBy: null } })
   const lessonRows = [...rosterRows, ...extraRows]
 
   const statusColour = (s: string) => s === 'overdue' ? T.bad : s === 'expiring' ? T.warn : T.good
@@ -192,7 +192,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
         {lessonRows.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No players on the roster yet — add players in Player Roster and they’ll appear here.</div> : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 780 }}>
-              <thead><tr>{['Player', 'Plan', 'Used', 'Cost', 'Status', 'Paid', 'Renews'].map(h => <th key={h} style={{ textAlign: 'left', fontSize: 10, color: T.text3, fontWeight: 600, padding: '6px 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>)}</tr></thead>
+              <thead><tr>{['Player', 'Plan', 'Used', 'Cost', 'Pays by', 'Status', 'Paid', 'Renews'].map(h => <th key={h} style={{ textAlign: 'left', fontSize: 10, color: T.text3, fontWeight: 600, padding: '6px 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>)}</tr></thead>
               <tbody>
                 {lessonRows.map(r => {
                   const a = r.assign
@@ -214,6 +214,12 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
                         ) : <span style={{ fontSize: 11, color: T.text3 }}>{r.used} logged · PAYG</span>}
                       </td>
                       <td style={{ padding: '10px 10px', fontSize: 12, color: a && a.amount ? T.text : T.text3 }}>{a && a.amount ? money(a.amount) : '—'}</td>
+                      {/* How they pay. An unpaid pack on a standing order is
+                          money on its way; an unpaid pack on cash is a
+                          conversation on Saturday. Same badge, different job. */}
+                      <td style={{ padding: '10px 10px' }}>{r.paysBy
+                        ? <span style={{ fontSize: 10, fontWeight: 600, color: T.text2, background: T.hover, padding: '3px 8px', borderRadius: 5, whiteSpace: 'nowrap' }}>{r.paysBy}</span>
+                        : <span style={{ fontSize: 11, color: T.text3 }}>—</span>}</td>
                       <td style={{ padding: '10px 10px' }}>{a
                         ? <span style={{ fontSize: 9.5, fontWeight: 700, color: statusColour(s), background: `${statusColour(s)}22`, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase' }}>{s}</span>
                         : <span style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, background: T.hover, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase' }}>Pay as you go</span>}</td>

@@ -11,7 +11,7 @@
 
 export type StudentSectionKey =
   | 'progress' | 'camp' | 'highlights' | 'report' | 'rewards'
-  | 'racket' | 'homework' | 'lessons' | 'resources'
+  | 'racket' | 'homework' | 'lessons' | 'resources' | 'messages'
 
 export type StudentSection = {
   key: StudentSectionKey
@@ -30,7 +30,8 @@ export const STUDENT_SECTIONS: StudentSection[] = [
   { key: 'racket',     label: 'Racket progression',    blurb: 'The racket ladder and how far through the current one they are.' },
   { key: 'homework',   label: "Homework & what's next", blurb: 'What to practise before the next lesson.' },
   { key: 'lessons',    label: 'Recent lessons',        blurb: 'Your lesson summaries and coach notes.' },
-  { key: 'resources',  label: 'Recommended resources', blurb: 'Drills and guides matched to their racket.' },
+  { key: 'resources',  label: 'Recommended resources', blurb: 'Drills, guides and books you have recommended for them.' },
+  { key: 'messages',   label: 'Messages',              blurb: 'Your conversation with the player or parent — they can reply from their page.' },
 ]
 
 /** For the Settings card — everything the coach is allowed to switch off. */

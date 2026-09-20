@@ -96,6 +96,8 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
   )
   const openStage = RACKET_STAGES.find(s => s.id === open) || RACKET_STAGES[0]
   const sectOff = getSettings().sectionsOff?.belts || []
+  // Lumio's kit, or the coach's own. The ladder does not change either way.
+  const ownRewards = !!getSettings().ownRewards
   const showSec = (k: string) => !sectOff.includes(k)
 
   return (
@@ -116,21 +118,28 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
         </div>
       </div>
 
-      {/* Racket Reward System */}
+      {/* The reward system. What the reward IS depends on whether the coach
+          runs Lumio's kit or supplies their own — the ladder is identical
+          either way, and a coach who bought nothing should not be reading
+          about keyrings they do not have. Settings → Lumio Coach Kit. */}
       <div style={{ ...card, display: showSec('rewards') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <span style={{ width: 34, height: 34, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0, fontSize: 17 }}>🏆</span>
           <div style={{ flex: 1, minWidth: 240 }}>
             <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>Racket Reward System — earn the racket, collect the reward</div>
             <div style={{ fontSize: 12.5, color: T.text2, marginTop: 3, lineHeight: 1.5, maxWidth: 640 }}>
-              Every level is a milestone players keep. When a student masters every skill in their racket (Consistent or better), you award them the <strong style={{ color: T.text }}>coloured racket keyring and matching dampener</strong> for that level plus a <strong style={{ color: T.text }}>certificate</strong> — with a <strong style={{ color: T.text }}>full trophy at Black</strong>. A tangible reward that drives motivation and retention.
+              {ownRewards ? (
+                <>Every level is a milestone players keep. When a student masters every skill in their racket (Consistent or better), you hand over <strong style={{ color: T.text }}>your own reward</strong> for that level plus a <strong style={{ color: T.text }}>certificate</strong> printed from here. Badges, wristbands, a club trophy at the top — whatever you already give out. A tangible reward that drives motivation and retention.</>
+              ) : (
+                <>Every level is a milestone players keep. When a student masters every skill in their racket (Consistent or better), you award them the <strong style={{ color: T.text }}>coloured racket keyring and matching dampener</strong> for that level plus a <strong style={{ color: T.text }}>certificate</strong> — with a <strong style={{ color: T.text }}>full trophy at Black</strong>. A tangible reward that drives motivation and retention.</>
+              )}
             </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'stretch', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
           {[
             { icon: '✓', t: 'Complete the level', d: 'Every skill Consistent or better' },
-            { icon: '🏆', t: 'Award the reward', d: 'Hand over the keyring, dampener & certificate' },
+            { icon: '🏆', t: 'Award the reward', d: ownRewards ? 'Hand over your reward & the certificate' : 'Hand over the keyring, dampener & certificate' },
             { icon: '✦', t: 'Celebrate', d: 'A milestone the player keeps' },
             { icon: '⚑', t: 'On to the next', d: 'New racket, new skills to earn' },
           ].map((s, i, arr) => (
@@ -149,8 +158,8 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.border}`, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            {RACKET_STAGES.map(s => <span key={s.id} title={`${s.name} keyring + dampener`} style={{ display: 'inline-block', width: 13, height: 13, borderRadius: 3, background: s.colour, border: '1px solid rgba(128,128,128,0.4)' }} />)}
-            <span style={{ fontSize: 11, color: T.text3, marginLeft: 4 }}>9 keyring + dampener sets · one per level</span>
+            {RACKET_STAGES.map(s => <span key={s.id} title={ownRewards ? s.name : `${s.name} keyring + dampener`} style={{ display: 'inline-block', width: 13, height: 13, borderRadius: 3, background: s.colour, border: '1px solid rgba(128,128,128,0.4)' }} />)}
+            <span style={{ fontSize: 11, color: T.text3, marginLeft: 4 }}>{ownRewards ? '9 levels · one reward each, yours to choose' : '9 keyring + dampener sets · one per level'}</span>
           </div>
         </div>
       </div>
@@ -252,7 +261,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
                       </td>
                       <td style={{ padding: '8px 8px', textAlign: 'right' }}>
                         <button onClick={() => award(p)}
-                          title={!hasStage ? `Start ${p.name} on the White racket` : ready ? `Award the ${curStage.name} keyring + dampener + certificate, and advance ${p.name} to the next racket` : `${p.name} is ${curProg}% through this racket — awarding gives the reward and moves them up`}
+                          title={!hasStage ? `Start ${p.name} on the White racket` : ready ? `Award the ${curStage.name} reward${ownRewards ? '' : ' (keyring + dampener)'} + certificate, and advance ${p.name} to the next racket` : `${p.name} is ${curProg}% through this racket — awarding gives the reward and moves them up`}
                           style={{ appearance: 'none', border: `1px solid ${ready ? accent.hex : T.border}`, background: ready ? accent.hex : 'transparent', color: ready ? T.btnText : accent.hex, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', fontFamily: FONT }}>
                           {!hasStage ? '▶ Start on White' : curIdx === LAST ? '🏆 Award reward' : '🏆 Award reward'}
                         </button>
@@ -267,7 +276,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
         <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', fontSize: 10.5, color: T.text3 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: T.good, fontWeight: 800 }}>✓</span> racket earned</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on current racket (skills graded Consistent in the Player Roster)</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>🏆 award = keyring + dampener + certificate, then advance to the next racket</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>🏆 award = {ownRewards ? 'your reward' : 'keyring + dampener'} + certificate, then advance to the next racket</span>
         </div>
       </div>
     </div>

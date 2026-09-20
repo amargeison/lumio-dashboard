@@ -27,6 +27,7 @@ import {
   studentFraming, latestGuidance, activeCamps, daysUntil, asStringList,
   type StudentBundle, type StudentCamp, type StudentClip, type StudentWatchSession,
 } from '@/lib/student/bundle'
+import { lessonRecap } from '@/lib/coach/lesson-recap'
 import { studentSectionOn } from '@/lib/student/sections'
 
 export type StudentTheme = {
@@ -81,9 +82,15 @@ const prettyDate = (iso?: string | null) => {
 }
 const bandLabel = (n: number) => (n >= 70 ? 'High' : n >= 40 ? 'Medium' : 'Low')
 
-export function LiveStudentView({ T, bundle, footnote }: { T: StudentTheme; bundle: StudentBundle; footnote?: string }) {
+export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
+  T: StudentTheme; bundle: StudentBundle; footnote?: string
+  /** Supplied by the portal only — the coach's preview is read-only. */
+  onSendMessage?: (body: string) => Promise<void>
+}) {
   const [playing, setPlaying] = useState<StudentClip | null>(null)
   const { player, skills, lessons, clips, voiceNotes, watch, resources, sectionsOff, awardThreshold } = bundle
+  const books = bundle.books || []
+  const messages = bundle.messages || []
 
   const f = studentFraming(player)
   const off = sectionsOff || []
@@ -119,7 +126,8 @@ export function LiveStudentView({ T, bundle, footnote }: { T: StudentTheme; bund
     racket: studentSectionOn('racket', off, hasRacket),
     homework: studentSectionOn('homework', off, !!(guidance.homework || guidance.nextFocus)),
     lessons: studentSectionOn('lessons', off, lessons.length > 0),
-    resources: studentSectionOn('resources', off, resources.length > 0),
+    resources: studentSectionOn('resources', off, resources.length > 0 || books.length > 0),
+    messages: studentSectionOn('messages', off, messages.length > 0 || !!onSendMessage),
   }
   const anyBelowHeader = Object.values(show).some(Boolean)
 
@@ -328,6 +336,10 @@ export function LiveStudentView({ T, bundle, footnote }: { T: StudentTheme; bund
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {lessons.slice(0, 12).map(l => {
               const r = l.review_json || {}
+              // The summary leads. It is the paragraph that actually gets read —
+              // burying it under a takeaway quote made the page look like notes
+              // rather than an answer to "how did it go?".
+              const recap = lessonRecap({ ...l, player_name: player.name })
               const take = (r.takeaways || [])[0] || (l.summary || '').trim()
               return (
                 <div key={l.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
@@ -336,7 +348,10 @@ export function LiveStudentView({ T, bundle, footnote }: { T: StudentTheme; bund
                     <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: MONO }}>{prettyDate(l.session_date)}{r.type ? ` · ${r.type}` : ''}</span>
                     {!!l.rating && <span style={{ display: 'flex', gap: 1 }}>{Array.from({ length: 5 }).map((_, i) => <span key={i} style={{ color: i < (l.rating || 0) ? T.accent : T.text4, fontSize: 12 }}>★</span>)}</span>}
                   </div>
-                  {!!take && <div style={{ fontSize: 12, color: T.text2, marginTop: 6, lineHeight: 1.5 }}>“{take}”</div>}
+                  {recap.source !== 'none' && (
+                    <div style={{ fontSize: 12.5, color: T.text, marginTop: 8, lineHeight: 1.65 }}>{recap.text}</div>
+                  )}
+                  {!!take && take !== recap.text && <div style={{ fontSize: 12, color: T.text2, marginTop: 6, lineHeight: 1.5, fontStyle: 'italic' }}>“{take}”</div>}
                   {!!r.coachNote && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 6, fontStyle: 'italic', display: 'flex', gap: 6 }}>
                     <Icon name="megaphone" size={12} stroke={1.7} style={{ color: T.accent, flexShrink: 0, marginTop: 2 }} />Coach: {r.coachNote}
                   </div>}
@@ -351,6 +366,31 @@ export function LiveStudentView({ T, bundle, footnote }: { T: StudentTheme; bund
       {show.resources && (
         <Card T={T}>
           <Head T={T} icon="newspaper" title={`Recommended for ${f.possessiveLower} level`} sub={hasRacket ? `Drills & guides matched to the ${stage.name} racket` : 'Drills and guides from your coach'} />
+
+          {/* Books the coach chose for THIS player, not for everyone on this
+              colour. They lead, because somebody picked them on purpose. */}
+          {books.length > 0 && (
+            <div style={{ marginBottom: resources.length ? T.gap + 4 : 0 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+                {f.audience === 'adult' ? 'Your coach recommends you read' : `Your coach recommends for ${f.first}`}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: T.gap }}>
+                {books.map(b => (
+                  <div key={b.id} style={{ display: 'flex', gap: 12, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
+                    <div style={{ width: 42, height: 58, borderRadius: 3, flexShrink: 0, background: b.spine || T.accent, boxShadow: 'inset -6px 0 10px -8px rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', padding: '5px 4px' }}>
+                      <span style={{ fontSize: 7.5, fontWeight: 700, color: 'rgba(255,255,255,0.92)', lineHeight: 1.15 }}>{b.title}</span>
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, lineHeight: 1.3 }}>{b.title}</div>
+                      <div style={{ fontSize: 10.5, color: T.text3, marginTop: 1 }}>{[b.author, b.topic].filter(Boolean).join(' · ')}</div>
+                      {!!b.note && <div style={{ fontSize: 11.5, color: T.text2, marginTop: 6, lineHeight: 1.5, fontStyle: 'italic' }}>“{b.note}”</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: T.gap }}>
             {resources.slice(0, 9).map(r => (
               <div key={r.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
@@ -370,6 +410,35 @@ export function LiveStudentView({ T, bundle, footnote }: { T: StudentTheme; bund
               </div>
             ))}
           </div>
+        </Card>
+      )}
+
+      {/* ── MESSAGES ──────────────────────────────────────────────────────── */}
+      {show.messages && (
+        <Card T={T}>
+          <Head T={T} icon="megaphone" title={onSendMessage ? 'Message your coach' : 'Messages'}
+            sub={onSendMessage ? 'Anything at all — a question, an absence, a well done' : 'What has been said between you'} />
+          {onSendMessage
+            ? <MessageComposer T={T} onSend={onSendMessage} />
+            : <div style={{ fontSize: 11.5, color: T.text3, marginBottom: messages.length ? 12 : 0, lineHeight: 1.5 }}>
+                This is their side of the conversation. Replies go to your Messages page.
+              </div>}
+          {messages.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+              {messages.slice(0, 10).map(m => {
+                const mine = m.direction === 'in'
+                return (
+                  <div key={m.id} style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '88%', background: mine ? T.accentDim : T.panel2, border: `1px solid ${mine ? T.accentBorder : T.border}`, borderRadius: 12, padding: '9px 12px' }}>
+                    {!!m.subject && <div style={{ fontSize: 11, fontWeight: 700, color: T.text2, marginBottom: 3 }}>{m.subject}</div>}
+                    <div style={{ fontSize: 12.5, color: T.text, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{m.body}</div>
+                    <div style={{ fontSize: 9.5, color: T.text3, marginTop: 5 }}>
+                      {mine ? (f.audience === 'adult' ? 'You' : 'You') : (m.from_name || 'Coach')} · {prettyDate(m.created_at)}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </Card>
       )}
 
@@ -409,6 +478,29 @@ export function LiveStudentView({ T, bundle, footnote }: { T: StudentTheme; bund
         </div>
       )}
     </div>
+  )
+}
+
+function MessageComposer({ T, onSend }: { T: StudentTheme; onSend: (body: string) => Promise<void> }) {
+  const [text, setText] = useState('')
+  const [state, setState] = useState('')
+  const send = async () => {
+    if (!text.trim()) return
+    setState('Sending…')
+    try { await onSend(text.trim()); setText(''); setState('✓ Sent to your coach') }
+    catch { setState('Could not send') }
+  }
+  return (
+    <>
+      <textarea value={text} onChange={e => { setText(e.target.value); setState('') }} rows={3}
+        placeholder="Ask a question, or let your coach know about an absence…"
+        style={{ width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text, padding: '10px 12px', fontSize: 13, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+        <button onClick={send} disabled={!text.trim()}
+          style={{ appearance: 'none', border: 0, background: T.accent, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: text.trim() ? 'pointer' : 'not-allowed', opacity: text.trim() ? 1 : 0.5, fontFamily: 'inherit' }}>Send</button>
+        {!!state && <span style={{ fontSize: 11.5, color: state.startsWith('✓') ? T.good : T.text3 }}>{state}</span>}
+      </div>
+    </>
   )
 }
 
