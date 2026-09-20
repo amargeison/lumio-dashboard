@@ -53,7 +53,7 @@ const PROBLEMS: Array<{accent:string;category:string;emoji:string;quote:string;f
     statNum:'0',statLabel:'Real-time PSR compliance tools built for football clubs'},
   {accent:'#EC4899',category:'THE WOMEN\'S GAME',emoji:'⚽',
     quote:'A WSL club\'s finance director tracks FSR compliance in a spreadsheet — regulations introduced this season, with points deduction penalties for breach.',
-    fact:'75% of women\'s football clubs globally still don\'t have a kit sponsor. The commercial infrastructure of women\'s sport is being built right now.',
+    fact:'The commercial infrastructure of women\'s sport is being built right now — the regulations arrived before the tooling did.',
     statNum:'0',statLabel:'Purpose-built women\'s football platforms anywhere in the world'},
 ]
 
@@ -84,7 +84,7 @@ const PILLARS: Array<{icon:string;accent:string;heading:string;body:string;extra
 
 const QUOTES: Array<{border:string;text:string;label:string}> = [
   {border:'#8B5CF6',text:'The salary cap manager is the only tool in rugby that tracks both the ceiling and the new £5.4M salary floor introduced from 2026/27 — the compliant zone narrows to just £1 million. One formula error in Excel costs you points. Lumio tracks it to the pound.',label:'Lumio Rugby · Champ Rugby tier'},
-  {border:'#EC4899',text:'The FSR Compliance Dashboard is the first platform to make Financial Sustainability Regulation compliance real-time for WSL and WSL2 clubs. Relevant Revenue, bundled sponsorship attribution, age-band salary minimums — all tracked in one view, updated as contracts change.',label:'Lumio Women\'s Football · WSL tier'},
+  {border:'#EC4899',text:'The FSR Compliance Dashboard makes Financial Sustainability Regulation compliance real-time for WSL and WSL2 clubs. Relevant Revenue, bundled sponsorship attribution, age-band salary minimums — all tracked in one view, updated as contracts change.',label:'Lumio Women\'s Football · WSL tier'},
   {border:'#DC2626',text:'The Purse Simulator models UK, USA, Saudi Arabia, Germany and UAE tax and deduction implications on any fight purse. Same £5M headline. Dramatically different take-home depending on where you fight. Know before you sign.',label:'Lumio Boxing · Professional tier'},
 ]
 
