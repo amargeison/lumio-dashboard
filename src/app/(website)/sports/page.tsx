@@ -55,6 +55,16 @@ const PORTALS: Array<{emoji:string;name:string;pill:string;accent:string;feature
     url:'lumiosports.com/boxing',href:'/boxing'},
 ]
 
+// The two products that are actually live. Kept here rather than pulled from
+// marketing-sports because these carry a logo and a longer line than the demo
+// gallery cards below.
+const LIVE_PRODUCTS: Array<{name:string;href:string;logo:string;accent:string;line:string}> = [
+  {name:'Tennis Coach', href:'/tennis-coach', logo:'/tennis_coach_logo.png', accent:'#3A8EE0',
+   line:'Session planner, AI reviews, Racket Progression, GPS heatmaps.'},
+  {name:'Impact', href:'/impact', logo:'/impact_logo.png', accent:'#a855f7',
+   line:'Digital registers, funder reporting, fundraising, parent app.'},
+]
+
 const PROBLEMS: Array<{accent:string;category:string;emoji:string;quote:string;fact:string;statNum:string;statLabel:string}> = [
   {accent:'#3A8EE0',category:'THE COACH',emoji:'🎾',
     quote:'A tennis coach runs a 60-player academy from a notebook and three WhatsApp groups — chasing lesson payments, remembering who is due to progress, with nothing a parent can actually see.',
@@ -168,7 +178,32 @@ export default function SportsLandingPage() {
         </div>
       </section>
 
-      {/* ═══ SECTION 2: THE PROBLEM ═══ */}
+      {/* ═══ SECTION 2: LIVE PRODUCTS ═══ */}
+      {/* The conversion path. Everything below this is either the problem
+          framing or a demo of something not yet purchasable, so the two
+          products anyone can actually buy lead the page. */}
+      <section className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
+        <div className="max-w-5xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>LIVE NOW</p>
+          <h2 className="text-3xl md:text-5xl font-black text-center mb-3">Two products you can use today.</h2>
+          <p className="text-center text-sm mb-12 mx-auto" style={{color:'#94A3B8',maxWidth:520}}>Built, running and taking customers. Everything further down this page is a working demo of something still in development.</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {LIVE_PRODUCTS.map((pr:{name:string;href:string;logo:string;accent:string;line:string},i:number)=>(
+              <Link key={i} href={pr.href} className="rounded-2xl p-8 flex flex-col items-start transition-all hover:opacity-90"
+                style={{background:'#0D1117',border:'1px solid #1E293B',borderTop:`4px solid ${pr.accent}`,textDecoration:'none'}}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pr.logo} alt={pr.name} style={{width:64,height:64,objectFit:'contain',marginBottom:18}}/>
+                <div className="text-2xl font-bold text-white mb-2">{pr.name}</div>
+                <div className="text-sm leading-relaxed mb-6 flex-1" style={{color:'#94A3B8'}}>{pr.line}</div>
+                <span className="px-5 py-2.5 rounded-lg text-sm font-bold" style={{background:pr.accent,color:'#fff'}}>Explore {pr.name} &rarr;</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SECTION 3: THE PROBLEM ═══ */}
       <section className="px-6 py-24" style={{borderTop:'1px solid #1E293B'}}>
         <div className="max-w-6xl mx-auto">
           <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>THE PROBLEM</p>
