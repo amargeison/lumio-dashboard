@@ -18,6 +18,7 @@ import { MediaCaptureModal } from './MediaCaptureModal'
 import { useCoachTable, dbInsert, dbUpdate, SKILLS_BY_STAGE, logSessionAttendance } from '../_lib/coach-db'
 import { pollMedia, processStageShort } from '../_lib/media-upload'
 import { avatarSrc } from '@/lib/avatar'
+import { lessonRecap } from '@/lib/coach/lesson-recap'
 
 type Review = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
@@ -237,6 +238,7 @@ function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, on
 }) {
   const [shareOpen, setShareOpen] = useState(false)
   const [recapOpen, setRecapOpen] = useState(false)
+  const recap = shortRecap(s)
   const r = s.review_json || {}
   const rating = s.rating ?? r.rating ?? 0
   const hasStructured = !!(r.assessment || r.covered?.length || r.takeaways?.length || r.drills?.length || r.skillsWorked?.length || r.homework || r.nextFocus)
@@ -307,6 +309,20 @@ function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, on
               </>}
             </div>
           </div>
+
+          {/* THE SHORT VERSION, on the page. It used to live behind the
+              Summary button, which meant the one paragraph a parent actually
+              reads was the one thing you had to click to see. */}
+          {!!recap.text && (
+            <div style={{ ...card, marginTop: 16, background: accent.dim, borderColor: accent.border }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <div style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>✦ Summary</div>
+                <div style={{ fontSize: 10.5, color: T.text3 }}>the short version — what a parent reads in the doorway</div>
+                <button onClick={() => setRecapOpen(true)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Copy →</button>
+              </div>
+              <div style={{ fontSize: 13, color: T.text, marginTop: 6, lineHeight: 1.65 }}>{recap.text}</div>
+            </div>
+          )}
 
           {(r.nextFocus || r.coachNote) && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
@@ -773,31 +789,12 @@ function SummaryFormModal({ T, accent, players, session, onClose, onSave }: {
 // diagnostic tuning carry a proper "recap" field; for everything before that
 // (and for manually-typed summaries) we derive one locally from what the summary
 // already holds — no per-click API call, so the button is instant and free.
-const lowerFirst = (x: string) => x.charAt(0).toLowerCase() + x.slice(1)
-const stripEnd = (x: string) => x.replace(/\s*[.;,]+\s*$/, '')
-const firstSentences = (text: string, n: number) =>
-  (text.match(/[^.!?]+[.!?]+(\s|$)/g) || [text]).map(x => x.trim()).slice(0, n).join(' ').trim()
-
 function shortRecap(s: Session): { text: string; source: 'ai' | 'derived' } {
-  const r = s.review_json || {}
-  if (r.recap?.trim()) return { text: r.recap.trim(), source: 'ai' }
-
-  const first = (s.player_name || '').trim().split(/\s+/)[0]
-  const focus = stripEnd((s.focus || r.focus || '').trim())
-  const out: string[] = []
-  if (focus) out.push(`${first ? `${first}'s session` : 'This session'} focused on ${lowerFirst(focus)}.`)
-  // Where there's a diagnosis it IS the headline; otherwise the top takeaway.
-  const lead = (r.assessment || r.takeaways?.[0] || r.covered?.[0] || '').trim()
-  if (lead) out.push(firstSentences(`${stripEnd(lead)}.`, r.assessment ? 2 : 1))
-  const homework = stripEnd((r.homework || '').trim())
-  const next = stripEnd((r.nextFocus || '').trim())
-  if (homework && homework.toLowerCase() !== 'not set') out.push(`To practise before next time: ${lowerFirst(homework)}.`)
-  else if (next) out.push(`Next session: ${lowerFirst(next)}.`)
-
-  const derived = out.join(' ').trim()
-  if (derived) return { text: derived, source: 'derived' }
-  const fallback = (r.coachNote || s.summary || s.ai_review || '').trim()
-  return { text: fallback ? firstSentences(fallback, 3) : 'No detail recorded for this summary yet — use Edit to add notes.', source: 'derived' }
+  const r = lessonRecap(s)
+  return {
+    text: r.source === 'none' ? 'No detail recorded for this summary yet — use Edit to add notes.' : r.text,
+    source: r.source === 'ai' ? 'ai' : 'derived',
+  }
 }
 
 function RecapModal({ T, accent, s, onClose }: { T: ThemeTokens; accent: AccentTokens; s: Session; onClose: () => void }) {

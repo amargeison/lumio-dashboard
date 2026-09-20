@@ -199,7 +199,19 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
         )}
         {tab === 'attendees' && (
           <AttendeeTable T={T} accent={accent} camp={sel} attendees={campAttendees} players={players}
-            addPlayer={async (name, playerId) => { await dbInsert('coach_camp_attendees', { camp_id: sel.id, player_id: playerId, player_name: name }); attendees.reload() }}
+            addPlayer={async (name, playerId) => {
+              const row = await dbInsert('coach_camp_attendees', { camp_id: sel.id, player_id: playerId, player_name: name }) as { id?: string } | null
+              attendees.reload()
+              // Confirm it the same three ways a lesson is confirmed: in their
+              // portal, by email, and with a calendar entry they can add.
+              // Fire-and-forget — the place is already booked either way.
+              if (row?.id) {
+                fetch('/api/coach/camps/confirm', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ attendeeId: row.id }),
+                }).catch(() => {})
+              }
+            }}
             remove={async id => { await attendees.remove(id); attendees.reload() }}
             editAtt={attendees.edit} />
         )}

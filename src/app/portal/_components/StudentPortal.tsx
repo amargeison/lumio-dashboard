@@ -43,20 +43,18 @@ type Raw = {
   watch?: unknown[]
   camps?: unknown[]
   resources?: unknown[]
+  books?: unknown[]
   sectionsOff?: string[]
   awardThreshold?: number
 }
 
 const card: React.CSSProperties = { background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 18, marginTop: 14 }
 const h2: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 12px' }
-const fmt = (d?: string) => (d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '')
 
 export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
   const [raw, setRaw] = useState<Raw | null>(null)
   const [loading, setLoading] = useState(true)
   const [avatar, setAvatar] = useState<string | null>(null)
-  const [msg, setMsg] = useState('')
-  const [sent, setSent] = useState('')
 
   const load = useCallback(() => {
     return fetch('/api/portal/player')
@@ -106,13 +104,10 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
     } catch { setLogErr('Could not save') } finally { setLogBusy(false) }
   }
 
-  const send = async () => {
-    if (!msg.trim()) return
-    setSent('Sending…')
-    try {
-      const r = await fetch('/api/portal/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body: msg.trim() }) })
-      if (r.ok) { setMsg(''); setSent('✓ Sent to your coach'); load() } else setSent('Could not send')
-    } catch { setSent('Could not send') }
+  const send = async (body: string) => {
+    const r = await fetch('/api/portal/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body }) })
+    if (!r.ok) throw new Error('Could not send')
+    load()
   }
 
   if (loading) return <Shell onSignOut={onSignOut}><div style={{ color: MUTED, fontSize: 13 }}>Loading…</div></Shell>
@@ -145,11 +140,12 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
     watch: (raw.watch || []) as StudentBundle['watch'],
     resources: (raw.resources || []) as StudentBundle['resources'],
     camps: (raw.camps || []) as StudentBundle['camps'],
+    books: (raw.books || []) as StudentBundle['books'],
+    messages: (raw.messages || []) as StudentBundle['messages'],
     sectionsOff: raw.sectionsOff || [],
     awardThreshold: raw.awardThreshold ?? 3,
   }
   const f = studentFraming(bundle.player)
-  const messages = raw.messages || []
 
   return (
     <Shell onSignOut={onSignOut}>
@@ -170,7 +166,10 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
         <div style={{ fontSize: 12, color: MUTED }}>Tap the photo to change it.</div>
       </div>
 
-      <LiveStudentView T={ST} bundle={bundle} />
+      {/* Messages are a section of the shared view now, so the coach previewing
+          this page sees the same conversation the family does. Only the family
+          gets a box to type in — that is what onSendMessage is. */}
+      <LiveStudentView T={ST} bundle={bundle} onSendMessage={send} />
 
       {/* ── Log a session ───────────────────────────────────────────────── */}
       <div style={card}>
@@ -210,26 +209,6 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
         )}
       </div>
 
-      {/* ── Message the coach ───────────────────────────────────────────── */}
-      <div style={card}>
-        <p style={h2}>Message your coach</p>
-        <textarea value={msg} onChange={e => { setMsg(e.target.value); setSent('') }} rows={3} placeholder="Ask a question, or let your coach know about an absence…"
-          style={{ width: '100%', background: PANEL2, border: `1px solid ${BORDER}`, borderRadius: 9, color: TEXT, padding: '10px 12px', fontSize: 13, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-          <button onClick={send} disabled={!msg.trim()} style={{ appearance: 'none', border: 0, background: ACCENT, color: '#06223f', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 700, cursor: msg.trim() ? 'pointer' : 'not-allowed', opacity: msg.trim() ? 1 : 0.5 }}>Send</button>
-          {!!sent && <span style={{ fontSize: 12, color: sent.startsWith('✓') ? '#3FB37F' : MUTED }}>{sent}</span>}
-        </div>
-        {messages.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
-            {messages.slice(0, 8).map(m => (
-              <div key={m.id} style={{ alignSelf: m.direction === 'in' ? 'flex-end' : 'flex-start', maxWidth: '85%', background: m.direction === 'in' ? 'rgba(58,142,224,0.16)' : PANEL2, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '8px 11px' }}>
-                <div style={{ fontSize: 12.5, color: TEXT, whiteSpace: 'pre-wrap' }}>{m.body}</div>
-                <div style={{ fontSize: 9.5, color: MUTED, marginTop: 4 }}>{m.direction === 'in' ? 'You' : 'Coach'} · {fmt(m.created_at)}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </Shell>
   )
 }

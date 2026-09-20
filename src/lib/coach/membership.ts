@@ -89,7 +89,8 @@ export async function bindPendingInvites(userId: string, email?: string | null):
   // member_user_id must be null. A row already bound to a different auth user is
   // never re-pointed by an email match — that would be a way to take over
   // somebody else's membership by claiming their address.
-  const { data: pending } = await db.from('coach_members').select('id')
+  const { data: pending } = await db.from('coach_members')
+    .select('id, academy_id, role, scope_player_id')
     .ilike('email', email)
     .is('member_user_id', null)
     .neq('status', 'revoked')
@@ -98,8 +99,78 @@ export async function bindPendingInvites(userId: string, email?: string | null):
     .update({ member_user_id: userId, status: 'active', updated_at: new Date().toISOString() })
     .in('id', pending.map(r => r.id))
   if (error) { console.error('[membership] bind', error.message); return 0 }
+
+  // Say hello, once, in the portal itself.
+  //
+  // The invite email already welcomed them; a second email would be noise. What
+  // was missing is the thing a family sees when they arrive: an empty Messages
+  // panel on a page full of their child's data, with no sign that anyone is on
+  // the other end. This puts the first message there before they look.
+  //
+  // Fired here because binding happens exactly once per invite — so this cannot
+  // send twice, however many times they sign in afterwards. Failures are logged
+  // and swallowed: a greeting must never be the reason somebody cannot get in.
+  for (const m of pending) {
+    if (m.role !== 'parent' && m.role !== 'student') continue
+    try { await sendWelcomeMessage(db, m.academy_id as string, m.scope_player_id as string | null, m.role as 'parent' | 'student') }
+    catch (e) { console.error('[membership] welcome message', e) }
+  }
+
   return pending.length
 }
+
+// The coach's first message to a new family, written in their academy's name.
+async function sendWelcomeMessage(
+  db: ReturnType<typeof admin>,
+  academyId: string,
+  playerId: string | null,
+  role: 'parent' | 'student',
+) {
+  if (!playerId) return
+  const [{ data: player }, { data: profile }] = await Promise.all([
+    db.from('coach_players').select('name').eq('id', playerId).eq('coach_id', academyId).maybeSingle(),
+    db.from('sports_profiles').select('brand_name, display_name').eq('id', academyId).maybeSingle(),
+  ])
+  const name = (player?.name || '').trim()
+  if (!name) return
+  const academy = (profile?.brand_name || '').trim() || 'your academy'
+  const coach = (profile?.display_name || '').trim()
+  const first = name.split(/\s+/)[0]
+
+  // Don't greet twice if a family is re-invited or holds two memberships.
+  const { data: existing } = await db.from('coach_messages')
+    .select('id').eq('coach_id', academyId).eq('recipients', name).eq('subject', WELCOME_SUBJECT).limit(1)
+  if (existing?.length) return
+
+  const body = role === 'student'
+    ? [
+        `Welcome to ${academy}.`,
+        '',
+        'This is your page. After each lesson you will find the summary here — what you worked on, what to practise before next time, and the coach note that goes with it. Your progress through the colours updates as you are graded, and anything your coach recommends you read turns up here too.',
+        '',
+        'You can reply to this message any time — it comes straight to the coach.',
+        coach ? `\n${coach}` : '',
+      ].join('\n')
+    : [
+        `Welcome to ${academy}.`,
+        '',
+        `This is ${first}'s page. After each lesson you will find the summary here — what they worked on, what to practise at home before the next session, and the coach's note. Their progress through the colours updates as they are graded, and anything the coach recommends for them appears here too.`,
+        '',
+        'You can reply to this message any time — it comes straight to the coach.',
+        coach ? `\n${coach}` : '',
+      ].join('\n')
+
+  await db.from('coach_messages').insert({
+    coach_id: academyId,
+    recipients: name,
+    channels: 'inapp',
+    subject: WELCOME_SUBJECT,
+    body: body.trim(),
+    status: 'sent',
+  })
+}
+
+const WELCOME_SUBJECT = 'Welcome to your portal'
 
 // Service-role DB handle for scoped reads — callers MUST apply the membership
 // scope to every query (academy_id = m.academyId, plus player/coach scope).

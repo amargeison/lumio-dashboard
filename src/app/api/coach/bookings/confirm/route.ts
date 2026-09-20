@@ -6,6 +6,8 @@ import { sendEmail } from '@/lib/emails/send'
 import {
   gatherBookingContext, resolveRecipient, buildConfirmationHtml, type BookingRow,
 } from '@/lib/coach/booking-email'
+import { calendarButtonsHtml, googleCalendarUrl, icsUrl, type CalendarEvent } from '@/lib/coach/calendar-links'
+import { notifyBooked } from '@/lib/coach/booking-notify'
 
 // Booking confirmation. Called (fire-and-forget) when a booking is CREATED.
 //
@@ -45,12 +47,46 @@ export async function POST(req: NextRequest) {
     const rec = resolveRecipient(player)
     const results: Record<string, unknown> = { to: rec.to, toParent: rec.toParent, reason: rec.reason }
 
+    // Add-to-calendar. Built once and used by the email and the in-app message,
+    // so both offer the same two links rather than one telling a parent a time
+    // and leaving them to type it in.
+    const origin = new URL(req.url).origin.replace('http://localhost', 'http://localhost')
+    const place = [venue?.name, b.court].filter(Boolean).join(' · ') || b.court || null
+    const event: CalendarEvent = {
+      title: `${b.type || 'Lesson'} — ${playerName} · ${academy}`,
+      date: String(b.booking_date || ''),
+      time: b.start_time ? String(b.start_time).slice(0, 5) : null,
+      durationMin: b.duration_min,
+      location: [place, venue?.address].filter(Boolean).join(', ') || undefined,
+      description: `Booked with ${academy}.`,
+      uid: `booking-${b.id}`,
+    }
+    const calendarHtml = b.booking_date ? calendarButtonsHtml(event, origin, 'booking', b.id) : null
+
+    // ── 0. In the portal ──────────────────────────────────────────────────
+    // Before the emails, because this is the one that cannot bounce, cannot be
+    // filtered into Promotions, and is still there next week.
+    results.inApp = await notifyBooked(db, {
+      academyId: coachId,
+      playerName,
+      kind: 'lesson',
+      title: `${b.type || 'Lesson'} with ${coachName || academy}`,
+      date: b.booking_date,
+      time: b.start_time ? String(b.start_time).slice(0, 5) : null,
+      durationMin: b.duration_min,
+      location: [place, venue?.address].filter(Boolean).join(', ') || null,
+      detail: b.notes || null,
+      googleUrl: b.booking_date ? googleCalendarUrl(event) : null,
+      icsUrl: b.booking_date ? icsUrl(origin, 'booking', b.id) : null,
+      dedupeKey: b.id,
+    })
+
     // ── 1. Player / parent ────────────────────────────────────────────────
     if (rec.to) {
       const html = buildConfirmationHtml({
         academy, coachName, logoUrl: profile?.brand_logo_url, playerName,
         greetingName: rec.toParent ? (player?.parent_name || 'there') : playerName.split(' ')[0],
-        toParent: rec.toParent, booking: b, venue, last,
+        toParent: rec.toParent, booking: b, venue, last, calendarHtml,
       })
       const subject = `Session booked — ${playerName} · ${b.booking_date || ''}`.trim()
       const sent = await sendAsCoach(coachId, { to: rec.to, subject, html })
@@ -78,7 +114,7 @@ export async function POST(req: NextRequest) {
     if (coachTo) {
       const html = buildConfirmationHtml({
         academy, coachName, logoUrl: profile?.brand_logo_url, playerName,
-        greetingName: coachName || 'Coach', toParent: false, booking: b, venue, last, forCoach: true,
+        greetingName: coachName || 'Coach', toParent: false, booking: b, venue, last, forCoach: true, calendarHtml,
       })
       const note = rec.to ? `Confirmation sent to ${rec.to} (${rec.reason}).` : `NOT sent to the player — ${rec.reason}.`
       const sent = await sendAsCoach(coachId, {

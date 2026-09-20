@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { bookById } from '@/lib/coach/books'
 
 export const runtime = 'nodejs'
 
@@ -147,7 +148,26 @@ export async function GET(req: NextRequest) {
     }))
   }
 
+  // Recommended books, and the conversation so far. The coach sees the thread
+  // read-only here — this screen is a preview of the family's page, not a second
+  // place to reply from.
+  const [bookRows, messages] = await Promise.all([
+    safe(admin.from('coach_player_resources')
+      .select('id, ref_id, title, author, note, created_at')
+      .eq('coach_id', me.academyId).eq('player_id', playerId).eq('kind', 'book')
+      .order('created_at', { ascending: false }).limit(12)),
+    name ? safe(admin.from('coach_messages')
+      .select('id, direction, from_name, subject, body, created_at')
+      .eq('coach_id', me.academyId).eq('recipients', name)
+      .order('created_at', { ascending: false }).limit(20)) : Promise.resolve([]),
+  ])
+  const books = bookRows.map(b => {
+    const shelf = bookById(String(b.ref_id))
+    return { id: b.id, title: b.title, author: b.author, note: b.note, topic: shelf?.topic ?? null, spine: shelf?.spine ?? null }
+  })
+
   return NextResponse.json({
+    books, messages,
     player: {
       id: player.id, name: player.name, nickname: player.nickname, age: player.age,
       category: player.category, level: player.level, racket_stage: player.racket_stage,

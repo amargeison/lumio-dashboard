@@ -49,6 +49,21 @@ export const PLAYER_LEVELS: string[] = [
   'Social / cardio',
 ]
 
+// How a family pays. Recorded against the player so the Payments page can tell
+// a standing-order family (money is coming) from a cash-on-court one (ask them
+// Saturday) from somebody who just needs a card link. Lumio does not collect
+// any of these — it is what the coach expects, which is exactly what a chase
+// list needs to know.
+export const PAYMENT_METHODS: string[] = [
+  'Direct debit',
+  'Standing order',
+  'Bank transfer',
+  'Card',
+  'Cash',
+  'Invoice',
+  'Childcare vouchers',
+]
+
 export type CoachSettings = {
   theme: 'dark' | 'light'
   accentKey: AccentKey
@@ -87,6 +102,11 @@ export type CoachSettings = {
   // pitches shouldn't need a trip through Settings to reach it), OFF for a real
   // academy (they opt in). See LIVE_DEFAULT_SETTINGS. A coach's own saved choice
   // always wins over either default.
+  // Who supplies the rewards. Lumio's kit (keyrings, dampeners, a trophy at
+  // Black) is one way to run the ladder; a coach with their own badges, their
+  // club's trophies or nothing but certificates is running the same system and
+  // should not be reading about merchandise they have not bought.
+  ownRewards: boolean
   studentApp: boolean
   audioOnly: boolean              // Video & Audio module: hide the video half, show audio only (menu label → "Audio only")
   brandLogo: string               // Club/academy logo (data URL) shown top-left instead of the Lumio mark
@@ -124,6 +144,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   packagesSeeded: false,
   equipmentSeeded: false,
   ccCoachOnEmail: true,
+  ownRewards: false,
   studentApp: true,
   audioOnly: false,
   brandLogo: '',
@@ -158,6 +179,7 @@ export const LIVE_DEFAULT_SETTINGS: CoachSettings = {
   privateRate: 0,
   // Real academies opt IN to the parent & student app (Settings → Parent &
   // student app). Only the demo seed defaults it on.
+  ownRewards: false,
   studentApp: false,
   profile: { role: 'Head Coach', email: '', phone: '', dbsNumber: '', dbsExpiry: '', safeguardingDate: '' },
   staff: { ...DEFAULT_SETTINGS.staff, dsl: '' },

@@ -11,7 +11,8 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, currentIdentity, type CoachIdentity, dbInsert, dbUpdate, dbRemove, dbList, RACKET_STAGES, RACKET_SKILLS, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore, useCoachProfile } from '../_lib/coach-db'
 import { WatchConnectPanel } from './WatchConnectPanel'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
-import { getSettings, PLAYER_LEVELS } from '../_lib/settings-store'
+import { getSettings, PLAYER_LEVELS, PAYMENT_METHODS } from '../_lib/settings-store'
+import { studentAudience } from '@/lib/student/bundle'
 
 // v1: Effort & Rewards is manual-only — smartwatch QR pairing is hidden until v2.
 const SHOW_WATCH_PAIRING: boolean = false
@@ -216,7 +217,7 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
     setSaving(true); setErr('')
     try {
       const row = {
-        name: d.name, category: d.category || null, age: d.age || null, parent_name: d.parent_name || null, racket_stage: d.racket_stage || null, assigned_coach: d.assigned_coach || null, goal: d.goal || null, level: d.level || null, email: d.email || null, phone: d.phone || null, notes: d.notes || null,
+        name: d.name, category: d.category || null, age: d.age || null, parent_name: d.parent_name || null, racket_stage: d.racket_stage || null, assigned_coach: d.assigned_coach || null, goal: d.goal || null, level: d.level || null, email: d.email || null, phone: d.phone || null, notes: d.notes || null, payment_method: d.payment_method || null,
         consent_data: !!d.consent_data, consent_photo: !!d.consent_photo, consent_medical: !!d.consent_medical, consent_wearable: !!d.consent_wearable, consent_by: d.consent_by || null, consent_date: d.consent_date || null, medical_notes: d.medical_notes || null,
       }
       let playerId = initial?.id as string | undefined
@@ -266,6 +267,14 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
           </div>
           {field('email', 'Email')}
           {field('phone', 'Phone')}
+          <div><label style={lbl}>How they pay</label>
+            <select value={d.payment_method ?? ''} onChange={e => set('payment_method', e.target.value)} style={input}>
+              <option value="">— Not set —</option>
+              {/* Whatever is already on the row stays selectable, so a method
+                  typed before this list existed is never silently rewritten. */}
+              {Array.from(new Set([d.payment_method, ...PAYMENT_METHODS].filter(Boolean))).map((m: string) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
         </div>
         <div style={{ marginTop: 12 }}>{field('goal', 'Goal', 'text', 'e.g. First serve over the net consistently')}</div>
         <div style={{ marginTop: 12 }}><label style={lbl}>Notes</label><textarea value={d.notes ?? ''} onChange={e => set('notes', e.target.value)} rows={2} style={{ ...input, resize: 'vertical' }} /></div>
@@ -317,11 +326,19 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
     try { const data = await fileToAvatarDataUrl(file); const url = await uploadAvatar('/api/coach/avatar', { playerId: player.id, dataUrl: data }); if (url) setAvatarUrl(url) } catch { /* ignore */ } finally { setPhotoBusy(false) }
   }
   const inviteEmail = player.email || player.parent_email
+  // An adult is not somebody's child. Inviting a 45-year-old and calling them
+  // a parent is a small thing that tells them the product was not built with
+  // them in mind — and it sends them an email addressed to the wrong person.
+  // The same rule the student app uses to decide whose page it is.
+  const audience = studentAudience(player)
+  const invitesPlayer = audience === 'adult'
+  const inviteLabel = invitesPlayer ? 'Invite player' : 'Invite parent'
+
   const invitePortal = async () => {
     if (!inviteEmail) { setInviteMsg('Add an email on the Contact tab first.'); return }
     setInviteMsg('Sending…')
     try {
-      const r = await fetch('/api/portal/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: inviteEmail, role: 'parent', scopePlayerId: player.id, name: player.parent_name || player.name }) })
+      const r = await fetch('/api/portal/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: inviteEmail, role: invitesPlayer ? 'student' : 'parent', scopePlayerId: player.id, name: invitesPlayer ? player.name : (player.parent_name || player.name) }) })
       setInviteMsg(r.ok ? `✓ Invite sent to ${inviteEmail}` : 'Could not send invite.')
     } catch { setInviteMsg('Could not send invite.') }
   }
@@ -365,7 +382,7 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
             {inviteMsg && <span style={{ fontSize: 11, color: inviteMsg.startsWith('✓') ? T.good : T.text3 }}>{inviteMsg}</span>}
-            <button onClick={invitePortal} title="Invite the parent to a read-only portal for this player" style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 12, fontWeight: 600 }}>🔑 Invite parent</button>
+            <button onClick={invitePortal} title={invitesPlayer ? 'Invite this player to their own portal' : 'Invite the parent to a portal for this player'} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 12, fontWeight: 600 }}>🔑 {inviteLabel}</button>
             <button onClick={onEdit} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 12, fontWeight: 600 }}>Edit</button>
             <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 32, height: 32, fontSize: 18, lineHeight: 1 }}>×</button>
           </div>
