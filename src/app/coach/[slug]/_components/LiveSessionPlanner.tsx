@@ -13,6 +13,7 @@ import { useCoachTable, dbInsert, dbRemove, invalidateCoachTable, RACKET_STAGES,
 import { MediaCaptureModal } from './MediaCaptureModal'
 import { pollMedia } from '../_lib/media-upload'
 import { getSettings } from '../_lib/settings-store'
+import { avatarSrc } from '@/lib/avatar'
 import { campSpans, campsOn, campsBetween, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
@@ -87,6 +88,8 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   // A camp is a week the coach is not on their home courts. It belongs in the
   // planner for the same reason it belongs in the calendar — read-only here.
   const campRows = useCoachTable<CampRow>('coach_camps')
+  // Lesson history — what the snapshot's "last lesson" line is built from.
+  const sessions = useCoachTable<any>('coach_sessions')
   const [tab, setTab] = useState<'overview' | 'today' | 'week' | 'month'>('overview')
   const sectOff = getSettings().sectionsOff?.planner || []
   const showSec = (k: string) => !sectOff.includes(k)
@@ -168,8 +171,20 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
               <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 10 }}>Next up</div>
               {nextUp ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                  {(() => {
+                    // The player, not a title. A coach recognises a face before
+                    // they read "Private · 26/09/2026".
+                    const nm = String(nextUp.player_name || '').trim()
+                    const pl = players.rows.find((p: any) => String(p.name || '').trim().toLowerCase() === nm.toLowerCase())
+                    return pl?.avatar_url
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={avatarSrc(pl.avatar_url)} alt="" style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      : <span style={{ width: 46, height: 46, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
+                          {(nm || nextUp.title || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join('')}
+                        </span>
+                  })()}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 17, fontWeight: 700, color: T.text }}>{nextUp.title || nextUp.player_name || 'Session'}</div>
+                    <div style={{ fontSize: 17, fontWeight: 700, color: T.text }}>{nextUp.player_name || nextUp.title || 'Session'}</div>
                     <div style={{ fontSize: 12, color: T.text3, marginTop: 3 }}>{[nextUp.booking_date && new Date(nextUp.booking_date).toLocaleDateString('en-GB'), nextUp.start_time, nextUp.type, nextUp.court].filter(Boolean).join(' · ')}</div>
                     {planFor(nextUp)?.focus && <div style={{ fontSize: 12.5, color: T.text2, marginTop: 8 }}>🎯 {planFor(nextUp)?.focus}</div>}
                   </div>
@@ -230,6 +245,17 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
             </div>
           )}
 
+          {/* The plan itself, inline — not a modal. A run-sheet is the thing the
+              coach is about to work from for an hour; it belongs on the page at
+              full width, next to the player's history and the kit they need,
+              rather than in a 620px box floating over a dimmed planner. */}
+          {sel && (
+            <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} lessons={sessions.rows} onNavigate={onNavigate} inline
+              onCompleted={() => { setSel(null); plans.reload() }}
+              onClose={() => setSel(null)}
+              onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />
+          )}
+
           {/* This week's calendar (synced from bookings) */}
           <div style={{ display: showSec('weekcal') ? undefined : 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 0, overflow: 'hidden' }}>
             <div style={{ display: 'flex', alignItems: 'baseline', padding: '14px 16px 0' }}>
@@ -274,7 +300,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
               })}
             </div>
           )}
-          {selPlan && <SessionRunSheet T={T} accent={accent} density={density} plan={selPlan} players={players.rows} onNavigate={onNavigate} inline
+          {selPlan && <SessionRunSheet T={T} accent={accent} density={density} plan={selPlan} players={players.rows} lessons={sessions.rows} onNavigate={onNavigate} inline
             onCompleted={() => { setSel(null); plans.reload() }}
             onClose={() => setSel(null)}
             onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', selPlan.id); setSel(null); plans.reload() } }} />}
@@ -294,7 +320,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
 
       {open && <NewSession T={T} accent={accent} density={density} players={players.rows} prefill={prefill}
         onClose={() => { setOpen(false); setPrefill(null) }} onSaved={() => { setOpen(false); setPrefill(null); plans.reload() }} />}
-      {sel && tab !== 'today' && <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} onNavigate={onNavigate}
+      {sel && tab !== 'today' && tab !== 'overview' && <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} lessons={sessions.rows} onNavigate={onNavigate}
         onCompleted={() => { setSel(null); plans.reload() }}
         onClose={() => setSel(null)}
         onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />}
@@ -349,8 +375,9 @@ function WeekGrid({ T, accent, days, today, bookings, camps, onCamp, onOpen }: {
                   const c = typeCol(T, accent, b.type)
                   return (
                     <div key={b.id} onClick={() => onOpen(b)} title={b.title || b.player_name || ''} style={{ position: 'absolute', left: 3, right: 3, top: top + 1, height: h, background: `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '2px 5px', overflow: 'hidden', cursor: 'pointer' }}>
-                      <div style={{ fontSize: 10, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</div>
-                      <div style={{ fontSize: 8.5, color: T.text2 }}>{hhmm(s)}{b.court ? ` · ${b.court}` : ''}</div>
+                      {/* WHO first. A column of "1:1" tells a coach nothing. */}
+                      <div style={{ fontSize: 10, color: T.text, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.player_name || b.title || 'Session'}</div>
+                      <div style={{ fontSize: 8.5, color: T.text2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{hhmm(s)}{b.court ? ` · ${b.court}` : ''}</div>
                     </div>
                   )
                 })}
@@ -399,7 +426,7 @@ function MonthAgenda({ T, accent, bookings, camps, onCamp, fromISO, onOpen }: { 
                 <button key={b.id} onClick={() => onOpen(b)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, textAlign: 'left', width: '100%', cursor: 'pointer' }}>
                   <span style={{ fontSize: 11.5, color: T.text2, width: 50, flexShrink: 0 }}>{b.start_time || '—'}</span>
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: typeCol(T, accent, b.type), flexShrink: 0 }} />
-                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: T.text, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.player_name || b.title || 'Session'}</span>
                   <span style={{ fontSize: 11, color: T.text3 }}>{[b.type, b.court].filter(Boolean).join(' · ')}</span>
                 </button>
               ))}
@@ -656,12 +683,13 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
 }
 
 // ── Saved session run-sheet ──────────────────────────────────────────────────
-function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onCompleted, onClose, onDelete, inline }: Common & { plan: any; players: any[]; onNavigate?: (s: string) => void; onCompleted: () => void; onClose: () => void; onDelete: () => void; inline?: boolean }) {
+function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onCompleted, onClose, onDelete, inline }: Common & { plan: any; players: any[]; lessons?: any[]; onNavigate?: (s: string) => void; onCompleted: () => void; onClose: () => void; onDelete: () => void; inline?: boolean }) {
   // Prefer the run-sheet Lumio Coach actually designed and we stored. The
   // template is kept only for plans created before he built them, so an old plan
   // still renders something rather than an empty box.
   const stored: { phase: string; mins: number; detail: string; cue?: string }[] = Array.isArray(plan.run_sheet) ? plan.run_sheet : []
-  const sheet = stored.length ? stored : runSheet((plan.session_type as SType) || 'Private', plan.focus || '', plan.duration_min || 60)
+  const sheet: { phase: string; mins: number; detail: string; cue?: string }[] =
+    stored.length ? stored : runSheet((plan.session_type as SType) || 'Private', plan.focus || '', plan.duration_min || 60)
   const kit: string[] = Array.isArray(plan.kit) && plan.kit.length ? plan.kit : KIT_BY_TYPE[(plan.session_type as SType) || 'Private']
   const fp = (plan.focus_points || '').split('\n').filter(Boolean)
   const dr = (plan.drills || '').split('\n').filter(Boolean)
@@ -680,48 +708,158 @@ function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onComp
     } catch { setCompleting(false) }
   }
   const act = (bg: string, color: string, border?: string): React.CSSProperties => ({ appearance: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, border: border || 'none', background: bg, color, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' })
+  // ── Who this session is with ──────────────────────────────────────────────
+  // The plan stores a NAME; the roster holds the person. Matching them is what
+  // puts a face, a colour and a history on the page instead of a text heading.
+  const who = String(plan.group_name || '').trim()
+  const player = players.find((p: any) => String(p.name || '').trim().toLowerCase() === who.toLowerCase()) || null
+  const stage = player?.racket_stage ? RACKET_STAGES.find(s => s.id === player.racket_stage) : null
+  const last = [...(lessons || [])]
+    .filter((l: any) => String(l.player_name || '').trim().toLowerCase() === who.toLowerCase())
+    .sort((a: any, b: any) => String(b.session_date ?? '').localeCompare(String(a.session_date ?? '')))[0] || null
+
+  const total = sheet.reduce((a, ph) => a + (ph.mins || 0), 0) || 1
+  const PHASE_COLS = [accent.hex, '#E08A3C', '#4FAE72', '#7c5cbf', T.text3]
+  const endTime = (() => {
+    const m = toMins(plan.start_time)
+    if (m == null) return ''
+    const t = m + (plan.duration_min || 60)
+    return hhmm(t % 1440)
+  })()
+
+  const label: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }
+
   const body = (
       <>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <div style={{ flex: 1 }}>
-            <h3 style={{ color: T.text, fontSize: 18, fontWeight: 700, margin: 0 }}>{plan.title}</h3>
-            <div style={{ fontSize: 12, color: T.text3, marginTop: 3 }}>{[plan.session_type, plan.session_date && new Date(plan.session_date).toLocaleDateString('en-GB'), plan.start_time, plan.court, `${plan.duration_min || 60} mins`].filter(Boolean).join(' · ')}</div>
+        {/* ── Header: the player, not a paragraph of text ──────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          {player?.avatar_url
+            // eslint-disable-next-line @next/next/no-img-element
+            ? <img src={avatarSrc(player.avatar_url)} alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            : <span style={{ width: 44, height: 44, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
+                {(who || plan.title || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join('')}
+              </span>}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+              <h3 style={{ color: T.text, fontSize: 19, fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>{who || plan.title}</h3>
+              {stage && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: T.text2, fontWeight: 600 }}>
+                  <span style={{ width: 16, height: 10, borderRadius: 3, background: stage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />{stage.name}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: T.text3, marginTop: 3 }}>
+              {[plan.start_time ? `${plan.start_time}${endTime ? `–${endTime}` : ''}` : '', plan.session_type, plan.court, `${plan.duration_min || 60} min`].filter(Boolean).join(' · ')}
+            </div>
           </div>
-          {!inline && <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 17 }}>×</button>}
+          <div style={{ marginLeft: 'auto', display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            <button onClick={complete} disabled={completing} style={act(`${T.good}22`, T.good, `1px solid ${T.good}55`)}>✓ {completing ? 'Saving…' : 'Mark session done'}</button>
+            <button onClick={() => { onNavigate?.('lessons'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>Review session</button>
+            <button onClick={() => setMediaOpen(true)} style={act('transparent', T.text2, `1px solid ${T.border}`)}>Record audio</button>
+            <button onClick={() => { onNavigate?.('messages'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>Message</button>
+            <button onClick={() => { onNavigate?.('development'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>↗ Player</button>
+            <button onClick={onDelete} style={act('transparent', T.bad, `1px solid ${T.border}`)}>✕ Delete</button>
+            {!inline && <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 17 }}>×</button>}
+          </div>
         </div>
 
-        {/* Session actions */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
-          <button onClick={complete} disabled={completing} style={act(`${T.good}22`, T.good, `1px solid ${T.good}55`)}>✓ {completing ? 'Saving…' : 'Session completed'}</button>
-          <button onClick={() => { onNavigate?.('lessons'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>📝 Review session</button>
-          <button onClick={() => setMediaOpen(true)} style={act('transparent', T.text2, `1px solid ${T.border}`)}>🎙️ Record audio</button>
-          <button onClick={() => { onNavigate?.('messages'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>📣 Message</button>
-          <button onClick={() => { onNavigate?.('development'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>↗ Player</button>
-          <button onClick={onDelete} style={act('transparent', T.bad, `1px solid ${T.border}`)}>✕ Delete</button>
-        </div>
+        {/* ── The one thing this session is for ────────────────────────────── */}
+        {!!plan.focus && (
+          <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderLeft: `3px solid ${accent.hex}`, borderRadius: 10, padding: '12px 16px', marginTop: 16 }}>
+            <div style={{ ...label, color: accent.hex, fontSize: 10 }}>Session focus</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4, lineHeight: 1.35 }}>{plan.focus}</div>
+          </div>
+        )}
 
-        {plan.focus && <div style={{ background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 8, padding: '8px 12px', marginTop: 14, fontSize: 12.5, color: T.text }}>🎯 {plan.focus}</div>}
+        {/* ── What to work on — numbered, because it is an order ───────────── */}
+        {fp.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+              <div style={label}>What to work on</div>
+              {!!last && <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text4, fontStyle: 'italic' }}>from last lesson</div>}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+              {fp.slice(0, 4).map((x: string, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 9, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '11px 13px' }}>
+                  <span style={{ width: 19, height: 19, borderRadius: 5, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>{i + 1}</span>
+                  <span style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.5 }}>{x}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: fp.length || dr.length ? '1fr 1fr' : '1fr', gap: 16, marginTop: 16 }}>
+        {dr.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+            <span style={{ fontSize: 11, color: T.text3, fontWeight: 600 }}>Drills:</span>
+            {dr.map((x: string, i: number) => (
+              <span key={i} style={{ fontSize: 11.5, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '4px 11px' }}>{x}</span>
+            ))}
+          </div>
+        )}
+
+        {/* ── The hour itself, and what it needs ───────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.9fr) minmax(0, 1fr)', gap: 16, marginTop: 18 }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Run-sheet</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 8 }}>
+              <div style={label}>Run-sheet</div>
+              <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{total} min</div>
+            </div>
+            {/* The shape of the hour at a glance — how much is warm-up, how much
+                is live ball — before reading a single line of it. */}
+            <div style={{ display: 'flex', height: 6, borderRadius: 999, overflow: 'hidden', marginBottom: 10 }}>
+              {sheet.map((ph, i) => (
+                <div key={i} style={{ width: `${Math.round(((ph.mins || 0) / total) * 100)}%`, background: PHASE_COLS[i % PHASE_COLS.length] }} />
+              ))}
+            </div>
             {sheet.map((ph, i) => (
-              <div key={i} style={{ display: 'flex', gap: 8, padding: '6px 0', borderBottom: i < sheet.length - 1 ? `1px solid ${T.border}` : 'none' }}>
-                <span style={{ fontSize: 11, color: accent.hex, fontWeight: 700, width: 34, flexShrink: 0 }}>{ph.mins}m</span>
-                <div><div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{ph.phase}</div><div style={{ fontSize: 10.5, color: T.text3 }}>{ph.detail}</div></div>
+              <div key={i} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: i < sheet.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+                <span style={{ fontSize: 11.5, color: PHASE_COLS[i % PHASE_COLS.length], fontWeight: 700, width: 34, flexShrink: 0 }}>{ph.mins}m</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{ph.phase}</div>
+                  <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2, lineHeight: 1.5 }}>{ph.detail}</div>
+                  {!!ph.cue && <div style={{ fontSize: 11.5, color: accent.hex, marginTop: 3 }}>Cue: {ph.cue}</div>}
+                </div>
               </div>
             ))}
           </div>
-          {(fp.length > 0 || dr.length > 0) && (
-            <div>
-              {fp.length > 0 && <><div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Focus points</div><ul style={{ margin: '0 0 14px', paddingLeft: 16 }}>{fp.map((x: string, i: number) => <li key={i} style={{ fontSize: 12, color: T.text2, marginBottom: 4 }}>{x}</li>)}</ul></>}
-              {dr.length > 0 && <><div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Drills</div><ul style={{ margin: 0, paddingLeft: 16 }}>{dr.map((x: string, i: number) => <li key={i} style={{ fontSize: 12, color: T.text2, marginBottom: 4 }}>{x}</li>)}</ul></>}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px' }}>
+              <div style={label}>Player snapshot</div>
+              {!!player?.goal && (
+                <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', marginTop: 9 }}>
+                  <span style={{ color: accent.hex, flexShrink: 0 }}>⚑</span>
+                  <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600, lineHeight: 1.45 }}>{player.goal}</span>
+                </div>
+              )}
+              {last ? (
+                <div style={{ fontSize: 11.5, color: T.text3, marginTop: 9, lineHeight: 1.55 }}>
+                  <span style={{ color: T.text2, fontWeight: 700 }}>Last lesson ({new Date(String(last.session_date) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}):</span>{' '}
+                  {String(last.focus || '').trim()}{last.summary ? `. ${String(last.summary).slice(0, 160)}` : ''}
+                </div>
+              ) : (
+                <div style={{ fontSize: 11.5, color: T.text3, marginTop: 9 }}>No lessons logged for {who || 'this player'} yet.</div>
+              )}
             </div>
-          )}
+
+            <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline' }}>
+                <div style={label}>Kit to bring</div>
+                <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{kit.length}</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 9 }}>
+                {kit.map(k => (
+                  <label key={k} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: T.text2, cursor: 'pointer' }}>
+                    <input type="checkbox" style={{ accentColor: accent.hex, width: 13, height: 13 }} />
+                    {k}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 16 }}>
-          {kit.map(k => <span key={k} style={{ fontSize: 11, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '3px 10px' }}>{k}</span>)}
-        </div>
+
         {mediaOpen && <MediaCaptureModal T={T} accent={accent} defaultKind="audio" players={players} playerName={plan.group_name || undefined}
           onClose={() => setMediaOpen(false)}
           // Closing the modal mid-build must not lose the summary: keep watching,
@@ -730,12 +868,13 @@ function SessionRunSheet({ T, accent, density, plan, players, onNavigate, onComp
           onSummary={() => { setMediaOpen(false); onCompleted() }} />}
       </>
   )
+
   // Inline (Today view) — render as a panel under the session cards, like the demo.
   if (inline) return <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18, marginTop: 14 }}>{body}</div>
   // Default — modal.
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
-      <div style={{ width: '100%', maxWidth: 620, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>{body}</div>
+      <div style={{ width: '100%', maxWidth: 980, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>{body}</div>
     </div>
   )
 }

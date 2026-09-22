@@ -10,6 +10,8 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { dbList, dbInsert, dbUpdate, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
+import { campSpans, campsBetween, campsOn, campDayLabel, CAMP_COLOUR } from '@/lib/coach/camp-dates'
+import { getFlags, subscribe as subscribeFeatures } from '../_lib/feature-flags'
 import { EmptyCoachDashboard } from './EmptyCoachDashboard'
 import { EmptyCoachHome } from './EmptyCoachHome'
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
@@ -24,7 +26,7 @@ const wmo = (c: number): string => c === 0 ? 'clear' : c <= 3 ? 'cloudy' : c <= 
 
 export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard, asCoach }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void; asCoach?: { name: string; profileDone: boolean; staffId?: string | null } | null }) {
   const profile = useCoachProfile()
-  const [d, setD] = useState<{ players: any[]; bookings: any[]; lessons: any[]; payments: any[]; attendance: any[]; skills: any[]; messages: any[]; equipment: any[]; staff: any[]; venues: any[]; loading: boolean }>({ players: [], bookings: [], lessons: [], payments: [], attendance: [], skills: [], messages: [], equipment: [], staff: [], venues: [], loading: true })
+  const [d, setD] = useState<{ players: any[]; bookings: any[]; lessons: any[]; payments: any[]; attendance: any[]; skills: any[]; messages: any[]; equipment: any[]; staff: any[]; venues: any[]; camps: any[]; campAttendees: any[]; loading: boolean }>({ players: [], bookings: [], lessons: [], payments: [], attendance: [], skills: [], messages: [], equipment: [], staff: [], venues: [], camps: [], campAttendees: [], loading: true })
   const [weather, setWeather] = useState<{ temp: number; desc: string; wind: number } | null>(null)
   const [booking, setBooking] = useState(false)
   const [composer, setComposer] = useState<{ recipient?: string; body?: string } | null>(null)
@@ -32,6 +34,12 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   // "Take a payment" opens the Stripe checkout QR modal (same as the Payments page).
   const [pay, setPay] = useState<{ amount?: number; description?: string; player_name?: string; payment_id?: string } | null>(null)
   const [payConnected, setPayConnected] = useState<boolean | null>(null)
+  // Which modules are live. The briefing has to KNOW this: a signal about
+  // rackets is noise at an academy without the reward system, and switching the
+  // module on has to change what Lumio Coach talks about without waiting for the
+  // three-hour cache to lapse.
+  const [feat, setFeat] = useState(() => getFlags('prolite'))
+  useEffect(() => { const r = () => setFeat(getFlags('prolite')); r(); return subscribeFeatures(r) }, [])
   useEffect(() => { fetch('/api/coach/pay/status').then(r => r.json()).then(d => setPayConnected(!!d.chargesEnabled)).catch(() => setPayConnected(false)) }, [])
   const reloadBookings = async () => { const bookings = await dbList('coach_bookings'); setD(v => ({ ...v, bookings })) }
   const reloadMessages = async () => { const messages = await dbList('coach_messages'); setD(v => ({ ...v, messages })) }
@@ -53,11 +61,11 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const [players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues] = await Promise.all([
-        dbList('coach_players'), dbList('coach_bookings'), dbList('coach_sessions'), dbList('coach_payments'), dbList('coach_attendance'), dbList('coach_player_skills'), dbList('coach_messages'), dbList('coach_equipment'), dbList('coach_staff'), dbList('coach_venues'),
+      const [players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees] = await Promise.all([
+        dbList('coach_players'), dbList('coach_bookings'), dbList('coach_sessions'), dbList('coach_payments'), dbList('coach_attendance'), dbList('coach_player_skills'), dbList('coach_messages'), dbList('coach_equipment'), dbList('coach_staff'), dbList('coach_venues'), dbList('coach_camps'), dbList('coach_camp_attendees'),
       ])
       if (cancelled) return
-      setD({ players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, loading: false })
+      setD({ players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees, loading: false })
     })()
     return () => { cancelled = true }
   }, [])
@@ -126,6 +134,20 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   }
   const REACTIONS = ['👍', '❤️', '😄', '✅']
 
+  // Players with NOTHING in the diary. The earliest churn signal a coach gets —
+  // a player drifts weeks before they say anything — and the number is itself
+  // the call list. Replaces "Rackets due", which meant nothing to an academy
+  // without the reward module and so was blank for most of them.
+  const unbooked = d.players.filter(p => !hasUpcoming(p.name))
+  const daysBetween = (a: string, b: string) => Math.max(0, Math.round((new Date(`${b}T00:00:00`).getTime() - new Date(`${a}T00:00:00`).getTime()) / 86400000))
+  const campAttendeeCount = (campId: string) => (d.campAttendees || []).filter((a: any) => a.camp_id === campId && (a.status || 'confirmed') !== 'cancelled').length
+
+  // Camps belong in Upcoming too. A camp IS the coach's week; leaving it out
+  // made the emptiest-looking week the busiest one they have.
+  const campList = campSpans(d.camps || [])
+  const upcomingCamps = campsBetween(campList, today, weekAhead)
+  const todayCamps = campsOn(campList, today)
+
   // The signals. These are FACTS about the coach's week, not the briefing —
   // Lumio Coach turns them into the briefing (see the effect below). Anything
   // added here becomes something he can decide to lead with.
@@ -151,7 +173,17 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   // one; Payments joins them only for the person who can act on it.
   const briefing: { tag: string; pri: 'high' | 'med' | 'low'; text: string }[] = []
   if (!myStaffId) briefing.push({ tag: 'payments', pri: dueTotal > 0 ? 'high' : 'low', text: dueTotal > 0 ? `${due.length} player${due.length > 1 ? 's have' : ' has'} an outstanding balance — £${dueTotal.toLocaleString()} to collect.` : 'No outstanding balances — payments are up to date.' })
-  briefing.push({ tag: 'rackets', pri: myReady.length ? 'high' : 'low', text: myReady.length ? `${myReady.length} player${myReady.length > 1 ? 's are' : ' is'} ready to move up a racket — book ${myReady.length > 1 ? 'assessments' : 'an assessment'}: ${myReady.slice(0, 3).map(p => p.name).join(', ')}.` : 'No players ready to move up a racket yet — keep logging skill progress.' })
+  if (feat.racket) briefing.push({ tag: 'rackets', pri: myReady.length ? 'high' : 'low', text: myReady.length ? `${myReady.length} player${myReady.length > 1 ? 's are' : ' is'} ready to move up a racket — book ${myReady.length > 1 ? 'assessments' : 'an assessment'}: ${myReady.slice(0, 3).map(p => p.name).join(', ')}.` : 'No players ready to move up a racket yet — keep logging skill progress.' })
+  // A camp in the diary outranks almost everything else in the week, and the
+  // briefing never knew camps existed.
+  if (todayCamps.length) {
+    const c = todayCamps[0]
+    briefing.push({ tag: 'camps', pri: 'high', text: `${c.name} is running today — ${campDayLabel(c)}${c.where ? ` at ${c.where}` : ''}.` })
+  } else if (upcomingCamps.length) {
+    const c = upcomingCamps[0]
+    const away = daysBetween(today, c.start)
+    briefing.push({ tag: 'camps', pri: away <= 7 ? 'high' : 'med', text: `${c.name} starts ${away <= 1 ? 'tomorrow' : `in ${away} days`}${c.where ? ` at ${c.where}` : ''} — ${campAttendeeCount(c.id)} booked on.` })
+  }
   briefing.push({ tag: 'retention', pri: lowAtt.length ? 'high' : 'low', text: lowAtt.length ? `${lowAtt[0].p.name} is at ${lowAtt[0].a}% attendance — worth a check-in with the family.` : 'Attendance is healthy across your players.' })
   briefing.push({ tag: 'schedule', pri: myTodays.length ? 'med' : 'low', text: myTodays.length ? `${myTodays.length} session${myTodays.length > 1 ? 's' : ''} today${myTodays[0]?.start_time ? ` from ${myTodays[0].start_time}` : ''}.${myNext && dk(myNext.booking_date) > today ? ` Next after today: ${fmtDate(myNext.booking_date)} ${myNext.start_time || ''}.` : ''}` : (myNext ? `No sessions today — next is ${fmtDate(myNext.booking_date)} ${myNext.start_time || ''}.` : 'No upcoming sessions booked — add bookings in the calendar.') })
   briefing.push({ tag: 'progress', pri: 'low', text: myLessonsThisWeek ? `${myLessonsThisWeek} lesson summar${myLessonsThisWeek > 1 ? 'ies' : 'y'} logged this week — keep sharing the wins with players.` : 'No lesson summaries yet this week — log one after your next session.' })
@@ -242,7 +274,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           { l: 'This week', v: thisWeek.length, nav: 'calendar' },
           { l: 'Next session', v: next ? `${fmtDate(next.booking_date)}${next.start_time ? ' ' + next.start_time : ''}` : '—', nav: 'calendar', small: true },
           { l: 'Players', v: d.players.length, nav: 'roster' },
-          { l: 'Rackets due', v: racketsReady.length, nav: 'belts' },
+          { l: 'Nothing booked', v: unbooked.length, nav: 'roster' },
           { l: 'Payments due', v: `£${dueTotal.toLocaleString()}`, nav: 'payments' },
         ].map(s => (
           <button key={s.l} onClick={() => onNavigate(s.nav)} style={{ ...card, textAlign: 'left', cursor: 'pointer', appearance: 'none' }}>
@@ -306,7 +338,8 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
             numbers, plainly labelled as numbers. */}
         <div style={{ ...card, display: showSec('briefing') ? undefined : 'none' }}>
           <BriefingBody T={T} accent={accent} sectionTitle={sectionTitle} signals={briefing}
-            todayCount={myTodays.length} role={myStaffId ? 'coach' : 'head'} scopeKey={myStaffId || 'head'} />
+            todayCount={myTodays.length} role={myStaffId ? 'coach' : 'head'}
+            scopeKey={`${myStaffId || 'head'}.${feat.racket ? 'r' : ''}${feat.effort ? 'e' : ''}${feat.video ? 'v' : ''}${feat.audio ? 'a' : ''}`} />
         </div>
 
         {/* Needs attention — boxed rows (matches demo) + racket assessments due */}
@@ -346,12 +379,35 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
             <p style={{ ...sectionTitle, margin: 0 }}>Upcoming <span style={{ fontWeight: 400, color: T.text3 }}>· next 7 days</span></p>
             <button onClick={() => onNavigate('calendar')} style={{ ...linkBtn(accent), marginLeft: 'auto', fontSize: 11 }}>Calendar →</button>
           </div>
-          {nextSessions.length === 0 ? <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>Nothing booked in the next 7 days. <button onClick={() => onNavigate('calendar')} style={linkBtn(accent)}>Open calendar →</button></p> : nextSessions.map(b => (
-            <button key={b.id} onClick={() => onNavigate('calendar')} style={{ display: 'flex', gap: 10, width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
-              <span style={{ fontSize: 11, color: accent.hex, fontWeight: 600, width: 96, flexShrink: 0 }}>{fmtDate(b.booking_date)}{b.start_time ? ` ${b.start_time}` : ''}</span>
-              <span style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</span>
+          {upcomingCamps.map(c => (
+            <button key={c.id} onClick={() => { try { sessionStorage.setItem('lumio_open_camp', c.id) } catch { /* ignore */ } onNavigate('camps') }}
+              style={{ display: 'flex', gap: 10, alignItems: 'center', width: '100%', textAlign: 'left', appearance: 'none', background: `${CAMP_COLOUR}14`, border: `1px solid ${CAMP_COLOUR}44`, borderRadius: 8, padding: '8px 10px', cursor: 'pointer', marginBottom: 6 }}>
+              <span style={{ fontSize: 11, color: CAMP_COLOUR, fontWeight: 700, width: 92, flexShrink: 0 }}>{fmtDate(c.start)}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 12.5, color: T.text, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
+                <span style={{ display: 'block', fontSize: 10.5, color: T.text3 }}>{c.days > 1 ? `${c.days} days` : 'One day'}{c.where ? ` · ${c.where}` : ''}</span>
+              </span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: CAMP_COLOUR, textTransform: 'uppercase', letterSpacing: '0.06em', flexShrink: 0 }}>Camp</span>
             </button>
           ))}
+          {nextSessions.length === 0 && upcomingCamps.length === 0
+            ? <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>Nothing booked in the next 7 days. <button onClick={() => onNavigate('calendar')} style={linkBtn(accent)}>Open calendar →</button></p>
+            : nextSessions.map(b => {
+            // The player's name, not just the title. "1:1" on four lines tells a
+            // coach nothing about who is turning up.
+            const who = (b.player_name || '').trim()
+            const t = (b.title || '').trim()
+            return (
+            <button key={b.id} onClick={() => onNavigate('calendar')} style={{ display: 'flex', gap: 10, width: '100%', textAlign: 'left', appearance: 'none', background: 'transparent', border: 'none', borderBottom: `1px solid ${T.border}`, padding: '8px 0', cursor: 'pointer' }}>
+              <span style={{ fontSize: 11, color: accent.hex, fontWeight: 600, width: 96, flexShrink: 0 }}>{fmtDate(b.booking_date)}{b.start_time ? ` ${b.start_time}` : ''}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 12.5, color: T.text, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{who || t || 'Session'}</span>
+                {!!(who && t && t.toLowerCase() !== who.toLowerCase()) && (
+                  <span style={{ display: 'block', fontSize: 10.5, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t}{b.court ? ` · ${b.court}` : ''}</span>
+                )}
+              </span>
+            </button>
+          )})}
         </div>
 
         <div style={{ ...card, display: showSec('summaries') ? undefined : 'none' }}>

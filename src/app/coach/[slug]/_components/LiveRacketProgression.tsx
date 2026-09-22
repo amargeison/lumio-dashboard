@@ -24,7 +24,7 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE, RACKET_SKILLS } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 import { avatarSrc } from '@/lib/avatar'
-import { STAGE_META, LTA_MAP, BALL_COLOUR } from '@/lib/coach/colour-ladder'
+import { STAGE_META, LTA_MAP, ltaChip } from '@/lib/coach/colour-ladder'
 
 type Player = { id: string; name: string; level?: string | null; racket_stage?: string | null; avatar_url?: string | null }
 type SkillRow = { player_id: string; skill: string; score: number }
@@ -154,8 +154,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
                 <div style={{ height: 22, borderRadius: 4, background: s.colour, border: '1px solid rgba(128,128,128,0.4)', marginBottom: 6 }} />
                 <div style={{ fontSize: 11.5, fontWeight: 700, color: T.text }}>{bi + 1}. {s.name}</div>
                 <div style={{ fontSize: 9.5, color: T.text3 }}>{meta?.theme}</div>
-                <div style={{ marginTop: 4, display: 'inline-block', fontSize: 9, fontWeight: 700, color: BALL_COLOUR[meta?.ball], background: `${BALL_COLOUR[meta?.ball]}1f`, padding: '2px 7px', borderRadius: 999 }}>{meta?.ball} ball</div>
-                <div style={{ fontSize: 8.5, color: lta?.colour ?? T.text3, marginTop: 4, fontWeight: 600 }}>{lta?.stage.replace(/LTA Youth ?· ?/, '').replace('LTA Youth ', '')}</div>
+                <div style={{ marginTop: 5, display: 'inline-block', fontSize: 9, fontWeight: 700, color: lta?.colour ?? T.text3, background: `${lta?.colour ?? T.text3}1f`, border: `1px solid ${lta?.colour ?? T.text3}44`, padding: '2px 7px', borderRadius: 999, lineHeight: 1.3 }}>{ltaChip(s.id)}</div>
               </div>
             )
           })}
@@ -168,7 +167,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
           <span style={{ width: 40, height: 26, borderRadius: 5, background: openStage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{openStage.name} racket — {STAGE_META[openStage.id]?.theme}</div>
-            <div style={{ fontSize: 11.5, color: T.text3 }}>{STAGE_META[openStage.id]?.age} · {STAGE_META[openStage.id]?.ball} ball stage</div>
+            <div style={{ fontSize: 11.5, color: T.text3 }}>{STAGE_META[openStage.id]?.age}</div>
           </div>
           <div style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '4px 10px' }}>{(SKILLS_BY_STAGE[openStage.id] || []).length} skills to master</div>
         </div>
