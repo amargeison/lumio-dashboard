@@ -19,6 +19,7 @@ import { useCoachTable } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 import { LiveStudentView, type StudentTheme } from '@/components/student/LiveStudentView'
 import type { StudentBundle } from '@/lib/student/bundle'
+import { getFlags } from '../_lib/feature-flags'
 
 type PlayerRow = { id: string; name: string }
 
@@ -68,6 +69,9 @@ export function LiveStudentPreview({ T, accent, density, onNavigate }: {
           resources: d.resources || [],
           camps: d.camps || [],
           nextSession: d.nextSession || null,
+          // The preview is the coach's own browser, so the live flags are right
+          // here — and the preview must hide exactly what the family's copy hides.
+          features: getFlags('prolite'),
           books: d.books || [],
           messages: d.messages || [],
           sectionsOff: s.sectionsOff?.student || [],

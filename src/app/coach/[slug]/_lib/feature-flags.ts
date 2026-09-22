@@ -54,6 +54,34 @@ function write(flags: FeatureFlags) {
   if (typeof window === 'undefined') return
   try { localStorage.setItem(KEY, JSON.stringify(flags)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
+  try { persist?.(flags) } catch { /* a failed mirror must not block the toggle */ }
+}
+
+// ── Mirroring, so the family's app knows which modules are live ─────────────
+//
+// These flags have always lived in ONE localStorage bucket, in the coach's own
+// browser. That is fine for the coach's own screens and useless for everybody
+// else: the parent opening the portal on their phone is a different browser, so
+// the student app had no way to know the academy is on Essential and showed the
+// racket ladder regardless. Switching the module off changed the coach's view
+// and nothing else.
+//
+// settings-sync registers a hook here that copies the flags into coach_settings,
+// which the portal API already reads. localStorage stays the synchronous read
+// path — nothing about getFlags() changes — but the server now has a copy.
+type Persist = (flags: FeatureFlags) => void
+let persist: Persist | null = null
+export function setFeaturesPersist(fn: Persist | null) { persist = fn }
+
+/** Load the server's copy into the cache WITHOUT mirroring it straight back. */
+export function primeFeatures(flags: Partial<FeatureFlags> | null | undefined) {
+  if (typeof window === 'undefined' || !flags) return
+  const merged: FeatureFlags = {
+    effort: flags.effort ?? read().effort,
+    video: !!flags.video, audio: !!flags.audio, racket: !!flags.racket,
+  }
+  try { localStorage.setItem(KEY, JSON.stringify(merged)) } catch { /* ignore quota */ }
+  window.dispatchEvent(new CustomEvent(EVT))
 }
 
 // The DEMO's flags. Fixed, not read from storage.

@@ -154,11 +154,18 @@ export async function GET() {
   // to travel with the bundle or the toggles would silently do nothing here.
   let sectionsOff: string[] = []
   let awardThreshold = 3
+  // Which modules this academy actually pays for. Without this the student app
+  // showed the racket ladder to every family, including academies on a plan that
+  // does not include Racket Progression — the coach could switch the module off
+  // and the parent would carry on seeing it, because the flags lived in the
+  // coach's own browser and nowhere else.
+  let features: Record<string, boolean> | null = null
   try {
     const { data: cfg } = await db.from('coach_settings').select('data').eq('coach_id', m.academyId).maybeSingle()
     const d = (cfg?.data || {}) as Record<string, any>
     sectionsOff = Array.isArray(d?.sectionsOff?.student) ? d.sectionsOff.student : []
     if (typeof d?.awardThreshold === 'number') awardThreshold = d.awardThreshold
+    if (d?.features && typeof d.features === 'object') features = d.features as Record<string, boolean>
   } catch { /* defaults are a complete page, not a broken one */ }
 
   // The `avatars` bucket is private — sign the child's photo for the parent/student
@@ -181,6 +188,6 @@ export async function GET() {
       xp_total: player.xp_total, watch_token: player.watch_token,
     },
     skills, lessons, bookings, messages, watch, highlights, nextSession,
-    media: mediaSigned, resources, books, camps, sectionsOff, awardThreshold,
+    media: mediaSigned, resources, books, camps, sectionsOff, awardThreshold, features,
   })
 }

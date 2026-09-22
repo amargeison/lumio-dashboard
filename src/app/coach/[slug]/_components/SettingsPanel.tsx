@@ -816,7 +816,10 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
               <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, margin: '0 0 10px' }}>
                 What a player or parent sees on their page. A section with nothing in it stays hidden whether or not it is switched on here — so turning one on does not put an empty panel in front of a family.
               </div>
-              {STUDENT_TOGGLEABLE.map(sec => {
+              {/* A section whose module the academy does not have is not a choice
+                  to offer — a coach on Essential switching "Racket progression"
+                  on and seeing nothing happen is a toggle that lies. */}
+              {STUDENT_TOGGLEABLE.filter(sec => !sec.module || feat[sec.module] !== false).map(sec => {
                 const hidden = (s.sectionsOff?.student || []).includes(sec.key)
                 return (
                   <Toggle key={sec.key} T={T} accent={accent} on={!hidden}
