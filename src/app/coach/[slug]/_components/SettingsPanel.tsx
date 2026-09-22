@@ -23,6 +23,7 @@ import { CoachImport } from './CoachImport'
 import { seedLumioResources, LUMIO_RESOURCES } from '../_lib/lumio-resources'
 import { seedLumioEquipment, EQUIPMENT_KIT_CHOICES, EQUIPMENT_CATEGORY_CHOICES } from '../_lib/lumio-equipment'
 import { seedLumioPackages, LUMIO_PACKAGES } from '../_lib/lumio-packages'
+import { V2_LABEL, V2_NOTES } from '@/lib/coach/v2'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -931,13 +932,19 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           {demo
             ? <Field T={T} label="Sender phone (SMS)"><input style={input(T)} value={msg.senderPhone} onChange={e => setMsg({ ...msg, senderPhone: e.target.value })} /></Field>
             : <Field T={T} label="Text (SMS) sender">
-                <div style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.55 }}>
-                  Texts send from Lumio&rsquo;s messaging number — there&rsquo;s no per-coach number to set. Replies come back to your Lumio inbox.
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '2px 8px' }}>{V2_LABEL}</span>
+                  <span style={{ flex: 1, minWidth: 200, fontSize: 12.5, color: T.text3, lineHeight: 1.55 }}>{V2_NOTES.sms}</span>
                 </div>
               </Field>}
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Channels</div>
           <Toggle T={T} accent={accent} on={msg.email} onChange={v => setMsg({ ...msg, email: v })} label="Email" desc="Uses the sender email above." />
-          <Toggle T={T} accent={accent} on={msg.text} onChange={v => setMsg({ ...msg, text: v })} label="Text (SMS)" desc={demo ? 'Uses the sender phone above.' : 'Sends from Lumio’s messaging number.'} />
+          {/* The toggle stays for the demo (which shows the finished product) and
+              is off the table in a real portal until V2 — a switch that turns
+              nothing on is worse than one that says why. */}
+          {demo
+            ? <Toggle T={T} accent={accent} on={msg.text} onChange={v => setMsg({ ...msg, text: v })} label="Text (SMS)" desc="Uses the sender phone above." />
+            : <Toggle T={T} accent={accent} on={false} onChange={() => {}} label={`Text (SMS) · ${V2_LABEL}`} desc="Email and in-app both send today. Tell us if texting is something you'd use and it moves up the list." />}
           <Toggle T={T} accent={accent} on={msg.inapp} onChange={v => setMsg({ ...msg, inapp: v })} label="In-app (Lumio message)" desc="Always available to players in the app." />
         </Modal>
       )}

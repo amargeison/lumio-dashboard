@@ -18,6 +18,7 @@ import { EmptyCoachHome } from './EmptyCoachHome'
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 import { PayModal } from './LivePayments'
 import { avatarSrc } from '@/lib/avatar'
+import { V2_NOTES } from '@/lib/coach/v2'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -260,7 +261,9 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           <h1 style={{ margin: '10px 0 0', fontSize: 24, fontWeight: 800, color: T.text }}>{todays.length} session{todays.length === 1 ? '' : 's'} today{racketsReady.length ? `, ${racketsReady.length} racket assessment${racketsReady.length === 1 ? '' : 's'} due` : ''}</h1>
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
             <button onClick={() => setBooking(true)} style={btn(accent, T)}>+ Add booking</button>
-            <button onClick={() => setPay({})} style={btnGhost(T)}>Take a payment</button>
+            {/* Card payments are V2; the dashboard's shortcut says so rather than
+                opening a modal that explains itself only once you are in it. */}
+            <button onClick={() => setPay({})} style={btnGhost(T)} title={V2_NOTES.payments}>Record a payment</button>
             <button onClick={() => onNavigate('lessons')} style={btnGhost(T)}>Lesson Summaries</button>
             <button onClick={() => onNavigate('calendar')} style={btnGhost(T)}>Open calendar</button>
             <button onClick={() => setComposer({})} style={btnGhost(T)}>Send message</button>

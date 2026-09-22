@@ -23,6 +23,7 @@ import { campMoney } from '@/lib/coach/camp-money'
 // The four tabs a coach uses once the camp is sold and has to be run. They live
 // in their own module because each is a screen in its own right, not a panel.
 import { KitChecklist, AttendeeTable, TargetsBoard, FinanceBoard, CampCoaches } from './CampTabs'
+import { V2_LABEL } from '@/lib/coach/v2'
 
 type Camp = {
   /** coach_staff ids working this camp — see migration 177. */
@@ -416,7 +417,9 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
         </button>
       </div>
       <p style={{ margin: '6px 0 14px', fontSize: 12, color: T.text3, lineHeight: 1.55, maxWidth: 640 }}>
-        Share one link and people sign themselves up. Name, age, medical notes and consents land straight on your Attendees list, and the money goes into your own Stripe account.
+        Share one link and people sign themselves up. Name, age, medical notes and consents land straight on your
+        Attendees list. Taking the money on the page arrives in V2 — for now the page reserves the place and you
+        collect payment the way you do today, then tick it off on the Finance tab.
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12 }}>
@@ -432,10 +435,15 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
         </div>
         <div>
           <div style={lbl(T)}>Payment</div>
+          {/* Card payments are V2 (see lib/coach/v2.ts). The options stay listed
+              so a coach can see what is coming, but a camp cannot be set to take
+              money the page cannot take — which would be a parent clicking pay
+              and nothing happening. A camp already set to charge keeps its
+              setting; it simply cannot be chosen fresh. */}
           <select value={mode} onChange={e => setMode(e.target.value)} style={{ ...inp, marginTop: 4 }}>
             <option value="none">No payment — just reserve a place</option>
-            <option value="deposit">Deposit now, balance later</option>
-            <option value="full">Full amount ({money(camp.price || 0)})</option>
+            <option value="deposit" disabled={(camp.payment_mode || 'none') !== 'deposit'}>Deposit now, balance later · {V2_LABEL}</option>
+            <option value="full" disabled={(camp.payment_mode || 'none') !== 'full'}>Full amount ({money(camp.price || 0)}) · {V2_LABEL}</option>
           </select>
         </div>
         {mode === 'deposit' && (
