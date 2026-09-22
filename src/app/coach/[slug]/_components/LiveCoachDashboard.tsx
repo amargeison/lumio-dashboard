@@ -263,7 +263,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
             <button onClick={() => setBooking(true)} style={btn(accent, T)}>+ Add booking</button>
             {/* Card payments are V2; the dashboard's shortcut says so rather than
                 opening a modal that explains itself only once you are in it. */}
-            <button onClick={() => setPay({})} style={btnGhost(T)} title={V2_NOTES.payments}>Record a payment</button>
+            <button onClick={() => setPay({})} style={btnGhost(T)} title={V2_NOTES.payments}>Take a payment</button>
             <button onClick={() => onNavigate('lessons')} style={btnGhost(T)}>Lesson Summaries</button>
             <button onClick={() => onNavigate('calendar')} style={btnGhost(T)}>Open calendar</button>
             <button onClick={() => setComposer({})} style={btnGhost(T)}>Send message</button>

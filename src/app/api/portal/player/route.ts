@@ -24,6 +24,24 @@ export async function GET() {
   const name = (player.name || '').trim()
   const safe = async (q: any) => { try { const { data } = await q; return data || [] } catch { return [] } }
 
+  // ── Messages, whatever version of the database this is ────────────────────
+  // The newer columns (to_name, reply_to, camp_id — migration 181) let a family
+  // reply to a particular message, address a coach by name and hold a camp
+  // conversation. Asking for a column PostgREST does not know about fails the
+  // WHOLE select, and `safe` turns that into an empty array — so a portal
+  // running ahead of its migration silently lost its Messages section
+  // altogether. Ask for the full set, and fall back to the columns that have
+  // always existed rather than hiding the conversation.
+  const MSG_COLS = 'id, direction, from_name, recipients, subject, body, created_at, reaction, to_name, reply_to, camp_id'
+  const MSG_COLS_LEGACY = 'id, direction, from_name, recipients, subject, body, created_at, reaction'
+  const msgSelect = async (build: (cols: string) => any) => {
+    const { data, error } = await build(MSG_COLS)
+    if (!error) return (data || []) as any[]
+    console.warn('[portal/player] message columns missing — run migration 181', error.message)
+    const { data: legacy } = await build(MSG_COLS_LEGACY)
+    return (legacy || []) as any[]
+  }
+
   // Scope a name-keyed table by the child's player_id (exact, secure) and fall
   // back to the legacy player_name ONLY for rows that never got a player_id
   // (pre-migration 146). Two `.eq` queries merged — no filter-string injection,
@@ -47,8 +65,8 @@ export async function GET() {
     // sets — falling back to `recipients` for rows written before sending
     // threaded properly. Two exact queries rather than one fuzzy match: a
     // `like` on a name would hand "Sophia Jones" her namesake's messages.
-    safe(db.from('coach_messages').select('id, direction, from_name, recipients, subject, body, created_at, reaction, to_name, reply_to, camp_id').eq('coach_id', m.academyId).eq('thread_key', name).order('created_at', { ascending: false }).limit(50)),
-    safe(db.from('coach_messages').select('id, direction, from_name, recipients, subject, body, created_at, reaction, to_name, reply_to, camp_id').eq('coach_id', m.academyId).is('thread_key', null).eq('recipients', name).order('created_at', { ascending: false }).limit(50)),
+    msgSelect(cols => db.from('coach_messages').select(cols).eq('coach_id', m.academyId).eq('thread_key', name).order('created_at', { ascending: false }).limit(50)),
+    msgSelect(cols => db.from('coach_messages').select(cols).eq('coach_id', m.academyId).is('thread_key', null).eq('recipients', name).order('created_at', { ascending: false }).limit(50)),
     safe(db.from('coach_watch_sessions').select('started_at, duration_min, avg_hr, max_hr, distance_m, effort_score, movement_score, consistency_score, xp_awarded').eq('coach_id', m.academyId).eq('player_id', m.scopePlayerId).eq('voided', false).order('started_at', { ascending: false }).limit(50)),
   ])
 
@@ -73,10 +91,9 @@ export async function GET() {
   if (!messagesThreaded.length && !messagesLegacy.length) {
     try {
       await sendWelcomeMessage(db, m.academyId, m.scopePlayerId, m.role as 'parent' | 'student')
-      const { data: fresh } = await db.from('coach_messages')
-        .select('id, direction, from_name, recipients, subject, body, created_at, reaction, to_name, reply_to, camp_id')
-        .eq('coach_id', m.academyId).eq('thread_key', name).order('created_at', { ascending: false }).limit(5)
-      if (fresh?.length) (messagesThreaded as any[]).push(...fresh)
+      const fresh = await msgSelect(cols => db.from('coach_messages').select(cols)
+        .eq('coach_id', m.academyId).eq('thread_key', name).order('created_at', { ascending: false }).limit(5))
+      if (fresh.length) (messagesThreaded as any[]).push(...fresh)
     } catch { /* a greeting must never break the page */ }
   }
 
@@ -194,8 +211,10 @@ export async function GET() {
     })))
 
   const campThreads = await Promise.all((camps as any[]).map(async c => {
+    // A camp thread only exists once migration 181 has run; until then this is
+    // an empty list and the tab simply does not appear.
     const rows = await safe(db.from('coach_messages')
-      .select('id, direction, from_name, recipients, subject, body, created_at, reaction, to_name, reply_to, camp_id')
+      .select(MSG_COLS)
       .eq('coach_id', m.academyId).eq('camp_id', c.id)
       .order('created_at', { ascending: false }).limit(60))
     const { count } = await db.from('coach_camp_attendees')

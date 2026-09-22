@@ -167,6 +167,20 @@ export async function GET(req: NextRequest) {
   // Recommended books, and the conversation so far. The coach sees the thread
   // read-only here — this screen is a preview of the family's page, not a second
   // place to reply from.
+  // Same fallback as the family's own route: asking for a column the database
+  // does not have yet fails the whole select, and an empty thread hides the
+  // Messages section entirely — which is what "the messages have vanished"
+  // looks like when a deploy is ahead of its migration.
+  const MSG_COLS = 'id, direction, from_name, subject, body, created_at, reaction, to_name, reply_to, camp_id'
+  const MSG_COLS_LEGACY = 'id, direction, from_name, subject, body, created_at'
+  const msgSelect = async (build: (cols: string) => any) => {   // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { data, error } = await build(MSG_COLS)
+    if (!error) return (data || []) as Record<string, unknown>[]
+    console.warn('[coach/student-preview] message columns missing — run migration 181', error.message)
+    const { data: legacyRows } = await build(MSG_COLS_LEGACY)
+    return (legacyRows || []) as Record<string, unknown>[]
+  }
+
   const [bookRows, threaded, legacy] = await Promise.all([
     safe(admin.from('coach_player_resources')
       .select('id, ref_id, title, author, note, created_at')
@@ -176,12 +190,10 @@ export async function GET(req: NextRequest) {
     // written before sending threaded per person. TWO EXACT QUERIES, merged —
     // never one `.or()` with the name interpolated into a filter string, which
     // a name containing a comma or bracket would quietly rewrite.
-    name ? safe(admin.from('coach_messages')
-      .select('id, direction, from_name, subject, body, created_at, reaction, to_name, reply_to, camp_id')
+    name ? msgSelect(cols => admin.from('coach_messages').select(cols)
       .eq('coach_id', me.academyId).eq('thread_key', name)
       .order('created_at', { ascending: false }).limit(20)) : Promise.resolve([]),
-    name ? safe(admin.from('coach_messages')
-      .select('id, direction, from_name, subject, body, created_at, reaction, to_name, reply_to, camp_id')
+    name ? msgSelect(cols => admin.from('coach_messages').select(cols)
       .eq('coach_id', me.academyId).is('thread_key', null).eq('recipients', name)
       .order('created_at', { ascending: false }).limit(20)) : Promise.resolve([]),
   ])
@@ -207,7 +219,7 @@ export async function GET(req: NextRequest) {
   }))
   const campThreads = await Promise.all((camps as any[]).map(async c => {
     const rows = await safe(admin.from('coach_messages')
-      .select('id, direction, from_name, subject, body, created_at, reaction, to_name, reply_to, camp_id')
+      .select(MSG_COLS)
       .eq('coach_id', me.academyId).eq('camp_id', c.id)
       .order('created_at', { ascending: false }).limit(60))
     return { campId: String(c.id), name: String(c.name || 'Camp'), people: 0, messages: rows }
