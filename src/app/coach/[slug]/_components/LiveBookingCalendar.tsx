@@ -18,7 +18,7 @@ import { getSettings } from '../_lib/settings-store'
 import { campSpans, campsOn, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 
 type Booking = {
-  id: string; title: string | null; player_name: string | null; court: string | null
+  id: string; title: string | null; player_name: string | null; player_id?: string | null; court: string | null
   booking_date: string | null; start_time: string | null; duration_min: number | null
   status: string | null; type: string | null; notes: string | null
 }
@@ -502,8 +502,15 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, b
     setSaving(true)
     const isNewPlayer = playerSel === '__new__' && who && !players.some(p => p.name.toLowerCase() === who.toLowerCase())
     try {
+      // player_id, not just the name. A name is how this booking has always
+      // been tied to a person, and a name is why the confirmation email
+      // sometimes went nowhere: a coach who types "Sven " or picks the wrong
+      // one of two Joneses gets no match, and nothing is sent. The dropdown
+      // knows exactly who was chosen, so record it.
+      const picked = players.find(p => p.name === who) || null
       await onSave({
-        title: title.trim() || who, player_name: who || null, court: court.trim() || null,
+        title: title.trim() || who, player_name: who || null, player_id: picked?.id ?? null,
+        court: court.trim() || null,
         booking_date: date, start_time: start, duration_min: Number(dur) || 60,
         type, status, assigned_coach: coach || null, notes: notes.trim() || null,
       }, isNewPlayer ? who : null)

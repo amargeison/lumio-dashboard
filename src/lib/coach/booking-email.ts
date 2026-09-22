@@ -16,12 +16,16 @@
 // session will work on. That turns a confirmation into something a parent reads.
 
 import { serviceClient } from './oauth'
+import { matchVenue, type VenueRow } from './booking-venue'
 
 export type BookingRow = {
   id: string; coach_id: string
   title?: string | null; player_name?: string | null; court?: string | null
   booking_date?: string | null; start_time?: string | null; duration_min?: number | null
   status?: string | null; notes?: string | null; type?: string | null
+  /** Set on bookings made from the calendar. The reliable way to find the
+      family — the name match below is only for rows that predate it. */
+  player_id?: string | null
 }
 
 type PlayerRow = {
@@ -180,10 +184,17 @@ export async function gatherBookingContext(coachId: string, booking: BookingRow)
   const db = serviceClient()
   const name = (booking.player_name || '').trim()
 
+  // WHO to write to. By id when the booking carries one — an exact answer —
+  // and only then by name. Matching a typed name was the single reason a
+  // confirmation could silently reach nobody: "Sven " with a trailing space,
+  // or a nickname, matched no row, and resolveRecipient was handed null.
+  const cols = 'id,name,age,email,contact_email,parent_email,parent_name'
   const [{ data: players }, { data: venues }, { data: profile }] = await Promise.all([
-    name
-      ? db.from('coach_players').select('id,name,age,email,contact_email,parent_email,parent_name').eq('coach_id', coachId).ilike('name', name)
-      : Promise.resolve({ data: [] as PlayerRow[] }),
+    booking.player_id
+      ? db.from('coach_players').select(cols).eq('coach_id', coachId).eq('id', booking.player_id)
+      : name
+        ? db.from('coach_players').select(cols).eq('coach_id', coachId).ilike('name', name)
+        : Promise.resolve({ data: [] as PlayerRow[] }),
     db.from('coach_venues').select('name,address,access_note,is_home').eq('coach_id', coachId),
     db.from('sports_profiles').select('brand_name,display_name,brand_logo_url,contact_email').eq('id', coachId).maybeSingle(),
   ]) as any
@@ -201,11 +212,11 @@ export async function gatherBookingContext(coachId: string, booking: BookingRow)
     last = (data ?? [])[0] ?? null
   }
 
-  // Venue: match the booking's court to a venue where we can, else the home venue.
-  const vs = (venues ?? []) as any[]
-  const court = (booking.court || '').toLowerCase()
-  const venue = vs.find(v => court && (v.name || '').toLowerCase() && court.includes((v.name || '').toLowerCase()))
-    || vs.find(v => v.is_home) || vs[0] || null
+  // Venue: match the booking's court to a venue where we can, else the home
+  // venue. The rule lives in one place because the family's page infers the
+  // venue too, and the email and the page must not send them to different
+  // buildings — see src/lib/coach/booking-venue.ts.
+  const venue = matchVenue((venues ?? []) as VenueRow[], booking.court)
 
   return { player, last, venue, profile: profile ?? null }
 }

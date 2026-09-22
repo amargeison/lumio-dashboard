@@ -10,7 +10,7 @@
 // a build error rather than a design.
 
 export type StudentSectionKey =
-  | 'progress' | 'camp' | 'highlights' | 'report' | 'rewards'
+  | 'progress' | 'nextsession' | 'camp' | 'highlights' | 'report' | 'rewards'
   | 'racket' | 'homework' | 'lessons' | 'resources' | 'messages'
 
 export type StudentSection = {
@@ -23,6 +23,7 @@ export type StudentSection = {
 
 export const STUDENT_SECTIONS: StudentSection[] = [
   { key: 'progress',   label: 'Progress header',       blurb: 'Photo, racket level and the goal you set together.', locked: true },
+  { key: 'nextsession', label: 'Next session',         blurb: 'When and where the next lesson is, with a map and what the coach is planning to cover.' },
   { key: 'camp',       label: 'Camp',                  blurb: 'Turns on by itself once they are booked on a camp, and off when it finishes.' },
   { key: 'highlights', label: 'Session highlights',    blurb: 'Clips you saved from sessions, plus your voice notes.' },
   { key: 'report',     label: 'Session report',        blurb: 'Distance, speed and heart rate from a tracked session.' },

@@ -26,7 +26,9 @@ import { avatarSrc } from '@/lib/avatar'
 import {
   studentFraming, latestGuidance, activeCamps, daysUntil, asStringList,
   type StudentBundle, type StudentCamp, type StudentClip, type StudentWatchSession,
+  type StudentNextSession,
 } from '@/lib/student/bundle'
+import { venueMapUrl } from '@/lib/coach/booking-venue'
 import { lessonRecap } from '@/lib/coach/lesson-recap'
 import { studentSectionOn } from '@/lib/student/sections'
 
@@ -117,8 +119,13 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
   // ── camp ──────────────────────────────────────────────────────────────────
   const camps = activeCamps(bundle.camps || [])
 
+  // ── the next session ──────────────────────────────────────────────────────
+  // Server-built: the booking, its venue and its plan, already resolved.
+  const nextSession = bundle.nextSession || null
+
   // ── what is actually on ───────────────────────────────────────────────────
   const show = {
+    nextsession: studentSectionOn('nextsession', off, !!nextSession),
     camp: studentSectionOn('camp', off, camps.length > 0),
     highlights: studentSectionOn('highlights', off, clips.length > 0 || voiceNotes.length > 0),
     report: studentSectionOn('report', off, !!latestWatch),
@@ -166,6 +173,11 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
           </div>
         )}
       </Card>
+
+      {/* ── NEXT SESSION — the thing they opened the app to check ──────────── */}
+      {show.nextsession && nextSession && (
+        <NextSessionCard T={T} next={nextSession} first={f.first} adult={f.audience === 'adult'} />
+      )}
 
       {/* ── CAMP — on from the moment they are booked, off when it ends ────── */}
       {show.camp && camps.map(c => <CampCard key={c.id} T={T} camp={c} first={f.first} />)}
@@ -560,6 +572,145 @@ function RewardsBlock({ T, xpTotal, sessions, latest }: {
         </div>
       )}
     </>
+  )
+}
+
+// ── The next session ────────────────────────────────────────────────────────
+// Directly under the header, because on a Tuesday night this is the only thing
+// anybody opens the app for: when is it, where is it, what are we doing.
+//
+// The confirmation email said all of this once. This is the copy that stays —
+// with a map link, because "Court 3" has never got anyone to a tennis club, and
+// with the coach's plan, so a player turns up knowing what the session is for
+// rather than finding out in the first ten minutes.
+function NextSessionCard({ T, next, first, adult }: {
+  T: StudentTheme; next: StudentNextSession; first: string; adult: boolean
+}) {
+  const days = daysUntil(next.date)
+  const when = days === null ? ''
+    : days > 6 ? `In ${days} days`
+    : days > 1 ? `In ${days} days`
+    : days === 1 ? 'Tomorrow'
+    : days === 0 ? 'Today'
+    : ''
+  const soon = days !== null && days <= 1
+
+  const dayName = (() => {
+    if (!next.date) return ''
+    const d = new Date(`${next.date}T00:00:00`)
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { weekday: 'long' })
+  })()
+
+  const ends = (() => {
+    if (!next.start_time || !next.duration_min) return ''
+    const [h, m] = next.start_time.split(':').map(Number)
+    if (Number.isNaN(h) || Number.isNaN(m)) return ''
+    const t = h * 60 + m + next.duration_min
+    return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`
+  })()
+
+  const map = venueMapUrl(next.venue)
+  const where = [next.venue?.name, next.court].filter(Boolean).join(' · ')
+  const plan = next.plan
+  const pending = (next.status || '').toLowerCase() === 'pending'
+
+  return (
+    <Card T={T} style={{ borderColor: T.accentBorder }}>
+      <Head T={T} icon="calendar" title={adult ? 'Your next session' : `${first}’s next session`}
+        sub={pending ? 'Awaiting confirmation from your coach' : 'Booked in'} lead />
+
+      {/* When */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', padding: '14px 16px', borderRadius: 14, background: `linear-gradient(135deg, ${T.accentDim}, ${T.panel2})`, border: `1px solid ${T.accentBorder}`, marginBottom: T.gap }}>
+        <div style={{ minWidth: 0 }}>
+          {!!when && (
+            <div style={{ fontSize: 10, fontWeight: 700, color: soon ? T.good : T.accent, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{when}</div>
+          )}
+          <div style={{ fontSize: 20, fontWeight: 800, color: T.text, marginTop: 3, lineHeight: 1.2 }}>
+            {[dayName, prettyDate(next.date)].filter(Boolean).join(' ')}
+          </div>
+          <div style={{ fontSize: 13.5, color: T.text2, marginTop: 4, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {!!next.start_time && (
+              <span style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, color: T.text }}>
+                {next.start_time}{ends ? `–${ends}` : ''}
+              </span>
+            )}
+            {!!next.duration_min && <span style={{ fontSize: 12, color: T.text3 }}>{next.duration_min} min</span>}
+            {!!next.type && (
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: T.accent, background: T.accentDim, border: `1px solid ${T.accentBorder}`, padding: '2px 8px', borderRadius: 999 }}>{next.type}</span>
+            )}
+          </div>
+        </div>
+        {!!next.coach && (
+          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+            <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>With</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginTop: 2 }}>{next.coach}</div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: T.gap }}>
+        {/* Where */}
+        {(!!where || !!next.venue?.address) && (
+          <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 6 }}>Where</div>
+            {!!where && <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{where}</div>}
+            {!!next.venue?.address && <div style={{ fontSize: 12.5, color: T.text2, marginTop: 3, lineHeight: 1.55 }}>{next.venue.address}</div>}
+            {!!next.venue?.access_note && (
+              <div style={{ fontSize: 12, color: T.text2, marginTop: 8, lineHeight: 1.55, borderLeft: `2px solid ${T.accentBorder}`, paddingLeft: 9 }}>
+                {next.venue.access_note}
+              </div>
+            )}
+            {map && (
+              <a href={map} target="_blank" rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 10, background: T.accent, color: T.btnText, borderRadius: 10, padding: '8px 13px', fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }}>
+                📍 Open in Maps
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* What we'll cover */}
+        {!!plan && (
+          <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 6 }}>
+              {adult ? 'What you’ll cover' : 'What you’ll be working on'}
+            </div>
+            {!!(plan.focus || plan.title) && (
+              <div style={{ fontSize: 14, fontWeight: 700, color: T.text, lineHeight: 1.35 }}>{plan.focus || plan.title}</div>
+            )}
+            {!!plan.runSheet?.length && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 9 }}>
+                {plan.runSheet.map((p, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'baseline' }}>
+                    {typeof p.mins === 'number' && p.mins > 0 && (
+                      <span style={{ fontFamily: MONO, fontSize: 10.5, color: T.accent, fontWeight: 700, width: 34, flexShrink: 0 }}>{p.mins}m</span>
+                    )}
+                    <span style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.5 }}>
+                      <span style={{ color: T.text, fontWeight: 600 }}>{p.phase}</span>
+                      {p.detail ? ` — ${p.detail}` : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!plan.runSheet?.length && !!plan.drills?.length && (
+              <ul style={{ margin: '9px 0 0', paddingLeft: 18, fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>
+                {plan.drills.map((d, i) => <li key={i}>{d}</li>)}
+              </ul>
+            )}
+            {!!plan.notes && (
+              <div style={{ fontSize: 12, color: T.text3, marginTop: 9, lineHeight: 1.55 }}>{plan.notes}</div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {!plan && (
+        <div style={{ fontSize: 12, color: T.text3, marginTop: T.gap, lineHeight: 1.55 }}>
+          Your coach hasn&rsquo;t published the plan for this one yet — it&rsquo;ll appear here once they do.
+        </div>
+      )}
+    </Card>
   )
 }
 
