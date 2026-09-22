@@ -10,6 +10,9 @@
 import type { StudentNextSession } from './next-session'
 export type { StudentNextSession }
 
+/** Mirrors the coach's feature flags (see _lib/feature-flags.ts). */
+export type StudentFeatures = { effort?: boolean; video?: boolean; audio?: boolean; racket?: boolean }
+
 export type StudentPlayer = {
   id: string
   name: string
@@ -154,6 +157,10 @@ export type StudentBundle = {
   /** The next booked lesson — when, where and what it covers. Built on the
       server (src/lib/student/next-session.ts); null when nothing is booked. */
   nextSession?: StudentNextSession | null
+  /** Which of the coach's paid modules are live. A section whose module is off
+      is not shown, however much data sits behind it — see studentSectionOn.
+      Undefined means "not known yet" and nothing is gated on it. */
+  features?: StudentFeatures | null
   /** Books the coach recommended to this player specifically. */
   books: StudentBook[]
   /** The conversation with the coach, newest first. */

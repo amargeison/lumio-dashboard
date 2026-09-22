@@ -108,6 +108,7 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
   const remaining = stageSkills.filter(s => scoreOf(s) < awardThreshold).length
   const pct = stageSkills.length ? Math.round(((stageSkills.length - remaining) / stageSkills.length) * 100) : 0
   const hasRacket = !!player.racket_stage && stageSkills.length > 0
+  const racketModule = !bundle.features || bundle.features.racket !== false
 
   // ── effort & session report ───────────────────────────────────────────────
   const latestWatch = watch.filter(w => !!w.started_at)[0] || null
@@ -115,6 +116,14 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
 
   // ── homework / next focus ─────────────────────────────────────────────────
   const guidance = latestGuidance(lessons)
+
+  // ── which modules this academy actually has ───────────────────────────────
+  // Video and audio are one section on the page but two products, so they are
+  // filtered here rather than left to the section gate: an academy with video
+  // and no audio shows its clips and no voice notes.
+  const feat = bundle.features || null
+  const clipsOn = !feat || feat.video !== false
+  const notesOn = !feat || feat.audio !== false
 
   // ── camp ──────────────────────────────────────────────────────────────────
   const camps = activeCamps(bundle.camps || [])
@@ -125,16 +134,16 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
 
   // ── what is actually on ───────────────────────────────────────────────────
   const show = {
-    nextsession: studentSectionOn('nextsession', off, !!nextSession),
-    camp: studentSectionOn('camp', off, camps.length > 0),
-    highlights: studentSectionOn('highlights', off, clips.length > 0 || voiceNotes.length > 0),
-    report: studentSectionOn('report', off, !!latestWatch),
-    rewards: studentSectionOn('rewards', off, watch.length > 0 && xpTotal > 0),
-    racket: studentSectionOn('racket', off, hasRacket),
-    homework: studentSectionOn('homework', off, !!(guidance.homework || guidance.nextFocus)),
-    lessons: studentSectionOn('lessons', off, lessons.length > 0),
-    resources: studentSectionOn('resources', off, resources.length > 0 || books.length > 0),
-    messages: studentSectionOn('messages', off, messages.length > 0 || !!onSendMessage),
+    nextsession: studentSectionOn('nextsession', off, !!nextSession, feat),
+    camp: studentSectionOn('camp', off, camps.length > 0, feat),
+    highlights: studentSectionOn('highlights', off, (clipsOn && clips.length > 0) || (notesOn && voiceNotes.length > 0), feat),
+    report: studentSectionOn('report', off, !!latestWatch, feat),
+    rewards: studentSectionOn('rewards', off, watch.length > 0 && xpTotal > 0, feat),
+    racket: studentSectionOn('racket', off, hasRacket, feat),
+    homework: studentSectionOn('homework', off, !!(guidance.homework || guidance.nextFocus), feat),
+    lessons: studentSectionOn('lessons', off, lessons.length > 0, feat),
+    resources: studentSectionOn('resources', off, resources.length > 0 || books.length > 0, feat),
+    messages: studentSectionOn('messages', off, messages.length > 0 || !!onSendMessage, feat),
   }
   const anyBelowHeader = Object.values(show).some(Boolean)
 
@@ -160,7 +169,9 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
               {hasRacket && (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 18, height: 11, borderRadius: 3, background: stage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
-                  {stage.name} racket
+                  {/* "Blue racket" only means something at an academy that awards
+                      rackets. Everywhere else it is simply the colour they are on. */}
+                  {stage.name}{racketModule ? ' racket' : ''}
                 </span>
               )}
             </div>
@@ -186,7 +197,7 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
       {show.highlights && (
         <Card T={T}>
           <Head T={T} icon="play" title={`${f.possessive} session highlights`} sub="Clips your coach saved from recent sessions" lead />
-          {clips.length > 0 && (
+          {clipsOn && clips.length > 0 && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: T.gap }}>
               {clips.map(v => (
                 <button key={v.id} onClick={() => setPlaying(v)} style={{ appearance: 'none', textAlign: 'left', cursor: 'pointer', padding: 0, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', background: T.panel, fontFamily: FONT }}>
@@ -202,7 +213,7 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
               ))}
             </div>
           )}
-          {voiceNotes.length > 0 && (
+          {notesOn && voiceNotes.length > 0 && (
             <div style={{ marginTop: clips.length ? T.gap : 0 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Coach voice notes</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -237,7 +248,7 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
                 color={latestWatch.effort_score >= 70 ? T.good : latestWatch.effort_score >= 40 ? T.warn : T.bad} />}
           </div>
           <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, margin: '12px 0 0' }}>
-            From {f.possessiveLower} own watch or a logged session — it never tracks court position, and it is separate from racket progression.
+            From {f.possessiveLower} own watch or a logged session — it never tracks court position{racketModule ? ', and it is separate from racket progression' : ''}.
           </p>
         </Card>
       )}

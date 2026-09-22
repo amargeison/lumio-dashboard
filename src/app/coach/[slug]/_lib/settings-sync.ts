@@ -17,6 +17,7 @@
 // fix is per-key timestamps — not worth the complexity today.
 
 import { sb, currentCoachId } from './coach-db'
+import { getFlags, primeFeatures, setFeaturesPersist } from './feature-flags'
 import {
   rawSettings, primeSettingsCache, setSettingsPersist, isDemoPortal,
   type CoachSettings,
@@ -37,7 +38,11 @@ async function flush() {
   // rawSettings(), not the value handed to the hook — the hook fires for resets
   // too, where the cache has just been cleared and the correct thing to store is
   // an empty blob rather than the defaults object passed in.
-  const data = rawSettings()
+  // The feature flags ride along in the same blob. They are what tells the
+  // family's app whether a module is live — see feature-flags.ts. 'prolite' is
+  // the fallback the LIVE portal itself uses when nothing is stored, so the
+  // mirror always matches what the coach is actually looking at.
+  const data = { ...rawSettings(), features: getFlags('prolite') }
   const { error } = await sb().from(TABLE).upsert(
     { coach_id: coachId, data, updated_at: new Date().toISOString() },
     { onConflict: 'coach_id' },
@@ -62,6 +67,7 @@ async function hydrate(): Promise<boolean> {
   // primeSettingsCache, not setSettings — writing through setSettings would treat
   // the freshly-loaded server values as a local edit and push them straight back.
   primeSettingsCache(stored)
+  primeFeatures((stored as { features?: Record<string, boolean> }).features)
   return true
 }
 
@@ -83,6 +89,10 @@ export async function startSettingsSync(): Promise<() => void> {
   if (!hadServerCopy && Object.keys(rawSettings()).length > 0) schedule()
 
   setSettingsPersist(schedule)
+  setFeaturesPersist(schedule)
+  // Nothing stored yet, or a blob written before flags travelled: seed it now so
+  // the family's app stops guessing from this coach's very next page load.
+  if (!hadServerCopy) schedule()
 
   // Re-hydrate when the coach comes back to the tab — this is what makes "changed
   // it on the phone, now look at the iMac" work without a refresh.
@@ -99,6 +109,7 @@ export async function startSettingsSync(): Promise<() => void> {
     window.removeEventListener('focus', onFocus)
     window.removeEventListener('pagehide', onHide)
     setSettingsPersist(null)
+    setFeaturesPersist(null)
     started = false
   }
 }
