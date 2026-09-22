@@ -21,7 +21,23 @@ import { LiveStudentView, type StudentTheme } from '@/components/student/LiveStu
 import type { StudentBundle } from '@/lib/student/bundle'
 import { getFlags } from '../_lib/feature-flags'
 
-type PlayerRow = { id: string; name: string }
+type PlayerRow = {
+  id: string; name: string
+  age?: number | null; level?: string | null; category?: string | null
+  racket_stage?: string | null; avatar_url?: string | null
+}
+
+// Two players can share a name, and in a dropdown that reads as one player
+// listed twice. A coach previewing "Sven" then lands on whichever Sven the list
+// happened to put first, sees an empty page and reasonably concludes the app is
+// broken. So a repeated name carries whatever tells them apart.
+function pickerLabel(p: PlayerRow, all: PlayerRow[]): string {
+  const same = all.filter(x => x.name.trim().toLowerCase() === p.name.trim().toLowerCase())
+  if (same.length < 2) return p.name
+  const hint = [p.age ? `age ${p.age}` : '', p.category || p.level || '', p.racket_stage || '', p.avatar_url ? 'photo' : '']
+    .filter(Boolean).slice(0, 2).join(' · ')
+  return hint ? `${p.name} — ${hint}` : `${p.name} — profile ${same.indexOf(p) + 1}`
+}
 
 export function studentThemeFrom(T: ThemeTokens, accent: AccentTokens, density: Density): StudentTheme {
   return {
@@ -116,7 +132,7 @@ export function LiveStudentPreview({ T, accent, density, onNavigate }: {
             style={{ appearance: 'none', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text, fontSize: 13, fontWeight: 600, padding: '8px 30px 8px 12px', fontFamily: FONT, cursor: 'pointer',
               backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(T.text3)}' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>")`,
               backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}>
-            {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            {players.map(p => <option key={p.id} value={p.id}>{pickerLabel(p, players)}</option>)}
           </select>
         </div>
       </div>

@@ -8,7 +8,7 @@
 import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { dbInsert } from '../_lib/coach-db'
+import { ensureRosterPlayer } from '../_lib/coach-db'
 import { uploadMedia, confirmAndProcess, pollMedia, processStageLabel, processStep, type UploadPhase } from '../_lib/media-upload'
 
 export type LessonReview = {
@@ -125,10 +125,13 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
     setPhase('uploading'); setErr(''); setPct(0); setProcStatus(''); setElapsed(0); setNote('')
     try {
       const who = resolvePlayer()
-      // New player typed → add to the roster first so the summary lands on a profile.
-      if (!demo && who && !players.some(p => p.name.toLowerCase() === who.toLowerCase())) {
-        await dbInsert('coach_players', { name: who }).catch(() => {})
-      }
+      // New player typed → add to the roster first so the summary lands on a
+      // profile. Through ensureRosterPlayer, which asks the DATABASE: this used
+      // to check the `players` prop, which is empty while the roster is still
+      // loading and is matched without trimming — so a recording made a second
+      // early, or a name with a trailing space, silently created a second
+      // profile for somebody who was already on the roster.
+      if (!demo && who) await ensureRosterPlayer(who)
       const uploaded = await uploadMedia(items, {
         kind, playerName: who || playerName || null,
         onProgress: p => {

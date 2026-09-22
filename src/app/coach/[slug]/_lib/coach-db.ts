@@ -662,6 +662,40 @@ export async function setSkillScore(playerId: string, skill: string, score: numb
 // When a lesson summary is created, the session happened — auto-mark the player
 // present that day (no manual tagging). Idempotent: skips if already logged that
 // date. Best-effort and silent so it never blocks the summary save.
+// ── One player, one row ─────────────────────────────────────────────────────
+// Four screens could each quietly create a player: type a name into a booking,
+// into a lesson summary, into a recording, or let an AI summary tag one. Each
+// checked the roster it happened to be holding — a props array that can still be
+// loading, matched without trimming — so "Sven", "Sven " and a recording made
+// three seconds after the page opened produced three different Svens. The coach
+// then had four profiles for one man, with his camp on one, his XP on another
+// and his lessons on a third, and no way to tell them apart in a dropdown.
+//
+// So nobody creates a player from a typed name any more except through here:
+// the check is against the DATABASE, on a trimmed case-insensitive match, and
+// the id comes back so the caller can attach the booking or the session to the
+// person rather than to their name.
+export async function ensureRosterPlayer(
+  name: string | null | undefined, extra: Record<string, any> = {},
+): Promise<string | null> {
+  const clean = String(name ?? '').trim()
+  if (!clean) return null
+  try {
+    const coach_id = await currentCoachId()
+    if (!coach_id) return null
+    const { data } = await sb().from('coach_players')
+      .select('id').eq('coach_id', coach_id).ilike('name', clean).limit(1)
+    const existing = (data as any)?.[0]?.id as string | undefined
+    if (existing) return existing
+    const created = await dbInsert('coach_players', { name: clean, ...extra })
+    invalidateCoachTable('coach_players')
+    return (created as any)?.id ?? null
+  } catch (e) {
+    console.error('[coach-db] ensureRosterPlayer', e)
+    return null
+  }
+}
+
 export async function logSessionAttendance(playerName: string | null | undefined, sessionDate?: string | null) {
   try {
     if (!playerName) return

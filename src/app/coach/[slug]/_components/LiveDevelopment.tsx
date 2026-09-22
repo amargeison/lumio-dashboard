@@ -252,7 +252,13 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
         <div style={card}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Colour journey</div>
-            {racketOn && <div style={{ fontSize: 10.5, color: T.text3 }}>awarded in Racket Progression</div>}
+            {/* The colour is set HERE (or on the roster) — Racket Progression only
+                turns a colour that has been reached into a physical reward. Saying
+                "awarded in Racket Progression" sent coaches looking for a button
+                on another page to do something they had already done on this one. */}
+            <div style={{ fontSize: 10.5, color: T.text3 }}>
+              {racketOn ? 'set here · rackets awarded in Racket Progression' : 'set here, or when you edit the player'}
+            </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {RACKET_STAGES.map((st, i) => {
