@@ -32,6 +32,147 @@ function stageOf(id?: string | null) {
   return { idx, stage: idx >= 0 ? RACKET_STAGES[idx] : null, pct: idx >= 0 ? Math.round(((idx + 1) / RACKET_STAGES.length) * 100) : 0 }
 }
 
+// ── The same person, four times ─────────────────────────────────────────────
+// A name typed into a booking, a lesson summary or a recording used to create a
+// player without checking properly, so a coach could end up with four profiles
+// for one man — his camp on one, his XP on another, his lessons on a third, and
+// a dropdown showing four identical names with no way to tell them apart. The
+// creation side is fixed (see ensureRosterPlayer); this is for the duplicates
+// already sitting in the roster.
+//
+// It only ever offers a merge, never performs one on its own: which profile is
+// the real one is the coach's call, even when one of them obviously holds
+// everything. The suggestion is marked, and it is only a suggestion.
+function DuplicatePlayers({ T, accent, players, skills, attendance, onMerged }: {
+  T: ThemeTokens; accent: AccentTokens
+  players: any[]; skills: any[]; attendance: any[]
+  onMerged: () => void
+}) {
+  const [openName, setOpenName] = useState<string | null>(null)
+  const [keepId, setKeepId] = useState<string>('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const [dismissed, setDismissed] = useState<string[]>([])
+
+  const groups = new Map<string, any[]>()
+  for (const p of players) {
+    const key = String(p.name || '').trim().toLowerCase()
+    if (!key) continue
+    groups.set(key, [...(groups.get(key) || []), p])
+  }
+  const dupes = [...groups.entries()].filter(([k, v]) => v.length > 1 && !dismissed.includes(k))
+  if (!dupes.length) return null
+
+  // How much a profile actually holds — the one to keep is almost always the one
+  // with the history on it, so that is the one pre-selected.
+  const weight = (p: any) => {
+    const filled = ['avatar_url', 'racket_stage', 'age', 'level', 'category', 'goal', 'email', 'parent_email', 'phone']
+      .filter(k => p[k] !== null && p[k] !== undefined && String(p[k]).trim() !== '').length
+    const sk = skills.filter(x => x.player_id === p.id).length
+    const att = attendance.filter(x => x.player_id === p.id).length
+    return filled + sk * 2 + att + (Number(p.xp_total) || 0 ? 3 : 0)
+  }
+  const describe = (p: any) => {
+    const sk = skills.filter(x => x.player_id === p.id).length
+    const att = attendance.filter(x => x.player_id === p.id).length
+    return [
+      p.racket_stage ? stageOf(p.racket_stage).stage?.name : 'no colour',
+      p.age ? `age ${p.age}` : '',
+      sk ? `${sk} skill${sk === 1 ? '' : 's'} graded` : '',
+      att ? `${att} session${att === 1 ? '' : 's'} logged` : '',
+      Number(p.xp_total) ? `${p.xp_total} XP` : '',
+      p.avatar_url ? 'photo' : '',
+    ].filter(Boolean).join(' · ')
+  }
+
+  const merge = async (name: string, group: any[]) => {
+    const keep = keepId || [...group].sort((a, b) => weight(b) - weight(a))[0]?.id
+    if (!keep || busy) return
+    setBusy(true); setErr('')
+    try {
+      const res = await fetch('/api/coach/players/merge', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keepId: keep, mergeIds: group.map(p => p.id).filter(id => id !== keep) }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || 'Could not merge those profiles.')
+      setOpenName(null); setKeepId('')
+      onMerged()
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Could not merge those profiles.') }
+    setBusy(false)
+  }
+
+  return (
+    <div style={{ background: T.panel, border: `1px solid ${T.warn}55`, borderLeft: `3px solid ${T.warn}`, borderRadius: 12, padding: 14, marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>
+          {dupes.length === 1 ? 'One name appears more than once' : `${dupes.length} names appear more than once`}
+        </span>
+        <span style={{ fontSize: 11.5, color: T.text3 }}>
+          Merging keeps one profile and moves every booking, lesson, camp place and skill onto it.
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 11 }}>
+        {dupes.map(([key, group]) => {
+          const open = openName === key
+          const suggested = [...group].sort((a, b) => weight(b) - weight(a))[0]
+          return (
+            <div key={key} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>{group[0].name}</span>
+                <span style={{ fontSize: 11.5, color: T.text3 }}>{group.length} profiles</span>
+                <span style={{ marginLeft: 'auto', display: 'flex', gap: 7 }}>
+                  <button onClick={() => { setOpenName(open ? null : key); setKeepId(suggested?.id || ''); setErr('') }}
+                    style={{ appearance: 'none', border: 0, borderRadius: 8, padding: '6px 12px', background: accent.hex, color: T.btnText, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
+                    {open ? 'Close' : 'Merge them'}
+                  </button>
+                  <button onClick={() => setDismissed(d => [...d, key])}
+                    style={{ appearance: 'none', border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 10px', background: 'transparent', color: T.text3, fontSize: 11.5, cursor: 'pointer' }}>
+                    Different people
+                  </button>
+                </span>
+              </div>
+
+              {open && (
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 11, color: T.text3, marginBottom: 7 }}>Which one do you want to keep?</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {[...group].sort((a, b) => weight(b) - weight(a)).map(p => {
+                      const on = (keepId || suggested?.id) === p.id
+                      return (
+                        <button key={p.id} onClick={() => setKeepId(p.id)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', appearance: 'none', cursor: 'pointer', background: on ? accent.dim : 'transparent', border: `1px solid ${on ? accent.hex : T.border}`, borderRadius: 9, padding: '8px 10px' }}>
+                          <Avatar accent={accent} name={p.name} size={26} url={p.avatar_url} />
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: 'block', fontSize: 12, color: T.text, fontWeight: 600 }}>
+                              {p.name}{p.id === suggested?.id ? ' · suggested' : ''}
+                            </span>
+                            <span style={{ display: 'block', fontSize: 10.5, color: T.text3 }}>{describe(p) || 'nothing recorded yet'}</span>
+                          </span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: on ? accent.hex : T.text4 }}>{on ? 'KEEP' : ''}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {!!err && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 8 }}>{err}</div>}
+                  <button onClick={() => merge(key, group)} disabled={busy}
+                    style={{ appearance: 'none', border: 0, borderRadius: 9, padding: '9px 14px', marginTop: 10, background: busy ? T.hover : T.warn, color: busy ? T.text3 : '#1a1d29', fontSize: 12, fontWeight: 700, cursor: busy ? 'wait' : 'pointer' }}>
+                    {busy ? 'Merging…' : `Merge ${group.length - 1} profile${group.length - 1 === 1 ? '' : 's'} into the one above`}
+                  </button>
+                  <div style={{ fontSize: 10.5, color: T.text3, marginTop: 7, lineHeight: 1.5 }}>
+                    Nothing is deleted until everything has moved across. A photo, age or colour the other profiles hold is copied onto the one you keep, and XP is added together.
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function Avatar({ accent, name, size = 40, url }: { accent: AccentTokens; name: string; size?: number; url?: string | null }) {
   if (url) {
     // eslint-disable-next-line @next/next/no-img-element
@@ -119,6 +260,12 @@ export function LiveRoster({ T, accent, density }: Common) {
           </button>
         </div>
       </div>
+
+      {!players.loading && (
+        <DuplicatePlayers T={T} accent={accent} players={players.rows}
+          skills={skills.rows} attendance={attendance.rows}
+          onMerged={() => { players.reload(); skills.reload(); attendance.reload() }} />
+      )}
 
       {players.loading ? (
         <p style={{ color: T.text3, fontSize: 13, padding: '40px 0', textAlign: 'center' }}>Loading…</p>
@@ -210,7 +357,17 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
   const profile = useCoachProfile()
   const { rows: staffRows } = useCoachTable<{ id: string; name: string }>('coach_staff')
+  const { rows: rosterRows } = useCoachTable<any>('coach_players')
   const coaches = [profile.display_name || 'Head Coach', ...staffRows.map(s => s.name)]
+
+  // Somebody of this name is already on the roster. Not a block — two families
+  // really can both have a Sophia — but the second profile for one player is how
+  // a coach ends up with his camp on one and his lessons on another, and by then
+  // it takes a merge to undo.
+  const typed = String(d.name ?? '').trim().toLowerCase()
+  const clash = !initial?.id && typed
+    ? rosterRows.filter(p => String(p.name || '').trim().toLowerCase() === typed)
+    : []
 
   const save = async () => {
     if (!String(d.name ?? '').trim()) { setErr('Name is required'); return }
@@ -249,6 +406,12 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
           </label>
           <div style={{ fontSize: 12, color: T.text3 }}>{preview ? 'Photo added — saved with the player.' : 'Add a profile photo (optional).'}</div>
         </div>
+        {clash.length > 0 && (
+          <div style={{ background: `${T.warn}18`, border: `1px solid ${T.warn}55`, borderRadius: 10, padding: '9px 12px', marginBottom: 12, fontSize: 11.5, color: T.text2, lineHeight: 1.55 }}>
+            <strong style={{ color: T.warn }}>You already have {clash.length === 1 ? 'a player' : `${clash.length} players`} called {clash[0].name}.</strong>{' '}
+            If this is the same person, close this and open their card instead — a second profile splits their bookings, lessons and camp places across two records.
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {field('name', 'Name', 'text', 'Player name')}
           <div><label style={lbl}>Category</label><select value={d.category ?? ''} onChange={e => set('category', e.target.value)} style={input}><option value="">—</option>{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>

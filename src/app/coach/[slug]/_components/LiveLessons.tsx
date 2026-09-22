@@ -15,7 +15,7 @@ import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { MediaCaptureModal } from './MediaCaptureModal'
-import { useCoachTable, dbInsert, dbUpdate, SKILLS_BY_STAGE, logSessionAttendance } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbUpdate, ensureRosterPlayer, SKILLS_BY_STAGE, logSessionAttendance } from '../_lib/coach-db'
 import { pollMedia, processStageShort } from '../_lib/media-upload'
 import { avatarSrc } from '@/lib/avatar'
 import { lessonRecap } from '@/lib/coach/lesson-recap'
@@ -72,8 +72,17 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
     ;(async () => {
       for (const p of playerRows as any[]) {
         if ((p.goal || '').trim() || goalAttempted.current.has(p.id)) continue
+        // THEIR summaries: the ones written for this player id, plus the older
+        // rows that carry a name and no id. Matching on name alone wrote the
+        // same goal onto every profile that happened to share a name — which is
+        // how three empty duplicates of one player all ended up "working on" a
+        // lesson that belonged to the fourth.
         const mine = rows
-          .filter(s => (s.player_name || '').trim().toLowerCase() === (p.name || '').trim().toLowerCase())
+          .filter(s => {
+            const sid = (s as any).player_id
+            if (sid) return String(sid) === String(p.id)
+            return (s.player_name || '').trim().toLowerCase() === (p.name || '').trim().toLowerCase()
+          })
           .sort((a, b) => String(b.session_date || '').localeCompare(String(a.session_date || '')))
         const latest = mine[0]
         if (!latest) continue
@@ -182,7 +191,8 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
           session={editing === 'new' ? null : editing}
           onClose={() => setEditing(null)}
           onSave={async (vals, newPlayer) => {
-            if (newPlayer) await dbInsert('coach_players', { name: newPlayer }).catch(() => {})
+            // Reuses the roster row when the name is already there — see ensureRosterPlayer.
+            if (newPlayer) await ensureRosterPlayer(newPlayer)
             if (editing === 'new') { await add(vals); setSelId(null) }  // null → effect selects the newest
             else await edit(editing.id, vals)
             // Session happened → auto-log attendance (present) for that day.

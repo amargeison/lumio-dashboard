@@ -13,7 +13,7 @@
 import { useState, useEffect, useMemo, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile, subscribeCalendarSync, type CalSyncState } from '../_lib/coach-db'
+import { useCoachTable, ensureRosterPlayer, useCoachProfile, subscribeCalendarSync, type CalSyncState } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 import { campSpans, campsOn, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 import { BookingLinkModal } from './BookingLinkModal'
@@ -139,7 +139,13 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
       onClose={() => { setEditing(null); setNewSlot(null) }}
       onDelete={editing !== 'new' ? async () => { await remove(editing.id); setEditing(null); reload() } : undefined}
       onSave={async (vals, newPlayer) => {
-        if (newPlayer) await dbInsert('coach_players', { name: newPlayer }).catch(() => {})
+        // A typed name reuses the roster row when there is one, and the booking
+        // carries that id — which is what makes the confirmation email, the
+        // family's next-session card and their history find each other.
+        if (newPlayer) {
+          const id = await ensureRosterPlayer(newPlayer)
+          if (id) vals = { ...vals, player_id: id }
+        }
         if (editing === 'new') await add(vals); else await edit(editing.id, vals)
         setEditing(null); setNewSlot(null); reload()
       }} />
