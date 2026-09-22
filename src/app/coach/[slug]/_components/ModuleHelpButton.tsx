@@ -12,7 +12,7 @@
 // remembers nothing else — help that tracks whether you have read it is help
 // that argues with you.
 
-import { useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { helpFor } from '../_lib/module-help'
@@ -32,12 +32,89 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<(typeof TABS)[number]['id']>('how')
   const help = helpFor(moduleId)
+
+  // ── Where the button sits ─────────────────────────────────────────────────
+  // It belongs beside the page's NAME — that is where somebody looks when they
+  // want to know what a page is. Parking it in the top corner of the content
+  // area put it behind "Add booking" on half the pages and made it invisible on
+  // the rest.
+  //
+  // Seventeen modules render their own heading, so rather than editing all of
+  // them (and every page added later), this measures the first heading in the
+  // content column and places itself just after the last word of it. A Range
+  // over the heading's text is what gives the TEXT width — the element is a
+  // block and its right edge is the far side of the column, which is exactly
+  // the wrong answer.
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+  const holder = useRef<HTMLDivElement | null>(null)
+
+  useLayoutEffect(() => {
+    if (!help) return
+    const place = () => {
+      const host = holder.current?.parentElement
+      if (!host) return
+      const heading = host.querySelector('h1, h2') as HTMLElement | null
+      if (!heading) { setPos(null); return }
+      try {
+        const r = document.createRange()
+        r.selectNodeContents(heading)
+        const text = r.getBoundingClientRect()
+        const box = host.getBoundingClientRect()
+        if (!text.width) { setPos(null); return }
+        setPos({
+          left: text.right - box.left + host.scrollLeft + 12,
+          top: text.top - box.top + host.scrollTop + (text.height - 30) / 2,
+        })
+      } catch { setPos(null) }
+    }
+    // After paint, and again once fonts and any async content have settled.
+    place()
+    const t = setTimeout(place, 350)
+    window.addEventListener('resize', place)
+    return () => { clearTimeout(t); window.removeEventListener('resize', place) }
+  }, [moduleId, help])
+
+  // Re-measure when the page's own content changes height (a list loading,
+  // a banner appearing) — the heading can move down the page as it does.
+  useEffect(() => {
+    const host = holder.current?.parentElement
+    if (!host || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      const heading = host.querySelector('h1, h2') as HTMLElement | null
+      if (!heading) return
+      try {
+        const r = document.createRange()
+        r.selectNodeContents(heading)
+        const text = r.getBoundingClientRect()
+        const box = host.getBoundingClientRect()
+        if (text.width) {
+          setPos({
+            left: text.right - box.left + host.scrollLeft + 12,
+            top: text.top - box.top + host.scrollTop + (text.height - 30) / 2,
+          })
+        }
+      } catch { /* leave it where it is */ }
+    })
+    ro.observe(host)
+    return () => ro.disconnect()
+  }, [moduleId])
+
   if (!help) return null
 
   return (
-    <>
+    <div ref={holder} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
       <button onClick={() => setOpen(true)} title={`How ${label} works`} aria-label={`How ${label} works`}
-        style={{ appearance: 'none', width: 26, height: 26, borderRadius: '50%', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, lineHeight: 1, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+        style={{
+          position: 'absolute',
+          // No heading found on the page? Sit at the top-left of the content,
+          // which is still beside where a title would be and never under a button.
+          left: pos ? pos.left : 24, top: pos ? pos.top : 26,
+          pointerEvents: 'auto',
+          appearance: 'none', width: 30, height: 30, borderRadius: '50%',
+          border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex,
+          fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: FONT, lineHeight: 1,
+          display: 'grid', placeItems: 'center', flexShrink: 0,
+        }}>
         i
       </button>
 
@@ -96,6 +173,6 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }
