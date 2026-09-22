@@ -122,19 +122,26 @@ export async function buildNextSession(
 
   const [venues, plans] = await Promise.all([
     safe(db.from('coach_venues').select('name, address, access_note, facilities, is_home').eq('coach_id', academyId)),
-    // The planner writes a plan's group_name as the player's name when it is
-    // assigned to a booking, so that is what ties the two together. Matched on
-    // the date AND the name — a date alone would hand this family whatever the
-    // coach happened to be planning for somebody else that afternoon.
-    playerName
-      ? safe(db.from('coach_session_plans')
-        .select('title, focus, drills, notes, run_sheet, session_date, group_name')
-        .eq('coach_id', academyId).eq('session_date', dayKey(next.booking_date)).ilike('group_name', playerName)
-        .limit(1))
-      : Promise.resolve([]),
+    // The plan for THIS booking (migration 179). Name-and-date is the fallback
+    // for plans written before plans carried a booking id — and it is why a
+    // moved session used to show a family no plan at all, because the plan was
+    // still dated the day the lesson was originally on.
+    safe(db.from('coach_session_plans')
+      .select('title, focus, drills, notes, run_sheet, session_date, group_name, booking_id')
+      .eq('coach_id', academyId).eq('booking_id', next.id).limit(1)),
   ])
 
   const venue = matchVenue(venues as VenueRow[], String(next.court ?? ''))
+
+  // Nothing tied to the booking itself — fall back to the old match.
+  let plan = plans[0] || null
+  if (!plan && playerName) {
+    const legacyPlan = await safe(db.from('coach_session_plans')
+      .select('title, focus, drills, notes, run_sheet, session_date, group_name, booking_id')
+      .eq('coach_id', academyId).is('booking_id', null)
+      .eq('session_date', dayKey(next.booking_date)).ilike('group_name', playerName).limit(1))
+    plan = legacyPlan[0] || null
+  }
 
   return {
     id: String(next.id),
@@ -147,6 +154,6 @@ export async function buildNextSession(
     coach: (next.assigned_coach as string) ?? null,
     status: (next.status as string) ?? null,
     venue: venue ? { name: venue.name, address: venue.address, access_note: venue.access_note, facilities: venue.facilities } : null,
-    plan: planFor(plans[0]),
+    plan: planFor(plan),
   }
 }

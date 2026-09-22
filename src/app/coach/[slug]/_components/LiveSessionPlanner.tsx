@@ -106,8 +106,16 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   const weekDays = Array.from({ length: 7 }, (_, i) => addD(weekStart, i))
   const weekEndISO = isoD(addD(weekStart, 7))
 
-  // A booking "has a plan" if a session plan matches its player + date.
-  const planFor = (b: any) => plans.rows.find(pl => (pl.group_name || '').trim().toLowerCase() === (b.player_name || '').trim().toLowerCase() && pl.session_date === b.booking_date)
+  // A booking's plan is the one WRITTEN FOR IT (migration 179). The name-and-date
+  // match below is the fallback for plans made before plans knew which booking
+  // they belonged to — it is also what used to lose a plan the moment a coach
+  // moved the session, because a plan dated Tuesday matches nothing once the
+  // lesson is on Thursday.
+  const planFor = (b: any) =>
+    plans.rows.find((pl: any) => pl.booking_id && String(pl.booking_id) === String(b.id))
+    || plans.rows.find((pl: any) => !pl.booking_id
+      && (pl.group_name || '').trim().toLowerCase() === (b.player_name || '').trim().toLowerCase()
+      && pl.session_date === b.booking_date)
   const sortByTime = (a: any, b: any) => (toMins(a.start_time) ?? 9999) - (toMins(b.start_time) ?? 9999)
   const upcoming = bookings.rows.filter(b => (b.booking_date || '') >= todayISO && b.status !== 'cancelled')
     .sort((a, b) => (a.booking_date || '').localeCompare(b.booking_date || '') || sortByTime(a, b))
@@ -117,7 +125,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   // tied to a booking yet — they wait here until the session is booked.
   const unbookedPlans = plans.rows.filter((pl: any) => !pl.session_date)
   const assignPlanToBooking = async (planId: string, b: any) => {
-    await plans.edit(planId, { session_date: b.booking_date, start_time: b.start_time || null, court: b.court || null, session_type: b.type || 'Private', group_name: b.player_name || null })
+    await plans.edit(planId, { booking_id: b.id, session_date: b.booking_date, start_time: b.start_time || null, court: b.court || null, session_type: b.type || 'Private', group_name: b.player_name || null })
   }
   const todays = bookings.rows.filter(b => b.booking_date === todayISO && b.status !== 'cancelled').sort(sortByTime)
   const weekStartISO = isoD(weekStart)
@@ -552,6 +560,9 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
     try {
       await dbInsert('coach_session_plans', {
         title: `${player || type}${focus ? ' — ' + focus : ''}`.slice(0, 120),
+        // Planned FOR a booking when the planner was opened from one. This is
+        // what lets the session be moved later without the plan going missing.
+        booking_id: prefill?.id || null,
         session_date: date || null, start_time: time || null, session_type: type, court: court || null,
         group_name: player || null, focus, duration_min: duration || null, racket_stage: racket || null,
         standard: standard || null, focus_points: focusPoints || null, drills: drills || null, notes: note || null,

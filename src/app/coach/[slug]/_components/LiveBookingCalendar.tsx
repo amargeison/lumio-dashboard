@@ -16,6 +16,7 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile, subscribeCalendarSync, type CalSyncState } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 import { campSpans, campsOn, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
+import { BookingLinkModal } from './BookingLinkModal'
 
 type Booking = {
   id: string; title: string | null; player_name: string | null; player_id?: string | null; court: string | null
@@ -56,7 +57,8 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   T: ThemeTokens; accent: AccentTokens; onNavigate?: (section: string) => void
 }) {
   const { rows, add, edit, remove, reload } = useCoachTable<Booking>('coach_bookings')
-  const { rows: playerRows } = useCoachTable<{ id: string; name: string }>('coach_players')
+  const { rows: playerRows } = useCoachTable<{ id: string; name: string; email?: string | null; parent_email?: string | null; contact_email?: string | null }>('coach_players')
+  const { rows: venueRows } = useCoachTable<{ id: string; name: string }>('coach_venues')
   const players = playerRows.map(p => ({ id: p.id, name: p.name }))
   const { rows: staffRows } = useCoachTable<{ id: string; name: string }>('coach_staff')
   // Camps are read here, never written here — see src/lib/coach/camp-dates.ts.
@@ -67,6 +69,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   const [view, setView] = useState<'week' | 'month'>('week')
   const [cursor, setCursor] = useState(() => new Date())
   const [editing, setEditing] = useState<Booking | 'new' | null>(null)
+  const [linkOpen, setLinkOpen] = useState(false)
   const [connected, setConnected] = useState<string[] | null>(null)
   const [busy, setBusy] = useState<{ date: string; start: number; end: number }[]>([])
   // Set when the coach clicks an empty cell on the week grid, so the form opens
@@ -156,7 +159,13 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Booking Calendar</h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Your week across all courts — private lessons, group squads, cardio and match play.</p>
         </div>
-        <button onClick={() => setEditing('new')} style={{ appearance: 'none', border: 0, padding: '9px 15px', borderRadius: 10, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>＋ Add booking</button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {/* A player who wants a lesson should not have to go through the coach's
+              inbox, and the coach should not be the one checking the diary on
+              their behalf. */}
+          <button onClick={() => setLinkOpen(true)} style={{ appearance: 'none', border: `1px solid ${accent.border}`, padding: '9px 15px', borderRadius: 10, background: accent.dim, color: accent.hex, fontSize: 13, fontWeight: 700, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>🔗 Send a booking link</button>
+          <button onClick={() => setEditing('new')} style={{ appearance: 'none', border: 0, padding: '9px 15px', borderRadius: 10, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>＋ Add booking</button>
+        </div>
       </div>
 
       {/* Toolbar: month heading + nav, Week/Month switch */}
@@ -217,6 +226,8 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
       </div>
 
       {modals}
+      {linkOpen && <BookingLinkModal T={T} accent={accent} players={playerRows} venues={venueRows}
+        onClose={() => { setLinkOpen(false); reload() }} />}
     </div>
   )
 }

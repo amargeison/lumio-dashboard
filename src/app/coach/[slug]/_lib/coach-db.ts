@@ -195,6 +195,7 @@ export async function dbInsert(table: CoachTable, row: Record<string, any>) {
   // Confirmation email fires on CREATE only — dbUpdate deliberately does not call
   // it, because editing a booking should not re-thank somebody for making it.
   if (table === 'coach_bookings') { syncBookingCalendar(data); sendBookingConfirmation(data) }
+  if (table === 'coach_camps') syncCampCalendar(data)
   return data
 }
 
@@ -220,7 +221,16 @@ export async function dbUpdate(table: CoachTable, id: string, row: Record<string
   }
 
   if (error) { console.error('[coach-db] update', table, error.message); throw new Error(error.message) }
-  if (table === 'coach_bookings') syncBookingCalendar(data)
+  if (table === 'coach_bookings') {
+    syncBookingCalendar(data)
+    // Moving a booking moves its session plan — the database does that (migration
+    // 179), so the copy in this tab is now out of date. Drop it rather than let
+    // the planner keep showing the old date and look like it lost the plan.
+    invalidateCoachTable('coach_session_plans')
+  }
+  // Moving a camp's dates has to move the event, not leave last month's block
+  // sitting on the coach's phone.
+  if (table === 'coach_camps') syncCampCalendar(data)
   return data
 }
 
@@ -228,6 +238,9 @@ export async function dbRemove(table: CoachTable, id: string) {
   const { error } = await sb().from(table).delete().eq('id', id)
   if (error) { console.error('[coach-db] remove', table, error.message); throw new Error(error.message) }
   if (table === 'coach_bookings') removeBookingCalendar(id)
+  if (table === 'coach_camps') {
+    fetch(`/api/coach/camps/sync?campId=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => { /* the camp is gone either way */ })
+  }
 }
 
 // Drop empty strings → null and strip internal fields before writing.
@@ -285,6 +298,25 @@ function sendBookingConfirmation(row: any) {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bookingId: row.id }),
     }).catch(() => { /* silent — the booking itself already saved */ })
+  } catch { /* ignore */ }
+}
+
+// Camps go to the coach's calendar too.
+//
+// They never used to, which is why a coach who connected iCloud watched every
+// one-hour lesson land on their phone while a week in Spain did not. A camp has
+// no start time and runs for days, so the server pushes it as one block across
+// the trip — see /api/coach/camps/sync.
+//
+// Fire-and-forget, exactly like the booking push: a calendar that is down must
+// never stop a coach saving a camp.
+function syncCampCalendar(row: any) {
+  try {
+    if (!row?.id || !row.start_date) return
+    fetch('/api/coach/camps/sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campId: row.id }),
+    }).catch(() => { /* silent — the camp itself already saved */ })
   } catch { /* ignore */ }
 }
 
