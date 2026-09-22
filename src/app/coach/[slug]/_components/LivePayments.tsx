@@ -428,9 +428,30 @@ export function PayModal({ T, accent, connected, init, onClose }: { T: ThemeToke
           <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '3px 9px' }}>{V2_LABEL}</span>
         </div>
         <div style={{ fontSize: 13, color: T.text2, lineHeight: 1.6 }}>{V2_NOTES.payments}</div>
-        <div style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.6, marginTop: 10 }}>
-          Take the money however you do today — bank transfer, cash, your own card reader — then log it with
-          <strong style={{ color: T.text2 }}> Record a payment</strong> and everything else stays accurate.
+
+        {/* What it will actually do. "Coming soon" with no detail is a shrug;
+            this is the list a coach can decide whether they want. */}
+        <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px', marginTop: 12 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.text3, marginBottom: 8 }}>What it will do</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {[
+              ['💳', 'Take card, Apple Pay and Google Pay on the spot — a link and a QR code to scan courtside'],
+              ['🏦', 'Money straight into your own bank, not ours — no card details ever touch Lumio'],
+              ['📦', 'Sell a lesson pack and have the credits count themselves down as they are used'],
+              ['🎾', 'Take a deposit or the full amount on a camp sign-up page'],
+              ['✅', 'Mark a balance paid the moment the money lands, so nobody is chased twice'],
+            ].map(([icon, text]) => (
+              <div key={text} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 13, lineHeight: 1.4, flexShrink: 0 }}>{icon}</span>
+                <span style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.5 }}>{text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.6, marginTop: 12 }}>
+          Until then, take the money however you do today — bank transfer, cash, your own card reader — and record
+          it here. Balances, what is outstanding and the chasers all work exactly as they will in V2.
         </div>
       </Shell>
     )

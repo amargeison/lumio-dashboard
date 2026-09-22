@@ -1056,6 +1056,25 @@ function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; firs
   const shapeBody = String(shape?.body || '').trim()
   const shapeItems = asStringList(shape?.items)
 
+  // The rhythm lines and the shape paragraph are usually the SAME sentences —
+  // the coach writes "mornings on court, lunch, back out at four" once and both
+  // fields end up holding it. Printing both produced three boxes that repeated
+  // the paragraph above them, cut mid-sentence. So a line only earns a box if it
+  // reads like a timetable entry (it names a time or a part of the day) and is
+  // not already sitting in the paragraph.
+  const inBody = (x: string) => {
+    const a = x.trim().toLowerCase().replace(/[.,;:]+$/, '')
+    return a.length > 12 && shapeBody.toLowerCase().includes(a.slice(0, Math.min(40, a.length)))
+  }
+  const looksLikeTime = (x: string) =>
+    /^\s*(\d{1,2}[:.]\d{2}|\d{1,2}\s*(am|pm)|morning|afternoon|evening|night|breakfast|lunch|dinner|day\s*\d)/i.test(x)
+  const timetable = [...shapeItems, ...rhythm]
+    .map(x => String(x).trim())
+    .filter(Boolean)
+    .filter(x => looksLikeTime(x) && !inBody(x))
+    .filter((x, i, all) => all.findIndex(y => y.toLowerCase() === x.toLowerCase()) === i)
+    .slice(0, 12)
+
   const goalsTab = targets.goals.length > 0 || !!camp.camp_goal || objectives.length > 0
   const weekTab = itinerary.length > 0 || rhythm.length > 0 || !!shapeBody || shapeItems.length > 0
   const stayTab = stay.length > 0 || venue.length > 0 || !!trip.stay?.name || !!trip.venue?.name || !!camp.room
@@ -1118,15 +1137,15 @@ function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; firs
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {/* How the days run, first — the question everyone asks before
                   they read a single day: what is a day here actually like? */}
-              {(!!shapeBody || shapeItems.length > 0 || rhythm.length > 0) && (
+              {(!!shapeBody || timetable.length > 0) && (
                 <div style={{ background: T.accentDim, border: `1px solid ${T.accentBorder}`, borderLeft: `3px solid ${T.accent}`, borderRadius: 12, padding: '14px 16px' }}>
                   <div style={{ fontSize: 10, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 800, marginBottom: 7 }}>How the days run</div>
                   {!!shapeBody && (
                     <p style={{ fontSize: 13.5, color: T.text, lineHeight: 1.7, margin: 0, fontWeight: 500 }}>{shapeBody}</p>
                   )}
-                  {(shapeItems.length > 0 || rhythm.length > 0) && (
+                  {timetable.length > 0 && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8, marginTop: shapeBody ? 12 : 0 }}>
-                      {[...shapeItems, ...rhythm].slice(0, 12).map((x, i) => {
+                      {timetable.map((x, i) => {
                         // "09:30 Morning session — groups on court 3" splits into a
                         // time and the thing itself, which is how a timetable should
                         // read. Anything without a time is simply a line.
@@ -1184,21 +1203,41 @@ function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; firs
                 </div>
               )}
               {targets.goals.length > 0 && (
-                <Box T={T} title={adultCamp ? 'What you’re working on' : `What ${first} is working on`}>
-                  <Bullets T={T} items={targets.goals} />
-                  {targets.measure && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 8, lineHeight: 1.55 }}>How we&rsquo;ll know: {targets.measure}</div>}
+                <Box T={T} icon="🎯" tone="accent" title={adultCamp ? 'What you’re working on' : `What ${first} is working on`}>
+                  <Bullets T={T} items={targets.goals} marker="number" />
+                  {targets.measure && (
+                    <div style={{ display: 'flex', gap: 8, marginTop: 11, paddingTop: 10, borderTop: `1px solid ${T.accentBorder}` }}>
+                      <span style={{ fontSize: 12, flexShrink: 0 }}>✅</span>
+                      <span style={{ fontSize: 11.5, color: T.text2, lineHeight: 1.55 }}>
+                        <strong style={{ color: T.text }}>How we&rsquo;ll know:</strong> {targets.measure}
+                      </span>
+                    </div>
+                  )}
                 </Box>
               )}
               {objectives.length > 0 && (
-                <Box T={T} title="What everyone leaves with"><Bullets T={T} items={objectives} /></Box>
+                <Box T={T} icon="🏅" tone="good" title="What everyone leaves with">
+                  <Bullets T={T} items={objectives} marker="tick" tone="good" />
+                </Box>
               )}
             </div>
           )}
 
           {active === 'bring' && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: T.gap }}>
-              {bring.length > 0 && <Box T={T} title="In the bag"><Bullets T={T} items={bring} /></Box>}
-              {brief.length > 0 && <Box T={T} title={adultCamp ? 'Before you come' : 'For parents'}><Bullets T={T} items={brief} /></Box>}
+              {bring.length > 0 && (
+                <Box T={T} icon="🎒" tone="accent" title="In the bag">
+                  <Bullets T={T} items={bring} marker="tick" />
+                  <div style={{ fontSize: 11, color: T.text3, marginTop: 10, lineHeight: 1.5 }}>
+                    Your coach&rsquo;s own kit — balls, first aid, everything for the courts — is packed separately. This is just yours.
+                  </div>
+                </Box>
+              )}
+              {brief.length > 0 && (
+                <Box T={T} icon="📋" tone="warn" title={adultCamp ? 'Before you come' : 'For parents'}>
+                  <Bullets T={T} items={brief} tone="warn" />
+                </Box>
+              )}
             </div>
           )}
 
@@ -1210,7 +1249,7 @@ function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; firs
                   <div style={{ fontSize: 13.5, color: T.text, fontWeight: 600 }}>{camp.arrival}</div>
                 </div>
               )}
-              {travel.length > 0 && <Box T={T} title="Flights & transfers"><Facts T={T} rows={travel} /></Box>}
+              {travel.length > 0 && <Box T={T} icon="✈️" title="Flights & transfers"><Facts T={T} rows={travel} /></Box>}
               {!!trip.travel?.airport && (
                 <MapLink T={T} label={`Map — ${trip.travel.airport} to ${trip.stay?.name || camp.location || 'the hotel'}`}
                   href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(trip.travel.airport)}&destination=${encodeURIComponent(trip.stay?.address || trip.stay?.name || [camp.location, camp.region].filter(Boolean).join(', '))}`} />
@@ -1227,14 +1266,14 @@ function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; firs
                 </div>
               )}
               {(!!trip.stay?.name || stay.length > 0) && (
-                <Box T={T} title={trip.stay?.name || 'Where you’re staying'}>
+                <Box T={T} icon="🏨" tone="accent" title={trip.stay?.name || 'Where you’re staying'}>
                   {!!trip.stay?.address && <div style={{ fontSize: 12.5, color: T.text2, marginBottom: 8 }}>{trip.stay.address}</div>}
                   <Facts T={T} rows={stay} />
                   <Links T={T} map={mapsUrl(trip.stay?.address || trip.stay?.name)} web={webUrl(trip.stay?.url)} />
                 </Box>
               )}
               {(!!trip.venue?.name || venue.length > 0) && (
-                <Box T={T} title={trip.venue?.name || 'Where you play'}>
+                <Box T={T} icon="🎾" title={trip.venue?.name || 'Where you play'}>
                   {!!trip.venue?.address && <div style={{ fontSize: 12.5, color: T.text2, marginBottom: 8 }}>{trip.venue.address}</div>}
                   <Facts T={T} rows={venue} />
                   <Links T={T} map={mapsUrl(trip.venue?.address || trip.venue?.name)} web={webUrl(trip.venue?.url)} />
@@ -1246,20 +1285,20 @@ function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; firs
           {active === 'about' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {eating.length > 0 && (
-                <Box T={T} title="Where we eat">
+                <Box T={T} icon="🍽️" title="Where we eat">
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
                     {eating.map((p, i) => <PlaceCard key={i} T={T} p={p} />)}
                   </div>
                 </Box>
               )}
               {transport.length > 0 && (
-                <Box T={T} title="Taxis & getting about">
+                <Box T={T} icon="🚕" title="Taxis & getting about">
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
                     {transport.map((p, i) => <PlaceCard key={i} T={T} p={p} />)}
                   </div>
                 </Box>
               )}
-              {practical.length > 0 && <Box T={T} title="Good to know"><Facts T={T} rows={practical} /></Box>}
+              {practical.length > 0 && <Box T={T} icon="💡" title="Good to know"><Facts T={T} rows={practical} /></Box>}
             </div>
           )}
 
@@ -1283,7 +1322,7 @@ function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; firs
           {extras.map((s, i) => active === `x${i}` && (
             <div key={i}>
               {!!s.body && <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.65, margin: '0 0 8px' }}>{s.body}</p>}
-              {!!(s.items || []).length && <Box T={T} title={String(s.title)}><Bullets T={T} items={asStringList(s.items)} /></Box>}
+              {!!(s.items || []).length && <Box T={T} icon="📌" title={String(s.title)}><Bullets T={T} items={asStringList(s.items)} /></Box>}
             </div>
           ))}
         </>
@@ -1366,27 +1405,60 @@ const Colon = ({ T }: { T: StudentTheme }) => (
   <div style={{ fontFamily: MONO, fontSize: 24, color: T.text4, paddingBottom: 16 }}>:</div>
 )
 
-function Box({ T, title, children }: { T: StudentTheme; title: string; children: React.ReactNode }) {
+// ── The camp panels ─────────────────────────────────────────────────────────
+// Everything under a camp's tabs is built from these three, so they are where
+// "very bland, lots of text" is either fixed or not. A grey label over a grey
+// bulleted list is a document; a family reading about a week in Spain on a phone
+// should get something with a bit of life in it. Each box therefore carries an
+// icon and a tone, and a list is rows with a real marker rather than browser
+// bullets — same information, findable at a glance.
+type BoxTone = 'plain' | 'accent' | 'good' | 'warn'
+
+function Box({ T, title, icon, tone = 'plain', children }: {
+  T: StudentTheme; title: string; icon?: string; tone?: BoxTone; children: React.ReactNode
+}) {
+  const hue = tone === 'accent' ? T.accent : tone === 'good' ? T.good : tone === 'warn' ? T.warn : T.text3
+  const bg = tone === 'accent' ? T.accentDim : T.panel2
+  const edge = tone === 'accent' ? T.accentBorder : T.border
   return (
-    <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
-      <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 7 }}>{title}</div>
+    <div style={{ background: bg, border: `1px solid ${edge}`, borderLeft: tone === 'plain' ? `1px solid ${edge}` : `3px solid ${hue}`, borderRadius: 12, padding: '13px 15px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 9 }}>
+        {!!icon && <span style={{ fontSize: 13, lineHeight: 1 }}>{icon}</span>}
+        <span style={{ fontSize: 10.5, color: hue, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 800 }}>{title}</span>
+      </div>
       {children}
     </div>
   )
 }
 
-const Bullets = ({ T, items }: { T: StudentTheme; items: string[] }) => (
-  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: T.text2, lineHeight: 1.75 }}>
-    {items.slice(0, 20).map((k, i) => <li key={i}>{k}</li>)}
-  </ul>
-)
+const Bullets = ({ T, items, marker = 'dot', tone }: {
+  T: StudentTheme; items: string[]; marker?: 'dot' | 'tick' | 'number'; tone?: BoxTone
+}) => {
+  const hue = tone === 'good' ? T.good : tone === 'warn' ? T.warn : T.accent
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+      {items.slice(0, 20).map((k, i) => (
+        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          {marker === 'number' ? (
+            <span style={{ flexShrink: 0, width: 19, height: 19, borderRadius: 6, background: `${hue}22`, color: hue, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, marginTop: 1 }}>{i + 1}</span>
+          ) : marker === 'tick' ? (
+            <span style={{ flexShrink: 0, width: 17, height: 17, borderRadius: 5, border: `1.5px solid ${hue}66`, color: hue, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, marginTop: 2 }}>✓</span>
+          ) : (
+            <span style={{ flexShrink: 0, width: 6, height: 6, borderRadius: '50%', background: hue, marginTop: 7 }} />
+          )}
+          <span style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>{k}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 const Facts = ({ T, rows }: { T: StudentTheme; rows: { label: string; value: string }[] }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+  <div style={{ display: 'flex', flexDirection: 'column' }}>
     {rows.map((r, i) => (
-      <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', width: 92, flexShrink: 0, paddingTop: 2 }}>{r.label}</span>
-        <span style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>{r.value}</span>
+      <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '8px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+        <span style={{ fontSize: 10, fontWeight: 800, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.06em', width: 96, flexShrink: 0, paddingTop: 2 }}>{r.label}</span>
+        <span style={{ fontSize: 12.5, color: T.text, lineHeight: 1.6, fontWeight: 500 }}>{r.value}</span>
       </div>
     ))}
   </div>
