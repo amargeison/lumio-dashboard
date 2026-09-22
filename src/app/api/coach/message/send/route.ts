@@ -116,18 +116,37 @@ export async function POST(req: NextRequest) {
   const okCount = results.filter(r => r.ok).length
   const status = okCount === 0 ? 'failed' : okCount === results.length ? 'sent' : 'partial'
 
-  // Log to coach_messages (service client; coach_id from the verified session).
+  // Log to coach_messages — ONE ROW PER RECIPIENT.
+  //
+  // This used to write a single row whose `recipients` was every addressee
+  // joined with commas. That string is a summary, not an address, and two
+  // places read it as one: the coach's inbox groups conversations by it, and
+  // the family's portal fetches their thread with recipients = <their name>.
+  // So a message to two people produced "Sven, Sophia Jones", matched neither,
+  // and was visible on the coach's dashboard and in their inbox while both
+  // families saw nothing. A row each fixes both readers at once, and matches
+  // what every inbound path (portal reply, email, SMS) already does.
   try {
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
-    await admin.from('coach_messages').insert({
-      coach_id: user.id,
-      recipients: recipients.map(r => r.name || r.email || r.phone).filter(Boolean).join(', '),
-      channels: channels.join(', '),
-      subject: subject || null,
-      body,
-      status,
-      results,
-    })
+    const rows = recipients.map(r => {
+      const who = (r.name || r.email || r.phone || '').trim()
+      const mine = results.filter(x => x.name === (r.name || r.email || r.phone))
+      const okMine = mine.filter(x => x.ok).length
+      return {
+        coach_id: user.id,
+        recipients: who,
+        // The thread this belongs to. Named after the person, so their portal
+        // and the coach's inbox agree on which conversation it is.
+        thread_key: who,
+        direction: 'out',
+        channels: channels.join(', '),
+        subject: subject || null,
+        body,
+        status: mine.length === 0 ? status : okMine === 0 ? 'failed' : okMine === mine.length ? 'sent' : 'partial',
+        results: mine.length ? mine : results,
+      }
+    }).filter(r => !!r.recipients)
+    if (rows.length) await admin.from('coach_messages').insert(rows)
   } catch (e) { console.error('[coach/message/send] log failed', e) }
 
   return NextResponse.json({ status, results })

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getMembership, scopedDb, signAvatar } from '@/lib/coach/membership'
+import { getMembership, scopedDb, signAvatar, sendWelcomeMessage } from '@/lib/coach/membership'
 import { bookById } from '@/lib/coach/books'
 
 export const runtime = 'nodejs'
@@ -37,12 +37,17 @@ export async function GET() {
     return [...(byId as any[]), ...(legacy as any[]).filter((r: any) => !seen.has(r.id))]
   }
 
-  const [skills, lessons, bookings, media, messages, watch] = await Promise.all([
+  const [skills, lessons, bookings, media, messagesThreaded, messagesLegacy, watch] = await Promise.all([
     safe(db.from('coach_player_skills').select('skill, score').eq('player_id', m.scopePlayerId)),
     scopedByPlayer('coach_sessions', 'id, session_date, focus, summary, ai_review, review_json, rating', { col: 'session_date', asc: false }),
     scopedByPlayer('coach_bookings', 'id, booking_date, start_time, court, type, status', { col: 'booking_date', asc: true }),
     scopedByPlayer('coach_media', '*', { col: 'created_at', asc: false }, q => q.is('clip_of', null)),
-    safe(db.from('coach_messages').select('id, direction, from_name, recipients, subject, body, created_at, reaction').eq('coach_id', m.academyId).eq('recipients', name).order('created_at', { ascending: false }).limit(50)),
+    // Their thread. Matched on thread_key first — the column every inbound path
+    // sets — falling back to `recipients` for rows written before sending
+    // threaded properly. Two exact queries rather than one fuzzy match: a
+    // `like` on a name would hand "Sophia Jones" her namesake's messages.
+    safe(db.from('coach_messages').select('id, direction, from_name, recipients, subject, body, created_at, reaction').eq('coach_id', m.academyId).eq('thread_key', name).order('created_at', { ascending: false }).limit(50)),
+    safe(db.from('coach_messages').select('id, direction, from_name, recipients, subject, body, created_at, reaction').eq('coach_id', m.academyId).is('thread_key', null).eq('recipients', name).order('created_at', { ascending: false }).limit(50)),
     safe(db.from('coach_watch_sessions').select('started_at, duration_min, avg_hr, max_hr, distance_m, effort_score, movement_score, consistency_score, xp_awarded').eq('coach_id', m.academyId).eq('player_id', m.scopePlayerId).eq('voided', false).order('started_at', { ascending: false }).limit(50)),
   ])
 
@@ -59,6 +64,23 @@ export async function GET() {
     try { const { data } = await db.storage.from('coach-media').createSignedUrl(c.storage_path, 3600); url = data?.signedUrl ?? null } catch { /* skip */ }
     return { id: c.id, title: c.title, shot_type: c.shot_type, duration_seconds: c.duration_seconds, clip_start: c.clip_start, created_at: c.created_at, url }
   }))
+
+  // Catch-up greeting. The welcome is written when an invite binds, which never
+  // happened for anyone who signed in before that code shipped — they would open
+  // a portal with an empty Messages panel for ever. Deduped on the subject, so
+  // this is a no-op for everybody else and runs before the thread is read.
+  if (!messagesThreaded.length && !messagesLegacy.length) {
+    try {
+      await sendWelcomeMessage(db, m.academyId, m.scopePlayerId, m.role as 'parent' | 'student')
+      const { data: fresh } = await db.from('coach_messages')
+        .select('id, direction, from_name, recipients, subject, body, created_at, reaction')
+        .eq('coach_id', m.academyId).eq('thread_key', name).order('created_at', { ascending: false }).limit(5)
+      if (fresh?.length) (messagesThreaded as any[]).push(...fresh)
+    } catch { /* a greeting must never break the page */ }
+  }
+
+  const messages = [...(messagesThreaded as any[]), ...(messagesLegacy as any[])]
+    .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
 
   // Voice notes need a playable link, and the media bucket is private — so the
   // audio recordings get the same short-lived signing the highlight clips get.
