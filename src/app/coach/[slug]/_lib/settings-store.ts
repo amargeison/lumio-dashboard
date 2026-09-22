@@ -93,7 +93,7 @@ export type CoachSettings = {
   packagesSeeded: boolean         // Payments price list auto-loaded the Lumio default packages once
   equipmentSeeded: boolean        // Equipment & Kit auto-loaded the Lumio default kit + inventory once
   ccCoachOnEmail: boolean         // CC the coach's own inbox on emails sent to players/parents
-  // Parent & student app. When on, the profile menu's Switch view gains the
+  // Parent & player app. When on, the profile menu's Switch view gains the
   // Student option; when off the switcher offers coach views only. Coach-
   // controlled for now; this is the hook the future Pro/Academy paid-tier gate
   // will sit behind (no billing enforcement yet).
@@ -177,8 +177,8 @@ export const LIVE_DEFAULT_SETTINGS: CoachSettings = {
   coach: '',
   cert: '',
   privateRate: 0,
-  // Real academies opt IN to the parent & student app (Settings → Parent &
-  // student app). Only the demo seed defaults it on.
+  // Real academies opt IN to the parent & player app (Settings → Parent &
+  // player app). Only the demo seed defaults it on.
   //
   // ownRewards ON by default for a live academy: Lumio does not stock the
   // keyrings and dampeners yet, so promising them on day one would be selling

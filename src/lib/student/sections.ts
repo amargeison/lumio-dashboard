@@ -1,4 +1,4 @@
-// The student app's sections, in the order they appear, as ONE list.
+// The player app's sections, in the order they appear, as ONE list.
 //
 // This registry is the single source of truth for three things that used to be
 // three separate lists waiting to drift: what the view renders, what the coach

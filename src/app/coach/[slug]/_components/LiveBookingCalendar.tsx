@@ -129,7 +129,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
 
   const modals = editing && (
     <BookingFormModal T={T} accent={accent} players={players} coaches={coaches} typeColour={TYPE_COLOUR}
-      bookings={rows}
+      bookings={rows} camps={camps}
       booking={editing === 'new' ? null : editing}
       defaultDate={newSlot?.date || iso(cursor)}
       defaultStart={newSlot?.start}
@@ -277,10 +277,16 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, o
             // clicking one still opens it for editing. The busy overlays are
             // pointer-events:none, so clicking a striped block opens the form and
             // immediately shows the clash warning — more useful than a dead zone.
+            const campToday = campsOn(camps, dayKey)
+            const onCamp = campToday.length > 0
             return (
               <div key={di}
-                title="Click to add a booking at this time"
+                title={onCamp ? `${campToday[0].name} — no court bookings on camp days` : 'Click to add a booking at this time'}
                 onClick={e => {
+                  // A coach cannot be on court here and in Spain at the same
+                  // time. The camp band already says so at the top of the
+                  // column; the column itself has to mean it.
+                  if (onCamp) return
                   const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
                   const raw = HOUR_START * 60 + ((e.clientY - rect.top) / ROW_H) * 60
                   const snapped = Math.round(raw / 30) * 30
@@ -288,8 +294,11 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, o
                   const last = (HOUR_START + HOURS.length) * 60 - 30
                   onSlotClick(dayKey, Math.max(first, Math.min(snapped, last)))
                 }}
-                style={{ position: 'relative', borderLeft: `1px solid ${T.border}`, cursor: 'pointer' }}>
+                style={{ position: 'relative', borderLeft: `1px solid ${T.border}`, cursor: onCamp ? 'not-allowed' : 'pointer' }}>
                 {HOURS.map(h => <div key={h} style={{ height: ROW_H, borderTop: `1px solid ${T.border}` }} />)}
+                {onCamp && (
+                  <div style={{ position: 'absolute', inset: 0, background: `repeating-linear-gradient(45deg, ${CAMP_COLOUR}22, ${CAMP_COLOUR}22 6px, transparent 6px, transparent 12px)`, pointerEvents: 'none', zIndex: 2 }} />
+                )}
                 {dayBusy.map((b, bi) => {
                   const top = yFor(b.start), h = yFor(b.end) - top
                   if (h <= 0) return null
@@ -303,13 +312,30 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, o
                   return (
                     <div key={b.id} onClick={e => { e.stopPropagation(); onOpen(b) }} title={`${bookingLabel(b)} · ${minsToHHMM(startM)}`}
                       style={{ position: 'absolute', left: 3, right: 3, top: top + 1, height, background: b.status === 'pending' ? `${c}14` : `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '3px 6px', overflow: 'hidden', opacity: b.status === 'cancelled' ? 0.45 : 1, cursor: 'pointer', zIndex: 1 }}>
-                      <div style={{ fontSize: 10.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Booking'}</div>
-                      {/* Who it is with. A court full of "1:1" blocks tells a
-                          coach nothing at a glance; the name is the booking. */}
-                      {!!b.player_name && b.player_name !== b.title && (
-                        <div style={{ fontSize: 9.5, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.player_name}</div>
-                      )}
-                      <div style={{ fontSize: 9, color: T.text2, fontFamily: FONT_MONO }}>{minsToHHMM(startM)}{b.court ? ` · ${b.court}` : ''}</div>
+                      {/* A 30-minute block is about 22px tall and three lines
+                          do not fit in it — which is why the time and court were
+                          being sliced off mid-character. So the block spends the
+                          height it actually has: the name always, the session
+                          type next, the time and court last, and each line only
+                          when there is room for it. Nothing is ever half-drawn. */}
+                      {(() => {
+                        const who = (b.player_name || '').trim()
+                        const t = (b.title || '').trim()
+                        const room = height
+                        const showSecond = room >= 30 && !!(who && t && t.toLowerCase() !== who.toLowerCase())
+                        const showTime = room >= (showSecond ? 44 : 31)
+                        return (
+                          <>
+                            <div style={{ fontSize: 10.5, color: T.text, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }}>{who || t || 'Booking'}</div>
+                            {showSecond && (
+                              <div style={{ fontSize: 9.5, color: T.text2, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }}>{t}</div>
+                            )}
+                            {showTime && (
+                              <div style={{ fontSize: 9, color: T.text2, fontFamily: FONT_MONO, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }}>{minsToHHMM(startM)}{b.court ? ` · ${b.court}` : ''}</div>
+                            )}
+                          </>
+                        )
+                      })()}
                     </div>
                   )
                 })}
@@ -403,10 +429,11 @@ function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, camps, on
 }
 
 // ── Add / Edit booking modal ──────────────────────────────────────────────────
-function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, booking, defaultDate, defaultStart, onClose, onSave, onDelete }: {
+function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, camps, booking, defaultDate, defaultStart, onClose, onSave, onDelete }: {
   T: ThemeTokens; accent: AccentTokens; players: { id: string; name: string }[]; coaches: string[]
   typeColour: (t: string | null) => string
   bookings: Booking[]
+  camps: ReturnType<typeof campSpans>
   booking: Booking | null; defaultDate: string; defaultStart?: string
   onClose: () => void
   onSave: (vals: Record<string, any>, newPlayer: string | null) => Promise<void>
@@ -485,17 +512,23 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, b
   const clash = allBusy.find(b => overlaps(startMins, startMins + durMins, b.start, b.end))
 
   // Free starts on the hour/half-hour within coaching hours that fit the duration.
+  // Computed from whatever we know, which is always at least Lumio's own diary.
+  // It used to wait for the connected-calendar check, so a coach with no mailbox
+  // connected got no suggestions at all and was offered times they had already
+  // booked themselves — the one clash we can always see.
   const DAY_START = 7 * 60, DAY_END = 21 * 60
   const freeSlots: number[] = []
-  if (extBusy !== null) {
-    for (let t = DAY_START; t + durMins <= DAY_END; t += 30) {
-      if (!allBusy.some(b => overlaps(t, t + durMins, b.start, b.end))) freeSlots.push(t)
-    }
+  for (let t = DAY_START; t + durMins <= DAY_END; t += 30) {
+    if (!allBusy.some(b => overlaps(t, t + durMins, b.start, b.end))) freeSlots.push(t)
   }
 
   const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box' }
   const lbl: CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 6px' }
-  const canSave = (!!title.trim() || !!who) && !saving
+  // A camp on this date is a hard stop, not a warning. Everything else here
+  // warns and lets the coach overrule it — a double-booking can be deliberate.
+  // Being in two countries cannot, so this is the one case that blocks the save.
+  const campClash = campsOn(camps, date)[0] || null
+  const canSave = (!!title.trim() || !!who) && !saving && !campClash
 
   const save = async () => {
     if (!canSave) return
@@ -549,7 +582,11 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, b
           {/* Availability. Warns, never blocks — a coach may deliberately
               double-book, and refusing the save would be us overruling them. */}
           <div style={{ marginTop: -4 }}>
-            {extBusy === null ? (
+            {campClash ? (
+              <div style={{ fontSize: 11.5, color: CAMP_COLOUR, background: `${CAMP_COLOUR}14`, border: `1px solid ${CAMP_COLOUR}55`, borderRadius: 9, padding: '8px 10px' }}>
+                🏕 {campClash.name} is running on this date ({campDayLabel(campClash)}). Court bookings can&rsquo;t be made while you&rsquo;re on camp — pick another day.
+              </div>
+            ) : extBusy === null ? (
               <div style={{ fontSize: 11.5, color: T.text3 }}>Checking your calendar…</div>
             ) : clash ? (
               <div style={{ fontSize: 11.5, color: T.warn, background: `${T.warn}14`, border: `1px solid ${T.warn}33`, borderRadius: 9, padding: '8px 10px' }}>
@@ -559,7 +596,7 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, b
               <div style={{ fontSize: 11.5, color: T.good }}>✓ {minsToHHMM(startMins)}–{minsToHHMM(startMins + durMins)} is free</div>
             )}
 
-            {extBusy !== null && freeSlots.length > 0 && (
+            {freeSlots.length > 0 && (
               <div style={{ marginTop: 8 }}>
                 <div style={{ fontSize: 10.5, color: T.text3, marginBottom: 5 }}>
                   Free {durMins}-min slots on this day — tap one to use it

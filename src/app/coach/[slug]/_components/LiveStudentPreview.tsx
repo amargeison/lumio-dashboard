@@ -1,6 +1,6 @@
 'use client'
 
-// The coach's preview of the student app.
+// The coach's preview of the player app.
 //
 // Same page the family gets — the view is shared — with a picker on top so the
 // coach can look through any of their players' eyes before inviting anyone. The
@@ -92,7 +92,7 @@ export function LiveStudentPreview({ T, accent, density, onNavigate }: {
   if (!playersLoading && players.length === 0) {
     return (
       <div style={{ fontFamily: FONT, maxWidth: 560, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>
-        <h1 style={{ color: T.text, fontSize: 20, fontWeight: 700, margin: 0 }}>The student app</h1>
+        <h1 style={{ color: T.text, fontSize: 20, fontWeight: 700, margin: 0 }}>The player app</h1>
         <p style={{ color: T.text3, fontSize: 13.5, lineHeight: 1.6, margin: '8px 0 16px' }}>
           This is the page a player or parent sees when you invite them. It fills itself from the work you
           already do — lesson summaries, racket progress, clips you save — so there is nothing to write twice.

@@ -28,7 +28,7 @@ export function FeatureAdminPanel({ T, accent, density, demo = false }: Common &
         <div style={{ width: 30, height: 30, borderRadius: 8, display: 'grid', placeItems: 'center', background: accent.dim }}><Icon name="settings" size={15} stroke={1.7} style={{ color: accent.hex }} /></div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Plan &amp; features <span style={{ fontSize: 9.5, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 6px', borderRadius: 5, textTransform: 'uppercase', letterSpacing: '0.06em', marginLeft: 4 }}>Admin</span></div>
-          <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>Choose which features are live. Turning one off removes its module and linked data — including the student app.</div>
+          <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>Choose which features are live. Turning one off removes its module and linked data — including the player app.</div>
         </div>
       </div>
 
@@ -72,7 +72,7 @@ export function FeatureAdminPanel({ T, accent, density, demo = false }: Common &
       </div>
       </div>
       <div style={{ fontSize: 10.5, color: T.text3, marginTop: 10, lineHeight: 1.5 }}>
-        Off-features disappear from the sidebar, the dashboard and the student app, and their kit drops out of the restock and reward flows. Demo — saved on this device.
+        Off-features disappear from the sidebar, the dashboard and the player app, and their kit drops out of the restock and reward flows. Demo — saved on this device.
       </div>
     </div>
   )

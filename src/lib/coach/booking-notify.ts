@@ -70,10 +70,15 @@ export async function notifyBooked(db: SupabaseClient, n: BookedNotice): Promise
     if (when) lines.push(when + (n.durationMin ? ` · ${n.durationMin} min` : ''))
     if (n.location) lines.push(`📍 ${n.location}`)
     if (n.detail) lines.push('', n.detail)
+    // Written as [label](url), not as a bare address. A Google Calendar link is
+    // ~400 characters of encoded title and description; pasted raw into a chat
+    // bubble it is an unreadable wall that pushes the message out of its own
+    // box. The player app renders these as a short tappable link; anywhere that
+    // does not understand the syntax still shows a sane label and the address.
     if (n.googleUrl || n.icsUrl) {
       lines.push('', 'Add it to your calendar:')
-      if (n.googleUrl) lines.push(`Google — ${n.googleUrl}`)
-      if (n.icsUrl) lines.push(`Apple / Outlook — ${n.icsUrl}`)
+      if (n.googleUrl) lines.push(`[Google Calendar](${n.googleUrl})`)
+      if (n.icsUrl) lines.push(`[Apple / Outlook](${n.icsUrl})`)
     }
 
     const { error } = await db.from('coach_messages').insert({

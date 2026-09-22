@@ -99,7 +99,7 @@ const CoachOnboardingWizard = lazyNamed(() => import('./_components/CoachOnboard
 const COACH_ROLES = [
   { id: 'head',    label: 'Head Coach', icon: '🎾',   description: 'Head Coach — full academy access' },
   { id: 'coach',   label: 'Coach',      icon: '🧑‍🏫', description: 'Coach — your players & sessions' },
-  { id: 'student', label: 'Student',    icon: '🎓',   description: 'Student — player & parent view' },
+  { id: 'student', label: 'Player',     icon: '🎾',   description: 'Player — the player & parent view' },
 ]
 
 // Known demo slug(s) keep the full sample-data portal. Any other slug is a
@@ -603,13 +603,13 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const roleLabel = COACH_ROLES.find(r => r.id === role)?.label ?? 'Head Coach'
   // Real coach portal: Head Coach is the only view until data unlocks the others —
   // adding a staff member unlocks Coach; adding a player unlocks Student. The demo
-  // keeps all three. Student is additionally opt-in (Settings → Parent & student
+  // keeps all three. Student is additionally opt-in (Settings → Parent & player
   // app, off by default) on both, so it never appears unless the coach asks for it.
   const availableRoles = (isEmpty
     ? COACH_ROLES.filter(r => r.id === 'head' || (r.id === 'coach' && liveStats.staff > 0) || (r.id === 'student' && liveStats.players > 0))
     : COACH_ROLES
-    // The parent & student app is opt-in for a REAL academy (Settings → Parent &
-    // student app). The DEMO is not an academy — it exists to show the whole
+    // The parent & player app is opt-in for a REAL academy (Settings → Parent &
+    // player app). The DEMO is not an academy — it exists to show the whole
     // product, and settings live in one localStorage bucket per browser, so
     // opening a live portal first was quietly switching Student off in the demo
     // too. The demo always offers all three.
@@ -620,7 +620,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
     if (role === 'coach' && liveStats.staff === 0) { if (isHeadUser !== false) setRole('head') }
     if (role === 'student' && liveStats.players === 0) { if (isHeadUser !== false) setRole('head') }
   }, [isEmpty, role, liveStats.loading, liveStats.staff, liveStats.players])
-  // Turning the student app off while viewing it must not strand the coach there.
+  // Turning the player app off while viewing it must not strand the coach there.
   //
   // LIVE PORTALS ONLY. On the demo this fired the instant Student was selected —
   // settings.studentApp is false there, inherited from a live portal through the
