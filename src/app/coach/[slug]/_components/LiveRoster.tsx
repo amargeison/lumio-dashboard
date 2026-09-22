@@ -254,7 +254,7 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
           <div><label style={lbl}>Category</label><select value={d.category ?? ''} onChange={e => set('category', e.target.value)} style={input}><option value="">—</option>{CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
           {field('age', 'Age', 'number')}
           {field('parent_name', 'Parent / guardian')}
-          <div><label style={lbl}>Racket stage</label><select value={d.racket_stage ?? ''} onChange={e => set('racket_stage', e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+          <div><label style={lbl}>Colour</label><select value={d.racket_stage ?? ''} onChange={e => set('racket_stage', e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
           <div><label style={lbl}>Coach</label><select value={d.assigned_coach ?? ''} onChange={e => set('assigned_coach', e.target.value)} style={input}><option value="">Head coach (you)</option>{coaches.slice(1).map(c => <option key={c} value={c}>{c}</option>)}</select></div>
           <div><label style={lbl}>Level</label>
             <select value={d.level ?? ''} onChange={e => set('level', e.target.value)} style={input}>
@@ -391,8 +391,11 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
         <div style={{ padding: `${density.pad}px ${density.pad + 4}px ${density.pad + 4}px` }}>
           {/* stat tiles */}
           <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginBottom: 14 }}>
-            {tile('Current racket', <RacketChip stage={s.stage} T={T} />)}
-            {tile('Racket progress', `${racketProgress}%`, accent.hex)}
+            {/* Colour, not racket. The roster belongs to every academy; only
+                the ones running the reward ladder have rackets. Same rule as
+                Player Development — see LiveDevelopment.tsx. */}
+            {tile('Current colour', <RacketChip stage={s.stage} T={T} />)}
+            {tile('Colour progress', `${racketProgress}%`, accent.hex)}
             {tile('Attendance', attPct !== null ? `${attPct}%` : '—', attPct === null ? T.text3 : attPct >= 90 ? T.good : attPct >= 80 ? T.warn : T.bad, attPct === null)}
             {tile('Lessons', String(lessons.length))}
             {tile('Next session', nextSession, undefined, true)}
@@ -416,11 +419,11 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Working racket · {s.stage ? s.stage.name : '—'}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Working on · {s.stage ? s.stage.name : '—'}</span>
                   <span style={{ fontSize: 11, color: accent.hex, fontWeight: 600 }}>{racketProgress}%</span>
                 </div>
                 {stageSkills.length === 0 ? (
-                  <p style={{ fontSize: 12, color: T.text3 }}>Set a racket stage for this player to track skills.</p>
+                  <p style={{ fontSize: 12, color: T.text3 }}>Set a colour for this player to track their skills.</p>
                 ) : stageSkills.map(skill => {
                   const score = skillMap[skill] || 0
                   return (
@@ -441,7 +444,7 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
                 <p style={{ fontSize: 10.5, color: T.text3, marginTop: 4 }}>Tap a bar to mark mastery. Four bars (Consistent) = mastered.</p>
               </div>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Racket journey</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Colour journey</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {RACKET_STAGES.map((b, bi) => {
                     const state = s.idx < 0 ? 'locked' : bi < s.idx ? 'done' : bi === s.idx ? 'current' : 'locked'

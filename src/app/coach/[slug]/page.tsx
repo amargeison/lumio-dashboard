@@ -742,8 +742,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
           </>
         )
         case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)}
-          asCoach={viewStaff ? { name: viewStaff.name, profileDone: true }
-            : isHeadUser === false ? { name: myIdentity?.displayName || coachName, profileDone: profileDone !== false }
+          asCoach={viewStaff ? { name: viewStaff.name, profileDone: true, staffId: viewStaff.id }
+            : isHeadUser === false ? { name: myIdentity?.displayName || coachName, profileDone: profileDone !== false, staffId: myIdentity?.staffId ?? null }
             : null} />
       }
       const activeItem = COACH_SIDEBAR.find(i => i.id === active)
@@ -1038,7 +1038,13 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
               <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>This week</div>
               {(isEmpty
-                ? [['Sessions today', String(liveStats.sessionsToday)], ['Lessons this week', String(liveStats.lessonsThisWeek)], ['Rackets ready', String(liveStats.racketsReady)], ['New players', `+${liveStats.newPlayers}`], ['Outstanding', `£${liveStats.outstandingPayments.toLocaleString()}`]] as [string, string][]
+                // "Rackets ready" only means something to an academy running the
+                // reward ladder. With it off, the slot goes to the number that is
+                // actionable every single day and exists for everyone: lessons
+                // that have happened and still have no summary written.
+                ? [['Sessions today', String(liveStats.sessionsToday)], ['Lessons this week', String(liveStats.lessonsThisWeek)],
+                   feat.racket ? ['Rackets ready', String(liveStats.racketsReady)] : ['Needs a summary', String(liveStats.summariesDue)],
+                   ['New players', `+${liveStats.newPlayers}`], ['Outstanding', `£${liveStats.outstandingPayments.toLocaleString()}`]] as [string, string][]
                 : [['Rackets awarded', String(COACH_ORG.season.beltsAwarded)], ['Sessions', String(COACH_ORG.season.lessonsThisWeek)], ['New players', '+3']] as [string, string][]
               ).map(([k, v], i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, padding: '3px 0' }}>

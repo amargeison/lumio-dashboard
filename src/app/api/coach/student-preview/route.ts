@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
       .eq('coach_id', me.academyId).eq('player_id', playerId).eq('voided', false)
       .order('started_at', { ascending: false }).limit(50)),
     safe(admin.from('coach_camp_attendees')
-      .select('camp_id, paid, status')
+      .select('camp_id, paid, status, room, arrival, camp_goal')
       .eq('coach_id', me.academyId).eq('player_id', playerId)),
   ])
 
@@ -138,14 +138,29 @@ export async function GET(req: NextRequest) {
   let camps: Record<string, unknown>[] = []
   if (campIds.length) {
     camps = await safe(admin.from('coach_camps')
-      .select('id, name, start_date, end_date, location, region, audience, board, daily_rhythm, description, overseas, itinerary, equipment, parent_brief, balance_link')
+      .select('id, name, start_date, end_date, location, region, audience, board, daily_rhythm, description, intent, objectives, outcomes, itinerary, equipment, parent_brief, balance_link, overseas, trip, player_targets')
       .eq('coach_id', me.academyId).in('id', campIds))
     const statusOf = new Map(attendees.map(a => [a.camp_id as string, a]))
-    camps = camps.map(c => ({
-      ...c,
-      paid: statusOf.get(c.id as string)?.paid ?? null,
-      status: statusOf.get(c.id as string)?.status ?? 'confirmed',
-    }))
+    const playerName = String(player.name || '').trim().toLowerCase()
+    camps = camps.map(c => {
+      const a = statusOf.get(c.id as string)
+      // Same filter as the family's own route: the preview has to show what THEY
+      // will see, and what they will see is their own child's targets and no
+      // other child's. A preview that shows more than the real page is not a
+      // preview, it is a leak the coach cannot see coming.
+      const targets = Array.isArray(c.player_targets)
+        ? (c.player_targets as Record<string, unknown>[]).filter(t => String(t?.player_name ?? '').trim().toLowerCase() === playerName)
+        : []
+      return {
+        ...c,
+        player_targets: targets,
+        paid: a?.paid ?? null,
+        status: a?.status ?? 'confirmed',
+        room: a?.room ?? null,
+        arrival: a?.arrival ?? null,
+        camp_goal: a?.camp_goal ?? null,
+      }
+    })
   }
 
   // Recommended books, and the conversation so far. The coach sees the thread

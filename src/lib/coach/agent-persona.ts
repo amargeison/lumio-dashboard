@@ -383,23 +383,40 @@ Return ONLY valid JSON (no markdown) in EXACTLY this shape:
 // Builds the task block for the coach's morning briefing.
 export function dailyBriefingTask(p: {
   coachName: string
+  /** Who is being briefed. A head coach owns the academy's money and staff; an
+      assistant owns their own players and court time and can do nothing about
+      an academy balance, so briefing them on it is noise. */
+  role?: 'head' | 'coach'
   signals: { tag: string; fact: string }[]
   todayCount: number
 }): string {
+  const isHead = p.role !== 'coach'
   return `Write ${p.coachName ? p.coachName + "'s" : 'the coach\u2019s'} briefing for today.
+
+${isHead
+  ? 'They run the academy: the players, the staff, the money and the diary are all theirs to act on.'
+  : 'They are a coach at the academy, not the person who runs it. The signals below are about THEIR players and THEIR sessions. Never tell them to do something only the head coach can do.'}
 
 Here is everything true about their week right now:
 ${p.signals.map(s => `- [${s.tag}] ${s.fact}`).join('\n')}
 Sessions on court today: ${p.todayCount}
 
 You are reading this out to them while they walk to the courts. So:
-1. LEAD WITH WHAT MATTERS MOST, and say why it is first. A player who has stopped turning up outranks a small unpaid balance every time — a child drifting away is the thing you cannot get back.
-2. DO NOT LIST EVERYTHING. Three things at most. A briefing that mentions all five signals has decided nothing, and deciding is the job.
+1. LEAD WITH WHAT MATTERS MOST. A player who has stopped turning up outranks a small unpaid balance every time — a child drifting away is the thing you cannot get back. The first line is the one thing you would say if they only heard one.
+2. DO NOT LIST EVERYTHING. Three, at most four. A briefing that mentions all five signals has decided nothing, and deciding is the job.
 3. BE CONCRETE ABOUT THE NEXT ACTION. "Ring Mia's mum today" beats "consider following up on attendance".
-4. QUIET WEEKS ARE ALLOWED TO BE QUIET. If nothing needs them, say so in a sentence and let them get on with coaching. Never manufacture urgency to fill space.
+4. QUIET WEEKS ARE ALLOWED TO BE QUIET. If nothing needs them, say so in one line and let them get on with coaching. Never manufacture urgency to fill space.
 5. NEVER INVENT A NUMBER, A NAME OR AN EVENT that is not in the signals above.
 
-Write 3-5 sentences of plain prose. No bullet points, no headers, no markdown, no greeting, no sign-off. British English. Talk to them, not about them.`
+Return one line per item, most important first, in exactly this format:
+
+tag|priority|sentence
+
+- tag: one lower-case word, taken from the signal tags above (rackets, retention, schedule, payments, progress, camps).
+- priority: high, med or low. Reserve high for the things that cost them a player or a payment if ignored. Not everything is high.
+- sentence: one or two sentences of plain prose. No markdown, no bullets, no emoji, no greeting. British English. Talk to them, not about them.
+
+Nothing else — no preamble, no blank lines, no closing remark.`
 }
 
 // Builds the task block for a message to players and parents.

@@ -47,7 +47,11 @@ export async function POST(req: NextRequest) {
     // RLS keeps this to the coach's own roster.
     const { data: player } = await supabase
       .from('coach_players')
-      .select('id, name, age, racket_stage, standard, goal, notes')
+      // `level` — NOT `standard`, which has never existed on this table. Asking
+      // for a column that is not there makes PostgREST return an error and no
+      // rows, so every single request answered "Player not found" for a player
+      // sitting right there on the roster. The targets button has never worked.
+      .select('id, name, age, racket_stage, level, category, goal, notes')
       .eq('id', playerId).maybeSingle()
     if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
 
@@ -68,7 +72,7 @@ export async function POST(req: NextRequest) {
       playerName: player.name,
       age: player.age ?? null,
       stage: player.racket_stage ?? null,
-      standard: player.standard ?? null,
+      standard: player.level ?? player.category ?? null,
       goal: player.goal ?? null,
       notes: player.notes ?? null,
       weakest: scored.slice(0, 6).map(s => `${s.skill}: ${s.score ?? 0}/5`),

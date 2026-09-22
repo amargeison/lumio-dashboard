@@ -46,7 +46,12 @@ export async function POST(req: NextRequest) {
   const b = (await req.json().catch(() => ({}))) as {
     signals?: { tag?: string; fact?: string }[]
     todayCount?: number
+    role?: string
   }
+  // A head coach and one of their assistants get different briefings, because
+  // they are looking at different jobs. The client sends the signals it is
+  // allowed to see; this just tells the agent which chair it is talking to.
+  const role: 'head' | 'coach' = b.role === 'coach' ? 'coach' : 'head'
   const signals = (Array.isArray(b.signals) ? b.signals : [])
     .slice(0, 12)
     .map(s => ({ tag: String(s.tag ?? '').slice(0, 40), fact: String(s.fact ?? '').slice(0, 400) }))
@@ -62,17 +67,44 @@ export async function POST(req: NextRequest) {
 
     const task = dailyBriefingTask({
       coachName: (profile?.display_name || '').split(' ')[0] || '',
+      role,
       signals,
       todayCount: Number(b.todayCount) || 0,
     })
     const { text } = await runCoachAgent({ apiKey, task, maxTokens: 700 })
 
-    // Returned as prose, not a list. The briefing's whole job is to say what
-    // matters FIRST — a list re-flattens it into five equal bullets, which is
-    // the thing that was wrong with it before.
-    const briefing = text.trim()
-    if (!briefing) throw new Error('empty briefing')
-    return NextResponse.json({ briefing })
+    // `tag|priority|sentence` per line, most important first.
+    //
+    // The ORDER is the briefing. The signals arrive in a fixed order every
+    // morning — payments, rackets, retention, schedule, progress — and a fixed
+    // order has decided nothing. What comes back here is the same facts sorted
+    // by what they cost if ignored, and shortened to the few worth saying.
+    const items = text.trim().split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map(line => {
+        const [tag, pri, ...rest] = line.split('|')
+        const txt = rest.join('|').trim()
+        if (!txt) return null
+        const p = (pri || '').trim().toLowerCase()
+        return {
+          tag: (tag || '').trim().toLowerCase().replace(/[^a-z ]/g, '').slice(0, 16) || 'today',
+          pri: (p === 'high' || p === 'med' || p === 'low' ? p : 'med') as 'high' | 'med' | 'low',
+          text: txt.replace(/^[-•*\s]+/, ''),
+        }
+      })
+      .filter(Boolean)
+      .slice(0, 5) as { tag: string; pri: 'high' | 'med' | 'low'; text: string }[]
+
+    // A model that ignored the format leaves us with prose and no items. That
+    // is still a usable briefing, so it is returned as one unprioritised block
+    // rather than thrown away — the client renders whichever it gets.
+    if (!items.length) {
+      const briefing = text.trim()
+      if (!briefing) throw new Error('empty briefing')
+      return NextResponse.json({ briefing, at: new Date().toISOString() })
+    }
+    return NextResponse.json({ items, at: new Date().toISOString() })
   } catch (err) {
     console.error('[coach/briefing]', err)
     return NextResponse.json({ error: 'Lumio Coach could not write your briefing just now.' }, { status: 500 })

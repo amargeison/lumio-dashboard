@@ -19,7 +19,7 @@
 // on one side, a service-role query fenced to one player on the other — and the
 // view has no business knowing which.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { RACKET_STAGES, SKILLS_BY_STAGE, SKILL_LEVELS } from '@/app/coach/[slug]/_lib/coach-db'
 import { avatarSrc } from '@/lib/avatar'
@@ -565,81 +565,417 @@ function RewardsBlock({ T, xpTotal, sessions, latest }: {
 
 // ── The camp module ─────────────────────────────────────────────────────────
 // Booked, not browsing: this only ever renders for a camp the player has a place
-// on, so it answers the questions a family actually has once the place is taken —
-// when, where, what to bring, what the days look like — rather than selling it.
+// on, so it answers the questions a family actually has once the place is taken.
+//
+// It used to answer them in three grey boxes. But a camp is the thing a child
+// counts down to — the one part of this app they will open for no reason, just
+// to look at it again — and a folded list of bullet points is not what that
+// feels like. So: a live countdown to the minute, and the rest of the week
+// behind tabs, so the page is short until they choose to dig.
+//
+// Everything here is still only what the coach actually filled in. A tab with
+// nothing behind it does not appear — an empty "Where you're staying" heading
+// tells a parent their coach has not sorted the hotel, which may be true and is
+// not this page's job to imply.
+
+type TripLike = {
+  intro?: string
+  stay?: Record<string, string | undefined>
+  venue?: Record<string, string | undefined>
+  travel?: Record<string, string | undefined>
+  practical?: Record<string, string | undefined>
+  transport?: { name?: string; kind?: string; address?: string; phone?: string; url?: string; note?: string }[]
+  eating?: { name?: string; kind?: string; address?: string; phone?: string; url?: string; note?: string }[]
+  contacts?: { name?: string; role?: string; phone?: string; note?: string }[]
+  bring?: string[]
+  sections?: { title?: string; body?: string; items?: string[] }[]
+}
+
+/** A day of the camp, however the coach's itinerary happens to be shaped. */
+type CampDayRow = { label: string; date?: string; focus?: string; detail?: string }
+
+function campDays(v: unknown): CampDayRow[] {
+  if (!Array.isArray(v)) return []
+  return v.map((x, i) => {
+    if (typeof x === 'string') return { label: `Day ${i + 1}`, focus: x }
+    if (!x || typeof x !== 'object') return null
+    const o = x as Record<string, unknown>
+    const str = (k: string) => { const s = String(o[k] ?? '').trim(); return s || undefined }
+    const label = str('day') || str('title') || `Day ${i + 1}`
+    const focus = str('focus') || str('theme') || str('label') || str('name')
+    const detail = [str('did'), str('detail'), str('description'), str('nextAction')].filter(Boolean).join(' ')
+    if (!focus && !detail && !str('date')) return null
+    return { label: /^\d+$/.test(label) ? `Day ${label}` : label, date: str('date'), focus, detail: detail || undefined }
+  }).filter(Boolean) as CampDayRow[]
+}
+
+/** This player's own targets for the week, already filtered to them by the API. */
+function campTargets(v: unknown): { goals: string[]; measure?: string; stage?: string } {
+  const row = Array.isArray(v) ? (v[0] as Record<string, unknown> | undefined) : undefined
+  if (!row) return { goals: [] }
+  return {
+    goals: asStringList(row.goals),
+    measure: String(row.measure ?? '').trim() || undefined,
+    stage: String(row.stage ?? '').trim() || undefined,
+  }
+}
+
+const mapsUrl = (q?: string) => q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null
+const telUrl = (p?: string) => p ? `tel:${p.replace(/[^\d+]/g, '')}` : null
+const webUrl = (u?: string) => !u ? null : /^https?:\/\//i.test(u) ? u : `https://${u}`
+
+/** Fields → visible rows, dropping the empty ones, in the coach's own words. */
+const rowsOf = (o: Record<string, string | undefined> | undefined, map: [string, string][]) =>
+  (map.map(([k, label]) => { const v = String(o?.[k] ?? '').trim(); return v ? { label, value: v } : null }).filter(Boolean) as { label: string; value: string }[])
+
 function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; first: string }) {
   const days = daysUntil(camp.start_date)
   const started = days !== null && days <= 0
+  const adultCamp = (camp.audience || '').toLowerCase() === 'adult'
+  const you = adultCamp ? 'you' : first
+
   const kit = asStringList(camp.equipment)
   const rhythm = asStringList(camp.daily_rhythm)
   const brief = asStringList(camp.parent_brief)
-  const itinerary = asStringList(camp.itinerary)
-  const adultCamp = (camp.audience || '').toLowerCase() === 'adult'
+  const itinerary = campDays(camp.itinerary)
+  const objectives = asStringList(camp.objectives)
+  const targets = campTargets(camp.player_targets)
+  const trip = (camp.trip && typeof camp.trip === 'object' ? camp.trip : {}) as TripLike
 
-  const countdown = days === null ? 'Booked'
-    : days > 1 ? `In ${days} days`
-    : days === 1 ? 'Tomorrow'
-    : days === 0 ? 'Today'
-    : 'On now'
+  const stay = rowsOf(trip.stay, [['checkIn', 'Check-in'], ['rooms', 'Rooms'], ['meals', 'Meals'], ['wifi', 'Wi-Fi'], ['notes', 'Also']])
+  const venue = rowsOf(trip.venue, [['courts', 'Courts'], ['facilities', 'Facilities'], ['notes', 'Also']])
+  const travel = rowsOf(trip.travel, [['airport', 'Airport'], ['flights', 'Flights'], ['transfers', 'Transfers'], ['arrival', 'Getting there'], ['departure', 'Coming home'], ['notes', 'Also']])
+  const practical = rowsOf(trip.practical, [['weather', 'Weather'], ['currency', 'Currency'], ['timeDifference', 'Time difference'], ['plugs', 'Plugs'], ['health', 'Health'], ['notes', 'Also']])
+  const eating = (trip.eating || []).filter(p => String(p?.name || '').trim())
+  const transport = (trip.transport || []).filter(p => String(p?.name || '').trim())
+  const contacts = (trip.contacts || []).filter(c => String(c?.name || '').trim())
+  const bring = [...kit, ...asStringList(trip.bring)]
+  const extras = (trip.sections || []).filter(s => String(s?.title || '').trim())
+
+  const goalsTab = targets.goals.length > 0 || !!camp.camp_goal || objectives.length > 0
+  const weekTab = itinerary.length > 0 || rhythm.length > 0
+  const stayTab = stay.length > 0 || venue.length > 0 || !!trip.stay?.name || !!trip.venue?.name || !!camp.room
+  const travelTab = travel.length > 0 || !!camp.arrival
+  const aboutTab = eating.length > 0 || transport.length > 0 || practical.length > 0
+  const bringTab = bring.length > 0 || brief.length > 0
+  const callTab = contacts.length > 0
+
+  const TABS: { id: string; label: string; icon: string; on: boolean }[] = [
+    { id: 'week', label: 'The week', icon: 'calendar', on: weekTab },
+    { id: 'goals', label: adultCamp ? 'Your goals' : 'Goals', icon: 'flag', on: goalsTab },
+    { id: 'bring', label: 'What to bring', icon: 'check', on: bringTab },
+    { id: 'travel', label: 'Getting there', icon: 'plane', on: travelTab },
+    { id: 'stay', label: 'Where you stay', icon: 'pin', on: stayTab },
+    { id: 'about', label: 'Out & about', icon: 'globe', on: aboutTab },
+    { id: 'call', label: 'Who to ring', icon: 'people', on: callTab },
+    ...extras.map((s, i) => ({ id: `x${i}`, label: String(s.title).slice(0, 22), icon: 'note', on: true })),
+  ].filter(t => t.on)
+
+  const [tab, setTab] = useState(TABS[0]?.id || '')
+  const active = TABS.some(t => t.id === tab) ? tab : (TABS[0]?.id || '')
 
   return (
-    <Card T={T} style={{ borderColor: T.accentBorder }}>
-      <Head T={T} icon="calendar" title={camp.name}
+    <Card T={T} style={{ borderColor: T.accentBorder, overflow: 'hidden' }}>
+      <Head T={T} icon="sun" title={camp.name}
         sub={[camp.location, camp.region].filter(Boolean).join(' · ') || (camp.overseas ? 'Overseas camp' : 'Camp')} lead />
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '12px 14px', borderRadius: 14, background: T.accentDim, border: `1px solid ${T.accentBorder}`, marginBottom: 14 }}>
-        <span style={{ fontSize: 26 }}>{started ? '🎾' : '📅'}</span>
-        <div style={{ flex: 1, minWidth: 180 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>
-            {countdown}
-            {camp.start_date ? ` · ${prettyDate(camp.start_date)}${camp.end_date && camp.end_date !== camp.start_date ? ` – ${prettyDate(camp.end_date)}` : ''}` : ''}
-          </div>
-          <div style={{ fontSize: 11.5, color: T.text2, marginTop: 2 }}>
-            {adultCamp ? 'Your place is booked.' : `${first}’s place is booked.`}
-            {camp.status === 'pending' ? ' Balance outstanding — your coach will be in touch.' : ''}
-            {camp.board ? ` ${camp.board}.` : ''}
-          </div>
-        </div>
-        {camp.status === 'pending' && !!camp.balance_link && (
-          <a href={camp.balance_link} target="_blank" rel="noopener noreferrer"
-            style={{ background: T.accent, color: T.btnText, borderRadius: 10, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, textDecoration: 'none' }}>
-            Pay the balance →
-          </a>
-        )}
-      </div>
+      <Countdown T={T} camp={camp} started={started} days={days} you={you} />
 
-      {!!(camp.description || '').trim() && (
-        <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.6, margin: '0 0 14px' }}>{camp.description}</p>
+      {!!(camp.intent || camp.description || '').trim() && (
+        <p style={{ fontSize: 13.5, color: T.text2, lineHeight: 1.65, margin: '0 0 14px' }}>{camp.intent || camp.description}</p>
+      )}
+      {!!(trip.intro || '').trim() && (
+        <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.65, margin: '0 0 14px' }}>{trip.intro}</p>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: T.gap }}>
-        {kit.length > 0 && (
-          <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
-            <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 6 }}>What to bring</div>
-            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>
-              {kit.slice(0, 12).map((k, i) => <li key={i}>{k}</li>)}
-            </ul>
+      {camp.status === 'pending' && !!camp.balance_link && (
+        <a href={camp.balance_link} target="_blank" rel="noopener noreferrer"
+          style={{ display: 'inline-block', background: T.accent, color: T.btnText, borderRadius: 10, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, textDecoration: 'none', marginBottom: 14 }}>
+          Pay the balance →
+        </a>
+      )}
+
+      {TABS.length > 0 && (
+        <>
+          <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 14, WebkitOverflowScrolling: 'touch' }}>
+            {TABS.map(t => {
+              const on = active === t.id
+              return (
+                <button key={t.id} onClick={() => setTab(t.id)}
+                  style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, padding: '8px 13px', borderRadius: 999, fontSize: 12.5, fontWeight: on ? 700 : 600, color: on ? T.btnText : T.text2, background: on ? T.accent : T.panel2, border: `1px solid ${on ? T.accent : T.border}` }}>
+                  <Icon name={t.icon} size={13} stroke={1.8} style={{ color: on ? T.btnText : T.text3 }} />
+                  {t.label}
+                </button>
+              )
+            })}
           </div>
-        )}
-        {(rhythm.length > 0 || itinerary.length > 0) && (
-          <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
-            <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 6 }}>How the days run</div>
-            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>
-              {(rhythm.length ? rhythm : itinerary).slice(0, 12).map((k, i) => <li key={i}>{k}</li>)}
-            </ul>
-          </div>
-        )}
-        {brief.length > 0 && (
-          <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
-            <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 6 }}>
-              {adultCamp ? 'Before you come' : 'For parents'}
+
+          {active === 'week' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {itinerary.map((d, i) => (
+                <div key={i} style={{ display: 'flex', gap: 12, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
+                  <div style={{ flexShrink: 0, width: 52, textAlign: 'center' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{d.label}</div>
+                    {d.date && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2 }}>{prettyDate(d.date).replace(/ \d{4}$/, '')}</div>}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    {d.focus && <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{d.focus}</div>}
+                    {d.detail && <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6, marginTop: 2 }}>{d.detail}</div>}
+                  </div>
+                </div>
+              ))}
+              {rhythm.length > 0 && (
+                <Box T={T} title="How the days run"><Bullets T={T} items={rhythm} /></Box>
+              )}
             </div>
-            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>
-              {brief.slice(0, 12).map((k, i) => <li key={i}>{k}</li>)}
-            </ul>
-          </div>
-        )}
-      </div>
+          )}
+
+          {active === 'goals' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {!!camp.camp_goal && (
+                <div style={{ background: T.accentDim, border: `1px solid ${T.accentBorder}`, borderRadius: 12, padding: '13px 15px' }}>
+                  <div style={{ fontSize: 10, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 4 }}>
+                    {adultCamp ? 'Your week, in one line' : `${first}’s week, in one line`}
+                  </div>
+                  <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text, lineHeight: 1.45 }}>{camp.camp_goal}</div>
+                </div>
+              )}
+              {targets.goals.length > 0 && (
+                <Box T={T} title={adultCamp ? 'What you’re working on' : `What ${first} is working on`}>
+                  <Bullets T={T} items={targets.goals} />
+                  {targets.measure && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 8, lineHeight: 1.55 }}>How we&rsquo;ll know: {targets.measure}</div>}
+                </Box>
+              )}
+              {objectives.length > 0 && (
+                <Box T={T} title="What everyone leaves with"><Bullets T={T} items={objectives} /></Box>
+              )}
+            </div>
+          )}
+
+          {active === 'bring' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: T.gap }}>
+              {bring.length > 0 && <Box T={T} title="In the bag"><Bullets T={T} items={bring} /></Box>}
+              {brief.length > 0 && <Box T={T} title={adultCamp ? 'Before you come' : 'For parents'}><Bullets T={T} items={brief} /></Box>}
+            </div>
+          )}
+
+          {active === 'travel' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {!!camp.arrival && (
+                <div style={{ background: T.accentDim, border: `1px solid ${T.accentBorder}`, borderRadius: 12, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 10, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 3 }}>Your arrival</div>
+                  <div style={{ fontSize: 13.5, color: T.text, fontWeight: 600 }}>{camp.arrival}</div>
+                </div>
+              )}
+              {travel.length > 0 && <Box T={T} title="Flights & transfers"><Facts T={T} rows={travel} /></Box>}
+              {!!trip.travel?.airport && (
+                <MapLink T={T} label={`Map — ${trip.travel.airport} to ${trip.stay?.name || camp.location || 'the hotel'}`}
+                  href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(trip.travel.airport)}&destination=${encodeURIComponent(trip.stay?.address || trip.stay?.name || [camp.location, camp.region].filter(Boolean).join(', '))}`} />
+              )}
+            </div>
+          )}
+
+          {active === 'stay' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {!!camp.room && (
+                <div style={{ background: T.accentDim, border: `1px solid ${T.accentBorder}`, borderRadius: 12, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 10, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 3 }}>Your room</div>
+                  <div style={{ fontSize: 13.5, color: T.text, fontWeight: 600 }}>{camp.room}</div>
+                </div>
+              )}
+              {(!!trip.stay?.name || stay.length > 0) && (
+                <Box T={T} title={trip.stay?.name || 'Where you’re staying'}>
+                  {!!trip.stay?.address && <div style={{ fontSize: 12.5, color: T.text2, marginBottom: 8 }}>{trip.stay.address}</div>}
+                  <Facts T={T} rows={stay} />
+                  <Links T={T} map={mapsUrl(trip.stay?.address || trip.stay?.name)} web={webUrl(trip.stay?.url)} />
+                </Box>
+              )}
+              {(!!trip.venue?.name || venue.length > 0) && (
+                <Box T={T} title={trip.venue?.name || 'Where you play'}>
+                  {!!trip.venue?.address && <div style={{ fontSize: 12.5, color: T.text2, marginBottom: 8 }}>{trip.venue.address}</div>}
+                  <Facts T={T} rows={venue} />
+                  <Links T={T} map={mapsUrl(trip.venue?.address || trip.venue?.name)} web={webUrl(trip.venue?.url)} />
+                </Box>
+              )}
+            </div>
+          )}
+
+          {active === 'about' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {eating.length > 0 && (
+                <Box T={T} title="Where we eat">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+                    {eating.map((p, i) => <PlaceCard key={i} T={T} p={p} />)}
+                  </div>
+                </Box>
+              )}
+              {transport.length > 0 && (
+                <Box T={T} title="Taxis & getting about">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+                    {transport.map((p, i) => <PlaceCard key={i} T={T} p={p} />)}
+                  </div>
+                </Box>
+              )}
+              {practical.length > 0 && <Box T={T} title="Good to know"><Facts T={T} rows={practical} /></Box>}
+            </div>
+          )}
+
+          {active === 'call' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 8 }}>
+              {contacts.map((c, i) => (
+                <div key={i} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>{c.name}</div>
+                  {!!c.role && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 1 }}>{c.role}</div>}
+                  {!!c.note && <div style={{ fontSize: 12, color: T.text2, marginTop: 6, lineHeight: 1.55 }}>{c.note}</div>}
+                  {!!c.phone && (
+                    <a href={telUrl(c.phone) || '#'} style={{ display: 'inline-block', marginTop: 9, fontSize: 12.5, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>
+                      📞 {c.phone}
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {extras.map((s, i) => active === `x${i}` && (
+            <div key={i}>
+              {!!s.body && <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.65, margin: '0 0 8px' }}>{s.body}</p>}
+              {!!(s.items || []).length && <Box T={T} title={String(s.title)}><Bullets T={T} items={asStringList(s.items)} /></Box>}
+            </div>
+          ))}
+        </>
+      )}
     </Card>
+  )
+}
+
+// The countdown. Ticking, because a number that moves while you look at it is
+// the entire point — a static "in 34 days" is a fact, a clock is anticipation.
+// It stops counting the moment the camp starts and switches to which day of it
+// today is, which is the only thing anyone wants from it once they are there.
+function Countdown({ T, camp, started, days, you }: {
+  T: StudentTheme; camp: StudentCamp; started: boolean; days: number | null; you: string
+}) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (started || days === null) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [started, days])
+
+  const startMs = camp.start_date ? new Date(`${String(camp.start_date).slice(0, 10)}T09:00:00`).getTime() : NaN
+  const left = Math.max(0, Math.floor((startMs - now) / 1000))
+  const dd = Math.floor(left / 86400), hh = Math.floor((left % 86400) / 3600)
+  const mm = Math.floor((left % 3600) / 60), ss = left % 60
+
+  // How far through the camp today is, once it has started.
+  const total = (() => {
+    if (!camp.start_date || !camp.end_date) return 1
+    const a = new Date(`${String(camp.start_date).slice(0, 10)}T00:00:00`).getTime()
+    const b = new Date(`${String(camp.end_date).slice(0, 10)}T00:00:00`).getTime()
+    return Math.max(1, Math.round((b - a) / 86400000) + 1)
+  })()
+  const dayNo = days === null ? 1 : Math.min(total, Math.max(1, 1 - days))
+
+  const dates = camp.start_date
+    ? `${prettyDate(camp.start_date)}${camp.end_date && camp.end_date !== camp.start_date ? ` – ${prettyDate(camp.end_date)}` : ''}`
+    : ''
+
+  const unit = (n: number, label: string) => (
+    <div style={{ textAlign: 'center', minWidth: 54 }}>
+      <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: T.text, lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>{String(n).padStart(2, '0')}</div>
+      <div style={{ fontSize: 9, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 3 }}>{label}</div>
+    </div>
+  )
+
+  return (
+    <div style={{ borderRadius: 16, border: `1px solid ${T.accentBorder}`, background: `linear-gradient(135deg, ${T.accentDim}, ${T.panel2})`, padding: '16px 18px', marginBottom: 14 }}>
+      {started ? (
+        <>
+          <div style={{ fontSize: 22, fontWeight: 800, color: T.text }}>🎾 Day {dayNo} of {total}</div>
+          <div style={{ fontSize: 12.5, color: T.text2, marginTop: 3 }}>You&rsquo;re on camp. {dates}</div>
+          <div style={{ height: 7, borderRadius: 999, background: T.hover, marginTop: 12, overflow: 'hidden' }}>
+            <div style={{ width: `${Math.round(dayNo / total * 100)}%`, height: '100%', background: T.accent, borderRadius: 999 }} />
+          </div>
+        </>
+      ) : (
+        <>
+          <div style={{ fontSize: 10, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
+            {camp.status === 'pending' ? 'Place held' : 'Place booked'} · counting down
+          </div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', marginTop: 10, flexWrap: 'wrap' }}>
+            {unit(dd, dd === 1 ? 'day' : 'days')}
+            <Colon T={T} />{unit(hh, 'hrs')}
+            <Colon T={T} />{unit(mm, 'min')}
+            <Colon T={T} />{unit(ss, 'sec')}
+          </div>
+          <div style={{ fontSize: 12.5, color: T.text2, marginTop: 11, lineHeight: 1.55 }}>
+            {dates ? `${dates}. ` : ''}{you === 'you' ? 'Your place is booked.' : `${you}’s place is booked.`}
+            {camp.board ? ` ${camp.board}.` : ''}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+const Colon = ({ T }: { T: StudentTheme }) => (
+  <div style={{ fontFamily: MONO, fontSize: 24, color: T.text4, paddingBottom: 16 }}>:</div>
+)
+
+function Box({ T, title, children }: { T: StudentTheme; title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
+      <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 7 }}>{title}</div>
+      {children}
+    </div>
+  )
+}
+
+const Bullets = ({ T, items }: { T: StudentTheme; items: string[] }) => (
+  <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: T.text2, lineHeight: 1.75 }}>
+    {items.slice(0, 20).map((k, i) => <li key={i}>{k}</li>)}
+  </ul>
+)
+
+const Facts = ({ T, rows }: { T: StudentTheme; rows: { label: string; value: string }[] }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    {rows.map((r, i) => (
+      <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', width: 92, flexShrink: 0, paddingTop: 2 }}>{r.label}</span>
+        <span style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>{r.value}</span>
+      </div>
+    ))}
+  </div>
+)
+
+const MapLink = ({ T, label, href }: { T: StudentTheme; label: string; href: string }) => (
+  <a href={href} target="_blank" rel="noopener noreferrer"
+    style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '9px 13px', fontSize: 12.5, fontWeight: 600, color: T.accent, textDecoration: 'none' }}>
+    📍 {label}
+  </a>
+)
+
+const Links = ({ T, map, web }: { T: StudentTheme; map: string | null; web: string | null }) => (
+  (map || web) ? (
+    <div style={{ display: 'flex', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
+      {map && <a href={map} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>📍 Open in Maps</a>}
+      {web && <a href={web} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>🔗 Website</a>}
+    </div>
+  ) : null
+)
+
+function PlaceCard({ T, p }: { T: StudentTheme; p: { name?: string; kind?: string; address?: string; phone?: string; url?: string; note?: string } }) {
+  return (
+    <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 11, padding: '11px 13px' }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{p.name}</div>
+      {!!p.kind && <div style={{ fontSize: 10.5, color: T.accent, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 2 }}>{p.kind}</div>}
+      {!!p.note && <div style={{ fontSize: 12, color: T.text2, marginTop: 6, lineHeight: 1.55 }}>{p.note}</div>}
+      <div style={{ display: 'flex', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+        {!!p.address && <a href={mapsUrl(p.address) || '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>📍 Map</a>}
+        {!!p.phone && <a href={telUrl(p.phone) || '#'} style={{ fontSize: 11.5, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>📞 {p.phone}</a>}
+        {!!p.url && <a href={webUrl(p.url) || '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>🔗 Site</a>}
+      </div>
+    </div>
   )
 }

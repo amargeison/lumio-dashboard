@@ -119,15 +119,33 @@ export async function GET() {
   // a camp is only theirs if an attendee row ties this player to it, and the
   // settings come from the academy this membership belongs to and no other.
   const attendees = await safe(db.from('coach_camp_attendees')
-    .select('camp_id, paid, status').eq('coach_id', m.academyId).eq('player_id', m.scopePlayerId))
+    .select('camp_id, paid, status, room, arrival, camp_goal').eq('coach_id', m.academyId).eq('player_id', m.scopePlayerId))
   const campIds = (attendees as any[]).filter(a => (a.status || 'confirmed') !== 'cancelled').map(a => a.camp_id)
   let camps: any[] = []
   if (campIds.length) {
     camps = await safe(db.from('coach_camps')
-      .select('id, name, start_date, end_date, location, region, audience, board, daily_rhythm, description, overseas, itinerary, equipment, parent_brief, balance_link')
+      .select('id, name, start_date, end_date, location, region, audience, board, daily_rhythm, description, intent, objectives, outcomes, itinerary, equipment, parent_brief, balance_link, overseas, trip, player_targets')
       .eq('coach_id', m.academyId).in('id', campIds))
     const byId = new Map((attendees as any[]).map(a => [a.camp_id, a]))
-    camps = camps.map(c => ({ ...c, paid: byId.get(c.id)?.paid ?? null, status: byId.get(c.id)?.status ?? 'confirmed' }))
+    const playerName = String(player?.name || '').trim().toLowerCase()
+    camps = camps.map(c => {
+      const a = byId.get(c.id)
+      // player_targets holds a row PER ATTENDEE. The family gets their own row
+      // and nobody else's — sending the whole array would hand one parent every
+      // other child's assessment, which is a safeguarding failure, not a bug.
+      const targets = Array.isArray(c.player_targets)
+        ? (c.player_targets as any[]).filter(t => String(t?.player_name || '').trim().toLowerCase() === playerName)
+        : []
+      return {
+        ...c,
+        player_targets: targets,
+        paid: a?.paid ?? null,
+        status: a?.status ?? 'confirmed',
+        room: a?.room ?? null,
+        arrival: a?.arrival ?? null,
+        camp_goal: a?.camp_goal ?? null,
+      }
+    })
   }
 
   // Which sections this academy shows a family, and what counts as a mastered

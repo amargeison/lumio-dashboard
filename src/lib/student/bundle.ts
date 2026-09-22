@@ -101,6 +101,21 @@ export type StudentCamp = {
   paid?: boolean | null
   status?: string | null            // confirmed | pending
   balance_link?: string | null
+  /** The coach's one line on what the week is for. */
+  intent?: string | null
+  objectives?: unknown
+  outcomes?: unknown
+  /** The trip hub record — hotel, travel, taxis, where to eat, who to ring.
+      Shared with everyone on the trip, so nothing player-specific lives here. */
+  trip?: unknown
+  /** THIS player's targets only. The API filters the camp's array down to the
+      one row before it leaves the server — see /api/portal/player. */
+  player_targets?: unknown
+  /** From their own attendee row: where they sleep, when they land, and the one
+      thing they are there to work on. */
+  room?: string | null
+  arrival?: string | null
+  camp_goal?: string | null
 }
 
 // A book the coach has put in this player's hands. Denormalised on purpose —
