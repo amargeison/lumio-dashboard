@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
-import { sendAsCoach } from '@/lib/coach/mail'
-import { sendEmail } from '@/lib/emails/send'
-import {
-  gatherBookingContext, resolveRecipient, buildConfirmationHtml, type BookingRow,
-} from '@/lib/coach/booking-email'
-import { calendarButtonsHtml, googleCalendarUrl, icsUrl, type CalendarEvent } from '@/lib/coach/calendar-links'
-import { notifyBooked } from '@/lib/coach/booking-notify'
+import { publicSiteOrigin } from '@/lib/public-origin'
+import type { BookingRow } from '@/lib/coach/booking-email'
+import { sendBookingConfirmation } from '@/lib/coach/booking-confirm'
 
 // Booking confirmation. Called (fire-and-forget) when a booking is CREATED.
 //
-// Two emails go out: one to the player or their parent, and one to the coach so a
-// new booking never goes unseen. They are sent AS THE COACH via their connected
-// mailbox — iCloud SMTP, Gmail or Outlook — because a parent should recognise the
-// sender. Lumio's own transport (Resend) is only a fallback for a coach with no
-// mailbox connected, and it is clearly a different from-address.
+// Two emails go out plus the in-app message — see lib/coach/booking-confirm.ts,
+// which is shared with the public booking-link route so a session a player books
+// themselves is confirmed in exactly the same words as one the coach types in.
 //
 // Auth is the coach's own session, and the booking is re-read server-side scoped
 // to their coach_id — the client passes an id, never the content of the email.
@@ -39,97 +33,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ sent: false, reason: 'booking is cancelled' })
     }
 
-    const { player, last, venue, profile } = await gatherBookingContext(coachId, b)
-    const academy = profile?.brand_name || 'Your academy'
-    const coachName = profile?.display_name || ''
-    const playerName = player?.name || b.player_name || b.title || 'your player'
-
-    const rec = resolveRecipient(player)
-    const results: Record<string, unknown> = { to: rec.to, toParent: rec.toParent, reason: rec.reason }
-
-    // Add-to-calendar. Built once and used by the email and the in-app message,
-    // so both offer the same two links rather than one telling a parent a time
-    // and leaving them to type it in.
-    const origin = new URL(req.url).origin.replace('http://localhost', 'http://localhost')
-    const place = [venue?.name, b.court].filter(Boolean).join(' · ') || b.court || null
-    const event: CalendarEvent = {
-      title: `${b.type || 'Lesson'} — ${playerName} · ${academy}`,
-      date: String(b.booking_date || ''),
-      time: b.start_time ? String(b.start_time).slice(0, 5) : null,
-      durationMin: b.duration_min,
-      location: [place, venue?.address].filter(Boolean).join(', ') || undefined,
-      description: `Booked with ${academy}.`,
-      uid: `booking-${b.id}`,
-    }
-    const calendarHtml = b.booking_date ? calendarButtonsHtml(event, origin, 'booking', b.id) : null
-
-    // ── 0. In the portal ──────────────────────────────────────────────────
-    // Before the emails, because this is the one that cannot bounce, cannot be
-    // filtered into Promotions, and is still there next week.
-    results.inApp = await notifyBooked(db, {
-      academyId: coachId,
-      playerName,
-      kind: 'lesson',
-      title: `${b.type || 'Lesson'} with ${coachName || academy}`,
-      date: b.booking_date,
-      time: b.start_time ? String(b.start_time).slice(0, 5) : null,
-      durationMin: b.duration_min,
-      location: [place, venue?.address].filter(Boolean).join(', ') || null,
-      detail: b.notes || null,
-      googleUrl: b.booking_date ? googleCalendarUrl(event) : null,
-      icsUrl: b.booking_date ? icsUrl(origin, 'booking', b.id) : null,
-      dedupeKey: b.id,
-    })
-
-    // ── 1. Player / parent ────────────────────────────────────────────────
-    if (rec.to) {
-      const html = buildConfirmationHtml({
-        academy, coachName, logoUrl: profile?.brand_logo_url, playerName,
-        greetingName: rec.toParent ? (player?.parent_name || 'there') : playerName.split(' ')[0],
-        toParent: rec.toParent, booking: b, venue, last, calendarHtml,
-      })
-      const subject = `Session booked — ${playerName} · ${b.booking_date || ''}`.trim()
-      const sent = await sendAsCoach(coachId, { to: rec.to, subject, html })
-      if (!sent.ok) {
-        // Fallback: Lumio's transport. Reply-to is the coach so a parent replying
-        // still reaches a human, even though the from-address is not theirs.
-        // sendEmail resolves with { data, error } and only rejects on a thrown
-        // fault, so the result object is truthy even when Resend refused the
-        // send. Testing truthiness reported playerSent: true for a failed send —
-        // telling a parent their confirmation went out when it had not. Read the
-        // error.
-        const fb = await sendEmail({
-          from: 'Lumio Tennis <noreply@lumiosports.com>', to: [rec.to], subject, html,
-          replyTo: profile?.contact_email || undefined,
-          context: 'coach/bookings/confirm player-fallback',
-        }).catch(() => null)
-        results.playerSent = !!fb && !fb.error; results.via = 'lumio-fallback'
-      } else { results.playerSent = true; results.via = sent.provider }
-    } else {
-      results.playerSent = false
-    }
-
-    // ── 2. Coach copy ─────────────────────────────────────────────────────
-    const coachTo = profile?.contact_email || null
-    if (coachTo) {
-      const html = buildConfirmationHtml({
-        academy, coachName, logoUrl: profile?.brand_logo_url, playerName,
-        greetingName: coachName || 'Coach', toParent: false, booking: b, venue, last, forCoach: true, calendarHtml,
-      })
-      const note = rec.to ? `Confirmation sent to ${rec.to} (${rec.reason}).` : `NOT sent to the player — ${rec.reason}.`
-      const sent = await sendAsCoach(coachId, {
-        to: coachTo,
-        subject: `New booking — ${playerName} · ${b.booking_date || ''}`.trim(),
-        // The coach's copy states where the player's copy went and why, so the
-        // safeguarding decision is visible rather than buried in a log.
-        html: html.replace('</body>', `<div style="max-width:560px;margin:0 auto 22px;font-size:12px;color:#6b7280;text-align:center">${note}</div></body>`),
-      })
-      results.coachSent = sent.ok
-    } else {
-      results.coachSent = false
-      results.coachReason = 'no contact email on the coach profile (Settings → contact details)'
-    }
-
+    const origin = publicSiteOrigin(new URL(req.url).origin)
+    const results = await sendBookingConfirmation({ coachId, booking: b, origin, db })
     return NextResponse.json({ ok: true, ...results })
   } catch (err) {
     console.error('[coach/bookings/confirm]', err)

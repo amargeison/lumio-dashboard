@@ -120,6 +120,22 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   })
   const [tab, setTab] = useState('overview')
   const [formOpen, setFormOpen] = useState(false)
+
+  // ── Catch-up calendar sync ────────────────────────────────────────────────
+  // Camps only started syncing to Google / Outlook / iCloud in this release, and
+  // a coach who connected their calendar today would otherwise see every lesson
+  // appear on their phone and every camp they had already planned stay missing —
+  // because nothing had re-saved those camps since.
+  //
+  // So opening Camps pushes anything that has never been written to a calendar.
+  // Once per page load, and the server skips camps it has already linked, so
+  // this is a no-op on every visit after the first.
+  useEffect(() => {
+    fetch('/api/coach/camps/sync', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ missing: true }),
+    }).catch(() => { /* no calendar connected, or offline — not an error here */ })
+  }, [])
   // Until now a camp could be created but never edited — so capacity and price,
   // both of which the public sign-up page depends on, were fixed at creation.
   const [editOpen, setEditOpen] = useState(false)
