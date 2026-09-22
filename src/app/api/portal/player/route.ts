@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getMembership, scopedDb, signAvatar, sendWelcomeMessage } from '@/lib/coach/membership'
 import { bookById } from '@/lib/coach/books'
+import { buildNextSession } from '@/lib/student/next-session'
 
 export const runtime = 'nodejs'
 
@@ -165,6 +166,12 @@ export async function GET() {
   // full public URL; leaves data/external URLs alone.
   const avatarUrl = await signAvatar(db, player.avatar_url, m.academyId)
 
+  // The next lesson: when, where (with a map) and what the coach is planning.
+  // Read here rather than derived in the browser because the venue and the plan
+  // live in tables a family has no business querying — they get the one row
+  // that is theirs, already resolved.
+  const nextSession = await buildNextSession(db, m.academyId, m.scopePlayerId, name)
+
   return NextResponse.json({
     player: {
       id: player.id, name: player.name, nickname: player.nickname,
@@ -173,7 +180,7 @@ export async function GET() {
       parent_name: player.parent_name, parent_email: player.parent_email,
       xp_total: player.xp_total, watch_token: player.watch_token,
     },
-    skills, lessons, bookings, messages, watch, highlights,
+    skills, lessons, bookings, messages, watch, highlights, nextSession,
     media: mediaSigned, resources, books, camps, sectionsOff, awardThreshold,
   })
 }

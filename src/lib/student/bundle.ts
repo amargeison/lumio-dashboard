@@ -7,6 +7,9 @@
 // child. They agree on this type and nothing else, which is what lets one view
 // serve both.
 
+import type { StudentNextSession } from './next-session'
+export type { StudentNextSession }
+
 export type StudentPlayer = {
   id: string
   name: string
@@ -148,6 +151,9 @@ export type StudentBundle = {
   watch: StudentWatchSession[]
   resources: StudentResource[]
   camps: StudentCamp[]
+  /** The next booked lesson — when, where and what it covers. Built on the
+      server (src/lib/student/next-session.ts); null when nothing is booked. */
+  nextSession?: StudentNextSession | null
   /** Books the coach recommended to this player specifically. */
   books: StudentBook[]
   /** The conversation with the coach, newest first. */

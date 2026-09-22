@@ -67,6 +67,7 @@ export function LiveStudentPreview({ T, accent, density, onNavigate }: {
           watch: d.watch || [],
           resources: d.resources || [],
           camps: d.camps || [],
+          nextSession: d.nextSession || null,
           books: d.books || [],
           messages: d.messages || [],
           sectionsOff: s.sectionsOff?.student || [],

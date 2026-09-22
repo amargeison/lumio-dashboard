@@ -402,7 +402,11 @@ function QuickBookingModal({ T, accent, players, onClose, onSaved }: { T: ThemeT
     if (!v.booking_date || saving) return
     setSaving(true)
     try {
-      await dbInsert('coach_bookings', { player_name: v.player_name || null, booking_date: v.booking_date, start_time: v.start_time || null, court: v.court || null, type: v.type, status: 'confirmed', duration_min: Number(v.duration_min) || 60 })
+      // Record WHICH player, not just the typed name — the confirmation email
+      // resolves the family by id first, and a name that does not match a
+      // roster row exactly means nobody is written to at all.
+      const picked = players.find((p: any) => (p.name || '') === v.player_name) || null
+      await dbInsert('coach_bookings', { player_name: v.player_name || null, player_id: picked?.id ?? null, booking_date: v.booking_date, start_time: v.start_time || null, court: v.court || null, type: v.type, status: 'confirmed', duration_min: Number(v.duration_min) || 60 })
       onSaved()
     } catch { setSaving(false) }
   }

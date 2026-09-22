@@ -42,6 +42,7 @@ type Raw = {
   messages?: { id: string; direction: string; body: string; created_at: string }[]
   watch?: unknown[]
   camps?: unknown[]
+  nextSession?: unknown
   resources?: unknown[]
   books?: unknown[]
   sectionsOff?: string[]
@@ -140,6 +141,7 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
     watch: (raw.watch || []) as StudentBundle['watch'],
     resources: (raw.resources || []) as StudentBundle['resources'],
     camps: (raw.camps || []) as StudentBundle['camps'],
+    nextSession: (raw.nextSession || null) as StudentBundle['nextSession'],
     books: (raw.books || []) as StudentBundle['books'],
     messages: (raw.messages || []) as StudentBundle['messages'],
     sectionsOff: raw.sectionsOff || [],

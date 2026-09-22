@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { bookById } from '@/lib/coach/books'
+import { buildNextSession } from '@/lib/student/next-session'
 
 export const runtime = 'nodejs'
 
@@ -192,8 +193,12 @@ export async function GET(req: NextRequest) {
     return { id: b.id, title: b.title, author: b.author, note: b.note, topic: shelf?.topic ?? null, spine: shelf?.spine ?? null }
   })
 
+  // Same builder as the family's own route, so the preview cannot promise a
+  // session, a venue or a plan that the real page does not show.
+  const nextSession = await buildNextSession(admin, me.academyId, playerId, name)
+
   return NextResponse.json({
-    books, messages,
+    books, messages, nextSession,
     player: {
       id: player.id, name: player.name, nickname: player.nickname, age: player.age,
       category: player.category, level: player.level, racket_stage: player.racket_stage,
