@@ -15,7 +15,7 @@ import { useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
-import { STAGE_META, LTA_MAP, BALL_COLOUR, ltaShort } from '@/lib/coach/colour-ladder'
+import { STAGE_META, LTA_MAP, ltaChip, ltaColour } from '@/lib/coach/colour-ladder'
 
 export function ColourLadder({ T, accent, currentStageId }: {
   T: ThemeTokens; accent: AccentTokens
@@ -53,11 +53,12 @@ export function ColourLadder({ T, accent, currentStageId }: {
       {expanded && (
         <>
           <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.6, margin: '12px 0 12px', maxWidth: 760 }}>
-            Each colour maps to a stage of the LTA Youth programme — the five ball-colour stages
-            <span style={{ color: '#3A8EE0' }}> Blue</span> →<span style={{ color: '#C75A5A' }}> Red</span> →
+            Each colour maps to one stage of the LTA Youth pathway. Those five stages ARE ball stages —
+            <span style={{ color: '#3A8EE0' }}> Blue</span> (foam) →<span style={{ color: '#C75A5A' }}> Red</span> →
             <span style={{ color: '#E08A3C' }}> Orange</span> →<span style={{ color: '#4FAE72' }}> Green</span> →
-            <span style={{ color: '#E5C76B' }}> Yellow</span>, then the Compete grades and the performance pathway.
-            The colour is your academy&rsquo;s ladder; the LTA stage is the national-framework equivalent.
+            <span style={{ color: '#E5C76B' }}> Yellow</span> — and the four colours above them sit on Compete and the
+            performance pathway, all on a yellow ball. The colour is your academy&rsquo;s ladder; the LTA stage is the
+            national equivalent. Two names for one rung, never three.
             <div style={{ fontSize: 10.5, color: T.text4, marginTop: 6, fontStyle: 'italic' }}>
               Lumio is independent and is not affiliated with, endorsed by, or approved by the LTA. &ldquo;LTA Youth&rdquo; is a
               trademark of the Lawn Tennis Association, used here only to describe the equivalent national stage.
@@ -76,8 +77,8 @@ export function ColourLadder({ T, accent, currentStageId }: {
                   <div style={{ height: 20, borderRadius: 4, background: s.colour, border: '1px solid rgba(128,128,128,0.4)', marginBottom: 6 }} />
                   <div style={{ fontSize: 11.5, fontWeight: 700, color: T.text }}>{i + 1}. {s.name}</div>
                   <div style={{ fontSize: 9.5, color: T.text3 }}>{m?.theme}</div>
-                  <div style={{ marginTop: 4, display: 'inline-block', fontSize: 9, fontWeight: 700, color: BALL_COLOUR[m?.ball], background: `${BALL_COLOUR[m?.ball]}1f`, padding: '2px 7px', borderRadius: 999 }}>{m?.ball} ball</div>
-                  <div style={{ fontSize: 8.5, color: LTA_MAP[s.id]?.colour ?? T.text3, marginTop: 4, fontWeight: 600 }}>{ltaShort(s.id)}</div>
+                  {/* ONE chip: the LTA stage and its ball are the same fact. */}
+                  <div style={{ marginTop: 5, display: 'inline-block', fontSize: 9, fontWeight: 700, color: ltaColour(s.id), background: `${ltaColour(s.id)}1f`, border: `1px solid ${ltaColour(s.id)}44`, padding: '2px 7px', borderRadius: 999, lineHeight: 1.3 }}>{ltaChip(s.id)}</div>
                   {isCurrent && <div style={{ fontSize: 8, fontWeight: 700, color: accent.hex, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>on this now</div>}
                 </button>
               )
@@ -90,7 +91,7 @@ export function ColourLadder({ T, accent, currentStageId }: {
               <span style={{ width: 38, height: 24, borderRadius: 5, background: stage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{stage.name} — {meta?.theme}</div>
-                <div style={{ fontSize: 11.5, color: T.text3 }}>{meta?.age} · {meta?.ball} ball stage</div>
+                <div style={{ fontSize: 11.5, color: T.text3 }}>{meta?.age}</div>
               </div>
               <div style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '4px 10px' }}>
                 {skills.length} skills to master
