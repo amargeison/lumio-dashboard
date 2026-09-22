@@ -38,6 +38,7 @@ import { EmptyModule } from './_components/EmptyCoachDashboard'
 import { clearDemoSession, wipeDemoSurvivors, markDemoSignedOut } from '@/lib/demo-session/clear'
 import { useCoachStats, RACKET_STAGES, dbList, setPreviewStaff } from './_lib/coach-db'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, DEMO_FLAGS, type FeatureFlags } from './_lib/feature-flags'
+import { ModuleHelpButton } from './_components/ModuleHelpButton'
 
 // ── Lazy-loaded modules ─────────────────────────────────────────────────────
 // Each module is code-split so only the one you're viewing is downloaded — the
@@ -943,7 +944,19 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         )}
 
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: 24, position: 'relative' }}>
+            {/* ── How this page works ─────────────────────────────────────────
+                One mount rather than seventeen: every module gets the same ⓘ in
+                the same place, and a page added later gets it for free. It is
+                positioned over the content instead of inside each header,
+                because retro-fitting a button into seventeen different layouts
+                is how you end up with it in seventeen different places. */}
+            {settings.helpHints !== false && (
+              <div style={{ position: 'absolute', top: 26, right: 22, zIndex: 5 }}>
+                <ModuleHelpButton T={T} accent={accent} moduleId={active}
+                  label={(() => { const it = COACH_SIDEBAR.find(i => i.id === active); return it ? navLabel(it) : 'This page' })()} />
+              </div>
+            )}
             {renderView()}
           </div>
 

@@ -42,9 +42,13 @@ const DEMO_PORTALS = SPORTS
 // portal, not to a coach standing on a court.)
 const LIVE_PRODUCTS: Array<{name:string;href:string;logo:string;accent:string;hook:string;line:string;tags:string[];cta:string}> = [
   {name:'Tennis Coach', href:'/tennis-coach', logo:'/tennis_coach_logo.png', accent:'#3A8EE0',
-   hook:'You are running a 60-player academy from a notebook.',
-   line:'Plan the hour on the way to court. Talk through the review as you pack the balls away, and the parent has it written up before they’ve left the car park — with what their child is working on next, and the invoice already raised.',
-   tags:['Session planner','AI lesson reviews','Parent & player app','Payments, camps & rewards'],
+   // The hook has to fit a coach with four adults on a Tuesday as well as a head
+   // coach with sixty juniors and eight staff — the first version spoke only to
+   // the academy and read as "not for you" to everybody else, which is most of
+   // the market. Same for the line under it: not every player has a parent.
+   hook:'Sixty juniors and eight coaches, or four adults on a Tuesday night.',
+   line:'Plan the hour on the way to court. Talk the review through as you pack the balls away and it is written up, sent and logged before you are off the car park — with what they are working on next. Then the parts nobody trains you for: what is booked, who has paid, and where the next block of income comes from.',
+   tags:['Session planner','AI lesson reviews','Player & parent app','Bookings & payments','Camps & retention'],
    cta:'See it running'},
   {name:'Impact', href:'/impact', logo:'/impact_logo.png', accent:'#a855f7',
    hook:'The funding is only safe if you can prove what it did.',

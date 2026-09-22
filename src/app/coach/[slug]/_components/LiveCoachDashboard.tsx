@@ -19,6 +19,7 @@ import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 import { PayModal } from './LivePayments'
 import { avatarSrc } from '@/lib/avatar'
 import { V2_NOTES } from '@/lib/coach/v2'
+import { GettingStarted, type StartStep } from './GettingStarted'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -149,6 +150,26 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const campList = campSpans(d.camps || [])
   const upcomingCamps = campsBetween(campList, today, weekAhead)
   const todayCamps = campsOn(campList, today)
+
+  // ── Getting started ────────────────────────────────────────────────────────
+  // Each step is a FACT about their account, not a flag we set when they looked
+  // at a screen. That is the whole reason this can be trusted: it cannot say
+  // "done" for something they have not done, and it cannot nag about something
+  // they have.
+  const hasVenue = (d.venues || []).length > 0
+  const hasPlayers = d.players.length > 0
+  const hasPlan = (d.lessons || []).length > 0 || (d.bookings || []).length > 0
+  const hasSummary = (d.lessons || []).length > 0
+  const hasMessage = (d.messages || []).length > 0
+  const hasBooking = (d.bookings || []).length > 0
+  const startSteps: StartStep[] = [
+    { id: 'venue', label: 'Set your home court', why: 'Everything with an address on it — a confirmation email, the map link a family taps, free-slot suggestions — comes from your venue. Two minutes, once.', done: hasVenue, nav: 'venues', cta: 'Add it' },
+    { id: 'players', label: 'Add the players you coach', why: 'A player record is what every booking, summary, payment and message hangs off. Add a handful to start — you do not need the whole roster today.', done: hasPlayers, nav: 'roster', cta: 'Add players' },
+    { id: 'booking', label: 'Put a session in the diary', why: 'Book one lesson and you will see the confirmation, the calendar link and the family\u2019s own page all fill in behind it.', done: hasBooking, nav: 'calendar', cta: 'Open calendar' },
+    { id: 'plan', label: 'Build a session plan', why: 'Open a booking in the Session Planner and Lumio Coach writes the plan and the run-sheet from that player\u2019s history. This is the bit coaches say they would pay for on its own.', done: hasPlan, nav: 'planner', cta: 'Plan one' },
+    { id: 'summary', label: 'Write up a lesson', why: 'Record the hour, or tick what you covered when you finish. The write-up lands with the player and is the thing families value most.', done: hasSummary, nav: 'lessons', cta: 'Write one' },
+    { id: 'message', label: 'Message a player or parent', why: 'Send one message and they get it in their app as well as their inbox \u2014 which is how conversations move off WhatsApp.', done: hasMessage, nav: 'messages', cta: 'Send one' },
+  ]
 
   // ── The camp, on the dashboard ──────────────────────────────────────────────
   // A camp is the largest single thing in a coach's year — the most money, the
@@ -291,6 +312,13 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           </div>
         </div>
       </div>
+
+      {/* ── Getting started ────────────────────────────────────────────────── */}
+      {/* Six things that make the portal work, ticked off from the data rather
+          than from "have you seen this yet". It removes itself at six of six. */}
+      {getSettings().gettingStarted !== false && !asCoach && (
+        <GettingStarted T={T} accent={accent} steps={startSteps} onNavigate={onNavigate} />
+      )}
 
       {/* ── Camp spotlight ─────────────────────────────────────────────────── */}
       {campFocus && (
@@ -685,6 +713,17 @@ function BriefingBody({ T, accent, sectionTitle, signals, todayCount, role, scop
   // everything into one grey list.
   const rows: BriefItem[] = items ?? (prose ? [] : signals)
 
+  // ── Nothing is invisible ──────────────────────────────────────────────────
+  // The briefing deliberately says three or four things: a list of everything
+  // has prioritised nothing. But a coach who has just switched Racket
+  // Progression on and never sees the word "rackets" reasonably concludes the
+  // briefing cannot see it. So every subject the written briefing left out is
+  // still here, as a chip — tap one and it tells you what it knows. The
+  // briefing keeps deciding; the dashboard stops hiding.
+  const [openTag, setOpenTag] = useState<string | null>(null)
+  const mentioned = new Set(rows.map(r => r.tag))
+  const rest = signals.filter(s => !mentioned.has(s.tag))
+
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
@@ -709,6 +748,28 @@ function BriefingBody({ T, accent, sectionTitle, signals, todayCount, role, scop
             <div style={{ flex: 1, fontSize: 12.5, color: T.text, lineHeight: 1.45 }}>{it.text}</div>
           </div>
         ))}
+
+      {rest.length > 0 && (
+        <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 9.5, color: T.text4, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Also watching</span>
+            {rest.map(r => {
+              const on = openTag === r.tag
+              return (
+                <button key={r.tag} onClick={() => setOpenTag(on ? null : r.tag)}
+                  style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT_MONO, fontSize: 9.5, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 7px', borderRadius: 4, border: `1px solid ${on ? accent.border : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text3 }}>
+                  {r.tag}
+                </button>
+              )
+            })}
+          </div>
+          {!!openTag && (
+            <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.5, marginTop: 8 }}>
+              {rest.find(r => r.tag === openTag)?.text}
+            </div>
+          )}
+        </div>
+      )}
 
       {state === 'failed' && !items && !prose && (
         <div style={{ fontSize: 11, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>
