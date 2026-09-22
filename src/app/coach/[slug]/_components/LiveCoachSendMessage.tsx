@@ -17,6 +17,7 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { getSettings } from '../_lib/settings-store'
 import { useCoachTable } from '../_lib/coach-db'
+import { V2_LABEL, V2_NOTES } from '@/lib/coach/v2'
 import { campSpans, campsBetween } from '@/lib/coach/camp-dates'
 
 const clean = (s: string) => s.replace(/[*_#`>]/g, '').replace(/^\s*[-•]\s*/gm, '').replace(/\n{3,}/g, '\n\n').trim()
@@ -83,7 +84,6 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
   // is no per-coach sending number, so we never name one here. The only thing the
   // coach controls is whether the Text channel is on at all; if texting isn't
   // enabled on the account, the send route says so per recipient in the results.
-  const textingOn = s.messaging?.text !== false
 
   const togglePerson = (name: string) => setSelectedNames(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
   const toggleChannel = (id: string) => setChannels(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id])
@@ -122,16 +122,17 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
   ]
   const allRecipients = recipients.map(r => r.name)
 
-  const channelNote = (id: ChannelId): { note: string; tag: 'Live' | 'Setup' | 'Soon'; live: boolean } => {
+  const channelNote = (id: ChannelId): { note: string; tag: 'Live' | 'Setup' | 'Soon' | typeof V2_LABEL; live: boolean } => {
     switch (id) {
       case 'internal': return { note: 'Live — lands in the inbox instantly', tag: 'Live', live: true }
       case 'email':    return emailSynced
         ? { note: `Live — sent through ${provider}, no app opens`, tag: 'Live', live: true }
         : { note: 'Connect your mailbox in Settings to send email', tag: 'Setup', live: false }
-      case 'sms':      return textingOn
-        ? { note: 'Sends from Lumio’s messaging number — replies come back to your inbox', tag: 'Live', live: true }
-        : { note: 'Text is switched off — turn it on in Settings → Messaging', tag: 'Setup', live: false }
-      case 'whatsapp': return { note: 'Coming soon — needs WhatsApp Business verification', tag: 'Soon', live: false }
+      // Texting is not part of founders access — see lib/coach/v2.ts. It is
+      // shown rather than hidden, because a coach who wants it should be able to
+      // see it is coming and tell us they want it.
+      case 'sms':      return { note: V2_NOTES.sms, tag: V2_LABEL, live: false }
+      case 'whatsapp': return { note: 'Arrives after texting — it needs WhatsApp Business verification.', tag: V2_LABEL, live: false }
     }
   }
 
@@ -141,8 +142,8 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
     switch (id) {
       case 'internal': return 'Added to the inbox'
       case 'email':    return emailSynced ? `Sent through ${provider}` : 'Needs mailbox setup'
-      case 'sms':      return textingOn ? 'Texted from Lumio’s number' : 'Text is off in Settings'
-      case 'whatsapp': return 'Coming soon'
+      case 'sms':      return 'Not sent — texting arrives in V2'
+      case 'whatsapp': return 'Not sent — arrives after texting'
     }
   }
 
@@ -315,9 +316,11 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
                   const on = channels.includes(id)
                   const meta = CHANNEL_META[id]
                   const { note, tag, live } = channelNote(id)
-                  const tagColor = tag === 'Soon' ? T.text3 : live ? T.good : T.warn
+                  const v2 = tag === V2_LABEL
+                  const tagColor = v2 ? accent.hex : tag === 'Soon' ? T.text3 : live ? T.good : T.warn
                   return (
-                    <button key={id} onClick={() => toggleChannel(id)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, borderRadius: 12, padding: 14, textAlign: 'left', cursor: 'pointer', ...card(on) }}>
+                    <button key={id} onClick={() => { if (!v2) toggleChannel(id) }} disabled={v2}
+                      style={{ display: 'flex', alignItems: 'flex-start', gap: 12, borderRadius: 12, padding: 14, textAlign: 'left', cursor: v2 ? 'not-allowed' : 'pointer', opacity: v2 ? 0.65 : 1, ...card(on && !v2) }}>
                       <span style={{ fontSize: 22, lineHeight: 1 }}>{meta.icon}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

@@ -6,6 +6,7 @@
 
 import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { V2_LABEL, V2_NOTES } from '@/lib/coach/v2'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, sb, currentCoachId } from '../_lib/coach-db'
 import { getSettings, setSettings, isDemoPortal } from '../_lib/settings-store'
@@ -133,7 +134,14 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Payments &amp; Packages</h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Lesson packs, credits used and what’s outstanding.{(() => { const r = getSettings().privateRate; return r ? ` · Private £${r}/hr` : '' })()}</p>
         </div>
-        <button onClick={() => setPay({})} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>💳 Take a payment</button>
+        {/* Card payments are V2. The button stays — a coach who has connected a
+            bank can still use it — but it says what it is until then. */}
+        <button onClick={() => setPay({})}
+          title={payConnected ? 'Card · Apple Pay · Google Pay' : V2_NOTES.payments}
+          style={{ appearance: 'none', border: payConnected ? 0 : `1px solid ${T.border}`, background: payConnected ? accent.hex : 'transparent', color: payConnected ? T.btnText : T.text3, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8 }}>
+          💳 Take a payment
+          {!payConnected && <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: accent.hex, background: accent.dim, borderRadius: 999, padding: '2px 7px' }}>{V2_LABEL}</span>}
+        </button>
       </div>
 
       {showSetup && (
@@ -410,10 +418,20 @@ export function PayModal({ T, accent, connected, init, onClose }: { T: ThemeToke
     } catch { setErr('Could not start payment') } finally { setCreating(false) }
   }
 
+  // No bank connected means, in founders access, that card payments are not on
+  // yet — and sending a coach to Settings to connect one would be sending them
+  // to a dead end. Say what is actually true and what they can do instead.
   if (connected === false) {
     return (
       <Shell T={T} title="Take a payment" onClose={onClose} footer={<button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, border: 0, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Got it</button>}>
-        <div style={{ fontSize: 13, color: T.text2, lineHeight: 1.6 }}>Connect your bank first. Go to <strong style={{ color: T.text }}>Settings → Pricing &amp; packages</strong> and use <strong style={{ color: T.text }}>Connect your bank</strong> at the bottom — a couple of minutes with Stripe. The money then lands straight in your own account.</div>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '3px 9px' }}>{V2_LABEL}</span>
+        </div>
+        <div style={{ fontSize: 13, color: T.text2, lineHeight: 1.6 }}>{V2_NOTES.payments}</div>
+        <div style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.6, marginTop: 10 }}>
+          Take the money however you do today — bank transfer, cash, your own card reader — then log it with
+          <strong style={{ color: T.text2 }}> Record a payment</strong> and everything else stays accurate.
+        </div>
       </Shell>
     )
   }
