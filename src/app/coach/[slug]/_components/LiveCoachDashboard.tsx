@@ -11,6 +11,7 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { dbList, dbInsert, dbUpdate, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 import { campSpans, campsBetween, campsOn, campDayLabel, CAMP_COLOUR } from '@/lib/coach/camp-dates'
+import { campMoney } from '@/lib/coach/camp-money'
 import { getFlags, subscribe as subscribeFeatures } from '../_lib/feature-flags'
 import { EmptyCoachDashboard } from './EmptyCoachDashboard'
 import { EmptyCoachHome } from './EmptyCoachHome'
@@ -148,6 +149,26 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const upcomingCamps = campsBetween(campList, today, weekAhead)
   const todayCamps = campsOn(campList, today)
 
+  // ── The camp, on the dashboard ──────────────────────────────────────────────
+  // A camp is the largest single thing in a coach's year — the most money, the
+  // most logistics, the most parents asking questions — and it was visible only
+  // if you went looking for it on the Camps page. The one running (or the one
+  // coming) now sits directly under the coach card, because for the eight weeks
+  // before it departs that is the first thing a head coach wants to know.
+  const campFocus = (() => {
+    const c = todayCamps[0] || campsBetween(campList, today, '9999-12-31')[0]
+    if (!c) return null
+    const row = (d.camps || []).find((x: any) => String(x.id) === String(c.id)) || {}
+    const att = (d.campAttendees || []).filter((a: any) => a.camp_id === c.id && (a.status || 'confirmed') !== 'cancelled')
+    const m = campMoney(row, att)
+    const costs: { label?: string; amount?: number }[] = Array.isArray(row.costs) ? row.costs : []
+    const totalCost = costs.reduce((n, x) => n + (Number(x.amount) || 0), 0)
+    const dayNo = c.start <= today ? daysBetween(c.start, today) + 1 : 0
+    const away = daysBetween(today, c.start)
+    const coachCount = Array.isArray(row.coach_ids) ? (row.coach_ids as unknown[]).length : 0
+    return { c, m, costs, totalCost, dayNo, away, coachCount, running: dayNo > 0 }
+  })()
+
   // The signals. These are FACTS about the coach's week, not the briefing —
   // Lumio Coach turns them into the briefing (see the effect below). Anything
   // added here becomes something he can decide to lead with.
@@ -267,6 +288,56 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           </div>
         </div>
       </div>
+
+      {/* ── Camp spotlight ─────────────────────────────────────────────────── */}
+      {campFocus && (
+        <button onClick={() => { try { sessionStorage.setItem('lumio_open_camp', campFocus.c.id) } catch { /* ignore */ } onNavigate('camps') }}
+          style={{ ...card, textAlign: 'left', cursor: 'pointer', appearance: 'none', width: '100%', borderLeft: `3px solid ${CAMP_COLOUR}` }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: CAMP_COLOUR }}>
+              {campFocus.running ? 'Camp running now' : 'Camp coming up'}
+            </span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: T.text }}>{campFocus.c.name}</span>
+            {!!campFocus.c.where && <span style={{ fontSize: 11.5, color: T.text3 }}>{campFocus.c.where}</span>}
+            <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 700, color: campFocus.running ? T.good : (campFocus.away <= 14 ? T.warn : T.text2) }}>
+              {campFocus.running
+                ? `Day ${campFocus.dayNo} of ${campFocus.c.days}`
+                : campFocus.away === 0 ? 'Starts today' : campFocus.away === 1 ? 'Starts tomorrow' : `${campFocus.away} days to go`}
+            </span>
+          </div>
+
+          {/* How full it is, at a glance — the number that decides whether the
+              camp makes money or is quietly cancelled. */}
+          {campFocus.m.capacity > 0 && (
+            <div style={{ display: 'flex', height: 6, borderRadius: 999, overflow: 'hidden', background: T.border, marginTop: 12 }}>
+              <div style={{ width: `${Math.min(100, Math.round((campFocus.m.seats / campFocus.m.capacity) * 100))}%`, background: CAMP_COLOUR }} />
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: 12, marginTop: 12 }}>
+            {[
+              { l: 'Booked', v: campFocus.m.capacity ? `${campFocus.m.seats}/${campFocus.m.capacity}` : String(campFocus.m.seats), c: T.text },
+              { l: 'Coaches going', v: campFocus.coachCount || '—', c: campFocus.coachCount ? T.text : T.warn },
+              { l: 'Collected', v: `£${Math.round(campFocus.m.collected).toLocaleString()}`, c: T.good },
+              { l: 'Still owed', v: `£${Math.round(campFocus.m.outstanding).toLocaleString()}`, c: campFocus.m.outstanding > 0 ? T.warn : T.text3 },
+              { l: campFocus.costs.length ? 'Margin' : 'Booked value', v: `£${Math.round(campFocus.costs.length ? campFocus.m.booked - campFocus.totalCost : campFocus.m.booked).toLocaleString()}`, c: campFocus.costs.length && campFocus.m.booked - campFocus.totalCost < 0 ? T.bad : T.text },
+            ].map(x => (
+              <div key={x.l}>
+                <div style={{ fontSize: 10.5, color: T.text3 }}>{x.l}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: x.c, marginTop: 2 }}>{x.v}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 11, color: T.text3, marginTop: 10 }}>
+            {campFocus.coachCount === 0
+              ? 'No coaches assigned to this trip yet — open the camp and add them.'
+              : campFocus.m.outstanding > 0
+                ? `£${Math.round(campFocus.m.outstanding).toLocaleString()} still to collect before you travel.`
+                : campFocus.costs.length ? 'Everyone has paid. Costs are tracked on the Finance tab.' : 'Everyone has paid — add your costs to see the margin.'}
+          </div>
+        </button>
+      )}
 
       {/* Stat cards */}
       <div className="cm-md" style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(5, 1fr)', gap: density.gap }}>

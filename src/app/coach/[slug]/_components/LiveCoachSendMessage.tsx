@@ -16,6 +16,8 @@ import { useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { getSettings } from '../_lib/settings-store'
+import { useCoachTable } from '../_lib/coach-db'
+import { campSpans, campsBetween } from '@/lib/coach/camp-dates'
 
 const clean = (s: string) => s.replace(/[*_#`>]/g, '').replace(/^\s*[-•]\s*/gm, '').replace(/\n{3,}/g, '\n\n').trim()
 
@@ -46,13 +48,33 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
   const [step, setStep] = useState<'who' | 'how' | 'message' | 'preview' | 'sent'>('who')
   const [selectedNames, setSelectedNames] = useState<string[]>(init?.recipient ? [init.recipient] : [])
   const [broadcast, setBroadcast] = useState(false)
+  // The camp audience. A camp is not a subset of the roster — it is the families
+  // booked on it PLUS the coaches travelling with it, and those coaches are not
+  // players at all. So it is its own audience rather than a filter over the list.
+  const [campId, setCampId] = useState<string | null>(null)
   const [customPerson, setCustomPerson] = useState('')
   const [channels, setChannels] = useState<string[]>(['internal'])
   const [messageText, setMessageText] = useState(init?.body ? `Re your message:\n${init.body}` : '')
   const [isUrgent, setIsUrgent] = useState(false)
   const [aiDraft, setAiDraft] = useState('')
+  // Did Lumio Coach write what is on the preview screen, or did the coach?
+  // The preview must never imply the AI tidied something it never saw.
+  const [aiWrote, setAiWrote] = useState(true)
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState('')
+
+  const campRows = useCoachTable<{ id: string; name: string; start_date?: string | null; end_date?: string | null; location?: string | null; region?: string | null; confirmed?: boolean | null; coach_ids?: string[] | null }>('coach_camps')
+  const attendeeRows = useCoachTable<{ camp_id: string; player_name?: string | null; player_id?: string | null; parent_email?: string | null; status?: string | null }>('coach_camp_attendees')
+  const staffRows = useCoachTable<{ id: string; name: string; email?: string | null; phone?: string | null; role?: string | null }>('coach_staff')
+
+  // "Active" = running now or still to come. A camp that finished last August is
+  // not something a coach wants at the top of their message list forever.
+  const todayISO = new Date().toLocaleDateString('en-CA')
+  const activeCampSpans = campsBetween(campSpans(campRows.rows), todayISO, '9999-12-31')
+  const activeCamps = activeCampSpans
+    .map(sp => campRows.rows.find(c => c.id === sp.id))
+    .filter(Boolean) as typeof campRows.rows
+  const camp = campId ? activeCamps.find(c => c.id === campId) || null : null
 
   const s = getSettings()
   const emailSynced = !!s.conn?.emailProvider
@@ -68,7 +90,33 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
 
   // Resolve selected players (+ broadcast = whole roster) into recipients.
   const picked = broadcast ? players : players.filter(p => selectedNames.includes(p.name))
-  const recipients: Recipient[] = [
+
+  // Everyone on the camp: the families booked on (matched back to the roster so
+  // they keep their own contact details) and the coaches working it. Cancelled
+  // places are not on the camp and are not written to.
+  const campRecipients: Recipient[] = (() => {
+    if (!camp) return []
+    const booked = attendeeRows.rows.filter(a => a.camp_id === camp.id && (a.status || 'confirmed') !== 'cancelled')
+    const fams: Recipient[] = booked.map(a => {
+      const nm = String(a.player_name || '').trim()
+      const p = players.find(x => x.name === nm) || (a.player_id ? players.find(x => (x as { id?: string }).id === a.player_id) : undefined)
+      return p
+        ? { name: p.name, role: 'Camp · player', email: emailOf(p), phone: phoneOf(p) }
+        : { name: nm || 'Attendee', role: 'Camp · player', email: String(a.parent_email || ''), phone: '' }
+    }).filter(r => r.name && r.name !== 'Attendee')
+    const ids = Array.isArray(camp.coach_ids) ? camp.coach_ids.map(String) : []
+    const coaches: Recipient[] = staffRows.rows.filter(c => ids.includes(c.id))
+      .map(c => ({ name: c.name, role: 'Camp · coach', email: String(c.email || ''), phone: String(c.phone || '') }))
+    // One message per person, even if a coach is also on the roster as a player.
+    const seen = new Set<string>()
+    return [...coaches, ...fams].filter(r => {
+      const k = r.name.trim().toLowerCase()
+      if (!k || seen.has(k)) return false
+      seen.add(k); return true
+    })
+  })()
+
+  const recipients: Recipient[] = campId ? campRecipients : [
     ...picked.map(p => ({ name: p.name, role: p.group || 'Player', email: emailOf(p), phone: phoneOf(p) })),
     ...(customPerson.trim() ? [{ name: customPerson.trim(), role: 'Contact', email: '', phone: '' }] : []),
   ]
@@ -98,9 +146,22 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
     }
   }
 
-  const handleSend = async (urgent: boolean) => {
+  // Two ways out of the message box, and the difference is the whole point:
+  // `draft` runs the coach's note through Lumio Coach; without it the message
+  // goes exactly as typed. A coach who has already worded something carefully
+  // — a price, a cancellation, a sentence they've thought about — should not
+  // have to fight an AI rewrite to send their own words.
+  const handleSend = async (urgent: boolean, draft = true) => {
     setIsUrgent(urgent)
-    setLoading(true); setErr('')
+    setErr('')
+    if (!draft) {
+      setAiWrote(false)
+      setAiDraft(messageText.trim())
+      setStep('preview')
+      return
+    }
+    setAiWrote(true)
+    setLoading(true)
     try {
       const usedChannels = (urgent ? [...CHANNEL_IDS] : channels as ChannelId[]).map(id => CHANNEL_META[id]?.label || id)
       // Authenticated Lumio Coach route. This used to post the persona from the
@@ -184,7 +245,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
           {/* STEP 1 — Who */}
           {step === 'who' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <button onClick={() => { setBroadcast(b => !b); setSelectedNames([]) }} style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: 12, textAlign: 'left', cursor: 'pointer', ...card(broadcast) }}>
+              <button onClick={() => { setBroadcast(b => !b); setSelectedNames([]); setCampId(null) }} style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: 12, textAlign: 'left', cursor: 'pointer', ...card(broadcast) }}>
                 <span style={{ fontSize: 18 }}>📣</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>All players</div>
@@ -192,7 +253,31 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
                 </div>
                 {broadcast && <span style={{ color: accent.hex }}>✓</span>}
               </button>
-              {!broadcast && (
+
+              {/* A camp is its own audience: everyone booked on it AND the
+                  coaches travelling with it. Those coaches are not on the player
+                  roster, so this is the only way to reach the trip in one go. */}
+              {activeCamps.map(c => {
+                const on = campId === c.id
+                const booked = attendeeRows.rows.filter(a => a.camp_id === c.id && (a.status || 'confirmed') !== 'cancelled').length
+                const nCoaches = Array.isArray(c.coach_ids) ? c.coach_ids.length : 0
+                const where = [c.location, c.region].filter(Boolean).join(', ')
+                return (
+                  <button key={c.id} onClick={() => { setCampId(on ? null : c.id); setBroadcast(false); setSelectedNames([]) }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: 12, textAlign: 'left', cursor: 'pointer', ...card(on) }}>
+                    <span style={{ fontSize: 18 }}>🏕</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Camp · {c.name}</div>
+                      <div style={{ fontSize: 10, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {booked} booked{nCoaches ? ` · ${nCoaches} coach${nCoaches === 1 ? '' : 'es'}` : ' · no coaches added yet'}{where ? ` · ${where}` : ''}
+                      </div>
+                    </div>
+                    {on && <span style={{ color: accent.hex }}>✓</span>}
+                  </button>
+                )
+              })}
+
+              {!broadcast && !campId && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, maxHeight: 280, overflowY: 'auto' }}>
                   {players.map(m => (
                     <button key={m.id || m.name} onClick={() => togglePerson(m.name)} style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: 12, textAlign: 'left', cursor: 'pointer', ...card(selectedNames.includes(m.name)) }}>
@@ -207,8 +292,8 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
                   {players.length === 0 && <div style={{ gridColumn: '1 / -1', fontSize: 12, color: T.text3 }}>No players on your roster yet — add one, or type a name below.</div>}
                 </div>
               )}
-              <input value={customPerson} onChange={e => setCustomPerson(e.target.value)} placeholder="Someone else — type name…"
-                style={{ width: '100%', padding: '11px 13px', borderRadius: 12, fontSize: 13, color: T.text, background: T.panel2, border: `1px solid ${T.borderHi}`, outline: 'none', fontFamily: FONT }} />
+              {!campId && <input value={customPerson} onChange={e => setCustomPerson(e.target.value)} placeholder="Someone else — type name…"
+                style={{ width: '100%', padding: '11px 13px', borderRadius: 12, fontSize: 13, color: T.text, background: T.panel2, border: `1px solid ${T.borderHi}`, outline: 'none', fontFamily: FONT }} />}
               {allRecipients.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                   {allRecipients.slice(0, 12).map(n => <span key={n} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, fontWeight: 600, background: accent.dim, color: accent.hex }}>{n}</span>)}
@@ -259,12 +344,16 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
                 <span>via</span>
                 {channels.map(id => <span key={id} style={{ padding: '2px 8px', borderRadius: 20, background: T.hover, color: T.text2 }}>{CHANNEL_META[id as ChannelId]?.label}</span>)}
               </div>
-              <textarea value={messageText} onChange={e => setMessageText(e.target.value)} rows={5} placeholder="Type your message… (AI will tidy it into a polished draft)"
+              <textarea value={messageText} onChange={e => setMessageText(e.target.value)} rows={5} placeholder="Type your message… Send it as written, or let Lumio Coach tidy it first."
                 style={{ width: '100%', padding: '13px', borderRadius: 12, fontSize: 13, color: T.text, background: T.panel2, border: `1px solid ${T.borderHi}`, resize: 'none', outline: 'none', fontFamily: FONT, lineHeight: 1.5 }} autoFocus />
               <div style={{ display: 'flex', gap: 10 }}>
                 <button onClick={() => setStep('how')} style={{ appearance: 'none', border: 0, borderRadius: 11, padding: '11px 16px', fontSize: 13, background: T.hover, color: T.text2, cursor: 'pointer' }}>← Back</button>
-                <button onClick={() => handleSend(false)} disabled={!messageText.trim() || loading} style={{ flex: 1, ...primaryBtn(!!messageText.trim() && !loading) }}>{loading ? '⏳ Drafting…' : 'Draft & send →'}</button>
-                <button onClick={() => handleSend(true)} disabled={!messageText.trim() || loading} style={{ ...primaryBtn(!!messageText.trim() && !loading, T.bad), padding: '11px 16px' }}>🚨 Urgent</button>
+                <button onClick={() => handleSend(false, false)} disabled={!messageText.trim() || loading}
+                  style={{ appearance: 'none', borderRadius: 11, padding: '11px 18px', fontSize: 13, fontWeight: 700, fontFamily: FONT, background: 'transparent', border: `1px solid ${T.borderHi}`, color: messageText.trim() && !loading ? T.text : T.text3, cursor: messageText.trim() && !loading ? 'pointer' : 'not-allowed' }}>
+                  Send as written
+                </button>
+                <button onClick={() => handleSend(false, true)} disabled={!messageText.trim() || loading} style={{ flex: 1, ...primaryBtn(!!messageText.trim() && !loading) }}>{loading ? '⏳ Drafting…' : '✨ Draft & send →'}</button>
+                <button onClick={() => handleSend(true, true)} disabled={!messageText.trim() || loading} style={{ ...primaryBtn(!!messageText.trim() && !loading, T.bad), padding: '11px 16px' }}>🚨 Urgent</button>
               </div>
             </div>
           )}
@@ -277,6 +366,9 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
                   <span>🚨</span><span style={{ fontSize: 11.5, fontWeight: 700, color: T.bad }}>URGENT — sending to all channels at once</span>
                 </div>
               )}
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: aiWrote ? accent.hex : T.text3 }}>
+                {aiWrote ? '✨ Lumio Coach\u2019s draft' : 'Your message, word for word'}
+              </div>
               <div style={{ borderRadius: 12, padding: 16, fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap', background: T.panel2, border: `1px solid ${T.border}`, color: T.text2 }}>{aiDraft}</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 10.5 }}>
                 {usedChannelIds.map(id => {

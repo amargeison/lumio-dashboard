@@ -265,8 +265,10 @@ function printKit(camp: TabCamp, kit: KitCategory[]) {
 // ATTENDEES — the rooming list, the airport run and what each week is for
 // ═══════════════════════════════════════════════════════════════════════════
 
-export function AttendeeTable({ T, accent, camp, attendees, players, addPlayer, remove, editAtt }: {
+export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [], addPlayer, remove, editAtt }: {
   T: ThemeTokens; accent: AccentTokens; camp: TabCamp; attendees: TabAttendee[]; players: TabPlayer[]
+  /** The coaches travelling, resolved from camp.coach_ids — see the Coaches tab. */
+  coaches?: { id: string; name: string; role?: string | null; qualifications?: string | null; avatar_url?: string | null }[]
   addPlayer: (name: string, playerId: string | null) => Promise<void>
   remove: (id: string) => Promise<void>
   editAtt: SaveAtt
@@ -293,6 +295,36 @@ export function AttendeeTable({ T, accent, camp, attendees, players, addPlayer, 
           Attendees · {attendees.length}{cap ? ` of ${cap}` : ''}
         </div>
         {left !== null && <div style={{ marginLeft: 'auto', fontSize: 11.5, color: left === 0 ? T.warn : T.text3 }}>{left === 0 ? 'Full' : `${left} spot${left === 1 ? '' : 's'} left`}</div>}
+      </div>
+
+      {/* ── Who is taking them ───────────────────────────────────────────────
+          A list of children going abroad is only half the list. The other half is
+          the staff, and the number that matters to a parent — and to a safeguarding
+          form — is the ratio between them. It sits above the players because that
+          is the order a head coach checks it in. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '9px 12px', marginBottom: 12 }}>
+        <span style={{ ...lbl(T), padding: 0 }}>Coaching team</span>
+        {coaches.length === 0 ? (
+          <span style={{ fontSize: 11.5, color: T.warn }}>Nobody assigned yet — add them on the Coaches tab.</span>
+        ) : (
+          <>
+            {coaches.map(c => (
+              <span key={c.id} title={c.role || c.qualifications || 'Coach'}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '3px 10px 3px 3px' }}>
+                {c.avatar_url
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={avatarSrc(c.avatar_url)} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+                  : <span style={{ width: 20, height: 20, borderRadius: '50%', background: accent.hex, color: T.btnText, display: 'grid', placeItems: 'center', fontSize: 9, fontWeight: 800 }}>
+                      {(c.name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('')}
+                    </span>}
+                <span style={{ fontSize: 11.5, fontWeight: 600, color: T.text }}>{c.name}</span>
+              </span>
+            ))}
+            <span style={{ marginLeft: 'auto', fontSize: 11, color: attendees.length / coaches.length > 8 ? T.warn : T.text3 }}>
+              1 : {Math.ceil(attendees.length / coaches.length) || 0} players
+            </span>
+          </>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -824,4 +856,81 @@ function nextMonthISO(start: string | null | undefined, index: number): string {
   const today = new Date()
   if (d.getTime() < today.getTime()) { d.setTime(today.getTime()); d.setMonth(d.getMonth() + index + 1) }
   return d.toISOString().slice(0, 10)
+}
+
+// ── Who is working the camp ─────────────────────────────────────────────────
+// A camp knew its players and nothing about its staff. For a head coach sending
+// eight coaches abroad that is the first question, not a detail — and it is what
+// makes "message the camp" mean something, because a camp is the coaches on it
+// as much as the families.
+//
+// Selection is by staff id, never by name: two coaches can share a name, and a
+// coach who changes theirs should not quietly fall off the trip.
+export function CampCoaches({ T, accent, camp, staff, onSave }: {
+  T: ThemeTokens; accent: AccentTokens
+  camp: { id: string; name?: string | null; coach_ids?: unknown }
+  staff: { id: string; name: string; role?: string | null; qualifications?: string | null; avatar_url?: string | null; email?: string | null }[]
+  onSave: (v: Record<string, unknown>) => void
+}) {
+  const selected = Array.isArray(camp.coach_ids) ? (camp.coach_ids as string[]).map(String) : []
+  const [ids, setIds] = useState<string[]>(selected)
+  const [saved, setSaved] = useState(false)
+  const dirty = ids.length !== selected.length || ids.some(i => !selected.includes(i))
+
+  const toggle = (id: string) => { setSaved(false); setIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]) }
+  const save = () => { onSave({ coach_ids: ids }); setSaved(true) }
+
+  const card: CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={card}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Coaches on this camp</div>
+          <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{ids.length} of {staff.length} selected</div>
+        </div>
+        <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, margin: '0 0 12px' }}>
+          Who is actually travelling and coaching. They show on the trip hub, they count towards the
+          coach-to-player ratio, and a message sent to <strong style={{ color: T.text2 }}>Camp</strong> reaches them
+          alongside every family booked on.
+        </p>
+
+        {staff.length === 0 ? (
+          <p style={{ fontSize: 12.5, color: T.text3, margin: 0 }}>
+            No coaches on your team yet — add them in Coaches and they&rsquo;ll appear here.
+          </p>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 8 }}>
+            {staff.map(c => {
+              const on = ids.includes(c.id)
+              return (
+                <button key={c.id} onClick={() => toggle(c.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', appearance: 'none', cursor: 'pointer', fontFamily: FONT, background: on ? accent.dim : T.panel2, border: `1px solid ${on ? accent.hex : T.border}`, borderRadius: 10, padding: '9px 11px' }}>
+                  {c.avatar_url
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={avatarSrc(c.avatar_url)} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    : <span style={{ width: 30, height: 30, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+                        {(c.name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('')}
+                      </span>}
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
+                    <span style={{ display: 'block', fontSize: 10.5, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.role || c.qualifications || 'Coach'}</span>
+                  </span>
+                  <span style={{ width: 17, height: 17, borderRadius: 5, flexShrink: 0, display: 'grid', placeItems: 'center', background: on ? accent.hex : 'transparent', border: `1px solid ${on ? accent.hex : T.border}`, color: T.btnText, fontSize: 11, fontWeight: 800 }}>{on ? '✓' : ''}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
+          <button onClick={save} disabled={!dirty}
+            style={{ appearance: 'none', border: 0, background: dirty ? accent.hex : T.panel2, color: dirty ? T.btnText : T.text3, borderRadius: 9, padding: '8px 16px', fontSize: 12.5, fontWeight: 700, cursor: dirty ? 'pointer' : 'default', fontFamily: FONT }}>
+            Save coaches
+          </button>
+          {saved && !dirty && <span style={{ fontSize: 11.5, color: T.good }}>✓ Saved</span>}
+        </div>
+      </div>
+    </div>
+  )
 }

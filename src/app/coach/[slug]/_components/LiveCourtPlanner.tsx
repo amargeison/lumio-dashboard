@@ -6,7 +6,7 @@
 // at each venue come from coach_staff.home_venue. Venues/courts are managed in
 // Settings → Venues (no Add-venue button here, by design).
 
-import { useState, useEffect, type CSSProperties } from 'react'
+import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, sb, currentIdentity, type CoachIdentity } from '../_lib/coach-db'
@@ -15,7 +15,7 @@ import { getSettings } from '../_lib/settings-store'
 type Venue = { id: string; name: string; address?: string | null; contact_name?: string | null; contact_phone?: string | null; contact_email?: string | null; facilities?: string | null; access_note?: string | null; is_home?: boolean | null }
 type Court = { id: string; venue_id?: string | null; name: string; surface?: string | null; status?: string | null; notes?: string | null }
 type Booking = { player_name?: string | null; court?: string | null; booking_date?: string | null; start_time?: string | null; duration_min?: number | null; status?: string | null; type?: string | null }
-type Staff = { id: string; name: string; role?: string | null; home_venue?: string | null }
+type Staff = { id: string; name: string; role?: string | null; home_venue?: string | null; is_head?: boolean | null }
 
 const todayISO = () => new Date().toISOString().slice(0, 10)
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
@@ -53,6 +53,41 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
     const ids = new Set((links || []).filter(l => l.venue_id === venueId).map(l => l.staff_id))
     return staff.filter(s => ids.has(s.id))
   }
+
+  // ── The head coach is based at their own home base ──────────────────────────
+  // Onboarding asks for a home court and writes coach_venues.is_home, but it
+  // never wrote the assignment row that says WHO works there — so the head coach
+  // set up their academy, opened the Court Planner and read "No coaches based
+  // here yet" about the club they run. Assistants got assigned on the Coaches
+  // page; the head never went through that form because they were never added
+  // by anyone.
+  //
+  // Rather than only fixing the wizard (which does nothing for an academy that
+  // has already onboarded — Pete's, for one), the link is written the first time
+  // the head opens this page and finds it missing. coach_id must be the signed-in
+  // user's own id: the RLS check on coach_staff_venues is literally
+  // `coach_id = auth.uid()`.
+  const headStaff = staff.find(st => st.is_head) || null
+  const homeVenue = venues.find(v => v.is_home) || null
+  const healed = useRef(false)
+  useEffect(() => {
+    if (healed.current || !me?.isHead || !links || !headStaff || !homeVenue) return
+    if (links.some(l => l.staff_id === headStaff.id && l.venue_id === homeVenue.id)) return
+    healed.current = true
+    ;(async () => {
+      const { data: authData } = await sb().auth.getUser()
+      const uid = authData.user?.id
+      if (!uid) return
+      const { error } = await sb().from('coach_staff_venues')
+        .insert({ coach_id: uid, staff_id: headStaff.id, venue_id: homeVenue.id, is_primary: true })
+      if (error) { console.error('[court-planner] could not assign the head coach to the home base', error); return }
+      setLinks(prev => [...(prev || []), { staff_id: headStaff.id, venue_id: homeVenue.id }])
+      // Keep the name-string copy in step, because the Coaches page still shows it.
+      if (!(headStaff.home_venue || '').trim()) {
+        await sb().from('coach_staff').update({ home_venue: homeVenue.name }).eq('id', headStaff.id)
+      }
+    })()
+  }, [me, links, headStaff, homeVenue])
 
   // A head coach sees every site. An assistant sees the ones they work at —
   // anything else would be a card with no courts under it, because RLS has
