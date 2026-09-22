@@ -40,7 +40,7 @@ const DEMO_REVIEW: LessonReview = {
   rating: 5,
 }
 
-export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing, defaultKind = 'audio', playerName, demo = false, players = [] }: {
+export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing, defaultKind = 'audio', autoUpload = false, playerName, demo = false, players = [] }: {
   T: ThemeTokens; accent: AccentTokens; onClose: () => void
   onSummary?: (review: LessonReview, transcript: string) => void
   // Fired the moment the AI review starts, with the media id the pipeline writes
@@ -48,6 +48,10 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
   // summary lands in the list even if the coach closes this modal.
   onProcessing?: (mediaId: string) => void
   defaultKind?: 'audio' | 'video'; playerName?: string; demo?: boolean
+  /** Opened from "Upload a recording" rather than "Record" — puts the file
+      picker first, because a coach who has already chosen does not want to
+      choose again. */
+  autoUpload?: boolean
   players?: { id: string; name: string }[]
 }) {
   const [kind, setKind] = useState<'audio' | 'video'>(defaultKind)
@@ -219,12 +223,17 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
                   <button key={k} onClick={() => setKind(k)} style={{ ...btn(kind === k ? T.panel : 'transparent', kind === k ? T.text : T.text2), padding: '6px 14px', boxShadow: kind === k ? `0 0 0 1px ${T.border}` : 'none' }}>{k === 'audio' ? '🎙️ Audio' : '🎬 Video'}</button>
                 ))}
               </div>
+              {/* Opened from "Upload a recording"? Then uploading is the primary
+                  button and recording is the alternative, rather than the coach
+                  having to make the same choice twice. */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <button onClick={startRecording} disabled={!who} style={{ ...btn(accent.hex, T.btnText), padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: who ? 1 : 0.45, cursor: who ? 'pointer' : 'not-allowed' }}>
-                  <span style={{ fontSize: 26 }}>⏺</span> Record now
+                <button onClick={autoUpload ? () => who && fileRef.current?.click() : startRecording} disabled={!who}
+                  style={{ ...btn(accent.hex, T.btnText), padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: who ? 1 : 0.45, cursor: who ? 'pointer' : 'not-allowed' }}>
+                  <span style={{ fontSize: 26 }}>{autoUpload ? '⬆' : '⏺'}</span> {autoUpload ? 'Choose file(s)' : 'Record now'}
                 </button>
-                <button onClick={() => who && fileRef.current?.click()} disabled={!who} style={{ ...btn(T.panel2, accent.hex), border: `1px dashed ${accent.border}`, padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: who ? 1 : 0.45, cursor: who ? 'pointer' : 'not-allowed' }}>
-                  <span style={{ fontSize: 26 }}>⬆</span> Upload file(s)
+                <button onClick={autoUpload ? startRecording : () => who && fileRef.current?.click()} disabled={!who}
+                  style={{ ...btn(T.panel2, accent.hex), border: `1px dashed ${accent.border}`, padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: who ? 1 : 0.45, cursor: who ? 'pointer' : 'not-allowed' }}>
+                  <span style={{ fontSize: 26 }}>{autoUpload ? '⏺' : '⬆'}</span> {autoUpload ? 'Record now instead' : 'Upload file(s)'}
                 </button>
               </div>
               <input ref={fileRef} type="file" accept="audio/*,video/*" multiple style={{ display: 'none' }} onChange={e => onPickFiles(Array.from(e.target.files || []))} />

@@ -47,8 +47,8 @@ export async function GET() {
     // sets — falling back to `recipients` for rows written before sending
     // threaded properly. Two exact queries rather than one fuzzy match: a
     // `like` on a name would hand "Sophia Jones" her namesake's messages.
-    safe(db.from('coach_messages').select('id, direction, from_name, recipients, subject, body, created_at, reaction').eq('coach_id', m.academyId).eq('thread_key', name).order('created_at', { ascending: false }).limit(50)),
-    safe(db.from('coach_messages').select('id, direction, from_name, recipients, subject, body, created_at, reaction').eq('coach_id', m.academyId).is('thread_key', null).eq('recipients', name).order('created_at', { ascending: false }).limit(50)),
+    safe(db.from('coach_messages').select('id, direction, from_name, recipients, subject, body, created_at, reaction, to_name, reply_to, camp_id').eq('coach_id', m.academyId).eq('thread_key', name).order('created_at', { ascending: false }).limit(50)),
+    safe(db.from('coach_messages').select('id, direction, from_name, recipients, subject, body, created_at, reaction, to_name, reply_to, camp_id').eq('coach_id', m.academyId).is('thread_key', null).eq('recipients', name).order('created_at', { ascending: false }).limit(50)),
     safe(db.from('coach_watch_sessions').select('started_at, duration_min, avg_hr, max_hr, distance_m, effort_score, movement_score, consistency_score, xp_awarded').eq('coach_id', m.academyId).eq('player_id', m.scopePlayerId).eq('voided', false).order('started_at', { ascending: false }).limit(50)),
   ])
 
@@ -74,7 +74,7 @@ export async function GET() {
     try {
       await sendWelcomeMessage(db, m.academyId, m.scopePlayerId, m.role as 'parent' | 'student')
       const { data: fresh } = await db.from('coach_messages')
-        .select('id, direction, from_name, recipients, subject, body, created_at, reaction')
+        .select('id, direction, from_name, recipients, subject, body, created_at, reaction, to_name, reply_to, camp_id')
         .eq('coach_id', m.academyId).eq('thread_key', name).order('created_at', { ascending: false }).limit(5)
       if (fresh?.length) (messagesThreaded as any[]).push(...fresh)
     } catch { /* a greeting must never break the page */ }
@@ -125,7 +125,7 @@ export async function GET() {
   let camps: any[] = []
   if (campIds.length) {
     camps = await safe(db.from('coach_camps')
-      .select('id, name, start_date, end_date, location, region, audience, board, daily_rhythm, description, intent, objectives, outcomes, itinerary, equipment, parent_brief, balance_link, overseas, trip, player_targets')
+      .select('id, name, start_date, end_date, location, region, audience, board, daily_rhythm, description, intent, objectives, outcomes, itinerary, equipment, parent_brief, balance_link, overseas, trip, player_targets, coach_ids')
       .eq('coach_id', m.academyId).in('id', campIds))
     const byId = new Map((attendees as any[]).map(a => [a.camp_id, a]))
     const playerName = String(player?.name || '').trim().toLowerCase()
@@ -179,7 +179,33 @@ export async function GET() {
   // that is theirs, already resolved.
   const nextSession = await buildNextSession(db, m.academyId, m.scopePlayerId, name)
 
+  // ── Who they can write to, and the camp conversations they are in ────────
+  // A family messaging "the academy" is fine when there is one coach. With eight
+  // it is a message nobody owns. And a camp is a group of people who need one
+  // thread, not sixteen private ones — which is the gap that sends a trip to
+  // WhatsApp within a day of landing.
+  const staffRows = await safe(db.from('coach_staff')
+    .select('id, name, role, avatar_url, is_head').eq('coach_id', m.academyId).limit(40))
+  const coaches = await Promise.all((staffRows as any[])
+    .filter(s2 => String(s2.name || '').trim())
+    .map(async s2 => ({
+      id: String(s2.id), name: String(s2.name), role: s2.role || (s2.is_head ? 'Head coach' : 'Coach'),
+      avatar_url: await signAvatar(db, s2.avatar_url, m.academyId),
+    })))
+
+  const campThreads = await Promise.all((camps as any[]).map(async c => {
+    const rows = await safe(db.from('coach_messages')
+      .select('id, direction, from_name, recipients, subject, body, created_at, reaction, to_name, reply_to, camp_id')
+      .eq('coach_id', m.academyId).eq('camp_id', c.id)
+      .order('created_at', { ascending: false }).limit(60))
+    const { count } = await db.from('coach_camp_attendees')
+      .select('id', { count: 'exact', head: true }).eq('camp_id', c.id).neq('status', 'cancelled')
+    const coachCount = Array.isArray(c.coach_ids) ? (c.coach_ids as unknown[]).length : 0
+    return { campId: String(c.id), name: String(c.name || 'Camp'), people: (count ?? 0) + coachCount, messages: rows }
+  }))
+
   return NextResponse.json({
+    coaches, campThreads,
     player: {
       id: player.id, name: player.name, nickname: player.nickname,
       racket_stage: player.racket_stage, level: player.level, goal: player.goal,

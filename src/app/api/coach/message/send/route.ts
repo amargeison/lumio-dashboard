@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
 
-  const { recipients = [], channels = [], subject = '', body = '', ccCoach = true } =
-    (await req.json().catch(() => ({}))) as { recipients: Recipient[]; channels: string[]; subject?: string; body?: string; ccCoach?: boolean }
+  const { recipients = [], channels = [], subject = '', body = '', ccCoach = true, campId } =
+    (await req.json().catch(() => ({}))) as { recipients: Recipient[]; channels: string[]; subject?: string; body?: string; ccCoach?: boolean; campId?: string }
   // BCC the coach's own inbox on outbound email when enabled (Settings toggle) —
   // a silent copy that doesn't expose their address or invite reply-all.
   const bccAddress = ccCoach !== false && user.email ? user.email : undefined
@@ -147,6 +147,28 @@ export async function POST(req: NextRequest) {
       }
     }).filter(r => !!r.recipients)
     if (rows.length) await admin.from('coach_messages').insert(rows)
+
+    // A message TO A CAMP is also a message in the camp's own conversation —
+    // the one every family on the trip and every coach travelling can see in
+    // their app. Without this row the coach's "message the camp" reaches sixteen
+    // private threads and the group chat they are all looking at stays empty.
+    if (campId) {
+      const { data: camp } = await admin.from('coach_camps')
+        .select('name').eq('id', campId).eq('coach_id', user.id).maybeSingle()
+      if (camp) {
+        await admin.from('coach_messages').insert({
+          coach_id: user.id,
+          recipients: `Camp · ${camp.name}`,
+          thread_key: `camp:${campId}`,
+          camp_id: campId,
+          direction: 'out',
+          channels: channels.join(', '),
+          subject: subject || null,
+          body,
+          status,
+        })
+      }
+    }
   } catch (e) { console.error('[coach/message/send] log failed', e) }
 
   return NextResponse.json({ status, results })

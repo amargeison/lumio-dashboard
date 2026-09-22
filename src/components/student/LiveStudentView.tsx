@@ -84,10 +84,12 @@ const prettyDate = (iso?: string | null) => {
 }
 const bandLabel = (n: number) => (n >= 70 ? 'High' : n >= 40 ? 'Medium' : 'Low')
 
-export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
+export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }: {
   T: StudentTheme; bundle: StudentBundle; footnote?: string
   /** Supplied by the portal only — the coach's preview is read-only. */
-  onSendMessage?: (body: string) => Promise<void>
+  onSendMessage?: (body: string, opts?: { toName?: string; replyTo?: string; campId?: string }) => Promise<void>
+  /** Reacting is the family's, for the same reason. */
+  onReact?: (id: string, reaction: string | null) => Promise<void>
 }) {
   const [playing, setPlaying] = useState<StudentClip | null>(null)
   const { player, skills, lessons, clips, voiceNotes, watch, resources, sectionsOff, awardThreshold } = bundle
@@ -449,7 +451,9 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
         <Card T={T}>
           <Head T={T} icon="megaphone" title={onSendMessage ? 'Messages' : 'Messages'}
             sub={onSendMessage ? 'Your conversation with the coaching team' : 'What has been said between you'} />
-          <MessageThread T={T} messages={messages} adult={f.audience === 'adult'} onSend={onSendMessage} />
+          <MessageThread T={T} messages={messages} adult={f.audience === 'adult'}
+            coaches={bundle.coaches} campThreads={bundle.campThreads}
+            onSend={onSendMessage} onReact={onReact} />
         </Card>
       )}
 
@@ -537,21 +541,97 @@ function MessageBody({ T, text }: { T: StudentTheme; text: string }) {
   return <span style={{ whiteSpace: 'pre-wrap', ...WRAP }}>{out}</span>
 }
 
-function MessageThread({ T, messages, adult, onSend }: {
+// ── The conversation ────────────────────────────────────────────────────────
+// A player app that can only receive is a noticeboard. This is the part that
+// decides whether a parent messages their coach HERE or on WhatsApp at ten at
+// night, so it has to do what a messaging app does: answer a particular message,
+// react to one, pick who you are writing to, and — on a camp — talk to everyone
+// at once rather than to eight separate people.
+//
+// The three audiences are real, not cosmetic. "The academy" is the shared inbox
+// whoever picks it up answers; a named coach routes to that coach; a camp thread
+// is the families booked on and the coaches travelling. The server re-checks all
+// three, so choosing one here is a statement of intent, never a permission.
+
+const REACTIONS = ['👍', '❤️', '😄', '✅', '🎾', '🙌']
+
+type SendOpts = { toName?: string; replyTo?: string; campId?: string }
+
+function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onReact }: {
   T: StudentTheme
   messages: StudentBundle['messages']
   adult: boolean
-  onSend?: (body: string) => Promise<void>
+  coaches?: StudentBundle['coaches']
+  campThreads?: StudentBundle['campThreads']
+  onSend?: (body: string, opts?: SendOpts) => Promise<void>
+  onReact?: (id: string, reaction: string | null) => Promise<void>
 }) {
+  const camps = campThreads || []
+  const team = coaches || []
+  // 'academy' | 'coach:<name>' | 'camp:<id>'
+  const [audience, setAudience] = useState<string>('academy')
   const [showAll, setShowAll] = useState(false)
-  // The bundle hands them newest-first (that is what the inbox wants). A
-  // conversation reads the other way round.
-  const ordered = [...(messages || [])].sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')))
+  const [reacting, setReacting] = useState<string | null>(null)
+  const [reply, setReply] = useState<StudentBundle['messages'][number] | null>(null)
+  const [draft, setDraft] = useState('')
+
+  const campId = audience.startsWith('camp:') ? audience.slice(5) : null
+  const camp = campId ? camps.find(c => c.campId === campId) || null : null
+  const toName = audience.startsWith('coach:') ? audience.slice(6) : undefined
+
+  // Which messages belong to the tab you are looking at. The academy tab shows
+  // the whole one-to-one thread — a family does not think of their coach and
+  // "the academy" as two conversations, and splitting them would hide half the
+  // history behind a name they did not pick.
+  const source = camp ? camp.messages : (messages || []).filter(m => !m.camp_id)
+  const ordered = [...source].sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')))
+  const byId = new Map(ordered.map(m => [m.id, m]))
   const hidden = Math.max(0, ordered.length - 12)
   const shown = showAll ? ordered : ordered.slice(-12)
 
+  const tabs: { id: string; label: string; sub?: string }[] = [
+    { id: 'academy', label: 'Your coach' },
+    ...team.slice(0, 6).map(c => ({ id: `coach:${c.name}`, label: c.name.split(/\s+/)[0], sub: c.role || 'Coach' })),
+    ...camps.map(c => ({ id: `camp:${c.campId}`, label: c.name.length > 18 ? `${c.name.slice(0, 18)}…` : c.name, sub: c.people ? `${c.people} people` : 'Camp' })),
+  ]
+
+  const send = async () => {
+    if (!onSend || !draft.trim()) return
+    await onSend(draft.trim(), { toName, replyTo: reply?.id, campId: campId || undefined })
+    setDraft(''); setReply(null)
+  }
+
+  const quote = (m: StudentBundle['messages'][number]) =>
+    `> ${String(m.body || '').split('\n').slice(0, 3).join('\n> ').slice(0, 240)}\n\n`
+
   return (
     <>
+      {/* Who you are writing to. Only shown when there is a choice to make. */}
+      {tabs.length > 1 && (
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 12 }}>
+          {tabs.map(t => {
+            const on = audience === t.id
+            return (
+              <button key={t.id} onClick={() => { setAudience(t.id); setReply(null); setShowAll(false) }}
+                style={{ flex: '0 0 auto', appearance: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                  background: on ? T.accentDim : T.panel2, border: `1px solid ${on ? T.accentBorder : T.border}`,
+                  color: on ? T.accent : T.text2, borderRadius: 999, padding: '6px 13px' }}>
+                <span style={{ display: 'block', fontSize: 12, fontWeight: on ? 700 : 500 }}>
+                  {t.id.startsWith('camp:') ? '🎾 ' : ''}{t.label}
+                </span>
+                {!!t.sub && <span style={{ display: 'block', fontSize: 9.5, color: T.text3 }}>{t.sub}</span>}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {!!camp && (
+        <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, marginBottom: 10 }}>
+          Everyone on {camp.name} sees this — the families going and the coaches with them.
+        </div>
+      )}
+
       {hidden > 0 && !showAll && (
         <button onClick={() => setShowAll(true)}
           style={{ appearance: 'none', background: 'transparent', border: `1px solid ${T.border}`, color: T.text2, borderRadius: 999, padding: '6px 14px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', alignSelf: 'center', margin: '0 auto 12px', display: 'block', fontFamily: 'inherit' }}>
@@ -561,30 +641,70 @@ function MessageThread({ T, messages, adult, onSend }: {
 
       {ordered.length === 0 ? (
         <div style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.6, marginBottom: onSend ? 14 : 0 }}>
-          {onSend
-            ? 'Nothing here yet. Anything at all — a question, an absence, a well done — send it below and it goes straight to your coach.'
-            : 'No messages yet.'}
+          {camp
+            ? 'Nothing here yet. Say hello to everyone going — a question about kit, flights, or who is on which flight.'
+            : onSend
+              ? 'Nothing here yet. Anything at all — a question, an absence, a well done — send it below and it goes straight to your coach.'
+              : 'No messages yet.'}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: onSend ? 14 : 0, maxHeight: showAll ? 'none' : 520, overflowY: showAll ? 'visible' : 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: onSend ? 14 : 0, maxHeight: showAll ? 'none' : 560, overflowY: showAll ? 'visible' : 'auto' }}>
           {shown.map(m => {
             const mine = m.direction === 'in'
+            const parent = m.reply_to ? byId.get(m.reply_to) : null
+            const open = reacting === m.id
             return (
               <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start', maxWidth: '100%' }}>
-                <div style={{
-                  maxWidth: '86%', boxSizing: 'border-box',
-                  background: mine ? T.accentDim : T.panel2,
-                  border: `1px solid ${mine ? T.accentBorder : T.border}`,
-                  borderRadius: 14, borderBottomRightRadius: mine ? 4 : 14, borderBottomLeftRadius: mine ? 14 : 4,
-                  padding: '10px 13px', ...WRAP,
-                }}>
+                <div onClick={() => onReact && setReacting(open ? null : m.id)}
+                  style={{
+                    maxWidth: '86%', boxSizing: 'border-box', cursor: onReact ? 'pointer' : 'default',
+                    background: mine ? T.accentDim : T.panel2,
+                    border: `1px solid ${mine ? T.accentBorder : T.border}`,
+                    borderRadius: 14, borderBottomRightRadius: mine ? 4 : 14, borderBottomLeftRadius: mine ? 14 : 4,
+                    padding: '10px 13px', ...WRAP,
+                  }}>
+                  {/* What this answers, so a reply still makes sense a week later. */}
+                  {!!parent && (
+                    <div style={{ borderLeft: `2px solid ${T.accentBorder}`, paddingLeft: 8, marginBottom: 6 }}>
+                      <div style={{ fontSize: 10, color: T.accent, fontWeight: 700 }}>{parent.direction === 'in' ? 'You' : (parent.from_name || 'Coach')}</div>
+                      <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.45, ...WRAP }}>
+                        {String(parent.body || '').slice(0, 120)}{String(parent.body || '').length > 120 ? '…' : ''}
+                      </div>
+                    </div>
+                  )}
                   {!!m.subject && <div style={{ fontSize: 11, fontWeight: 700, color: T.text2, marginBottom: 4, ...WRAP }}>{m.subject}</div>}
                   <div style={{ fontSize: 13, color: T.text, lineHeight: 1.6, ...WRAP }}>
                     <MessageBody T={T} text={String(m.body || '')} />
                   </div>
+                  {!!m.reaction && (
+                    <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1 }}>{m.reaction}</div>
+                  )}
                 </div>
+
+                {/* Tap a message to react, reply or pass it on. Hidden until then,
+                    because a row of icons under every bubble is noise. */}
+                {open && !!onSend && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', margin: '6px 2px 0', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                    {REACTIONS.map(e => (
+                      <button key={e} onClick={() => { onReact?.(m.id, m.reaction === e ? null : e); setReacting(null) }}
+                        style={{ appearance: 'none', cursor: 'pointer', border: `1px solid ${m.reaction === e ? T.accent : 'transparent'}`, background: m.reaction === e ? T.accentDim : T.panel2, borderRadius: 8, padding: '3px 6px', fontSize: 14, lineHeight: 1 }}>
+                        {e}
+                      </button>
+                    ))}
+                    <button onClick={() => { setReply(m); setReacting(null) }}
+                      style={{ appearance: 'none', cursor: 'pointer', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '4px 9px', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>
+                      ↩ Reply
+                    </button>
+                    <button onClick={() => { setDraft(quote(m)); setReacting(null); if (tabs.length > 1) setAudience(camps.length ? `camp:${camps[0].campId}` : 'academy') }}
+                      style={{ appearance: 'none', cursor: 'pointer', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '4px 9px', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>
+                      ↪ Forward
+                    </button>
+                  </div>
+                )}
+
                 <div style={{ fontSize: 9.5, color: T.text3, margin: '4px 4px 0' }}>
-                  {mine ? 'You' : (m.from_name || 'Coach')} · {prettyDate(m.created_at)}
+                  {mine ? 'You' : (m.from_name || 'Coach')}
+                  {!!m.to_name && mine ? ` → ${m.to_name}` : ''} · {prettyDate(m.created_at)}
                 </div>
               </div>
             )
@@ -592,38 +712,65 @@ function MessageThread({ T, messages, adult, onSend }: {
         </div>
       )}
 
-      {!!onSend && <MessageComposer T={T} onSend={onSend} />}
-      {!onSend && messages.length > 0 && (
-        <div style={{ fontSize: 11.5, color: T.text3, marginTop: 12, lineHeight: 1.5 }}>
-          This is the family&rsquo;s side of the conversation. Replies go to your Messages page.
-        </div>
+      {!!onSend && (
+        <MessageComposer
+          T={T} value={draft} onChange={setDraft} onSend={send}
+          reply={reply} onCancelReply={() => setReply(null)}
+          to={camp ? `everyone on ${camp.name}` : toName ? toName : 'your coach'} />
       )}
+
       {!onSend && (
-        <div style={{ fontSize: 10.5, color: T.text4, marginTop: 8 }}>
-          {adult ? 'They can reply from their own page.' : 'The parent can reply from their own page.'}
+        <div style={{ fontSize: 11, color: T.text4, marginTop: 10, lineHeight: 1.5 }}>
+          {adult ? 'They can reply, react and message any of your coaches from their own page.' : 'The parent can reply, react and message any of your coaches from their own page.'}
         </div>
       )}
     </>
   )
 }
 
-function MessageComposer({ T, onSend }: { T: StudentTheme; onSend: (body: string) => Promise<void> }) {
-  const [text, setText] = useState('')
+function MessageComposer({ T, value, onChange, onSend, reply, onCancelReply, to }: {
+  T: StudentTheme
+  value: string
+  onChange: (v: string) => void
+  onSend: () => Promise<void>
+  reply: StudentBundle['messages'][number] | null
+  onCancelReply: () => void
+  to: string
+}) {
   const [state, setState] = useState('')
+  const [emojiOpen, setEmojiOpen] = useState(false)
   const send = async () => {
-    if (!text.trim()) return
+    if (!value.trim()) return
     setState('Sending…')
-    try { await onSend(text.trim()); setText(''); setState('✓ Sent to your coach') }
-    catch { setState('Could not send') }
+    try { await onSend(); setState('✓ Sent') } catch { setState('Could not send') }
   }
   return (
     <>
-      <textarea value={text} onChange={e => { setText(e.target.value); setState('') }} rows={3}
-        placeholder="Ask a question, or let your coach know about an absence…"
+      {!!reply && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: T.panel2, border: `1px solid ${T.border}`, borderLeft: `3px solid ${T.accent}`, borderRadius: 10, padding: '8px 11px', marginBottom: 8 }}>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: 10, color: T.accent, fontWeight: 700 }}>Replying to {reply.direction === 'in' ? 'yourself' : (reply.from_name || 'your coach')}</span>
+            <span style={{ display: 'block', fontSize: 11.5, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{String(reply.body || '').slice(0, 90)}</span>
+          </span>
+          <button onClick={onCancelReply} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15 }}>×</button>
+        </div>
+      )}
+      <textarea value={value} onChange={e => { onChange(e.target.value); setState('') }} rows={3}
+        placeholder={`Message ${to}…`}
         style={{ width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text, padding: '10px 12px', fontSize: 13, resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
-        <button onClick={send} disabled={!text.trim()}
-          style={{ appearance: 'none', border: 0, background: T.accent, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: text.trim() ? 'pointer' : 'not-allowed', opacity: text.trim() ? 1 : 0.5, fontFamily: 'inherit' }}>Send</button>
+      {emojiOpen && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+          {['👍', '❤️', '😄', '🎾', '🙌', '💪', '🔥', '😅', '🙏', '👏', '⏰', '🚗'].map(e => (
+            <button key={e} onClick={() => onChange(value + e)}
+              style={{ appearance: 'none', cursor: 'pointer', border: `1px solid ${T.border}`, background: T.panel2, borderRadius: 8, padding: '4px 7px', fontSize: 15, lineHeight: 1 }}>{e}</button>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+        <button onClick={() => setEmojiOpen(o => !o)} title="Add an emoji"
+          style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', borderRadius: 10, padding: '8px 11px', fontSize: 15, cursor: 'pointer', lineHeight: 1 }}>🙂</button>
+        <button onClick={send} disabled={!value.trim()}
+          style={{ appearance: 'none', border: 0, background: T.accent, color: T.btnText, borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: value.trim() ? 'pointer' : 'not-allowed', opacity: value.trim() ? 1 : 0.5, fontFamily: 'inherit' }}>Send</button>
         {!!state && <span style={{ fontSize: 11.5, color: state.startsWith('✓') ? T.good : T.text3 }}>{state}</span>}
       </div>
     </>
@@ -877,7 +1024,11 @@ function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; firs
   const adultCamp = (camp.audience || '').toLowerCase() === 'adult'
   const you = adultCamp ? 'you' : first
 
-  const kit = asStringList(camp.equipment)
+  // camp.equipment is the COACH's kit list — 360 balls, ball baskets, a first
+  // aid kit, the stringing machine. It is what the academy packs, not what a
+  // family packs, and merging the two produced a "what to bring" telling a
+  // parent to bring twelve ball baskets. The family's list is the trip hub's
+  // own "What to bring" and nothing else.
   const rhythm = asStringList(camp.daily_rhythm)
   const brief = asStringList(camp.parent_brief)
   const itinerary = campDays(camp.itinerary)
@@ -892,11 +1043,21 @@ function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; firs
   const eating = (trip.eating || []).filter(p => String(p?.name || '').trim())
   const transport = (trip.transport || []).filter(p => String(p?.name || '').trim())
   const contacts = (trip.contacts || []).filter(c => String(c?.name || '').trim())
-  const bring = [...kit, ...asStringList(trip.bring)]
-  const extras = (trip.sections || []).filter(s => String(s?.title || '').trim())
+  const bring = asStringList(trip.bring)
+  // "Shape of the week" is the same subject as the itinerary and the daily
+  // rhythm: how the days run. As its own tab it split one answer across two
+  // places and left the main tab reading like a bare timetable — so its copy is
+  // folded into The week, where somebody looking for it actually is, and it
+  // stops being a tab of its own.
+  const allSections = (trip.sections || []).filter(s => String(s?.title || '').trim())
+  const isShape = (t: unknown) => /shape of (the )?week|how the (week|days) (run|work)/i.test(String(t || ''))
+  const shape = allSections.find(s => isShape(s.title)) || null
+  const extras = allSections.filter(s => !isShape(s.title))
+  const shapeBody = String(shape?.body || '').trim()
+  const shapeItems = asStringList(shape?.items)
 
   const goalsTab = targets.goals.length > 0 || !!camp.camp_goal || objectives.length > 0
-  const weekTab = itinerary.length > 0 || rhythm.length > 0
+  const weekTab = itinerary.length > 0 || rhythm.length > 0 || !!shapeBody || shapeItems.length > 0
   const stayTab = stay.length > 0 || venue.length > 0 || !!trip.stay?.name || !!trip.venue?.name || !!camp.room
   const travelTab = travel.length > 0 || !!camp.arrival
   const aboutTab = eating.length > 0 || transport.length > 0 || practical.length > 0
@@ -954,21 +1115,60 @@ function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; firs
           </div>
 
           {active === 'week' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {itinerary.map((d, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
-                  <div style={{ flexShrink: 0, width: 52, textAlign: 'center' }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{d.label}</div>
-                    {d.date && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2 }}>{prettyDate(d.date).replace(/ \d{4}$/, '')}</div>}
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    {d.focus && <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{d.focus}</div>}
-                    {d.detail && <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6, marginTop: 2 }}>{d.detail}</div>}
-                  </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* How the days run, first — the question everyone asks before
+                  they read a single day: what is a day here actually like? */}
+              {(!!shapeBody || shapeItems.length > 0 || rhythm.length > 0) && (
+                <div style={{ background: T.accentDim, border: `1px solid ${T.accentBorder}`, borderLeft: `3px solid ${T.accent}`, borderRadius: 12, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 10, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 800, marginBottom: 7 }}>How the days run</div>
+                  {!!shapeBody && (
+                    <p style={{ fontSize: 13.5, color: T.text, lineHeight: 1.7, margin: 0, fontWeight: 500 }}>{shapeBody}</p>
+                  )}
+                  {(shapeItems.length > 0 || rhythm.length > 0) && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 8, marginTop: shapeBody ? 12 : 0 }}>
+                      {[...shapeItems, ...rhythm].slice(0, 12).map((x, i) => {
+                        // "09:30 Morning session — groups on court 3" splits into a
+                        // time and the thing itself, which is how a timetable should
+                        // read. Anything without a time is simply a line.
+                        const m = String(x).match(/^\s*([0-9]{1,2}[:.][0-9]{2}\s*(?:–|-|to)?\s*(?:[0-9]{1,2}[:.][0-9]{2})?|morning|afternoon|evening|night)\b[\s—–:-]*(.*)$/i)
+                        const when = m?.[1] ? m[1].trim() : ''
+                        const what = m?.[2]?.trim() || String(x).trim()
+                        return (
+                          <div key={i} style={{ display: 'flex', gap: 10, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 10, padding: '9px 11px' }}>
+                            {!!when && (
+                              <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, color: T.accent, textTransform: 'capitalize', minWidth: 46 }}>{when}</span>
+                            )}
+                            <span style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.55 }}>{what}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
-              ))}
-              {rhythm.length > 0 && (
-                <Box T={T} title="How the days run"><Bullets T={T} items={rhythm} /></Box>
+              )}
+
+              {itinerary.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 800, marginBottom: 9 }}>Day by day</div>
+                  {itinerary.map((d, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 14, position: 'relative', paddingBottom: i === itinerary.length - 1 ? 0 : 14 }}>
+                      {/* A week is a sequence, so it is drawn as one. */}
+                      {i < itinerary.length - 1 && (
+                        <span style={{ position: 'absolute', left: 17, top: 34, bottom: 0, width: 2, background: T.border }} />
+                      )}
+                      <span style={{ flexShrink: 0, width: 36, height: 36, borderRadius: '50%', background: T.accentDim, border: `1px solid ${T.accentBorder}`, color: T.accent, display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, zIndex: 1 }}>
+                        {String(d.label || '').replace(/[^0-9]/g, '') || i + 1}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '11px 14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                          {d.focus && <div style={{ fontSize: 14, fontWeight: 700, color: T.text, letterSpacing: '-0.01em' }}>{d.focus}</div>}
+                          {d.date && <div style={{ fontSize: 10.5, color: T.text3, marginLeft: 'auto' }}>{prettyDate(d.date).replace(/ \d{4}$/, '')}</div>}
+                        </div>
+                        {d.detail && <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.65, marginTop: 4 }}>{d.detail}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}

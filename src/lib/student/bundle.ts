@@ -143,6 +143,31 @@ export type StudentMessage = {
   direction?: string | null
   from_name?: string | null
   created_at?: string | null
+  /** The coach this was addressed to, when the sender picked one. */
+  to_name?: string | null
+  /** The message this answers — rendered as a quote above the body. */
+  reply_to?: string | null
+  /** One of 👍 ❤️ 😄 ✅ 🎾 🙌, the same set the coach's inbox uses. */
+  reaction?: string | null
+  /** Set on camp-wide messages. */
+  camp_id?: string | null
+}
+
+/** Somebody the family can write to by name. */
+export type StudentCoach = {
+  id: string
+  name: string
+  role?: string | null
+  avatar_url?: string | null
+}
+
+/** A camp conversation: everyone booked on it, and the coaches travelling. */
+export type StudentCampThread = {
+  campId: string
+  name: string
+  /** How many people are in it, so "Camp · 9 people" is honest. */
+  people: number
+  messages: StudentMessage[]
 }
 
 export type StudentBundle = {
@@ -165,6 +190,10 @@ export type StudentBundle = {
   books: StudentBook[]
   /** The conversation with the coach, newest first. */
   messages: StudentMessage[]
+  /** The coaching team, so a family can write to a person rather than a club. */
+  coaches?: StudentCoach[]
+  /** One thread per camp they are on — families and coaches together. */
+  campThreads?: StudentCampThread[]
   /** Section keys the coach has switched off (settings.sectionsOff.student). */
   sectionsOff: string[]
   /** Mastery score that counts as "earned" (settings.awardThreshold, 3 or 4). */

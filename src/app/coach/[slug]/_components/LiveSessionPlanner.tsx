@@ -9,7 +9,8 @@ import { useState, useEffect, useRef } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { useCoachTable, dbInsert, dbRemove, invalidateCoachTable, RACKET_STAGES, RACKET_SKILLS, logSessionAttendance } from '../_lib/coach-db'
+import { useCoachTable, useCoachProfile, dbInsert, dbRemove, invalidateCoachTable, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
+import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 import { MediaCaptureModal } from './MediaCaptureModal'
 import { pollMedia } from '../_lib/media-upload'
 import { getSettings } from '../_lib/settings-store'
@@ -446,6 +447,158 @@ function MonthAgenda({ T, accent, bookings, camps, onCamp, fromISO, onOpen }: { 
   )
 }
 
+// ── Finishing a session ─────────────────────────────────────────────────────
+// "Mark session done" used to write a lesson row with a date and the plan's
+// focus on it and nothing else, which is how Lesson Summaries filled up with
+// stubs. A coach who recorded the hour got a proper write-up; everybody else got
+// a line. But the coach knows what happened — they have just coached it — and
+// the plan already knows what the hour was for. Ticking what actually got
+// covered, adding a sentence and a rating takes fifteen seconds on the walk back
+// to the car, and Lumio Coach turns that into the same structured summary a
+// recording produces.
+//
+// The recording route is still the better one, so it is offered here rather than
+// hidden: if they did record, that write-up is richer and this screen says so.
+function FinishSessionModal({ T, accent, plan, sheet, onClose, onDone, onRecord }: {
+  T: ThemeTokens; accent: AccentTokens
+  plan: any
+  sheet: { phase: string; mins: number; detail: string; cue?: string }[]
+  onClose: () => void; onDone: () => void; onRecord: () => void
+}) {
+  // Everything the plan said would happen, as things to tick. Pre-ticked,
+  // because the common case is that the session went as planned — and a coach
+  // who has to tick six boxes to log a normal lesson will stop logging lessons.
+  const planned: string[] = [
+    ...String(plan.focus_points || '').split('\n').map((x: string) => x.trim()).filter(Boolean),
+    ...sheet.filter(p => p.detail).map(p => `${p.phase}: ${p.detail}`),
+  ].slice(0, 10)
+  const drills: string[] = String(plan.drills || '').split('\n').map((x: string) => x.trim()).filter(Boolean).slice(0, 10)
+
+  const [covered, setCovered] = useState<string[]>(planned)
+  const [didDrills, setDidDrills] = useState<string[]>(drills)
+  const [note, setNote] = useState('')
+  const [rating, setRating] = useState(0)
+  const [writeUp, setWriteUp] = useState(true)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+
+  const toggle = (list: string[], set: (v: string[]) => void, x: string) =>
+    set(list.includes(x) ? list.filter(i => i !== x) : [...list, x])
+
+  const save = async () => {
+    if (busy) return
+    setBusy(true); setErr('')
+    try {
+      const res = await fetch('/api/coach/session-complete', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: plan.id, covered, drills: didDrills, note, rating: rating || undefined, writeUp }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || 'Could not save that session.')
+      invalidateCoachTable('coach_sessions')
+      onDone()
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Could not save that session.'); setBusy(false) }
+  }
+
+  const tick = (on: boolean): React.CSSProperties => ({
+    display: 'flex', gap: 9, alignItems: 'flex-start', textAlign: 'left', width: '100%',
+    appearance: 'none', cursor: 'pointer', fontFamily: FONT,
+    background: on ? accent.dim : T.panel2, border: `1px solid ${on ? accent.border : T.border}`,
+    borderRadius: 9, padding: '9px 11px',
+  })
+  const box = (on: boolean): React.CSSProperties => ({
+    width: 16, height: 16, borderRadius: 5, flexShrink: 0, marginTop: 1, display: 'grid', placeItems: 'center',
+    background: on ? accent.hex : 'transparent', border: `1px solid ${on ? accent.hex : T.border}`,
+    color: T.btnText, fontSize: 10, fontWeight: 800,
+  })
+
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
+      style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto', fontFamily: FONT }}>
+      <div style={{ width: '100%', maxWidth: 600, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 22 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 3 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>Finish the session</div>
+          <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 28, height: 28, fontSize: 16 }}>×</button>
+        </div>
+        <p style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.55, margin: '0 0 14px' }}>
+          Tick what you actually got through. Lumio Coach writes it up as a lesson summary from this — and only from this, so anything you untick is treated as not covered.
+        </p>
+
+        <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, color: T.text2 }}>Recorded the hour? That write-up is far richer than this one.</span>
+          <button onClick={onRecord} style={{ marginLeft: 'auto', appearance: 'none', border: 0, borderRadius: 8, padding: '6px 12px', background: accent.hex, color: T.btnText, fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>🎙 Use a recording instead</button>
+        </div>
+
+        {planned.length > 0 && (
+          <>
+            <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: T.text3, marginBottom: 7 }}>What you covered</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+              {planned.map(x => {
+                const on = covered.includes(x)
+                return (
+                  <button key={x} onClick={() => toggle(covered, setCovered, x)} style={tick(on)}>
+                    <span style={box(on)}>{on ? '✓' : ''}</span>
+                    <span style={{ fontSize: 12.5, color: on ? T.text : T.text3, lineHeight: 1.5 }}>{x}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        {drills.length > 0 && (
+          <>
+            <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: T.text3, marginBottom: 7 }}>Drills you ran</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+              {drills.map(x => {
+                const on = didDrills.includes(x)
+                return (
+                  <button key={x} onClick={() => toggle(didDrills, setDidDrills, x)}
+                    style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 11.5, padding: '6px 11px', borderRadius: 999, background: on ? accent.dim : 'transparent', border: `1px solid ${on ? accent.hex : T.border}`, color: on ? accent.hex : T.text3, maxWidth: '100%', textAlign: 'left' }}>
+                    {on ? '✓ ' : ''}{x.length > 70 ? `${x.slice(0, 70)}…` : x}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: T.text3, marginBottom: 7 }}>How did it go?</div>
+        <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
+          placeholder="One or two lines — what moved, what did not, anything to remember. This is the strongest thing the summary is built from."
+          style={{ width: '100%', boxSizing: 'border-box', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px', color: T.text, fontSize: 13, fontFamily: FONT, lineHeight: 1.5, outline: 'none', resize: 'vertical' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11.5, color: T.text3 }}>Session rating</span>
+          <span style={{ display: 'flex', gap: 3 }}>
+            {[1, 2, 3, 4, 5].map(n => (
+              <button key={n} onClick={() => setRating(n === rating ? 0 : n)}
+                style={{ appearance: 'none', border: 0, background: 'transparent', cursor: 'pointer', fontSize: 18, color: n <= rating ? accent.hex : T.text4, padding: 0 }}>★</button>
+            ))}
+          </span>
+          <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: T.text2, cursor: 'pointer' }}>
+            <input type="checkbox" checked={writeUp} onChange={e => setWriteUp(e.target.checked)} style={{ accentColor: accent.hex, width: 14, height: 14 }} />
+            Let Lumio Coach write the summary
+          </label>
+        </div>
+
+        {!!err && <div style={{ fontSize: 12, color: T.bad, marginTop: 10 }}>{err}</div>}
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+          <button onClick={onClose} style={{ appearance: 'none', border: 0, borderRadius: 10, padding: '11px 16px', background: T.hover, color: T.text2, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+          <button onClick={save} disabled={busy}
+            style={{ flex: 1, appearance: 'none', border: 0, borderRadius: 10, padding: '11px 16px', background: busy ? T.hover : T.good, color: busy ? T.text3 : '#0b1a10', fontSize: 13, fontWeight: 700, cursor: busy ? 'wait' : 'pointer', fontFamily: FONT }}>
+            {busy ? (writeUp ? 'Lumio Coach is writing it up…' : 'Saving…') : '✓ Session done'}
+          </button>
+        </div>
+        <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8, textAlign: 'center' }}>
+          Saved to Lesson Summaries, shared with the player, and attendance is marked.
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Print today's run-sheets (one page) — the demo's "Print run-sheet".
 function printRunSheets(todayPlans: any[]) {
   if (typeof window === 'undefined') return
@@ -704,20 +857,14 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
   const kit: string[] = Array.isArray(plan.kit) && plan.kit.length ? plan.kit : KIT_BY_TYPE[(plan.session_type as SType) || 'Private']
   const fp = (plan.focus_points || '').split('\n').filter(Boolean)
   const dr = (plan.drills || '').split('\n').filter(Boolean)
-  const [mediaOpen, setMediaOpen] = useState(false)
-  const [completing, setCompleting] = useState(false)
-  // "Session completed" → logs a Lesson Summary stub (coach_sessions) the coach can
-  // enrich or record audio into — the same flow as the demo.
-  const complete = async () => {
-    if (completing) return
-    setCompleting(true)
-    try {
-      const when = new Date().toISOString().slice(0, 10)
-      await dbInsert('coach_sessions', { player_name: plan.group_name || plan.title, session_date: when, focus: plan.focus || plan.title || 'Session', rating: null, summary: plan.notes || '', ai_review: '' })
-      logSessionAttendance(plan.group_name, when)
-      onCompleted(); onNavigate?.('lessons')
-    } catch { setCompleting(false) }
-  }
+  // Three ways a session gets captured, and they were all behind one word.
+  // "Record audio" opened a modal that also uploads; there was no video button at
+  // all; and "Mark session done" silently wrote an empty stub. Each now says what
+  // it does, and finishing a session writes a real summary either way.
+  const [media, setMedia] = useState<null | { kind: 'audio' | 'video'; upload: boolean }>(null)
+  const [doneOpen, setDoneOpen] = useState(false)
+  const [msgOpen, setMsgOpen] = useState(false)
+  const profile = useCoachProfile()
   const act = (bg: string, color: string, border?: string): React.CSSProperties => ({ appearance: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, border: border || 'none', background: bg, color, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' })
   // ── Who this session is with ──────────────────────────────────────────────
   // The plan stores a NAME; the roster holds the person. Matching them is what
@@ -763,14 +910,23 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
               {[plan.start_time ? `${plan.start_time}${endTime ? `–${endTime}` : ''}` : '', plan.session_type, plan.court, `${plan.duration_min || 60} min`].filter(Boolean).join(' · ')}
             </div>
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', flexWrap: 'wrap', gap: 7 }}>
-            <button onClick={complete} disabled={completing} style={act(`${T.good}22`, T.good, `1px solid ${T.good}55`)}>✓ {completing ? 'Saving…' : 'Mark session done'}</button>
-            <button onClick={() => { onNavigate?.('lessons'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>Review session</button>
-            <button onClick={() => setMediaOpen(true)} style={act('transparent', T.text2, `1px solid ${T.border}`)}>Record audio</button>
-            <button onClick={() => { onNavigate?.('messages'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>Message</button>
-            <button onClick={() => { onNavigate?.('development'); onClose() }} style={act('transparent', T.text2, `1px solid ${T.border}`)}>↗ Player</button>
-            <button onClick={onDelete} style={act('transparent', T.bad, `1px solid ${T.border}`)}>✕ Delete</button>
-            {!inline && <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 17 }}>×</button>}
+          <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7 }}>
+            {/* What you do WITH the session, while you are on court. */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'flex-end' }}>
+              <button onClick={() => setDoneOpen(true)} style={act(`${T.good}22`, T.good, `1px solid ${T.good}55`)}>✓ Finish session</button>
+              <button onClick={() => setMedia({ kind: 'audio', upload: false })} style={act(accent.dim, accent.hex, `1px solid ${accent.border}`)}>🎙 Record the lesson</button>
+              <button onClick={() => setMedia({ kind: 'video', upload: false })} style={act('transparent', T.text2, `1px solid ${T.border}`)}>🎥 Record video</button>
+              <button onClick={() => setMedia({ kind: 'audio', upload: true })} style={act('transparent', T.text2, `1px solid ${T.border}`)}>⬆ Upload a recording</button>
+              {!inline && <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 17 }}>×</button>}
+            </div>
+            {/* Everything else about this player or this plan. */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'flex-end' }}>
+              <button onClick={() => { onNavigate?.('lessons'); onClose() }} style={act('transparent', T.text3, `1px solid ${T.border}`)}>Review last session</button>
+              <button onClick={() => setMsgOpen(true)} style={act('transparent', T.text3, `1px solid ${T.border}`)}>✉ Message {who ? who.split(/\s+/)[0] : 'player'}</button>
+              <button onClick={() => { if (player) { try { sessionStorage.setItem('lumio_open_player', player.id) } catch { /* ignore */ } } onNavigate?.(player ? 'roster' : 'development'); onClose() }} style={act('transparent', T.text3, `1px solid ${T.border}`)}>↗ View player profile</button>
+              <button onClick={() => printRunSheets([plan])} style={act('transparent', T.text3, `1px solid ${T.border}`)}>🖨 Print / share</button>
+              <button onClick={onDelete} style={act('transparent', T.bad, `1px solid ${T.border}`)}>✕ Delete</button>
+            </div>
           </div>
         </div>
 
@@ -871,12 +1027,26 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
           </div>
         </div>
 
-        {mediaOpen && <MediaCaptureModal T={T} accent={accent} defaultKind="audio" players={players} playerName={plan.group_name || undefined}
-          onClose={() => setMediaOpen(false)}
+        {doneOpen && (
+          <FinishSessionModal T={T} accent={accent} plan={plan} sheet={sheet}
+            onClose={() => setDoneOpen(false)}
+            onRecord={() => { setDoneOpen(false); setMedia({ kind: 'audio', upload: false }) }}
+            onDone={() => { setDoneOpen(false); onCompleted(); onNavigate?.('lessons') }} />
+        )}
+
+        {msgOpen && (
+          <LiveCoachSendMessage T={T} accent={accent} players={players as any}
+            coachName={profile.display_name || 'Coach'} clubName={profile.brand_name || 'Your academy'}
+            init={{ recipient: who || undefined }}
+            onClose={() => setMsgOpen(false)} onSent={() => setMsgOpen(false)} />
+        )}
+
+        {media && <MediaCaptureModal T={T} accent={accent} defaultKind={media.kind} autoUpload={media.upload} players={players} playerName={plan.group_name || undefined}
+          onClose={() => setMedia(null)}
           // Closing the modal mid-build must not lose the summary: keep watching,
           // and drop the cached Lesson Summaries so it's there when the coach looks.
           onProcessing={id => { void pollMedia(id, {}).then(() => invalidateCoachTable('coach_sessions')).catch(() => {}) }}
-          onSummary={() => { setMediaOpen(false); onCompleted() }} />}
+          onSummary={() => { setMedia(null); onCompleted() }} />}
       </>
   )
 
