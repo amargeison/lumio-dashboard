@@ -120,7 +120,12 @@ export async function bindPendingInvites(userId: string, email?: string | null):
 }
 
 // The coach's first message to a new family, written in their academy's name.
-async function sendWelcomeMessage(
+//
+// Exported because binding is not the only moment it can be needed: anyone who
+// signed in BEFORE this existed is already bound and would never be greeted, so
+// the portal calls it on load too. It dedupes on the subject, so calling it
+// twice is a no-op rather than a second hello.
+export async function sendWelcomeMessage(
   db: ReturnType<typeof admin>,
   academyId: string,
   playerId: string | null,

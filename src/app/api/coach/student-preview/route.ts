@@ -151,16 +151,27 @@ export async function GET(req: NextRequest) {
   // Recommended books, and the conversation so far. The coach sees the thread
   // read-only here — this screen is a preview of the family's page, not a second
   // place to reply from.
-  const [bookRows, messages] = await Promise.all([
+  const [bookRows, threaded, legacy] = await Promise.all([
     safe(admin.from('coach_player_resources')
       .select('id, ref_id, title, author, note, created_at')
       .eq('coach_id', me.academyId).eq('player_id', playerId).eq('kind', 'book')
       .order('created_at', { ascending: false }).limit(12)),
+    // thread_key is the address; `recipients` is the legacy fallback for rows
+    // written before sending threaded per person. TWO EXACT QUERIES, merged —
+    // never one `.or()` with the name interpolated into a filter string, which
+    // a name containing a comma or bracket would quietly rewrite.
     name ? safe(admin.from('coach_messages')
       .select('id, direction, from_name, subject, body, created_at')
-      .eq('coach_id', me.academyId).eq('recipients', name)
+      .eq('coach_id', me.academyId).eq('thread_key', name)
+      .order('created_at', { ascending: false }).limit(20)) : Promise.resolve([]),
+    name ? safe(admin.from('coach_messages')
+      .select('id, direction, from_name, subject, body, created_at')
+      .eq('coach_id', me.academyId).is('thread_key', null).eq('recipients', name)
       .order('created_at', { ascending: false }).limit(20)) : Promise.resolve([]),
   ])
+  const messages = [...threaded, ...legacy]
+    .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+
   const books = bookRows.map(b => {
     const shelf = bookById(String(b.ref_id))
     return { id: b.id, title: b.title, author: b.author, note: b.note, topic: shelf?.topic ?? null, spine: shelf?.spine ?? null }
