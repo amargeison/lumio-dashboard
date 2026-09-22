@@ -62,7 +62,7 @@ function write(flags: FeatureFlags) {
 // These flags have always lived in ONE localStorage bucket, in the coach's own
 // browser. That is fine for the coach's own screens and useless for everybody
 // else: the parent opening the portal on their phone is a different browser, so
-// the student app had no way to know the academy is on Essential and showed the
+// the player app had no way to know the academy is on Essential and showed the
 // racket ladder regardless. Switching the module off changed the coach's view
 // and nothing else.
 //

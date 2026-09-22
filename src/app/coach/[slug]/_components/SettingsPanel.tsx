@@ -510,7 +510,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: 'Your plan: Coach £39/mo · order kit & rewards' },
     { id: 'appearance',  g: 'Rewards & system', icon: 'settings', t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
     { id: 'menu',        g: 'Rewards & system', icon: 'eye',      t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
-    { id: 'studentapp',  g: 'Rewards & system', icon: 'people',   t: 'Parent & student app', d: s.studentApp ? 'On · Student view available in your profile menu' : 'Off · your switcher shows coach views only' },
+    { id: 'studentapp',  g: 'Rewards & system', icon: 'people',   t: 'Parent & player app', d: s.studentApp ? 'On · Player view available in your profile menu' : 'Off · your switcher shows coach views only' },
     { id: 'contact',     g: 'You',        icon: 'note',     t: 'Contact & calendar',  d: 'Sender email, phone & calendar sync' },
     { id: 'venuescfg',   g: 'Academy',    icon: 'home',     t: 'Venues & courts',     d: 'Venues, courts & calendar links' },
     { id: 'devcfg',      g: 'Coaching',   icon: 'trophy',   t: 'Coaching, rewards & modules', d: 'Racket criteria, effort & module setup' },
@@ -801,15 +801,15 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
         </Modal>
       )}
 
-      {/* Parent & student app — deliberately NOT readOnly in the demo. Every
+      {/* Parent & player app — deliberately NOT readOnly in the demo. Every
           other card is locked there because it would edit a sample academy's
-          data; this one only decides whether the Student view is offered in the
+          data; this one only decides whether the Player view is offered in the
           profile menu, and locking it would make that view unreachable in the
           demo now it's off by default. */}
       {open === 'studentapp' && (
-        <Modal T={T} accent={accent} title="Parent & student app" sub="The player & parent view of your academy" onClose={() => setOpen(null)}>
+        <Modal T={T} accent={accent} title="Parent & player app" sub="The player & parent view of your academy" onClose={() => setOpen(null)}>
           <Toggle T={T} accent={accent} on={!!s.studentApp} onChange={v => setSettings({ studentApp: v })}
-            label="Student app" desc="On: your profile menu gains a Student view so you can see the academy as a player or parent does. Off: coach views only." />
+            label="Player app" desc="On: your profile menu gains a Player view so you can see the academy as a player or parent does. Off: coach views only." />
           {!!s.studentApp && (
             <>
               <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '18px 0 4px' }}>Sections</div>
@@ -830,7 +830,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
             </>
           )}
           <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5, marginTop: 14 }}>
-            The parent &amp; student app is a <strong style={{ color: T.text2 }}>Pro / Academy</strong> feature. It&rsquo;s yours to switch on or off here for now — no billing attached yet.
+            The parent &amp; player app is a <strong style={{ color: T.text2 }}>Pro / Academy</strong> feature. It&rsquo;s yours to switch on or off here for now — no billing attached yet.
           </div>
         </Modal>
       )}
@@ -888,7 +888,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {open === 'rewards' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Effort & Rewards" sub="The smartwatch reward system — separate from Racket Progression" onClose={() => setOpen(null)}>
           <Toggle T={T} accent={accent} on={rewards.leaderboard} onChange={v => setRewards({ ...rewards, leaderboard: v })} label="Show squad leaderboard" desc="Rank players by XP across the academy." />
-          <Toggle T={T} accent={accent} on={rewards.levelsVisible} onChange={v => setRewards({ ...rewards, levelsVisible: v })} label="Show effort levels to players" desc="Rookie → Elite progression in the student view." />
+          <Toggle T={T} accent={accent} on={rewards.levelsVisible} onChange={v => setRewards({ ...rewards, levelsVisible: v })} label="Show effort levels to players" desc="Rookie → Elite progression in the player view." />
           <Toggle T={T} accent={accent} on={rewards.watchConsentDefault} onChange={v => setRewards({ ...rewards, watchConsentDefault: v })} label="Default new players to wearable consent" desc="Off is safer — capture effort only with explicit parent consent." />
           <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>Effort &amp; Rewards uses the player&apos;s own smartwatch and never advances a racket — <strong style={{ color: T.text2 }}>Racket Progression stays coach-assessed</strong> against the LTA Youth pathway.</div>
         </Modal>

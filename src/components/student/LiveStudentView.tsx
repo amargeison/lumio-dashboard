@@ -185,13 +185,49 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
         )}
       </Card>
 
+      {/* ── CAMP — first under the header. A booked camp is the biggest thing
+           in a player's year; nothing else on the page outranks it. On from the
+           moment they are booked, off when it finishes. ─────────────────── */}
+      {show.camp && camps.map(c => <CampCard key={c.id} T={T} camp={c} first={f.first} />)}
+
       {/* ── NEXT SESSION — the thing they opened the app to check ──────────── */}
       {show.nextsession && nextSession && (
         <NextSessionCard T={T} next={nextSession} first={f.first} adult={f.audience === 'adult'} />
       )}
 
-      {/* ── CAMP — on from the moment they are booked, off when it ends ────── */}
-      {show.camp && camps.map(c => <CampCard key={c.id} T={T} camp={c} first={f.first} />)}
+      {/* ── RECENT LESSONS — straight after the next session, because the two
+           are one thought: what we just did, what we do next. ───────────── */}
+      {show.lessons && (
+        <Card T={T}>
+          <Head T={T} icon="note" title="Recent lessons" sub="What you worked on, and your coach’s notes" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {lessons.slice(0, 12).map(l => {
+              const r = l.review_json || {}
+              // The summary leads. It is the paragraph that actually gets read —
+              // burying it under a takeaway quote made the page look like notes
+              // rather than an answer to "how did it go?".
+              const recap = lessonRecap({ ...l, player_name: player.name })
+              const take = (r.takeaways || [])[0] || (l.summary || '').trim()
+              return (
+                <div key={l.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{r.focus || l.focus || 'Lesson'}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: MONO }}>{prettyDate(l.session_date)}{r.type ? ` · ${r.type}` : ''}</span>
+                    {!!l.rating && <span style={{ display: 'flex', gap: 1 }}>{Array.from({ length: 5 }).map((_, i) => <span key={i} style={{ color: i < (l.rating || 0) ? T.accent : T.text4, fontSize: 12 }}>★</span>)}</span>}
+                  </div>
+                  {recap.source !== 'none' && (
+                    <div style={{ fontSize: 12.5, color: T.text, marginTop: 8, lineHeight: 1.65 }}>{recap.text}</div>
+                  )}
+                  {!!take && take !== recap.text && <div style={{ fontSize: 12, color: T.text2, marginTop: 6, lineHeight: 1.5, fontStyle: 'italic' }}>“{take}”</div>}
+                  {!!r.coachNote && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 6, fontStyle: 'italic', display: 'flex', gap: 6 }}>
+                    <Icon name="megaphone" size={12} stroke={1.7} style={{ color: T.accent, flexShrink: 0, marginTop: 2 }} />Coach: {r.coachNote}
+                  </div>}
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* ── SESSION HIGHLIGHTS ─────────────────────────────────────────────── */}
       {show.highlights && (
@@ -352,39 +388,6 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
         </Card>
       )}
 
-      {/* ── RECENT LESSONS ─────────────────────────────────────────────────── */}
-      {show.lessons && (
-        <Card T={T}>
-          <Head T={T} icon="note" title="Recent lessons" sub="What you worked on, and your coach’s notes" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {lessons.slice(0, 12).map(l => {
-              const r = l.review_json || {}
-              // The summary leads. It is the paragraph that actually gets read —
-              // burying it under a takeaway quote made the page look like notes
-              // rather than an answer to "how did it go?".
-              const recap = lessonRecap({ ...l, player_name: player.name })
-              const take = (r.takeaways || [])[0] || (l.summary || '').trim()
-              return (
-                <div key={l.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{r.focus || l.focus || 'Lesson'}</span>
-                    <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3, fontFamily: MONO }}>{prettyDate(l.session_date)}{r.type ? ` · ${r.type}` : ''}</span>
-                    {!!l.rating && <span style={{ display: 'flex', gap: 1 }}>{Array.from({ length: 5 }).map((_, i) => <span key={i} style={{ color: i < (l.rating || 0) ? T.accent : T.text4, fontSize: 12 }}>★</span>)}</span>}
-                  </div>
-                  {recap.source !== 'none' && (
-                    <div style={{ fontSize: 12.5, color: T.text, marginTop: 8, lineHeight: 1.65 }}>{recap.text}</div>
-                  )}
-                  {!!take && take !== recap.text && <div style={{ fontSize: 12, color: T.text2, marginTop: 6, lineHeight: 1.5, fontStyle: 'italic' }}>“{take}”</div>}
-                  {!!r.coachNote && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 6, fontStyle: 'italic', display: 'flex', gap: 6 }}>
-                    <Icon name="megaphone" size={12} stroke={1.7} style={{ color: T.accent, flexShrink: 0, marginTop: 2 }} />Coach: {r.coachNote}
-                  </div>}
-                </div>
-              )
-            })}
-          </div>
-        </Card>
-      )}
-
       {/* ── RECOMMENDED RESOURCES ──────────────────────────────────────────── */}
       {show.resources && (
         <Card T={T}>
@@ -437,31 +440,16 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
       )}
 
       {/* ── MESSAGES ──────────────────────────────────────────────────────── */}
+      {/* A real conversation, not a notice board. The whole point of this
+          section is that a parent messages their coach HERE rather than on
+          WhatsApp at 10pm — so it has to feel like the thing they would
+          otherwise open: the thread, oldest at the top, newest at the bottom,
+          and the box to type in right under it. */}
       {show.messages && (
         <Card T={T}>
-          <Head T={T} icon="megaphone" title={onSendMessage ? 'Message your coach' : 'Messages'}
-            sub={onSendMessage ? 'Anything at all — a question, an absence, a well done' : 'What has been said between you'} />
-          {onSendMessage
-            ? <MessageComposer T={T} onSend={onSendMessage} />
-            : <div style={{ fontSize: 11.5, color: T.text3, marginBottom: messages.length ? 12 : 0, lineHeight: 1.5 }}>
-                This is their side of the conversation. Replies go to your Messages page.
-              </div>}
-          {messages.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-              {messages.slice(0, 10).map(m => {
-                const mine = m.direction === 'in'
-                return (
-                  <div key={m.id} style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '88%', background: mine ? T.accentDim : T.panel2, border: `1px solid ${mine ? T.accentBorder : T.border}`, borderRadius: 12, padding: '9px 12px' }}>
-                    {!!m.subject && <div style={{ fontSize: 11, fontWeight: 700, color: T.text2, marginBottom: 3 }}>{m.subject}</div>}
-                    <div style={{ fontSize: 12.5, color: T.text, whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{m.body}</div>
-                    <div style={{ fontSize: 9.5, color: T.text3, marginTop: 5 }}>
-                      {mine ? (f.audience === 'adult' ? 'You' : 'You') : (m.from_name || 'Coach')} · {prettyDate(m.created_at)}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          <Head T={T} icon="megaphone" title={onSendMessage ? 'Messages' : 'Messages'}
+            sub={onSendMessage ? 'Your conversation with the coaching team' : 'What has been said between you'} />
+          <MessageThread T={T} messages={messages} adult={f.audience === 'adult'} onSend={onSendMessage} />
         </Card>
       )}
 
@@ -501,6 +489,121 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage }: {
         </div>
       )}
     </div>
+  )
+}
+
+// ── The conversation ────────────────────────────────────────────────────────
+// A thread, in the order a thread runs: oldest at the top, newest at the bottom,
+// composer underneath. It replaces a "latest 10, newest first" list, which read
+// backwards and quietly hid everything older with no way to see it.
+//
+// The bleeding-text bug lived here. Message bodies carry calendar links, and a
+// Google Calendar URL is roughly four hundred characters with no spaces in it.
+// `white-space: pre-wrap` will not break a word that has nowhere to break, so
+// the bubble grew past the card and off the screen. Two fixes, both needed:
+// links are now rendered as short labels rather than raw addresses (see
+// booking-notify.ts), and every text node below hard-wraps mid-word as a
+// backstop — because the next long thing a coach pastes will not be a link.
+
+const WRAP: React.CSSProperties = { overflowWrap: 'anywhere', wordBreak: 'break-word', minWidth: 0 }
+
+const LINK_RE = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s]+)/g
+
+/** Renders message text with links as short, tappable labels. A bare URL is
+    shortened to its host so a pasted address can never dominate the bubble. */
+function MessageBody({ T, text }: { T: StudentTheme; text: string }) {
+  const out: React.ReactNode[] = []
+  let last = 0
+  let m: RegExpExecArray | null
+  const re = new RegExp(LINK_RE.source, 'g')
+  let i = 0
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index))
+    const label = m[1]
+    const href = m[2] || m[3] || ''
+    let shown = label
+    if (!shown) {
+      try { shown = new URL(href).hostname.replace(/^www\./, '') } catch { shown = 'Open link' }
+    }
+    out.push(
+      <a key={`l${i++}`} href={href} target="_blank" rel="noopener noreferrer"
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, maxWidth: '100%', color: T.accent, fontWeight: 700, textDecoration: 'none', borderBottom: `1px solid ${T.accentBorder}`, ...WRAP }}>
+        {shown} ↗
+      </a>,
+    )
+    last = m.index + m[0].length
+  }
+  if (last < text.length) out.push(text.slice(last))
+  return <span style={{ whiteSpace: 'pre-wrap', ...WRAP }}>{out}</span>
+}
+
+function MessageThread({ T, messages, adult, onSend }: {
+  T: StudentTheme
+  messages: StudentBundle['messages']
+  adult: boolean
+  onSend?: (body: string) => Promise<void>
+}) {
+  const [showAll, setShowAll] = useState(false)
+  // The bundle hands them newest-first (that is what the inbox wants). A
+  // conversation reads the other way round.
+  const ordered = [...(messages || [])].sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')))
+  const hidden = Math.max(0, ordered.length - 12)
+  const shown = showAll ? ordered : ordered.slice(-12)
+
+  return (
+    <>
+      {hidden > 0 && !showAll && (
+        <button onClick={() => setShowAll(true)}
+          style={{ appearance: 'none', background: 'transparent', border: `1px solid ${T.border}`, color: T.text2, borderRadius: 999, padding: '6px 14px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', alignSelf: 'center', margin: '0 auto 12px', display: 'block', fontFamily: 'inherit' }}>
+          Show {hidden} earlier message{hidden === 1 ? '' : 's'}
+        </button>
+      )}
+
+      {ordered.length === 0 ? (
+        <div style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.6, marginBottom: onSend ? 14 : 0 }}>
+          {onSend
+            ? 'Nothing here yet. Anything at all — a question, an absence, a well done — send it below and it goes straight to your coach.'
+            : 'No messages yet.'}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: onSend ? 14 : 0, maxHeight: showAll ? 'none' : 520, overflowY: showAll ? 'visible' : 'auto' }}>
+          {shown.map(m => {
+            const mine = m.direction === 'in'
+            return (
+              <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start', maxWidth: '100%' }}>
+                <div style={{
+                  maxWidth: '86%', boxSizing: 'border-box',
+                  background: mine ? T.accentDim : T.panel2,
+                  border: `1px solid ${mine ? T.accentBorder : T.border}`,
+                  borderRadius: 14, borderBottomRightRadius: mine ? 4 : 14, borderBottomLeftRadius: mine ? 14 : 4,
+                  padding: '10px 13px', ...WRAP,
+                }}>
+                  {!!m.subject && <div style={{ fontSize: 11, fontWeight: 700, color: T.text2, marginBottom: 4, ...WRAP }}>{m.subject}</div>}
+                  <div style={{ fontSize: 13, color: T.text, lineHeight: 1.6, ...WRAP }}>
+                    <MessageBody T={T} text={String(m.body || '')} />
+                  </div>
+                </div>
+                <div style={{ fontSize: 9.5, color: T.text3, margin: '4px 4px 0' }}>
+                  {mine ? 'You' : (m.from_name || 'Coach')} · {prettyDate(m.created_at)}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {!!onSend && <MessageComposer T={T} onSend={onSend} />}
+      {!onSend && messages.length > 0 && (
+        <div style={{ fontSize: 11.5, color: T.text3, marginTop: 12, lineHeight: 1.5 }}>
+          This is the family&rsquo;s side of the conversation. Replies go to your Messages page.
+        </div>
+      )}
+      {!onSend && (
+        <div style={{ fontSize: 10.5, color: T.text4, marginTop: 8 }}>
+          {adult ? 'They can reply from their own page.' : 'The parent can reply from their own page.'}
+        </div>
+      )}
+    </>
   )
 }
 
@@ -680,38 +783,16 @@ function NextSessionCard({ T, next, first, adult }: {
           </div>
         )}
 
-        {/* What we'll cover */}
-        {!!plan && (
+        {/* What we'll cover — the headline, and nothing else.
+            A family wants to know what the session is FOR. The phase-by-phase
+            run-sheet is the coach's working document; printing it here turned a
+            one-line answer into a wall of text nobody read. */}
+        {!!plan && !!(plan.focus || plan.title) && (
           <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
             <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 6 }}>
-              {adult ? 'What you’ll cover' : 'What you’ll be working on'}
+              {adult ? 'What you\u2019ll cover' : 'What you\u2019ll be working on'}
             </div>
-            {!!(plan.focus || plan.title) && (
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.text, lineHeight: 1.35 }}>{plan.focus || plan.title}</div>
-            )}
-            {!!plan.runSheet?.length && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 9 }}>
-                {plan.runSheet.map((p, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 9, alignItems: 'baseline' }}>
-                    {typeof p.mins === 'number' && p.mins > 0 && (
-                      <span style={{ fontFamily: MONO, fontSize: 10.5, color: T.accent, fontWeight: 700, width: 34, flexShrink: 0 }}>{p.mins}m</span>
-                    )}
-                    <span style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.5 }}>
-                      <span style={{ color: T.text, fontWeight: 600 }}>{p.phase}</span>
-                      {p.detail ? ` — ${p.detail}` : ''}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {!plan.runSheet?.length && !!plan.drills?.length && (
-              <ul style={{ margin: '9px 0 0', paddingLeft: 18, fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>
-                {plan.drills.map((d, i) => <li key={i}>{d}</li>)}
-              </ul>
-            )}
-            {!!plan.notes && (
-              <div style={{ fontSize: 12, color: T.text3, marginTop: 9, lineHeight: 1.55 }}>{plan.notes}</div>
-            )}
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.text, lineHeight: 1.4 }}>{plan.focus || plan.title}</div>
           </div>
         )}
       </div>

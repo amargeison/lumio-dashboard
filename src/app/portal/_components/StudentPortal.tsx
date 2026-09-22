@@ -2,7 +2,7 @@
 
 // The player & parent portal.
 //
-// The page itself is now the SHARED student view — the same component the coach
+// The page itself is now the SHARED player view — the same component the coach
 // previews through their role switcher — fed by /api/portal/player, which is
 // fenced to exactly one player in one academy. Before this, the portal and the
 // coach's preview were two hand-written implementations of "the same" page, and
@@ -21,7 +21,7 @@ import { studentFraming, type StudentBundle } from '@/lib/student/bundle'
 
 const BG = '#0B0F17', CARD = '#0F1623', PANEL2 = '#0B1220', BORDER = '#1E293B', TEXT = '#F4F7FB', MUTED = '#93A1B5', ACCENT = '#3A8EE0'
 
-// The student view's tokens, in the portal's palette. The coach portal builds
+// The player view's tokens, in the portal's palette. The coach portal builds
 // the same object from its theme — which is how one component sits inside two
 // very different shells without either one bending to the other.
 const ST: StudentTheme = {

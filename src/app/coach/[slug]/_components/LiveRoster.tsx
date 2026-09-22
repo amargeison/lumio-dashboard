@@ -329,7 +329,7 @@ function PlayerDetail({ T, accent, density, player, skillMap, attendanceRows, on
   // An adult is not somebody's child. Inviting a 45-year-old and calling them
   // a parent is a small thing that tells them the product was not built with
   // them in mind — and it sends them an email addressed to the wrong person.
-  // The same rule the student app uses to decide whose page it is.
+  // The same rule the player app uses to decide whose page it is.
   const audience = studentAudience(player)
   const invitesPlayer = audience === 'adult'
   const inviteLabel = invitesPlayer ? 'Invite player' : 'Invite parent'
