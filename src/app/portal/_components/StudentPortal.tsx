@@ -40,6 +40,8 @@ type Raw = {
   highlights?: unknown[]
   media?: Record<string, unknown>[]
   messages?: { id: string; direction: string; body: string; created_at: string }[]
+  coaches?: unknown[]
+  campThreads?: unknown[]
   watch?: unknown[]
   camps?: unknown[]
   nextSession?: unknown
@@ -106,9 +108,23 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
     } catch { setLogErr('Could not save') } finally { setLogBusy(false) }
   }
 
-  const send = async (body: string) => {
-    const r = await fetch('/api/portal/message', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body }) })
+  // A message now carries who it is for: a named coach, a reply to a particular
+  // message, or the camp everyone is on. The route re-checks all three — nothing
+  // here is taken on trust — but the family gets to say it.
+  const send = async (body: string, opts?: { toName?: string; replyTo?: string; campId?: string }) => {
+    const r = await fetch('/api/portal/message', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body, ...opts }),
+    })
     if (!r.ok) throw new Error('Could not send')
+    load()
+  }
+
+  const react = async (id: string, reaction: string | null) => {
+    await fetch('/api/portal/message', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, reaction }),
+    }).catch(() => {})
     load()
   }
 
@@ -146,6 +162,8 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
     features: (raw.features || null) as StudentBundle['features'],
     books: (raw.books || []) as StudentBundle['books'],
     messages: (raw.messages || []) as StudentBundle['messages'],
+    coaches: (raw.coaches || []) as StudentBundle['coaches'],
+    campThreads: (raw.campThreads || []) as StudentBundle['campThreads'],
     sectionsOff: raw.sectionsOff || [],
     awardThreshold: raw.awardThreshold ?? 3,
   }
@@ -173,7 +191,7 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
       {/* Messages are a section of the shared view now, so the coach previewing
           this page sees the same conversation the family does. Only the family
           gets a box to type in — that is what onSendMessage is. */}
-      <LiveStudentView T={ST} bundle={bundle} onSendMessage={send} />
+      <LiveStudentView T={ST} bundle={bundle} onSendMessage={send} onReact={react} />
 
       {/* ── Log a session ───────────────────────────────────────────────── */}
       <div style={card}>

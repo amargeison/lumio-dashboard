@@ -177,11 +177,11 @@ export async function GET(req: NextRequest) {
     // never one `.or()` with the name interpolated into a filter string, which
     // a name containing a comma or bracket would quietly rewrite.
     name ? safe(admin.from('coach_messages')
-      .select('id, direction, from_name, subject, body, created_at')
+      .select('id, direction, from_name, subject, body, created_at, reaction, to_name, reply_to, camp_id')
       .eq('coach_id', me.academyId).eq('thread_key', name)
       .order('created_at', { ascending: false }).limit(20)) : Promise.resolve([]),
     name ? safe(admin.from('coach_messages')
-      .select('id, direction, from_name, subject, body, created_at')
+      .select('id, direction, from_name, subject, body, created_at, reaction, to_name, reply_to, camp_id')
       .eq('coach_id', me.academyId).is('thread_key', null).eq('recipients', name)
       .order('created_at', { ascending: false }).limit(20)) : Promise.resolve([]),
   ])
@@ -197,8 +197,24 @@ export async function GET(req: NextRequest) {
   // session, a venue or a plan that the real page does not show.
   const nextSession = await buildNextSession(admin, me.academyId, playerId, name)
 
+  // The coaching team and the camp threads, so the preview shows the same
+  // choices the family has — a preview that cannot see the camp conversation is
+  // a preview of a different page.
+  const staffRows = await safe(admin.from('coach_staff')
+    .select('id, name, role, avatar_url, is_head').eq('coach_id', me.academyId).limit(40))
+  const coaches = (staffRows as any[]).filter(s2 => String(s2.name || '').trim()).map(s2 => ({
+    id: String(s2.id), name: String(s2.name), role: s2.role || (s2.is_head ? 'Head coach' : 'Coach'), avatar_url: null,
+  }))
+  const campThreads = await Promise.all((camps as any[]).map(async c => {
+    const rows = await safe(admin.from('coach_messages')
+      .select('id, direction, from_name, subject, body, created_at, reaction, to_name, reply_to, camp_id')
+      .eq('coach_id', me.academyId).eq('camp_id', c.id)
+      .order('created_at', { ascending: false }).limit(60))
+    return { campId: String(c.id), name: String(c.name || 'Camp'), people: 0, messages: rows }
+  }))
+
   return NextResponse.json({
-    books, messages, nextSession,
+    books, messages, nextSession, coaches, campThreads,
     player: {
       id: player.id, name: player.name, nickname: player.nickname, age: player.age,
       category: player.category, level: player.level, racket_stage: player.racket_stage,

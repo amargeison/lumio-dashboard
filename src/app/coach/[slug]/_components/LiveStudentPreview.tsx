@@ -90,6 +90,8 @@ export function LiveStudentPreview({ T, accent, density, onNavigate }: {
           features: getFlags('prolite'),
           books: d.books || [],
           messages: d.messages || [],
+          coaches: d.coaches || [],
+          campThreads: d.campThreads || [],
           sectionsOff: s.sectionsOff?.student || [],
           awardThreshold: s.awardThreshold || 3,
         })

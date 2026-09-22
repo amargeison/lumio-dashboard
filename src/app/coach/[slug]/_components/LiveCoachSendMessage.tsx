@@ -197,6 +197,9 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
         body: JSON.stringify({
           recipients: recipients.map(r => ({ name: r.name, email: r.email || undefined, phone: r.phone || undefined })),
           channels: sendChannels,
+          // A camp message also lands in the camp's shared thread, which is what
+          // the families and the coaches on the trip actually read.
+          campId: campId || undefined,
           subject: `${isUrgent ? '[URGENT] ' : ''}Message from ${coachName}`,
           body: aiDraft,
           ccCoach: s.ccCoachOnEmail,
