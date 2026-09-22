@@ -75,3 +75,25 @@ export const ltaChip = (id: string) => {
 export const BALL_COLOUR: Record<string, string> = {
   Foam: '#8FB7DE', Red: '#C75A5A', Orange: '#E08A3C', Green: '#4FAE72', Yellow: '#E5C76B',
 }
+
+// ── A goal per colour ───────────────────────────────────────────────────────
+// "No goal set yet" was the most common thing on a player's page, because
+// setting one meant opening the roster, editing the player and writing a
+// sentence. But the colour a coach has already chosen says most of it: a player
+// on Orange and a player on Compete are not aiming at the same thing. These are
+// the three or four a coach would actually write for that rung — one tap, or
+// their own words if none of them is the player in front of them.
+export const GOAL_PRESETS: Record<string, string[]> = {
+  white:  ['Rally five balls over the net with a coach', 'Serve underarm into the right box five times', 'Play a whole game and keep the score'],
+  yellow: ['Rally ten in a row on a red court', 'Start a point on their own serve', 'Play a red-ball match at a club event'],
+  orange: ['Control forehand and backhand from the baseline', 'Land two first serves out of three', 'Finish a point at the net in a match'],
+  green:  ['Serve overarm with a full action', 'Rally fifteen on a full court', 'Enter and finish a green-ball competition'],
+  blue:   ['Put topspin on both wings under pressure', 'Hold serve against a rallying opponent', 'Win a match at LTA Youth Grade 5'],
+  purple: ['Play an LTA Youth Grade 4 event', 'Build a reliable serve-plus-one pattern', 'Win three competitive matches this season'],
+  brown:  ['Be selected for the county squad', 'Turn the inside-out forehand into a weapon', 'Win a round at county level'],
+  red:    ['Compete at regional level', 'Take a set off a higher-rated player', 'Hold one game plan for a whole match'],
+  black:  ['Compete at national level', 'Perform across a three-match day', 'Build and commit to a full-year schedule'],
+}
+
+/** The goals worth offering for a colour — never an empty list. */
+export const goalPresets = (id: string): string[] => GOAL_PRESETS[id] || GOAL_PRESETS.orange

@@ -177,6 +177,32 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         ? [...players, { name: pName.trim(), level: pLevel.trim(), coach: pCoach }]
         : players
 
+      // ── The head coach's own staff row ────────────────────────────────────
+      // Migration 165 created one for every academy that existed when it ran,
+      // and nothing has created one since — so an academy onboarding today had
+      // a head coach who was not a coach in the data. That is why they could not
+      // be assigned to their own home base, did not appear under "Coaches based
+      // here", and showed up on the Coaches page only as an invented `__head__`
+      // placeholder that nothing could be attached to.
+      let headStaffId: string | null = null
+      {
+        const { data: existingHead } = await sb().from('coach_staff')
+          .select('id').eq('coach_id', uid).eq('is_head', true).limit(1).maybeSingle()
+        headStaffId = existingHead?.id || null
+        if (!headStaffId) {
+          const { data: headRow, error: headErr } = await sb().from('coach_staff').insert({
+            coach_id: uid,
+            name: name.trim() || 'Head Coach',
+            role: 'Head Coach',
+            qualifications: null,
+            email: (email.trim() || defaultEmail) || null,
+            is_head: true,
+          }).select('id').single()
+          if (headErr) console.error('[onboarding] head coach staff row failed', headErr)
+          headStaffId = headRow?.id || null
+        }
+      }
+
       const staffToAdd = team.filter(m => m.name.trim())
       let staffRows: { id: string; name: string; email: string | null }[] = []
       if (staffToAdd.length) {
@@ -267,6 +293,16 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         addVenue({ id: venueId, name: homeCourt.trim(), type: 'Home court', address: '', distance: 'Home base', manager: name.trim() || 'You', managerPhone: phone.trim() || '', managerEmail: email.trim() || '', access: '', facilities: [], courts: [] })
         const cur = getSettings()
         setSettings({ primaryVenueId: venueId, syncedVenues: [...new Set([...(cur.syncedVenues || []), venueId])] })
+
+        // And the head coach is based there. Saying "this is my home court" and
+        // then not appearing at it is the kind of small broken promise that makes
+        // a coach distrust everything else the wizard claimed to have set up.
+        if (venueRow?.id && headStaffId) {
+          const { error: linkErr } = await sb().from('coach_staff_venues')
+            .insert({ coach_id: uid, staff_id: headStaffId, venue_id: venueRow.id, is_primary: true })
+          if (linkErr) console.error('[onboarding] head coach venue assignment failed', linkErr)
+          await sb().from('coach_staff').update({ home_venue: homeCourt.trim() }).eq('id', headStaffId)
+        }
       }
 
       // "Set it up for me" — notify the Lumio team (fire and forget).

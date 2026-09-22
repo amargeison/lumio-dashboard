@@ -22,8 +22,9 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
   useCoachTable, useCoachProfile, setSkillScore, RACKET_STAGES, RACKET_SKILLS,
-  SKILL_LEVELS, skillLevelColour,
+  SKILL_LEVELS, skillLevelColour, dbUpdate,
 } from '../_lib/coach-db'
+import { goalPresets } from '@/lib/coach/colour-ladder'
 import { printRacketCertificate, certOrg } from './LiveRacketProgression'
 import { getSettings } from '../_lib/settings-store'
 import { getFlags, subscribe as subscribeFlags } from '../_lib/feature-flags'
@@ -50,7 +51,7 @@ const TOTAL_SKILLS = RACKET_STAGES.reduce((n, s) => n + (RACKET_SKILLS[s.id]?.le
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
 
 export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
-  const { rows: players } = useCoachTable<Player>('coach_players')
+  const { rows: players, reload: reloadPlayers } = useCoachTable<Player>('coach_players')
   const { rows: skillRows, reload: reloadSkills } = useCoachTable<{ player_id: string; skill: string; score: number }>('coach_player_skills')
   const { rows: attRows } = useCoachTable<{ player_id: string; present: boolean }>('coach_attendance')
   const { rows: sessionRows } = useCoachTable<{ player_name: string | null; session_date: string | null; focus: string | null; summary: string | null }>('coach_sessions')
@@ -108,7 +109,7 @@ export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentT
           })}
         </div>
 
-        {sel && <Detail T={T} accent={accent} p={sel}
+        {sel && <Detail T={T} accent={accent} p={sel} onSaved={reloadPlayers}
           skillScores={skillMap[sel.id] || {}}
           attRows={attRows.filter(a => a.player_id === sel.id)}
           lessons={sessionRows.filter(s => (s.player_name || '').trim().toLowerCase() === sel.name.trim().toLowerCase())}
@@ -128,8 +129,9 @@ function Head({ T }: { T: ThemeTokens }) {
   )
 }
 
-function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
+function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onSaved }: {
   T: ThemeTokens; accent: AccentTokens; p: Player
+  onSaved?: () => void
   skillScores: Record<string, number>
   attRows: { present: boolean }[]
   lessons: { session_date: string | null; focus: string | null; summary: string | null }[]
@@ -191,13 +193,10 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
               style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: hasStage ? 'pointer' : 'not-allowed', opacity: hasStage ? 1 : 0.5, fontFamily: FONT }}>🏆 Racket certificate</button>
           )}
         </div>
-        <PlayerTargets T={T} accent={accent} p={p} />
+        <PlayerTargets T={T} accent={accent} p={p} onSaved={onSaved} />
 
         {/* Goal */}
-        <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '9px 12px', display: showSec('goal') ? 'flex' : 'none', alignItems: 'center', gap: 8, marginTop: 14 }}>
-          <span style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>⚑ Goal</span>
-          <span style={{ fontSize: 12.5, color: T.text }}>{p.goal || 'No goal set yet — add one when you edit this player in the Roster.'}</span>
-        </div>
+        {showSec('goal') && <GoalBox T={T} accent={accent} p={p} stageId={hasStage ? curStage.id : ''} onSaved={onSaved} />}
         {/* Stats */}
         <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 14 }}>
           {tiles.map(t => (
@@ -289,21 +288,105 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
   )
 }
 
+// ── The goal ────────────────────────────────────────────────────────────────
+// It used to say "No goal set yet — add one when you edit this player in the
+// Roster", which is an instruction to go somewhere else and type a sentence. So
+// most players never had one. The colour the coach has already chosen says most
+// of what the goal should be, so the three that fit this rung are offered right
+// here, one tap each — with their own words still a click away for the player
+// that none of them describes.
+function GoalBox({ T, accent, p, stageId, onSaved }: {
+  T: ThemeTokens; accent: AccentTokens; p: Player; stageId: string; onSaved?: () => void
+}) {
+  // Everything here is keyed to the player rather than reset by an effect, so
+  // switching player can never leave the last one's goal (or a half-typed one)
+  // on screen — and the freshly saved goal survives the roster refresh that
+  // follows it, instead of flickering back to the stale row.
+  const [ownFor, setOwnFor] = useState<string | null>(null)
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [saved, setSaved] = useState<{ id: string; goal: string } | null>(null)
+  const own = ownFor === p.id
+  const goal = (saved && saved.id === p.id ? saved.goal : p.goal) || ''
+
+  const save = async (v: string) => {
+    const clean = v.trim()
+    if (!clean || busy) return
+    setBusy(true)
+    try { await dbUpdate('coach_players', p.id, { goal: clean }); setSaved({ id: p.id, goal: clean }); setOwnFor(null); onSaved?.() } catch { /* surfaced in console */ }
+    setBusy(false)
+  }
+
+  const presets = goalPresets(stageId)
+
+  return (
+    <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '10px 12px', marginTop: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>⚑ Goal</span>
+        <span style={{ fontSize: 12.5, color: T.text, fontWeight: goal ? 600 : 400 }}>{goal || 'Nothing set yet — pick one below, or write your own.'}</span>
+        {!!goal && (
+          <button onClick={() => { setOwnFor(p.id); setText(goal) }}
+            style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Change</button>
+        )}
+      </div>
+
+      {(!goal || own) && (
+        <div style={{ marginTop: 9 }}>
+          {!own && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {presets.map(g => (
+                <button key={g} onClick={() => void save(g)} disabled={busy}
+                  style={{ appearance: 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 999, padding: '5px 12px', fontSize: 11.5, color: T.text2, cursor: busy ? 'wait' : 'pointer', fontFamily: FONT }}>
+                  {g}
+                </button>
+              ))}
+              <button onClick={() => { setOwnFor(p.id); setText('') }}
+                style={{ appearance: 'none', background: 'transparent', border: `1px dashed ${accent.border}`, borderRadius: 999, padding: '5px 12px', fontSize: 11.5, color: accent.hex, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
+                ✎ Write your own
+              </button>
+            </div>
+          )}
+          {own && (
+            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+              <input value={text} onChange={e => setText(e.target.value)} autoFocus
+                onKeyDown={e => { if (e.key === 'Enter') void save(text) }}
+                placeholder={`What is ${(p.name || 'this player').split(/\s+/)[0]} working towards?`}
+                style={{ flex: 1, minWidth: 220, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 11px', fontSize: 12.5, color: T.text, fontFamily: FONT, outline: 'none' }} />
+              <button onClick={() => void save(text)} disabled={!text.trim() || busy}
+                style={{ appearance: 'none', border: 0, borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 700, background: text.trim() ? accent.hex : T.border, color: text.trim() ? T.btnText : T.text3, cursor: text.trim() ? 'pointer' : 'not-allowed', fontFamily: FONT }}>Save</button>
+              <button onClick={() => setOwnFor(null)}
+                style={{ appearance: 'none', border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 12px', fontSize: 12, background: 'transparent', color: T.text3, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Development targets ──────────────────────────────────────────────────────
 // The goal says where a player wants to get to. This says what the next block of
 // sessions is actually for — the piece that was missing, so a skills matrix and
 // a pile of lesson summaries never added up to a plan.
-function PlayerTargets({ T, accent, p }: { T: ThemeTokens; accent: AccentTokens; p: Player }) {
+function PlayerTargets({ T, accent, p, onSaved }: { T: ThemeTokens; accent: AccentTokens; p: Player; onSaved?: () => void }) {
   const [targets, setTargets] = useState<Target[]>(Array.isArray(p.targets) ? p.targets : [])
   const [note, setNote] = useState(p.targets_note || '')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
-  // Switching player must not leave the previous player's targets on screen.
+  // Switching player must not leave the previous player's targets on screen —
+  // but this must key on the PLAYER, not on the player's targets. It used to run
+  // whenever `p.targets` changed identity, and the cached roster row still said
+  // null, so the targets Lumio Coach had just written were wiped off the screen
+  // the moment React re-rendered. The coach saw "done" and then nothing, and only
+  // found them by navigating away and back, which re-read the row from the
+  // database. Reset on p.id; after a write, refresh the roster so the row
+  // underneath agrees with what is on screen.
   useEffect(() => {
     setTargets(Array.isArray(p.targets) ? p.targets : [])
     setNote(p.targets_note || ''); setErr('')
-  }, [p.id, p.targets, p.targets_note])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.id])
 
   const set = async () => {
     if (busy) return
@@ -316,6 +399,7 @@ function PlayerTargets({ T, accent, p }: { T: ThemeTokens; accent: AccentTokens;
       const d = await r.json()
       if (!r.ok) throw new Error(d.error || 'Lumio Coach could not set targets')
       setTargets(d.targets || []); setNote(d.note || '')
+      onSaved?.()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Lumio Coach could not set targets') }
     setBusy(false)
   }

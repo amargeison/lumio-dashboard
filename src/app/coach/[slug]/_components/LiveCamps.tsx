@@ -22,9 +22,11 @@ import { flagFor } from '@/lib/coach/country-flag'
 import { campMoney } from '@/lib/coach/camp-money'
 // The four tabs a coach uses once the camp is sold and has to be run. They live
 // in their own module because each is a screen in its own right, not a panel.
-import { KitChecklist, AttendeeTable, TargetsBoard, FinanceBoard } from './CampTabs'
+import { KitChecklist, AttendeeTable, TargetsBoard, FinanceBoard, CampCoaches } from './CampTabs'
 
 type Camp = {
+  /** coach_staff ids working this camp — see migration 177. */
+  coach_ids?: string[] | null
   id: string; name: string; start_date?: string | null; end_date?: string | null; capacity?: number | null
   price?: number | null; collected?: number | null; location?: string | null; region?: string | null
   surface?: string | null; courts?: number | null; board?: string | null; daily_rhythm?: string | null
@@ -107,6 +109,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   // say a racket was earned DURING this camp rather than just asserting it.
   const { rows: skillRows } = useCoachTable<{ player_id: string; skill: string; score: number; updated_at?: string }>('coach_player_skills')
   const { rows: attRows } = useCoachTable<{ player_id: string; present: boolean }>('coach_attendance')
+  const { rows: staffRows } = useCoachTable<{ id: string; name: string; role?: string; qualifications?: string; avatar_url?: string; email?: string }>('coach_staff')
 
   // Deep link from the calendar / planner: a coach who clicks a camp band in
   // their diary should land on THAT camp, not on whichever one happens to be
@@ -142,7 +145,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   }
 
   const booked = (c: Camp) => attendees.rows.filter(a => a.camp_id === c.id).length
-  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['trip', 'Trip hub'], ['emails', 'Emails'], ['promote', 'Promote'], ['finance', 'Finance']]
+  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['coaches', `Coaches${Array.isArray(sel!.coach_ids) && (sel!.coach_ids as string[]).length ? ` · ${(sel!.coach_ids as string[]).length}` : ''}`], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['trip', 'Trip hub'], ['emails', 'Emails'], ['promote', 'Promote'], ['finance', 'Finance']]
 
   return (
     <div style={{ fontFamily: FONT }}>
@@ -203,8 +206,10 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
           <TargetsBoard T={T} accent={accent} camp={sel} attendees={campAttendees} players={players}
             onSave={v => camps.edit(sel.id, v)} onReload={() => camps.reload()} editAtt={attendees.edit} />
         )}
+        {tab === 'coaches' && <CampCoaches T={T} accent={accent} camp={sel} staff={staffRows} onSave={v => camps.edit(sel.id, v)} />}
         {tab === 'attendees' && (
           <AttendeeTable T={T} accent={accent} camp={sel} attendees={campAttendees} players={players}
+            coaches={staffRows.filter(st => (Array.isArray(sel.coach_ids) ? (sel.coach_ids as string[]) : []).map(String).includes(String(st.id)))}
             addPlayer={async (name, playerId) => {
               const row = await dbInsert('coach_camp_attendees', { camp_id: sel.id, player_id: playerId, player_name: name }) as { id?: string } | null
               attendees.reload()

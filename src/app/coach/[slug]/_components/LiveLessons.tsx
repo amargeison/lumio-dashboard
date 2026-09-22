@@ -48,6 +48,20 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
   const players: PlayerLite[] = playerRows.map(p => ({ id: p.id, name: p.name, racket_stage: p.racket_stage }))
   const picFor = (name?: string | null) => (playerRows as any[]).find(p => (p.name || '').trim().toLowerCase() === (name || '').trim().toLowerCase())?.avatar_url as string | undefined
 
+  // ── Where and when the lesson actually was ──────────────────────────────────
+  // A summary carried a date and nothing else, because the time, court and
+  // session type live on the BOOKING, not on the write-up. A coach reading back
+  // through three lessons in a week cannot tell them apart by date alone, and a
+  // parent certainly cannot. So the booking is matched back on (player, date)
+  // and its details fill in whatever the summary itself does not carry.
+  const { rows: bookingRows } = useCoachTable<{ player_name?: string | null; booking_date?: string | null; start_time?: string | null; court?: string | null; type?: string | null; duration?: number | null }>('coach_bookings')
+  const whenWhere = (sess: { player_name: string | null; session_date: string | null }) => {
+    const day = String(sess.session_date || '').slice(0, 10)
+    const who = String(sess.player_name || '').trim().toLowerCase()
+    if (!day) return null
+    return bookingRows.find(b => String(b.booking_date || '').slice(0, 10) === day && String(b.player_name || '').trim().toLowerCase() === who) || null
+  }
+
   // Auto-set a development goal once a player has a summary, so the coach doesn't
   // have to: derive it from their latest summary (the AI brief's next-focus when it's
   // an AI summary, otherwise the session focus). Only fills an EMPTY goal — never
@@ -210,7 +224,9 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
                   <Avatar T={T} accent={accent} text={initials(s.player_name)} size={26} url={picFor(s.player_name)} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.player_name || 'Recorded session'}</div>
-                    <div style={{ fontSize: 10.5, color: T.text3 }}>{fmtDate(s.session_date)}</div>
+                    <div style={{ fontSize: 10.5, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {[fmtDate(s.session_date), s.review_json?.time || whenWhere(s)?.start_time || '', s.review_json?.court || whenWhere(s)?.court || ''].filter(Boolean).join(' \u00b7 ')}
+                    </div>
                   </div>
                 </div>
                 <div style={{ fontSize: 11, color: active ? T.text : T.text2, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.focus || '—'}</div>
@@ -220,7 +236,7 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
         </div>
 
         {/* Detail */}
-        {sel && <DetailPane T={T} accent={accent} s={sel} avatarUrl={picFor(sel.player_name)}
+        {sel && <DetailPane T={T} accent={accent} s={sel} avatarUrl={picFor(sel.player_name)} booking={whenWhere(sel)}
           onExport={() => printSession(sel)}
           onEdit={() => setEditing(sel)}
           onDuplicate={async () => { await add({ player_name: sel.player_name, session_date: new Date().toISOString().slice(0, 10), focus: sel.focus, rating: sel.rating, summary: sel.summary, ai_review: sel.ai_review, review_json: sel.review_json }); setSelId(null) }}
@@ -232,18 +248,26 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
 }
 
 // ── Detail pane ───────────────────────────────────────────────────────────────
-function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, onDelete }: {
+function DetailPane({ T, accent, s, avatarUrl, booking, onExport, onEdit, onDuplicate, onDelete }: {
   T: ThemeTokens; accent: AccentTokens; s: Session; avatarUrl?: string | null
+  /** The booking this lesson came from, when one matches — supplies the time,
+      court and session type the write-up itself never stored. */
+  booking?: { start_time?: string | null; court?: string | null; type?: string | null; duration?: number | null } | null
   onExport: () => void; onEdit: () => void; onDuplicate: () => void; onDelete: () => void
 }) {
   const [shareOpen, setShareOpen] = useState(false)
   const [recapOpen, setRecapOpen] = useState(false)
+  // "What we covered" is the longest, least-read block on the page: a coach
+  // scanning between sessions wants the headline, the takeaways and what is
+  // next. The blow-by-blow is still here — one click away, not in the way.
+  const [fullOpen, setFullOpen] = useState(false)
   const recap = shortRecap(s)
   const r = s.review_json || {}
   const rating = s.rating ?? r.rating ?? 0
   const hasStructured = !!(r.assessment || r.covered?.length || r.takeaways?.length || r.drills?.length || r.skillsWorked?.length || r.homework || r.nextFocus)
   const card: CSSProperties = { background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' }
-  const meta = [r.time, r.duration ? `${r.duration} min` : '', r.court, r.type].filter(Boolean).join(' · ')
+  const dur = r.duration || booking?.duration
+  const meta = [r.time || booking?.start_time || '', dur ? `${dur} min` : '', r.court || booking?.court || '', r.type || booking?.type || ''].filter(Boolean).join(' · ')
 
   return (
     <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18 }}>
@@ -265,6 +289,20 @@ function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, on
         <div style={{ fontSize: 14, color: T.text, fontWeight: 600, marginTop: 2 }}>{s.focus || r.focus || 'Lesson summary'}</div>
       </div>
 
+      {/* THE SHORT VERSION, first. It is the paragraph a parent actually reads
+          and the one a coach re-reads before the next lesson, so it sits at the
+          top — under the focus, above every detail block. */}
+      {!!recap.text && (
+        <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderLeft: `3px solid ${accent.hex}`, borderRadius: 8, padding: '12px 14px', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+            <div style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>✦ Summary</div>
+            <div style={{ fontSize: 10.5, color: T.text3 }}>the short version</div>
+            <button onClick={() => setRecapOpen(true)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Copy →</button>
+          </div>
+          <div style={{ fontSize: 13.5, color: T.text, marginTop: 6, lineHeight: 1.65, fontWeight: 500 }}>{recap.text}</div>
+        </div>
+      )}
+
       {/* The coach's diagnosis leads the summary — the one highest-leverage
           priority, why it matters and what it is costing — before the
           chronological "what we covered". */}
@@ -279,62 +317,85 @@ function DetailPane({ T, accent, s, avatarUrl, onExport, onEdit, onDuplicate, on
 
       {hasStructured ? (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-            <div>
-              {!!r.covered?.length && <>
-                <SubHead T={T} accent={accent}>✓ What we covered</SubHead>
-                <ul style={{ margin: 0, paddingLeft: 18 }}>{r.covered.map((c, i) => <li key={i} style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>{c}</li>)}</ul>
-              </>}
-              {!!r.takeaways?.length && <>
-                <SubHead T={T} accent={accent} mt>✦ Key takeaways</SubHead>
-                {r.takeaways.map((t, i) => <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12.5, color: T.text, padding: '4px 0' }}><span style={{ color: accent.hex }}>›</span>{t}</div>)}
-              </>}
-            </div>
-            <div>
-              {!!r.drills?.length && <>
-                <SubHead T={T} accent={accent}>⚑ Drills used</SubHead>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{r.drills.map((d, i) => <span key={i} style={{ fontSize: 11.5, color: T.text2, padding: '4px 8px', borderRadius: 6, background: T.panel2, border: `1px solid ${T.border}` }}>{d}</span>)}</div>
-              </>}
-              {!!r.technique?.length && <>
-                <SubHead T={T} accent={accent} mt>◈ How we worked on it</SubHead>
-                {r.technique.map((t, i) => <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12.5, color: T.text2, padding: '4px 0', lineHeight: 1.5 }}><span style={{ color: accent.hex, flexShrink: 0 }}>·</span>{t}</div>)}
-              </>}
-              {!!r.skillsWorked?.length && <>
-                <SubHead T={T} accent={accent} mt>🏆 Skills worked</SubHead>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{r.skillsWorked.map((sk, i) => <span key={i} style={{ fontSize: 11, color: accent.hex, padding: '3px 9px', borderRadius: 999, background: accent.dim, border: `1px solid ${accent.border}` }}>{sk}</span>)}</div>
-              </>}
-              {!!r.homework && <>
-                <SubHead T={T} accent={accent} mt>⌂ Homework</SubHead>
-                <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.5 }}>{r.homework}</div>
-              </>}
-            </div>
-          </div>
-
-          {/* THE SHORT VERSION, on the page. It used to live behind the
-              Summary button, which meant the one paragraph a parent actually
-              reads was the one thing you had to click to see. */}
-          {!!recap.text && (
-            <div style={{ ...card, marginTop: 16, background: accent.dim, borderColor: accent.border }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <div style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>✦ Summary</div>
-                <div style={{ fontSize: 10.5, color: T.text3 }}>the short version — what a parent reads in the doorway</div>
-                <button onClick={() => setRecapOpen(true)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Copy →</button>
+          {/* The scannable half: what mattered, what they practised, what is
+              next. Everything here is a box or a chip on purpose — this pane
+              is read standing on a court with a bag over one shoulder. */}
+          {!!r.takeaways?.length && (
+            <div style={{ marginBottom: 14 }}>
+              <SubHead T={T} accent={accent}>✦ Key takeaways</SubHead>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 8 }}>
+                {r.takeaways.map((t, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '10px 12px' }}>
+                    <span style={{ width: 18, height: 18, borderRadius: 5, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5, fontWeight: 500 }}>{t}</span>
+                  </div>
+                ))}
               </div>
-              <div style={{ fontSize: 13, color: T.text, marginTop: 6, lineHeight: 1.65 }}>{recap.text}</div>
             </div>
           )}
 
-          {(r.nextFocus || r.coachNote) && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
-              {r.nextFocus && <div style={card}>
-                <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Next session focus</div>
-                <div style={{ fontSize: 12.5, color: T.text, marginTop: 3 }}>{r.nextFocus}</div>
+          {(!!r.skillsWorked?.length || !!r.drills?.length) && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 12, marginBottom: 14 }}>
+              {!!r.skillsWorked?.length && (
+                <div style={card}>
+                  <div style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 7 }}>🏆 Skills worked</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{r.skillsWorked.map((sk, i) => <span key={i} style={{ fontSize: 11, color: accent.hex, padding: '3px 9px', borderRadius: 999, background: accent.dim, border: `1px solid ${accent.border}` }}>{sk}</span>)}</div>
+                </div>
+              )}
+              {!!r.drills?.length && (
+                <div style={card}>
+                  <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 7 }}>⚑ Drills used</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{r.drills.map((dl, i) => <span key={i} style={{ fontSize: 11.5, color: T.text2, padding: '4px 9px', borderRadius: 6, background: T.panel, border: `1px solid ${T.border}` }}>{dl}</span>)}</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {(r.nextFocus || r.homework || r.coachNote) && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12, marginBottom: 14 }}>
+              {r.nextFocus && <div style={{ ...card, borderLeft: `3px solid ${accent.hex}` }}>
+                <div style={{ fontSize: 10, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>→ Next session focus</div>
+                <div style={{ fontSize: 12.5, color: T.text, marginTop: 4, lineHeight: 1.5, fontWeight: 600 }}>{r.nextFocus}</div>
               </div>}
-              {r.coachNote && <div style={card}>
-                <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Coach note (private)</div>
-                <div style={{ fontSize: 12.5, color: T.text2, marginTop: 3, fontStyle: 'italic' }}>{r.coachNote}</div>
+              {r.homework && <div style={{ ...card, borderLeft: `3px solid ${T.good}` }}>
+                <div style={{ fontSize: 10, color: T.good, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>⌂ Homework</div>
+                <div style={{ fontSize: 12.5, color: T.text, marginTop: 4, lineHeight: 1.5 }}>{r.homework}</div>
+              </div>}
+              {r.coachNote && <div style={{ ...card, borderLeft: `3px solid ${T.border}` }}>
+                <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Coach note (private)</div>
+                <div style={{ fontSize: 12.5, color: T.text2, marginTop: 4, fontStyle: 'italic', lineHeight: 1.5 }}>{r.coachNote}</div>
               </div>}
             </div>
+          )}
+
+          {/* The long version, folded away. */}
+          {(!!r.covered?.length || !!r.technique?.length) && (
+            <>
+              <button onClick={() => setFullOpen(o => !o)}
+                style={{ appearance: 'none', width: '100%', textAlign: 'left', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '10px 13px', fontSize: 12.5, fontWeight: 700, color: T.text2, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ color: accent.hex }}>{fullOpen ? '▾' : '▸'}</span>
+                {fullOpen ? 'Hide the full session detail' : 'Full session detail'}
+                <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 500, color: T.text3 }}>
+                  {[r.covered?.length ? `${r.covered.length} things covered` : '', r.technique?.length ? 'how we worked on it' : ''].filter(Boolean).join(' \u00b7 ')}
+                </span>
+              </button>
+              {fullOpen && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 18, marginTop: 14 }}>
+                  {!!r.covered?.length && (
+                    <div>
+                      <SubHead T={T} accent={accent}>✓ What we covered</SubHead>
+                      <ul style={{ margin: 0, paddingLeft: 18 }}>{r.covered.map((c, i) => <li key={i} style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.7 }}>{c}</li>)}</ul>
+                    </div>
+                  )}
+                  {!!r.technique?.length && (
+                    <div>
+                      <SubHead T={T} accent={accent}>◈ How we worked on it</SubHead>
+                      {r.technique.map((t, i) => <div key={i} style={{ display: 'flex', gap: 8, fontSize: 12.5, color: T.text2, padding: '4px 0', lineHeight: 1.5 }}><span style={{ color: accent.hex, flexShrink: 0 }}>·</span>{t}</div>)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </>
       ) : (

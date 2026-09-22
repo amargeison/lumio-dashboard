@@ -35,11 +35,22 @@ const DEMO_PORTALS = SPORTS
 // The two products that are actually live. Kept here rather than pulled from
 // marketing-sports because these carry a logo and a longer line than the demo
 // gallery cards below.
-const LIVE_PRODUCTS: Array<{name:string;href:string;logo:string;accent:string;line:string}> = [
+// A feature list is not a reason to click. Each card now leads with the thing
+// the reader already recognises as their own problem, says what changes, and
+// only then names the parts — and it names the parts this product actually has.
+// (The old Tennis Coach line advertised GPS heatmaps, which belong to a football
+// portal, not to a coach standing on a court.)
+const LIVE_PRODUCTS: Array<{name:string;href:string;logo:string;accent:string;hook:string;line:string;tags:string[];cta:string}> = [
   {name:'Tennis Coach', href:'/tennis-coach', logo:'/tennis_coach_logo.png', accent:'#3A8EE0',
-   line:'Session planner, AI reviews, Racket Progression, GPS heatmaps.'},
+   hook:'You are running a 60-player academy from a notebook.',
+   line:'Plan the hour on the way to court. Talk through the review as you pack the balls away, and the parent has it written up before they’ve left the car park — with what their child is working on next, and the invoice already raised.',
+   tags:['Session planner','AI lesson reviews','Parent & player app','Payments, camps & rewards'],
+   cta:'See it running'},
   {name:'Impact', href:'/impact', logo:'/impact_logo.png', accent:'#a855f7',
-   line:'Digital registers, funder reporting, fundraising, parent app.'},
+   hook:'The funding is only safe if you can prove what it did.',
+   line:'Take the register on your phone at the side of the pitch. Attendance, postcodes and outcomes count themselves, so the report that used to eat a fortnight of somebody’s evenings is an afternoon — and the next bid opens with real numbers.',
+   tags:['Digital registers','Funder-ready reporting','Fundraising','Parent app'],
+   cta:'See it running'},
 ]
 
 const PROBLEMS: Array<{accent:string;category:string;emoji:string;quote:string;fact:string;statNum:string;statLabel:string}> = [
@@ -168,17 +179,23 @@ export default function SportsLandingPage() {
         <div className="max-w-5xl mx-auto">
           <p className="text-xs font-semibold uppercase tracking-widest text-center mb-3" style={{color:'#64748B'}}>LIVE NOW</p>
           <h2 className="text-3xl md:text-5xl font-black text-center mb-3">Two products you can use today.</h2>
-          <p className="text-center text-sm mb-12 mx-auto" style={{color:'#94A3B8',maxWidth:520}}>Built, running and taking customers. Everything further down this page is a working demo of something still in development.</p>
+          <p className="text-center text-sm mb-12 mx-auto" style={{color:'#94A3B8',maxWidth:560}}>Built, running, and being paid for by the people using them. Everything further down this page is a working demo of something still in development — these two are not.</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {LIVE_PRODUCTS.map((pr:{name:string;href:string;logo:string;accent:string;line:string},i:number)=>(
+            {LIVE_PRODUCTS.map((pr:{name:string;href:string;logo:string;accent:string;hook:string;line:string;tags:string[];cta:string},i:number)=>(
               <Link key={i} href={pr.href} className="rounded-2xl p-8 flex flex-col items-start transition-all hover:opacity-90"
                 style={{background:'#0D1117',border:'1px solid #1E293B',borderTop:`4px solid ${pr.accent}`,textDecoration:'none'}}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={pr.logo} alt={pr.name} style={{width:64,height:64,objectFit:'contain',marginBottom:18}}/>
                 <div className="text-2xl font-bold text-white mb-2">{pr.name}</div>
-                <div className="text-sm leading-relaxed mb-6 flex-1" style={{color:'#94A3B8'}}>{pr.line}</div>
-                <span className="px-5 py-2.5 rounded-lg text-sm font-bold" style={{background:pr.accent,color:'#fff'}}>Explore {pr.name} &rarr;</span>
+                <div className="text-base font-bold leading-snug mb-2" style={{color:pr.accent}}>{pr.hook}</div>
+                <div className="text-sm leading-relaxed mb-5" style={{color:'#94A3B8'}}>{pr.line}</div>
+                <div className="flex flex-wrap gap-1.5 mb-6 flex-1 content-start">
+                  {pr.tags.map((t:string,j:number)=>(
+                    <span key={j} className="text-[10px] px-2.5 py-1 rounded-full font-medium" style={{background:`${pr.accent}15`,color:pr.accent,border:`1px solid ${pr.accent}33`}}>{t}</span>
+                  ))}
+                </div>
+                <span className="px-5 py-2.5 rounded-lg text-sm font-bold" style={{background:pr.accent,color:'#fff'}}>{pr.cta} &rarr;</span>
               </Link>
             ))}
           </div>
