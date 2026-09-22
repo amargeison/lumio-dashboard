@@ -107,6 +107,10 @@ export type CoachSettings = {
   // club's trophies or nothing but certificates is running the same system and
   // should not be reading about merchandise they have not bought.
   ownRewards: boolean
+  // Help that cannot be switched off is nagging. Both default ON for a new
+  // portal; a coach who knows their way around turns them off in Settings.
+  helpHints: boolean          // the ⓘ beside each page title
+  gettingStarted: boolean     // the setup checklist on the dashboard
   studentApp: boolean
   audioOnly: boolean              // Video & Audio module: hide the video half, show audio only (menu label → "Audio only")
   brandLogo: string               // Club/academy logo (data URL) shown top-left instead of the Lumio mark
@@ -145,6 +149,8 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   equipmentSeeded: false,
   ccCoachOnEmail: true,
   ownRewards: false,
+  helpHints: true,
+  gettingStarted: true,
   studentApp: true,
   audioOnly: false,
   brandLogo: '',

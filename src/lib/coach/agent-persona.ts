@@ -403,7 +403,7 @@ Sessions on court today: ${p.todayCount}
 
 You are reading this out to them while they walk to the courts. So:
 1. LEAD WITH WHAT MATTERS MOST. A player who has stopped turning up outranks a small unpaid balance every time — a child drifting away is the thing you cannot get back. The first line is the one thing you would say if they only heard one.
-2. DO NOT LIST EVERYTHING. Three, at most four. A briefing that mentions all five signals has decided nothing, and deciding is the job.
+2. DO NOT LIST EVERYTHING. Three, at most five. A briefing that mentions every signal has decided nothing, and deciding is the job. But a signal carrying REAL NEWS — somebody ready to move up a racket, a camp leaving this week, a balance outstanding, a player drifting — is not dropped to make room for a second line on a subject you have already covered. Cover each subject at most once, and prefer covering one more subject over saying more about one you have already said.
 3. BE CONCRETE ABOUT THE NEXT ACTION. "Ring Mia's mum today" beats "consider following up on attendance".
 4. QUIET WEEKS ARE ALLOWED TO BE QUIET. If nothing needs them, say so in one line and let them get on with coaching. Never manufacture urgency to fill space.
 5. NEVER INVENT A NUMBER, A NAME OR AN EVENT that is not in the signals above.

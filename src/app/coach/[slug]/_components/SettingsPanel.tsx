@@ -511,6 +511,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: 'Your plan: Coach £39/mo · order kit & rewards' },
     { id: 'appearance',  g: 'Rewards & system', icon: 'settings', t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
     { id: 'menu',        g: 'Rewards & system', icon: 'eye',      t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
+    { id: 'help',        g: 'Rewards & system', icon: 'note',     t: 'Help & guidance',     d: `${[s.helpHints !== false && 'Page guides', s.gettingStarted !== false && 'Getting started'].filter(Boolean).join(' · ') || 'Both off'}` },
     { id: 'studentapp',  g: 'Rewards & system', icon: 'people',   t: 'Parent & player app', d: s.studentApp ? 'On · Player view available in your profile menu' : 'Off · your switcher shows coach views only' },
     { id: 'contact',     g: 'You',        icon: 'note',     t: 'Contact & calendar',  d: 'Sender email, phone & calendar sync' },
     { id: 'venuescfg',   g: 'Academy',    icon: 'home',     t: 'Venues & courts',     d: 'Venues, courts & calendar links' },
@@ -920,6 +921,20 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           </Field>
           <Toggle T={T} accent={accent} on={staffCfg.policyOn} onChange={v => setStaffCfg({ ...staffCfg, policyOn: v })} label="Require safeguarding training for all staff" desc="Flags any coach without recorded training." />
           <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>Manage individual DBS certificates and dates on the <strong style={{ color: T.text2 }}>Staff</strong> page.</div>
+        </Modal>
+      )}
+
+      {open === 'help' && (
+        <Modal readOnly={demo} T={T} accent={accent} title="Help & guidance" sub="The bits that explain the portal" onClose={() => setOpen(null)}>
+          <Toggle T={T} accent={accent} on={s.helpHints !== false} onChange={v => setSettings({ helpHints: v })}
+            label="Page guides (the ⓘ button)"
+            desc="A small ⓘ beside each page title: what the page is for, how to use it, and the things worth knowing. Switch it off once you know your way around." />
+          <Toggle T={T} accent={accent} on={s.gettingStarted !== false} onChange={v => setSettings({ gettingStarted: v })}
+            label="Getting started checklist"
+            desc="Six steps on your dashboard that tick themselves off as you set the portal up. It disappears on its own once they are all done." />
+          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, marginTop: 12 }}>
+            Turning either back on is this same switch — nothing is lost, and the checklist picks up wherever you actually are.
+          </div>
         </Modal>
       )}
 
