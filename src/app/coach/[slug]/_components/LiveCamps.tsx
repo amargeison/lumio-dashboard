@@ -108,7 +108,13 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   const { rows: skillRows } = useCoachTable<{ player_id: string; skill: string; score: number; updated_at?: string }>('coach_player_skills')
   const { rows: attRows } = useCoachTable<{ player_id: string; present: boolean }>('coach_attendance')
 
-  const [selId, setSelId] = useState<string | null>(null)
+  // Deep link from the calendar / planner: a coach who clicks a camp band in
+  // their diary should land on THAT camp, not on whichever one happens to be
+  // first. Read once and cleared, so a later visit opens normally.
+  const [selId, setSelId] = useState<string | null>(() => {
+    try { const id = sessionStorage.getItem('lumio_open_camp'); if (id) { sessionStorage.removeItem('lumio_open_camp'); return id } } catch { /* ignore */ }
+    return null
+  })
   const [tab, setTab] = useState('overview')
   const [formOpen, setFormOpen] = useState(false)
   // Until now a camp could be created but never edited — so capacity and price,

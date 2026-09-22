@@ -28,6 +28,7 @@ import { printRacketCertificate, certOrg } from './LiveRacketProgression'
 import { getSettings } from '../_lib/settings-store'
 import { getFlags, subscribe as subscribeFlags } from '../_lib/feature-flags'
 import { avatarSrc } from '@/lib/avatar'
+import { ColourLadder } from './ColourLadder'
 
 type Target = { target: string; why?: string; measure?: string; by?: string }
 type Player = {
@@ -241,6 +242,11 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade }: {
           {!hasStage ? ' This player has no colour set yet — grade the foundation skills here, or set their colour when you edit them in the Roster.' : ''}
         </p>
       </div>
+
+      {/* What the colours actually mean. A coach who does not run the reward
+          ladder has never seen it explained anywhere, and neither has the
+          assistant they just hired — so the key lives on this page too. */}
+      <ColourLadder T={T} accent={accent} currentStageId={hasStage ? curStage.id : null} />
 
       {/* Colour journey + recent lessons */}
       <div style={{ display: showSec('journey') ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: 14 }}>

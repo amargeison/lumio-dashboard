@@ -15,6 +15,7 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile, subscribeCalendarSync, type CalSyncState } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
+import { campSpans, campsOn, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 
 type Booking = {
   id: string; title: string | null; player_name: string | null; court: string | null
@@ -39,6 +40,14 @@ const parseMins = (t: string | null): number | null => {
   const h = t.match(/^(\d{1,2})$/); return h ? +h[1] * 60 : null
 }
 const minsToHHMM = (mins: number) => `${pad(Math.floor(mins / 60))}:${pad(mins % 60)}`
+// What a booking is called, wherever it is shown. A title alone ("1:1", "Junior
+// squad") does not say who it is with, and a court full of identical titles is
+// unreadable — so the player's name rides along unless it IS the title.
+const bookingLabel = (b: { title?: string | null; player_name?: string | null }) => {
+  const t = (b.title || '').trim(), who = (b.player_name || '').trim()
+  if (t && who && t.toLowerCase() !== who.toLowerCase()) return `${t} · ${who}`
+  return t || who || 'Booking'
+}
 
 const HOUR_START = 7, HOUR_END = 21, ROW_H = 44
 const HOURS = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_START + i)
@@ -50,6 +59,8 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   const { rows: playerRows } = useCoachTable<{ id: string; name: string }>('coach_players')
   const players = playerRows.map(p => ({ id: p.id, name: p.name }))
   const { rows: staffRows } = useCoachTable<{ id: string; name: string }>('coach_staff')
+  // Camps are read here, never written here — see src/lib/coach/camp-dates.ts.
+  const { rows: campRows } = useCoachTable<CampRow>('coach_camps')
   const profile = useCoachProfile()
   const coaches = [profile.display_name || 'Head Coach', ...staffRows.map(s => s.name)]
 
@@ -65,6 +76,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   const today = new Date()
   const weekStart = useMemo(() => mondayOf(cursor), [cursor])
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart])
+  const camps = useMemo(() => campSpans(campRows), [campRows])
 
   const TYPE_COLOUR = (t: string | null): string => {
     switch (t) {
@@ -130,6 +142,9 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
       }} />
   )
 
+  // Camps live on their own page; the calendar shows them and hands over.
+  const openCamp = (id: string) => { try { sessionStorage.setItem('lumio_open_camp', id) } catch { /* ignore */ } onNavigate?.('camps') }
+
   const sectOff = getSettings().sectionsOff?.calendar || []
   const showSec = (k: string) => !sectOff.includes(k)
 
@@ -189,13 +204,15 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
 
       {view === 'week'
         ? <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={rows} busy={busy} typeColour={TYPE_COLOUR}
+            camps={camps} onCamp={openCamp}
             onOpen={b => setEditing(b)}
             onSlotClick={(dayKey, mins) => { setNewSlot({ date: dayKey, start: minsToHHMM(mins) }); setEditing('new') }} />
-        : <MonthGrid T={T} accent={accent} cursor={cursor} today={today} bookingsOn={bookingsOn} typeColour={TYPE_COLOUR} onOpen={b => setEditing(b)} onDay={d => { setCursor(d); setView('week') }} />}
+        : <MonthGrid T={T} accent={accent} cursor={cursor} today={today} bookingsOn={bookingsOn} typeColour={TYPE_COLOUR} camps={camps} onCamp={openCamp} onOpen={b => setEditing(b)} onDay={d => { setCursor(d); setView('week') }} />}
 
       {/* Legend */}
       <div style={{ display: showSec('legend') ? 'flex' : 'none', gap: 14, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
         {TYPES.map(t => <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: TYPE_COLOUR(t) }} />{t}</span>)}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: CAMP_COLOUR }} />Camp</span>
         <span style={{ marginLeft: 'auto' }}>{view === 'week' ? 'Faint fill = pending confirmation' : 'Click a day to open its week'}</span>
       </div>
 
@@ -209,10 +226,12 @@ function NavBtn({ T, onClick, children }: { T: ThemeTokens; onClick: () => void;
 }
 
 // ── Week grid ─────────────────────────────────────────────────────────────────
-function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, onOpen, onSlotClick }: {
+function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, onCamp, onOpen, onSlotClick }: {
   T: ThemeTokens; accent: AccentTokens; days: Date[]; today: Date
   bookings: Booking[]; busy: { date: string; start: number; end: number }[]
-  typeColour: (t: string | null) => string; onOpen: (b: Booking) => void
+  typeColour: (t: string | null) => string
+  camps: ReturnType<typeof campSpans>; onCamp: (id: string) => void
+  onOpen: (b: Booking) => void
   onSlotClick: (dayKey: string, mins: number) => void
 }) {
   const yFor = (mins: number) => Math.max(0, Math.min((mins / 60 - HOUR_START) * ROW_H, HOURS.length * ROW_H))
@@ -232,6 +251,19 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, onOpen, 
             )
           })}
         </div>
+        {/* All-day band — camps. A camp has no start time, so it cannot live in
+            the hour grid; it sits above it as a band, the way every calendar
+            draws a multi-day event. The row only exists on weeks that have one. */}
+        {days.some(d => campsOn(camps, iso(d)).length > 0) && (
+          <div style={{ display: 'grid', gridTemplateColumns: `56px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}`, background: T.hover }}>
+            <div style={{ fontSize: 9, color: T.text3, fontFamily: FONT_MONO, padding: '7px 6px', textAlign: 'right' }}>ALL DAY</div>
+            {days.map((d, i) => (
+              <div key={i} style={{ borderLeft: `1px solid ${T.border}`, padding: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {campsOn(camps, iso(d)).map(c => <CampBand key={c.id} T={T} camp={c} onClick={() => onCamp(c.id)} />)}
+              </div>
+            ))}
+          </div>
+        )}
         {/* grid */}
         <div style={{ display: 'grid', gridTemplateColumns: `56px repeat(7, 1fr)` }}>
           <div>{HOURS.map(h => <div key={h} style={{ height: ROW_H, fontSize: 10, color: T.text3, fontFamily: FONT_MONO, padding: '2px 6px', textAlign: 'right' }}>{pad(h)}:00</div>)}</div>
@@ -269,9 +301,14 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, onOpen, 
                   const top = yFor(startM), height = Math.max(yFor(startM + dur) - top - 2, 20)
                   const c = typeColour(b.type)
                   return (
-                    <div key={b.id} onClick={e => { e.stopPropagation(); onOpen(b) }} title={`${b.title || b.player_name || 'Booking'} · ${minsToHHMM(startM)}`}
+                    <div key={b.id} onClick={e => { e.stopPropagation(); onOpen(b) }} title={`${bookingLabel(b)} · ${minsToHHMM(startM)}`}
                       style={{ position: 'absolute', left: 3, right: 3, top: top + 1, height, background: b.status === 'pending' ? `${c}14` : `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '3px 6px', overflow: 'hidden', opacity: b.status === 'cancelled' ? 0.45 : 1, cursor: 'pointer', zIndex: 1 }}>
                       <div style={{ fontSize: 10.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Booking'}</div>
+                      {/* Who it is with. A court full of "1:1" blocks tells a
+                          coach nothing at a glance; the name is the booking. */}
+                      {!!b.player_name && b.player_name !== b.title && (
+                        <div style={{ fontSize: 9.5, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.player_name}</div>
+                      )}
                       <div style={{ fontSize: 9, color: T.text2, fontFamily: FONT_MONO }}>{minsToHHMM(startM)}{b.court ? ` · ${b.court}` : ''}</div>
                     </div>
                   )
@@ -285,10 +322,36 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, onOpen, 
   )
 }
 
+// A camp on a day. Squared off where it continues into the next day and rounded
+// where it ends, so a five-day camp reads as one bar across the week rather than
+// five unrelated blocks. A camp that is not confirmed yet is drawn dashed — it
+// is in the diary, but it is not a promise.
+function CampBand({ T, camp, onClick }: { T: ThemeTokens; camp: CampDay; onClick: () => void }) {
+  return (
+    <button onClick={e => { e.stopPropagation(); onClick() }}
+      title={`${camp.name}${camp.where ? ` · ${camp.where}` : ''} · ${campDayLabel(camp)}`}
+      style={{
+        appearance: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', display: 'block',
+        fontFamily: FONT, background: camp.confirmed ? `${CAMP_COLOUR}26` : 'transparent',
+        border: `1px ${camp.confirmed ? 'solid' : 'dashed'} ${CAMP_COLOUR}`,
+        borderLeftWidth: camp.first ? 3 : 1,
+        borderTopLeftRadius: camp.first ? 6 : 0, borderBottomLeftRadius: camp.first ? 6 : 0,
+        borderTopRightRadius: camp.last ? 6 : 0, borderBottomRightRadius: camp.last ? 6 : 0,
+        padding: '3px 5px', overflow: 'hidden',
+      }}>
+      <div style={{ fontSize: 9.5, fontWeight: 700, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {camp.first ? camp.name : `${camp.name} →`}
+      </div>
+      <div style={{ fontSize: 8.5, color: CAMP_COLOUR, fontWeight: 600 }}>{campDayLabel(camp)}{camp.confirmed ? '' : ' · pencilled in'}</div>
+    </button>
+  )
+}
+
 // ── Month grid ────────────────────────────────────────────────────────────────
-function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, onOpen, onDay }: {
+function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, camps, onCamp, onOpen, onDay }: {
   T: ThemeTokens; accent: AccentTokens; cursor: Date; today: Date
   bookingsOn: (d: Date) => Booking[]; typeColour: (t: string | null) => string
+  camps: ReturnType<typeof campSpans>; onCamp: (id: string) => void
   onOpen: (b: Booking) => void; onDay: (d: Date) => void
 }) {
   const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1)
@@ -311,12 +374,21 @@ function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, onOpen, o
                 <span style={{ fontSize: 12, fontWeight: isToday ? 700 : 500, color: isToday ? T.btnText : T.text2, background: isToday ? accent.hex : 'transparent', borderRadius: 999, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{d.getDate()}</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
+                {/* Camps first: a camp owns the whole day, so it belongs above
+                    the hour-by-hour list rather than sorted into it. */}
+                {campsOn(camps, iso(d)).map(c => (
+                  <div key={c.id} onClick={e => { e.stopPropagation(); onCamp(c.id) }}
+                    title={`${c.name}${c.where ? ` · ${c.where}` : ''} · ${campDayLabel(c)}`}
+                    style={{ fontSize: 9.5, fontWeight: 700, color: T.text, background: c.confirmed ? `${CAMP_COLOUR}26` : 'transparent', border: `1px ${c.confirmed ? 'solid' : 'dashed'} ${CAMP_COLOUR}`, borderRadius: 4, padding: '1px 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {c.first ? c.name : `${c.name} →`}
+                  </div>
+                ))}
                 {items.slice(0, 3).map(b => {
                   const c = typeColour(b.type)
                   return (
                     <div key={b.id} onClick={e => { e.stopPropagation(); onOpen(b) }} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: T.text, background: `${c}22`, borderLeft: `2px solid ${c}`, borderRadius: 4, padding: '1px 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: b.status === 'cancelled' ? 0.45 : 1 }}>
                       <span style={{ fontFamily: FONT_MONO, color: T.text3, fontSize: 9 }}>{(() => { const m = parseMins(b.start_time); return m == null ? '' : minsToHHMM(m) })()}</span>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Booking'}</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{bookingLabel(b)}</span>
                     </div>
                   )
                 })}
@@ -405,7 +477,7 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, b
     .filter(b => b.booking_date === date && b.id !== booking?.id && b.status !== 'cancelled')
     .map(b => {
       const s = parseMins(b.start_time)
-      return s == null ? null : { start: s, end: s + (b.duration_min || 60), label: b.title || b.player_name || 'another lesson' }
+      return s == null ? null : { start: s, end: s + (b.duration_min || 60), label: bookingLabel(b) || 'another lesson' }
     })
     .filter(Boolean) as { start: number; end: number; label: string }[]
 

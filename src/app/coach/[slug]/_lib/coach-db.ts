@@ -402,10 +402,14 @@ export function useCoachTable<T = any>(table: CoachTable) {
 export interface CoachStats {
   players: number; lessonsThisWeek: number; staff: number; upcomingBookings: number; loading: boolean
   sessionsToday: number; racketsReady: number; outstandingPayments: number; newPlayers: number
+  /** Bookings that have been and gone with no lesson summary written. The one
+      number that is actionable every day, and the one that feeds the parent
+      app — so it stands in for "rackets ready" when the ladder is switched off. */
+  summariesDue: number
   racketCounts: number[]   // aligned to RACKET_STAGES order
 }
 
-const emptyStats: CoachStats = { players: 0, lessonsThisWeek: 0, staff: 0, upcomingBookings: 0, loading: true, sessionsToday: 0, racketsReady: 0, outstandingPayments: 0, newPlayers: 0, racketCounts: [] }
+const emptyStats: CoachStats = { players: 0, lessonsThisWeek: 0, staff: 0, upcomingBookings: 0, loading: true, sessionsToday: 0, racketsReady: 0, outstandingPayments: 0, newPlayers: 0, summariesDue: 0, racketCounts: [] }
 const dayKey = (d?: string | null) => String(d ?? '').slice(0, 10)
 
 export function useCoachStats(enabled = true): CoachStats {
@@ -439,6 +443,21 @@ export function useCoachStats(enabled = true): CoachStats {
         const m: any = skillFor(p.id)
         return list.every(sk => (m[sk] || 0) >= awardThreshold)
       }).length
+      // A lesson that has happened and has no summary. Matched on player + date
+      // against coach_sessions, so a summary written for that day counts however
+      // it was created. Only the last fortnight — a booking from March with no
+      // summary is history, not a to-do list.
+      const fortnight = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10)
+      const summaryKey = (name: unknown, date: unknown) => `${String(name || '').trim().toLowerCase()}|${dayKey(date as string | null | undefined)}`
+      const written = new Set(sessions.map((r: any) => summaryKey(r.player_name, r.session_date)))
+      const summariesDue = brows.filter((b: any) => {
+        const d = dayKey(b.booking_date)
+        if (!d || d >= today || d < fortnight) return false
+        if ((b.status || '') === 'cancelled') return false
+        const who = b.player_name || b.title
+        return !!who && !written.has(summaryKey(who, b.booking_date))
+      }).length
+
       setS({
         players: prows.length,
         staff: staff.length,
@@ -448,6 +467,7 @@ export function useCoachStats(enabled = true): CoachStats {
         racketsReady,
         outstandingPayments: pays.filter((p: any) => !p.paid && (Number(p.amount) || 0) > 0).reduce((t: number, p: any) => t + (Number(p.amount) || 0), 0),
         newPlayers: prows.filter((p: any) => dayKey(p.created_at) >= weekAgo).length,
+        summariesDue,
         racketCounts: RACKET_STAGES.map(st => prows.filter((p: any) => p.racket_stage === st.id).length),
         loading: false,
       })

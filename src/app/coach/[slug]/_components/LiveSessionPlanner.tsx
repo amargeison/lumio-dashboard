@@ -13,6 +13,7 @@ import { useCoachTable, dbInsert, dbRemove, invalidateCoachTable, RACKET_STAGES,
 import { MediaCaptureModal } from './MediaCaptureModal'
 import { pollMedia } from '../_lib/media-upload'
 import { getSettings } from '../_lib/settings-store'
+import { campSpans, campsOn, campsBetween, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -83,12 +84,18 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   const players = useCoachTable<any>('coach_players')
   const bookings = useCoachTable<any>('coach_bookings')
   const skills = useCoachTable<any>('coach_player_skills')
+  // A camp is a week the coach is not on their home courts. It belongs in the
+  // planner for the same reason it belongs in the calendar — read-only here.
+  const campRows = useCoachTable<CampRow>('coach_camps')
   const [tab, setTab] = useState<'overview' | 'today' | 'week' | 'month'>('overview')
   const sectOff = getSettings().sectionsOff?.planner || []
   const showSec = (k: string) => !sectOff.includes(k)
   const [open, setOpen] = useState(false)
   const [prefill, setPrefill] = useState<any | null>(null)
   const [sel, setSel] = useState<any | null>(null)
+
+  const camps = campSpans(campRows.rows)
+  const openCamp = (id: string) => { try { sessionStorage.setItem('lumio_open_camp', id) } catch { /* ignore */ } onNavigate?.('camps') }
 
   const today = new Date()
   const todayISO = isoD(today)
@@ -229,7 +236,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
               <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>This week’s calendar</div>
               <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>synced from Booking Calendar</div>
             </div>
-            <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={bookings.rows} onOpen={openBooking} />
+            <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={bookings.rows} camps={camps} onCamp={openCamp} onOpen={openBooking} />
           </div>
         </div>
       )}
@@ -241,6 +248,17 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
         return (
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>Today · {todays.length} session{todays.length === 1 ? '' : 's'}</div>
+          {/* A camp running today is the context everything else on this page sits
+              in. It goes above the session cards, not among them. */}
+          {campsOn(camps, todayISO).map((c: CampDay) => (
+            <button key={c.id} onClick={() => openCamp(c.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', appearance: 'none', cursor: 'pointer', marginBottom: 12, padding: '10px 13px', borderRadius: 10, fontFamily: FONT, background: `${CAMP_COLOUR}18`, border: `1px ${c.confirmed ? 'solid' : 'dashed'} ${CAMP_COLOUR}59`, borderLeft: `3px solid ${CAMP_COLOUR}` }}>
+              <span style={{ fontSize: 9.5, fontWeight: 700, color: CAMP_COLOUR, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Camp</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{c.name}</span>
+              <span style={{ fontSize: 11.5, color: T.text3 }}>{[campDayLabel(c), c.where].filter(Boolean).join(' · ')}</span>
+              <span style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 700, color: CAMP_COLOUR }}>Open camp →</span>
+            </button>
+          ))}
           {todays.length === 0 ? <div style={{ fontSize: 13, color: T.text3, padding: '20px 0' }}>No sessions today.</div> : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
               {todays.map(b => {
@@ -266,12 +284,12 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
 
       {tab === 'week' && (
         <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
-          <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={bookings.rows} onOpen={openBooking} />
+          <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={bookings.rows} camps={camps} onCamp={openCamp} onOpen={openBooking} />
         </div>
       )}
 
       {tab === 'month' && (
-        <MonthAgenda T={T} accent={accent} bookings={bookings.rows} fromISO={todayISO} onOpen={openBooking} />
+        <MonthAgenda T={T} accent={accent} bookings={bookings.rows} camps={camps} onCamp={openCamp} fromISO={todayISO} onOpen={openBooking} />
       )}
 
       {open && <NewSession T={T} accent={accent} density={density} players={players.rows} prefill={prefill}
@@ -285,7 +303,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
 }
 
 // ── This-week grid (read-only mirror of the Booking Calendar) ───────────────
-function WeekGrid({ T, accent, days, today, bookings, onOpen }: { T: ThemeTokens; accent: AccentTokens; days: Date[]; today: Date; bookings: any[]; onOpen: (b: any) => void }) {
+function WeekGrid({ T, accent, days, today, bookings, camps, onCamp, onOpen }: { T: ThemeTokens; accent: AccentTokens; days: Date[]; today: Date; bookings: any[]; camps: ReturnType<typeof campSpans>; onCamp: (id: string) => void; onOpen: (b: any) => void }) {
   const ROW = 42, START = HRS[0]
   const yFor = (mins: number) => Math.max(0, Math.min((mins / 60 - START) * ROW, HRS.length * ROW))
   return (
@@ -301,6 +319,22 @@ function WeekGrid({ T, accent, days, today, bookings, onOpen }: { T: ThemeTokens
             </div>
           })}
         </div>
+        {days.some(d => campsOn(camps, isoD(d)).length > 0) && (
+          <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}`, background: T.hover }}>
+            <div style={{ fontSize: 8.5, color: T.text3, padding: '6px 5px', textAlign: 'right' }}>ALL DAY</div>
+            {days.map((d, i) => (
+              <div key={i} style={{ borderLeft: `1px solid ${T.border}`, padding: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {campsOn(camps, isoD(d)).map(c => (
+                  <button key={c.id} onClick={() => onCamp(c.id)} title={`${c.name}${c.where ? ` · ${c.where}` : ''} · ${campDayLabel(c)}`}
+                    style={{ appearance: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: FONT, background: c.confirmed ? `${CAMP_COLOUR}26` : 'transparent', border: `1px ${c.confirmed ? 'solid' : 'dashed'} ${CAMP_COLOUR}`, borderLeftWidth: c.first ? 3 : 1, borderRadius: 5, padding: '2px 4px', overflow: 'hidden' }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.first ? c.name : `${c.name} →`}</div>
+                    <div style={{ fontSize: 8, color: CAMP_COLOUR, fontWeight: 600 }}>{campDayLabel(c)}</div>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, 1fr)` }}>
           <div>{HRS.map(h => <div key={h} style={{ height: ROW, fontSize: 9.5, color: T.text3, padding: '2px 5px', textAlign: 'right' }}>{pad2(h)}:00</div>)}</div>
           {days.map((d, di) => {
@@ -329,10 +363,21 @@ function WeekGrid({ T, accent, days, today, bookings, onOpen }: { T: ThemeTokens
   )
 }
 
-function MonthAgenda({ T, accent, bookings, fromISO, onOpen }: { T: ThemeTokens; accent: AccentTokens; bookings: any[]; fromISO: string; onOpen: (b: any) => void }) {
+function MonthAgenda({ T, accent, bookings, camps, onCamp, fromISO, onOpen }: { T: ThemeTokens; accent: AccentTokens; bookings: any[]; camps: ReturnType<typeof campSpans>; onCamp: (id: string) => void; fromISO: string; onOpen: (b: any) => void }) {
   const end = isoD(addD(new Date(fromISO + 'T00:00:00'), 31))
   const inRange = bookings.filter(b => (b.booking_date || '') >= fromISO && (b.booking_date || '') < end && b.status !== 'cancelled')
-  const dates = Array.from(new Set(inRange.map(b => b.booking_date))).sort()
+  // A camp day with no bookings on it still needs a row. Before, a fortnight
+  // abroad showed as a gap in the agenda — the emptiest the diary ever looks is
+  // the week the coach is busiest.
+  const campsInRange = campsBetween(camps, fromISO, end)
+  const campDates = campsInRange.flatMap(c => {
+    const out: string[] = []
+    for (let d = new Date(`${c.start}T00:00:00`); isoD(d) <= c.end; d = addD(d, 1)) {
+      const k = isoD(d); if (k >= fromISO && k < end) out.push(k)
+    }
+    return out
+  })
+  const dates = Array.from(new Set([...inRange.map(b => b.booking_date as string), ...campDates])).sort()
   if (!dates.length) return <div style={{ fontSize: 12.5, color: T.text3, fontStyle: 'italic', padding: '18px 4px' }}>No bookings in the next 30 days.</div>
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -342,6 +387,14 @@ function MonthAgenda({ T, accent, bookings, fromISO, onOpen }: { T: ThemeTokens;
           <div key={dt} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 14 }}>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text3, marginBottom: 10 }}>{new Date(dt + 'T00:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short' })}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {campsOn(camps, dt as string).map((c: CampDay) => (
+                <button key={c.id} onClick={() => onCamp(c.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', background: c.confirmed ? `${CAMP_COLOUR}18` : T.panel2, border: `1px ${c.confirmed ? 'solid' : 'dashed'} ${CAMP_COLOUR}59`, borderRadius: 8, textAlign: 'left', width: '100%', cursor: 'pointer' }}>
+                  <span style={{ fontSize: 11.5, color: T.text2, width: 50, flexShrink: 0 }}>All day</span>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: CAMP_COLOUR, flexShrink: 0 }} />
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
+                  <span style={{ fontSize: 11, color: T.text3 }}>{[campDayLabel(c), c.where].filter(Boolean).join(' · ')}</span>
+                </button>
+              ))}
               {items.map(b => (
                 <button key={b.id} onClick={() => onOpen(b)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 11px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, textAlign: 'left', width: '100%', cursor: 'pointer' }}>
                   <span style={{ fontSize: 11.5, color: T.text2, width: 50, flexShrink: 0 }}>{b.start_time || '—'}</span>

@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { dbList, dbInsert, dbUpdate, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 import { EmptyCoachDashboard } from './EmptyCoachDashboard'
@@ -22,7 +22,7 @@ const fmtDate = (d?: string) => { if (!d) return ''; try { return new Date(d).to
 // WMO weather code → short label (Open-Meteo current weather).
 const wmo = (c: number): string => c === 0 ? 'clear' : c <= 3 ? 'cloudy' : c <= 48 ? 'fog' : c <= 67 ? 'rain' : c <= 77 ? 'snow' : c <= 82 ? 'showers' : c <= 86 ? 'snow' : 'storms'
 
-export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard, asCoach }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void; asCoach?: { name: string; profileDone: boolean } | null }) {
+export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard, asCoach }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void; asCoach?: { name: string; profileDone: boolean; staffId?: string | null } | null }) {
   const profile = useCoachProfile()
   const [d, setD] = useState<{ players: any[]; bookings: any[]; lessons: any[]; payments: any[]; attendance: any[]; skills: any[]; messages: any[]; equipment: any[]; staff: any[]; venues: any[]; loading: boolean }>({ players: [], bookings: [], lessons: [], payments: [], attendance: [], skills: [], messages: [], equipment: [], staff: [], venues: [], loading: true })
   const [weather, setWeather] = useState<{ temp: number; desc: string; wind: number } | null>(null)
@@ -89,7 +89,6 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   // Highlight the next not-yet-started session in the Today timeline (demo style).
   const nowHM = new Date().toTimeString().slice(0, 5)
   const todayHighlightId = (todays.find(b => (b.start_time || '') >= nowHM) || todays[0])?.id
-  const lessonsThisWeek = d.lessons.filter(l => dk(l.session_date) >= weekAgo).length
   const due = d.payments.filter(p => !p.paid && (Number(p.amount) || 0) > 0)
   const dueTotal = due.reduce((s, p) => s + (Number(p.amount) || 0), 0)
 
@@ -130,15 +129,32 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   // The signals. These are FACTS about the coach's week, not the briefing —
   // Lumio Coach turns them into the briefing (see the effect below). Anything
   // added here becomes something he can decide to lead with.
-  const lowAtt = d.players.map(p => ({ p, a: attPct(p.id) })).filter(x => x.a !== null && (x.a as number) < 80).sort((a, b) => (a.a as number) - (b.a as number))
-  // Always show Payments, Rackets and Retention (with live data + zero-states) so
-  // the briefing reads the same on a fresh account as a busy one.
-  const briefing: { tag: string; text: string }[] = []
-  briefing.push({ tag: 'Payments', text: dueTotal > 0 ? `${due.length} player${due.length > 1 ? 's have' : ' has'} an outstanding balance — £${dueTotal.toLocaleString()} to collect.` : 'No outstanding balances — payments are up to date.' })
-  briefing.push({ tag: 'Rackets', text: racketsReady.length ? `${racketsReady.length} player${racketsReady.length > 1 ? 's are' : ' is'} ready to move up a racket — book ${racketsReady.length > 1 ? 'assessments' : 'an assessment'}: ${racketsReady.slice(0, 3).map(p => p.name).join(', ')}.` : 'No players ready to move up a racket yet — keep logging skill progress.' })
-  briefing.push({ tag: 'Retention', text: lowAtt.length ? `${lowAtt[0].p.name} is at ${lowAtt[0].a}% attendance — worth a check-in with the family.` : 'Attendance is healthy across your players.' })
-  briefing.push({ tag: 'Schedule', text: todays.length ? `${todays.length} session${todays.length > 1 ? 's' : ''} today${todays[0]?.start_time ? ` from ${todays[0].start_time}` : ''}.${next && dk(next.booking_date) > today ? ` Next after today: ${fmtDate(next.booking_date)} ${next.start_time || ''}.` : ''}` : (next ? `No sessions today — next is ${fmtDate(next.booking_date)} ${next.start_time || ''}.` : 'No upcoming sessions booked — add bookings in the calendar.') })
-  briefing.push({ tag: 'Progress', text: lessonsThisWeek ? `${lessonsThisWeek} lesson summar${lessonsThisWeek > 1 ? 'ies' : 'y'} logged this week — keep sharing the wins with players.` : 'No lesson summaries yet this week — log one after your next session.' })
+  //
+  // WHOSE week, though. An assistant coach can read the whole academy (tier 2
+  // RLS), so the numbers above are the club's, not theirs — and a briefing that
+  // opens with a balance they cannot chase for a player they have never taught
+  // is worse than no briefing. When a staff identity is in the chair, every
+  // signal below is narrowed to rows carrying their staff_id, and the money
+  // signal is dropped entirely: payments are academy-level by design (see
+  // migration 165), so there is no honest per-coach version of it.
+  const myStaffId = asCoach?.staffId || null
+  const mine = <R extends { staff_id?: string | null }>(rows: R[]) => myStaffId ? rows.filter(r => r.staff_id === myStaffId) : rows
+  const myPlayers = mine(d.players)
+  const myTodays = mine(todays)
+  const myNext = mine(upcoming)[0]
+  const myLessonsThisWeek = mine(d.lessons).filter(l => dk(l.session_date) >= weekAgo).length
+  const myReady = mine(racketsReady)
+
+  const lowAtt = myPlayers.map(p => ({ p, a: attPct(p.id) })).filter(x => x.a !== null && (x.a as number) < 80).sort((a, b) => (a.a as number) - (b.a as number))
+  // Rackets, Retention, Schedule and Progress always appear (with live data +
+  // zero-states) so the briefing reads the same on a fresh account as a busy
+  // one; Payments joins them only for the person who can act on it.
+  const briefing: { tag: string; pri: 'high' | 'med' | 'low'; text: string }[] = []
+  if (!myStaffId) briefing.push({ tag: 'payments', pri: dueTotal > 0 ? 'high' : 'low', text: dueTotal > 0 ? `${due.length} player${due.length > 1 ? 's have' : ' has'} an outstanding balance — £${dueTotal.toLocaleString()} to collect.` : 'No outstanding balances — payments are up to date.' })
+  briefing.push({ tag: 'rackets', pri: myReady.length ? 'high' : 'low', text: myReady.length ? `${myReady.length} player${myReady.length > 1 ? 's are' : ' is'} ready to move up a racket — book ${myReady.length > 1 ? 'assessments' : 'an assessment'}: ${myReady.slice(0, 3).map(p => p.name).join(', ')}.` : 'No players ready to move up a racket yet — keep logging skill progress.' })
+  briefing.push({ tag: 'retention', pri: lowAtt.length ? 'high' : 'low', text: lowAtt.length ? `${lowAtt[0].p.name} is at ${lowAtt[0].a}% attendance — worth a check-in with the family.` : 'Attendance is healthy across your players.' })
+  briefing.push({ tag: 'schedule', pri: myTodays.length ? 'med' : 'low', text: myTodays.length ? `${myTodays.length} session${myTodays.length > 1 ? 's' : ''} today${myTodays[0]?.start_time ? ` from ${myTodays[0].start_time}` : ''}.${myNext && dk(myNext.booking_date) > today ? ` Next after today: ${fmtDate(myNext.booking_date)} ${myNext.start_time || ''}.` : ''}` : (myNext ? `No sessions today — next is ${fmtDate(myNext.booking_date)} ${myNext.start_time || ''}.` : 'No upcoming sessions booked — add bookings in the calendar.') })
+  briefing.push({ tag: 'progress', pri: 'low', text: myLessonsThisWeek ? `${myLessonsThisWeek} lesson summar${myLessonsThisWeek > 1 ? 'ies' : 'y'} logged this week — keep sharing the wins with players.` : 'No lesson summaries yet this week — log one after your next session.' })
 
   // Extra row cards. Upcoming = the next 7 days EXCLUDING today (today already
   // has its own timeline in the hero), so this isn't duplicate content.
@@ -285,16 +301,12 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           })}
         </div>
 
-        {/* Lumio Coach's briefing. The badge only says "Lumio Coach" when he
-            actually wrote it — if the call fails the panel shows the underlying
+        {/* Coach AI briefing. The panel only claims to be a briefing when Lumio
+            Coach actually wrote one — if the call fails it shows the underlying
             numbers, plainly labelled as numbers. */}
         <div style={{ ...card, display: showSec('briefing') ? undefined : 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
-            <span style={{ color: accent.hex }}>✦</span>
-            <p style={{ ...sectionTitle, margin: 0 }}>Your week</p>
-          </div>
-
-          <BriefingBody T={T} accent={accent} signals={briefing} todayCount={todays.length} />
+          <BriefingBody T={T} accent={accent} sectionTitle={sectionTitle} signals={briefing}
+            todayCount={myTodays.length} role={myStaffId ? 'coach' : 'head'} scopeKey={myStaffId || 'head'} />
         </div>
 
         {/* Needs attention — boxed rows (matches demo) + racket assessments due */}
@@ -428,70 +440,143 @@ function btn(accent: AccentTokens, T: ThemeTokens): React.CSSProperties { return
 function btnGhost(T: ThemeTokens): React.CSSProperties { return { appearance: 'none', cursor: 'pointer', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, fontWeight: 600 } }
 function linkBtn(accent: AccentTokens): React.CSSProperties { return { appearance: 'none', background: 'transparent', border: 0, color: accent.hex, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', padding: 0 } }
 
-// ── Lumio Coach's briefing ───────────────────────────────────────────────────
+// ── Coach AI briefing ────────────────────────────────────────────────────────
 // A child component ON PURPOSE. Its hooks used to live in LiveCoachDashboard,
 // below two early returns (`if (d.loading)` and `if (total === 0)`), so the first
 // render registered fewer hooks than the second and React threw #310 — the whole
 // dashboard failed to load. Hooks in a child mount and unmount with the child,
 // so an early return in the parent can never desynchronise them.
-function BriefingBody({ T, accent, signals, todayCount }: {
-  T: ThemeTokens; accent: AccentTokens
-  signals: { tag: string; text: string }[]
-  todayCount: number
-}) {
-  const [text, setText] = useState('')
-  const [state, setState] = useState<'idle' | 'loading' | 'failed'>('idle')
-  const signalKey = signals.map(b => `${b.tag}:${b.text}`).join('|')
+//
+// Written once every three hours and kept in localStorage until then. A coach
+// opens this dashboard a dozen times a day; before, every mount either re-read a
+// per-day cache that had gone stale by lunchtime or spent another agent call
+// saying the same thing. Three hours is roughly the rhythm of a coaching day —
+// morning block, afternoon block, evening block — so the briefing is fresh when
+// they come off court without being rewritten because they changed tab.
+//
+// The cache is keyed by WHO is reading. A head coach and their assistant share a
+// browser at the desk more often than not, and a briefing about the academy's
+// unpaid balances is not the assistant's briefing.
+const BRIEF_WINDOW_MS = 3 * 60 * 60 * 1000
+const briefBucket = () => Math.floor(Date.now() / BRIEF_WINDOW_MS)
 
-  // Cached per day AND per set of signals: revisiting costs nothing, but if
-  // something real changes the briefing is rewritten rather than going stale.
+type BriefItem = { tag: string; pri: 'high' | 'med' | 'low'; text: string }
+type BriefCache = { bucket: number; hash: number; at: string; items?: BriefItem[]; prose?: string }
+
+function BriefingBody({ T, accent, sectionTitle, signals, todayCount, role, scopeKey }: {
+  T: ThemeTokens; accent: AccentTokens
+  sectionTitle: React.CSSProperties
+  signals: BriefItem[]
+  todayCount: number
+  role: 'head' | 'coach'
+  /** The staff id of whoever is signed in, or 'head'. Keys the cache. */
+  scopeKey: string
+}) {
+  const [items, setItems] = useState<BriefItem[] | null>(null)
+  const [prose, setProse] = useState('')
+  const [at, setAt] = useState('')
+  const [state, setState] = useState<'idle' | 'loading' | 'failed'>('idle')
+  // Bumped on a manual refresh and by the clock, so a dashboard left open on the
+  // desk all day rewrites itself at the next three-hour mark instead of showing
+  // this morning's briefing at six in the evening.
+  const [tick, setTick] = useState(0)
+  const [bucket, setBucket] = useState(briefBucket())
+  const signalKey = signals.map(b => `${b.tag}:${b.text}`).join('|')
+  const cacheKey = `lumio.brief.${scopeKey}`
+
+  useEffect(() => {
+    const id = setInterval(() => setBucket(briefBucket()), 5 * 60_000)
+    return () => clearInterval(id)
+  }, [])
+
   useEffect(() => {
     if (!signalKey) return
-    const today = new Date().toISOString().slice(0, 10)
     let hash = 0
     for (let i = 0; i < signalKey.length; i++) { hash = (hash * 31 + signalKey.charCodeAt(i)) | 0 }
-    const cacheKey = `lumio.briefing.${today}.${hash}`
-    try {
-      const cached = sessionStorage.getItem(cacheKey)
-      if (cached) { setText(cached); return }
-    } catch { /* private mode — just fetch */ }
+
+    // Reuse within the window — unless the facts themselves moved. A payment
+    // landing or a player being marked absent is exactly when the briefing
+    // should stop agreeing with itself.
+    if (tick === 0) {
+      try {
+        const raw = localStorage.getItem(cacheKey)
+        const c: BriefCache | null = raw ? JSON.parse(raw) : null
+        if (c && c.bucket === bucket && c.hash === hash && (c.items?.length || c.prose)) {
+          setItems(c.items ?? null); setProse(c.prose ?? ''); setAt(c.at || ''); setState('idle')
+          return
+        }
+      } catch { /* private mode or corrupt entry — just fetch */ }
+    }
 
     let cancelled = false
     setState('loading')
     fetch('/api/coach/briefing', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ signals: signals.map(b => ({ tag: b.tag, fact: b.text })), todayCount }),
+      body: JSON.stringify({ signals: signals.map(b => ({ tag: b.tag, fact: b.text })), todayCount, role }),
     })
       .then(r => r.json().then(d => ({ ok: r.ok, d })))
       .then(({ ok, d }) => {
         if (cancelled) return
-        if (!ok || !d.briefing) { setState('failed'); return }
-        setText(d.briefing); setState('idle')
-        try { sessionStorage.setItem(cacheKey, d.briefing) } catch { /* nothing to do */ }
+        const got: BriefItem[] | null = Array.isArray(d?.items) && d.items.length ? d.items : null
+        if (!ok || (!got && !d?.briefing)) { setState('failed'); return }
+        const stamp = String(d.at || new Date().toISOString())
+        setItems(got); setProse(got ? '' : String(d.briefing || '')); setAt(stamp); setState('idle')
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            bucket, hash, at: stamp, items: got ?? undefined, prose: got ? undefined : String(d.briefing || ''),
+          } satisfies BriefCache))
+        } catch { /* nothing to do */ }
       })
       .catch(() => { if (!cancelled) setState('failed') })
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signalKey])
+  }, [signalKey, bucket, tick, cacheKey, role])
 
-  if (text) {
-    return (
-      <>
-        <div style={{ fontSize: 10, color: T.text3, marginBottom: 6 }}>Lumio Coach</div>
-        <p style={{ fontSize: 13, color: T.text2, lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap' }}>{text}</p>
-      </>
-    )
+  const refresh = () => {
+    try { localStorage.removeItem(cacheKey) } catch { /* nothing to do */ }
+    setTick(v => v + 1)
   }
+
+  // The stamp is when the briefing was WRITTEN, not when the page loaded —
+  // that is the number that tells a coach whether they are reading something
+  // from before their first lesson.
+  const written = (() => {
+    if (!at) return ''
+    const d = new Date(at)
+    return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  })()
+
+  // Fallback rows carry the same priority colouring as a written briefing, so a
+  // failed call still puts the urgent thing in red rather than flattening
+  // everything into one grey list.
+  const rows: BriefItem[] = items ?? (prose ? [] : signals)
+
   return (
     <>
-      {state === 'loading' && <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 8 }}>Lumio Coach is reading your week…</div>}
-      {signals.map((b, i) => (
-        <div key={i} style={{ display: 'flex', gap: 10, padding: '7px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.05em', width: 64, flexShrink: 0, paddingTop: 2 }}>{b.tag}</span>
-          <span style={{ fontSize: 12, color: T.text2, lineHeight: 1.45 }}>{b.text}</span>
-        </div>
-      ))}
-      {state === 'failed' && (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>
+        <span style={{ color: accent.hex, fontSize: 13 }}>✦</span>
+        <p style={{ ...sectionTitle, margin: 0 }}>Coach AI briefing</p>
+        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          {written && <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: T.text3 }}>{written}</span>}
+          <button onClick={refresh} title="Rewrite the briefing now" aria-label="Rewrite the briefing now"
+            style={{ appearance: 'none', background: 'transparent', border: 0, color: T.text3, cursor: 'pointer', fontSize: 12, padding: 0, lineHeight: 1 }}>↻</button>
+        </span>
+      </div>
+
+      {state === 'loading' && !items && !prose && (
+        <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 8 }}>Lumio Coach is reading your week…</div>
+      )}
+
+      {prose
+        ? <p style={{ fontSize: 12.5, color: T.text, lineHeight: 1.55, margin: 0, whiteSpace: 'pre-wrap' }}>{prose}</p>
+        : rows.map((it, i) => (
+          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
+            <span style={{ fontSize: 9.5, fontFamily: FONT_MONO, padding: '2px 6px', borderRadius: 4, whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0, color: it.pri === 'high' ? T.bad : T.text3, background: it.pri === 'high' ? 'rgba(199,90,90,0.10)' : T.panel2 }}>{it.tag}</span>
+            <div style={{ flex: 1, fontSize: 12.5, color: T.text, lineHeight: 1.45 }}>{it.text}</div>
+          </div>
+        ))}
+
+      {state === 'failed' && !items && !prose && (
         <div style={{ fontSize: 11, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>
           These are your numbers — Lumio Coach couldn&rsquo;t write the briefing just now, so nothing here has been prioritised for you.
         </div>
