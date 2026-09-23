@@ -3,7 +3,7 @@
 // own address (iCloud via SMTP; the others via API). Returns { ok:false } when
 // no connected mailbox can send — the caller then falls back to Resend.
 
-import { getConnection, getFreshAccessToken, type Provider } from './oauth'
+import { getConnection, getFreshAccessToken, markReauth, type Provider } from './oauth'
 import { sendMailSmtp } from './smtp'
 
 export type OutboundMail = { to: string; subject: string; html: string; replyTo?: string; bcc?: string }
@@ -23,16 +23,22 @@ function buildRawMessage(from: string | undefined, msg: OutboundMail): string {
   return Buffer.from(raw).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
-async function sendGoogle(token: string, from: string | undefined, msg: OutboundMail): Promise<boolean> {
+// Adapters report the HTTP status as well as success: a 401/403 means the
+// connection is dead or the send scope was never granted, and that has to reach
+// the coach as "Reconnect Gmail" rather than being absorbed into a silent
+// fallback to the Lumio sender.
+type SendResult = { ok: boolean; status: number }
+
+async function sendGoogle(token: string, from: string | undefined, msg: OutboundMail): Promise<SendResult> {
   const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ raw: buildRawMessage(from, msg) }),
   })
-  return res.ok
+  return { ok: res.ok, status: res.status }
 }
 
-async function sendMicrosoft(token: string, msg: OutboundMail): Promise<boolean> {
+async function sendMicrosoft(token: string, msg: OutboundMail): Promise<SendResult> {
   const res = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -45,7 +51,7 @@ async function sendMicrosoft(token: string, msg: OutboundMail): Promise<boolean>
       saveToSentItems: true,
     }),
   })
-  return res.ok || res.status === 202
+  return { ok: res.ok || res.status === 202, status: res.status }
 }
 
 // iCloud SMTP submission endpoint (STARTTLS on 587). Same app-specific password
@@ -53,10 +59,13 @@ async function sendMicrosoft(token: string, msg: OutboundMail): Promise<boolean>
 const ICLOUD_SMTP = { host: 'smtp.mail.me.com', port: 587 }
 
 // Try Google, then Microsoft, then iCloud. Returns the provider that sent, or ok:false.
+// A mailbox flagged for reconnection is skipped rather than retried — the caller
+// then falls back to Resend, which is the right outcome while the coach sorts it.
 export async function sendAsCoach(coachId: string, msg: OutboundMail): Promise<{ ok: boolean; provider?: Provider; from?: string }> {
   for (const provider of ['google', 'microsoft', 'icloud'] as Provider[]) {
     const conn = await getConnection(coachId, provider)
     if (!conn || !conn.capabilities?.includes('send_email')) continue
+    if (conn.status === 'reauth') continue
     const from = conn.email_address || undefined
     try {
       if (provider === 'icloud') {
@@ -71,8 +80,11 @@ export async function sendAsCoach(coachId: string, msg: OutboundMail): Promise<{
       }
       const token = await getFreshAccessToken(coachId, provider)
       if (!token) continue
-      const ok = provider === 'google' ? await sendGoogle(token, from, msg) : await sendMicrosoft(token, msg)
-      if (ok) return { ok: true, provider, from: from || undefined }
+      const r = provider === 'google' ? await sendGoogle(token, from, msg) : await sendMicrosoft(token, msg)
+      if (r.ok) return { ok: true, provider, from: from || undefined }
+      // 401 = token dead, 403 = the send permission was never granted. Both need
+      // the coach back on the consent screen, so flag it and move on.
+      if (r.status === 401 || r.status === 403) await markReauth(coachId, provider)
     } catch { /* try the next connected mailbox */ }
   }
   return { ok: false }
@@ -99,7 +111,8 @@ export async function fetchInboundGmail(coachId: string): Promise<InboundMail[]>
     if (!token) return []
     const auth = { Authorization: `Bearer ${token}` }
     const list = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=25&q=' + encodeURIComponent('in:inbox newer_than:2d -from:me'), { headers: auth })
-    if (!list.ok) return [] // 403 = read scope not granted; caller surfaces "reconnect Gmail"
+    if (list.status === 401) { await markReauth(coachId, 'google' as Provider); return [] }
+    if (!list.ok) return [] // 403 = read scope not granted (it is a V2 scope)
     const ids: { id: string }[] = (await list.json()).messages || []
     const out: InboundMail[] = []
     for (const { id } of ids.slice(0, 25)) {
@@ -118,6 +131,7 @@ export async function fetchInboundGmail(coachId: string): Promise<InboundMail[]>
 export async function hasConnectedMailbox(coachId: string): Promise<boolean> {
   for (const provider of ['google', 'microsoft', 'icloud'] as Provider[]) {
     const conn = await getConnection(coachId, provider)
+    if (conn?.status === 'reauth') continue
     if (conn?.capabilities?.includes('send_email')) return true
   }
   return false

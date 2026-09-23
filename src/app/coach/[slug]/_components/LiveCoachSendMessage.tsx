@@ -12,7 +12,7 @@
 //   • Phone   → if a Twilio sender number is configured (Settings), Lumio texts.
 //   • WhatsApp → coming soon.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { getSettings } from '../_lib/settings-store'
@@ -82,9 +82,29 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
     .filter(Boolean) as typeof campRows.rows
   const camp = campId ? activeCamps.find(c => c.id === campId) || null : null
 
-  const s = getSettings()
-  const emailSynced = !!s.conn?.emailProvider
-  const provider = providerLabel(s.conn?.emailProvider || '')
+  // Where email actually leaves from — read from the connected mailbox, not from
+  // the provider ticked during onboarding. A coach who chose "Google" in the
+  // wizard and never finished Google's consent screen was told "Sent through
+  // Gmail" on every send while the email really went out from the Lumio address.
+  //
+  // Email is live either way: with no mailbox connected the send route falls
+  // back to Lumio's own sender, so the channel is never switched off here — only
+  // the promise about the From line changes.
+  const [mailbox, setMailbox] = useState<{ label: string; from: string } | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/coach/integrations')
+        if (!res.ok) return
+        const j = await res.json()
+        const live = (j.connections || []).find((c: { status?: string; capabilities?: string[] }) =>
+          c.status !== 'reauth' && (c.capabilities || []).includes('send_email'))
+        if (!cancelled && live) setMailbox({ label: providerLabel(live.provider), from: live.email_address || '' })
+      } catch { /* offline — fall through to the Lumio-sender wording */ }
+    })()
+    return () => { cancelled = true }
+  }, [])
   // Texts are sent server-side from Lumio's own messaging number (Twilio) — there
   // is no per-coach sending number, so we never name one here. The only thing the
   // coach controls is whether the Text channel is on at all; if texting isn't
@@ -138,9 +158,9 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
   const channelNote = (id: ChannelId): { note: string; tag: 'Live' | 'Setup' | 'Soon' | typeof V2_LABEL; live: boolean } => {
     switch (id) {
       case 'internal': return { note: 'Live — lands in the inbox instantly', tag: 'Live', live: true }
-      case 'email':    return emailSynced
-        ? { note: `Live — sent through ${provider}, no app opens`, tag: 'Live', live: true }
-        : { note: 'Connect your mailbox in Settings to send email', tag: 'Setup', live: false }
+      case 'email':    return mailbox
+        ? { note: `Live — arrives from ${mailbox.from || mailbox.label}, no app opens`, tag: 'Live', live: true }
+        : { note: 'Live — sent from the Lumio address. Connect your mailbox in Settings to send as you.', tag: 'Live', live: true }
       // Texting is not part of founders access — see lib/coach/v2.ts. It is
       // shown rather than hidden, because a coach who wants it should be able to
       // see it is coming and tell us they want it.
@@ -154,7 +174,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
   const outcomeFor = (id: ChannelId): string => {
     switch (id) {
       case 'internal': return 'Added to the inbox'
-      case 'email':    return emailSynced ? `Sent through ${provider}` : 'Needs mailbox setup'
+      case 'email':    return mailbox ? `Sent from ${mailbox.from || mailbox.label}` : 'Sent from the Lumio address'
       case 'sms':      return 'Not sent — texting arrives in V2'
       case 'whatsapp': return 'Not sent — arrives after texting'
     }
@@ -216,7 +236,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
           campId: campId && wholeCamp ? campId : undefined,
           subject: `${isUrgent ? '[URGENT] ' : ''}Message from ${coachName}`,
           body: aiDraft,
-          ccCoach: s.ccCoachOnEmail,
+          ccCoach: getSettings().ccCoachOnEmail,
         }),
       })
       const d = await r.json()

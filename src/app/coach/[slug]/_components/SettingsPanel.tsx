@@ -121,6 +121,62 @@ function Modal({ T, accent, title, sub, onClose, children, readOnly = false, wid
 // onboarding. A coach who chose “I’ll add my own” was stuck with an empty Centre
 // for good — a one-way door with no handle on the inside. And a coach who loaded
 // it by mistake had to delete every card one at a time. Both now have a control.
+// One honest line about the mailbox/calendar, wherever Settings used to offer a
+// toggle that only wrote to this browser.
+//
+// The old controls — a Google/Outlook picker on the profile, "Google Calendar"
+// and "Outlook" switches on the booking page — looked like they connected
+// something. They did not: connecting needs the provider's consent screen, and
+// the switches only set a local preference. A coach could therefore turn
+// "Google Calendar" on, see it stay on, and reasonably conclude their bookings
+// were syncing. This reads the real connection instead and sends them to the one
+// place that can change it.
+function ConnectedAccountsLine({ T, accent, onOpen, demo }: { T: ThemeTokens; accent: AccentTokens; onOpen: () => void; demo?: boolean }) {
+  // The demo portal has no account to ask about, so it starts settled rather
+  // than flashing "Checking…" at a coach who is only looking around.
+  const [state, setState] = useState<{ loading: boolean; mail: string | null; cal: string | null; reauth: boolean }>(
+    () => ({ loading: !demo, mail: null, cal: null, reauth: false }))
+  useEffect(() => {
+    if (demo) return
+    let off = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/coach/integrations')
+        if (!res.ok) { if (!off) setState(s0 => ({ ...s0, loading: false })); return }
+        const j = await res.json()
+        const conns: { provider: string; email_address: string | null; capabilities: string[]; status: string }[] = j.connections || []
+        const name = (p: string) => p === 'google' ? 'Gmail' : p === 'microsoft' ? 'Outlook' : 'iCloud'
+        const live = conns.filter(c => c.status !== 'reauth')
+        const mail = live.find(c => (c.capabilities || []).includes('send_email'))
+        const cal = live.find(c => (c.capabilities || []).includes('calendar'))
+        if (!off) setState({
+          loading: false,
+          mail: mail ? `${name(mail.provider)}${mail.email_address ? ` · ${mail.email_address}` : ''}` : null,
+          cal: cal ? name(cal.provider) : null,
+          reauth: conns.some(c => c.status === 'reauth'),
+        })
+      } catch { if (!off) setState(s0 => ({ ...s0, loading: false })) }
+    })()
+    return () => { off = true }
+  }, [demo])
+
+  const line = state.loading ? 'Checking…'
+    : demo ? 'Connect a mailbox and calendar from your own portal.'
+    : state.reauth ? 'A connected account needs reconnecting — sync and send-as have stopped.'
+    : state.mail || state.cal
+      ? `${state.cal ? `Bookings sync to your ${state.cal} calendar` : 'No calendar connected'} · ${state.mail ? `email sends from ${state.mail}` : 'email sends from the Lumio address'}`
+      : 'Nothing connected yet — bookings stay in Lumio and email sends from the Lumio address.'
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, border: `1px solid ${state.reauth ? T.warn : T.border}`, background: T.panel2, borderRadius: 10, padding: '11px 12px', marginBottom: 12 }}>
+      <div style={{ flex: 1, minWidth: 0, fontSize: 11.5, color: state.reauth ? T.warn : T.text2, lineHeight: 1.5 }}>{line}</div>
+      <button onClick={onOpen} style={{ appearance: 'none', border: 0, borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 700, fontFamily: FONT, cursor: 'pointer', background: accent.hex, color: T.btnText, flexShrink: 0 }}>
+        {state.mail || state.cal ? 'Manage' : 'Connect'}
+      </button>
+    </div>
+  )
+}
+
 function ResourceCentreSettings({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const s = useCoachSettings()
   const on = s.resourcesPreloaded !== false
@@ -473,8 +529,9 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     if (Object.keys(patch).length) setSettings(patch)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [realProfile.loading, realProfile.display_name, realProfile.brand_name, realProfile.contact_email, realProfile.contact_phone])
-  const conn = { ...D.conn, ...(s.conn || {}) }
-  const setConn = (n: typeof conn) => setSettings({ conn: n })
+  // conn.* is a leftover local preference from onboarding — the real connection
+  // state lives server-side (see ConnectedAccountsLine), so nothing writes here
+  // any more.
   const booking = { ...D.booking, ...(s.booking || {}) }
   const setBooking = (n: typeof booking) => setSettings({ booking: n })
   const gdpr = { ...D.gdpr, ...(s.gdpr || {}) }
@@ -496,10 +553,13 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
 
   const GROUPS = ['You', 'Academy', 'Coaching', 'People & compliance', 'Rewards & system']
   const cards = [
-    { id: 'profile',     g: 'You',        icon: 'people',    t: 'Head coach profile',  d: `${[hp.name, hp.role].filter(Boolean).join(' · ')} · email & calendar ${conn.calendarSync ? 'synced' : 'off'}` },
+    { id: 'profile',     g: 'You',        icon: 'people',    t: 'Head coach profile',  d: `${[hp.name, hp.role, hp.accreditation].filter(Boolean).join(' · ') || 'Your details, calendar and safeguarding'}` },
     { id: 'integrations',g: 'You',        icon: 'calendar',  t: 'Connected accounts',  d: 'Email & calendar sync — Google, Outlook, iCloud' },
     { id: 'academy',     g: 'Academy',    icon: 'home',      t: 'Academy profile',     d: [s.academy, s.cert].filter(Boolean).join(' · ') || 'Add your academy name & accreditation' },
-    { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${[booking.google && 'Google', booking.outlook && 'Outlook'].filter(Boolean).join(' + ') || 'No'} sync · ${booking.defaultDuration}m default` },
+    // The old summary read "Google + Outlook sync" off two local switches that
+    // connected nothing. Booking defaults are real settings, so that is what it
+    // now reports; what is actually connected lives in Connected accounts.
+    { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${booking.defaultDuration}m default · ${booking.buffer}m buffer · ${booking.autoConfirm ? 'auto-confirm' : 'you approve each one'}` },
     { id: 'availability',g: 'Academy',    icon: 'grid',      t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
     { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: s.privateRate ? `Private £${s.privateRate}/hr · take payments` : 'Set your hourly rate · take payments' },
     { id: 'belts',       g: 'Coaching',   icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
@@ -854,10 +914,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           <Field T={T} label="Phone"><input style={input(T)} value={hp.phone} onChange={e => setHeadProfile({ phone: e.target.value })} /></Field>
 
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Email &amp; calendar sync</div>
-          <Field T={T} label="Connected account" hint="Sessions and bookings are added to your calendar.">
-            <Seg T={T} accent={accent} value={conn.emailProvider} options={[{ v: 'google', label: 'Google' }, { v: 'outlook', label: 'Outlook' }, { v: 'none', label: 'None' }]} onChange={v => setConn({ ...conn, emailProvider: v })} />
-          </Field>
-          <Toggle T={T} accent={accent} on={conn.calendarSync} onChange={v => setConn({ ...conn, calendarSync: v })} label="Calendar sync (one-way)" desc="Your Lumio bookings are added to your calendar. Busy times from it show striped in your diary." />
+          <ConnectedAccountsLine T={T} accent={accent} demo={demo} onOpen={() => setOpen('integrations')} />
 
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>DBS &amp; safeguarding documents</div>
           <Field T={T} label="DBS certificate number"><input style={input(T)} value={hp.dbsNumber} onChange={e => setHeadProfile({ dbsNumber: e.target.value })} /></Field>
@@ -873,11 +930,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {open === 'booking' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Booking calendar" sub="Sync external calendars and set booking defaults" onClose={() => setOpen(null)}>
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>External calendar sync</div>
-          <Toggle T={T} accent={accent} on={booking.google} onChange={v => setBooking({ ...booking, google: v })} label="Google Calendar" desc="Bookings are added to your Google Calendar; busy times show striped." />
-          <Toggle T={T} accent={accent} on={booking.outlook} onChange={v => setBooking({ ...booking, outlook: v })} label="Outlook / Microsoft 365" desc="Bookings are added to your work calendar; busy times show striped." />
-          <Field T={T} label="iCal subscribe URL" hint="Paste a read-only feed to overlay external commitments.">
-            <input style={input(T)} value={booking.ical} onChange={e => setBooking({ ...booking, ical: e.target.value })} placeholder="webcal://…" />
-          </Field>
+          <ConnectedAccountsLine T={T} accent={accent} demo={demo} onOpen={() => setOpen('integrations')} />
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Booking defaults</div>
           <Field T={T} label="Default lesson length">
             <Seg T={T} accent={accent} value={booking.defaultDuration} options={[{ v: 30, label: '30 min' }, { v: 45, label: '45 min' }, { v: 60, label: '60 min' }]} onChange={v => setBooking({ ...booking, defaultDuration: v })} />

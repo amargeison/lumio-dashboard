@@ -598,6 +598,64 @@ export default function TennisCoachPage() {
         </div>
       </section>
 
+      {/* ── CONNECTED ACCOUNTS ──
+          Written for two readers at once: a coach deciding whether to hand over
+          their mailbox, and a Google reviewer checking that the page explains
+          why the app asks for the scopes it asks for. The wording matches
+          /privacy section 5 deliberately — a reviewer comparing the two should
+          find the same promises in the same words. */}
+      <section id="connected-accounts" style={{ padding: '96px 24px', backgroundColor: BG, borderTop: `1px solid ${BORDER}` }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
+            Connect your own calendar and inbox.
+          </h2>
+          <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 48, maxWidth: 760, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.7 }}>
+            Lumio Tennis Coach can connect to the Google, Microsoft 365 or Apple iCloud account you already use, so
+            your coaching diary lives where you look for it and your emails arrive from you — not from a
+            software company your players have never heard of. Connecting is optional, and you can disconnect at
+            any time from Settings.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+            <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24 }}>
+              <div style={{ fontSize: 28, marginBottom: 12 }}>📅</div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Your bookings, in your calendar</h3>
+              <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.7 }}>
+                Every lesson and camp you put in Lumio is written into your own calendar, and stays in step when you
+                move or cancel it. We also read your existing busy times so the booking calendar cannot offer a slot
+                you are not free for. Sync is one-way — we never import your calendar&apos;s own events into Lumio.
+              </p>
+            </div>
+            <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24 }}>
+              <div style={{ fontSize: 28, marginBottom: 12 }}>📧</div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Emails that come from you</h3>
+              <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.7 }}>
+                Booking confirmations, camp information and lesson write-ups send from your own address, so a parent
+                recognises the sender and can simply hit reply. Lumio only ever sends the messages you or your
+                players trigger — it does not send anything on its own.
+              </p>
+            </div>
+            <div style={{ backgroundColor: CARD, border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 24 }}>
+              <div style={{ fontSize: 28, marginBottom: 12 }}>🔒</div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8 }}>What we never do</h3>
+              <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.7 }}>
+                We do not read your inbox. We do not sell your data, use it for advertising, or hand it to anyone
+                else. Access is held on UK servers, used only for the features you switch on, and revoked the moment
+                you disconnect the account.
+              </p>
+            </div>
+          </div>
+
+          <p style={{ fontSize: 13, color: MUTED, textAlign: 'center', marginTop: 32, lineHeight: 1.7, maxWidth: 820, marginLeft: 'auto', marginRight: 'auto' }}>
+            Lumio&apos;s use and transfer of information received from Google APIs adheres to the{' '}
+            <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" style={{ color: PURPLE_LIGHT, textDecoration: 'underline' }}>
+              Google API Services User Data Policy
+            </a>, including the Limited Use requirements. The full detail is in our{' '}
+            <Link href="/privacy" style={{ color: PURPLE_LIGHT, textDecoration: 'underline' }}>privacy policy</Link>.
+          </p>
+        </div>
+      </section>
+
       {/* ── REVENUE HIGHLIGHT PANEL ── */}
       <section style={{ padding: '96px 24px 48px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>

@@ -79,6 +79,25 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Is a mailbox/calendar actually connected? Every other step here is a fact
+  // read from the coach's own data; this one lives behind an API because the
+  // tokens are server-side only, so it is fetched once rather than guessed from
+  // a local setting.
+  const [hasMailbox, setHasMailbox] = useState(true)   // assume yes until told otherwise, so the step never flashes up for a coach who has done it
+  useEffect(() => {
+    let off = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/coach/integrations')
+        if (!res.ok) return
+        const j = await res.json()
+        const live = (j.connections || []).some((c: { status?: string }) => c.status !== 'reauth')
+        if (!off) setHasMailbox(live)
+      } catch { /* offline — leave the step out rather than nagging wrongly */ }
+    })()
+    return () => { off = true }
+  }, [])
+
   if (d.loading) return <div style={{ fontFamily: FONT, color: T.text3, fontSize: 13, padding: '60px 0', textAlign: 'center' }}>Loading your portal…</div>
 
   const total = d.players.length + d.bookings.length + d.lessons.length + d.payments.length
@@ -163,6 +182,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const hasMessage = (d.messages || []).length > 0
   const hasBooking = (d.bookings || []).length > 0
   const startSteps: StartStep[] = [
+    { id: 'mailbox', label: 'Connect your calendar & email', why: 'Bookings land in the calendar on your phone, and confirmations, camp emails and lesson write-ups arrive from your own address instead of ours — which is the difference between a parent trusting the email and deleting it.', done: hasMailbox, nav: 'settings', cta: 'Connect' },
     { id: 'venue', label: 'Set your home court', why: 'Everything with an address on it — a confirmation email, the map link a player taps, free-slot suggestions — comes from your venue. Two minutes, once.', done: hasVenue, nav: 'venues', cta: 'Add it' },
     { id: 'players', label: 'Add the players you coach', why: 'A player record is what every booking, summary, payment and message hangs off. Add a handful to start — you do not need the whole roster today.', done: hasPlayers, nav: 'roster', cta: 'Add players' },
     { id: 'booking', label: 'Put a session in the diary', why: 'Book one lesson and you will see the confirmation, the calendar link and the player\u2019s own page all fill in behind it.', done: hasBooking, nav: 'calendar', cta: 'Open calendar' },

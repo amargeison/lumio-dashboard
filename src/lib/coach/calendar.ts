@@ -4,7 +4,7 @@
 // deletes propagate. Google/Microsoft use OAuth tokens; iCloud uses CalDAV with
 // the coach's app-specific password (see ./caldav).
 
-import { getFreshAccessToken, getConnection, upsertConnection, serviceClient, type Provider } from './oauth'
+import { getFreshAccessToken, getConnection, upsertConnection, markReauth, serviceClient, type Provider } from './oauth'
 import { icloudPutEvent, icloudDeleteEvent, icloudBusy, icloudDiscoverCalendar } from './caldav'
 
 const SYNC_PROVIDERS: Provider[] = ['google', 'microsoft', 'icloud']
@@ -26,7 +26,9 @@ export type CalEvent = {
 // than silently reporting success (see UpsertResult / syncBooking).
 type UpsertResult =
   | { ok: true; externalId: string }
-  | { ok: false; detail: string }
+  // `status` travels with the failure so the caller can tell a dead connection
+  // (401) from an event the provider simply refused (400, 409…).
+  | { ok: false; detail: string; status: number }
 
 async function googleUpsert(token: string, e: CalEvent, externalId?: string): Promise<UpsertResult> {
   const payload = {
@@ -44,7 +46,7 @@ async function googleUpsert(token: string, e: CalEvent, externalId?: string): Pr
   })
   const json = await res.json().catch(() => ({}))
   if (res.ok && json.id) return { ok: true, externalId: json.id as string }
-  return { ok: false, detail: `HTTP ${res.status}${json?.error?.message ? ` — ${json.error.message}` : ''}` }
+  return { ok: false, status: res.status, detail: `HTTP ${res.status}${json?.error?.message ? ` — ${json.error.message}` : ''}` }
 }
 async function googleDelete(token: string, externalId: string) {
   await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${externalId}`, {
@@ -68,7 +70,7 @@ async function microsoftUpsert(token: string, e: CalEvent, externalId?: string):
   })
   const json = await res.json().catch(() => ({}))
   if (res.ok && json.id) return { ok: true, externalId: json.id as string }
-  return { ok: false, detail: `HTTP ${res.status}${json?.error?.message ? ` — ${json.error.message}` : ''}` }
+  return { ok: false, status: res.status, detail: `HTTP ${res.status}${json?.error?.message ? ` — ${json.error.message}` : ''}` }
 }
 async function microsoftDelete(token: string, externalId: string) {
   await fetch(`https://graph.microsoft.com/v1.0/me/events/${externalId}`, {
@@ -161,7 +163,14 @@ export async function syncBooking(coachId: string, e: CalEvent): Promise<SyncRes
     if (res.ok) { await saveLink(coachId, e.bookingId, provider, res.externalId); synced.push(provider) }
     else {
       console.error('[calendar] upsert failed', { coachId, provider, bookingId: e.bookingId, detail: res.detail })
-      failed.push({ provider, reason: `${provider} rejected the event (${res.detail}).` })
+      // 401/403 is not "this event was rejected", it is "this account is no
+      // longer connected" — flag it so Settings offers Reconnect.
+      if (res.status === 401 || res.status === 403) {
+        await markReauth(coachId, provider)
+        failed.push({ provider, reason: `${provider} sign-in has expired — reconnect the account in Settings.` })
+      } else {
+        failed.push({ provider, reason: `${provider} rejected the event (${res.detail}).` })
+      }
     }
   }
   return { synced, failed, connected }
