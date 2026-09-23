@@ -27,7 +27,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '👥', title: 'Staff / Coaches', desc: 'Run a club of coaches, not just yourself. A directory with each coach’s calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team’s week.' },
   { icon: '🏕️', title: 'Training Camps', desc: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft and a per-player camp log that captures progress day by day.' },
   { icon: '🗓️', title: 'Booking Calendar', desc: 'Your whole week across every court — private, group, cardio and match play. The single source of truth that feeds the Session Planner, so the schedule and the plans never drift apart.' },
-  { icon: '💳', title: 'Payments — tap, scan, paid', desc: 'Take card, Apple Pay and Google Pay payments straight to your own bank — no card reader needed. Sell lesson packages or charge per session, and hand over a QR code or link and they pay in seconds. Sessions tick off automatically from your lesson summaries, and Lumio never sees a card number. Powered by Stripe.' },
+  { icon: '💳', title: 'Payments — coming in V2', desc: 'Built and coming in V2: take card, Apple Pay and Google Pay payments straight to your own bank — no card reader needed. Sell lesson packages or charge per session, and hand over a QR code or link and they pay in seconds. Sessions will tick off automatically from your lesson summaries, and Lumio never sees a card number. Powered by Stripe. Founding coaches record payments by hand until it lands.' },
   { icon: '📱', title: 'Mobile App', desc: 'An app-like experience on the phone — a bottom tab bar, your day at a glance, and the tools you actually reach for on court — wherever you’re coaching that day.' },
 ]
 
@@ -36,7 +36,7 @@ const INTEGRATIONS = [
   { icon: '🎬', name: 'Lumio Vision', desc: 'Video clips and annotations (BETA)' },
   { icon: '🤖', name: 'Claude AI', desc: 'Session reviews and camp drafts' },
   { icon: '🏛️', name: 'LTA Youth Pathway', desc: 'Racket stage mapping' },
-  { icon: '💳', name: 'Stripe', desc: 'Card, Apple Pay & Google Pay to your bank' },
+  { icon: '💳', name: 'Stripe', desc: 'Coming in V2 — card, Apple Pay & Google Pay to your bank' },
   { icon: '💰', name: 'Xero', desc: 'Academy finances' },
   { icon: '📧', name: 'Google (Gmail & Calendar)', desc: 'Send-as email, and your Lumio bookings land straight in Google Calendar' },
   { icon: '📧', name: 'Microsoft 365', desc: 'Email and calendar' },
@@ -429,7 +429,7 @@ function PaymentsMockup() {
           <div style={{ fontSize: 9, color: MUTED, lineHeight: 1.5, marginTop: 2 }}>Card, Apple Pay &amp; Google Pay. Sessions tick off from your lesson summaries automatically.</div>
         </div>
       </div>
-      <div style={{ fontSize: 8.5, color: MUTED, marginTop: 8, fontStyle: 'italic' }}>Powered by Stripe — Lumio never sees a card number.</div>
+      <div style={{ fontSize: 8.5, color: MUTED, marginTop: 8, fontStyle: 'italic' }}>Coming in V2 · powered by Stripe — Lumio never sees a card number.</div>
     </MockupFrame>
   )
 }
@@ -476,7 +476,7 @@ function SpotlightTabs() {
     { tab: 'Effort & Rewards', eyebrow: 'SPOTLIGHT · EFFORT & REWARDS', title: 'Turn every session into XP — no hardware to buy.', body: "Log a session in seconds — effort, movement and consistency become scores, XP and effort levels, with a squad leaderboard to keep players coming back. It's a motivation layer that sits alongside the technical racket pathway, never replacing it, and it never tracks a player's position on court. Automatic smartwatch sync is coming soon.", bullets: ['Effort, movement & consistency scores from every session', 'XP, effort levels and a squad leaderboard', 'Smartwatch sync (Apple Watch & Wear OS) coming soon — manual logging now', 'Kept separate from the LTA-mapped Racket Progression pathway'], mockup: <EffortRewardsMockup /> },
     { tab: 'Staff & Coaches', eyebrow: 'SPOTLIGHT · STAFF & COACHES', title: 'Run a club of coaches, not just yourself.', body: "A directory with each coach's calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team's week. See who's busy, who has room, and which certifications are about to expire.", bullets: ['Per-coach calendar, specialisms and assigned players', 'Utilisation across the whole team at a glance', 'Accreditation and certification expiry alerts', 'The head-coach view of the academy week'], mockup: <StaffMockup /> },
     { tab: 'Training Camps', eyebrow: 'SPOTLIGHT · TRAINING CAMPS', title: 'Day camps and tours, drafted by AI.', body: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft to get you started and a per-player camp log that captures progress day by day — and shows you the margin before you publish.', bullets: ['Itineraries, attendees, targets and finances in one place', 'One-click AI draft for the whole camp', 'Per-player camp log captures progress day by day', 'Revenue and margin visible before you publish'], mockup: <CampMockup /> },
-    { tab: 'Payments', eyebrow: 'SPOTLIGHT · PAYMENTS', title: 'Tap, scan, paid — straight to your bank.', body: "Take card, Apple Pay and Google Pay payments with no card reader needed. Sell lesson packages or charge per session, and hand over a QR code or link a parent pays in seconds. Sessions tick off automatically from your lesson summaries, and Lumio never sees a card number.", bullets: ['Card, Apple Pay & Google Pay — no reader needed', 'Sell packages or charge per session', 'QR code or link — a parent pays in seconds', 'Powered by Stripe · money lands in your own bank'], mockup: <PaymentsMockup /> },
+    { tab: 'Payments', eyebrow: 'SPOTLIGHT · PAYMENTS · COMING IN V2', title: 'Tap, scan, paid — straight to your bank.', body: "Coming in V2: take card, Apple Pay and Google Pay payments with no card reader needed. Sell lesson packages or charge per session, and hand over a QR code or link a parent pays in seconds. Sessions will tick off automatically from your lesson summaries, and Lumio never sees a card number. Founding coaches record payments by hand in the meantime — the money side of the portal works either way.", bullets: ['Coming in V2 — founding coaches record payments by hand for now', 'Card, Apple Pay & Google Pay — no reader needed', 'Sell packages or charge per session', 'Powered by Stripe · money lands in your own bank'], mockup: <PaymentsMockup /> },
     { tab: 'Mobile App', eyebrow: 'SPOTLIGHT · MOBILE APP', title: 'The whole platform, on your phone.', body: "An app-like experience on the phone — a bottom tab bar, your day at a glance, and the tools you actually reach for on court, wherever you're coaching that day. Install it on any phone, no app store required.", bullets: ['Your day at a glance the moment you open it', 'Bottom tab bar — the tools you reach for on court', 'Works wherever you’re coaching that day', 'Installs on any phone as a PWA — no app store'], mockup: <MobileAppMockup /> },
   ]
   return <SpotlightTabsClient spots={spots} />
