@@ -799,7 +799,7 @@ function PaymentPlanCard({ T, accent, camp, plan, perHead, open, setOpen, onSave
         <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, flex: 1 }}>Payment plan</div>
         <button onClick={() => { if (confirm('Remove the payment plan?')) { set(null); setOpen(false) } }} style={{ ...btn(T, accent), padding: '4px 10px', fontSize: 11.5 }}>Remove</button>
       </div>
-      <div style={{ fontSize: 11, color: T.text3, marginBottom: 12 }}>What a family owes, and when. Money still arrives however you take it today — this is the schedule, not a card machine.</div>
+      <div style={{ fontSize: 11, color: T.text3, marginBottom: 12 }}>What a player owes, and when. Money still arrives however you take it today — this is the schedule, not a card machine.</div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderTop: `1px solid ${T.border}` }}>
         <span style={{ flex: 1, fontSize: 12.5, color: T.text, fontWeight: 600 }}>Deposit</span>
@@ -862,7 +862,7 @@ function nextMonthISO(start: string | null | undefined, index: number): string {
 // A camp knew its players and nothing about its staff. For a head coach sending
 // eight coaches abroad that is the first question, not a detail — and it is what
 // makes "message the camp" mean something, because a camp is the coaches on it
-// as much as the families.
+// as much as the players.
 //
 // Selection is by staff id, never by name: two coaches can share a name, and a
 // coach who changes theirs should not quietly fall off the trip.
@@ -892,7 +892,7 @@ export function CampCoaches({ T, accent, camp, staff, onSave }: {
         <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, margin: '0 0 12px' }}>
           Who is actually travelling and coaching. They show on the trip hub, they count towards the
           coach-to-player ratio, and a message sent to <strong style={{ color: T.text2 }}>Camp</strong> reaches them
-          alongside every family booked on.
+          alongside every player booked on.
         </p>
 
         {staff.length === 0 ? (

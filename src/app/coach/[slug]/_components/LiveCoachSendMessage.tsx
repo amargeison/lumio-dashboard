@@ -49,7 +49,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
   const [step, setStep] = useState<'who' | 'how' | 'message' | 'preview' | 'sent'>('who')
   const [selectedNames, setSelectedNames] = useState<string[]>(init?.recipient ? [init.recipient] : [])
   const [broadcast, setBroadcast] = useState(false)
-  // The camp audience. A camp is not a subset of the roster — it is the families
+  // The camp audience. A camp is not a subset of the roster — it is the players
   // booked on it PLUS the coaches travelling with it, and those coaches are not
   // players at all. So it is its own audience rather than a filter over the list.
   const [campId, setCampId] = useState<string | null>(null)
@@ -96,7 +96,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
   // Resolve selected players (+ broadcast = whole roster) into recipients.
   const picked = broadcast ? players : players.filter(p => selectedNames.includes(p.name))
 
-  // Everyone on the camp: the families booked on (matched back to the roster so
+  // Everyone on the camp: the players booked on (matched back to the roster so
   // they keep their own contact details) and the coaches working it. Cancelled
   // places are not on the camp and are not written to.
   const campRecipients: Recipient[] = (() => {
@@ -212,7 +212,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
           recipients: recipients.map(r => ({ name: r.name, email: r.email || undefined, phone: r.phone || undefined })),
           channels: sendChannels,
           // A camp message also lands in the camp's shared thread, which is what
-          // the families and the coaches on the trip actually read.
+          // the players and the coaches on the trip actually read.
           campId: campId && wholeCamp ? campId : undefined,
           subject: `${isUrgent ? '[URGENT] ' : ''}Message from ${coachName}`,
           body: aiDraft,

@@ -20,7 +20,7 @@ export type StudentSection = {
   /** Always on. The header IS the page — switching it off leaves nothing. */
   locked?: boolean
   /** The paid module this section belongs to. When that module is not live for
-      the academy the section does not exist for the family, whatever data sits
+      the academy the section does not exist for the player, whatever data sits
       behind it and whatever the section toggle says. Declared here rather than
       checked at each render because a section added later would otherwise
       quietly default to visible — which is exactly how the racket ladder ended

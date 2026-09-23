@@ -62,7 +62,7 @@ const asList = (v: unknown): string[] => {
 }
 
 /** The plan the coach built for this session, stripped of anything that is not
-    the family's business. `coach_note` is explicitly a line TO THE COACH — it is
+    the player's business. `coach_note` is explicitly a line TO THE COACH — it is
     never returned here, and neither is anything not named below. */
 function planFor(row: Record<string, unknown> | null | undefined): NextSessionPlan | null {
   if (!row) return null
