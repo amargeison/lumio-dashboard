@@ -12,7 +12,7 @@
 // remembers nothing else — help that tracks whether you have read it is help
 // that argues with you.
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { helpFor } from '../_lib/module-help'
@@ -46,70 +46,82 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
   // block and its right edge is the far side of the column, which is exactly
   // the wrong answer.
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
+  // Nothing is drawn until we know where it goes. The button used to appear at
+  // its fallback spot and then jump across the page the moment the heading was
+  // measured, which looks broken even though it is only a frame or two.
+  const [ready, setReady] = useState(false)
   const holder = useRef<HTMLDivElement | null>(null)
+
+  // One measurement, used by all three triggers, so they cannot drift apart.
+  const measure = useCallback(() => {
+    const host = holder.current?.parentElement
+    if (!host) return
+    const heading = host.querySelector('h1, h2') as HTMLElement | null
+    if (!heading) { setReady(true); return }   // fall back, but still show
+    try {
+      const r = document.createRange()
+      r.selectNodeContents(heading)
+      const text = r.getBoundingClientRect()
+      const box = host.getBoundingClientRect()
+      if (!text.width) { setReady(true); return }
+      setPos({
+        left: text.right - box.left + host.scrollLeft + 12,
+        top: text.top - box.top + host.scrollTop + (text.height - 30) / 2,
+      })
+    } catch { /* leave it wherever it is */ }
+    setReady(true)
+  }, [])
 
   useLayoutEffect(() => {
     if (!help) return
-    const place = () => {
-      const host = holder.current?.parentElement
-      if (!host) return
-      const heading = host.querySelector('h1, h2') as HTMLElement | null
-      if (!heading) { setPos(null); return }
-      try {
-        const r = document.createRange()
-        r.selectNodeContents(heading)
-        const text = r.getBoundingClientRect()
-        const box = host.getBoundingClientRect()
-        if (!text.width) { setPos(null); return }
-        setPos({
-          left: text.right - box.left + host.scrollLeft + 12,
-          top: text.top - box.top + host.scrollTop + (text.height - 30) / 2,
-        })
-      } catch { setPos(null) }
-    }
-    // After paint, and again once fonts and any async content have settled.
-    place()
-    const t = setTimeout(place, 350)
-    window.addEventListener('resize', place)
-    return () => { clearTimeout(t); window.removeEventListener('resize', place) }
-  }, [moduleId, help])
+    // No reset needed: the shell mounts this fresh for each page (key={active}),
+    // so state never carries over from the last module.
+    //
+    // Measuring in a layout effect and setting state from it is the point — the
+    // position has to be known BEFORE the browser paints, or the button appears
+    // in one place and jumps to another. The lint rule guards against cascading
+    // renders in general; this one runs once per page.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    measure()
+    // Again once fonts, data and any banner above the title have settled.
+    const t = setTimeout(measure, 350)
+    window.addEventListener('resize', measure)
+    return () => { clearTimeout(t); window.removeEventListener('resize', measure) }
+  }, [moduleId, help, measure])
 
-  // Re-measure when the page's own content changes height (a list loading,
-  // a banner appearing) — the heading can move down the page as it does.
+  // The heading moves down the page when content above it loads, so follow it.
   useEffect(() => {
     const host = holder.current?.parentElement
     if (!host || typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(() => {
-      const heading = host.querySelector('h1, h2') as HTMLElement | null
-      if (!heading) return
-      try {
-        const r = document.createRange()
-        r.selectNodeContents(heading)
-        const text = r.getBoundingClientRect()
-        const box = host.getBoundingClientRect()
-        if (text.width) {
-          setPos({
-            left: text.right - box.left + host.scrollLeft + 12,
-            top: text.top - box.top + host.scrollTop + (text.height - 30) / 2,
-          })
-        }
-      } catch { /* leave it where it is */ }
-    })
+    const ro = new ResizeObserver(() => measure())
     ro.observe(host)
     return () => ro.disconnect()
-  }, [moduleId])
+  }, [moduleId, measure])
+
+  // Escape closes it, because a panel you have to aim at to dismiss is a panel
+  // people stop opening.
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
 
   if (!help) return null
 
   return (
-    <div ref={holder} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+    // zIndex, because the page's own cards are painted after this and were
+    // swallowing the click; pointerEvents none so the rest of the overlay never
+    // steals one.
+    <div ref={holder} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 30 }}>
       <button onClick={() => setOpen(true)} title={`How ${label} works`} aria-label={`How ${label} works`}
         style={{
           position: 'absolute',
           // No heading found on the page? Sit at the top-left of the content,
           // which is still beside where a title would be and never under a button.
           left: pos ? pos.left : 24, top: pos ? pos.top : 26,
-          pointerEvents: 'auto',
+          opacity: ready ? 1 : 0, transition: 'opacity .15s ease',
+          pointerEvents: ready ? 'auto' : 'none',
           appearance: 'none', width: 30, height: 30, borderRadius: '50%',
           border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex,
           fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: FONT, lineHeight: 1,
@@ -119,8 +131,12 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
       </button>
 
       {open && (
+        // pointerEvents has to be turned back ON here: this panel lives inside
+        // the positioning overlay above, which is pointer-transparent so it
+        // never eats a click meant for the page. Without this the tabs and the
+        // close button were visible and completely dead.
         <div onClick={e => { if (e.target === e.currentTarget) setOpen(false) }}
-          style={{ position: 'fixed', inset: 0, zIndex: 1200, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '8vh 16px', overflowY: 'auto', fontFamily: FONT }}>
+          style={{ position: 'fixed', inset: 0, zIndex: 1200, pointerEvents: 'auto', background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '8vh 16px', overflowY: 'auto', fontFamily: FONT }}>
           <div style={{ width: '100%', maxWidth: 520, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 22 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{label}</div>
