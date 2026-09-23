@@ -157,9 +157,27 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
   const topSpeed = gps.length ? Math.max(...gps.map(g => g.top_speed_kmh || 0)) : null
   const avgHr = gps.length ? Math.round(gps.reduce((s, g) => s + (g.avg_hr || 0), 0) / gps.filter(g => g.avg_hr).length) : null
 
+  // ── Moving a player up ────────────────────────────────────────────────────
+  // One function behind both the tile and the journey, so they cannot disagree,
+  // and it writes to coach_players — which is what Racket Progression, the
+  // roster, the certificate and the player's own app all read.
+  const setColour = async (stageId: string) => {
+    try { await dbUpdate('coach_players', p.id, { racket_stage: stageId || null }); onSaved?.() } catch { /* surfaced in console */ }
+  }
+  /** Ticking a colour means "they have finished this one" — so they move to the
+      next one, which is what a coach means when they tick it off. */
+  const completeColour = (i: number) => {
+    const next = RACKET_STAGES[Math.min(i + 1, RACKET_STAGES.length - 1)]
+    void setColour(next.id)
+  }
+
   const nextStage = hasStage && cur < RACKET_STAGES.length - 1 ? RACKET_STAGES[cur + 1] : null
   const tiles: { label: string; value: ReactNode; sub?: string; colour?: string }[] = [
-    { label: 'Current colour', value: <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><span style={{ width: 14, height: 14, borderRadius: 4, background: curStage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />{hasStage ? curStage.name : 'Not started'}</span> },
+    // Live, because this is the ONE place a colour is decided and the coach was
+    // being sent to the roster to change it. Setting it here updates the player
+    // record, so Racket Progression, the roster card, the certificate and the
+    // family's own app all move with it.
+    { label: 'Current colour', value: <ColourPicker T={T} accent={accent} stageId={hasStage ? curStage.id : ''} onPick={setColour} /> },
     { label: 'Colour progress', value: `${progress}%`, sub: nextStage ? `to ${nextStage.name}` : 'top colour', colour: accent.hex },
     { label: 'Attendance', value: attPct === null ? '—' : `${attPct}%`, sub: attPct === null ? 'no data' : `${attRows.length} logged`, colour: attPct === null ? T.text3 : attPct >= 90 ? T.good : attPct >= 80 ? T.warn : T.bad },
     { label: 'Skills mastered', value: `${skillsEarned}/${TOTAL_SKILLS}`, sub: 'all colours' },
@@ -171,6 +189,7 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
   const card: CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }
   const sectOff = getSettings().sectionsOff?.development || []
   const showSec = (k: string) => !sectOff.includes(k)
+
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -256,22 +275,32 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
                 turns a colour that has been reached into a physical reward. Saying
                 "awarded in Racket Progression" sent coaches looking for a button
                 on another page to do something they had already done on this one. */}
-            <div style={{ fontSize: 10.5, color: T.text3 }}>
-              {racketOn ? 'set here · rackets awarded in Racket Progression' : 'set here, or when you edit the player'}
-            </div>
+            <div style={{ fontSize: 10.5, color: T.text3 }}>tap a colour to set it · tick to complete it</div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {RACKET_STAGES.map((st, i) => {
               const state = !hasStage ? 'locked' : i < cur ? 'done' : i === cur ? 'current' : 'locked'
               return (
-                <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 9, opacity: state === 'locked' ? 0.4 : 1 }}>
-                  <span style={{ width: 20, height: 12, borderRadius: 3, background: st.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
-                  <span style={{ fontSize: 12, color: T.text, fontWeight: state === 'current' ? 700 : 500, flex: 1 }}>{st.name} · {THEME[st.id]}</span>
-                  {state === 'done' && <span style={{ color: T.good, fontWeight: 800, fontSize: 12 }}>✓</span>}
-                  {state === 'current' && <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>now</span>}
+                <div key={st.id} style={{ display: 'flex', alignItems: 'center', gap: 9, opacity: state === 'locked' ? 0.55 : 1, borderRadius: 8, padding: '3px 4px', background: state === 'current' ? accent.dim : 'transparent' }}>
+                  <button onClick={() => void setColour(st.id)} title={`Put ${p.name} on the ${st.name} colour`}
+                    style={{ display: 'flex', alignItems: 'center', gap: 9, flex: 1, minWidth: 0, textAlign: 'left', appearance: 'none', border: 0, background: 'transparent', cursor: 'pointer', fontFamily: FONT, padding: '3px 2px' }}>
+                    <span style={{ width: 20, height: 12, borderRadius: 3, background: st.colour, border: '1px solid rgba(128,128,128,0.4)', flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: T.text, fontWeight: state === 'current' ? 700 : 500 }}>{st.name} · {THEME[st.id]}</span>
+                  </button>
+                  {state === 'current' && <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: T.panel, padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>now</span>}
+                  {/* The tick is the action a coach actually wants here: "done
+                      that one". Completing a colour moves them to the next. */}
+                  <button onClick={() => completeColour(i)}
+                    title={state === 'done' ? `${st.name} is complete` : `Mark ${st.name} complete and move ${p.name} to ${RACKET_STAGES[Math.min(i + 1, RACKET_STAGES.length - 1)].name}`}
+                    style={{ appearance: 'none', cursor: 'pointer', width: 22, height: 22, borderRadius: 6, display: 'grid', placeItems: 'center', flexShrink: 0, fontSize: 11, fontWeight: 800, fontFamily: FONT, border: `1px solid ${state === 'done' ? T.good : T.border}`, background: state === 'done' ? `${T.good}1f` : 'transparent', color: state === 'done' ? T.good : T.text4 }}>
+                    ✓
+                  </button>
                 </div>
               )
             })}
+          </div>
+          <div style={{ fontSize: 10.5, color: T.text3, marginTop: 9, lineHeight: 1.5 }}>
+            This is the colour everything else reads — the roster, the player&rsquo;s own app{racketOn ? ', and Racket Progression' : ''}.
           </div>
         </div>
         <div style={card}>
@@ -291,6 +320,29 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
         </div>
       </div>
     </div>
+  )
+}
+
+
+// ── Setting the colour ──────────────────────────────────────────────────────
+// A dropdown rather than a modal: choosing a colour is a one-second decision a
+// coach makes at the end of a lesson, and it is the value everything else in
+// the portal reads. "Not started" is a real option — a player who has not been
+// graded yet should not be quietly put on White.
+function ColourPicker({ T, accent, stageId, onPick }: {
+  T: ThemeTokens; accent: AccentTokens; stageId: string; onPick: (id: string) => void
+}) {
+  const st = RACKET_STAGES.find(x => x.id === stageId) || null
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, position: 'relative' }}>
+      <span style={{ width: 14, height: 14, borderRadius: 4, background: st ? st.colour : 'transparent', border: `1px solid ${st ? 'rgba(128,128,128,0.4)' : T.border}`, flexShrink: 0 }} />
+      <select value={stageId} onChange={e => onPick(e.target.value)}
+        title="Set this player's colour"
+        style={{ appearance: 'none', background: 'transparent', border: 0, color: T.text, fontSize: 15, fontWeight: 600, fontFamily: FONT, cursor: 'pointer', outline: 'none', padding: '0 14px 0 0', backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(accent.hex)}' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right center' }}>
+        <option value="">Not started</option>
+        {RACKET_STAGES.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+      </select>
+    </span>
   )
 }
 
