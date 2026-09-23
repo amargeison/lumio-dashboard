@@ -32,6 +32,19 @@ export async function POST(req: NextRequest) {
     .eq('id', b.planId).eq('coach_id', coachId).maybeSingle()
   if (!plan) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
 
+  // Already written up? Say so and stop.
+  //
+  // The write-up can take the best part of two minutes, which is long enough for
+  // a coach to decide it has hung and press the button again — and long enough
+  // for a phone to retry the request on its own. Every one of those used to
+  // become another identical lesson on the player's page. The plan is the
+  // identity: one plan, one summary, however many times this is called.
+  const { data: already } = await db.from('coach_sessions')
+    .select('id').eq('coach_id', coachId).eq('plan_id', plan.id).limit(1)
+  if ((already as { id: string }[] | null)?.length) {
+    return NextResponse.json({ ok: true, sessionId: already![0].id, written: true, duplicate: true })
+  }
+
   const playerName = String(plan.group_name || plan.title || '').trim()
   const when = String(plan.session_date || '').slice(0, 10) || new Date().toISOString().slice(0, 10)
 
@@ -86,7 +99,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const { data: session, error } = await db.from('coach_sessions').insert({
+  const row = {
     coach_id: coachId,
     player_id: playerId,
     player_name: playerName || 'Session',
@@ -96,9 +109,27 @@ export async function POST(req: NextRequest) {
     summary: note || String(plan.notes || ''),
     ai_review: aiReview,
     review_json: review,
-  }).select('id').single()
-  if (error) {
-    console.error('[coach/session-complete] insert', error.message)
+    plan_id: plan.id,
+  }
+  let { data: session, error } = await db.from('coach_sessions').insert(row).select('id').single()
+
+  // Two failures are not really failures. A deploy that lands before migration
+  // 182 has no plan_id column, and a genuine race (two tabs, or a retry that
+  // overtook the first request) trips the unique index — in which case the
+  // lesson we wanted already exists and is the right answer.
+  if (error && /plan_id/.test(error.message)) {
+    const { plan_id: _unused, ...legacy } = row
+    void _unused
+    ;({ data: session, error } = await db.from('coach_sessions').insert(legacy).select('id').single())
+  } else if (error && error.code === '23505') {
+    const { data: won } = await db.from('coach_sessions')
+      .select('id').eq('coach_id', coachId).eq('plan_id', plan.id).limit(1)
+    if ((won as { id: string }[] | null)?.length) {
+      return NextResponse.json({ ok: true, sessionId: won![0].id, written: !!review, duplicate: true })
+    }
+  }
+  if (error || !session) {
+    console.error('[coach/session-complete] insert', error?.message)
     return NextResponse.json({ error: 'Could not save that lesson.' }, { status: 500 })
   }
 

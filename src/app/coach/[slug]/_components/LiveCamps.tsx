@@ -12,11 +12,12 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, useCoachProfile, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
 import { avatarSrc } from '@/lib/avatar'
 import { CampDesigner, type CampPlan } from './CampDesigner'
-import { campOrg, printParentBrief, printRunSheet, printPlayerReport, printCertificate } from '../_lib/camp-printables'
+import { campOrg, printParentBrief, printRunSheet, printPlayerReport, printCertificate, printCampPack } from '../_lib/camp-printables'
 import { CampPromote } from './CampPromote'
 import { CampEmails } from './CampEmails'
 import { CampTrip } from './CampTrip'
 import { getSettings } from '../_lib/settings-store'
+import { stageWords } from '../_lib/stage-words'
 import { AUDIENCES, campAudience } from '@/lib/coach/camp-audience'
 import { flagFor } from '@/lib/coach/country-flag'
 import { campMoney } from '@/lib/coach/camp-money'
@@ -589,7 +590,7 @@ function Itinerary({ T, accent, camp, onSave, attendeeNames }: { T: ThemeTokens;
 // players with their own targets is coaching — and it is built from data the coach
 // already has (racket stage, recent session focus), which is the part a rival
 // cannot copy without the lesson history behind it.
-function ReportButton({ T, accent, camp, playerName, stage, stageColour, achievement }: { T: ThemeTokens; accent: AccentTokens; camp: Camp; playerName: string; stage?: string | null; stageColour?: string | null; achievement?: string | null }) {
+function ReportButton({ T, accent, camp, playerName, stage, stageColour, achievement, noun = 'racket' }: { T: ThemeTokens; accent: AccentTokens; camp: Camp; playerName: string; stage?: string | null; stageColour?: string | null; achievement?: string | null; noun?: string }) {
   const profile = useCoachProfile()
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -599,7 +600,7 @@ function ReportButton({ T, accent, camp, playerName, stage, stageColour, achieve
       const res = await fetch('/api/coach/camp-player', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campId: camp.id, mode: 'report', playerName }) })
       const d = await res.json()
       if (!res.ok) throw new Error(d.error || 'Could not write the report')
-      if (!printPlayerReport(camp as any, campOrg(profile), playerName, d, stage, stageColour, achievement)) setErr('Pop-up blocked — allow pop-ups for this site.')
+      if (!printPlayerReport(camp as any, campOrg(profile), playerName, d, stage, stageColour, achievement, noun)) setErr('Pop-up blocked — allow pop-ups for this site.')
     } catch (e) { setErr(e instanceof Error ? e.message : 'Failed') }
     setBusy(false)
   }
@@ -610,7 +611,7 @@ function ReportButton({ T, accent, camp, playerName, stage, stageColour, achieve
       </button>
       {/* Certificate on its own — for a younger group where the written report is
           for the parent and the child just wants the certificate. */}
-      <button onClick={() => { if (!printCertificate(camp as any, campOrg(profile), playerName, stage, stageColour, achievement)) setErr('Pop-up blocked — allow pop-ups for this site.') }}
+      <button onClick={() => { if (!printCertificate(camp as any, campOrg(profile), playerName, stage, stageColour, achievement, noun)) setErr('Pop-up blocked — allow pop-ups for this site.') }}
         style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>🏅 Certificate</button>
       {err && <span style={{ fontSize: 11, color: T.bad, alignSelf: 'center' }}>{err}</span>}
     </>
@@ -638,6 +639,11 @@ function ReportButton({ T, accent, camp, playerName, stage, stageColour, achieve
 // is for the ones that do not, and for rewriting one after the plan changes.
 function Packs({ T, accent, camp, attendees, players, skillMap, skillDates, attRows }: { T: ThemeTokens; accent: AccentTokens; camp: Camp; attendees: Attendee[]; players: Player[]; skillMap: Record<string, Record<string, number>>; skillDates: Record<string, Record<string, string>>; attRows: { player_id: string; present: boolean }[] }) {
   const [selId, setSelId] = useState<string | null>(null)
+  const profile = useCoachProfile()   // above the early return — hooks run in one order or not at all
+  // A coach without the Racket Progression module has the colour ladder and no
+  // keyrings to hand over, so calling it a "racket" names a product they do not
+  // have. One source for the word, shared with the printed pack.
+  const W = stageWords()
   if (attendees.length === 0) return <div style={{ ...card(T), fontSize: 12.5, color: T.text3 }}>Add attendees first to generate their camp packs.</div>
   const sel = attendees.find(a => a.id === selId) ?? attendees[0]
   const p = players.find(x => x.id === sel.player_id)
@@ -669,13 +675,13 @@ function Packs({ T, accent, camp, attendees, players, skillMap, skillDates, attR
     if (!movedInCamp.length) return null
     const allMet = skills.every(sk => (sm[sk.name] || 0) >= threshold)
     return allMet
-      ? `Achieved their ${st.name} racket during this camp`
-      : `Mastered ${movedInCamp.length} ${st.name} racket skill${movedInCamp.length === 1 ? '' : 's'} during this camp`
+      ? `Achieved their ${W.stage(st.name)} during this camp`
+      : `Mastered ${movedInCamp.length} ${W.stage(st.name)} skill${movedInCamp.length === 1 ? '' : 's'} during this camp`
   })()
 
   const att = p ? attRows.filter(a => a.player_id === p.id) : []
   const attPct = att.length ? Math.round(att.filter(a => a.present).length / att.length * 100) : null
-  const tiles: [string, string][] = [['Attendance', attPct === null ? '—' : `${attPct}%`], ['Racket', st ? st.name : '—'], ['Skills mastered', String(mastered.length)], ['Camp days', String(campDays(camp))]]
+  const tiles: [string, string][] = [['Attendance', attPct === null ? '—' : `${attPct}%`], [W.Noun, st ? st.name : '—'], ['Skills mastered', String(mastered.length)], ['Camp days', String(campDays(camp))]]
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 14 }}>
@@ -696,15 +702,15 @@ function Packs({ T, accent, camp, attendees, players, skillMap, skillDates, attR
           <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{sel.player_name}</div>
           <div style={{ fontSize: 11.5, color: T.text3 }}>{camp.name} · {fmtD(camp.start_date)}–{fmtD(camp.end_date)}</div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <ReportButton T={T} accent={accent} camp={camp} playerName={sel.player_name} stage={st?.name} stageColour={(st as any)?.colour} achievement={achievement} />
-            <button onClick={() => printPack(sel.player_name, camp, { attPct, racket: st?.name, mastered: curMastered })} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>🏆 Print camp pack</button>
+            <ReportButton T={T} accent={accent} camp={camp} playerName={sel.player_name} stage={st?.name} stageColour={(st as any)?.colour} achievement={achievement} noun={W.noun} />
+            <button onClick={() => { if (!printCampPack(camp as any, campOrg(profile), { playerName: sel.player_name, attendancePct: attPct, stage: st?.name, stageColour: (st as any)?.colour, mastered: curMastered, achievement, stageNoun: W.Noun, campDays: campDays(camp) })) alert('Your browser blocked the print window — allow pop-ups for this site.') }} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>🏆 Print camp pack</button>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 14 }}>
           {tiles.map(([l, v]) => <div key={l} style={box(T)}><div style={lbl(T)}>{l}</div><div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginTop: 3 }}>{v}</div></div>)}
         </div>
         {curMastered.length > 0 && <>
-          <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '16px 0 8px' }}>Mastered this racket</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '16px 0 8px' }}>Mastered on this {W.noun}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{curMastered.map(s => <span key={s} style={{ fontSize: 11, color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '3px 9px' }}>▲ {s}</span>)}</div>
         </>}
         {!!camp.itinerary?.length && <>
@@ -716,7 +722,7 @@ function Packs({ T, accent, camp, attendees, players, skillMap, skillDates, attR
             </div>
           ))}
         </>}
-        {!p && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 12 }}>This attendee isn’t linked to a roster player, so racket/skills aren’t shown. Add them to the Roster to track their development.</div>}
+        {!p && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 12 }}>This attendee isn’t linked to a roster player, so {W.noun} and skills aren’t shown. Add them to the Roster to track their development.</div>}
       </div>
     </div>
   )
@@ -787,16 +793,3 @@ function CampForm({ T, accent, camp, onClose, onSave }: { T: ThemeTokens; accent
   )
 }
 
-function printPack(name: string, camp: Camp, p: { attPct: number | null; racket?: string; mastered: string[] }) {
-  if (typeof window === 'undefined') return
-  const esc = (s: string) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!))
-  const chips = p.mastered.map(s => `<span class="chip">${esc(s)}</span>`).join('')
-  const days = (camp.itinerary || []).map(d => `<tr><td style="color:#1f6fd6;font-weight:700">D${d.day}</td><td><b>${esc(d.focus || '')}</b>${d.did ? `<div style="color:#555;font-size:12px">${esc(d.did)}</div>` : ''}</td></tr>`).join('')
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Camp pack — ${esc(name)}</title><style>body{font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:720px;margin:32px auto;color:#111;padding:0 20px}.chip{display:inline-block;border:1px solid #dfe4ee;background:#f5f7fb;border-radius:20px;padding:3px 11px;margin:0 5px 7px;font-size:12px}td{padding:6px 8px;border-top:1px solid #eee;vertical-align:top}.tiles{display:flex;gap:18px;margin:14px 0}</style></head><body>
-  <h1 style="margin:0">${esc(name)}</h1><h2 style="font-weight:600;color:#444;margin:2px 0 16px">${esc(camp.name)} · ${esc(fmtD(camp.start_date))}–${esc(fmtD(camp.end_date))}</h2>
-  <div class="tiles"><div><small>Attendance</small><div style="font-size:20px;font-weight:700">${p.attPct === null ? '—' : p.attPct + '%'}</div></div><div><small>Racket</small><div style="font-size:20px;font-weight:700">${esc(p.racket || '—')}</div></div></div>
-  ${p.mastered.length ? `<h3>Mastered this racket</h3>${chips}` : ''}
-  ${days ? `<h3>Daily plan</h3><table style="width:100%;border-collapse:collapse">${days}</table>` : ''}
-  <div style="margin-top:24px;font-size:10px;color:#aab;letter-spacing:.1em">LUMIO COACH · lumiosports.com</div></body></html>`
-  const w = window.open('', '_blank'); if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 300) }
-}

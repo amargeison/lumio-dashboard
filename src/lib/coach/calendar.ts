@@ -168,6 +168,11 @@ export async function syncBooking(coachId: string, e: CalEvent): Promise<SyncRes
       if (res.status === 401 || res.status === 403) {
         await markReauth(coachId, provider)
         failed.push({ provider, reason: `${provider} sign-in has expired — reconnect the account in Settings.` })
+      } else if (provider === 'microsoft' && /MailboxNotEnabled|ResourceNotFound/i.test(res.detail)) {
+        // An Entra account with no Exchange licence, or a personal account with no
+        // Outlook mailbox. Graph answers 404, which reads like a Lumio bug unless
+        // we say what it actually is.
+        failed.push({ provider, reason: 'That Microsoft account has no Outlook mailbox or calendar, so there is nothing to sync to. Connect the account that holds your work calendar.' })
       } else {
         failed.push({ provider, reason: `${provider} rejected the event (${res.detail}).` })
       }
