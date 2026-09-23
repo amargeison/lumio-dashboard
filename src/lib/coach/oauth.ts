@@ -64,24 +64,61 @@ export function providerConfig(provider: Provider): ProviderConfig | null {
   return null // iCloud is not OAuth — see the iCloud connect route
 }
 
-// True once the OAuth app credentials are present in the environment.
-// Google/Microsoft OAuth is PARKED while the pilot runs on iCloud.
+// Which providers are switched on, and whether their credentials exist.
 //
-// Credentials are present, so without this gate the portal shows working
-// "Connect" buttons for both. That is worse than showing nothing: the Google app
-// is still in "Testing" publishing status, so any coach who is not on the
-// test-user allowlist gets Google's hard error screen — "Access blocked: Lumio
-// Sports has not completed the Google verification process" — with our app name
-// on it. During a pilot with a head coach and 8 staff, that reads as a broken
-// product rather than an unfinished feature.
+// COACH_OAUTH_LIVE is a switch per provider, not one switch for both:
 //
-// Set COACH_OAUTH_LIVE=true to re-enable, once Google verification has cleared
-// (and the Azure consent state has been checked). iCloud is unaffected — it is
-// not OAuth and never passes through here.
+//   COACH_OAUTH_LIVE=google              → Gmail live, Outlook still parked
+//   COACH_OAUTH_LIVE=google,microsoft    → both
+//   COACH_OAUTH_LIVE=true                → both (the old spelling still works)
+//   unset / anything else                → neither
+//
+// It is a switch rather than "credentials present" because the credentials have
+// been in the environment all along, and the thing that decides whether a coach
+// should see a Connect button is the state of the app in Google's / Microsoft's
+// console — which no code here can detect. Google in "Testing" publishing status
+// kills every refresh token after 7 days; an app in Production shows one
+// unverified-app screen and then stays connected. Flipping this variable is the
+// deploy step that follows the console change, so the two never disagree.
+//
+// iCloud is unaffected — it is not OAuth and never passes through here.
+export function providerLive(provider: Provider): boolean {
+  const raw = (process.env.COACH_OAUTH_LIVE || '').trim().toLowerCase()
+  if (!raw) return false
+  if (raw === 'true' || raw === 'all') return true
+  return raw.split(/[,\s]+/).filter(Boolean).includes(provider)
+}
+
 export function providerConfigured(provider: Provider): boolean {
-  if (process.env.COACH_OAUTH_LIVE !== 'true') return false
+  if (!providerLive(provider)) return false
   const c = providerConfig(provider)
   return !!(c && c.clientId && c.clientSecret)
+}
+
+// What the coach actually granted, read from the token response's scope string.
+//
+// Google's consent screen lets a coach untick individual permissions — calendar
+// yes, Gmail no — and still return a perfectly valid token. Assuming both were
+// granted meant the portal promised "sends from your address", then quietly fell
+// back to the Lumio sender with nothing on screen to explain it.
+//
+// An empty scope string means the provider did not tell us (Microsoft omits it
+// on some tenants), so assume the full set rather than crippling a good
+// connection: the first real send will correct the record via markReauth.
+export function capabilitiesFromScopes(provider: Provider, scope?: string | null): string[] {
+  const s = (scope || '').toLowerCase()
+  if (!s) return ['calendar', 'send_email']
+  const caps: string[] = []
+  if (provider === 'google') {
+    if (s.includes('auth/calendar')) caps.push('calendar')
+    if (s.includes('gmail.send')) caps.push('send_email')
+    if (s.includes('gmail.readonly') || s.includes('gmail.modify')) caps.push('read_inbox')
+  } else {
+    if (s.includes('calendars.readwrite') || s.includes('calendars.read')) caps.push('calendar')
+    if (s.includes('mail.send')) caps.push('send_email')
+    if (s.includes('mail.read')) caps.push('read_inbox')
+  }
+  return caps
 }
 
 // The canonical PUBLIC origin for coach-facing redirects.
@@ -158,6 +195,7 @@ export type FullConnection = {
   app_password: string | null
   caldav_url: string | null
   capabilities: string[]
+  status: string
 }
 export async function getConnection(coachId: string, provider: Provider): Promise<FullConnection | null> {
   const { data } = await serviceClient()
@@ -166,27 +204,62 @@ export async function getConnection(coachId: string, provider: Provider): Promis
   return (data as FullConnection | null) ?? null
 }
 
+// Flag a connection the coach has to reconnect by hand.
+//
+// Three things land here: a refresh token Google expired (its 7-day life while
+// the app sits in "Testing"), one the coach revoked from their Google account,
+// and a mailbox/calendar call that came back 401. The portal shows a Reconnect
+// button off the back of this, which is the whole point — before it existed a
+// dead connection looked identical to a working one and emails simply arrived
+// from the wrong address.
+//
+// The access token is cleared at the same time so nothing keeps retrying with a
+// credential that is known to be dead.
+export async function markReauth(coachId: string, provider: Provider): Promise<void> {
+  await serviceClient()
+    .from('coach_oauth_connections')
+    .update({ status: 'reauth', access_token: null, updated_at: new Date().toISOString() })
+    .eq('coach_id', coachId).eq('provider', provider)
+}
+
 // A valid access token for google/microsoft, refreshed via the refresh_token when the
-// stored one is within 60s of expiry. Returns null if the coach hasn't connected.
+// stored one is within 60s of expiry. Returns null when the coach hasn't connected,
+// or when the connection is dead and needs reconnecting (flagged as it goes).
 export async function getFreshAccessToken(coachId: string, provider: Provider): Promise<string | null> {
   const conn = await getConnection(coachId, provider)
   if (!conn?.access_token) return null
   const expMs = conn.token_expiry ? new Date(conn.token_expiry).getTime() : 0
   if (expMs - Date.now() > 60_000) return conn.access_token
+
   const cfg = providerConfig(provider)
-  if (!conn.refresh_token || !cfg?.clientId || !cfg.clientSecret) return conn.access_token
+  if (!conn.refresh_token || !cfg?.clientId || !cfg.clientSecret) {
+    // Nothing to refresh with. Handing back a token we know has expired only
+    // buys a 401 somewhere further down, reported as a mystery send failure.
+    if (expMs && expMs < Date.now()) { await markReauth(coachId, provider); return null }
+    return conn.access_token
+  }
+
   const body = new URLSearchParams({
     client_id: cfg.clientId, client_secret: cfg.clientSecret,
     refresh_token: conn.refresh_token, grant_type: 'refresh_token',
   })
   const res = await fetch(cfg.tokenUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
   const json = await res.json().catch(() => ({}))
-  if (!res.ok || !json.access_token) return conn.access_token
+  if (!res.ok || !json.access_token) {
+    // invalid_grant is the one that matters: the refresh token is gone for good.
+    if (json?.error === 'invalid_grant' || res.status === 400 || res.status === 401) {
+      await markReauth(coachId, provider)
+      return null
+    }
+    return null   // a transient provider error — try again next time, don't flag
+  }
   await upsertConnection(coachId, {
     provider,
     access_token: json.access_token,
     token_expiry: json.expires_in ? new Date(Date.now() + json.expires_in * 1000).toISOString() : null,
     ...(json.refresh_token ? { refresh_token: json.refresh_token } : {}),
+    // A successful refresh clears any earlier Reconnect flag.
+    status: 'connected',
   })
   return json.access_token
 }

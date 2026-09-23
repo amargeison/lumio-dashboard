@@ -52,23 +52,42 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
   const [ready, setReady] = useState(false)
   const holder = useRef<HTMLDivElement | null>(null)
 
-  // One measurement, used by all three triggers, so they cannot drift apart.
+  // The dashboard (and a few other pages) fetch before they render a heading,
+  // so the FIRST measurement after navigating finds nothing at all. The old
+  // code revealed the button at its fallback corner in that case and only
+  // corrected itself if something happened to resize the column — which is why
+  // it sat in the top-left until you refreshed, when the cached render already
+  // had the title in place. So: never reveal on a miss, and keep watching the
+  // column until a heading actually turns up.
+  const found = useRef(false)
+  const last = useRef<{ left: number; top: number } | null>(null)
+
   const measure = useCallback(() => {
     const host = holder.current?.parentElement
     if (!host) return
     const heading = host.querySelector('h1, h2') as HTMLElement | null
-    if (!heading) { setReady(true); return }   // fall back, but still show
+    if (!heading) return                       // not rendered yet — wait for it
+    let next: { left: number; top: number } | null = null
     try {
       const r = document.createRange()
       r.selectNodeContents(heading)
       const text = r.getBoundingClientRect()
       const box = host.getBoundingClientRect()
-      if (!text.width) { setReady(true); return }
-      setPos({
+      if (!text.width) return                  // fonts still loading
+      next = {
         left: text.right - box.left + host.scrollLeft + 12,
         top: text.top - box.top + host.scrollTop + (text.height - 30) / 2,
-      })
-    } catch { /* leave it wherever it is */ }
+      }
+    } catch { return }
+    // Only touch state when it has actually moved: the observers below fire on
+    // every content change, and a fresh object each time would re-render the
+    // whole page for nothing.
+    const prev = last.current
+    if (!prev || Math.abs(prev.left - next.left) > 0.5 || Math.abs(prev.top - next.top) > 0.5) {
+      last.current = next
+      setPos(next)
+    }
+    found.current = true
     setReady(true)
   }, [])
 
@@ -79,23 +98,35 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
     //
     // Measuring in a layout effect and setting state from it is the point — the
     // position has to be known BEFORE the browser paints, or the button appears
-    // in one place and jumps to another. The lint rule guards against cascading
-    // renders in general; this one runs once per page.
+    // in one place and jumps to another.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     measure()
-    // Again once fonts, data and any banner above the title have settled.
-    const t = setTimeout(measure, 350)
+    // A short ladder of retries covers the common cases — a frame later, once
+    // fonts swap, once a quick fetch lands — without a permanent timer.
+    const ts = [0, 60, 150, 350, 800, 1500].map(ms => setTimeout(measure, ms))
+    // Last resort: if two seconds pass with still no heading on the page, show
+    // the button at the fallback spot rather than hiding help forever.
+    const giveUp = setTimeout(() => { if (!found.current) setReady(true) }, 2000)
     window.addEventListener('resize', measure)
-    return () => { clearTimeout(t); window.removeEventListener('resize', measure) }
+    return () => {
+      ts.forEach(clearTimeout); clearTimeout(giveUp)
+      window.removeEventListener('resize', measure)
+    }
   }, [moduleId, help, measure])
 
-  // The heading moves down the page when content above it loads, so follow it.
+  // Two observers, because they catch different things: the heading ARRIVING
+  // (a childList change that need not alter the column's box, so ResizeObserver
+  // stays silent), and the heading MOVING when content above it loads.
   useEffect(() => {
     const host = holder.current?.parentElement
-    if (!host || typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(() => measure())
-    ro.observe(host)
-    return () => ro.disconnect()
+    if (!host) return
+    const mo = typeof MutationObserver !== 'undefined'
+      ? new MutationObserver(() => measure()) : null
+    mo?.observe(host, { childList: true, subtree: true, characterData: true })
+    const ro = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => measure()) : null
+    ro?.observe(host)
+    return () => { mo?.disconnect(); ro?.disconnect() }
   }, [moduleId, measure])
 
   // Escape closes it, because a panel you have to aim at to dismiss is a panel
