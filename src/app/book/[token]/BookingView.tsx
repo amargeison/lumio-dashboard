@@ -86,8 +86,15 @@ export default function BookingView({ token }: { token: string }) {
   const page = (children: React.ReactNode) => (
     <div style={{ minHeight: '100vh', background: '#eef0f5', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif", paddingBottom: 48 }}>
       <div style={{ background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT}bb)`, padding: '32px 20px 28px', textAlign: 'center', color: '#fff' }}>
-        {head?.logoUrl && /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={head.logoUrl} alt="" style={{ height: 50, maxWidth: 160, objectFit: 'contain', background: '#fff', borderRadius: 12, padding: 8, marginBottom: 12 }} />}
+        {/* A flex row rather than text-align, so the club's mark is centred
+            whatever shape the logo is and whatever display the image ends up
+            with. It was sitting hard against the left edge. */}
+        {!!head?.logoUrl && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={head.logoUrl} alt="" style={{ height: 50, maxWidth: 180, objectFit: 'contain', background: '#fff', borderRadius: 12, padding: 8 }} />
+          </div>
+        )}
         <div style={{ fontSize: 11.5, letterSpacing: '.24em', textTransform: 'uppercase', opacity: .88 }}>{head?.academy || 'Tennis'}</div>
         <h1 style={{ fontSize: 27, fontWeight: 800, margin: '8px 0 0', lineHeight: 1.15 }}>Book a session</h1>
         {!!head && !head.error && (

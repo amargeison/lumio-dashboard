@@ -224,11 +224,32 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
                           <span style={{ fontSize: 12, color: T.text, fontWeight: 500 }}>{p.name}</span>
                         </div>
                       </td>
-                      {RACKET_STAGES.map((s, bi) => {
-                        let cell: ReactNode = null
-                        if (hasStage && bi < curIdx) cell = <span style={{ color: T.good, fontWeight: 800 }}>✓</span>
-                        else if (hasStage && bi === curIdx) cell = <span style={{ fontSize: 9.5, fontFamily: FONT_MONO, color: accent.hex, fontWeight: 700 }}>{curProg}%</span>
-                        return <td key={s.id} style={{ textAlign: 'center', padding: '8px 4px' }}>{cell}</td>
+                      {/* ── The matrix is where you move somebody ──────────────
+                          It used to be a read-only picture of what Player
+                          Development already said, which left a coach on this
+                          page with no way to record that a player had moved —
+                          the one thing this page is about. Every cell is now a
+                          button: tap a colour to put that player on it. */}
+                      {RACKET_STAGES.map((st, bi) => {
+                        const isDone = hasStage && bi < curIdx
+                        const isNow = hasStage && bi === curIdx
+                        return (
+                          <td key={st.id} style={{ textAlign: 'center', padding: '4px 2px' }}>
+                            <button
+                              onClick={() => edit(p.id, { racket_stage: st.id })}
+                              title={isNow ? `${p.name} is on ${st.name} — ${curProg}% of the skills mastered` : `Move ${p.name} to the ${st.name} racket`}
+                              style={{
+                                appearance: 'none', cursor: 'pointer', fontFamily: FONT,
+                                width: 32, height: 26, borderRadius: 7, display: 'grid', placeItems: 'center',
+                                border: `1px solid ${isNow ? accent.hex : isDone ? `${T.good}44` : 'transparent'}`,
+                                background: isNow ? accent.dim : isDone ? `${T.good}14` : 'transparent',
+                                color: isNow ? accent.hex : isDone ? T.good : T.text4,
+                                fontSize: isNow ? 9.5 : 12, fontWeight: 800,
+                              }}>
+                              {isDone ? '✓' : isNow ? <span style={{ fontFamily: FONT_MONO }}>{curProg}%</span> : '·'}
+                            </button>
+                          </td>
+                        )
                       })}
                       <td style={{ padding: '8px 10px' }}>
                         {hasStage ? (
@@ -255,6 +276,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: T.good, fontWeight: 800 }}>✓</span> racket earned</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on current racket (skills graded Consistent in the Player Roster)</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>🏆 award = {ownRewards ? 'your reward' : 'keyring + dampener'} + certificate, then advance to the next racket</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>Tap any colour in a player&rsquo;s row to move them onto it</span>
         </div>
       </div>
     </div>
@@ -269,13 +291,17 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
 // If the coach hasn't filled their name in yet we print an EMPTY signature line
 // rather than a wrong name. A blank line is something a coach can sign by hand;
 // someone else's name is something a parent notices.
-export type CertOrg = { coach: string; cert: string; academy: string }
-export function certOrg(profile?: { display_name?: string | null; brand_name?: string | null } | null): CertOrg {
+export type CertOrg = { coach: string; cert: string; academy: string; logo?: string | null }
+export function certOrg(profile?: { display_name?: string | null; brand_name?: string | null; brand_logo_url?: string | null } | null): CertOrg {
   const s = getSettings()
   return {
     coach: (profile?.display_name || s.coach || '').trim(),
     cert: (s.cert || '').trim(),
     academy: (profile?.brand_name || s.academy || '').trim(),
+    // The club's own mark, uploaded at onboarding, before any logo set in
+    // Settings and before Lumio's. A certificate that goes home in a bag is the
+    // most-seen thing the academy produces — it should carry THEIR badge.
+    logo: (profile?.brand_logo_url || s.brandLogo || '').trim() || null,
   }
 }
 
@@ -283,7 +309,10 @@ export function printRacketCertificate(playerName: string, stage: { name: string
   if (typeof window === 'undefined') return
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   const chips = skills.map(s => `<span class="chip">${esc(s)}</span>`).join('')
-  const brandLogo = getSettings().brandLogo || (typeof window !== 'undefined' ? `${window.location.origin}/tennis_transparent_logo.png` : '')
+  // The academy's own logo, then whatever they set in Settings, and only then
+  // Lumio's mark. This used to skip the profile entirely, so a club that
+  // uploaded their badge at onboarding printed a certificate without it.
+  const brandLogo = org.logo || getSettings().brandLogo || (typeof window !== 'undefined' ? `${window.location.origin}/tennis_transparent_logo.png` : '')
   const logoTag = brandLogo ? `<img src="${brandLogo}" alt="" style="height:60px;max-width:180px;object-fit:contain;display:block;margin:0 auto 14px" />` : ''
   const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(stage.name)} Racket — ${esc(playerName)}</title>
@@ -297,7 +326,7 @@ export function printRacketCertificate(playerName: string, stage: { name: string
     <div style="position:absolute;font-size:340px;opacity:.04;top:50%;left:50%;transform:translate(-50%,-50%)">🎾</div>
     <div style="text-align:center;padding:28mm 24mm;position:relative;max-width:170mm">
       ${logoTag}
-      <div style="font-size:12px;letter-spacing:.5em;color:#3A8EE0;font-weight:700;text-transform:uppercase">Lumio Tennis Academy</div>
+      <div style="font-size:12px;letter-spacing:.5em;color:#3A8EE0;font-weight:700;text-transform:uppercase">${esc(org.academy || 'Tennis Academy')}</div>
       <div style="font-family:Georgia,serif;font-size:40px;letter-spacing:.04em;margin-top:14px">Racket Award</div>
       <div style="width:70px;height:3px;background:${stage.colour};margin:14px auto 20px;border:1px solid rgba(0,0,0,.15)"></div>
       <div style="font-size:13px;color:#6b7280">This certifies that</div>
@@ -307,7 +336,7 @@ export function printRacketCertificate(playerName: string, stage: { name: string
         <span style="width:54px;height:34px;border-radius:5px;background:${stage.colour};border:1px solid rgba(0,0,0,.25);box-shadow:0 3px 10px rgba(0,0,0,.18)"></span>
         <span style="font-family:Georgia,serif;font-size:34px;font-weight:700">${esc(stage.name)} Racket</span>
       </div>
-      <div style="font-size:11px;color:#6b7280;margin-top:8px">Awarded with the coloured racket keyring &amp; matching dampener</div>
+      ${getSettings().ownRewards ? '' : '<div style="font-size:11px;color:#6b7280;margin-top:8px">Awarded with the coloured racket keyring &amp; matching dampener</div>'}
       <div style="margin:20px auto 0;max-width:150mm">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#9099ad;margin-bottom:8px">Skills mastered</div>${chips}
       </div>
