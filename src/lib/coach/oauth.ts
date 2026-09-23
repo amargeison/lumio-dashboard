@@ -59,6 +59,11 @@ export function providerConfig(provider: Provider): ProviderConfig | null {
       // The client secret must still be supplied via env (secrets never live in code).
       clientId: process.env.MICROSOFT_OAUTH_CLIENT_ID || '60f7ad0b-978c-4bde-9ae5-36b88f7134a8',
       clientSecret: process.env.MICROSOFT_OAUTH_CLIENT_SECRET,
+      // Without this, Microsoft silently reuses whichever account the browser is
+      // already signed into — so a coach with a personal Outlook and a club
+      // account connects the wrong one and only finds out when a parent replies
+      // to an address nobody reads.
+      extraAuthParams: { prompt: 'select_account' },
     }
   }
   return null // iCloud is not OAuth — see the iCloud connect route
@@ -242,6 +247,9 @@ export async function getFreshAccessToken(coachId: string, provider: Provider): 
   const body = new URLSearchParams({
     client_id: cfg.clientId, client_secret: cfg.clientSecret,
     refresh_token: conn.refresh_token, grant_type: 'refresh_token',
+    // Google infers the scopes from the refresh token; Microsoft's personal-account
+    // endpoint wants them restated, and rejects the refresh without them.
+    ...(provider === 'microsoft' ? { scope: cfg.scopes } : {}),
   })
   const res = await fetch(cfg.tokenUrl, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
   const json = await res.json().catch(() => ({}))

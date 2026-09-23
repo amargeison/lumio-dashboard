@@ -16,6 +16,7 @@ import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { RACKET_STAGES } from '../_lib/coach-db'
+import { stageWords } from '../_lib/stage-words'
 import { avatarSrc } from '@/lib/avatar'
 import { campMoney, paidSoFar, balanceOwed } from '@/lib/coach/camp-money'
 import {
@@ -591,7 +592,7 @@ export function TargetsBoard({ T, accent, camp, attendees, players, onSave, onRe
           <button onClick={aiPlayers} disabled={busy || attendees.length === 0} style={{ ...btn(T, accent, true), opacity: busy || attendees.length === 0 ? 0.5 : 1 }}>
             ✦ {busy ? 'Setting targets…' : perPlayer.length ? 'Re-set targets' : 'Set targets with Lumio Coach'}
           </button>
-          <span style={{ fontSize: 11, color: T.text3 }}>Built from each player’s racket stage and recent sessions.</span>
+          <span style={{ fontSize: 11, color: T.text3 }}>Built from each player’s {stageWords().noun} stage and recent sessions.</span>
         </div>
       </div>
 

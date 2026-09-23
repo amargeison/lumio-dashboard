@@ -136,7 +136,10 @@ export function printRunSheet(camp: CampLike, org: PrintOrg, attendees?: string[
 // deliver. It matters more here than it looks: the whole racket-reward system is
 // built on physical rewards plus a certificate, and this is the one page a parent
 // photographs and a child puts on a wall.
-export function certificatePage(camp: CampLike, org: PrintOrg, playerName: string, stage?: string | null, stageColour?: string | null, achievement?: string | null): string {
+// `noun` is what this coach calls the ladder — "racket" on the reward system,
+// "colour" without it. A certificate that awards a "Purple racket" to a player
+// whose coach hands out no rackets is a promise nobody can keep.
+export function certificatePage(camp: CampLike, org: PrintOrg, playerName: string, stage?: string | null, stageColour?: string | null, achievement?: string | null, noun = 'racket'): string {
   const awarded = camp.end_date ? fmtDate(camp.end_date) : fmtDate(camp.start_date)
   const year = (camp.end_date || camp.start_date || '').slice(0, 4) || ''
   const place = [camp.location, camp.region].filter(Boolean).join(', ')
@@ -157,7 +160,7 @@ export function certificatePage(camp: CampLike, org: PrintOrg, playerName: strin
       </div>
       ${(achievement || stage) ? `<div style="display:inline-flex;align-items:center;gap:10px;margin-top:22px;background:${achievement ? '#fffaf0' : '#faf7ff'};border:1px solid ${achievement ? '#e8d9a8' : '#ead9ff'};border-radius:30px;padding:8px 18px">
         <span style="width:22px;height:14px;border-radius:3px;background:${esc(stageColour || '#7c3aed')};border:1px solid rgba(0,0,0,.2)"></span>
-        <span style="font-weight:700;color:#1a1d29">${esc(achievement || `${stage} racket`)}</span>
+        <span style="font-weight:700;color:#1a1d29">${esc(achievement || (noun === 'racket' ? `${stage} racket` : String(stage)))}</span>
       </div>` : ''}
       <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:32px;padding:0 6mm">
         <div style="text-align:center">
@@ -176,11 +179,11 @@ export function certificatePage(camp: CampLike, org: PrintOrg, playerName: strin
 
 // Certificate on its own — for a coach who wants to hand one out without the
 // written report (a younger group, or a parents' evening).
-export function printCertificate(camp: CampLike, org: PrintOrg, playerName: string, stage?: string | null, stageColour?: string | null, achievement?: string | null): boolean {
-  return openPrintDoc(`${playerName} — certificate`, certificatePage(camp, org, playerName, stage, stageColour, achievement))
+export function printCertificate(camp: CampLike, org: PrintOrg, playerName: string, stage?: string | null, stageColour?: string | null, achievement?: string | null, noun = 'racket'): boolean {
+  return openPrintDoc(`${playerName} — certificate`, certificatePage(camp, org, playerName, stage, stageColour, achievement, noun))
 }
 
-export function printPlayerReport(camp: CampLike, org: PrintOrg, playerName: string, rep: PlayerReport, stage?: string | null, stageColour?: string | null, achievement?: string | null): boolean {
+export function printPlayerReport(camp: CampLike, org: PrintOrg, playerName: string, rep: PlayerReport, stage?: string | null, stageColour?: string | null, achievement?: string | null, noun = 'racket'): boolean {
   const body = `
     ${rep.headline ? `<div class="diag" style="border-color:#7c3aed;background:#7c3aed0e">
       <div class="lbl" style="color:#7c3aed">The headline</div><p style="margin:0;font-weight:600;color:#1a1d29">${esc(rep.headline)}</p></div>` : ''}
@@ -203,7 +206,126 @@ export function printPlayerReport(camp: CampLike, org: PrintOrg, playerName: str
   return openPrintDoc(`${playerName} — ${camp.name} report`,
     printPage({
       org, kicker: 'End-of-camp report', title: playerName, accent: '#7c3aed',
-      chips: [camp.name, dateRange(camp), stage ? `${stage} racket` : ''].filter(Boolean),
+      chips: [camp.name, dateRange(camp), stage ? (noun === 'racket' ? `${stage} racket` : String(stage)) : ''].filter(Boolean),
       body, footNote: `${camp.name} · report`,
-    }) + certificatePage(camp, org, playerName, stage, stageColour, achievement))
+    }) + certificatePage(camp, org, playerName, stage, stageColour, achievement, noun))
+}
+
+// ── 4. The camp pack ────────────────────────────────────────────────────────
+// Everything from the week, in the player's hands, on the day they leave.
+//
+// The old version was a page of white with a name, two numbers and a list of
+// day numbers — and because it read `focus`/`did` while an AI-designed camp
+// writes `theme`/`sessions`, the day list printed empty. A player would not keep
+// that; a parent would not photograph it. This one is built from the same plan
+// the coach ran, in the same house style as the report and the certificate, and
+// it ends with the certificate so the whole thing prints as one job.
+export type CampPackInput = {
+  playerName: string
+  attendancePct?: number | null
+  stage?: string | null
+  stageColour?: string | null
+  /** Skills mastered at the current stage, by name. */
+  mastered?: string[]
+  achievement?: string | null
+  /** "Racket" / "Colour" — whatever this coach calls the ladder. */
+  stageNoun?: string
+  campDays?: number | null
+  coachNote?: string | null
+}
+
+export function campPackPages(camp: CampLike, org: PrintOrg, p: CampPackInput): string {
+  const ACC = '#7c3aed'
+  const noun = p.stageNoun || 'Racket'
+  const days = (camp.itinerary || []).filter(d => d && typeof d.day === 'number')
+  const onCourt = days.reduce((n, d) => n + (d.sessions?.length || 0), 0)
+  const place = [camp.location, camp.region].filter(Boolean).join(', ')
+
+  const tile = (label: string, value: string, sub?: string) => `
+    <div style="flex:1;min-width:0;background:#faf9ff;border:1px solid #ece7fb;border-radius:12px;padding:12px 14px">
+      <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#8b93a7;font-weight:700">${esc(label)}</div>
+      <div style="font-size:21px;font-weight:800;color:#1a1d29;margin-top:3px;line-height:1.1">${esc(value)}</div>
+      ${sub ? `<div style="font-size:10px;color:#8b93a7;margin-top:2px">${esc(sub)}</div>` : ''}
+    </div>`
+
+  const tiles = [
+    tile('Attendance', p.attendancePct === null || p.attendancePct === undefined ? '—' : `${p.attendancePct}%`, 'of camp sessions'),
+    tile('Days on camp', String(p.campDays ?? days.length ?? '—'), place || camp.name),
+    tile('Sessions', onCourt ? String(onCourt) : '—', 'on the plan'),
+    tile(noun, p.stage || '—', p.mastered?.length ? `${p.mastered.length} skill${p.mastered.length === 1 ? '' : 's'} mastered` : 'where they are now'),
+  ].join('')
+
+  const chips = (xs: string[]) => xs.map(x =>
+    `<span style="display:inline-block;border:1px solid #e3d9fb;background:#f7f3ff;color:#5b21b6;border-radius:999px;padding:4px 12px;margin:0 6px 7px 0;font-size:11.5px;font-weight:600">${esc(x)}</span>`).join('')
+
+  // Page 1 — the week at a glance.
+  const cover = printPage({
+    org, kicker: 'Camp pack', title: p.playerName, accent: ACC,
+    chips: [camp.name, dateRange(camp), p.stage ? `${p.stage}${noun === 'Racket' ? ' racket' : ''}` : ''].filter(Boolean),
+    footNote: `${camp.name} · camp pack`,
+    body: `
+      <div style="display:flex;gap:10px;margin-top:16px">${tiles}</div>
+
+      ${p.achievement ? `<div class="succ"><div class="lbl">Achieved this week</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="width:22px;height:14px;border-radius:3px;background:${esc(p.stageColour || ACC)};border:1px solid rgba(0,0,0,.2);flex-shrink:0"></span>
+          <span style="font-size:13px;font-weight:700;color:#1a1d29">${esc(p.achievement)}</span>
+        </div></div>` : ''}
+
+      ${p.mastered?.length ? `<h2 style="color:${ACC}">Mastered on this ${esc(noun.toLowerCase())}</h2><div>${chips(p.mastered)}</div>` : ''}
+
+      ${camp.objectives?.length ? `<h2 style="color:${ACC}">What the week was built around</h2>${ul(camp.objectives)}` : ''}
+
+      ${camp.parent_brief?.whatTheyLeaveWith?.length
+        ? `<h2 style="color:${ACC}">What they leave with</h2>${ul(camp.parent_brief.whatTheyLeaveWith)}`
+        : ''}
+
+      ${p.coachNote ? `<div class="diag" style="border-color:${ACC};background:${ACC}0e">
+        <div class="lbl" style="color:${ACC}">From your coach</div>
+        <p style="margin:0;font-style:italic">${esc(p.coachNote)}</p></div>` : ''}
+    `,
+  })
+
+  // Page 2 — the week itself, from the plan that was actually run.
+  const dayBlock = (d: CampDay) => {
+    const sessions = (d.sessions || []).map(sn => {
+      const c = SESSION_COLOUR[String(sn.type || '')] || '#8b93a7'
+      return `<tr>
+        <td style="width:58px;color:#8b93a7;font-size:10.5px;white-space:nowrap">${esc(sn.time || sn.slot || '')}</td>
+        <td>
+          <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${c};margin-right:7px"></span>
+          <strong style="font-size:12px">${esc(sn.title || sn.type || 'Session')}</strong>
+          ${sn.where ? `<span style="color:#8b93a7;font-size:10.5px"> · ${esc(sn.where)}</span>` : ''}
+          ${sn.detail ? `<div style="color:#5b6172;font-size:11px;margin-top:2px">${esc(sn.detail)}</div>` : ''}
+        </td></tr>`
+    }).join('')
+    const line = d.did || d.focus || d.coachFocus || ''
+    return `
+      <div style="margin-top:14px;page-break-inside:avoid">
+        <div style="display:flex;align-items:baseline;gap:10px;border-bottom:2px solid #ecedf2;padding-bottom:5px">
+          <span style="font-size:11px;font-weight:800;color:${ACC};letter-spacing:.08em">DAY ${d.day}</span>
+          <span style="font-size:13px;font-weight:700;color:#1a1d29">${esc(d.theme || d.focus || (d.rest ? 'Lighter day' : `Day ${d.day}`))}</span>
+          <span style="margin-left:auto;font-size:10px;color:#8b93a7">${esc(d.date || '')}${d.rest ? ' · lighter day' : ''}</span>
+        </div>
+        ${line && line !== d.theme ? `<p style="margin:6px 0 0;font-size:11.5px">${esc(line)}</p>` : ''}
+        ${sessions ? `<table>${sessions}</table>` : ''}
+      </div>`
+  }
+
+  const week = days.length ? printPage({
+    org, kicker: 'Camp pack', title: 'Your week, day by day', accent: ACC,
+    chips: [camp.name, dateRange(camp)].filter(Boolean),
+    footNote: `${camp.name} · the week`,
+    body: `
+      ${camp.daily_rhythm ? `<p style="margin-top:14px">${esc(camp.daily_rhythm)}</p>` : ''}
+      ${days.map(dayBlock).join('')}
+      <h2 style="color:${ACC}">Your notes</h2>${dashLines(4)}
+    `,
+  }) : ''
+
+  return cover + week + certificatePage(camp, org, p.playerName, p.stage, p.stageColour, p.achievement, noun.toLowerCase())
+}
+
+export function printCampPack(camp: CampLike, org: PrintOrg, p: CampPackInput): boolean {
+  return openPrintDoc(`${p.playerName} — ${camp.name} camp pack`, campPackPages(camp, org, p))
 }
