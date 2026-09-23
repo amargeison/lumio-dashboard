@@ -655,9 +655,9 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
             const open = reacting === m.id
             return (
               <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start', maxWidth: '100%' }}>
-                <div onClick={() => onReact && setReacting(open ? null : m.id)}
+                <div onClick={() => setReacting(open ? null : m.id)}
                   style={{
-                    maxWidth: '86%', boxSizing: 'border-box', cursor: onReact ? 'pointer' : 'default',
+                    maxWidth: '86%', boxSizing: 'border-box', cursor: 'pointer',
                     background: mine ? T.accentDim : T.panel2,
                     border: `1px solid ${mine ? T.accentBorder : T.border}`,
                     borderRadius: 14, borderBottomRightRadius: mine ? 4 : 14, borderBottomLeftRadius: mine ? 14 : 4,
@@ -683,8 +683,8 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
 
                 {/* Tap a message to react, reply or pass it on. Hidden until then,
                     because a row of icons under every bubble is noise. */}
-                {open && !!onSend && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', margin: '6px 2px 0', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                {open && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', margin: '6px 2px 0', justifyContent: mine ? 'flex-end' : 'flex-start', opacity: onSend ? 1 : 0.55, pointerEvents: onSend ? 'auto' : 'none' }}>
                     {REACTIONS.map(e => (
                       <button key={e} onClick={() => { onReact?.(m.id, m.reaction === e ? null : e); setReacting(null) }}
                         style={{ appearance: 'none', cursor: 'pointer', border: `1px solid ${m.reaction === e ? T.accent : 'transparent'}`, background: m.reaction === e ? T.accentDim : T.panel2, borderRadius: 8, padding: '3px 6px', fontSize: 14, lineHeight: 1 }}>
@@ -719,10 +719,29 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
           to={camp ? `everyone on ${camp.name}` : toName ? toName : 'your coach'} />
       )}
 
+      {/* ── The coach's preview ──────────────────────────────────────────────
+          A preview that hides the box, the emoji button and the send button
+          does not show the coach what the family can do — which is the only
+          reason to look at this page. So the whole composer is drawn, and it is
+          dead on purpose: sending from here would post a message AS the family,
+          and a coach writing to themselves in a parent's name is not a feature.
+          Reply, forward and reactions work the same way — visible, inert. */}
       {!onSend && (
-        <div style={{ fontSize: 11, color: T.text4, marginTop: 10, lineHeight: 1.5 }}>
-          {adult ? 'They can reply, react and message any of your coaches from their own page.' : 'The parent can reply, react and message any of your coaches from their own page.'}
-        </div>
+        <>
+          <div style={{ opacity: 0.55, pointerEvents: 'none', userSelect: 'none' }} aria-hidden>
+            <textarea readOnly value="" rows={3}
+              placeholder={camp ? `Message everyone on ${camp.name}…` : 'Message your coach…'}
+              style={{ width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, color: T.text, padding: '10px 12px', fontSize: 13, resize: 'none', boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
+              <span style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '8px 11px', fontSize: 15, lineHeight: 1 }}>🙂</span>
+              <span style={{ background: T.accent, color: T.btnText, borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700 }}>Send</span>
+            </div>
+          </div>
+          <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10, lineHeight: 1.55 }}>
+            This is their side of it. {adult ? 'They' : 'The parent'} can type here, tap a message to react, reply or forward it, and pick which coach — or the camp — they are writing to.
+            You can&rsquo;t send from the preview, because it would go out in their name; reply from your own Messages page instead.
+          </div>
+        </>
       )}
     </>
   )
