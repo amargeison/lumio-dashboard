@@ -163,11 +163,11 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const hasMessage = (d.messages || []).length > 0
   const hasBooking = (d.bookings || []).length > 0
   const startSteps: StartStep[] = [
-    { id: 'venue', label: 'Set your home court', why: 'Everything with an address on it — a confirmation email, the map link a family taps, free-slot suggestions — comes from your venue. Two minutes, once.', done: hasVenue, nav: 'venues', cta: 'Add it' },
+    { id: 'venue', label: 'Set your home court', why: 'Everything with an address on it — a confirmation email, the map link a player taps, free-slot suggestions — comes from your venue. Two minutes, once.', done: hasVenue, nav: 'venues', cta: 'Add it' },
     { id: 'players', label: 'Add the players you coach', why: 'A player record is what every booking, summary, payment and message hangs off. Add a handful to start — you do not need the whole roster today.', done: hasPlayers, nav: 'roster', cta: 'Add players' },
-    { id: 'booking', label: 'Put a session in the diary', why: 'Book one lesson and you will see the confirmation, the calendar link and the family\u2019s own page all fill in behind it.', done: hasBooking, nav: 'calendar', cta: 'Open calendar' },
+    { id: 'booking', label: 'Put a session in the diary', why: 'Book one lesson and you will see the confirmation, the calendar link and the player\u2019s own page all fill in behind it.', done: hasBooking, nav: 'calendar', cta: 'Open calendar' },
     { id: 'plan', label: 'Build a session plan', why: 'Open a booking in the Session Planner and Lumio Coach writes the plan and the run-sheet from that player\u2019s history. This is the bit coaches say they would pay for on its own.', done: hasPlan, nav: 'planner', cta: 'Plan one' },
-    { id: 'summary', label: 'Write up a lesson', why: 'Record the hour, or tick what you covered when you finish. The write-up lands with the player and is the thing families value most.', done: hasSummary, nav: 'lessons', cta: 'Write one' },
+    { id: 'summary', label: 'Write up a lesson', why: 'Record the hour, or tick what you covered when you finish. The write-up lands with the player and is the thing they value most.', done: hasSummary, nav: 'lessons', cta: 'Write one' },
     { id: 'message', label: 'Message a player or parent', why: 'Send one message and they get it in their app as well as their inbox \u2014 which is how conversations move off WhatsApp.', done: hasMessage, nav: 'messages', cta: 'Send one' },
   ]
 
@@ -227,7 +227,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
     const away = daysBetween(today, c.start)
     briefing.push({ tag: 'camps', pri: away <= 7 ? 'high' : 'med', text: `${c.name} starts ${away <= 1 ? 'tomorrow' : `in ${away} days`}${c.where ? ` at ${c.where}` : ''} — ${campAttendeeCount(c.id)} booked on.` })
   }
-  briefing.push({ tag: 'retention', pri: lowAtt.length ? 'high' : 'low', text: lowAtt.length ? `${lowAtt[0].p.name} is at ${lowAtt[0].a}% attendance — worth a check-in with the family.` : 'Attendance is healthy across your players.' })
+  briefing.push({ tag: 'retention', pri: lowAtt.length ? 'high' : 'low', text: lowAtt.length ? `${lowAtt[0].p.name} is at ${lowAtt[0].a}% attendance — worth a check-in.` : 'Attendance is healthy across your players.' })
   briefing.push({ tag: 'schedule', pri: myTodays.length ? 'med' : 'low', text: myTodays.length ? `${myTodays.length} session${myTodays.length > 1 ? 's' : ''} today${myTodays[0]?.start_time ? ` from ${myTodays[0].start_time}` : ''}.${myNext && dk(myNext.booking_date) > today ? ` Next after today: ${fmtDate(myNext.booking_date)} ${myNext.start_time || ''}.` : ''}` : (myNext ? `No sessions today — next is ${fmtDate(myNext.booking_date)} ${myNext.start_time || ''}.` : 'No upcoming sessions booked — add bookings in the calendar.') })
   briefing.push({ tag: 'progress', pri: 'low', text: myLessonsThisWeek ? `${myLessonsThisWeek} lesson summar${myLessonsThisWeek > 1 ? 'ies' : 'y'} logged this week — keep sharing the wins with players.` : 'No lesson summaries yet this week — log one after your next session.' })
 

@@ -171,7 +171,7 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
 
   return (
     <Shell onSignOut={onSignOut}>
-      {/* The photo control belongs to the family, so it sits above the shared
+      {/* The photo control belongs to the player, so it sits above the shared
           view rather than inside it — the coach's preview must not offer to
           change a child's picture from a page that is meant to be read-only. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
@@ -189,7 +189,7 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
       </div>
 
       {/* Messages are a section of the shared view now, so the coach previewing
-          this page sees the same conversation the family does. Only the family
+          this page sees the same conversation the player does. Only the player
           gets a box to type in — that is what onSendMessage is. */}
       <LiveStudentView T={ST} bundle={bundle} onSendMessage={send} onReact={react} />
 

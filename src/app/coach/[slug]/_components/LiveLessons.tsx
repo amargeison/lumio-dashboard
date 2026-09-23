@@ -147,7 +147,7 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
       <div>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text, fontFamily: FONT }}>Lesson Summaries</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3, fontFamily: FONT }}>What you covered, the key takeaways and the homework — ready to share with players and parents.</p>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3, fontFamily: FONT }}>What you covered, the key takeaways and the homework — ready to share with the player, or a junior&rsquo;s parent.</p>
       </div>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <button onClick={() => setMediaKind('audio')} title="Record or upload a session — the AI writes the summary"
@@ -424,7 +424,7 @@ function DetailPane({ T, accent, s, avatarUrl, booking, onExport, onEdit, onDupl
       )}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-        <button onClick={() => setShareOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>📣 Share with parent</button>
+        <button onClick={() => setShareOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>📣 Share it</button>
         <button onClick={onDuplicate} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Duplicate</button>
         <button onClick={() => setRecapOpen(true)} title="The short version — a 2-3 sentence recap of the session" style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Summary</button>
         <button onClick={onExport} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Export PDF</button>
@@ -570,7 +570,7 @@ function CoachAiBrief({ T, accent, s }: { T: ThemeTokens; accent: AccentTokens; 
             <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '5px 0', fontSize: 12.5, color: T.text, lineHeight: 1.45 }}><span style={{ color: accent.hex, fontWeight: 700, flexShrink: 0 }}>{i + 1}</span>{w}</div>
           ))}
           <div style={{ marginTop: 12, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '9px 11px' }}>
-            <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Parent tip</div>
+            <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tip to pass on</div>
             <div style={{ fontSize: 12, color: T.text2, marginTop: 3 }}>{brief.parentTip}</div>
           </div>
         </div>
@@ -608,13 +608,13 @@ function ShareMenu({ T, accent, s, onClose }: { T: ThemeTokens; accent: AccentTo
   const [copied, setCopied] = useState(false)
   const opts: { label: string; icon: string; run: () => void }[] = [
     { label: copied ? 'Copied to clipboard ✓' : 'Copy summary', icon: '📋', run: () => navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600) }).catch(() => {}) },
-    { label: 'Email to parent', icon: '✉️', run: () => { window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`); onClose() } },
+    { label: 'Email it', icon: '✉️', run: () => { window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`); onClose() } },
     { label: 'Share on WhatsApp', icon: '🟢', run: () => { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); onClose() } },
   ]
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, fontFamily: FONT, padding: 16 }}>
       <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16, width: 340, maxWidth: '100%' }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 4 }}>Share with parent</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 4 }}>Share this summary</div>
         <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 12 }}>The coach note stays private — only the lesson detail is shared.</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {opts.map(o => (

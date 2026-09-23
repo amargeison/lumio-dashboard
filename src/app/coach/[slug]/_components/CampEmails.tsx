@@ -456,7 +456,7 @@ function EmailStudio({
               <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55 }}>
                 Edit it and save, and <strong style={{ color: T.text2 }}>your version is what goes out</strong> —
                 Lumio Coach is not asked again for this email on this camp. The greeting, sign-off, map link and
-                any balance button are still added per family, so one saved version works for everybody.
+                any balance button are still added per player, so one saved version works for everybody.
               </div>
 
               <Field T={T} label="Subject">

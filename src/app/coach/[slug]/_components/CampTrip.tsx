@@ -49,7 +49,7 @@ const GROUPS: { key: keyof Trip; title: string; hint: string; fields: [string, s
   ] },
   { key: 'travel', title: 'Getting there', hint: 'The part that generates the most messages.', fields: [
     ['airport', 'Airport', 'Faro (FAO), 25 minutes from the resort'],
-    ['flights', 'Flights', 'Booked separately by each family / included'],
+    ['flights', 'Flights', 'Booked separately by each player / included'],
     ['transfers', 'Transfers', 'Minibus meets the 14:05 arrival'],
     ['arrival', 'Arriving', 'Any time on the Sunday'],
     ['departure', 'Leaving', 'Check out 10am, transfer at 11'],
@@ -197,7 +197,7 @@ export function CampTrip({ T, accent, camp, onSave }: {
             {busy || 'Drop in your joining instructions'}
           </div>
           <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>
-            PDF, Word, spreadsheet, or a photo of it. Anything you already send families.
+            PDF, Word, spreadsheet, or a photo of it. Anything you already send players.
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>

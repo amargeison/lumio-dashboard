@@ -17,7 +17,7 @@ export const AUDIENCES: { id: Audience; label: string; blurb: string }[] = [
   { id: 'adult', label: 'Adults',
     blurb: 'Everyone is written to directly. No parent or child language anywhere.' },
   { id: 'mixed', label: 'Both',
-    blurb: 'A family week or an open camp. Each person’s own age decides how they are addressed.' },
+    blurb: 'Juniors and adults on the same camp. Each person’s own age decides how they are addressed.' },
 ]
 
 /** The age at which somebody is written to directly rather than through a parent. */

@@ -57,7 +57,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'Share with parent sends it; Export PDF prints it.',
     ],
     worth: [
-      'The summary is the single thing families value most — it is the proof the money is doing something.',
+      'The summary is the single thing players and parents value most — it is the proof the money is doing something.',
       'Next session focus feeds straight into the next plan, so the work carries forward.',
       'Record the lesson on your phone and the write-up does itself.',
     ],
@@ -85,7 +85,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'Choose in Settings whether you supply the rewards yourself or use Lumio’s kit.',
     ],
     worth: [
-      'This is a second income as much as a reward system — families fund the journey.',
+      'This is a second income as much as a reward system — parents fund the junior journey.',
       'It is optional: switch the module off and the rest of the portal carries on without it.',
       'Grading happens in Player Development. This page only reads it, so the two can never disagree.',
     ],
@@ -100,7 +100,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
     ],
     worth: [
       'Free-slot suggestions honour your Lumio diary AND your connected calendar, so you cannot double-book a dentist.',
-      'A booking sends the confirmation, adds the calendar link and tells the family in their app.',
+      'A booking sends the confirmation, adds the calendar link and tells the player in their app.',
       'Bookable hours and the gap you want between lessons come from Settings.',
     ],
   },
@@ -113,7 +113,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'Request a court sends a pre-written email to that venue’s contact.',
     ],
     worth: [
-      'Court names on bookings match venues here — that is how a family gets the right address and map link.',
+      'Court names on bookings match venues here — that is how a player gets the right address and map link.',
       'Coaches based here comes from the assignment on the Coaches page, not from a name typed twice.',
     ],
   },
@@ -123,12 +123,12 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'Create the camp with dates and a price, then work across the tabs.',
       'Coaches says who is travelling — it drives the ratio and the camp message group.',
       'Attendees is your rooming and payment list.',
-      'Trip hub is what families see in their app: flights, hotel, what to bring, who to ring.',
+      'Trip hub is what players see in their app: flights, hotel, what to bring, who to ring.',
     ],
     worth: [
       'Camp days block your calendar automatically, so nobody books a lesson while you are in Spain.',
       'A camp with dates now appears in your own Google/Outlook/iCloud calendar.',
-      'Messaging the camp reaches every family and every coach on it, in one thread.',
+      'Messaging the camp reaches every player and every coach on it, in one thread.',
     ],
   },
   roster: {
@@ -136,7 +136,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
     how: [
       'Add a player once — everything else in the portal refers back to this record.',
       'Open a card for contact details, consents, medical notes and their history.',
-      'Welcome pack prints a branded starter sheet for a new family.',
+      'Welcome pack prints a branded starter sheet for a new player.',
       'The photo, age and parent email matter: they decide who gets emailed and what the app shows.',
     ],
     worth: [
@@ -145,7 +145,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
     ],
   },
   messages: {
-    what: 'Every conversation with your players and families, in one place.',
+    what: 'Every conversation with your players — and, for juniors, their parents — in one place.',
     how: [
       'Send a message walks you through who, how and what — then Send as written, or let Lumio Coach tidy it.',
       'Replies from the app land here as a thread per person.',
@@ -153,7 +153,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'React to a message with an emoji to close it off without typing.',
     ],
     worth: [
-      'In-app is the channel families actually read, and it cannot bounce.',
+      'In-app is the channel players actually read, and it cannot bounce.',
       'Email sends from your own mailbox once it is connected, so a parent recognises the sender.',
     ],
   },
@@ -163,7 +163,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
       'Record on your phone, or upload a file you already have.',
       'Pick the player first — that is where the summary lands.',
       'Recorded in sections? Upload them all at once; they become one summary.',
-      'Confirm the clips you want shared before the family sees them.',
+      'Confirm the clips you want shared before the player sees them.',
     ],
     worth: [
       'The AI reads what you SAID, so the summary is your coaching, not a template.',
@@ -227,7 +227,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
     how: [
       'Start with your details and your home venue.',
       'Connect your mailbox and calendar — that is what makes emails and free slots real.',
-      'Turn modules on or off; anything off disappears for you and for families.',
+      'Turn modules on or off; anything off disappears for you and for your players.',
       'Section toggles let you hide parts of a page you never use.',
     ],
     worth: [

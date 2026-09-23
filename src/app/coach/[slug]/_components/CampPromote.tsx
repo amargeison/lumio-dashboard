@@ -94,7 +94,7 @@ export function CampPromote({ T, accent, campId, campName, players }: {
     if (!testOnly) {
       const n = picked.size
       if (!n) { setErr('Nobody is selected.'); return }
-      if (!confirm(`Send this to ${n} ${n === 1 ? 'family' : 'families'}? It goes out immediately and cannot be recalled.`)) return
+      if (!confirm(`Send this to ${n} ${n === 1 ? 'person' : 'people'}? It goes out immediately and cannot be recalled.`)) return
     }
     setSending(true); setErr(''); setMsg('')
     try {
@@ -106,7 +106,7 @@ export function CampPromote({ T, accent, campId, campName, players }: {
       if (!res.ok) throw new Error(d.error || 'Could not send')
       setMsg(testOnly
         ? `Test sent to ${d.to}. Check it looks right before you send it to anyone else.`
-        : `Sent to ${d.sent} ${d.sent === 1 ? 'family' : 'families'}${d.failed ? ` · ${d.failed} failed` : ''}${d.dropped ? ` · ${d.dropped} skipped (not on your roster)` : ''}.`)
+        : `Sent to ${d.sent} ${d.sent === 1 ? 'person' : 'people'}${d.failed ? ` · ${d.failed} failed` : ''}${d.dropped ? ` · ${d.dropped} skipped (not on your roster)` : ''}.`)
     } catch (e) { setErr(e instanceof Error ? e.message : 'Could not send') }
     finally { setSending(false) }
   }
@@ -162,7 +162,7 @@ export function CampPromote({ T, accent, campId, campName, players }: {
         <textarea value={bodyText} onChange={e => setBodyText(e.target.value)} rows={9}
           style={{ ...inp, marginTop: 4, resize: 'vertical', lineHeight: 1.6 }} />
         <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>
-          Each family gets their own copy, addressed to them by name — never a group email. Your logo, the greeting and your sign-off are added automatically.
+          Everyone gets their own copy, addressed to them by name — never a group email. Your logo, the greeting and your sign-off are added automatically.
         </div>
 
         <div style={{ ...lbl, marginTop: 12 }}>The line that carries the link</div>
@@ -201,7 +201,7 @@ export function CampPromote({ T, accent, campId, campName, players }: {
           <button onClick={() => send(true)} disabled={sending} style={ghost}>Send a test to me</button>
           <button onClick={() => send(false)} disabled={sending || picked.size === 0}
             style={{ appearance: 'none', border: 0, background: picked.size ? accent.hex : T.hover, color: picked.size ? T.btnText : T.text3, borderRadius: 9, padding: '8px 16px', fontSize: 12.5, fontWeight: 700, cursor: sending || !picked.size ? 'default' : 'pointer', fontFamily: FONT }}>
-            {sending ? 'Sending…' : `Send to ${picked.size} ${picked.size === 1 ? 'family' : 'families'}`}
+            {sending ? 'Sending…' : `Send to ${picked.size} ${picked.size === 1 ? 'person' : 'people'}`}
           </button>
         </div>
       </div>

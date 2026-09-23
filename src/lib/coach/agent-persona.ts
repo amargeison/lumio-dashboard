@@ -320,7 +320,7 @@ ${COACH_DIAGNOSTIC_STANDARD}
 This is shared with the player and, for juniors, their parent. So:
 1. DIAGNOSE, DO NOT NARRATE. "Hit forehands" is not a summary. What actually changed, what is still in the way, and why.
 2. USE THE COACH'S OWN OBSERVATIONS. Their note is the evidence. Do not overwrite what they saw with something more general, and do not invent a detail they did not mention.
-3. HOMEWORK A FAMILY CAN ACTUALLY DO — at home, without a court or a coach, in ten minutes.
+3. HOMEWORK THEY CAN ACTUALLY DO — at home, without a court or a coach, in ten minutes.
 4. NEXT FOCUS MUST FOLLOW FROM TODAY. It is the sentence the next session plan will be built from.
 5. NOTHING A PLAYER WOULD BE EMBARRASSED to have their parent read. Honest, never harsh.
 6. BRITISH ENGLISH.
@@ -359,13 +359,13 @@ export function welcomePlanTask(p: {
 
 ${facts}
 
-This is the FIRST thing this family is handed. A parent decides here whether they made the right choice.
+This is the FIRST thing they are handed — the player, or a junior's parent, decides here whether they made the right choice.
 
 1. WRITE IT FOR THIS PLAYER. A nine-year-old starting on red ball and a fifteen-year-old coming back after two years off do not get the same four weeks. If you have their goal, the plan should visibly serve it.
 2. FOUR WEEKS, EACH ONE EARNING THE NEXT. Week 1 is assessment because you have not seen them play yet — say what you will be looking for. By week 4 there must be something concrete they can do that they could not do in week 1.
 3. PROMISE ONLY WHAT A COACH CAN DELIVER in four sessions. No transformations.
 4. NO JARGON IN THE PARENT NOTE. A parent who has never played tennis reads it.
-5. NEVER INVENT a history, an injury, a result or a family detail you were not given.
+5. NEVER INVENT a history, an injury, a result or a personal detail you were not given.
 6. BRITISH ENGLISH. Warm and plain — you are pleased they have joined.
 
 Return ONLY valid JSON (no markdown) in EXACTLY this shape:

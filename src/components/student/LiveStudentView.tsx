@@ -628,7 +628,7 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
 
       {!!camp && (
         <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, marginBottom: 10 }}>
-          Everyone on {camp.name} sees this — the families going and the coaches with them.
+          Everyone on {camp.name} sees this — the players going and the coaches with them.
         </div>
       )}
 
@@ -721,9 +721,9 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
 
       {/* ── The coach's preview ──────────────────────────────────────────────
           A preview that hides the box, the emoji button and the send button
-          does not show the coach what the family can do — which is the only
+          does not show the coach what the player can do — which is the only
           reason to look at this page. So the whole composer is drawn, and it is
-          dead on purpose: sending from here would post a message AS the family,
+          dead on purpose: sending from here would post a message AS the player,
           and a coach writing to themselves in a parent's name is not a feature.
           Reply, forward and reactions work the same way — visible, inert. */}
       {!onSend && (
@@ -950,7 +950,7 @@ function NextSessionCard({ T, next, first, adult }: {
         )}
 
         {/* What we'll cover — the headline, and nothing else.
-            A family wants to know what the session is FOR. The phase-by-phase
+            A player wants to know what the session is FOR. The phase-by-phase
             run-sheet is the coach's working document; printing it here turned a
             one-line answer into a wall of text nobody read. */}
         {!!plan && !!(plan.focus || plan.title) && (

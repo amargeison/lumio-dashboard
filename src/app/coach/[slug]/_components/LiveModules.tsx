@@ -266,7 +266,7 @@ export const BOOKINGS_CONFIG: ModuleConfig = {
 
 export const LESSONS_CONFIG: ModuleConfig = {
   table: 'coach_sessions', title: 'Lesson Summaries', singular: 'Lesson summary',
-  blurb: 'What you covered, the key takeaways and the homework — ready to share with players and parents.',
+  blurb: 'What you covered, the key takeaways and the homework — ready to share with the player, or a junior\u2019s parent.',
   fields: [
     { key: 'player_name', label: 'Player', type: 'text', required: true },
     { key: 'session_date', label: 'Date', type: 'date' },

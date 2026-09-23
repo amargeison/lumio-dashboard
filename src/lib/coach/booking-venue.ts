@@ -28,7 +28,7 @@ export function matchVenue<T extends VenueRow>(venues: T[] | null | undefined, c
 }
 
 /** A map link for an address, or null. Deliberately the universal Google Maps
-    search URL rather than a native scheme: it opens in whatever the family
+    search URL rather than a native scheme: it opens in whatever the player
     already uses, on a phone or a laptop, without an app install. */
 export function venueMapUrl(v: { name?: string | null; address?: string | null } | null | undefined): string | null {
   const q = String(v?.address || '').trim() || String(v?.name || '').trim()

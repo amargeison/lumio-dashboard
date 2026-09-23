@@ -33,7 +33,7 @@ export type PresetRecipient = { name: string; role?: string; email?: string; pho
 // phones use the Ofcom drama range (07700 900xxx) so nothing reaches a real
 // person while the mailto / sms channels still open the device apps.
 const TEAM = [
-  { name: 'Junior Squad parents', role: 'Group · 6 families', icon: '👨‍👩‍👧', email: '', phone: '' },
+  { name: 'Junior Squad parents', role: 'Group · 6 players', icon: '👨‍👩‍👧', email: '', phone: '' },
   { name: 'Grace Okafor', role: 'Parent · Tom', icon: '📋', email: 'grace.okafor@example.com', phone: '+44 7700 900812' },
   { name: 'Lily Chen', role: 'Parent · Mia', icon: '📋', email: 'lily.chen@example.com', phone: '+44 7700 900145' },
   { name: 'Riverside Desk', role: 'Venue', icon: '🏟️', email: 'desk@riversidetennis.example', phone: '+44 7700 900400' },

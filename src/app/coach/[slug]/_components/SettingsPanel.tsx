@@ -504,7 +504,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: s.privateRate ? `Private £${s.privateRate}/hr · take payments` : 'Set your hourly rate · take payments' },
     { id: 'belts',       g: 'Coaching',   icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
     { id: 'rewards',     g: 'Coaching',   icon: 'flag',      t: 'Effort & Rewards',    d: `Leaderboard ${rewards.leaderboard ? 'on' : 'off'} · watch consent default ${rewards.watchConsentDefault ? 'on' : 'off'}` },
-    { id: 'sharing',     g: 'Coaching',   icon: 'megaphone', t: 'Parent sharing',      d: `Shares include: ${sharingList}` },
+    { id: 'sharing',     g: 'Coaching',   icon: 'megaphone', t: 'Sharing a summary',      d: `Shares include: ${sharingList}` },
     { id: 'gdpr',        g: 'People & compliance', icon: 'shield', t: 'Players & data (GDPR)', d: `Retention ${gdpr.retentionYears}y · DPA ${gdpr.dpaAccepted ? 'accepted' : 'pending'}` },
     { id: 'staff',       g: 'People & compliance', icon: 'people', t: 'Staff & safeguarding',  d: `DSL ${staffCfg.dsl || 'not set'} · DBS reminders ${staffCfg.reminderDays}d` },
     { id: 'messaging',   g: 'People & compliance', icon: 'note',   t: 'Messaging',             d: `${[msg.email && 'Email', msg.text && 'Text', msg.inapp && 'In-app'].filter(Boolean).join(' · ') || 'No channels'}` },
@@ -733,7 +733,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       )}
 
       {open === 'sharing' && (
-        <Modal readOnly={demo} T={T} accent={accent} title="Parent sharing" sub="What's included when you share or export a lesson summary" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Sharing a summary" sub="What's included when you share or export a lesson summary" onClose={() => setOpen(null)}>
           <Toggle T={T} accent={accent} on={s.shareHomework} onChange={v => setSettings({ shareHomework: v })} label="Include homework" desc="The practice set for the week" />
           <Toggle T={T} accent={accent} on={s.shareNextFocus} onChange={v => setSettings({ shareNextFocus: v })} label="Include next session focus" desc="What you'll work on next" />
           <Toggle T={T} accent={accent} on={s.shareCoachNote} onChange={v => setSettings({ shareCoachNote: v })} label="Include private coach note" desc="Off by default — usually for your eyes only" />
@@ -845,7 +845,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
               onBlur={e => { const v = e.target.value.trim(); if (v && v !== realProfile.display_name) saveCoachProfile({ display_name: v }).then(() => realProfile.reload()).catch(() => {}) }} />
           </Field>
           <Field T={T} label="Role"><input style={input(T)} value={hp.role} onChange={e => setHeadProfile({ role: e.target.value })} /></Field>
-          <Field T={T} label="Accreditation" hint="Shown on your profile card and to families.">
+          <Field T={T} label="Accreditation" hint="Shown on your profile card and to your players.">
             <select style={{ ...input(T), cursor: 'pointer' }} value={hp.accreditation} onChange={e => setHeadProfile({ accreditation: e.target.value })}>
               {Array.from(new Set([hp.accreditation, ...ACCREDITATIONS].filter(Boolean))).map(a => <option key={a} value={a}>{a}</option>)}
             </select>
