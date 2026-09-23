@@ -53,6 +53,11 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
   // booked on it PLUS the coaches travelling with it, and those coaches are not
   // players at all. So it is its own audience rather than a filter over the list.
   const [campId, setCampId] = useState<string | null>(null)
+  // Who on the camp this is going to. null = everyone, which is the common case
+  // and stays one tap. A named subset exists because "ten of the forty fancy
+  // going out tonight" is a real message, and sending it to all forty is how
+  // people learn to ignore the camp thread.
+  const [campOnly, setCampOnly] = useState<string[] | null>(null)
   const [customPerson, setCustomPerson] = useState('')
   const [channels, setChannels] = useState<string[]>(['internal'])
   const [messageText, setMessageText] = useState(init?.body ? `Re your message:\n${init.body}` : '')
@@ -116,7 +121,15 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
     })
   })()
 
-  const recipients: Recipient[] = campId ? campRecipients : [
+  // A subset means individual messages. The camp THREAD is deliberately left
+  // out of it (see the send call below): posting "who's coming for dinner" into
+  // the group chat is exactly the spam this avoids.
+  const campChosen: Recipient[] = campOnly
+    ? campRecipients.filter(r => campOnly.includes(r.name))
+    : campRecipients
+  const wholeCamp = !campOnly || campChosen.length === campRecipients.length
+
+  const recipients: Recipient[] = campId ? campChosen : [
     ...picked.map(p => ({ name: p.name, role: p.group || 'Player', email: emailOf(p), phone: phoneOf(p) })),
     ...(customPerson.trim() ? [{ name: customPerson.trim(), role: 'Contact', email: '', phone: '' }] : []),
   ]
@@ -200,7 +213,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
           channels: sendChannels,
           // A camp message also lands in the camp's shared thread, which is what
           // the families and the coaches on the trip actually read.
-          campId: campId || undefined,
+          campId: campId && wholeCamp ? campId : undefined,
           subject: `${isUrgent ? '[URGENT] ' : ''}Message from ${coachName}`,
           body: aiDraft,
           ccCoach: s.ccCoachOnEmail,
@@ -267,7 +280,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
                 const nCoaches = Array.isArray(c.coach_ids) ? c.coach_ids.length : 0
                 const where = [c.location, c.region].filter(Boolean).join(', ')
                 return (
-                  <button key={c.id} onClick={() => { setCampId(on ? null : c.id); setBroadcast(false); setSelectedNames([]) }}
+                  <button key={c.id} onClick={() => { setCampId(on ? null : c.id); setCampOnly(null); setBroadcast(false); setSelectedNames([]) }}
                     style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12, padding: 12, textAlign: 'left', cursor: 'pointer', ...card(on) }}>
                     <span style={{ fontSize: 18 }}>🏕</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -280,6 +293,66 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
                   </button>
                 )
               })}
+
+              {/* ── Who on the camp ──────────────────────────────────────────
+                  Everyone by default — that is what "message the camp" means.
+                  Open it up and you can send to the three coaches, or to the
+                  ten players who wanted to go out, without the other thirty
+                  getting a message that is nothing to do with them. */}
+              {!!campId && campRecipients.length > 0 && (
+                <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: T.text }}>
+                      {wholeCamp ? `Everyone on the camp · ${campRecipients.length}` : `${campChosen.length} of ${campRecipients.length} people`}
+                    </span>
+                    <span style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {[
+                        { label: 'Everyone', pick: null as string[] | null },
+                        { label: 'Coaches', pick: campRecipients.filter(r => r.role === 'Camp · coach').map(r => r.name) },
+                        { label: 'Players', pick: campRecipients.filter(r => r.role !== 'Camp · coach').map(r => r.name) },
+                      ].map(o => {
+                        const active = o.pick === null ? wholeCamp
+                          : !!campOnly && campOnly.length === o.pick.length && o.pick.every(n => campOnly.includes(n))
+                        return (
+                          <button key={o.label} onClick={() => setCampOnly(o.pick)}
+                            style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 11, fontWeight: active ? 700 : 500, padding: '4px 10px', borderRadius: 999, border: `1px solid ${active ? accent.hex : T.border}`, background: active ? accent.dim : 'transparent', color: active ? accent.hex : T.text2 }}>
+                            {o.label}
+                          </button>
+                        )
+                      })}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: 6, marginTop: 10, maxHeight: 220, overflowY: 'auto' }}>
+                    {campRecipients.map(r => {
+                      const inSend = !campOnly || campOnly.includes(r.name)
+                      return (
+                        <button key={r.name}
+                          onClick={() => {
+                            const base = campOnly ?? campRecipients.map(x => x.name)
+                            const next = inSend ? base.filter(n => n !== r.name) : [...base, r.name]
+                            // Back to everyone rather than a list that happens to
+                            // hold everyone — so the camp thread gets it again.
+                            setCampOnly(next.length === campRecipients.length ? null : next)
+                          }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left', appearance: 'none', cursor: 'pointer', fontFamily: FONT, background: inSend ? accent.dim : 'transparent', border: `1px solid ${inSend ? accent.border : T.border}`, borderRadius: 9, padding: '7px 9px' }}>
+                          <span style={{ width: 15, height: 15, borderRadius: 4, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 800, background: inSend ? accent.hex : 'transparent', border: `1px solid ${inSend ? accent.hex : T.border}`, color: T.btnText }}>{inSend ? '✓' : ''}</span>
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={{ display: 'block', fontSize: 12, color: T.text, fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.name}</span>
+                            <span style={{ display: 'block', fontSize: 9.5, color: T.text3 }}>{r.role === 'Camp · coach' ? 'Coach' : 'Player'}{r.email ? '' : ' · no email'}</span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div style={{ fontSize: 10.5, color: T.text3, marginTop: 9, lineHeight: 1.5 }}>
+                    {wholeCamp
+                      ? 'Goes to everyone individually and into the camp conversation in their app.'
+                      : 'Goes only to the people ticked — it does not appear in the camp conversation.'}
+                  </div>
+                </div>
+              )}
 
               {!broadcast && !campId && (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, maxHeight: 280, overflowY: 'auto' }}>
