@@ -24,7 +24,7 @@ export type ThemeTokens = {
   isDark:     boolean
 }
 
-export const THEMES: Record<'dark' | 'light', ThemeTokens> = {
+export const THEMES: Record<'dark' | 'light' | 'white', ThemeTokens> = {
   dark: {
     name: 'Club Dark',
     bg:        '#0B0E14',
@@ -60,6 +60,28 @@ export const THEMES: Record<'dark' | 'light', ThemeTokens> = {
     warn:      '#B27A2E',
     hover:     'rgba(20,24,33,0.035)',
     cardShadow:'0 1px 0 rgba(255,255,255,0.5) inset, 0 4px 14px -10px rgba(20,24,33,0.10)',
+    btnText:   '#FFFFFF',
+    isDark:    false,
+  },
+  // Pure white, for clubs whose own brand is white — a logo designed on white
+  // sits in a box on the warm Light background and looks pasted on. Cooler
+  // neutrals than Light so it reads as clean rather than creamy.
+  white: {
+    name: 'Club White',
+    bg:        '#F6F7F9',
+    panel:     '#FFFFFF',
+    panel2:    '#FAFBFC',
+    border:    'rgba(15,23,42,0.08)',
+    borderHi:  'rgba(15,23,42,0.16)',
+    text:      '#0F172A',
+    text2:     'rgba(15,23,42,0.64)',
+    text3:     'rgba(15,23,42,0.44)',
+    text4:     'rgba(15,23,42,0.20)',
+    good:      '#2F8A5F',
+    bad:       '#B84A4A',
+    warn:      '#B7791F',
+    hover:     'rgba(15,23,42,0.035)',
+    cardShadow:'0 1px 2px rgba(15,23,42,0.05), 0 6px 18px -12px rgba(15,23,42,0.12)',
     btnText:   '#FFFFFF',
     isDark:    false,
   },
