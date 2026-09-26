@@ -599,7 +599,7 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
   // history behind a name they did not pick.
   const source = camp ? camp.messages : (messages || []).filter(m => !m.camp_id)
   const campChannels = camp
-    ? Array.from(new Set(camp.messages.map(m => m.channel).filter(Boolean) as string[])).sort()
+    ? Array.from(new Set([...(camp.channels ?? []), ...(camp.messages.map(m => m.channel).filter(Boolean) as string[])])).sort()
     : []
   const inChannel = chan ? source.filter(m => m.channel === chan) : source
   const ordered = [...inChannel].sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')))

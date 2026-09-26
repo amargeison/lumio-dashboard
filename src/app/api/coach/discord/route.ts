@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { sessionCoachId, serviceClient, publicOrigin } from '@/lib/coach/oauth'
 import { discordConfigured, botInviteUrl, listGuilds, listChannels } from '@/lib/coach/discord'
 import { syncCamp, type CampChannel } from '@/lib/coach/discord-sync'
 
@@ -20,6 +20,14 @@ async function ownCamp(coachId: string, campId: string) {
   return data as { id: string; name: string } | null
 }
 
+// The servers this coach added the bot to — and nobody else's. The bot sits in
+// every academy's server; listing all of them to every coach would let one club
+// link another's channels and read their parents' conversation.
+async function ownGuildIds(coachId: string): Promise<Set<string>> {
+  const { data } = await serviceClient().from('coach_discord_guilds').select('guild_id').eq('coach_id', coachId)
+  return new Set(((data as { guild_id: string }[] | null) ?? []).map(g => g.guild_id))
+}
+
 async function linked(coachId: string, campId: string) {
   const { data } = await serviceClient().from('coach_camp_channels')
     .select('id, coach_id, camp_id, guild_id, channel_id, channel_name, last_message_id, synced_at, mirror')
@@ -36,14 +44,20 @@ export async function GET(req: NextRequest) {
   const guildId = req.nextUrl.searchParams.get('guildId')
   const rows = campId ? await linked(coachId, campId) : []
 
-  const guilds = await listGuilds()
-  // Only reach for channels once a server is chosen — listing every channel of
-  // every server the bot has joined is slow and tells the coach nothing.
-  const channels = guildId ? await listChannels(guildId) : []
+  const mine = await ownGuildIds(coachId)
+  const guilds = (await listGuilds()).filter(g => mine.has(g.id))
+  // Only reach for channels once a server is chosen — and only a server that is
+  // this coach's own.
+  const channels = guildId && mine.has(guildId) ? await listChannels(guildId) : []
 
-  return NextResponse.json({
+  // The invite goes out with a one-time state and comes back through our
+  // callback, which is what ties the server to this coach.
+  const state = crypto.randomUUID()
+  const origin = publicOrigin(req.nextUrl.origin)
+  const ret = req.nextUrl.searchParams.get('return') || '/'
+  const res = NextResponse.json({
     configured: true,
-    invite: botInviteUrl(),
+    invite: botInviteUrl(`${origin}/api/coach/discord/callback`, state),
     guilds,
     channels,
     linked: rows.map(r => ({
@@ -51,6 +65,10 @@ export async function GET(req: NextRequest) {
       syncedAt: r.synced_at, mirror: r.mirror,
     })),
   })
+  const opts = { httpOnly: true, secure: req.nextUrl.protocol === 'https:', sameSite: 'lax' as const, maxAge: 900, path: '/' }
+  res.cookies.set('lumio_discord_state', state, opts)
+  res.cookies.set('lumio_discord_return', ret, opts)
+  return res
 }
 
 export async function POST(req: NextRequest) {
@@ -59,6 +77,8 @@ export async function POST(req: NextRequest) {
 
   const b = (await req.json().catch(() => ({}))) as {
     campId?: string; guildId?: string; channelId?: string; channelName?: string
+    /** Link several at once — the "Add all channels" button. */
+    channels?: { id: string; name: string }[]
     mirror?: boolean; sync?: boolean
   }
   if (!b.campId) return NextResponse.json({ error: 'campId is required' }, { status: 400 })
@@ -67,10 +87,25 @@ export async function POST(req: NextRequest) {
 
   const db = serviceClient()
 
-  // Link a new channel.
-  if (b.channelId && b.mirror === undefined) {
+  // Link one channel, or several.
+  const toLink = b.channels?.length
+    ? b.channels
+    : (b.channelId && b.mirror === undefined ? [{ id: b.channelId, name: b.channelName ?? '' }] : [])
+  if (toLink.length) {
+    // Only from a server this coach owns, and only channels that really are in
+    // it — both checked against Discord, not taken from the request.
+    const mine = await ownGuildIds(coachId)
+    if (!b.guildId || !mine.has(b.guildId)) {
+      return NextResponse.json({ error: 'That Discord server isn’t connected to your Lumio account. Add the bot from this page first.' }, { status: 403 })
+    }
+    const real = new Set((await listChannels(b.guildId)).map(c => c.id))
+    if (toLink.some(c => !real.has(c.id))) {
+      return NextResponse.json({ error: 'That channel isn’t in your server, or the bot can’t see it.' }, { status: 400 })
+    }
     const existing = await linked(coachId, b.campId)
-    if (existing.some(c => c.channel_id === b.channelId)) {
+    const have = new Set(existing.map(c => c.channel_id))
+    const fresh = toLink.filter(c => !have.has(c.id))
+    if (!fresh.length && !b.channels) {
       return NextResponse.json({ error: 'That channel is already linked to this camp.' }, { status: 400 })
     }
     // Start from now, not from the beginning of time: a camp thread should open
@@ -78,15 +113,19 @@ export async function POST(req: NextRequest) {
     // A Discord snowflake is (ms since 2015-01-01) shifted left 22 bits, built
     // by multiplication because the build target has no BigInt literals.
     const from = (BigInt(Date.now() - 1420070400000) * BigInt(4194304)).toString()
-    const { error } = await db.from('coach_camp_channels').insert({
-      coach_id: coachId, camp_id: b.campId, guild_id: b.guildId ?? null,
-      channel_id: b.channelId, channel_name: b.channelName ?? null,
-      last_message_id: from,
-      // The first channel a camp links is the one Lumio posts back to; later
-      // ones are read-only until the coach says otherwise.
-      mirror: existing.length === 0,
-    })
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (fresh.length) {
+      const { error } = await db.from('coach_camp_channels').insert(fresh.map((c, i) => ({
+        coach_id: coachId, camp_id: b.campId, guild_id: b.guildId ?? null,
+        channel_id: c.id, channel_name: c.name || null,
+        last_message_id: from,
+        // The camp's default destination for "send to the whole camp" is the
+        // first channel it ever links. The rest still read in, and still take
+        // replies aimed at them — they are just not where a camp-wide message
+        // goes by default.
+        mirror: existing.length === 0 && i === 0,
+      })))
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    }
   }
 
   // Toggle the mirror on one channel.

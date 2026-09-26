@@ -33,11 +33,36 @@ export function discordConfigured(): boolean {
 // Read Message History (65536). No member management, no message deletion, no
 // role changes — a coach handing an unknown app the keys to their community
 // should be able to see from the consent screen that it cannot do damage.
-export function botInviteUrl(): string | null {
+//
+// It comes back through our own callback with a one-time state, which is how a
+// server gets tied to the coach who added the bot to it. Without that, one bot
+// in every academy's server would show every academy's server to every coach.
+export function botInviteUrl(redirectUri?: string, state?: string): string | null {
   const id = process.env.DISCORD_CLIENT_ID
   if (!id) return null
   const params = new URLSearchParams({ client_id: id, scope: 'bot', permissions: '68608' })
+  if (redirectUri && state) {
+    params.set('response_type', 'code')
+    params.set('redirect_uri', redirectUri)
+    params.set('state', state)
+  }
   return `https://discord.com/oauth2/authorize?${params.toString()}`
+}
+
+// Swap the invite's one-time code for Discord's own account of which server
+// the bot was just added to. The guild id arriving on the redirect URL is not
+// trusted — anyone can edit a URL — only this server-to-server answer is.
+export async function exchangeInviteCode(code: string, redirectUri: string): Promise<{ id: string; name: string } | null> {
+  const id = process.env.DISCORD_CLIENT_ID
+  const secret = process.env.DISCORD_CLIENT_SECRET
+  if (!id || !secret) return null
+  const res = await fetch('https://discord.com/api/v10/oauth2/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: id, client_secret: secret, grant_type: 'authorization_code', code, redirect_uri: redirectUri }),
+  })
+  const j = await res.json().catch(() => ({})) as { guild?: { id?: string; name?: string } }
+  return res.ok && j.guild?.id ? { id: j.guild.id, name: j.guild.name || 'Discord server' } : null
 }
 
 type FetchResult<T> = { ok: true; data: T } | { ok: false; status: number; detail: string }

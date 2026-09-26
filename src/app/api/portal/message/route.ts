@@ -79,15 +79,17 @@ export async function POST(req: NextRequest) {
   //
   // A parent reading #faqs and typing a reply means it to appear in #faqs, not
   // wherever the coach happened to tick first. So the channel they are looking
-  // at comes with the message; if it is not linked, or the coach has switched
-  // off posting to it, it falls back to whichever channels are mirrored.
+  // at comes with the message; with no channel chosen ("All"), it goes to the
+  // camp's default channels — the ones marked "Post Lumio messages here".
   let targets: { channel_id: string; channel_name: string | null }[] = []
   if (campId) {
     const { data: chans } = await db.from('coach_camp_channels')
       .select('channel_id, channel_name, mirror').eq('coach_id', m.academyId).eq('camp_id', campId)
     const all = (chans as { channel_id: string; channel_name: string | null; mirror: boolean }[] | null) ?? []
     const wantedChannel = clean(b.channel, 100)
-    const picked = wantedChannel ? all.find(c => c.channel_name === wantedChannel && c.mirror) : null
+    // The channel they were reading wins even when it is not one of the camp's
+    // defaults — they chose it by being in it.
+    const picked = wantedChannel ? all.find(c => c.channel_name === wantedChannel) : null
     targets = picked ? [picked] : all.filter(c => c.mirror)
   }
   // Stamp the row only when there is one destination — a message that went to

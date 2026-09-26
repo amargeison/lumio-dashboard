@@ -243,7 +243,12 @@ export async function GET(req: NextRequest) {
       void _drop
       return { ...rest, channel: chan ?? null, ...(photos.length ? { photos } : {}) }
     }))
-    return { campId: String(c.id), name: String(c.name || 'Camp'), people: 0, messages: rows }
+        // Every linked channel, so each has a tab before anyone has posted in it.
+    const linkedNames = ((await safe(admin.from('coach_camp_channels')
+      .select('channel_name, created_at').eq('coach_id', me.academyId).eq('camp_id', c.id)
+      .order('created_at', { ascending: true }))) as { channel_name: string | null }[])
+      .map(x => x.channel_name).filter(Boolean) as string[]
+    return { campId: String(c.id), name: String(c.name || 'Camp'), people: 0, messages: rows, channels: linkedNames }
   }))
 
   return NextResponse.json({
