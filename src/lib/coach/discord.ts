@@ -11,7 +11,7 @@
 
 const API = 'https://discord.com/api/v10'
 
-export type DiscordChannel = { id: string; name: string; type: number; parentName?: string }
+export type DiscordChannel = { id: string; name: string; type: number; parentName?: string; guild_id?: string }
 export type DiscordGuild = { id: string; name: string; icon?: string | null }
 export type DiscordMessage = {
   id: string
