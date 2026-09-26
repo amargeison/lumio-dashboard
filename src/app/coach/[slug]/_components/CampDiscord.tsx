@@ -152,7 +152,11 @@ export function CampDiscord({ T, accent, campId, campName }: { T: ThemeTokens; a
         <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Add a channel</div>
         {s.guilds.length === 0 ? (
           <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>
-            Lumio’s bot isn’t in your Discord server yet.{' '}
+            {s.linked.length
+              // Channels are linked, so the bot WAS in the server. Saying it
+              // "isn't in your server yet" contradicts the list right above.
+              ? 'Your server isn’t showing — the bot may have been removed from it.'
+              : 'Lumio’s bot isn’t in your Discord server yet.'}{' '}
             {s.invite && <a href={s.invite} style={{ color: accent.hex, fontWeight: 700 }}>Add it to your server →</a>}
             <div style={{ fontSize: 11, color: T.text3, marginTop: 8, lineHeight: 1.6 }}>
               You need to be an admin of the server. The bot asks for three permissions only: see channels, read message

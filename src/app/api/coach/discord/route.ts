@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sessionCoachId, serviceClient, publicOrigin } from '@/lib/coach/oauth'
-import { discordConfigured, botInviteUrl, listGuilds, listChannels } from '@/lib/coach/discord'
+import { discordConfigured, botInviteUrl, listGuilds, listChannels, channelInfo } from '@/lib/coach/discord'
 import { syncCamp, type CampChannel } from '@/lib/coach/discord-sync'
 
 export const runtime = 'nodejs'
@@ -20,12 +20,49 @@ async function ownCamp(coachId: string, campId: string) {
   return data as { id: string; name: string } | null
 }
 
-// The servers this coach added the bot to — and nobody else's. The bot sits in
-// every academy's server; listing all of them to every coach would let one club
-// link another's channels and read their parents' conversation.
+// The servers this coach may see — and nobody else's.
+//
+// The bot sits in every academy's server; listing all of them to every coach
+// would let one club link another's channels and read their parents. So a
+// server shows only if it is recorded against this coach.
+//
+// "Recorded" has two routes in. The proper one is the invite callback. The
+// other is history: a server this coach was already linking channels from
+// before ownership existed. Without that second route every coach who set
+// Discord up before the ownership change lost their server from the list —
+// channels still syncing, but "the bot isn't in your server" on screen — which
+// is exactly what happened the first time this shipped. Those servers are
+// claimed on sight, unless another coach already owns them.
 async function ownGuildIds(coachId: string): Promise<Set<string>> {
-  const { data } = await serviceClient().from('coach_discord_guilds').select('guild_id').eq('coach_id', coachId)
-  return new Set(((data as { guild_id: string }[] | null) ?? []).map(g => g.guild_id))
+  const db = serviceClient()
+  const mine = new Set<string>()
+
+  const { data: owned, error: ownErr } = await db.from('coach_discord_guilds').select('guild_id').eq('coach_id', coachId)
+  for (const g of (owned as { guild_id: string }[] | null) ?? []) mine.add(g.guild_id)
+
+  // Servers behind channels this coach has already linked. Old links may have
+  // no server id stored; Discord can tell us which server a channel is in, and
+  // the row is repaired so this only has to be asked once.
+  const { data: links } = await db.from('coach_camp_channels').select('id, guild_id, channel_id').eq('coach_id', coachId)
+  const fromLinks = new Set<string>()
+  for (const l of (links as { id: string; guild_id: string | null; channel_id: string }[] | null) ?? []) {
+    let gid = l.guild_id
+    if (!gid) {
+      gid = (await channelInfo(l.channel_id))?.guild_id ?? null
+      if (gid) await db.from('coach_camp_channels').update({ guild_id: gid }).eq('id', l.id)
+    }
+    if (gid) fromLinks.add(gid)
+  }
+
+  for (const gid of fromLinks) {
+    if (mine.has(gid)) continue
+    if (ownErr) { mine.add(gid); continue }   // table not migrated yet — their own links are still theirs
+    const { data: other } = await db.from('coach_discord_guilds').select('coach_id').eq('guild_id', gid).maybeSingle()
+    if (other && (other as { coach_id: string }).coach_id !== coachId) continue   // someone else's server
+    if (!other) await db.from('coach_discord_guilds').insert({ coach_id: coachId, guild_id: gid })
+    mine.add(gid)
+  }
+  return mine
 }
 
 async function linked(coachId: string, campId: string) {
