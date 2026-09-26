@@ -16,6 +16,7 @@ import { campOrg, printParentBrief, printRunSheet, printPlayerReport, printCerti
 import { CampPromote } from './CampPromote'
 import { CampEmails } from './CampEmails'
 import { CampTrip } from './CampTrip'
+import { CampDiscord } from './CampDiscord'
 import { getSettings } from '../_lib/settings-store'
 import { stageWords } from '../_lib/stage-words'
 import { AUDIENCES, campAudience } from '@/lib/coach/camp-audience'
@@ -163,7 +164,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   }
 
   const booked = (c: Camp) => attendees.rows.filter(a => a.camp_id === c.id).length
-  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['coaches', `Coaches${Array.isArray(sel!.coach_ids) && (sel!.coach_ids as string[]).length ? ` · ${(sel!.coach_ids as string[]).length}` : ''}`], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['trip', 'Trip hub'], ['emails', 'Emails'], ['promote', 'Promote'], ['finance', 'Finance']]
+  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['coaches', `Coaches${Array.isArray(sel!.coach_ids) && (sel!.coach_ids as string[]).length ? ` · ${(sel!.coach_ids as string[]).length}` : ''}`], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['trip', 'Trip hub'], ['emails', 'Emails'], ['discord', 'Discord'], ['promote', 'Promote'], ['finance', 'Finance']]
 
   return (
     <div style={{ fontFamily: FONT }}>
@@ -251,6 +252,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
             link is what every announcement points at, so you set it up first.
             It used to live on Overview, where a coach reading camp facts had to
             scroll past his own public URL. */}
+        {tab === 'discord' && <CampDiscord T={T} accent={accent} campId={sel.id} campName={sel.name} />}
         {tab === 'promote' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <SignupPanel T={T} accent={accent} camp={sel} booked={campAttendees.length}

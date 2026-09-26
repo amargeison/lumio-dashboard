@@ -1,0 +1,168 @@
+'use client'
+
+// Camp → Discord. Links a camp to the channel its people already use.
+//
+// The camps that need this most are the ones that never adopted Lumio's own
+// thread, because the parents were already in a server asking what time the bus
+// leaves. Moving them is a losing argument; joining them is not. So: the bot
+// reads that channel into the camp thread, and anything sent from Lumio goes
+// back out to it.
+//
+// Nothing here is automatic. A coach picks the server, picks the channel, and
+// can unlink in one click — reading a community's conversation into another
+// product should never be something that happened to them.
+
+import { useCallback, useEffect, useState } from 'react'
+import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+
+type Guild = { id: string; name: string }
+type Channel = { id: string; name: string; parentName?: string }
+type Status = {
+  configured: boolean
+  invite: string | null
+  guilds: Guild[]
+  channels?: Channel[]
+  camp: { guildId: string | null; channelId: string | null; channelName: string | null; syncedAt: string | null; mirror: boolean } | null
+}
+
+export function CampDiscord({ T, accent, campId, campName }: { T: ThemeTokens; accent: AccentTokens; campId: string; campName: string }) {
+  const [s, setS] = useState<Status | null>(null)
+  const [guildId, setGuildId] = useState<string>('')
+  const [channels, setChannels] = useState<Channel[]>([])
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState('')
+  const [err, setErr] = useState('')
+
+  const load = useCallback(async (g?: string) => {
+    try {
+      const q = new URLSearchParams({ campId })
+      if (g) q.set('guildId', g)
+      const res = await fetch(`/api/coach/discord?${q.toString()}`)
+      if (!res.ok) return
+      const j: Status = await res.json()
+      setS(j)
+      if (j.channels) setChannels(j.channels)
+      if (!g && j.camp?.guildId) { setGuildId(j.camp.guildId); load(j.camp.guildId) }
+    } catch { /* offline */ }
+  }, [campId])
+  useEffect(() => { load() }, [load])
+
+  const post = async (body: Record<string, unknown>) => {
+    setBusy(true); setErr(''); setNote('')
+    try {
+      const res = await fetch('/api/coach/discord', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campId, ...body }),
+      })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j.error || 'That did not work')
+      if (j.error) setErr(j.error)
+      else setNote(j.added ? `Pulled in ${j.added} message${j.added === 1 ? '' : 's'}.` : 'Up to date — nothing new in that channel.')
+      load(guildId)
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Failed') }
+    setBusy(false)
+  }
+
+  const unlink = async () => {
+    setBusy(true); setErr('')
+    try { await fetch(`/api/coach/discord?campId=${campId}`, { method: 'DELETE' }); setNote('Unlinked. Messages already pulled in are still on the camp thread.'); load() }
+    catch { setErr('Could not unlink') }
+    setBusy(false)
+  }
+
+  const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }
+  const btn = (primary: boolean): React.CSSProperties => ({
+    appearance: 'none', cursor: busy ? 'default' : 'pointer', fontFamily: FONT, fontSize: 12.5, fontWeight: 700,
+    borderRadius: 9, padding: '8px 14px', opacity: busy ? 0.6 : 1,
+    border: primary ? 0 : `1px solid ${T.border}`, background: primary ? accent.hex : 'transparent', color: primary ? T.btnText : T.text2,
+  })
+  const select: React.CSSProperties = { background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, minWidth: 220 }
+
+  if (!s) return <div style={{ ...card, fontSize: 12.5, color: T.text3 }}>Checking Discord…</div>
+
+  if (!s.configured) return (
+    <div style={{ ...card, fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>
+      Discord isn’t set up on this server yet. It needs Lumio’s bot credentials in the environment —
+      once they’re there, this page lets you link {campName} to a channel.
+    </div>
+  )
+
+  const linked = !!s.camp?.channelId
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ ...card }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 20 }}>💬</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>
+              {linked ? `Linked to #${s.camp!.channelName || 'channel'}` : 'Bring this camp’s Discord in'}
+            </div>
+            <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2, lineHeight: 1.5 }}>
+              {linked
+                ? `Messages from that channel land in the ${campName} thread — in your inbox and in every player’s app. Anything you send to the camp goes back out to Discord.`
+                : 'Messages posted in your camp’s channel appear in the camp thread, and what you send from Lumio is posted back there.'}
+            </div>
+          </div>
+          {linked && <button onClick={unlink} disabled={busy} style={btn(false)}>Unlink</button>}
+        </div>
+        {linked && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}`, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, color: T.text3 }}>
+              {s.camp!.syncedAt ? `Last checked ${new Date(s.camp!.syncedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'Not synced yet'}
+            </span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: T.text2, cursor: 'pointer' }}>
+              <input type="checkbox" checked={s.camp!.mirror} onChange={e => post({ mirror: e.target.checked })} />
+              Send Lumio camp messages to Discord too
+            </label>
+            <button onClick={() => post({ sync: true })} disabled={busy} style={{ ...btn(true), marginLeft: 'auto' }}>
+              {busy ? 'Checking…' : 'Sync now'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Pick, or change, the channel. */}
+      <div style={card}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+          {linked ? 'Change channel' : 'Choose the channel'}
+        </div>
+        {s.guilds.length === 0 ? (
+          <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>
+            Lumio’s bot isn’t in your Discord server yet.{' '}
+            {s.invite && <a href={s.invite} target="_blank" rel="noopener noreferrer" style={{ color: accent.hex, fontWeight: 700 }}>Add it to your server →</a>}
+            <div style={{ fontSize: 11, color: T.text3, marginTop: 8, lineHeight: 1.6 }}>
+              You need to be an admin of the server. The bot asks for three permissions only: see channels, read message
+              history and send messages. Come back here afterwards and your server will be in the list.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+            <select value={guildId} onChange={e => { setGuildId(e.target.value); setChannels([]); load(e.target.value) }} style={select}>
+              <option value="">Select a server…</option>
+              {s.guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+            </select>
+            <select value={s.camp?.channelId || ''} disabled={!guildId || channels.length === 0}
+              onChange={e => {
+                const ch = channels.find(c => c.id === e.target.value)
+                if (ch) post({ guildId, channelId: ch.id, channelName: ch.name })
+              }} style={{ ...select, opacity: guildId ? 1 : 0.5 }}>
+              <option value="">{guildId ? (channels.length ? 'Select a channel…' : 'No channels the bot can see') : 'Pick a server first'}</option>
+              {channels.map(c => <option key={c.id} value={c.id}>{c.parentName ? `${c.parentName} / ` : ''}#{c.name}</option>)}
+            </select>
+            {s.invite && <a href={s.invite} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: T.text3 }}>Add to another server →</a>}
+          </div>
+        )}
+        <div style={{ fontSize: 11, color: T.text3, marginTop: 10, lineHeight: 1.6 }}>
+          Linking starts from now — the channel’s back catalogue isn’t imported. Photos posted in Discord are copied into
+          Lumio, because Discord’s own image links expire after about a day. Tell your group the channel is mirrored into
+          the app; people should know where what they write ends up.
+        </div>
+      </div>
+
+      {note && <div style={{ fontSize: 12, color: T.good, fontWeight: 600 }}>{note}</div>}
+      {err && <div style={{ fontSize: 12, color: T.warn, fontWeight: 600, lineHeight: 1.5 }}>{err}</div>}
+    </div>
+  )
+}

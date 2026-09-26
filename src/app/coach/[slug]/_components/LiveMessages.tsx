@@ -126,7 +126,7 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
                     {m.direction === 'in' && <div style={{ fontSize: 10.5, fontWeight: 700, color: T.text2, marginBottom: 3 }}>{m.from_name || sel.key}</div>}
                     {m.subject && <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, marginBottom: 4 }}>{m.subject}</div>}
                     <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.body}</div>
-                    <div style={{ fontSize: 10, color: T.text3, marginTop: 6 }}>{[m.direction === 'in' ? 'Received' : m.channels, m.status, fmtTime(m.created_at)].filter(Boolean).join(' · ')}</div>
+                    <div style={{ fontSize: 10, color: T.text3, marginTop: 6 }}>{[m.direction === 'in' ? (m.channels === 'discord' ? 'From Discord' : 'Received') : m.channels, m.status, fmtTime(m.created_at)].filter(Boolean).join(' · ')}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
                     {REACTIONS.map(r => (

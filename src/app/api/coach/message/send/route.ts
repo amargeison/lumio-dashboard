@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
     // private threads and the group chat they are all looking at stays empty.
     if (campId) {
       const { data: camp } = await admin.from('coach_camps')
-        .select('name').eq('id', campId).eq('coach_id', user.id).maybeSingle()
+        .select('name, discord_channel_id, discord_mirror').eq('id', campId).eq('coach_id', user.id).maybeSingle()
       if (camp) {
         await admin.from('coach_messages').insert({
           coach_id: user.id,
@@ -167,6 +167,22 @@ export async function POST(req: NextRequest) {
           body,
           status,
         })
+
+        // …and out to Discord, where most of the camp is actually reading.
+        //
+        // The mirror is what makes the integration worth having: a coach who
+        // has to send the same message twice — once in Lumio for the record,
+        // once in Discord so anyone sees it — will stop using one of them, and
+        // it will not be the one their parents are already in.
+        const c = camp as { discord_channel_id?: string | null; discord_mirror?: boolean | null }
+        if (c.discord_channel_id && c.discord_mirror !== false) {
+          try {
+            const { postMessage } = await import('@/lib/coach/discord')
+            const name = (await admin.from('sports_profiles').select('display_name').eq('id', user.id).maybeSingle())
+              .data?.display_name as string | undefined
+            await postMessage(c.discord_channel_id, [subject, body].filter(Boolean).join('\n\n'), name || undefined)
+          } catch (e) { console.error('[coach/message/send] discord mirror', e) }
+        }
       }
     }
   } catch (e) { console.error('[coach/message/send] log failed', e) }
