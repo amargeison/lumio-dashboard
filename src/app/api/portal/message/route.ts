@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   }
 
   const b = (await req.json().catch(() => ({}))) as {
-    body?: string; toName?: string; replyTo?: string; campId?: string
+    body?: string; toName?: string; replyTo?: string; campId?: string; channel?: string
   }
   const body = clean(b.body)
   if (!body) return NextResponse.json({ error: 'Message is empty' }, { status: 400 })
@@ -75,6 +75,25 @@ export async function POST(req: NextRequest) {
     replyTo = ok ? (parent!.id as string) : null
   }
 
+  // Which Discord channel this answers.
+  //
+  // A parent reading #faqs and typing a reply means it to appear in #faqs, not
+  // wherever the coach happened to tick first. So the channel they are looking
+  // at comes with the message; if it is not linked, or the coach has switched
+  // off posting to it, it falls back to whichever channels are mirrored.
+  let targets: { channel_id: string; channel_name: string | null }[] = []
+  if (campId) {
+    const { data: chans } = await db.from('coach_camp_channels')
+      .select('channel_id, channel_name, mirror').eq('coach_id', m.academyId).eq('camp_id', campId)
+    const all = (chans as { channel_id: string; channel_name: string | null; mirror: boolean }[] | null) ?? []
+    const wantedChannel = clean(b.channel, 100)
+    const picked = wantedChannel ? all.find(c => c.channel_name === wantedChannel && c.mirror) : null
+    targets = picked ? [picked] : all.filter(c => c.mirror)
+  }
+  // Stamp the row only when there is one destination — a message that went to
+  // three channels belongs to none of them, and should sit under "All".
+  const stamp = targets.length === 1 ? targets[0].channel_name : null
+
   const { data: row, error } = await db.from('coach_messages').insert({
     coach_id: m.academyId,
     direction: 'in',
@@ -87,10 +106,33 @@ export async function POST(req: NextRequest) {
     body,
     channels: 'portal',
     status: 'received',
+    ...(stamp ? { discord_channel_name: stamp } : {}),
     read: false,
     created_at: new Date().toISOString(),
   }).select('id, created_at').single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // …and out to Discord, if the camp's channels are mirrored.
+  //
+  // This is the half that makes the camp thread a conversation rather than a
+  // noticeboard. Without it a parent answers in the app, forty people in
+  // Discord never see it, and the parent concludes the app does not work —
+  // which is worse than never having offered them the box to type in.
+  //
+  // The message goes out under the player's name, because a line appearing in a
+  // camp channel from nobody in particular is how a group chat stops trusting
+  // what it reads. Only channels the coach ticked, so a reply cannot land three
+  // times across the server.
+  if (targets.length) {
+    try {
+      const { postMessage } = await import('@/lib/coach/discord')
+      for (const t of targets) await postMessage(t.channel_id, body, conv)
+    } catch (e) {
+      // A Discord outage must not lose the message: it is already saved, and the
+      // coach will see it in the app either way.
+      console.error('[portal/message] discord mirror', e)
+    }
+  }
 
   return NextResponse.json({ ok: true, id: row?.id, to: toName, campId })
 }

@@ -111,7 +111,7 @@ export function StudentPortal({ onSignOut }: { onSignOut: () => void }) {
   // A message now carries who it is for: a named coach, a reply to a particular
   // message, or the camp everyone is on. The route re-checks all three — nothing
   // here is taken on trust — but the family gets to say it.
-  const send = async (body: string, opts?: { toName?: string; replyTo?: string; campId?: string }) => {
+  const send = async (body: string, opts?: { toName?: string; replyTo?: string; campId?: string; channel?: string }) => {
     const r = await fetch('/api/portal/message', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ body, ...opts }),
