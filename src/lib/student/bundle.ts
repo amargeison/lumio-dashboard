@@ -174,6 +174,8 @@ export type StudentCampThread = {
   /** How many people are in it, so "Camp · 9 people" is honest. */
   people: number
   messages: StudentMessage[]
+  /** Discord channels linked to this camp, so each has a tab from day one. */
+  channels?: string[]
 }
 
 export type StudentBundle = {

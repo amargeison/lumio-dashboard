@@ -75,6 +75,13 @@ export async function syncChannel(ch: CampChannel): Promise<SyncOutcome> {
   const byDiscord = new Map((players as { id: string; name: string; discord_user_id: string }[] | null ?? [])
     .map(p => [p.discord_user_id, p]))
 
+  // The camp's name, so these rows land in the SAME conversation as everything
+  // else about this camp. They used to be filed under a bare "Camp", which the
+  // inbox treated as a different person from "Camp · Chiclana" — so one camp
+  // showed up as two chats, Discord in one and Lumio in the other.
+  const { data: campRow } = await db.from('coach_camps').select('name').eq('id', ch.camp_id).maybeSingle()
+  const campLabel = `Camp · ${(campRow as { name?: string } | null)?.name || 'Camp'}`
+
   let added = 0
   for (const m of fresh) {
     const known = byDiscord.get(m.author.id)
@@ -84,7 +91,7 @@ export async function syncChannel(ch: CampChannel): Promise<SyncOutcome> {
       camp_id: ch.camp_id,
       direction: 'in',
       from_name: known?.name || displayName(m),
-      recipients: 'Camp',
+      recipients: campLabel,
       thread_key: `camp:${ch.camp_id}`,
       body: bodyOf(m),
       channels: 'discord',

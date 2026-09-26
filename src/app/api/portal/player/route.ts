@@ -245,7 +245,12 @@ export async function GET() {
     const { count } = await db.from('coach_camp_attendees')
       .select('id', { count: 'exact', head: true }).eq('camp_id', c.id).neq('status', 'cancelled')
     const coachCount = Array.isArray(c.coach_ids) ? (c.coach_ids as unknown[]).length : 0
-    return { campId: String(c.id), name: String(c.name || 'Camp'), people: (count ?? 0) + coachCount, messages: rows }
+        // Every linked channel, so each has a tab before anyone has posted in it.
+    const linkedNames = ((await safe(db.from('coach_camp_channels')
+      .select('channel_name, created_at').eq('coach_id', m.academyId).eq('camp_id', c.id)
+      .order('created_at', { ascending: true }))) as { channel_name: string | null }[])
+      .map(x => x.channel_name).filter(Boolean) as string[]
+    return { campId: String(c.id), name: String(c.name || 'Camp'), people: (count ?? 0) + coachCount, messages: rows, channels: linkedNames }
   }))
 
   return NextResponse.json({

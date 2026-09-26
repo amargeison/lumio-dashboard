@@ -28,8 +28,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
 
-  const { recipients = [], channels = [], subject = '', body = '', ccCoach = true, campId } =
-    (await req.json().catch(() => ({}))) as { recipients: Recipient[]; channels: string[]; subject?: string; body?: string; ccCoach?: boolean; campId?: string }
+  const { recipients = [], channels = [], subject = '', body = '', ccCoach = true, campId, channel: discordChannel } =
+    (await req.json().catch(() => ({}))) as { recipients: Recipient[]; channels: string[]; subject?: string; body?: string; ccCoach?: boolean; campId?: string; channel?: string }
   // BCC the coach's own inbox on outbound email when enabled (Settings toggle) —
   // a silent copy that doesn't expose their address or invite reply-all.
   const bccAddress = ccCoach !== false && user.email ? user.email : undefined
@@ -156,6 +156,21 @@ export async function POST(req: NextRequest) {
       const { data: camp } = await admin.from('coach_camps')
         .select('name').eq('id', campId).eq('coach_id', user.id).maybeSingle()
       if (camp) {
+        // Where this is going in Discord, decided before the row is written so
+        // the message can be filed under the channel it actually went to.
+        //
+        // An explicitly chosen channel wins over the camp's defaults, ticked or
+        // not: the coach picked it by reading it. Without one, the defaults are
+        // the channels marked "Post Lumio messages here".
+        const { data: chans } = await admin.from('coach_camp_channels')
+          .select('channel_id, channel_name, mirror').eq('coach_id', user.id).eq('camp_id', campId)
+        const all = (chans as { channel_id: string; channel_name: string | null; mirror: boolean }[] | null) ?? []
+        const picked = discordChannel ? all.find(c => c.channel_name === discordChannel) : null
+        const targets = picked ? [picked] : all.filter(c => c.mirror)
+        // One destination → file it there. Several → it belongs to no single
+        // channel and sits under "All".
+        const stamp = targets.length === 1 ? targets[0].channel_name : null
+
         await admin.from('coach_messages').insert({
           coach_id: user.id,
           recipients: `Camp · ${camp.name}`,
@@ -166,6 +181,7 @@ export async function POST(req: NextRequest) {
           subject: subject || null,
           body,
           status,
+          ...(stamp ? { discord_channel_name: stamp } : {}),
         })
 
         // …and out to Discord, where most of the camp is actually reading.
@@ -175,12 +191,7 @@ export async function POST(req: NextRequest) {
         // once in Discord so anyone sees it — will stop using one of them, and
         // it will not be the one their parents are already in.
         //
-        // Only the channels flagged to mirror. A camp with #general, #faqs and
-        // #important-info linked should not have one message land three times.
         try {
-          const { data: chans } = await admin.from('coach_camp_channels')
-            .select('channel_id').eq('coach_id', user.id).eq('camp_id', campId).eq('mirror', true)
-          const targets = (chans as { channel_id: string }[] | null) ?? []
           if (targets.length) {
             const { postMessage } = await import('@/lib/coach/discord')
             const name = (await admin.from('sports_profiles').select('display_name').eq('id', user.id).maybeSingle())

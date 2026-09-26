@@ -16,7 +16,7 @@ import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 import { avatarSrc } from '@/lib/avatar'
 
 type Attachment = { name: string; path: string }
-type Msg = { id: string; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string; direction?: string | null; from_name?: string | null; thread_key?: string | null; external_id?: string | null; read?: boolean | null; discord_channel_name?: string | null; results?: { discord?: { attachments?: Attachment[] } } | null }
+type Msg = { id: string; camp_id?: string | null; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string; direction?: string | null; from_name?: string | null; thread_key?: string | null; external_id?: string | null; read?: boolean | null; discord_channel_name?: string | null; results?: { discord?: { attachments?: Attachment[] } } | null }
 
 // Photos that came in from Discord. The file itself is in Lumio's private
 // bucket (Discord's own links expire within a day), so the <img> points at the
@@ -43,6 +43,10 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const { rows: players } = useCoachTable<Player>('coach_players')
   const { rows: staff } = useCoachTable<{ id: string; name: string }>('coach_staff')
   const { rows: venues } = useCoachTable<{ id: string; name: string }>('coach_venues')
+  // Every channel linked to each camp — so a camp conversation shows a tab for
+  // each one from the moment it is linked, not only once somebody has spoken
+  // in it. A tab that appears halfway through a trip looks like a bug.
+  const { rows: campChannels } = useCoachTable<{ camp_id: string; channel_name: string | null; created_at?: string }>('coach_camp_channels')
   const profile = useCoachProfile()
   // Tag a conversation by matching the recipient name against roster / staff / venues.
   const tagFor = (raw?: string | null): string => {
@@ -66,16 +70,34 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
   // them: a camp with #general, #faqs and #important-info is three rooms, and
   // running them together reads like a crossed line.
   const [chan, setChan] = useState<string | null>(null)
-  const [compose, setCompose] = useState<false | { recipients: string[]; body: string }>(false)
+  const [compose, setCompose] = useState<false | { recipients: string[]; body: string; campId?: string; channel?: string }>(false)
 
   // Group the log into conversations keyed by recipient string.
+  //
+  // A camp is ONE conversation, whatever each row's recipients string says. It
+  // used to split in two — Discord rows said "Camp", Lumio rows said
+  // "Camp · Chiclana" — so the coach saw the parents in one chat and their own
+  // replies in another. Camp rows are grouped by their thread key instead, and
+  // labelled with the fullest name any of them carries.
   const convMap = new Map<string, Msg[]>()
-  for (const m of history.rows) { const k = (m.recipients || 'Unknown').trim(); if (!convMap.has(k)) convMap.set(k, []); convMap.get(k)!.push(m) }
-  const conversations = Array.from(convMap.entries()).map(([key, msgs]) => ({ key, msgs: msgs.slice().sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')) }))
+  const labelOf = new Map<string, string>()
+  for (const m of history.rows) {
+    const k = m.thread_key?.startsWith('camp:') ? m.thread_key : (m.recipients || 'Unknown').trim()
+    if (!convMap.has(k)) convMap.set(k, [])
+    convMap.get(k)!.push(m)
+    const r = (m.recipients || '').trim()
+    if (k.startsWith('camp:') && r.startsWith('Camp ·')) labelOf.set(k, r)
+  }
+  const conversations = Array.from(convMap.entries()).map(([id, msgs]) => ({
+    id,
+    key: labelOf.get(id) || (id.startsWith('camp:') ? 'Camp' : id),
+    campId: id.startsWith('camp:') ? id.slice(5) : null,
+    msgs: msgs.slice().sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')),
+  }))
     .sort((a, b) => (b.msgs[0]?.created_at || '').localeCompare(a.msgs[0]?.created_at || ''))
-  const sel = conversations.find(c => c.key === selKey) ?? conversations[0]
+  const sel = conversations.find(c => c.id === selKey) ?? conversations[0]
 
-  const startCompose = (recipients: string[] = [], body = '') => setCompose({ recipients, body })
+  const startCompose = (recipients: string[] = [], body = '', campId?: string, channel?: string) => setCompose({ recipients, body, campId, channel })
 
   // Inbound replies arrive via the inbound-email / SMS webhooks; refresh the log
   // every ~2 min while the inbox is open so they surface without a manual reload.
@@ -113,9 +135,9 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
           {/* Inbox list */}
           <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 8, alignSelf: 'start' }}>
             {conversations.map(c => {
-              const last = c.msgs[0]; const active = c.key === sel?.key
+              const last = c.msgs[0]; const active = c.id === sel?.id
               return (
-                <div key={c.key} onClick={() => { setSelKey(c.key); setChan(null) }} style={{ display: 'flex', gap: 10, padding: '10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 3 }}>
+                <div key={c.id} onClick={() => { setSelKey(c.id); setChan(null) }} style={{ display: 'flex', gap: 10, padding: '10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 3 }}>
                   <Av keyName={c.key} size={30} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
@@ -137,12 +159,22 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
                 <Av keyName={sel.key} size={34} />
                 <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{sel.key}</div>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                  <button onClick={() => startCompose(sel.key.split(',').map(s => s.trim()).filter(Boolean))} style={btn(T, accent, 'solid')}>↩ Reply</button>
+                  <button onClick={() => sel.campId
+                    // A camp reply goes back to the camp — not to a person called
+                    // "Camp", which is how it used to open a brand-new chat — and
+                    // into the channel on screen.
+                    ? startCompose([], '', sel.campId, chan || undefined)
+                    : startCompose(sel.key.split(',').map(s => s.trim()).filter(Boolean))} style={btn(T, accent, 'solid')}>
+                    ↩ {sel.campId && chan ? `Reply in #${chan}` : 'Reply'}
+                  </button>
                   <button onClick={() => startCompose([], sel.msgs[0]?.body || '')} style={btn(T, accent, 'ghost')}>↪ Forward</button>
                 </div>
               </div>
               {(() => {
-                const channels = Array.from(new Set(sel.msgs.map(m => m.discord_channel_name).filter(Boolean) as string[])).sort()
+                const linked = sel.campId
+                  ? campChannels.filter(c => c.camp_id === sel.campId).map(c => c.channel_name).filter(Boolean) as string[]
+                  : []
+                const channels = Array.from(new Set([...linked, ...(sel.msgs.map(m => m.discord_channel_name).filter(Boolean) as string[])])).sort()
                 if (channels.length < 2) return null
                 const tab = (id: string | null, label: string) => (
                   <button key={label} onClick={() => setChan(id)}
@@ -157,6 +189,11 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
                   </div>
                 )
               })()}
+              {chan && !sel.msgs.some(m => m.discord_channel_name === chan) && (
+                <div style={{ fontSize: 12, color: T.text3, padding: '8px 0 14px' }}>
+                  Nothing in #{chan} yet. Anything posted there in Discord appears here within a minute.
+                </div>
+              )}
               {[...sel.msgs]
                 .filter(m => !chan || m.discord_channel_name === chan)
                 .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')).map(m => (
@@ -194,7 +231,7 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
 
       {compose && <LiveCoachSendMessage T={T} accent={accent} players={players}
         coachName={profile.display_name || 'your coach'} clubName={(profile as any).club_name || (profile as any).academy_name || profile.display_name || 'your academy'}
-        init={{ recipient: compose.recipients[0], body: compose.body }}
+        init={{ recipient: compose.recipients[0], body: compose.body, campId: compose.campId, channel: compose.channel }}
         onClose={() => setCompose(false)} onSent={() => { setCompose(false); history.reload() }} />}
     </div>
   )

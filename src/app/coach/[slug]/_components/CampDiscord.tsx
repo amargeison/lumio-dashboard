@@ -35,6 +35,8 @@ export function CampDiscord({ T, accent, campId, campName }: { T: ThemeTokens; a
     try {
       const q = new URLSearchParams({ campId })
       if (g) q.set('guildId', g)
+      // Where Discord should send the coach back to after adding the bot.
+      q.set('return', window.location.pathname + window.location.search.replace(/[?&]discord=[^&]*/g, ''))
       const res = await fetch(`/api/coach/discord?${q.toString()}`)
       if (!res.ok) return
       const j: Status = await res.json()
@@ -48,6 +50,17 @@ export function CampDiscord({ T, accent, campId, campName }: { T: ThemeTokens; a
     } catch { /* offline */ }
   }, [campId, guildId])
   useEffect(() => { load() }, [load])
+  // The result of adding the bot, as reported by our callback.
+  const [added] = useState(() => typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('discord'))
+  const addedText = added && ({
+    added: 'Bot added — your server is now in the list below.',
+    taken: 'That server is already connected to another Lumio account. Ask us if two academies genuinely share it.',
+    cancelled: 'Adding the bot was cancelled.',
+    state: 'Security check failed — please try adding the bot again.',
+    exchange: 'Discord didn’t confirm which server the bot joined. Try again.',
+    signin: 'Please sign in, then add the bot again.',
+    store_error: 'The bot was added but saving failed — try again.',
+  } as Record<string, string>)[added]
 
   const post = async (body: Record<string, unknown>) => {
     setBusy(true); setErr(''); setNote('')
@@ -93,10 +106,14 @@ export function CampDiscord({ T, accent, campId, campName }: { T: ThemeTokens; a
   )
 
   const linkedIds = new Set(s.linked.map(l => l.channelId))
+  const banner = addedText ? (
+    <div style={{ fontSize: 12, fontWeight: 600, padding: '9px 12px', borderRadius: 9, color: added === 'added' ? T.good : T.warn, background: `${added === 'added' ? T.good : T.warn}1a` }}>{addedText}</div>
+  ) : null
   const available = s.channels.filter(c => !linkedIds.has(c.id))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {banner}
       {/* Linked channels */}
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: s.linked.length ? 12 : 0 }}>
@@ -120,9 +137,10 @@ export function CampDiscord({ T, accent, campId, campName }: { T: ThemeTokens; a
             <span style={{ fontSize: 10.5, color: T.text3 }}>
               {l.syncedAt ? `checked ${new Date(l.syncedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}` : 'not synced yet'}
             </span>
-            <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: T.text2, cursor: 'pointer' }}>
+            <label title="Messages you send to the whole camp go to the ticked channels. Replies from inside a channel tab always go to that channel, ticked or not."
+              style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: T.text2, cursor: 'pointer' }}>
               <input type="checkbox" checked={l.mirror} onChange={e => post({ channelId: l.channelId, mirror: e.target.checked })} />
-              Post Lumio messages here
+              Camp-wide messages post here
             </label>
             <button onClick={() => unlink(l.channelId)} disabled={busy} style={{ ...btn(false), padding: '6px 11px', fontSize: 11.5 }}>Unlink</button>
           </div>
@@ -135,7 +153,7 @@ export function CampDiscord({ T, accent, campId, campName }: { T: ThemeTokens; a
         {s.guilds.length === 0 ? (
           <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>
             Lumio’s bot isn’t in your Discord server yet.{' '}
-            {s.invite && <a href={s.invite} target="_blank" rel="noopener noreferrer" style={{ color: accent.hex, fontWeight: 700 }}>Add it to your server →</a>}
+            {s.invite && <a href={s.invite} style={{ color: accent.hex, fontWeight: 700 }}>Add it to your server →</a>}
             <div style={{ fontSize: 11, color: T.text3, marginTop: 8, lineHeight: 1.6 }}>
               You need to be an admin of the server. The bot asks for three permissions only: see channels, read message
               history and send messages. Come back here afterwards and your server will be in the list.
@@ -157,11 +175,17 @@ export function CampDiscord({ T, accent, campId, campName }: { T: ThemeTokens; a
               </option>
               {available.map(c => <option key={c.id} value={c.id}>{c.parentName ? `${c.parentName} / ` : ''}#{c.name}</option>)}
             </select>
-            {s.invite && <a href={s.invite} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, color: T.text3 }}>Add to another server →</a>}
+            {available.length > 1 && (
+              <button onClick={() => post({ guildId, channels: available.map(c => ({ id: c.id, name: c.name })) })} disabled={busy} style={btn(true)}>
+                Add all {available.length} channels
+              </button>
+            )}
+            {s.invite && <a href={s.invite} style={{ fontSize: 11.5, color: T.text3 }}>Add to another server →</a>}
           </div>
         )}
         <div style={{ fontSize: 11, color: T.text3, marginTop: 10, lineHeight: 1.6 }}>
-          Linking starts from now — a channel’s back catalogue isn’t imported. Photos posted in Discord are copied into
+          Every linked channel reads into the app. The tick only decides where a message sent to the whole camp
+          goes; a reply from inside a channel tab always lands in that channel. Linking starts from now — a channel’s back catalogue isn’t imported. Photos posted in Discord are copied into
           Lumio, because Discord’s own image links expire after about a day. Tell your group the channels are mirrored
           into the app; people should know where what they write ends up.
         </div>

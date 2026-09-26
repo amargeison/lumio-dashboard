@@ -44,7 +44,7 @@ const phoneOf = (p: Player) => p.phone || p.contact_phone || p.parent_phone || '
 
 export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, init, onClose, onSent }: {
   T: ThemeTokens; accent: AccentTokens; players: Player[]; coachName: string; clubName: string
-  init?: { recipient?: string; body?: string }; onClose: () => void; onSent: () => void
+  init?: { recipient?: string; body?: string; campId?: string; channel?: string }; onClose: () => void; onSent: () => void
 }) {
   const [step, setStep] = useState<'who' | 'how' | 'message' | 'preview' | 'sent'>('who')
   const [selectedNames, setSelectedNames] = useState<string[]>(init?.recipient ? [init.recipient] : [])
@@ -52,7 +52,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
   // The camp audience. A camp is not a subset of the roster — it is the players
   // booked on it PLUS the coaches travelling with it, and those coaches are not
   // players at all. So it is its own audience rather than a filter over the list.
-  const [campId, setCampId] = useState<string | null>(null)
+  const [campId, setCampId] = useState<string | null>(init?.campId ?? null)
   // Who on the camp this is going to. null = everyone, which is the common case
   // and stays one tap. A named subset exists because "ten of the forty fancy
   // going out tonight" is a real message, and sending it to all forty is how
@@ -234,6 +234,10 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
           // A camp message also lands in the camp's shared thread, which is what
           // the players and the coaches on the trip actually read.
           campId: campId && wholeCamp ? campId : undefined,
+          // The Discord channel the coach was reading when they hit Reply. A
+          // reply typed under #travel-info belongs in #travel-info, not in
+          // whichever channels happen to be the camp's defaults.
+          channel: campId && wholeCamp && init?.channel ? init.channel : undefined,
           subject: `${isUrgent ? '[URGENT] ' : ''}Message from ${coachName}`,
           body: aiDraft,
           ccCoach: getSettings().ccCoachOnEmail,
