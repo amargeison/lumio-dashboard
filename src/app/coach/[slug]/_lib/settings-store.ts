@@ -6,12 +6,27 @@
 import { COACH_ORG } from './coach-data'
 
 export type AccentKey = 'purple' | 'blue' | 'green' | 'bronze' | 'claret'
+  | 'pgorange' | 'teal' | 'navy' | 'gold' | 'pink'
+// dim/border are the hex at 16% and 45% — kept as literals so a colour reads
+// the same on a card as in the picker.
+const accent = (hex: string, label: string) => {
+  const n = parseInt(hex.slice(1), 16)
+  const rgb = `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`
+  return { hex, dim: `rgba(${rgb},0.16)`, border: `rgba(${rgb},0.45)`, label }
+}
 export const ACCENT_PRESETS: Record<AccentKey, { hex: string; dim: string; border: string; label: string }> = {
-  purple: { hex: '#a855f7', dim: 'rgba(168,85,247,0.16)', border: 'rgba(168,85,247,0.45)', label: 'Purple' },
-  blue:   { hex: '#3A8EE0', dim: 'rgba(58,142,224,0.16)', border: 'rgba(58,142,224,0.45)', label: 'Ocean' },
-  green:  { hex: '#3D9A6E', dim: 'rgba(61,154,110,0.16)', border: 'rgba(61,154,110,0.45)', label: 'Court green' },
-  bronze: { hex: '#B07A36', dim: 'rgba(176,122,54,0.16)', border: 'rgba(176,122,54,0.45)', label: 'Bronze' },
-  claret: { hex: '#B0455C', dim: 'rgba(176,69,92,0.16)', border: 'rgba(176,69,92,0.45)', label: 'Claret' },
+  purple:   { hex: '#a855f7', dim: 'rgba(168,85,247,0.16)', border: 'rgba(168,85,247,0.45)', label: 'Purple' },
+  blue:     { hex: '#3A8EE0', dim: 'rgba(58,142,224,0.16)', border: 'rgba(58,142,224,0.45)', label: 'Ocean' },
+  green:    { hex: '#3D9A6E', dim: 'rgba(61,154,110,0.16)', border: 'rgba(61,154,110,0.45)', label: 'Court green' },
+  bronze:   { hex: '#B07A36', dim: 'rgba(176,122,54,0.16)', border: 'rgba(176,122,54,0.45)', label: 'Bronze' },
+  claret:   { hex: '#B0455C', dim: 'rgba(176,69,92,0.16)', border: 'rgba(176,69,92,0.45)', label: 'Claret' },
+  // Sampled straight from the PG Tennis logo (#EE5A22), so the portal and the
+  // badge on the kit are the same orange rather than two near-misses.
+  pgorange: accent('#EE5A22', 'Clay orange'),
+  teal:     accent('#1FA2A6', 'Teal'),
+  navy:     accent('#2F4A8A', 'Navy'),
+  gold:     accent('#D4A017', 'Ball yellow'),
+  pink:     accent('#D9467D', 'Rose'),
 }
 
 // Coaching accreditations for the Settings dropdowns (head coach + sub-coaches).
@@ -65,7 +80,7 @@ export const PAYMENT_METHODS: string[] = [
 ]
 
 export type CoachSettings = {
-  theme: 'dark' | 'light'
+  theme: 'dark' | 'light' | 'white'
   accentKey: AccentKey
   density: 'compact' | 'regular' | 'spacious'
   academy: string

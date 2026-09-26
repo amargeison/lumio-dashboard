@@ -569,7 +569,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     { id: 'staff',       g: 'People & compliance', icon: 'people', t: 'Staff & safeguarding',  d: `DSL ${staffCfg.dsl || 'not set'} · DBS reminders ${staffCfg.reminderDays}d` },
     { id: 'messaging',   g: 'People & compliance', icon: 'note',   t: 'Messaging',             d: `${[msg.email && 'Email', msg.text && 'Text', msg.inapp && 'In-app'].filter(Boolean).join(' · ') || 'No channels'}` },
     { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: 'Your plan: Coach £39/mo · order kit & rewards' },
-    { id: 'appearance',  g: 'Rewards & system', icon: 'settings', t: 'Appearance',          d: `${s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey].label} · ${s.density}` },
+    { id: 'appearance',  g: 'Rewards & system', icon: 'settings', t: 'Appearance',          d: `${s.theme === 'white' ? 'White' : s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey]?.label ?? ''} · ${s.density}` },
     { id: 'menu',        g: 'Rewards & system', icon: 'eye',      t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
     { id: 'help',        g: 'Rewards & system', icon: 'note',     t: 'Help & guidance',     d: `${[s.helpHints !== false && 'Page guides', s.gettingStarted !== false && 'Getting started'].filter(Boolean).join(' · ') || 'Both off'}` },
     { id: 'studentapp',  g: 'Rewards & system', icon: 'people',   t: 'Parent & player app', d: s.studentApp ? 'On · Player view available in your profile menu' : 'Off · your switcher shows coach views only' },
@@ -676,9 +676,32 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       )}
       {open === 'academy' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Academy profile" sub="Shown across the portal — sidebar, dashboard, packs and certificates" onClose={() => setOpen(null)}>
-          <Field T={T} label="Academy name"><input style={input(T)} placeholder="Your academy name" value={s.academy} onChange={e => setSettings({ academy: e.target.value })} /></Field>
-          <Field T={T} label="Head coach name"><input style={input(T)} placeholder="Your name" value={s.coach} onChange={e => setSettings({ coach: e.target.value })} /></Field>
+          {/* The academy name lives in two places — these settings, and the
+              account's profile row that emails, certificates, the player app
+              and the sidebar all read. Editing only the first is how "PG
+              Tennis" could be typed here while every other screen still said
+              "Penrith Tennis Club". Both are written, on blur, every time. */}
+          <Field T={T} label="Academy name"><input style={input(T)} placeholder="Your academy name" value={s.academy}
+            onChange={e => setSettings({ academy: e.target.value })}
+            onBlur={e => { const v = e.target.value.trim(); if (!demo && v && v !== realProfile.brand_name) saveCoachProfile({ brand_name: v }).then(() => realProfile.reload()).catch(() => {}) }} /></Field>
+          <Field T={T} label="Head coach name"><input style={input(T)} placeholder="Your name" value={s.coach}
+            onChange={e => setSettings({ coach: e.target.value })}
+            onBlur={e => { const v = e.target.value.trim(); if (!demo && v && v !== realProfile.display_name) saveCoachProfile({ display_name: v }).then(() => realProfile.reload()).catch(() => {}) }} /></Field>
           <Field T={T} label="Certification / tagline"><input style={input(T)} placeholder="e.g. LTA Accredited Coach" value={s.cert} onChange={e => setSettings({ cert: e.target.value })} /></Field>
+          <Field T={T} label="Club logo" hint="Top-left of your portal, and on packs, certificates and the player app.">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {(s.brandLogo || realProfile.brand_logo_url)
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={s.brandLogo || realProfile.brand_logo_url || ''} alt="Club logo" style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 8, background: T.panel2, border: `1px solid ${T.border}` }} />
+                : <div style={{ width: 44, height: 44, borderRadius: 8, background: T.panel2, border: `1px dashed ${T.border}`, display: 'grid', placeItems: 'center', fontSize: 10, color: T.text3 }}>none</div>}
+              <label style={{ appearance: 'none', border: `1px solid ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '8px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                ⬆ Upload logo
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => { const f = e.target.files?.[0]; if (!f) return; try { await saveBrandLogo(await fileToLogoDataUrl(f)); realProfile.reload() } catch { /* ignore */ } }} />
+              </label>
+              {(s.brandLogo || realProfile.brand_logo_url) && <button onClick={() => saveBrandLogo(null).then(() => realProfile.reload())} style={{ appearance: 'none', background: 'transparent', border: 0, color: T.bad, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Remove</button>}
+            </div>
+          </Field>
+
         </Modal>
       )}
 
@@ -803,7 +826,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {open === 'appearance' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Appearance" sub="Watch the whole portal change as you tweak these" onClose={() => setOpen(null)}>
           <Field T={T} label="Theme">
-            <Seg T={T} accent={accent} value={s.theme} options={[{ v: 'dark', label: 'Dark' }, { v: 'light', label: 'Light' }]} onChange={v => setSettings({ theme: v as 'dark' | 'light' })} />
+            <Seg T={T} accent={accent} value={s.theme} options={[{ v: 'dark', label: 'Dark' }, { v: 'light', label: 'Light' }, { v: 'white', label: 'White' }]} onChange={v => setSettings({ theme: v as 'dark' | 'light' | 'white' })} />
           </Field>
           <Field T={T} label="Accent colour">
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -816,19 +839,6 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           </Field>
           <Field T={T} label="Density">
             <Seg T={T} accent={accent} value={s.density} options={[{ v: 'compact', label: 'Compact' }, { v: 'regular', label: 'Regular' }, { v: 'spacious', label: 'Spacious' }]} onChange={v => setSettings({ density: v as 'compact' | 'regular' | 'spacious' })} />
-          </Field>
-          <Field T={T} label="Club logo" hint="Replaces the Lumio mark top-left in your portal.">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              {s.brandLogo
-                // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={s.brandLogo} alt="Club logo" style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 8, background: T.panel2, border: `1px solid ${T.border}` }} />
-                : <div style={{ width: 44, height: 44, borderRadius: 8, background: T.panel2, border: `1px dashed ${T.border}`, display: 'grid', placeItems: 'center', fontSize: 10, color: T.text3 }}>none</div>}
-              <label style={{ appearance: 'none', border: `1px solid ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '8px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
-                ⬆ Upload logo
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => { const f = e.target.files?.[0]; if (!f) return; try { await saveBrandLogo(await fileToLogoDataUrl(f)) } catch { /* ignore */ } }} />
-              </label>
-              {s.brandLogo && <button onClick={() => saveBrandLogo(null)} style={{ appearance: 'none', background: 'transparent', border: 0, color: T.bad, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Remove</button>}
-            </div>
           </Field>
         </Modal>
       )}

@@ -31,7 +31,7 @@ import {
   normalizeRole, viewFromRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole, type CoachView,
 } from './_lib/role-scope'
 import { coachById, coachStats } from './_lib/coaches-data'
-import { currentIdentity, identityProblem, identityMessage, IDENTITY_CHANGED, type CoachIdentity } from './_lib/coach-db'
+import { currentIdentity, identityProblem, identityMessage, IDENTITY_CHANGED, saveCoachProfile, type CoachIdentity } from './_lib/coach-db'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
@@ -377,7 +377,30 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // straight away; the session value stays as the fallback for a coach who has
   // only ever set a photo during onboarding.
   const coachPhoto = (isEmpty ? settings.head?.avatarUrl || null : null) || session?.photoDataUrl || (isEmpty ? null : demoAvatarUrl(coachName))
-  const clubName = session?.clubName || slugClubName || (isEmpty ? '' : settings.academy)
+  // The name the head coach typed in Settings wins over the one captured when
+  // they signed in. session.clubName is a snapshot from sign-in, so while it
+  // came first, renaming the academy to "PG Tennis" changed nothing on screen —
+  // the sidebar and the dashboard banner kept "Penrith Tennis Club" until the
+  // next login. Same rule the coach's own name already follows just above.
+  const customClubName = session?.role === 'head' && settings.academy && settings.academy !== COACH_ORG.academy ? settings.academy : ''
+  const clubName = customClubName || session?.clubName || slugClubName || (isEmpty ? '' : settings.academy)
+
+  // …and carry a rename through to the account itself. The sidebar reads the
+  // setting, but certificates, camp packs, emails and the player app read the
+  // profile row — so a name changed only in Settings looked fixed here and was
+  // still wrong on every piece of paper that left the building. Written once
+  // per change, when the two disagree; never for the demo, never for staff.
+  const syncedNames = useRef('')
+  useEffect(() => {
+    if (!isEmpty || session?.role !== 'head') return
+    const patch: Record<string, string> = {}
+    if (customClubName && customClubName !== session?.clubName) patch.brand_name = customClubName
+    if (customHeadName && customHeadName !== session?.userName) patch.display_name = customHeadName
+    const key = JSON.stringify(patch)
+    if (key === '{}' || key === syncedNames.current) return
+    syncedNames.current = key
+    saveCoachProfile(patch).catch(() => { syncedNames.current = '' })
+  }, [isEmpty, session?.role, session?.clubName, session?.userName, customClubName, customHeadName])
   const showDemoBanner = !isEmpty && session?.isDemoShell !== false
 
   // The avatar takes an override so the sidebar can show whoever is being
