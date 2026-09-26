@@ -87,7 +87,7 @@ const bandLabel = (n: number) => (n >= 70 ? 'High' : n >= 40 ? 'Medium' : 'Low')
 export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }: {
   T: StudentTheme; bundle: StudentBundle; footnote?: string
   /** Supplied by the portal only — the coach's preview is read-only. */
-  onSendMessage?: (body: string, opts?: { toName?: string; replyTo?: string; campId?: string }) => Promise<void>
+  onSendMessage?: (body: string, opts?: { toName?: string; replyTo?: string; campId?: string; channel?: string }) => Promise<void>
   /** Reacting is the family's, for the same reason. */
   onReact?: (id: string, reaction: string | null) => Promise<void>
 }) {
@@ -555,7 +555,7 @@ function MessageBody({ T, text }: { T: StudentTheme; text: string }) {
 
 const REACTIONS = ['👍', '❤️', '😄', '✅', '🎾', '🙌']
 
-type SendOpts = { toName?: string; replyTo?: string; campId?: string }
+type SendOpts = { toName?: string; replyTo?: string; campId?: string; channel?: string }
 
 // The sync writes "📎 filename" into the body so a photo-only message is not
 // blank. Once the photo is on screen that line is noise, so the ones being
@@ -615,7 +615,9 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
 
   const send = async () => {
     if (!onSend || !draft.trim()) return
-    await onSend(draft.trim(), { toName, replyTo: reply?.id, campId: campId || undefined })
+    // The channel they are reading is the channel they are answering — a reply
+    // typed under #faqs belongs in #faqs, not wherever the coach ticked first.
+    await onSend(draft.trim(), { toName, replyTo: reply?.id, campId: campId || undefined, channel: (campId && chan) || undefined })
     setDraft(''); setReply(null)
   }
 
