@@ -557,6 +557,16 @@ const REACTIONS = ['👍', '❤️', '😄', '✅', '🎾', '🙌']
 
 type SendOpts = { toName?: string; replyTo?: string; campId?: string }
 
+// The sync writes "📎 filename" into the body so a photo-only message is not
+// blank. Once the photo is on screen that line is noise, so the ones being
+// rendered are dropped from the text.
+function bodyWithoutPhotos(m: { body?: string | null; photos?: { name: string; url: string }[] }): string {
+  const shown = new Set((m.photos ?? []).map(p => p.name))
+  return String(m.body || '').split('\n')
+    .filter(line => !(line.startsWith('\u{1F4CE} ') && shown.has(line.slice(2).trim())))
+    .join('\n').trim()
+}
+
 function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onReact }: {
   T: StudentTheme
   messages: StudentBundle['messages']
@@ -575,6 +585,10 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
   const [reply, setReply] = useState<StudentBundle['messages'][number] | null>(null)
   const [draft, setDraft] = useState('')
 
+  // Which Discord channel is showing inside a camp thread. null = all of them.
+  // A camp server is several rooms — #general, #faqs, #important-info — and
+  // running them together reads like a crossed line.
+  const [chan, setChan] = useState<string | null>(null)
   const campId = audience.startsWith('camp:') ? audience.slice(5) : null
   const camp = campId ? camps.find(c => c.campId === campId) || null : null
   const toName = audience.startsWith('coach:') ? audience.slice(6) : undefined
@@ -584,7 +598,11 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
   // "the academy" as two conversations, and splitting them would hide half the
   // history behind a name they did not pick.
   const source = camp ? camp.messages : (messages || []).filter(m => !m.camp_id)
-  const ordered = [...source].sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')))
+  const campChannels = camp
+    ? Array.from(new Set(camp.messages.map(m => m.channel).filter(Boolean) as string[])).sort()
+    : []
+  const inChannel = chan ? source.filter(m => m.channel === chan) : source
+  const ordered = [...inChannel].sort((a, b) => String(a.created_at ?? '').localeCompare(String(b.created_at ?? '')))
   const byId = new Map(ordered.map(m => [m.id, m]))
   const hidden = Math.max(0, ordered.length - 12)
   const shown = showAll ? ordered : ordered.slice(-12)
@@ -612,7 +630,7 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
           {tabs.map(t => {
             const on = audience === t.id
             return (
-              <button key={t.id} onClick={() => { setAudience(t.id); setReply(null); setShowAll(false) }}
+              <button key={t.id} onClick={() => { setAudience(t.id); setReply(null); setShowAll(false); setChan(null) }}
                 style={{ flex: '0 0 auto', appearance: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
                   background: on ? T.accentDim : T.panel2, border: `1px solid ${on ? T.accentBorder : T.border}`,
                   color: on ? T.accent : T.text2, borderRadius: 999, padding: '6px 13px' }}>
@@ -629,6 +647,21 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
       {!!camp && (
         <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, marginBottom: 10 }}>
           Everyone on {camp.name} sees this — the players going and the coaches with them.
+        </div>
+      )}
+
+      {campChannels.length > 1 && (
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 10 }}>
+          {[null, ...campChannels].map(c => {
+            const on = chan === c
+            return (
+              <button key={c ?? 'all'} onClick={() => { setChan(c); setShowAll(false) }}
+                style={{ flex: '0 0 auto', appearance: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11.5,
+                  fontWeight: on ? 700 : 500, borderRadius: 999, padding: '5px 12px',
+                  background: on ? T.accentDim : T.panel2, border: `1px solid ${on ? T.accentBorder : T.border}`,
+                  color: on ? T.accent : T.text2 }}>{c ? `#${c}` : 'All'}</button>
+            )
+          })}
         </div>
       )}
 
@@ -674,8 +707,20 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
                   )}
                   {!!m.subject && <div style={{ fontSize: 11, fontWeight: 700, color: T.text2, marginBottom: 4, ...WRAP }}>{m.subject}</div>}
                   <div style={{ fontSize: 13, color: T.text, lineHeight: 1.6, ...WRAP }}>
-                    <MessageBody T={T} text={String(m.body || '')} />
+                    <MessageBody T={T} text={bodyWithoutPhotos(m)} />
                   </div>
+                  {!!m.photos?.length && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                      {m.photos.map(ph => (
+                        <a key={ph.url} href={ph.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={ph.url} alt={ph.name}
+                            style={{ maxWidth: 220, maxHeight: 200, borderRadius: 10, border: `1px solid ${T.border}`, display: 'block', objectFit: 'cover' }} />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  {!!m.channel && <div style={{ fontSize: 9.5, color: T.text3, marginTop: 6 }}>#{m.channel}</div>}
                   {!!m.reaction && (
                     <div style={{ marginTop: 6, fontSize: 13, lineHeight: 1 }}>{m.reaction}</div>
                   )}

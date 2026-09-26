@@ -15,7 +15,24 @@ import { useCoachTable, useCoachProfile, dbUpdate, dbRemove } from '../_lib/coac
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 import { avatarSrc } from '@/lib/avatar'
 
-type Msg = { id: string; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string; direction?: string | null; from_name?: string | null; thread_key?: string | null; external_id?: string | null; read?: boolean | null }
+type Attachment = { name: string; path: string }
+type Msg = { id: string; recipients?: string | null; channels?: string | null; subject?: string | null; body?: string | null; status?: string | null; reaction?: string | null; created_at?: string; direction?: string | null; from_name?: string | null; thread_key?: string | null; external_id?: string | null; read?: boolean | null; discord_channel_name?: string | null; results?: { discord?: { attachments?: Attachment[] } } | null }
+
+// Photos that came in from Discord. The file itself is in Lumio's private
+// bucket (Discord's own links expire within a day), so the <img> points at the
+// signing proxy rather than at storage.
+const attachmentsOf = (m: Msg): Attachment[] => m.results?.discord?.attachments ?? []
+
+// The sync writes "📎 filename" into the body so a message with nothing but a
+// photo is not blank. Once the photo itself is on screen that line is noise, so
+// the ones we can render are dropped from the text.
+const textOf = (m: Msg): string => {
+  const shown = new Set(attachmentsOf(m).map(a => a.name))
+  return String(m.body || '').split('\n')
+    .filter(line => !(line.startsWith('\u{1F4CE} ') && shown.has(line.slice(2).trim())))
+    .join('\n').trim()
+}
+const mediaUrl = (path: string) => `/api/coach/discord-media?p=${encodeURIComponent(path)}`
 type Player = { id: string; name: string; email?: string | null; phone?: string | null; parent_name?: string | null; avatar_url?: string | null }
 const REACTIONS = ['👍', '❤️', '😄', '✅']
 const initials = (n: string) => n.split(/[\s,]+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
@@ -45,6 +62,10 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
     return <span style={{ width: size, height: size, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: size * 0.37, fontWeight: 700, flexShrink: 0 }}>{initials(keyName)}</span>
   }
   const [selKey, setSelKey] = useState<string | null>(null)
+  // Which Discord channel is showing, inside a camp conversation. null = all of
+  // them: a camp with #general, #faqs and #important-info is three rooms, and
+  // running them together reads like a crossed line.
+  const [chan, setChan] = useState<string | null>(null)
   const [compose, setCompose] = useState<false | { recipients: string[]; body: string }>(false)
 
   // Group the log into conversations keyed by recipient string.
@@ -94,7 +115,7 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
             {conversations.map(c => {
               const last = c.msgs[0]; const active = c.key === sel?.key
               return (
-                <div key={c.key} onClick={() => setSelKey(c.key)} style={{ display: 'flex', gap: 10, padding: '10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 3 }}>
+                <div key={c.key} onClick={() => { setSelKey(c.key); setChan(null) }} style={{ display: 'flex', gap: 10, padding: '10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 3 }}>
                   <Av keyName={c.key} size={30} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
@@ -120,13 +141,42 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
                   <button onClick={() => startCompose([], sel.msgs[0]?.body || '')} style={btn(T, accent, 'ghost')}>↪ Forward</button>
                 </div>
               </div>
-              {[...sel.msgs].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')).map(m => (
+              {(() => {
+                const channels = Array.from(new Set(sel.msgs.map(m => m.discord_channel_name).filter(Boolean) as string[])).sort()
+                if (channels.length < 2) return null
+                const tab = (id: string | null, label: string) => (
+                  <button key={label} onClick={() => setChan(id)}
+                    style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 11.5, fontWeight: chan === id ? 700 : 500,
+                      borderRadius: 999, padding: '5px 12px', border: `1px solid ${chan === id ? accent.border : T.border}`,
+                      background: chan === id ? accent.dim : 'transparent', color: chan === id ? accent.hex : T.text2 }}>{label}</button>
+                )
+                return (
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                    {tab(null, 'All')}
+                    {channels.map(c => tab(c, `#${c}`))}
+                  </div>
+                )
+              })()}
+              {[...sel.msgs]
+                .filter(m => !chan || m.discord_channel_name === chan)
+                .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')).map(m => (
                 <div key={m.id} style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', alignItems: m.direction === 'in' ? 'flex-start' : 'stretch' }}>
                   <div style={{ maxWidth: m.direction === 'in' ? '88%' : '100%', background: m.direction === 'in' ? T.panel2 : accent.dim, border: `1px solid ${m.direction === 'in' ? T.border : accent.border}`, borderRadius: 10, padding: '10px 12px' }}>
                     {m.direction === 'in' && <div style={{ fontSize: 10.5, fontWeight: 700, color: T.text2, marginBottom: 3 }}>{m.from_name || sel.key}</div>}
                     {m.subject && <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, marginBottom: 4 }}>{m.subject}</div>}
-                    <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{m.body}</div>
-                    <div style={{ fontSize: 10, color: T.text3, marginTop: 6 }}>{[m.direction === 'in' ? (m.channels === 'discord' ? 'From Discord' : 'Received') : m.channels, m.status, fmtTime(m.created_at)].filter(Boolean).join(' · ')}</div>
+                    <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{textOf(m)}</div>
+                    {attachmentsOf(m).length > 0 && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                        {attachmentsOf(m).map(a => (
+                          <a key={a.path} href={mediaUrl(a.path)} target="_blank" rel="noopener noreferrer" title={a.name}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={mediaUrl(a.path)} alt={a.name}
+                              style={{ maxWidth: 260, maxHeight: 220, borderRadius: 9, border: `1px solid ${T.border}`, display: 'block', objectFit: 'cover' }} />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 10, color: T.text3, marginTop: 6 }}>{[m.direction === 'in' ? (m.channels === 'discord' ? `From Discord${m.discord_channel_name ? ` · #${m.discord_channel_name}` : ''}` : 'Received') : m.channels, m.status, fmtTime(m.created_at)].filter(Boolean).join(' · ')}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6 }}>
                     {REACTIONS.map(r => (

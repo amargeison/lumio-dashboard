@@ -43,53 +43,57 @@ function bodyOf(m: DiscordMessage): string {
   return [m.content?.trim(), ...files].filter(Boolean).join('\n').slice(0, 4000)
 }
 
-export async function syncCampDiscord(camp: {
-  id: string; coach_id: string; discord_channel_id: string | null; discord_last_message_id: string | null
-}): Promise<SyncOutcome> {
-  if (!camp.discord_channel_id) return { added: 0 }
-  const db = serviceClient()
+export type CampChannel = {
+  id: string; coach_id: string; camp_id: string
+  channel_id: string; channel_name: string | null; last_message_id: string | null
+}
 
-  const r = await fetchMessages(camp.discord_channel_id, camp.discord_last_message_id)
+// One channel. The caller decides which ones to walk.
+export async function syncChannel(ch: CampChannel): Promise<SyncOutcome> {
+  const db = serviceClient()
+  const r = await fetchMessages(ch.channel_id, ch.last_message_id)
   if (!r.ok) {
     // 403 = the bot was removed from the channel, 404 = the channel was deleted.
     // Both are things the coach did, and both need saying rather than retrying
     // every minute in silence.
-    const why = r.status === 403 ? 'Lumio’s bot can no longer see that channel — re-invite it or pick another.'
-      : r.status === 404 ? 'That Discord channel no longer exists.'
+    const why = r.status === 403 ? `Lumio’s bot can no longer see #${ch.channel_name || 'that channel'} — re-invite it or unlink it.`
+      : r.status === 404 ? `#${ch.channel_name || 'That channel'} no longer exists in Discord.`
       : `Discord said no (${r.status}).`
     return { added: 0, error: why }
   }
+  if (!r.messages.length) return { added: 0, lastId: ch.last_message_id }
 
   const me = botUserId()
   // Our own mirrored messages come back down the pipe; reading them in would
   // double every message the coach sends and, worse, mirror it out again.
   const fresh = r.messages.filter(m => !(m.author?.bot && m.author.id === me))
-  if (!r.messages.length) return { added: 0, lastId: camp.discord_last_message_id }
 
   // Known Discord accounts → roster players, so a message from a parent files
   // itself against the right player rather than under a gamertag.
   const { data: players } = await db.from('coach_players')
-    .select('id, name, discord_user_id').eq('coach_id', camp.coach_id).not('discord_user_id', 'is', null)
+    .select('id, name, discord_user_id').eq('coach_id', ch.coach_id).not('discord_user_id', 'is', null)
   const byDiscord = new Map((players as { id: string; name: string; discord_user_id: string }[] | null ?? [])
     .map(p => [p.discord_user_id, p]))
 
   let added = 0
   for (const m of fresh) {
     const known = byDiscord.get(m.author.id)
-    const files = await rehostImages(db, camp.coach_id, m)
+    const files = await rehostImages(db, ch.coach_id, m)
     const { error } = await db.from('coach_messages').insert({
-      coach_id: camp.coach_id,
-      camp_id: camp.id,
+      coach_id: ch.coach_id,
+      camp_id: ch.camp_id,
       direction: 'in',
       from_name: known?.name || displayName(m),
       recipients: 'Camp',
-      thread_key: `camp:${camp.id}`,
+      thread_key: `camp:${ch.camp_id}`,
       body: bodyOf(m),
       channels: 'discord',
       status: 'received',
       external_id: `discord:${m.id}`,
       read: false,
       created_at: m.timestamp,
+      discord_channel_id: ch.channel_id,
+      discord_channel_name: ch.channel_name,
       ...(files.length ? { results: { discord: { attachments: files } } } : {}),
     })
     // 23505 = the unique index caught a message a parallel sync already stored.
@@ -101,10 +105,24 @@ export async function syncCampDiscord(camp: {
   }
 
   const lastId = r.messages[r.messages.length - 1].id
-  await db.from('coach_camps').update({
-    discord_last_message_id: lastId,
-    discord_synced_at: new Date().toISOString(),
-  }).eq('id', camp.id)
-
+  await db.from('coach_camp_channels').update({ last_message_id: lastId, synced_at: new Date().toISOString() }).eq('id', ch.id)
   return { added, lastId }
+}
+
+// Every channel linked to one camp. Errors are collected rather than thrown:
+// one dead channel must not stop the other two syncing.
+export async function syncCamp(campId: string, coachId?: string): Promise<{ added: number; errors: string[] }> {
+  const db = serviceClient()
+  let q = db.from('coach_camp_channels').select('id, coach_id, camp_id, channel_id, channel_name, last_message_id').eq('camp_id', campId)
+  if (coachId) q = q.eq('coach_id', coachId)
+  const { data } = await q
+  const channels = (data as CampChannel[] | null) ?? []
+  let added = 0
+  const errors: string[] = []
+  for (const ch of channels) {
+    const out = await syncChannel(ch)
+    added += out.added
+    if (out.error) errors.push(out.error)
+  }
+  return { added, errors }
 }

@@ -218,10 +218,31 @@ export async function GET(req: NextRequest) {
     id: String(s2.id), name: String(s2.name), role: s2.role || (s2.is_head ? 'Head coach' : 'Coach'), avatar_url: null,
   }))
   const campThreads = await Promise.all((camps as any[]).map(async c => {
-    const rows = await safe(admin.from('coach_messages')
-      .select(MSG_COLS)
+    // The preview has to show what the family sees, Discord channels and photos
+    // included — a preview that quietly drops half a thread is worse than none,
+    // because the coach trusts it.
+    let rows = await safe(admin.from('coach_messages')
+      .select(`${MSG_COLS}, discord_channel_name, results`)
       .eq('coach_id', me.academyId).eq('camp_id', c.id)
       .order('created_at', { ascending: false }).limit(60))
+    if (!rows.length) {
+      rows = await safe(admin.from('coach_messages')
+        .select(MSG_COLS)
+        .eq('coach_id', me.academyId).eq('camp_id', c.id)
+        .order('created_at', { ascending: false }).limit(60))
+    }
+    rows = await Promise.all((rows as any[]).map(async r => {
+      const files = (r.results?.discord?.attachments ?? []) as { name: string; path: string }[]
+      const photos = files.length ? (await Promise.all(files.map(async f => {
+        try {
+          const { data } = await admin.storage.from('coach-media').createSignedUrl(f.path, 3600)
+          return data?.signedUrl ? { name: f.name, url: data.signedUrl } : null
+        } catch { return null }
+      }))).filter(Boolean) : []
+      const { results: _drop, discord_channel_name: chan, ...rest } = r
+      void _drop
+      return { ...rest, channel: chan ?? null, ...(photos.length ? { photos } : {}) }
+    }))
     return { campId: String(c.id), name: String(c.name || 'Camp'), people: 0, messages: rows }
   }))
 

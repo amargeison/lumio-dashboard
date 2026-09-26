@@ -213,10 +213,35 @@ export async function GET() {
   const campThreads = await Promise.all((camps as any[]).map(async c => {
     // A camp thread only exists once migration 181 has run; until then this is
     // an empty list and the tab simply does not appear.
-    const rows = await safe(db.from('coach_messages')
-      .select(MSG_COLS)
+    //
+    // discord_channel_name and results arrived with migration 184 — asked for
+    // separately so a portal running ahead of that migration still renders the
+    // thread rather than losing it to a failed select.
+    let rows = await safe(db.from('coach_messages')
+      .select(`${MSG_COLS}, discord_channel_name, results`)
       .eq('coach_id', m.academyId).eq('camp_id', c.id)
       .order('created_at', { ascending: false }).limit(60))
+    if (!rows.length) {
+      rows = await safe(db.from('coach_messages')
+        .select(MSG_COLS)
+        .eq('coach_id', m.academyId).eq('camp_id', c.id)
+        .order('created_at', { ascending: false }).limit(60))
+    }
+
+    // Photos that came in from Discord live in a private bucket, so they are
+    // signed here — the family has no session that could sign them itself.
+    rows = await Promise.all((rows as any[]).map(async r => {
+      const files = (r.results?.discord?.attachments ?? []) as { name: string; path: string }[]
+      const photos = files.length ? (await Promise.all(files.map(async f => {
+        try {
+          const { data } = await db.storage.from('coach-media').createSignedUrl(f.path, 3600)
+          return data?.signedUrl ? { name: f.name, url: data.signedUrl } : null
+        } catch { return null }
+      }))).filter(Boolean) : []
+      const { results: _drop, discord_channel_name: chan, ...rest } = r
+      void _drop
+      return { ...rest, channel: chan ?? null, ...(photos.length ? { photos } : {}) }
+    }))
     const { count } = await db.from('coach_camp_attendees')
       .select('id', { count: 'exact', head: true }).eq('camp_id', c.id).neq('status', 'cancelled')
     const coachCount = Array.isArray(c.coach_ids) ? (c.coach_ids as unknown[]).length : 0

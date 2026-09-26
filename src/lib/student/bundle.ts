@@ -151,6 +151,12 @@ export type StudentMessage = {
   reaction?: string | null
   /** Set on camp-wide messages. */
   camp_id?: string | null
+  /** The Discord channel this arrived in, when it came from one — so a camp's
+      #general and #faqs read as the two rooms they are. */
+  channel?: string | null
+  /** Photos posted with the message, already signed for this reader. Discord's
+      own links expire within a day, so these point at Lumio's copy. */
+  photos?: { name: string; url: string }[]
 }
 
 /** Somebody the family can write to by name. */

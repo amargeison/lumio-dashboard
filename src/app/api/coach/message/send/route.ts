@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
     // private threads and the group chat they are all looking at stays empty.
     if (campId) {
       const { data: camp } = await admin.from('coach_camps')
-        .select('name, discord_channel_id, discord_mirror').eq('id', campId).eq('coach_id', user.id).maybeSingle()
+        .select('name').eq('id', campId).eq('coach_id', user.id).maybeSingle()
       if (camp) {
         await admin.from('coach_messages').insert({
           coach_id: user.id,
@@ -174,15 +174,22 @@ export async function POST(req: NextRequest) {
         // has to send the same message twice — once in Lumio for the record,
         // once in Discord so anyone sees it — will stop using one of them, and
         // it will not be the one their parents are already in.
-        const c = camp as { discord_channel_id?: string | null; discord_mirror?: boolean | null }
-        if (c.discord_channel_id && c.discord_mirror !== false) {
-          try {
+        //
+        // Only the channels flagged to mirror. A camp with #general, #faqs and
+        // #important-info linked should not have one message land three times.
+        try {
+          const { data: chans } = await admin.from('coach_camp_channels')
+            .select('channel_id').eq('coach_id', user.id).eq('camp_id', campId).eq('mirror', true)
+          const targets = (chans as { channel_id: string }[] | null) ?? []
+          if (targets.length) {
             const { postMessage } = await import('@/lib/coach/discord')
             const name = (await admin.from('sports_profiles').select('display_name').eq('id', user.id).maybeSingle())
               .data?.display_name as string | undefined
-            await postMessage(c.discord_channel_id, [subject, body].filter(Boolean).join('\n\n'), name || undefined)
-          } catch (e) { console.error('[coach/message/send] discord mirror', e) }
-        }
+            for (const t of targets) {
+              await postMessage(t.channel_id, [subject, body].filter(Boolean).join('\n\n'), name || undefined)
+            }
+          }
+        } catch (e) { console.error('[coach/message/send] discord mirror', e) }
       }
     }
   } catch (e) { console.error('[coach/message/send] log failed', e) }
