@@ -76,10 +76,23 @@ export async function POST(req: NextRequest) {
     .map(r => ({ ...r, coach_id: academyId, ...(staffId && spec.assignable ? { staff_id: staffId } : {}) }))
 
   if (!clean.length) return NextResponse.json({ inserted: 0 })
-  const { error } = await admin.from(spec.table).insert(clean)
+  const { data: saved, error } = await admin.from(spec.table).insert(clean).select('id')
   if (error) {
     console.error('[coach/import/save]', spec.table, error.message)
     return NextResponse.json({ error: `Could not save ${body.category}: ${error.message}` }, { status: 500 })
   }
-  return NextResponse.json({ inserted: clean.length })
+
+  // Camps go straight into the coach's own calendar, exactly as a camp added by
+  // hand does — a camp that is not on their phone is a week they can be
+  // double-booked into. A calendar hiccup never fails the import: the camps are
+  // saved, and the Camps page's catch-up pass picks up anything missed.
+  let calendar: { synced: number; failed: number } | undefined
+  if (spec.table === 'coach_camps' && saved?.length) {
+    try {
+      const { syncCampsToCalendar } = await import('@/lib/coach/camp-calendar')
+      const results = await syncCampsToCalendar(academyId, { campIds: saved.map((r: { id: string }) => r.id) })
+      calendar = { synced: results.filter(r => r.synced.length).length, failed: results.filter(r => r.failed.length).length }
+    } catch (e) { console.error('[coach/import/save] camp calendar', e) }
+  }
+  return NextResponse.json({ inserted: clean.length, ...(calendar ? { calendar } : {}) })
 }
