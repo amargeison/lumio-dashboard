@@ -3,6 +3,7 @@ import { Suspense } from 'react'
 import { notFound, redirect } from 'next/navigation'
 import { SportsLoginForm } from '@/components/auth/SportsLoginForm'
 import { partnerBrandBySlug } from '@/lib/coach/partner-login'
+import { shareMeta, ogImageUrl } from '@/lib/share-meta'
 
 // ─── PARTNER SIGN-IN ────────────────────────────────────────────────────────
 // URL: /login/<portal-slug> — e.g. /login/pg-tennis. The link an academy puts on
@@ -22,17 +23,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const brand = await partnerBrandBySlug(slug)
   if (!brand || !brand.enabled) return { title: 'Sign in — Lumio Tennis Coach' }
-  const title = `Sign in — ${brand.name}`
-  const description = `Sign in to ${brand.name}: sessions, lesson summaries, progress and messages. Running on Lumio Tennis Coach.`
   return {
-    title,
-    description,
+    ...shareMeta({
+      title: `Sign in to ${brand.name} — running on Lumio Tennis Coach`,
+      description: `Sign in to ${brand.name}: sessions, lesson summaries, progress and messages from your coach.`,
+      image: ogImageUrl({ slug: brand.slug, v: 'login' }),
+    }),
     robots: { index: false },
-    openGraph: {
-      title, description, siteName: 'Lumio Tennis Coach', type: 'website',
-      images: brand.emailLogoUrl ? [{ url: brand.emailLogoUrl }] : [{ url: 'https://www.lumiosports.com/tennis_coach_logo.png' }],
-    },
-    twitter: { card: 'summary', title, description },
+    // The academy's own badge in the browser tab, so the page a parent keeps
+    // open (or saves to their home screen) is theirs, not Lumio's.
+    ...(brand.emailLogoUrl ? {
+      icons: {
+        icon: [{ url: brand.emailLogoUrl }],
+        shortcut: brand.emailLogoUrl,
+        apple: brand.emailLogoUrl,
+      },
+    } : {}),
   }
 }
 

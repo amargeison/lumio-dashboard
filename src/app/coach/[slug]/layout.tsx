@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { PwaInstallRedeemer } from '@/components/pwa/PwaInstallRedeemer'
 import { partnerBrandBySlug } from '@/lib/coach/partner-login'
+import { shareMeta, ogImageUrl } from '@/lib/share-meta'
 
 // Server component wrapping the client coach [slug]/page.tsx so we can export
 // generateMetadata: a per-slug PWA manifest + iOS standalone tags so an
@@ -24,19 +25,19 @@ export async function generateMetadata(
   // business product's ("B2B workflow automation for EdTech companies") — so a
   // coach sharing their portal was captioned as somebody else's software.
   const brand = slug === 'demo' ? null : await partnerBrandBySlug(slug)
-  const name = brand?.name || (slug === 'demo' ? 'Demo academy' : slug)
-  const title = `${name} — Lumio Tennis Coach`
-  const description = brand
-    ? `${brand.name}'s coaching portal: bookings, session plans, lesson summaries, player progress, camps and messages. Running on Lumio Tennis Coach.`
-    : 'The coaching portal for tennis coaches and academies: bookings, session plans, lesson summaries, player progress, camps and parent messaging.'
+  const share = brand
+    ? shareMeta({
+        title: `${brand.name} portal — running on Lumio Tennis Coach`,
+        description: `${brand.name}'s coaching portal: bookings, session plans, lesson summaries, player progress, camps and messages.`,
+        image: ogImageUrl({ slug: brand.slug, v: 'portal' }),
+      })
+    : shareMeta({
+        title: slug === 'demo' ? 'Lumio Tennis Coach — demo academy' : 'Lumio Tennis Coach',
+        description: 'The coaching portal for tennis coaches and academies: bookings, session plans, lesson summaries, player progress, camps and parent messaging.',
+        image: ogImageUrl({ page: 'tennis-coach' }),
+      })
   return {
-    title,
-    description,
-    openGraph: {
-      title, description, siteName: 'Lumio Tennis Coach', type: 'website',
-      images: [{ url: brand?.emailLogoUrl || 'https://www.lumiosports.com/tennis_coach_logo.png' }],
-    },
-    twitter: { card: 'summary', title, description },
+    ...share,
     manifest: `/coach/${slug}/m/anon/manifest.webmanifest`,
     appleWebApp: {
       capable:        true,
