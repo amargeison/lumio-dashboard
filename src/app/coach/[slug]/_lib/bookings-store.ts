@@ -6,6 +6,7 @@
 // flow through schedule.ts into BOTH the calendar grid and the Session Planner.
 
 import { BOOKINGS, type Booking } from './coach-data'
+import { ls } from './storage-scope'
 
 const KEY = 'lumio_coach_bookings'           // added bookings
 const OKEY = 'lumio_coach_booking_overrides' // { [id]: Partial<Booking> } edits over seed/added
@@ -14,19 +15,19 @@ const EVT = 'lumio-coach-bookings-changed'
 
 function readList(): Booking[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(KEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v as Booking[] : [] } catch { return [] }
+  try { const raw = ls.getItem(KEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v as Booking[] : [] } catch { return [] }
 }
 function readMap(key: string): Record<string, Partial<Booking>> {
   if (typeof window === 'undefined') return {}
-  try { const raw = localStorage.getItem(key); const v = raw ? JSON.parse(raw) : {}; return v && typeof v === 'object' ? v : {} } catch { return {} }
+  try { const raw = ls.getItem(key); const v = raw ? JSON.parse(raw) : {}; return v && typeof v === 'object' ? v : {} } catch { return {} }
 }
 function readHidden(): string[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(HKEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v as string[] : [] } catch { return [] }
+  try { const raw = ls.getItem(HKEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v as string[] : [] } catch { return [] }
 }
 function writeRaw(key: string, val: unknown) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(key, JSON.stringify(val)) } catch { /* ignore quota */ }
+  try { ls.setItem(key, JSON.stringify(val)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

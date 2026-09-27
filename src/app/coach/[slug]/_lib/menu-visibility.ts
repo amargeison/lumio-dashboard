@@ -1,3 +1,4 @@
+import { ls } from './storage-scope'
 // Coach portal — which sidebar nav items the coach has hidden from the menu.
 // Persists to localStorage and notifies subscribers via a window event so the
 // sidebar (both shells) and the Settings toggles update the moment one changes.
@@ -12,11 +13,11 @@ export const ALWAYS_VISIBLE = ['dashboard', 'settings', 'staff']
 
 function read(): string[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(KEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v as string[] : [] } catch { return [] }
+  try { const raw = ls.getItem(KEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v as string[] : [] } catch { return [] }
 }
 function write(list: string[]) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

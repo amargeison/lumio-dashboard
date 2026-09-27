@@ -3,17 +3,18 @@
 // sessions-store.ts: the static CAMPS seed merged with locally-added camps.
 
 import { CAMPS, type Camp } from './coach-data'
+import { ls } from './storage-scope'
 
 const KEY = 'lumio_coach_camps'
 const EVT = 'lumio-coach-camps-changed'
 
 function read(): Camp[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(KEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v as Camp[] : [] } catch { return [] }
+  try { const raw = ls.getItem(KEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v as Camp[] : [] } catch { return [] }
 }
 function write(list: Camp[]) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

@@ -14,6 +14,7 @@
 // a stale copy of the seed bodies.
 
 import { COACH_MESSAGES, COACH_MESSAGE_THREADS, type CoachThreadEntry } from './coach-data'
+import { ls } from './storage-scope'
 
 const KEY = 'lumio_coach_messages'
 const EVT = 'lumio-coach-messages-changed'
@@ -70,7 +71,7 @@ export type CoachInboxMessage = {
 function readAll(): Persisted {
   if (typeof window === 'undefined') return { states: {}, composed: [] }
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = ls.getItem(KEY)
     if (!raw) return { states: {}, composed: [] }
     const parsed = JSON.parse(raw)
     // Backward-compat: Phase A persisted a bare StateMap (no states/composed keys).
@@ -82,7 +83,7 @@ function readAll(): Persisted {
 }
 function writeAll(data: Persisted) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(data)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(data)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

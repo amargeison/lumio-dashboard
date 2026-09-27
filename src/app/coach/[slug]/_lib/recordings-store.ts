@@ -5,17 +5,18 @@
 // override map and apply it over the seed. Demo only.
 
 import { RECORDINGS_SEED, type Recording } from './recordings-data'
+import { ls } from './storage-scope'
 
 const KEY = 'lumio_coach_recordings'   // { [recordingId]: sessionId }  ('' = untagged)
 const EVT = 'lumio-coach-recordings-changed'
 
 function readTags(): Record<string, string> {
   if (typeof window === 'undefined') return {}
-  try { const raw = localStorage.getItem(KEY); const v = raw ? JSON.parse(raw) : {}; return v && typeof v === 'object' ? v as Record<string, string> : {} } catch { return {} }
+  try { const raw = ls.getItem(KEY); const v = raw ? JSON.parse(raw) : {}; return v && typeof v === 'object' ? v as Record<string, string> : {} } catch { return {} }
 }
 function writeTags(map: Record<string, string>) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(map)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(map)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

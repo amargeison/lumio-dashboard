@@ -2,6 +2,7 @@
 // Planner. Persists to localStorage and notifies subscribers.
 
 import type { TodaySession } from './coach-data'
+import { ls } from './storage-scope'
 
 const KEY = 'lumio_coach_sessions'
 const STATUS_KEY = 'lumio_coach_session_status'   // { [id]: 'done' } overrides
@@ -10,20 +11,20 @@ const EVT = 'lumio-coach-sessions-changed'
 
 function read(): TodaySession[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) as TodaySession[] : [] } catch { return [] }
+  try { const raw = ls.getItem(KEY); return raw ? JSON.parse(raw) as TodaySession[] : [] } catch { return [] }
 }
 function write(list: TodaySession[]) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 function readMap<T>(key: string): T {
   if (typeof window === 'undefined') return ({} as T)
-  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : ({} as T) } catch { return ({} as T) }
+  try { const raw = ls.getItem(key); return raw ? JSON.parse(raw) as T : ({} as T) } catch { return ({} as T) }
 }
 function writeRaw(key: string, val: unknown) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(key, JSON.stringify(val)) } catch { /* ignore quota */ }
+  try { ls.setItem(key, JSON.stringify(val)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

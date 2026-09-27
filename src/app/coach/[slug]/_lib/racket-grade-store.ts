@@ -5,6 +5,7 @@
 // localStorage + a window event, like the other coach demo stores.
 
 import { BELTS, skillScore, type Player } from './coach-data'
+import { ls } from './storage-scope'
 
 const GKEY = 'lumio_coach_grades'         // { "playerId:beltIndex:skillIdx": score 0-4 }
 const BKEY = 'lumio_coach_belt_override'  // { "playerId": beltIndex }
@@ -12,11 +13,11 @@ const EVT = 'lumio-coach-grades-changed'
 
 function read(key: string): Record<string, number> {
   if (typeof window === 'undefined') return {}
-  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as Record<string, number> : {} } catch { return {} }
+  try { const raw = ls.getItem(key); return raw ? JSON.parse(raw) as Record<string, number> : {} } catch { return {} }
 }
 function write(key: string, obj: Record<string, number>) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(key, JSON.stringify(obj)) } catch { /* ignore */ }
+  try { ls.setItem(key, JSON.stringify(obj)) } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

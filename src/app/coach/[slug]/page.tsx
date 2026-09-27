@@ -365,8 +365,12 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // profile (i.e. it's no longer the demo default), that name wins everywhere —
   // sidebar, rail and the Coaches module all agree. Sub-coach logins keep their
   // own session name.
-  const customHeadName = session?.role === 'head' && settings.coach && settings.coach !== COACH_ORG.coach ? settings.coach : ''
-  const coachName = customHeadName || session?.userName || (isEmpty ? (slugClubName || '') : settings.coach)
+  // The DEMO is a fixed showcase: Vincent Jones, head coach of Lumio Tennis Club,
+  // whoever is looking at it. It used to take the visitor's sign-in name and any
+  // renamed academy on this browser, so a coach who also ran a real portal saw
+  // their own name and club dressed up as the demo.
+  const customHeadName = isEmpty && session?.role === 'head' && settings.coach && settings.coach !== COACH_ORG.coach ? settings.coach : ''
+  const coachName = !isEmpty ? COACH_ORG.coach : (customHeadName || session?.userName || slugClubName || '')
   const coachInitials = coachName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   // Live: the head coach's uploaded photo (settings). Demo: a name-seeded avatar
   // so the top-right rail matches the coach cards in the grid.
@@ -376,14 +380,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // The settings copy is written the moment the upload succeeds and repaints
   // straight away; the session value stays as the fallback for a coach who has
   // only ever set a photo during onboarding.
-  const coachPhoto = (isEmpty ? settings.head?.avatarUrl || null : null) || session?.photoDataUrl || (isEmpty ? null : demoAvatarUrl(coachName))
+  const coachPhoto = !isEmpty ? demoAvatarUrl(coachName) : (settings.head?.avatarUrl || session?.photoDataUrl || null)
   // The name the head coach typed in Settings wins over the one captured when
   // they signed in. session.clubName is a snapshot from sign-in, so while it
   // came first, renaming the academy to "PG Tennis" changed nothing on screen —
   // the sidebar and the dashboard banner kept "Penrith Tennis Club" until the
   // next login. Same rule the coach's own name already follows just above.
-  const customClubName = session?.role === 'head' && settings.academy && settings.academy !== COACH_ORG.academy ? settings.academy : ''
-  const clubName = customClubName || session?.clubName || slugClubName || (isEmpty ? '' : settings.academy)
+  const customClubName = isEmpty && session?.role === 'head' && settings.academy && settings.academy !== COACH_ORG.academy ? settings.academy : ''
+  const clubName = !isEmpty ? COACH_ORG.academy : (customClubName || session?.clubName || slugClubName || '')
 
   // …and carry a rename through to the account itself. The sidebar reads the
   // setting, but certificates, camp packs, emails and the player app read the
@@ -884,7 +888,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${line}`, minHeight: 56, padding: expanded ? '12px 12px' : '12px 4px', gap: expanded ? 8 : 0, justifyContent: expanded ? 'flex-start' : 'center' }}>
           <div style={{ width: 32, height: 32, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0, overflow: 'hidden' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={settings.brandLogo || session?.logoDataUrl || '/tennis_transparent_logo.png'} alt={clubName || 'Lumio'} style={{ width: 26, height: 26, objectFit: 'contain' }} />
+            <img src={!isEmpty ? '/tennis_coach_logo.png' : (settings.brandLogo || session?.logoDataUrl || '/tennis_transparent_logo.png')} alt={clubName || 'Lumio'} style={{ width: 26, height: 26, objectFit: 'contain' }} />
           </div>
           {expanded && (
             <div style={{ minWidth: 0 }}>

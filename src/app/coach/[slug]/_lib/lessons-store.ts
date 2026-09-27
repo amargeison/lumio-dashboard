@@ -4,17 +4,18 @@
 
 import { LESSONS, BELTS, ALL_SKILLS, type Lesson, type TodaySession } from './coach-data'
 import type { DemoReview } from './session-review-data'
+import { ls } from './storage-scope'
 
 const KEY = 'lumio_coach_lessons'
 const EVT = 'lumio-coach-lessons-changed'
 
 function read(): Lesson[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) as Lesson[] : [] } catch { return [] }
+  try { const raw = ls.getItem(KEY); return raw ? JSON.parse(raw) as Lesson[] : [] } catch { return [] }
 }
 function write(list: Lesson[]) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

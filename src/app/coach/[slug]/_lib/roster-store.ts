@@ -2,17 +2,18 @@
 // localStorage and notifies subscribers so the roster updates immediately.
 
 import type { Player } from './coach-data'
+import { ls } from './storage-scope'
 
 const KEY = 'lumio_coach_added_players'
 const EVT = 'lumio-coach-roster-changed'
 
 function read(): Player[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) as Player[] : [] } catch { return [] }
+  try { const raw = ls.getItem(KEY); return raw ? JSON.parse(raw) as Player[] : [] } catch { return [] }
 }
 function write(list: Player[]) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

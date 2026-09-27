@@ -1,3 +1,4 @@
+import { ls } from './storage-scope'
 // Client-side player → coach assignment overrides (demo). Lets the head coach
 // reassign a player to a different coach, or assign players to a newly added
 // coach. localStorage + a window event, mirroring the other coach demo stores.
@@ -7,11 +8,11 @@ const EVT = 'lumio-coach-player-assign-changed'
 
 function read(): Record<string, string> {
   if (typeof window === 'undefined') return {}
-  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) as Record<string, string> : {} } catch { return {} }
+  try { const raw = ls.getItem(KEY); return raw ? JSON.parse(raw) as Record<string, string> : {} } catch { return {} }
 }
 function write(map: Record<string, string>) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(map)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(map)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 
