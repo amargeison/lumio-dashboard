@@ -46,6 +46,17 @@ export function sb() {
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     )
+    // A different person signing in on this tab must not inherit the last
+    // person's academy. The identity is cached for the life of the page, so
+    // without this a coach who signed out of one academy and straight into a
+    // new account had every write filed under the OLD academy — and refused by
+    // row level security ("new row violates row-level security policy").
+    let lastUser: string | null | undefined
+    _sb.auth.onAuthStateChange((_event: string, session: { user?: { id?: string } } | null) => {
+      const uid = session?.user?.id ?? null
+      if (lastUser !== undefined && uid !== lastUser) forgetIdentity()
+      lastUser = uid
+    })
   }
   return _sb
 }
