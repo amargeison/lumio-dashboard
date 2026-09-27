@@ -1,4 +1,5 @@
 'use client'
+import { ls } from './storage-scope'
 
 // Racket Reward System — which (player, racket-level) trophy+certificate awards
 // the coach has made. DEMO ONLY: this records the award workflow so the matrix
@@ -17,11 +18,11 @@ export function awardKey(playerId: string, beltIndex: number): string {
 
 function read(): string[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(KEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v as string[] : [] } catch { return [] }
+  try { const raw = ls.getItem(KEY); const v = raw ? JSON.parse(raw) : []; return Array.isArray(v) ? v as string[] : [] } catch { return [] }
 }
 function write(list: string[]) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

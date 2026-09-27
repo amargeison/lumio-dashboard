@@ -1,3 +1,4 @@
+import { ls } from './storage-scope'
 // Tiny client-side store for the coach's saved "next session" plans.
 // Persists to localStorage and notifies subscribers via a window event so the
 // Session Planner view updates the moment a plan is added from a lesson brief.
@@ -20,11 +21,11 @@ const EVT = 'lumio-coach-plans-changed'
 
 function read(): PlannedSession[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) as PlannedSession[] : [] } catch { return [] }
+  try { const raw = ls.getItem(KEY); return raw ? JSON.parse(raw) as PlannedSession[] : [] } catch { return [] }
 }
 function write(list: PlannedSession[]) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

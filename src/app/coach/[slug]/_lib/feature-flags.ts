@@ -1,4 +1,5 @@
 'use client'
+import { ls } from './storage-scope'
 
 // Coach product feature flags + plan tiers (demo — localStorage only).
 // Four toggleable features gate whole modules and their linked data across the
@@ -41,7 +42,7 @@ function read(fallback: TierKey = 'elite'): FeatureFlags {
   const fb = TIERS.find(t => t.key === fallback)?.features ?? DEFAULT
   if (typeof window === 'undefined') return { ...fb }
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = ls.getItem(KEY)
     if (!raw) return { ...fb }
     const v = JSON.parse(raw) as Partial<FeatureFlags>
     // `gps` was renamed to `effort`. Effort & Rewards is a NEW feature, so anyone
@@ -52,7 +53,7 @@ function read(fallback: TierKey = 'elite'): FeatureFlags {
 }
 function write(flags: FeatureFlags) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(flags)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(flags)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
   try { persist?.(flags) } catch { /* a failed mirror must not block the toggle */ }
 }
@@ -80,7 +81,7 @@ export function primeFeatures(flags: Partial<FeatureFlags> | null | undefined) {
     effort: flags.effort ?? read().effort,
     video: !!flags.video, audio: !!flags.audio, racket: !!flags.racket,
   }
-  try { localStorage.setItem(KEY, JSON.stringify(merged)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(merged)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

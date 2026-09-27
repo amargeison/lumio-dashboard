@@ -112,17 +112,43 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. Insert the sports profile row
-    const { error: profileError } = await supabase.from('sports_profiles').insert({
+    //
+    // The portal address has to be free. Two academies can have the same name
+    // ("Penrith Tennis Club" more than once), and since migration 186 the
+    // database refuses a second one outright — which reached the coach as
+    // "duplicate key value violates unique constraint" on the last step of
+    // sign-up. Take the nearest free address instead (penrith-tennis-club-2);
+    // they can change it during setup.
+    const RESERVED_SLUGS = new Set(['demo', 'admin', 'new', 'settings', 'login', 'signup', 'api', 'portal', 'lumio', 'test', 'sso', 'guides'])
+    const slugTaken = async (s: string) => {
+      if (RESERVED_SLUGS.has(s)) return true
+      const { data } = await supabase.from('sports_profiles')
+        .select('id').eq('sport', sport).ilike('portal_slug', s).neq('id', userId).limit(1)
+      return !!(data as { id: string }[] | null)?.length
+    }
+    let finalSlug = portalSlug
+    if (finalSlug && await slugTaken(finalSlug)) {
+      let next: string | null = null
+      for (let i = 2; i <= 50 && !next; i++) if (!(await slugTaken(`${portalSlug}-${i}`))) next = `${portalSlug}-${i}`
+      finalSlug = next || `${portalSlug}-${Date.now().toString(36).slice(-4)}`
+    }
+    const row = {
       id: userId,
       sport,
       display_name: displayName,
       nickname: nickname ?? null,
       avatar_url: avatarUrl ?? null,
       brand_name: brand,
-      portal_slug: portalSlug,
+      portal_slug: finalSlug,
       brand_logo_url: brandLogoUrl ?? null,
       plan: 'founding',
-    })
+    }
+    let { error: profileError } = await supabase.from('sports_profiles').insert(row)
+    if (profileError && finalSlug && (profileError.code === '23505' && /portal_slug/.test(profileError.message))) {
+      // Lost a race for the address between the check and the insert.
+      finalSlug = `${portalSlug}-${Date.now().toString(36).slice(-4)}`
+      ;({ error: profileError } = await supabase.from('sports_profiles').insert({ ...row, portal_slug: finalSlug }))
+    }
 
     if (profileError) {
       // Don't leave a zombie auth user behind
@@ -169,6 +195,9 @@ export async function POST(req: NextRequest) {
       userId,
       sport,
       redirectTo,
+      // The address actually saved — not necessarily the one the form guessed
+      // from the club name, if another academy already had that.
+      portalSlug: finalSlug,
     })
   } catch (err) {
     console.error('[sports-auth] Unexpected error:', err)

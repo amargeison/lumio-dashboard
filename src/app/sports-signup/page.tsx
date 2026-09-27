@@ -42,7 +42,9 @@ export default function SportsSignupPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const accent = sport ? SPORTS.find(s => s.id === sport)?.color || '#8B5CF6' : '#8B5CF6'
-  const clubSlug = club.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'my-club'
+  const typedSlug = club.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'my-club'
+  const [savedSlug, setSavedSlug] = useState<string | null>(null)
+  const clubSlug = savedSlug || typedSlug
 
   // The ?sport= preselect is read AFTER mount, not during render.
   //
@@ -94,6 +96,9 @@ export default function SportsSignupPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Signup failed')
+      // Another academy may already have the address the club name suggests —
+      // the server hands back the one it actually saved (e.g. …-2).
+      if (typeof data.portalSlug === 'string' && data.portalSlug) setSavedSlug(data.portalSlug)
 
       // Send the branded founder OTP (replaces Supabase's default code email).
       await sendFounderOtp()

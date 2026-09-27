@@ -28,7 +28,7 @@ export const COACH_ORG = {
   product:    'Lumio Coach',
   coach:      'Vincent Jones',
   coachShort: 'Vincent',
-  academy:    'Lumio Tennis Academy',
+  academy:    'Lumio Tennis Club',
   cert:       'Performance Coach',
   date:       'Thu, 11 Jun 2026',
   venue:      'Riverside Tennis Centre · Courts 1–6',

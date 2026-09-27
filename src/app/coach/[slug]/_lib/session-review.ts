@@ -4,6 +4,7 @@
 // across reloads. Demo only — nothing leaves the browser.
 
 import type { DemoReview } from './session-review-data'
+import { ls } from './storage-scope'
 
 export type SessionReview = {
   id: string
@@ -18,11 +19,11 @@ const EVT = 'lumio-coach-reviews-changed'
 
 function read(): SessionReview[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) as SessionReview[] : [] } catch { return [] }
+  try { const raw = ls.getItem(KEY); return raw ? JSON.parse(raw) as SessionReview[] : [] } catch { return [] }
 }
 function write(list: SessionReview[]) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

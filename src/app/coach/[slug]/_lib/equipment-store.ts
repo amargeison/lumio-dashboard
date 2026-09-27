@@ -7,6 +7,7 @@
 //   4. Ordered items (restock workflow → mark ordered)    → lumio_coach_equip_ordered
 
 import type { KitItem, KitStatus } from './coach-data'
+import { ls } from './storage-scope'
 
 export type AddedKitItem = KitItem & { category: string; id: string }
 
@@ -14,11 +15,11 @@ const EVT = 'lumio-coach-equipment-changed'
 
 function read<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback
-  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : fallback } catch { return fallback }
+  try { const raw = ls.getItem(key); return raw ? JSON.parse(raw) as T : fallback } catch { return fallback }
 }
 function write(key: string, value: unknown) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* ignore quota */ }
+  try { ls.setItem(key, JSON.stringify(value)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

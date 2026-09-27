@@ -4,6 +4,7 @@
 // Notifies subscribers via a CustomEvent so views re-read on change.
 
 import { PACKAGE_OFFERS, PACKAGES, type PackageOffer } from './coach-data'
+import { ls } from './storage-scope'
 
 const OFFERS_KEY = 'lumio_coach_pkg_offers'    // added offers
 const HIDDEN_KEY = 'lumio_coach_pkg_hidden'    // removed default/added ids
@@ -13,11 +14,11 @@ const EVT = 'lumio-coach-packages-changed'
 
 function readJSON<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback
-  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) as T : fallback } catch { return fallback }
+  try { const raw = ls.getItem(key); return raw ? JSON.parse(raw) as T : fallback } catch { return fallback }
 }
 function writeJSON(key: string, val: unknown) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(key, JSON.stringify(val)) } catch { /* ignore quota */ }
+  try { ls.setItem(key, JSON.stringify(val)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

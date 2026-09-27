@@ -2,17 +2,18 @@
 // Persists to localStorage and notifies subscribers (mirrors roster-store.ts).
 
 import type { Resource } from './coach-data'
+import { ls } from './storage-scope'
 
 const KEY = 'lumio_coach_resources'
 const EVT = 'lumio-coach-resources-changed'
 
 function read(): Resource[] {
   if (typeof window === 'undefined') return []
-  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) as Resource[] : [] } catch { return [] }
+  try { const raw = ls.getItem(KEY); return raw ? JSON.parse(raw) as Resource[] : [] } catch { return [] }
 }
 function write(list: Resource[]) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
+  try { ls.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 

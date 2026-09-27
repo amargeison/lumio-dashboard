@@ -4,6 +4,7 @@
 // portal. localStorage + a window event so changes propagate live.
 
 import { COACH_ORG } from './coach-data'
+import { ls, isDemoPath } from './storage-scope'
 
 export type AccentKey = 'purple' | 'blue' | 'green' | 'bronze' | 'claret'
   | 'pgorange' | 'teal' | 'navy' | 'gold' | 'pink'
@@ -173,7 +174,8 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   gettingStarted: true,
   studentApp: true,
   audioOnly: false,
-  brandLogo: '',
+  // The demo academy's badge. Live portals start blank (LIVE_DEFAULT_SETTINGS).
+  brandLogo: '/tennis_coach_logo.png',
   partnerLogin: false,
   sectionsOff: {},
   head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '', avatarUrl: '' },
@@ -190,10 +192,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
 // that from the URL keeps every caller correct no matter which module reads
 // settings first — there's no provider to thread a flag through.
 export function isDemoPortal(): boolean {
-  if (typeof window === 'undefined') return false
-  const parts = window.location.pathname.split('/').filter(Boolean)
-  const i = parts.lastIndexOf('coach')
-  return i >= 0 && parts[i + 1] === 'demo'
+  return isDemoPath()
 }
 
 // Live defaults: identical to the demo seed except every field that carries the
@@ -219,6 +218,7 @@ export const LIVE_DEFAULT_SETTINGS: CoachSettings = {
   staff: { ...DEFAULT_SETTINGS.staff, dsl: '' },
   messaging: { ...DEFAULT_SETTINGS.messaging, senderEmail: '', senderPhone: '' },
   syncedVenues: [],
+  brandLogo: '',
 }
 
 // The seed this portal should fall back to for anything the coach hasn't set.
@@ -318,7 +318,7 @@ export function setSettingsPersist(fn: PersistFn | null) { persist = fn }
 // the same values back up as if the coach had just changed them.
 export function primeSettingsCache(next: Partial<CoachSettings>) {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(KEY, JSON.stringify({ ...getSettings(), ...next })) } catch { /* ignore */ }
+  try { ls.setItem(KEY, JSON.stringify({ ...getSettings(), ...next })) } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 
@@ -332,7 +332,7 @@ export function primeSettingsCache(next: Partial<CoachSettings>) {
 // changing a default does not retroactively reach a coach who already has a blob.
 export function rawSettings(): Partial<CoachSettings> {
   if (typeof window === 'undefined') return {}
-  try { const raw = localStorage.getItem(KEY); return raw ? JSON.parse(raw) : {} } catch { return {} }
+  try { const raw = ls.getItem(KEY); return raw ? JSON.parse(raw) : {} } catch { return {} }
 }
 
 export function getSettings(): CoachSettings {
@@ -341,13 +341,13 @@ export function getSettings(): CoachSettings {
   // swaps to the real values (below) on mount.
   if (typeof window === 'undefined') return DEFAULT_SETTINGS
   const base = activeDefaults()
-  try { const raw = localStorage.getItem(KEY); return raw ? { ...base, ...JSON.parse(raw) } : base } catch { return base }
+  try { const raw = ls.getItem(KEY); return raw ? { ...base, ...JSON.parse(raw) } : base } catch { return base }
 }
 
 export function setSettings(patch: Partial<CoachSettings>) {
   if (typeof window === 'undefined') return
   const next = { ...getSettings(), ...patch }
-  try { localStorage.setItem(KEY, JSON.stringify(next)) } catch { /* ignore */ }
+  try { ls.setItem(KEY, JSON.stringify(next)) } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(EVT))
   // Mirror to the server (debounced inside the hook). Never awaited: a slow or
   // failed write must not make the settings UI feel laggy or lose the local change.
@@ -367,7 +367,7 @@ export function setSectionOff(moduleId: string, key: string, off: boolean) {
 
 export function resetSettings() {
   if (typeof window === 'undefined') return
-  try { localStorage.removeItem(KEY) } catch { /* ignore */ }
+  try { ls.removeItem(KEY) } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(EVT))
   // Clear the server copy too, or the next hydrate would restore what the coach
   // just reset — on this device and every other one.
