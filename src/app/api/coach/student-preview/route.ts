@@ -171,7 +171,7 @@ export async function GET(req: NextRequest) {
   // does not have yet fails the whole select, and an empty thread hides the
   // Messages section entirely — which is what "the messages have vanished"
   // looks like when a deploy is ahead of its migration.
-  const MSG_COLS = 'id, direction, from_name, subject, body, created_at, reaction, to_name, reply_to, camp_id'
+  const MSG_COLS = 'id, direction, from_name, subject, body, created_at, reaction, to_name, reply_to, camp_id, channels'
   const MSG_COLS_LEGACY = 'id, direction, from_name, subject, body, created_at'
   const msgSelect = async (build: (cols: string) => any) => {   // eslint-disable-line @typescript-eslint/no-explicit-any
     const { data, error } = await build(MSG_COLS)
@@ -221,16 +221,26 @@ export async function GET(req: NextRequest) {
     // The preview has to show what the family sees, Discord channels and photos
     // included — a preview that quietly drops half a thread is worse than none,
     // because the coach trusts it.
-    let rows = await safe(admin.from('coach_messages')
-      .select(`${MSG_COLS}, discord_channel_name, results`)
-      .eq('coach_id', me.academyId).eq('camp_id', c.id)
-      .order('created_at', { ascending: false }).limit(60))
-    if (!rows.length) {
-      rows = await safe(admin.from('coach_messages')
-        .select(MSG_COLS)
-        .eq('coach_id', me.academyId).eq('camp_id', c.id)
-        .order('created_at', { ascending: false }).limit(60))
+    // A camp message is found by its camp id OR by its camp thread key. Rows
+    // have been written both ways over time — the Discord sync, the coach's
+    // send, the family's reply — and a row carrying one but not the other
+    // simply vanished from the family's side while the coach could see it.
+    // Two exact queries, merged, rather than an .or() built from a string.
+    const campRows = async (cols: string) => {
+      const [byId, byKey] = await Promise.all([
+        safe(admin.from('coach_messages').select(cols).eq('coach_id', me.academyId).eq('camp_id', c.id)
+          .order('created_at', { ascending: false }).limit(120)),
+        safe(admin.from('coach_messages').select(cols).eq('coach_id', me.academyId).eq('thread_key', `camp:${c.id}`)
+          .order('created_at', { ascending: false }).limit(120)),
+      ])
+      const seen = new Set<string>()
+      return ([...(byId as any[]), ...(byKey as any[])])   // eslint-disable-line @typescript-eslint/no-explicit-any
+        .filter(r => r?.id && !seen.has(r.id) && (seen.add(r.id), true))
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+        .slice(0, 120)
     }
+    let rows = await campRows(`${MSG_COLS}, discord_channel_name, results`)
+    if (!rows.length) rows = await campRows(MSG_COLS)
     rows = await Promise.all((rows as any[]).map(async r => {
       const files = (r.results?.discord?.attachments ?? []) as { name: string; path: string }[]
       const photos = files.length ? (await Promise.all(files.map(async f => {

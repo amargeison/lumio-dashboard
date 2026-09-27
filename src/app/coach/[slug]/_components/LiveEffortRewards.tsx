@@ -14,6 +14,7 @@ import { levelFor, bandLabel } from '../_lib/effort-rewards'
 import { getSettings } from '../_lib/settings-store'
 import { GpsLineChart } from './CoachHeatmaps'
 import { avatarSrc } from '@/lib/avatar'
+import { stageWords } from '../_lib/stage-words'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 const initials = (n: string) => (n || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -125,7 +126,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
     <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
       <div>
         <h2 style={{ color: T.text, fontSize: 22, fontWeight: 700, margin: 0 }}>Effort &amp; Rewards</h2>
-        <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>XP your players earn from training — log it here, or players can log from their app. Separate from Racket Progression.</p>
+        <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>XP your players earn from training — log it here, or players can log from their app.{stageWords().racket ? ' Separate from Racket Progression.' : ''}</p>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         {honest}
@@ -296,7 +297,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
           ))}
         </div>
         <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.6, margin: '14px 0 0' }}>
-          XP builds the effort level shown above. It is a motivation layer, kept separate from Racket Progression, which you assess against the LTA Youth pathway each session. Effort rewards never advance a racket. Short sessions are ignored, XP is capped per session, and you can void anything odd.
+          XP builds the effort level shown above. It is a motivation layer{stageWords().racket ? ', kept separate from Racket Progression, which you assess against the LTA Youth pathway each session. Effort rewards never advance a racket' : ' — it never changes a player’s colour, which you set yourself'}. Short sessions are ignored, XP is capped per session, and you can void anything odd.
         </p>
       </div>
 

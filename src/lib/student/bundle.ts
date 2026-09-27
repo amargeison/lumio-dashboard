@@ -151,6 +151,9 @@ export type StudentMessage = {
   reaction?: string | null
   /** Set on camp-wide messages. */
   camp_id?: string | null
+  /** How it arrived: 'portal' (typed in the app), 'discord', or the coach's
+      channels. Tells "you" apart from everyone else in a camp thread. */
+  channels?: string | null
   /** The Discord channel this arrived in, when it came from one — so a camp's
       #general and #faqs read as the two rooms they are. */
   channel?: string | null

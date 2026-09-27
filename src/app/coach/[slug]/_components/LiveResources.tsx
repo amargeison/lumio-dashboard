@@ -9,6 +9,7 @@ import { useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
+import { stageWords } from '../_lib/stage-words'
 import { useCoachTable, RACKET_STAGES } from '../_lib/coach-db'
 import { isPrintable, openPrintable } from '../_lib/resource-printables'
 import { DrillLibrary } from './DrillLibrary'
@@ -58,7 +59,7 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 14 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Resource Centre</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the racket system.</p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the {stageWords().noun} ladder.</p>
         </div>
         <button onClick={() => setEdit('new')} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ Add resource</button>
       </div>
