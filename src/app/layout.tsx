@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from 'next'
+import { headers } from 'next/headers'
+import { shareMeta, ogImageUrl } from '@/lib/share-meta'
 import { Geist, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import CookieBanner from '@/components/gdpr/CookieBanner'
@@ -20,19 +22,34 @@ const jetbrainsMono = JetBrains_Mono({
 // src/app/tennis/[slug]/layout.tsx) override manifest + themeColor with
 // their own generateMetadata so portal installs are scoped to the sport
 // route, not the marketing root.
-export const metadata: Metadata = {
-  title: 'Lumio',
-  description: 'B2B workflow automation for EdTech companies',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable:        true,
-    title:          'Lumio',
-    statusBarStyle: 'black-translucent',
-  },
-  icons: {
-    icon:  '/lumio-favicon-32.png',
-    apple: '/lumio-favicon-256.png',
-  },
+// Host-aware so a lumiosports.com page with no copy of its own never previews
+// as the business product. The EdTech line is lumiocms.com's; on the sports
+// domain it captioned coaches' links as somebody else's software.
+export async function generateMetadata(): Promise<Metadata> {
+  const host = (await headers()).get('host') ?? ''
+  const sports = host.includes('lumiosports')
+  const base: Metadata = {
+    manifest: '/manifest.json',
+    appleWebApp: {
+      capable:        true,
+      title:          'Lumio',
+      statusBarStyle: 'black-translucent',
+    },
+    icons: {
+      icon:  '/lumio-favicon-32.png',
+      apple: '/lumio-favicon-256.png',
+    },
+  }
+  if (!sports) return { ...base, title: 'Lumio', description: 'B2B workflow automation for EdTech companies' }
+  return {
+    ...base,
+    ...shareMeta({
+      title: 'Lumio Sports',
+      description: 'Software for coaches, clubs, academies and athletes: bookings, player development, camps, messaging and more. Home of Lumio Tennis Coach.',
+      image: ogImageUrl({ page: 'sports' }),
+      siteName: 'Lumio Sports',
+    }),
+  }
 }
 
 // themeColor lives on `viewport` in Next 16. Per-sport [slug]/layout.tsx

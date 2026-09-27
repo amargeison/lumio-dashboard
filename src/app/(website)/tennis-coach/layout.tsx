@@ -15,13 +15,15 @@ export const metadata: Metadata = {
     type: 'website',
     url: 'https://lumiosports.com/tennis-coach',
     siteName: 'Lumio Sports',
-    images: [{ url: '/tennis_coach_logo.png', alt: 'Lumio Tennis Coach' }],
+    // The 1200×630 card (logo kept small, words on it) — a bare logo filled the
+    // whole preview in Trello and WhatsApp with nothing saying what the link was.
+    images: [{ url: 'https://www.lumiosports.com/api/og?page=tennis-coach', width: 1200, height: 630, alt: 'Lumio Tennis Coach' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Lumio Tennis Coach',
     description: 'One platform. Two revenue streams. Built for tennis coaches and academies.',
-    images: ['/tennis_coach_logo.png'],
+    images: ['https://www.lumiosports.com/api/og?page=tennis-coach'],
   },
 }
 
