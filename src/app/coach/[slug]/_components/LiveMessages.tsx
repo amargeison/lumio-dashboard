@@ -49,15 +49,23 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const { rows: campChannels } = useCoachTable<{ camp_id: string; channel_name: string | null; created_at?: string }>('coach_camp_channels')
   const profile = useCoachProfile()
   // Tag a conversation by matching the recipient name against roster / staff / venues.
+  //
+  // "Parent" has to be earned — a name that matches a guardian on the roster.
+  // It used to be the fallback for anything unrecognised, which labelled a whole
+  // adult camp's group chat PARENT: nobody in it is anybody's parent. A camp is
+  // a camp, and a name we cannot place is just a contact.
   const tagFor = (raw?: string | null): string => {
-    const n = (raw || '').split(',')[0].trim().toLowerCase()
+    const key = (raw || '').trim()
+    if (key.startsWith('camp:') || /^camp\s*·/i.test(key)) return 'Camp'
+    const n = key.split(',')[0].trim().toLowerCase()
     if (!n) return 'Contact'
     if (venues.some(v => (v.name || '').trim().toLowerCase() === n)) return 'Venue'
     if (staff.some(s => (s.name || '').trim().toLowerCase() === n)) return 'Coach'
     if (players.some(p => (p.name || '').trim().toLowerCase() === n)) return 'Player'
-    return 'Parent'
+    if (players.some(p => (p.parent_name || '').trim().toLowerCase() === n)) return 'Parent'
+    return 'Contact'
   }
-  const tagColour = (t: string) => t === 'Venue' ? '#3A8EE0' : t === 'Coach' ? accent.hex : t === 'Player' ? T.good : T.text3
+  const tagColour = (t: string) => t === 'Venue' ? '#3A8EE0' : t === 'Coach' ? accent.hex : t === 'Player' ? T.good : t === 'Camp' ? '#E0A23A' : T.text3
   const avatarFor = (key?: string | null) => { const n = (key || '').split(',')[0].trim().toLowerCase(); return players.find(p => (p.name || '').trim().toLowerCase() === n)?.avatar_url as string | undefined }
   const Av = ({ keyName, size }: { keyName: string; size: number }) => {
     const url = avatarFor(keyName)

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { PwaInstallRedeemer } from '@/components/pwa/PwaInstallRedeemer'
+import { partnerBrandBySlug } from '@/lib/coach/partner-login'
 
 // Server component wrapping the client coach [slug]/page.tsx so we can export
 // generateMetadata: a per-slug PWA manifest + iOS standalone tags so an
@@ -18,8 +19,24 @@ export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> },
 ): Promise<Metadata> {
   const { slug } = await params
+  // What a pasted link shows in WhatsApp, Slack, Trello and the rest. Without
+  // its own description a portal link inherited the root layout's — which is the
+  // business product's ("B2B workflow automation for EdTech companies") — so a
+  // coach sharing their portal was captioned as somebody else's software.
+  const brand = slug === 'demo' ? null : await partnerBrandBySlug(slug)
+  const name = brand?.name || (slug === 'demo' ? 'Demo academy' : slug)
+  const title = `${name} — Lumio Tennis Coach`
+  const description = brand
+    ? `${brand.name}'s coaching portal: bookings, session plans, lesson summaries, player progress, camps and messages. Running on Lumio Tennis Coach.`
+    : 'The coaching portal for tennis coaches and academies: bookings, session plans, lesson summaries, player progress, camps and parent messaging.'
   return {
-    title:    `Lumio Coach — ${slug}`,
+    title,
+    description,
+    openGraph: {
+      title, description, siteName: 'Lumio Tennis Coach', type: 'website',
+      images: [{ url: brand?.emailLogoUrl || 'https://www.lumiosports.com/tennis_coach_logo.png' }],
+    },
+    twitter: { card: 'summary', title, description },
     manifest: `/coach/${slug}/m/anon/manifest.webmanifest`,
     appleWebApp: {
       capable:        true,

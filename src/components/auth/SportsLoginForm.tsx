@@ -323,7 +323,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
               )}
               {brand.logoUrl && <span style={{ width: 1, height: 40, background: P.border }} />}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/tennis_logo_tight.png" alt="Lumio Tennis Coach" style={{ height: brand.logoUrl ? 40 : 52, objectFit: 'contain' }} />
+              <img src={brand.theme === 'dark' ? '/tennis_coach_logo_on_dark.png' : '/tennis_coach_logo_on_light.png'} alt="Lumio Tennis Coach" style={{ height: brand.logoUrl ? 52 : 64, objectFit: 'contain' }} />
             </div>
             <div style={{ color: P.muted, fontSize: 12, marginTop: 12, letterSpacing: '0.01em' }}>
               <strong style={{ color: P.sub, fontWeight: 700 }}>{brand.name}</strong> — running on Lumio Tennis Coach

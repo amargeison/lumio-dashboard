@@ -1,4 +1,5 @@
 import { emailLayout, ctaButton } from './layout'
+import { coachGuidesHtml } from './coach-guides'
 
 const SPORT_LABELS: Record<string, string> = {
   tennis: 'Tennis', coach: 'Tennis Coach', golf: 'Golf', darts: 'Darts', boxing: 'Boxing',
@@ -217,6 +218,8 @@ ${ctaButton(`Try the ${sportLabel} demo first &rarr;`, demoUrl)}
   As a founding member, our team will be in touch within 24 hours to start configuring your portal. We&rsquo;ll work with you directly &mdash; no tickets, no waiting. Direct line to the people building it.
 </p>
 
+${sport === 'coach' ? coachGuidesHtml() : ''}
+
 ${ctaButton('Sign in to your portal &rarr;', loginUrl)}
 
 <p style="margin:24px 0 0;font-size:13px;color:rgba(255,255,255,0.4);line-height:1.6;">
@@ -241,6 +244,8 @@ ${logoHtml}
 </table>
 
 ${ctaButton('Complete your portal setup &rarr;', loginUrl)}
+
+${sport === 'coach' ? coachGuidesHtml() : ''}
 
 <p style="margin:24px 0 0;font-size:13px;color:rgba(255,255,255,0.4);line-height:1.6;">
   Questions? Reply to this email &mdash; a real person reads every one.
