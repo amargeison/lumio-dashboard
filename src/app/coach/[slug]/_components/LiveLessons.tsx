@@ -821,7 +821,7 @@ function SummaryFormModal({ T, accent, players, session, onClose, onSave }: {
           <Field label="Drills used" hint="One per line"><textarea rows={3} value={drills} onChange={e => setDrills(e.target.value)} style={{ ...field, resize: 'vertical', lineHeight: 1.5 }} /></Field>
 
           {stageSkills.length > 0 && (
-            <Field label="Skills worked (racket system)" hint="Tap to tag">
+            <Field label="Skills worked" hint="Tap to tag">
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {stageSkills.map(s => {
                   const on = skills.has(s)

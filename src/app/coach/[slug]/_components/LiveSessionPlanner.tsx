@@ -14,6 +14,7 @@ import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 import { MediaCaptureModal } from './MediaCaptureModal'
 import { pollMedia } from '../_lib/media-upload'
 import { getSettings } from '../_lib/settings-store'
+import { stageWords } from '../_lib/stage-words'
 import { avatarSrc } from '@/lib/avatar'
 import { campSpans, campsOn, campsBetween, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 
@@ -64,7 +65,9 @@ const TEMPLATES: Record<SType, { phase: string; pct: number; d: (f: string) => s
     { phase: 'Warm-up games', pct: 0.20, d: () => 'Fun coordination and ball-skill games.' },
     { phase: 'Skill of the day', pct: 0.30, d: f => `Introduce / build ${f} through play.` },
     { phase: 'Challenge games', pct: 0.35, d: () => 'Target and team games applying the skill.' },
-    { phase: 'Rewards & racket check', pct: 0.15, d: () => 'Stickers, racket-skill check, celebrate the wins.' },
+    // Worded for every academy: one without the racket reward system still
+    // checks skills and still celebrates, it just has no racket to hand over.
+    { phase: 'Rewards & skill check', pct: 0.15, d: () => 'Stickers, a quick skill check, celebrate the wins.' },
   ],
 }
 const KIT_BY_TYPE: Record<SType, string[]> = {
@@ -136,7 +139,10 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   // Rackets due = players sitting at 100% on their current racket (ready to award).
   const skillMap: Record<string, Record<string, number>> = {}
   for (const r of skills.rows) { (skillMap[r.player_id] ||= {})[r.skill] = r.score }
-  const racketsDue = players.rows.filter(p => {
+  // Only counted when the academy runs Racket Progression — otherwise there is
+  // no racket to be "due", and the tile shows the roster size instead.
+  const racketOn = stageWords().racket
+  const racketsDue = !racketOn ? 0 : players.rows.filter(p => {
     const st = RACKET_STAGES.find(s => s.id === p.racket_stage); if (!st) return false
     const sk = RACKET_SKILLS[st.id] || []; if (!sk.length) return false
     const sm = skillMap[p.id] || {}
@@ -205,7 +211,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
             <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {stat('Sessions today', todays.length, accent.hex)}
               {stat('This week', weekCount, accent.hex)}
-              {stat('Rackets due', racketsDue, T.warn)}
+              {racketOn ? stat('Rackets due', racketsDue, T.warn) : stat('Players', players.rows.length, T.good)}
               {stat('Pending bookings', pending, '#3A8EE0')}
             </div>
           </div>

@@ -451,7 +451,7 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
         <Card T={T}>
           <Head T={T} icon="megaphone" title={onSendMessage ? 'Messages' : 'Messages'}
             sub={onSendMessage ? 'Your conversation with the coaching team' : 'What has been said between you'} />
-          <MessageThread T={T} messages={messages} adult={f.audience === 'adult'}
+          <MessageThread T={T} messages={messages} adult={f.audience === 'adult'} me={bundle.player?.name}
             coaches={bundle.coaches} campThreads={bundle.campThreads}
             onSend={onSendMessage} onReact={onReact} />
         </Card>
@@ -567,10 +567,12 @@ function bodyWithoutPhotos(m: { body?: string | null; photos?: { name: string; u
     .join('\n').trim()
 }
 
-function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onReact }: {
+function MessageThread({ T, messages, adult, me, coaches, campThreads, onSend, onReact }: {
   T: StudentTheme
   messages: StudentBundle['messages']
   adult: boolean
+  /** This player's name — how "you" is told apart from everyone else in a camp. */
+  me?: string
   coaches?: StudentBundle['coaches']
   campThreads?: StudentBundle['campThreads']
   onSend?: (body: string, opts?: SendOpts) => Promise<void>
@@ -685,7 +687,13 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: onSend ? 14 : 0, maxHeight: showAll ? 'none' : 560, overflowY: showAll ? 'visible' : 'auto' }}>
           {shown.map(m => {
-            const mine = m.direction === 'in'
+            // In a one-to-one thread, everything inbound is from this family. In
+            // a CAMP thread it is not: every other player, and every Discord
+            // post, arrives as "inbound" too. Treating all of it as "You" put
+            // other people's words on this player's side of the screen, signed
+            // with their name. Here, only what this player sent from the app
+            // is theirs.
+            const mine = m.direction === 'in' && (!camp || (m.channels === 'portal' && (!me || (m.from_name || '').trim() === me.trim())))
             const parent = m.reply_to ? byId.get(m.reply_to) : null
             const open = reacting === m.id
             return (
@@ -701,7 +709,7 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
                   {/* What this answers, so a reply still makes sense a week later. */}
                   {!!parent && (
                     <div style={{ borderLeft: `2px solid ${T.accentBorder}`, paddingLeft: 8, marginBottom: 6 }}>
-                      <div style={{ fontSize: 10, color: T.accent, fontWeight: 700 }}>{parent.direction === 'in' ? 'You' : (parent.from_name || 'Coach')}</div>
+                      <div style={{ fontSize: 10, color: T.accent, fontWeight: 700 }}>{parent.direction === 'in' && (!camp || parent.from_name === me) ? 'You' : (parent.from_name || 'Coach')}</div>
                       <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.45, ...WRAP }}>
                         {String(parent.body || '').slice(0, 120)}{String(parent.body || '').length > 120 ? '…' : ''}
                       </div>
@@ -763,6 +771,7 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
         <MessageComposer
           T={T} value={draft} onChange={setDraft} onSend={send}
           reply={reply} onCancelReply={() => setReply(null)}
+          replyName={reply ? (reply.direction === 'in' && (!camp || (reply.channels === 'portal' && reply.from_name === me)) ? 'yourself' : (reply.from_name || 'your coach')) : undefined}
           to={camp ? `everyone on ${camp.name}` : toName ? toName : 'your coach'} />
       )}
 
@@ -794,7 +803,10 @@ function MessageThread({ T, messages, adult, coaches, campThreads, onSend, onRea
   )
 }
 
-function MessageComposer({ T, value, onChange, onSend, reply, onCancelReply, to }: {
+function MessageComposer({ T, value, onChange, onSend, reply, onCancelReply, to, replyName }: {
+  /** Who the quoted message is from, worked out by the thread — which knows
+      whether this is a camp and who "you" are. */
+  replyName?: string
   T: StudentTheme
   value: string
   onChange: (v: string) => void
@@ -815,7 +827,7 @@ function MessageComposer({ T, value, onChange, onSend, reply, onCancelReply, to 
       {!!reply && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: T.panel2, border: `1px solid ${T.border}`, borderLeft: `3px solid ${T.accent}`, borderRadius: 10, padding: '8px 11px', marginBottom: 8 }}>
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 10, color: T.accent, fontWeight: 700 }}>Replying to {reply.direction === 'in' ? 'yourself' : (reply.from_name || 'your coach')}</span>
+            <span style={{ display: 'block', fontSize: 10, color: T.accent, fontWeight: 700 }}>Replying to {replyName || (reply.direction === 'in' ? 'yourself' : (reply.from_name || 'your coach'))}</span>
             <span style={{ display: 'block', fontSize: 11.5, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{String(reply.body || '').slice(0, 90)}</span>
           </span>
           <button onClick={onCancelReply} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15 }}>×</button>

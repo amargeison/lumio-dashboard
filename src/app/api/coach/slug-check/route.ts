@@ -15,7 +15,7 @@ export const runtime = 'nodejs'
 const slugify = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 // Words that would collide with pages rather than with other academies.
-const RESERVED = new Set(['demo', 'admin', 'new', 'settings', 'login', 'signup', 'api', 'portal', 'lumio', 'test'])
+const RESERVED = new Set(['demo', 'admin', 'new', 'settings', 'login', 'signup', 'api', 'portal', 'lumio', 'test', 'sso'])
 
 export async function GET(req: NextRequest) {
   const uid = await sessionCoachId()

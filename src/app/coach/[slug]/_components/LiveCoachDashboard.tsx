@@ -125,7 +125,12 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   // Skill map per player → rackets ready to advance (all stage skills consistent).
   const skillFor = (pid: string) => Object.fromEntries(d.skills.filter(s => s.player_id === pid).map(s => [s.skill, s.score]))
   const awardThreshold = getSettings().awardThreshold  // 3 = Consistent, 4 = Mastered
-  const racketsReady = d.players.filter(p => {
+  // Only an academy on the Racket Progression module has "racket assessments"
+  // to be due. Without it the colour ladder still exists, but there is no award
+  // to book and nothing to hand over — so the headline, the Needs-attention
+  // card and the briefing all have to stay silent about it, not just one of
+  // them. Gating the list itself is what makes that true everywhere at once.
+  const racketsReady = !feat.racket ? [] : d.players.filter(p => {
     const st = RACKET_STAGES.findIndex(s => s.id === p.racket_stage)
     if (st < 0) return false
     const list = SKILLS_BY_STAGE[RACKET_STAGES[st].id] || []
