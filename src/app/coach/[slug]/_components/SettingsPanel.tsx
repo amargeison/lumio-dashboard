@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
+import { useParams } from 'next/navigation'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
@@ -511,6 +512,9 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
   // so it never clobbers the coach's own edits — and does nothing in the demo
   // (no real profile → no display_name).
   const realProfile = useCoachProfile()
+  // The academy's web address — the same slug as the portal it is looking at.
+  const portalSlug = String((useParams() as { slug?: string } | null)?.slug || 'your-academy')
+  const [linkCopied, setLinkCopied] = useState(false)
   useEffect(() => {
     if (realProfile.loading || !realProfile.display_name) return
     const patch: Record<string, any> = {}
@@ -561,6 +565,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     // now reports; what is actually connected lives in Connected accounts.
     { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${booking.defaultDuration}m default · ${booking.buffer}m buffer · ${booking.autoConfirm ? 'auto-confirm' : 'you approve each one'}` },
     { id: 'availability',g: 'Academy',    icon: 'grid',      t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
+    { id: 'partnerlogin',g: 'Academy',    icon: 'shield',    t: 'Partner sign-in page', d: s.partnerLogin ? `On · lumiosports.com/login/${portalSlug}` : 'Off · families use the standard Lumio sign-in' },
     { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: s.privateRate ? `Private £${s.privateRate}/hr · take payments` : 'Set your hourly rate · take payments' },
     { id: 'belts',       g: 'Coaching',   icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
     { id: 'rewards',     g: 'Coaching',   icon: 'flag',      t: 'Effort & Rewards',    d: `Leaderboard ${rewards.leaderboard ? 'on' : 'off'} · watch consent default ${rewards.watchConsentDefault ? 'on' : 'off'}` },
@@ -674,6 +679,44 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           <IntegrationsPanel T={T} accent={accent} />
         </Modal>
       )}
+      {open === 'partnerlogin' && (() => {
+        const url = `https://lumiosports.com/login/${portalSlug}`
+        const hasLogo = !!(s.brandLogo || realProfile.brand_logo_url)
+        return (
+        <Modal readOnly={demo} T={T} accent={accent} title="Partner sign-in page" sub="Your academy's own sign-in page — your logo, name and colours, running on Lumio Tennis Coach" onClose={() => setOpen(null)}>
+          <Toggle T={T} accent={accent} on={!!s.partnerLogin} onChange={v => { if (v && !hasLogo) return; setSettings({ partnerLogin: v }) }}
+            label="Use my own sign-in page"
+            desc={hasLogo
+              ? 'On: players, parents and your coaches sign in on your page, and welcome emails link there. Off: everyone uses the standard Lumio sign-in.'
+              : 'Add your logo below first — it is what makes the page yours.'} />
+          <Field T={T} label="Your logo" hint="The same logo as your Academy profile.">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {hasLogo
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={s.brandLogo || realProfile.brand_logo_url || ''} alt="Club logo" style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 8, background: T.panel2, border: `1px solid ${T.border}` }} />
+                : <div style={{ width: 44, height: 44, borderRadius: 8, background: T.panel2, border: `1px dashed ${T.border}`, display: 'grid', placeItems: 'center', fontSize: 10, color: T.text3 }}>none</div>}
+              <label style={{ appearance: 'none', border: `1px solid ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '8px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                ⬆ {hasLogo ? 'Change logo' : 'Upload logo'}
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => { const f = e.target.files?.[0]; if (!f) return; try { await saveBrandLogo(await fileToLogoDataUrl(f)); realProfile.reload() } catch { /* ignore */ } }} />
+              </label>
+            </div>
+          </Field>
+          {s.partnerLogin && (
+            <Field T={T} label="Your sign-in link" hint="Put it behind the “Log in” button on your website. Signing in at lumiosports.com works too — it's the same account.">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <code style={{ fontSize: 12.5, color: accent.hex, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 10px' }}>{url.replace('https://', '')}</code>
+                <button onClick={() => { try { navigator.clipboard.writeText(url); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 1800) } catch { /* ignore */ } }}
+                  style={{ appearance: 'none', border: `1px solid ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{linkCopied ? '✓ Copied' : 'Copy link'}</button>
+                <a href={`/login/${portalSlug}`} target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 600, color: accent.hex, textDecoration: 'none' }}>Open ↗</a>
+              </div>
+            </Field>
+          )}
+          <p style={{ margin: '4px 0 0', fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>
+            The page uses your theme and accent colour from Appearance ({s.theme === 'white' ? 'White' : s.theme === 'light' ? 'Light' : 'Dark'} · {ACCENT_PRESETS[s.accentKey]?.label ?? ''}).
+          </p>
+        </Modal>
+        )
+      })()}
       {open === 'academy' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Academy profile" sub="Shown across the portal — sidebar, dashboard, packs and certificates" onClose={() => setOpen(null)}>
           {/* The academy name lives in two places — these settings, and the
@@ -832,9 +875,14 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {(Object.keys(ACCENT_PRESETS) as AccentKey[]).map(k => {
                 const p = ACCENT_PRESETS[k]; const on = s.accentKey === k
-                return <button key={k} onClick={() => setSettings({ accentKey: k })} title={p.label}
+                return <button key={k} onClick={() => setSettings({ accentKey: k })} title={p.label} aria-label={p.label} aria-pressed={on}
                   style={{ width: 34, height: 34, borderRadius: '50%', background: p.hex, border: on ? `3px solid ${T.text}` : `2px solid ${T.border}`, cursor: 'pointer', appearance: 'none', boxShadow: on ? `0 0 0 2px ${p.hex}55` : 'none' }} />
               })}
+            </div>
+            {/* The names only show on hover otherwise — say which one is picked. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 12.5, color: T.text3 }}>
+              <span style={{ width: 10, height: 10, borderRadius: '50%', background: ACCENT_PRESETS[s.accentKey]?.hex ?? accent }} />
+              Selected: <strong style={{ color: T.text, fontWeight: 600 }}>{ACCENT_PRESETS[s.accentKey]?.label ?? 'Custom'}</strong>
             </div>
           </Field>
           <Field T={T} label="Density">
@@ -994,10 +1042,17 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
             desc="A small ⓘ beside each page title: what the page is for, how to use it, and the things worth knowing. Switch it off once you know your way around." />
           <Toggle T={T} accent={accent} on={s.gettingStarted !== false} onChange={v => setSettings({ gettingStarted: v })}
             label="Getting started checklist"
-            desc="Six steps on your dashboard that tick themselves off as you set the portal up. It disappears on its own once they are all done." />
+            desc="Seven steps on your dashboard that tick themselves off as you set the portal up. It disappears on its own once they are all done." />
           <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.55, marginTop: 12 }}>
             Turning either back on is this same switch — nothing is lost, and the checklist picks up wherever you actually are.
           </div>
+          <Field T={T} label="Starter guides (PDF)" hint="The same guides that come with your welcome email — handy to pass to a new coach.">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[['Quick start guide', 'lumio-quick-start-guide.pdf'], ['Getting started guide', 'lumio-getting-started-guide.pdf'], ['Portal guide', 'lumio-portal-guide.pdf']].map(([t, f]) => (
+                <a key={f} href={`/guides/${f}`} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, fontWeight: 600, color: accent.hex, textDecoration: 'none' }}>📄 {t} ↗</a>
+              ))}
+            </div>
+          </Field>
         </Modal>
       )}
 

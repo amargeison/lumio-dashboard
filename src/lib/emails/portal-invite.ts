@@ -1,4 +1,5 @@
 import { emailLayout, ctaButton } from './layout'
+import { coachGuidesHtml } from './coach-guides'
 
 // The email a coach, parent or player gets when a head coach gives them access.
 //
@@ -18,7 +19,33 @@ const LOGIN_URL = 'https://www.lumiosports.com/sports-login'
 // the demo is the only way to see what the portal looks like full.
 const DEMO_URL = 'https://www.lumiosports.com/tennis/coach/demo'
 
-const logoHtml = `<img src="${LOGO}" alt="Lumio Tennis Coach" width="96" style="display:block;height:auto;border:0;margin:0 0 24px;" />`
+const lumioLogoHtml = `<img src="${LOGO}" alt="Lumio Tennis Coach" width="96" style="display:block;height:auto;border:0;margin:0 0 24px;" />`
+
+// An academy with its own sign-in page is a brand in its own right to the
+// families it invites — "PG Tennis", not "Lumio". So the email leads with the
+// club's badge and name, with Lumio as the line underneath, exactly as their
+// sign-in page does.
+function headerHtml(partner?: { name: string; logoUrl: string | null } | null) {
+  if (!partner) return lumioLogoHtml
+  if (!partner.logoUrl) return `
+<div style="margin:0 0 24px;">
+  <p style="margin:0 0 2px;font-size:20px;font-weight:800;color:#ffffff;">${esc(partner.name)}</p>
+  <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.45);">running on Lumio Tennis Coach</p>
+</div>`
+  const badge = `<img src="${partner.logoUrl}" alt="${esc(partner.name)}" height="64" style="display:block;height:64px;width:auto;max-width:180px;border:0;background:#ffffff;border-radius:10px;padding:6px;" />`
+  return `
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px;"><tr>
+  <td style="vertical-align:middle;padding-right:16px;">${badge}</td>
+  <td style="vertical-align:middle;border-left:1px solid #1f2937;padding-left:16px;">
+    <p style="margin:0 0 2px;font-size:15px;font-weight:700;color:#ffffff;">${esc(partner.name)}</p>
+    <p style="margin:0;font-size:12px;color:rgba(255,255,255,0.45);">running on Lumio Tennis Coach</p>
+  </td>
+</tr></table>`
+}
+
+function esc(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 
 const feature = (icon: string, title: string, body: string) => `
 <tr><td style="padding:0 0 14px;">
@@ -45,7 +72,7 @@ const FAMILY_FEATURES = [
   feature('💬', 'A direct line', 'messages from the coaching team, in one place instead of scattered across texts.'),
 ].join('')
 
-export function portalInviteEmail({ role, inviteeName, headCoachName, academyName, playerName, signInUrl }: {
+export function portalInviteEmail({ role, inviteeName, headCoachName, academyName, playerName, signInUrl, partner }: {
   role: 'coach' | 'parent' | 'student'
   inviteeName?: string | null
   headCoachName?: string | null
@@ -54,7 +81,11 @@ export function portalInviteEmail({ role, inviteeName, headCoachName, academyNam
   /** The academy's own portal. A coach signs in there directly; everyone else
    *  goes through the shared sign-in page. Falls back to it either way. */
   signInUrl?: string | null
+  /** Set when the academy has switched on its own sign-in page: its name and a
+   *  hosted logo (never a data URL — mail clients refuse those). */
+  partner?: { name: string; logoUrl: string | null } | null
 }): { subject: string; html: string } {
+  const logoHtml = headerHtml(partner)
   const SIGN_IN = signInUrl || LOGIN_URL
   const hi = inviteeName?.trim() ? `Hi ${inviteeName.trim().split(/\s+/)[0]},` : 'Hi,'
   const club = academyName?.trim() || 'their coaching academy'
@@ -88,6 +119,8 @@ ${ctaButton('Sign in to your portal &rarr;', SIGN_IN)}
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
   ${COACH_FEATURES}
 </table>
+
+${coachGuidesHtml()}
 
 <p style="margin:0 0 8px;font-size:14px;color:rgba(255,255,255,0.55);line-height:1.7;">
   If it looks empty when you first sign in, that&rsquo;s normal &mdash; ${head} is still setting things up, and everything they add appears straight away. Nothing to refresh, nothing to install.

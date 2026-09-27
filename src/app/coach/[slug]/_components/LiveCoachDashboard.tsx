@@ -151,13 +151,18 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   // Live inbox — the 5 most recent messages (mirrors the Messages section).
   const inbox = d.messages.filter(m => !m.dismissed).sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? ''))).slice(0, 5)
   // Tag a contact by matching their name against the roster / staff / venues.
+  // Same rule as Messages: "Parent" only for a name that matches a guardian on
+  // the roster, never as the fallback — an adult camp's chat is not a parent.
   const tagFor = (raw?: string | null): string => {
-    const n = (raw || '').split(',')[0].trim().toLowerCase()
+    const key = (raw || '').trim()
+    if (key.startsWith('camp:') || /^camp\s*·/i.test(key)) return 'Camp'
+    const n = key.split(',')[0].trim().toLowerCase()
     if (!n) return 'Contact'
     if (d.venues.some((v: any) => (v.name || '').trim().toLowerCase() === n)) return 'Venue'
     if (d.staff.some((s: any) => (s.name || '').trim().toLowerCase() === n)) return 'Coach'
     if (d.players.some((p: any) => (p.name || '').trim().toLowerCase() === n)) return 'Player'
-    return 'Parent'
+    if (d.players.some((p: { parent_name?: string | null }) => (p.parent_name || '').trim().toLowerCase() === n)) return 'Parent'
+    return 'Contact'
   }
   const REACTIONS = ['👍', '❤️', '😄', '✅']
 

@@ -74,10 +74,19 @@ export async function POST(req: NextRequest) {
       //
       // Parents and students keep /sports-login: /portal is their destination and
       // it is not addressed by an academy slug.
+      //
+      // An academy that has switched on its own sign-in page gets that page for
+      // everybody — coaches included — with its badge and name at the top of the
+      // email. Signing in there lands each person in the right place, same as
+      // /sports-login does.
+      const { partnerBrandByCoach } = await import('@/lib/coach/partner-login')
+      const brand = await partnerBrandByCoach(user.id)
       const { portalUrlFor } = await import('@/lib/sports-admin/portal-url')
-      const signInUrl = role === 'coach' && academy
-        ? `https://www.lumiosports.com${portalUrlFor({ ...academy, sport: 'coach' })}`
-        : null
+      const signInUrl = brand?.enabled
+        ? brand.signInUrl
+        : role === 'coach' && academy
+          ? `https://www.lumiosports.com${portalUrlFor({ ...academy, sport: 'coach' })}`
+          : null
 
       const { portalInviteEmail } = await import('@/lib/emails/portal-invite')
       const { subject, html } = portalInviteEmail({
@@ -87,6 +96,7 @@ export async function POST(req: NextRequest) {
         academyName: academy?.brand_name ?? null,
         playerName,
         signInUrl,
+        partner: brand?.enabled ? { name: brand.name, logoUrl: brand.emailLogoUrl } : null,
       })
 
       const { Resend } = await import('resend')

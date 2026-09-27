@@ -129,6 +129,11 @@ export type CoachSettings = {
   studentApp: boolean
   audioOnly: boolean              // Video & Audio module: hide the video half, show audio only (menu label → "Audio only")
   brandLogo: string               // Club/academy logo (data URL) shown top-left instead of the Lumio mark
+  // The academy's own sign-in page at /login/<slug>: their logo, name and
+  // colours with "running on Lumio Tennis Coach" beneath. Off by default — an
+  // academy that has not asked for it gets the standard Lumio sign-in, and its
+  // welcome emails link there too.
+  partnerLogin: boolean
   sectionsOff: Record<string, string[]>  // per-module hidden sections (moduleId → section keys turned off)
   // The head coach's own contact + DBS / safeguarding record (the account owner).
   // Empty by default so a new head is correctly flagged until they record it.
@@ -169,6 +174,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   studentApp: true,
   audioOnly: false,
   brandLogo: '',
+  partnerLogin: false,
   sectionsOff: {},
   head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '', avatarUrl: '' },
 }

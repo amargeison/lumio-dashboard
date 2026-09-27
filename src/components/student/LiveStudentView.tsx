@@ -192,6 +192,24 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
            moment they are booked, off when it finishes. ─────────────────── */}
       {show.camp && camps.map(c => <CampCard key={c.id} T={T} camp={c} first={f.first} />)}
 
+      {/* ── MESSAGES — straight under the camp. During a camp the conversation IS
+           the camp (times, kit, the hotel); at the bottom of a long page it was
+           the thing parents could not find. ─────────────────────────────── */}
+      {/* A real conversation, not a notice board. The whole point of this
+          section is that a parent messages their coach HERE rather than on
+          WhatsApp at 10pm — so it has to feel like the thing they would
+          otherwise open: the thread, oldest at the top, newest at the bottom,
+          and the box to type in right under it. */}
+      {show.messages && (
+        <Card T={T}>
+          <Head T={T} icon="megaphone" title={onSendMessage ? 'Messages' : 'Messages'}
+            sub={onSendMessage ? 'Your conversation with the coaching team' : 'What has been said between you'} />
+          <MessageThread T={T} messages={messages} adult={f.audience === 'adult'} me={bundle.player?.name}
+            coaches={bundle.coaches} campThreads={bundle.campThreads}
+            onSend={onSendMessage} onReact={onReact} />
+        </Card>
+      )}
+
       {/* ── NEXT SESSION — the thing they opened the app to check ──────────── */}
       {show.nextsession && nextSession && (
         <NextSessionCard T={T} next={nextSession} first={f.first} adult={f.audience === 'adult'} />
@@ -438,22 +456,6 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
               </div>
             ))}
           </div>
-        </Card>
-      )}
-
-      {/* ── MESSAGES ──────────────────────────────────────────────────────── */}
-      {/* A real conversation, not a notice board. The whole point of this
-          section is that a parent messages their coach HERE rather than on
-          WhatsApp at 10pm — so it has to feel like the thing they would
-          otherwise open: the thread, oldest at the top, newest at the bottom,
-          and the box to type in right under it. */}
-      {show.messages && (
-        <Card T={T}>
-          <Head T={T} icon="megaphone" title={onSendMessage ? 'Messages' : 'Messages'}
-            sub={onSendMessage ? 'Your conversation with the coaching team' : 'What has been said between you'} />
-          <MessageThread T={T} messages={messages} adult={f.audience === 'adult'} me={bundle.player?.name}
-            coaches={bundle.coaches} campThreads={bundle.campThreads}
-            onSend={onSendMessage} onReact={onReact} />
         </Card>
       )}
 

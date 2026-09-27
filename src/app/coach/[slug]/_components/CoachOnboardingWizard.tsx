@@ -67,6 +67,9 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
     return () => clearTimeout(t)
   }, [slug])
   const [logo, setLogo] = useState<string | null>(null)
+  // Their own sign-in page at /login/<slug>. Ticked means families sign in on a
+  // page with the academy's logo and name; unticked means the standard Lumio one.
+  const [partnerLogin, setPartnerLogin] = useState(false)
   const [photo, setPhoto] = useState<string | null>(null)
   const [email, setEmail] = useState(defaultEmail)
   const [phone, setPhone] = useState('')
@@ -140,6 +143,18 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       // coach who completed onboarding and never opened Settings had no
       // qualification shown anywhere, and the rail line silently rendered nothing.
       if (accreditation) setSettings({ cert: accreditation })
+      // The sign-in page switch, and the logo it shows. Written to settings (which
+      // sync to coach_settings — the copy the /login page and the welcome emails
+      // read) whether on or off, so a coach who unticks it is definitely off.
+      setSettings({ partnerLogin: partnerLogin && !!logo, ...(logo ? { brandLogo: logo } : {}) })
+      // …and straight into coach_settings as well. The settings sync writes on a
+      // short delay, but the coach invites below go out now — and they read this
+      // switch to decide which sign-in page to link to.
+      try {
+        const { data: cur } = await sb().from('coach_settings').select('data').eq('coach_id', uid).maybeSingle()
+        const data = { ...((cur?.data as Record<string, unknown>) || {}), partnerLogin: partnerLogin && !!logo, ...(logo ? { brandLogo: logo } : {}) }
+        await sb().from('coach_settings').upsert({ coach_id: uid, data, updated_at: new Date().toISOString() }, { onConflict: 'coach_id' })
+      } catch { /* the settings sync catches up */ }
       // Calendar & email sync. Nothing is connected here — that needs the
       // provider's own consent screen, which would navigate away mid-wizard and
       // lose everything typed so far. What IS recorded is the choice and the
@@ -428,6 +443,33 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                   <button onClick={() => photoRef.current?.click()} style={{ ...input, cursor: 'pointer', textAlign: 'left', color: photo ? ACCENT : '#6B7280', border: `1px solid ${photo ? ACCENT : '#374151'}` }}>{photo ? '✓ Photo added' : '⬆ Upload photo'}</button>
                 </div>
               </div>
+              <div style={{ border: `1px solid ${partnerLogin ? ACCENT : '#1F2937'}`, background: partnerLogin ? `${ACCENT}10` : 'transparent', borderRadius: 12, padding: '14px 16px' }}>
+                <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={partnerLogin} onChange={e => setPartnerLogin(e.target.checked)} style={{ marginTop: 3, width: 16, height: 16, accentColor: ACCENT, flex: 'none' }} />
+                  <span>
+                    <span style={{ display: 'block', color: '#fff', fontSize: 14, fontWeight: 700 }}>Give my academy its own sign-in page</span>
+                    <span style={{ display: 'block', color: '#6B7280', fontSize: 12, lineHeight: 1.5, marginTop: 3 }}>
+                      Players and parents sign in on a page with your logo, name and colours, with &ldquo;running on Lumio Tennis Coach&rdquo; underneath. Welcome emails link there too. Leave it off to use the standard Lumio sign-in.
+                    </span>
+                  </span>
+                </label>
+                {partnerLogin && (
+                  <div style={{ marginTop: 12, paddingLeft: 28, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {logo
+                        // eslint-disable-next-line @next/next/no-img-element
+                        ? <img src={logo} alt="Your logo" style={{ width: 44, height: 44, objectFit: 'contain', borderRadius: 8, background: '#fff', padding: 3 }} />
+                        : <div style={{ width: 44, height: 44, borderRadius: 8, border: '1px dashed #374151', display: 'grid', placeItems: 'center', fontSize: 10, color: '#6B7280' }}>logo</div>}
+                      <button type="button" onClick={() => logoRef.current?.click()} style={{ appearance: 'none', border: `1px solid ${logo ? '#374151' : ACCENT}`, background: logo ? 'transparent' : ACCENT, color: '#fff', borderRadius: 9, padding: '8px 12px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+                        {logo ? 'Change logo' : '⬆ Add your logo to turn it on'}
+                      </button>
+                    </div>
+                    <p style={{ color: '#6B7280', fontSize: 11.5, margin: 0, lineHeight: 1.5 }}>
+                      Your page: <span style={{ color: ACCENT, fontFamily: 'monospace' }}>lumiosports.com/login/{slug || 'your-academy'}</span> &mdash; put it behind the &ldquo;Log in&rdquo; button on your website. Change it any time in Settings &rarr; Partner sign-in page.
+                    </p>
+                  </div>
+                )}
+              </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <label style={lbl}>Email <span style={{ color: '#4B5563', fontWeight: 400 }}>(for sending messages)</span></label>
@@ -645,6 +687,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                 setStaff(team); setSName(''); setSRole('Coach'); setSAccred(''); setSEmail('')
               }
               if (wantStaff === true && team.length === 0) { setErr('Add at least one coach — or choose “No — solo coach”.'); return }
+              if (partnerLogin && !logo) { setErr('Add your logo for your sign-in page — or untick it to use the standard Lumio sign-in.'); return }
               setErr(''); setStep(2)
             }} style={primary(true)}>Continue →</button>
           )}
