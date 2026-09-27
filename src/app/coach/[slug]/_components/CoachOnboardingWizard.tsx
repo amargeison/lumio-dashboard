@@ -4,7 +4,7 @@
 // questions (no athlete ranking / FIFA-card framing). Persists only to columns
 // known to exist on sports_profiles, plus optional first players to coach_players.
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { sb, forgetIdentity } from '../_lib/coach-db'
 import { CoachImport, IMPORT_TEMPLATE_URL } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
@@ -49,6 +49,23 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
   const [accreditation, setAccreditation] = useState('')
   const [slug, setSlug] = useState(slugify(defaultAcademy || defaultName))
   const [slugTouched, setSlugTouched] = useState(false)
+  // Whether the address is free, checked as they type. Finding out on the last
+  // step that another academy already has "penrith-tennis-club" is the wrong
+  // moment; finding out while looking at the box is the right one.
+  const [slugState, setSlugState] = useState<{ checked: string; available: boolean; suggestion?: string } | null>(null)
+  useEffect(() => {
+    const want = slug.trim()
+    if (!want) return
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/coach/slug-check?slug=${encodeURIComponent(want)}`)
+        if (!r.ok) return
+        const j = await r.json()
+        setSlugState({ checked: j.slug, available: !!j.available, suggestion: j.suggestion })
+      } catch { /* offline — the database still refuses a duplicate on save */ }
+    }, 350)
+    return () => clearTimeout(t)
+  }, [slug])
   const [logo, setLogo] = useState<string | null>(null)
   const [photo, setPhoto] = useState<string | null>(null)
   const [email, setEmail] = useState(defaultEmail)
@@ -101,7 +118,15 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       const { data: auth } = await sb().auth.getUser()
       const uid = auth.user?.id
       if (!uid) throw new Error('Not signed in')
-      const finalSlug = slug.trim() || slugify(academy)
+      // Checked once more at the moment of saving — somebody else may have
+      // taken it since the box went green — and swapped for the nearest free
+      // address rather than failing the whole sign-up over a URL.
+      let finalSlug = slug.trim() || slugify(academy)
+      try {
+        const r = await fetch(`/api/coach/slug-check?slug=${encodeURIComponent(finalSlug)}`)
+        const j = r.ok ? await r.json() : null
+        if (j && !j.available && j.suggestion) { finalSlug = j.suggestion; setSlug(j.suggestion) }
+      } catch { /* fall through to the database, which is the real guarantee */ }
       const update: Record<string, any> = {
         display_name: name.trim(),
         brand_name: academy.trim(),
@@ -156,8 +181,16 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       // sport is pinned to 'coach' because that is the flag whoami reads to
       // decide somebody owns a coaching academy. Without it the row exists but
       // is invisible to the very check it is meant to satisfy.
-      const { error } = await sb().from('sports_profiles')
+      let { error } = await sb().from('sports_profiles')
         .upsert({ id: uid, sport: 'coach', ...update }, { onConflict: 'id' })
+      if (error && (error.code === '23505' || /uniq_sports_profiles_portal_slug/.test(error.message))) {
+        // Lost a race for the address between the check and the save. Take a
+        // numbered one and carry on — the coach can change it later from
+        // Settings, and nothing else they entered is lost.
+        const fallback = `${finalSlug}-${Math.floor(Date.now() / 1000) % 1000}`
+        update.portal_slug = fallback; finalSlug = fallback; setSlug(fallback)
+        ;({ error } = await sb().from('sports_profiles').upsert({ id: uid, sport: 'coach', ...update }, { onConflict: 'id' }))
+      }
       if (error) throw new Error(error.message)
 
       // The coaching team, if they added one. Written before anything else that
@@ -371,8 +404,17 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                 <label style={lbl}>Your portal URL</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                   <span style={{ color: '#4B5563', fontSize: 12, whiteSpace: 'nowrap' }}>lumiosports.com/tennis/coach/</span>
-                  <input value={slug} onChange={e => { setSlug(slugify(e.target.value)); setSlugTouched(true) }} placeholder="your-academy" style={{ ...input, marginTop: 0, color: ACCENT, fontFamily: 'monospace', border: `1px solid ${ACCENT}40` }} />
+                  <input value={slug} onChange={e => { setSlug(slugify(e.target.value)); setSlugTouched(true) }} placeholder="your-academy" style={{ ...input, marginTop: 0, color: ACCENT, fontFamily: 'monospace', border: `1px solid ${slugState && slugState.checked === slug && !slugState.available ? '#E0A23A' : `${ACCENT}40`}` }} />
                 </div>
+                {slugState && slugState.checked === slug && (
+                  slugState.available
+                    ? <p style={{ color: '#6FA88A', fontSize: 11.5, margin: '6px 0 0' }}>✓ That address is yours.</p>
+                    : <p style={{ color: '#E0A23A', fontSize: 11.5, margin: '6px 0 0', lineHeight: 1.5 }}>
+                        Another academy already uses that address.
+                        {slugState.suggestion && <> <button type="button" onClick={() => { setSlug(slugState.suggestion!); setSlugTouched(true) }}
+                          style={{ appearance: 'none', background: 'transparent', border: 0, padding: 0, color: ACCENT, fontWeight: 700, cursor: 'pointer', fontFamily: 'monospace', fontSize: 11.5 }}>Use {slugState.suggestion}</button>, or type your own.</>}
+                      </p>
+                )}
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
