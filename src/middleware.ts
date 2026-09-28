@@ -14,6 +14,13 @@ const RESERVED_SLUGS = new Set([
   // /camp/<slug> is the public camp sign-up page. Reserving it stops a camp whose
   // slug happens to collide with a dashboard route being rewritten away.
   'camp',
+  // Real pages at the top level. Unreserved, every visit to /sports or
+  // /tennis-coach first asked Supabase "is this a demo tenant?" — and when
+  // Supabase was slow the marketing site hung for 30 seconds per page.
+  'sports', 'tennis-coach', 'sports-product', 'pricing-sports', 'womens-football',
+  'lumio-crm', 'product', 'ai', 'data-deletion', 'coming-soon', 'impact', 'junior',
+  'fundraise', 'book', 'trip', 'offline', 'oxed', 'tenproject', 'portal', 'coach',
+  'guides', 'templates', 'sports-signup', 'dev-login', 'robots.txt', 'sitemap.xml',
 ])
 
 const DASHBOARD_ROUTES = new Set([
@@ -183,8 +190,11 @@ export async function middleware(request: NextRequest) {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       if (supabaseUrl && supabaseKey) {
-        const res = await fetch(`${supabaseUrl}/rest/v1/demo_tenants?slug=eq.${slug}&select=slug,tenant_type&limit=1`, {
+        // Never let this lookup hold a page up. If Supabase is slow the answer
+        // is "not a demo tenant" and the page renders as normal.
+        const res = await fetch(`${supabaseUrl}/rest/v1/demo_tenants?slug=eq.${encodeURIComponent(slug)}&select=slug,tenant_type&limit=1`, {
           headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+          signal: AbortSignal.timeout(1500),
         })
         if (res.ok) {
           const rows = await res.json()
