@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getMembership, scopedDb, signAvatar, sendWelcomeMessage } from '@/lib/coach/membership'
 import { bookById } from '@/lib/coach/books'
+import { isLumioResource } from '@/lib/coach/lumio-resources-data'
 import { buildNextSession } from '@/lib/student/next-session'
 
 export const runtime = 'nodejs'
@@ -113,10 +114,15 @@ export async function GET() {
   // Drills and guides for the racket they are on — a recommendation, never the
   // academy's whole library.
   const stage = (player.racket_stage || '') as string
+  // A coach who has switched Lumio's starter library off sees only their own
+  // resources, and so do their players.
+  const lumioOff = await safe(db.from('coach_settings').select('data').eq('coach_id', m.academyId).limit(1))
+    .then(r => ((r[0] as { data?: { resourcesPreloaded?: boolean } } | undefined)?.data?.resourcesPreloaded === false))
   const allRes = await safe(db.from('coach_resources')
     .select('id, title, category, format, racket, level, duration, notes, url')
     .eq('coach_id', m.academyId).limit(300))
   const resources = (allRes as any[])
+    .filter(r => !(lumioOff && isLumioResource(r as { title?: string | null })))
     .filter(r => (stage && r.racket === stage) || (!r.racket && String(r.level || '').toLowerCase().startsWith('all')))
     .slice(0, 9)
 

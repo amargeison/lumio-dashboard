@@ -5,7 +5,7 @@
 // (coach_equipment) with inline quantity/status editing. (The Restock list is
 // intentionally left out of v1.)
 
-import { useState, useEffect, type CSSProperties } from 'react'
+import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, currentIdentity } from '../_lib/coach-db'
@@ -194,7 +194,7 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
 
       {/* Inventory */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-        <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Inventory <span style={{ fontSize: 11, fontWeight: 400, color: T.text3 }}>· tap a quantity or status to edit</span></div>
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Inventory <span style={{ fontSize: 11, fontWeight: 400, color: T.text3 }}>· tap − / + or type a number to update stock · tap a name for more</span></div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 8 }}>
           {(['all', 'attention'] as const).map(f => <button key={f} onClick={() => setFilter(f)} style={{ appearance: 'none', border: 0, padding: '5px 12px', borderRadius: 6, fontSize: 11.5, cursor: 'pointer', fontFamily: FONT, background: filter === f ? T.panel : 'transparent', color: filter === f ? T.text : T.text2, fontWeight: filter === f ? 600 : 400 }}>{f === 'all' ? 'All' : 'Needs attention'}</button>)}
         </div>
@@ -211,14 +211,20 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
                   <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{catItems.length}</div>
                 </div>
                 {catItems.map(i => (
-                  <div key={i.id} onClick={() => setEdit(i)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderTop: `1px solid ${T.border}`, cursor: 'pointer' }}>
+                  // The count and the status are edited right here — a coach
+                  // counting balls into the bag taps − / + or types the number,
+                  // and never waits on a form. The name opens the full edit.
+                  <div key={i.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderTop: `1px solid ${T.border}` }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: statusColour(i.status), flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <button type="button" onClick={() => setEdit(i)} title="Edit item"
+                      style={{ flex: 1, minWidth: 0, appearance: 'none', border: 0, background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer', fontFamily: FONT }}>
                       <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{i.item}</div>
                       {i.notes && <div style={{ fontSize: 10.5, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{i.notes}</div>}
-                    </div>
-                    {i.quantity != null && <span style={{ fontSize: 11, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 6, padding: '2px 7px' }}>×{i.quantity}</span>}
-                    <span style={{ fontSize: 9, fontWeight: 700, color: statusColour(i.status), background: `${statusColour(i.status)}22`, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{statusLabel(i.status)}</span>
+                    </button>
+                    <QtyStepper T={T} accent={accent} value={i.quantity ?? 0} label={i.item}
+                      onSave={q => items.edit(i.id, { quantity: q })} />
+                    <StatusPicker T={T} value={i.status || 'in_stock'} colour={statusColour(i.status)} label={i.item}
+                      onSave={v => items.edit(i.id, { status: v })} />
                   </div>
                 ))}
               </div>
@@ -232,6 +238,62 @@ export function LiveEquipment({ T, accent }: { T: ThemeTokens; accent: AccentTok
         onDelete={edit !== 'new' ? async () => { await items.remove(edit.id); setEdit(null) } : undefined}
         onSave={async v => { if (edit === 'new') await items.add(v); else await items.edit(edit.id, v); setEdit(null) }} />}
     </div>
+  )
+}
+
+// − [count] + on the row itself. Taps are counted locally and saved once the
+// coach pauses, so ten quick taps are one save rather than ten reloads racing
+// each other. A number typed in saves on Enter or when they click away.
+function QtyStepper({ T, accent, value, label, onSave }: { T: ThemeTokens; accent: AccentTokens; value: number; label: string; onSave: (q: number) => Promise<void> }) {
+  const [q, setQ] = useState(String(value))
+  const [saving, setSaving] = useState(false)
+  const dirty = useRef(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Follow the saved value when it changes elsewhere — but never over a number
+  // the coach is part-way through typing or tapping.
+  useEffect(() => { if (!dirty.current) setQ(String(value)) }, [value])
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+
+  const commit = async (raw: string) => {
+    if (timer.current) { clearTimeout(timer.current); timer.current = null }
+    const n = Math.max(0, Math.min(99999, Math.round(Number(raw) || 0)))
+    setQ(String(n))
+    if (n === value) { dirty.current = false; return }
+    setSaving(true)
+    try { await onSave(n) } catch { setQ(String(value)) } finally { dirty.current = false; setSaving(false) }
+  }
+  const bump = (d: number) => {
+    const n = Math.max(0, (Number(q) || 0) + d)
+    dirty.current = true
+    setQ(String(n))
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(() => { void commit(String(n)) }, 600)
+  }
+  const btn: CSSProperties = { appearance: 'none', width: 24, height: 26, border: 0, background: 'transparent', color: T.text2, cursor: 'pointer', fontSize: 15, lineHeight: 1, fontFamily: FONT, padding: 0 }
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', flexShrink: 0, border: `1px solid ${saving ? accent.border : T.border}`, background: T.panel2, borderRadius: 7, opacity: saving ? 0.7 : 1 }}>
+      <button type="button" aria-label={`One fewer ${label}`} onClick={() => bump(-1)} disabled={(Number(q) || 0) <= 0} style={{ ...btn, opacity: (Number(q) || 0) <= 0 ? 0.35 : 1 }}>−</button>
+      <input value={q} inputMode="numeric" aria-label={`How many ${label}`}
+        onChange={e => { dirty.current = true; setQ(e.target.value.replace(/[^0-9]/g, '')) }}
+        onFocus={e => e.target.select()}
+        onBlur={() => { if (dirty.current) void commit(q) }}
+        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') { dirty.current = false; setQ(String(value)); (e.target as HTMLInputElement).blur() } }}
+        style={{ width: 34, textAlign: 'center', border: 0, borderLeft: `1px solid ${T.border}`, borderRight: `1px solid ${T.border}`, background: 'transparent', color: T.text, fontSize: 12, fontWeight: 600, fontFamily: FONT, padding: '4px 0', outline: 'none', fontVariantNumeric: 'tabular-nums' }} />
+      <button type="button" aria-label={`One more ${label}`} onClick={() => bump(1)} style={btn}>+</button>
+    </div>
+  )
+}
+
+// The status chip is a real dropdown — tap it, pick, done.
+function StatusPicker({ T, value, colour, label, onSave }: { T: ThemeTokens; value: string; colour: string; label: string; onSave: (v: string) => Promise<void> }) {
+  const [v, setV] = useState(value)
+  useEffect(() => { setV(value) }, [value])
+  return (
+    <select value={v} aria-label={`Status of ${label}`}
+      onChange={async e => { const next = e.target.value; setV(next); try { await onSave(next) } catch { setV(value) } }}
+      style={{ appearance: 'none', WebkitAppearance: 'none', flexShrink: 0, cursor: 'pointer', fontSize: 9, fontWeight: 700, color: colour, background: `${colour}22`, border: 0, padding: '3px 6px', borderRadius: 4, textTransform: 'uppercase', fontFamily: FONT, textAlign: 'center', outline: 'none' }}>
+      {STATUSES.map(s => <option key={s.v} value={s.v} style={{ color: T.text, background: T.panel, textTransform: 'none' }}>{s.l}</option>)}
+    </select>
   )
 }
 
@@ -264,7 +326,7 @@ function ItemForm({ T, accent, item, onClose, onSave, onDelete }: { T: ThemeToke
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
   const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box', outline: 'none' }
   const lab: CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 5px' }
-  const save = async () => { if (!String(d.item).trim() || saving) return; setSaving(true); try { await onSave({ item: d.item, category: d.category, quantity: Number(d.quantity) || null, status: d.status, notes: d.notes }) } finally { setSaving(false) } }
+  const save = async () => { if (!String(d.item).trim() || saving) return; setSaving(true); try { await onSave({ item: d.item, category: d.category, quantity: d.quantity === '' || d.quantity == null ? null : Math.max(0, Number(d.quantity) || 0), status: d.status, notes: d.notes }) } finally { setSaving(false) } }
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '5vh 16px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 420, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
