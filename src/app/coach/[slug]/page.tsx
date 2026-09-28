@@ -15,6 +15,8 @@ import { useState, useRef, useEffect, use } from 'react'
 import dynamic from 'next/dynamic'
 import { createBrowserClient } from '@supabase/ssr'
 import { SportsDemoGate, type SportsDemoSession } from '@/components/sports-demo'
+import { ModuleGate } from './_components/ModuleSkeleton'
+import { prefetchCoachTables, type CoachTable } from './_lib/coach-db'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { avatarSrc } from '@/lib/avatar'
 import { THEMES, DENSITY } from '@/app/cricket/[slug]/v2/_lib/theme'
@@ -348,6 +350,28 @@ function SetupPendingScreen({ name, clubName, email, onEnter }: { name?: string;
   )
 }
 
+// The tables each live page reads. The page is held back (skeleton showing)
+// until these are loaded, so it never flashes its empty state at a coach whose
+// data is simply still on the way. Kept beside the switch that renders them.
+const LIVE_MODULE_TABLES: Record<string, CoachTable[]> = {
+  roster: ['coach_players', 'coach_staff', 'coach_attendance', 'coach_player_skills'],
+  staff: ['coach_staff', 'coach_players', 'coach_bookings', 'coach_venues'],
+  calendar: ['coach_bookings', 'coach_camps', 'coach_players', 'coach_staff', 'coach_venues'],
+  belts: ['coach_players', 'coach_player_skills'],
+  lessons: ['coach_sessions', 'coach_bookings', 'coach_players', 'coach_session_plans'],
+  camps: ['coach_camps', 'coach_camp_attendees', 'coach_camp_channels', 'coach_players', 'coach_staff', 'coach_attendance', 'coach_player_skills'],
+  payments: ['coach_payments', 'coach_packages', 'coach_players', 'coach_sessions'],
+  gpsheatmaps: ['coach_players', 'coach_watch_sessions'],
+  videoaudio: ['coach_media', 'coach_players'],
+  planner: ['coach_bookings', 'coach_sessions', 'coach_session_plans', 'coach_players', 'coach_camps', 'coach_player_skills'],
+  venues: ['coach_venues', 'coach_courts', 'coach_bookings', 'coach_staff'],
+  development: ['coach_players', 'coach_player_skills', 'coach_attendance', 'coach_sessions', 'coach_gps_sessions'],
+  equipment: ['coach_equipment', 'coach_kit_items'],
+  resources: ['coach_resources'],
+  messages: ['coach_messages', 'coach_players', 'coach_staff', 'coach_venues', 'coach_camp_channels'],
+}
+const ALL_LIVE_TABLES = Array.from(new Set(Object.values(LIVE_MODULE_TABLES).flat()))
+
 // ─── Portal shell ───────────────────────────────────────────────────────────
 function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?: SportsDemoSession; isEmpty?: boolean; slugClubName?: string }) {
   const settings = useCoachSettings()
@@ -357,6 +381,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const sideBg = T.isDark ? '#0a0c14' : T.panel2
   const line = T.border
   const isMobile = useIsMobile()
+  // Warm every page's data in the background once the portal is up, so moving
+  // between pages is instant rather than a fresh load each time. Deferred a
+  // moment so the dashboard's own reads go first.
+  useEffect(() => {
+    if (!isEmpty) return
+    const t = setTimeout(() => { void prefetchCoachTables(ALL_LIVE_TABLES) }, 1200)
+    return () => clearTimeout(t)
+  }, [isEmpty])
 
   // Empty (brand-new) portals must show NO demo data — no demo coach photo,
   // name or credential. Only the account's own real values (or blanks) appear
@@ -743,6 +775,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
 
   const renderView = () => {
     if (isEmpty) {
+      const view = renderLiveModule()
+      const tables = LIVE_MODULE_TABLES[active]
+      return tables ? <ModuleGate key={active} T={T} tables={tables}>{view}</ModuleGate> : view
+    }
+    return renderDemoModule()
+  }
+  const renderLiveModule = () => {
+    {
       // Live, persisted data modules for a real coach's portal (Supabase-backed).
       switch (active) {
         case 'roster':   return <LiveRoster T={T} accent={accent} density={density} />
@@ -778,6 +818,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       const title = (activeItem ? navLabel(activeItem) : null) ?? 'This section'
       return <EmptyModule T={T} accent={accent} density={density} title={title} onNavigate={setActive} />
     }
+  }
+  const renderDemoModule = () => {
     switch (active) {
       case 'dashboard':   return <DashboardView T={T} accent={accent} density={density} onNavigate={setActive} />
       case 'lessons':     return <LessonsView T={T} accent={accent} density={density} />

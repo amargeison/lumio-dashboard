@@ -8,7 +8,8 @@
 import { useEffect, useState } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { dbList, dbInsert, dbUpdate, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE } from '../_lib/coach-db'
+import { dbInsert, dbUpdate, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE, loadRows, cachedRows, type CoachTable } from '../_lib/coach-db'
+import { ModuleSkeleton } from './ModuleSkeleton'
 import { getSettings } from '../_lib/settings-store'
 import { campSpans, campsBetween, campsOn, campDayLabel, CAMP_COLOUR } from '@/lib/coach/camp-dates'
 import { campMoney } from '@/lib/coach/camp-money'
@@ -27,9 +28,21 @@ const fmtDate = (d?: string) => { if (!d) return ''; try { return new Date(d).to
 // WMO weather code → short label (Open-Meteo current weather).
 const wmo = (c: number): string => c === 0 ? 'clear' : c <= 3 ? 'cloudy' : c <= 48 ? 'fog' : c <= 67 ? 'rain' : c <= 77 ? 'snow' : c <= 82 ? 'showers' : c <= 86 ? 'snow' : 'storms'
 
+// Everything the dashboard reads, in the order it destructures them.
+const DASH_TABLES: CoachTable[] = ['coach_players', 'coach_bookings', 'coach_sessions', 'coach_payments', 'coach_attendance', 'coach_player_skills', 'coach_messages', 'coach_equipment', 'coach_staff', 'coach_venues', 'coach_camps', 'coach_camp_attendees']
+
 export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard, asCoach }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void; asCoach?: { name: string; profileDone: boolean; staffId?: string | null } | null }) {
   const profile = useCoachProfile()
-  const [d, setD] = useState<{ players: any[]; bookings: any[]; lessons: any[]; payments: any[]; attendance: any[]; skills: any[]; messages: any[]; equipment: any[]; staff: any[]; venues: any[]; camps: any[]; campAttendees: any[]; loading: boolean }>({ players: [], bookings: [], lessons: [], payments: [], attendance: [], skills: [], messages: [], equipment: [], staff: [], venues: [], camps: [], campAttendees: [], loading: true })
+  // Shared cache first: coming back to the dashboard from another page paints
+  // straight away from what is already loaded, then refreshes underneath.
+  const [d, setD] = useState<{ players: any[]; bookings: any[]; lessons: any[]; payments: any[]; attendance: any[]; skills: any[]; messages: any[]; equipment: any[]; staff: any[]; venues: any[]; camps: any[]; campAttendees: any[]; loading: boolean }>(() => {
+    const got = DASH_TABLES.map(t => cachedRows(t))
+    if (got.every(Boolean)) {
+      const [players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees] = got as unknown[][]
+      return { players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees, loading: false }
+    }
+    return { players: [], bookings: [], lessons: [], payments: [], attendance: [], skills: [], messages: [], equipment: [], staff: [], venues: [], camps: [], campAttendees: [], loading: true }
+  })
   const [weather, setWeather] = useState<{ temp: number; desc: string; wind: number } | null>(null)
   const [booking, setBooking] = useState(false)
   const [composer, setComposer] = useState<{ recipient?: string; body?: string } | null>(null)
@@ -44,8 +57,8 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const [feat, setFeat] = useState(() => getFlags('prolite'))
   useEffect(() => { const r = () => setFeat(getFlags('prolite')); r(); return subscribeFeatures(r) }, [])
   useEffect(() => { fetch('/api/coach/pay/status').then(r => r.json()).then(d => setPayConnected(!!d.chargesEnabled)).catch(() => setPayConnected(false)) }, [])
-  const reloadBookings = async () => { const bookings = await dbList('coach_bookings'); setD(v => ({ ...v, bookings })) }
-  const reloadMessages = async () => { const messages = await dbList('coach_messages'); setD(v => ({ ...v, messages })) }
+  const reloadBookings = async () => { const bookings = await loadRows('coach_bookings', true); setD(v => ({ ...v, bookings })) }
+  const reloadMessages = async () => { const messages = await loadRows('coach_messages', true); setD(v => ({ ...v, messages })) }
   const patchMsg = (id: string, patch: Record<string, any>) => setD(v => ({ ...v, messages: v.messages.map(m => m.id === id ? { ...m, ...patch } : m) }))
 
   // Live local weather for the banner (device location → Open-Meteo, keyless).
@@ -64,9 +77,9 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const [players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees] = await Promise.all([
-        dbList('coach_players'), dbList('coach_bookings'), dbList('coach_sessions'), dbList('coach_payments'), dbList('coach_attendance'), dbList('coach_player_skills'), dbList('coach_messages'), dbList('coach_equipment'), dbList('coach_staff'), dbList('coach_venues'), dbList('coach_camps'), dbList('coach_camp_attendees'),
-      ])
+      const [players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees] = await Promise.all(
+        DASH_TABLES.map(t => loadRows(t).catch(() => cachedRows(t) ?? [])),
+      )
       if (cancelled) return
       setD({ players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees, loading: false })
     })()
@@ -98,7 +111,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
     return () => { off = true }
   }, [])
 
-  if (d.loading) return <div style={{ fontFamily: FONT, color: T.text3, fontSize: 13, padding: '60px 0', textAlign: 'center' }}>Loading your portal…</div>
+  if (d.loading) return <ModuleSkeleton T={T} variant="dashboard" />
 
   const total = d.players.length + d.bookings.length + d.lessons.length + d.payments.length
   // An assistant coach gets a different empty state: the head coach's setup grid
