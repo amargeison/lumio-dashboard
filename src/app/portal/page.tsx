@@ -27,11 +27,33 @@ const supa = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.
 const BG = '#0B0F17', CARD = '#0F1623', BORDER = '#1E293B', TEXT = '#F4F7FB', MUTED = '#93A1B5', ACCENT = '#3A8EE0'
 const primary: React.CSSProperties = { width: '100%', appearance: 'none', border: 0, borderRadius: 10, padding: '11px', background: ACCENT, color: '#06223f', fontSize: 14, fontWeight: 700, cursor: 'pointer' }
 
+// The academy's badge in the tab (and on the home screen, if a family adds the
+// app to it) once we know which academy this is. The layout starts with
+// Lumio's, since it cannot know the academy before the session is read.
+function useAcademyIcon(brand: { name: string; iconUrl: string } | null | undefined) {
+  useEffect(() => {
+    if (!brand) return
+    const set = (rel: string, href: string, sizes?: string) => {
+      const found = document.head.querySelectorAll<HTMLLinkElement>(`link[rel="${rel}"]`)
+      if (found.length) { found.forEach(l => { l.href = href; if (sizes) l.sizes.value = sizes }); return }
+      const l = document.createElement('link')
+      l.rel = rel; l.href = href
+      if (sizes) l.sizes.value = sizes
+      document.head.appendChild(l)
+    }
+    set('icon', `${brand.iconUrl}&size=64`, '64x64')
+    set('shortcut icon', `${brand.iconUrl}&size=64`)
+    set('apple-touch-icon', `${brand.iconUrl}&size=180`)
+    document.title = `${brand.name} — your coaching`
+  }, [brand])
+}
+
 export default function PortalSignIn() {
   const [stage, setStage] = useState<'loading' | 'in' | 'noaccess'>('loading')
   const [email, setEmail] = useState('')
-  const [member, setMember] = useState<{ role: string } | null>(null)
+  const [member, setMember] = useState<{ role: string; brand?: { name: string; iconUrl: string } | null } | null>(null)
   const [err, setErr] = useState('')
+  useAcademyIcon(member?.brand)
 
   const loadMe = async () => {
     const r = await fetch('/api/portal/me')

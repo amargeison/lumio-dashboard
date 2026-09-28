@@ -8,14 +8,15 @@ import { useState, useRef, useEffect } from 'react'
 import { sb, forgetIdentity } from '../_lib/coach-db'
 import { CoachImport, IMPORT_TEMPLATE_URL } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
-import { setSettings, getSettings, ACCREDITATIONS, PLAYER_LEVELS } from '../_lib/settings-store'
+import { setSettings, getSettings, ACCREDITATIONS, PLAYER_LEVELS, ACCENT_PRESETS, type AccentKey } from '../_lib/settings-store'
+import { THEMES } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { seedLumioResources } from '../_lib/lumio-resources'
 import { seedLumioPackages } from '../_lib/lumio-packages'
 import { applyTier } from '../_lib/feature-flags'
 
-const ACCENT = '#3A8EE0'
 const IMPORT_THEME = { text: '#fff', text2: '#D1D5DB', text3: '#9CA3AF', panel: '#0d1117', panel2: '#111318', border: '#1F2937', btnText: '#fff', isDark: true }
-const IMPORT_ACCENT = { hex: ACCENT, dim: ACCENT + '22' }
+type Skin = 'dark' | 'light' | 'white'
+const SKINS: { v: Skin; label: string }[] = [{ v: 'dark', label: 'Dark' }, { v: 'light', label: 'Light' }, { v: 'white', label: 'White' }]
 const slugify = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 function compress(file: File, size: number): Promise<string> {
@@ -70,6 +71,20 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
   // Their own sign-in page at /login/<slug>. Ticked means families sign in on a
   // page with the academy's logo and name; unticked means the standard Lumio one.
   const [partnerLogin, setPartnerLogin] = useState(false)
+  // Their look — theme and accent colour. Chosen here so the portal they land in
+  // already looks like theirs (and so does their sign-in page), rather than a
+  // Lumio-blue default they have to find Settings → Appearance to change. The
+  // wizard itself takes the colour as they pick it.
+  const [skin, setSkin] = useState<Skin>(() => {
+    const t = getSettings().theme
+    return t === 'light' || t === 'white' ? t : 'dark'
+  })
+  const [accentKey, setAccentKey] = useState<AccentKey>(() => {
+    const k = getSettings().accentKey
+    return k in ACCENT_PRESETS ? k : 'blue'
+  })
+  const ACCENT = ACCENT_PRESETS[accentKey].hex
+  const IMPORT_ACCENT = { hex: ACCENT, dim: ACCENT + '22' }
   const [photo, setPhoto] = useState<string | null>(null)
   const [email, setEmail] = useState(defaultEmail)
   const [phone, setPhone] = useState('')
@@ -146,13 +161,13 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       // The sign-in page switch, and the logo it shows. Written to settings (which
       // sync to coach_settings — the copy the /login page and the welcome emails
       // read) whether on or off, so a coach who unticks it is definitely off.
-      setSettings({ partnerLogin: partnerLogin && !!logo, ...(logo ? { brandLogo: logo } : {}) })
+      setSettings({ theme: skin, accentKey, partnerLogin: partnerLogin && !!logo, ...(logo ? { brandLogo: logo } : {}) })
       // …and straight into coach_settings as well. The settings sync writes on a
       // short delay, but the coach invites below go out now — and they read this
       // switch to decide which sign-in page to link to.
       try {
         const { data: cur } = await sb().from('coach_settings').select('data').eq('coach_id', uid).maybeSingle()
-        const data = { ...((cur?.data as Record<string, unknown>) || {}), partnerLogin: partnerLogin && !!logo, ...(logo ? { brandLogo: logo } : {}) }
+        const data = { ...((cur?.data as Record<string, unknown>) || {}), theme: skin, accentKey, partnerLogin: partnerLogin && !!logo, ...(logo ? { brandLogo: logo } : {}) }
         await sb().from('coach_settings').upsert({ coach_id: uid, data, updated_at: new Date().toISOString() }, { onConflict: 'coach_id' })
       } catch { /* the settings sync catches up */ }
       // Calendar & email sync. Nothing is connected here — that needs the
@@ -443,6 +458,39 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                   <button onClick={() => photoRef.current?.click()} style={{ ...input, cursor: 'pointer', textAlign: 'left', color: photo ? ACCENT : '#6B7280', border: `1px solid ${photo ? ACCENT : '#374151'}` }}>{photo ? '✓ Photo added' : '⬆ Upload photo'}</button>
                 </div>
               </div>
+              {/* Your look — theme and accent colour, with a small preview of the
+                  portal so the choice is made by eye, not by name. */}
+              <div style={{ borderTop: '1px solid #1F2937', paddingTop: 16, marginTop: 2 }}>
+                <label style={lbl}>Your look</label>
+                <p style={{ color: '#6B7280', fontSize: 11.5, margin: '4px 0 10px', lineHeight: 1.5 }}>Pick a background and your academy&apos;s colour. It runs through your portal, the player app and your sign-in page. Change it any time in Settings &rarr; Appearance.</p>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'stretch', flexWrap: 'wrap' }}>
+                  <div style={{ flex: '1 1 250px', minWidth: 0 }}>
+                    <div style={{ ...lbl, fontSize: 10, marginBottom: 6 }}>Background</div>
+                    <div role="radiogroup" aria-label="Background" style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+                      {SKINS.map(o => (
+                        <button key={o.v} type="button" role="radio" aria-checked={skin === o.v} onClick={() => setSkin(o.v)}
+                          style={{ flex: 1, appearance: 'none', cursor: 'pointer', padding: '9px 10px', borderRadius: 9, fontSize: 13, fontWeight: 600, border: `2px solid ${skin === o.v ? ACCENT : '#1F2937'}`, background: skin === o.v ? ACCENT + '18' : '#111318', color: skin === o.v ? '#fff' : '#9CA3AF', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                          <span style={{ width: 12, height: 12, borderRadius: 3, background: THEMES[o.v].bg, border: '1px solid #4B5563' }} />
+                          {o.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ ...lbl, fontSize: 10, marginBottom: 6 }}>Colour</div>
+                    <div role="radiogroup" aria-label="Accent colour" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(26px, 1fr))', gap: 7 }}>
+                      {(Object.keys(ACCENT_PRESETS) as AccentKey[]).map(k => {
+                        const p = ACCENT_PRESETS[k]; const on = accentKey === k
+                        return <button key={k} type="button" role="radio" aria-checked={on} aria-label={p.label} title={p.label} onClick={() => setAccentKey(k)}
+                          style={{ aspectRatio: '1', width: '100%', maxWidth: 30, borderRadius: '50%', background: p.hex, cursor: 'pointer', appearance: 'none', padding: 0, border: on ? '3px solid #fff' : '2px solid #1F2937', boxShadow: on ? `0 0 0 2px ${p.hex}66` : 'none' }} />
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 9, fontSize: 12, color: '#6B7280' }}>
+                      <span style={{ width: 9, height: 9, borderRadius: '50%', background: ACCENT }} />
+                      Selected: <strong style={{ color: '#fff', fontWeight: 600 }}>{ACCENT_PRESETS[accentKey].label}</strong> &middot; {SKINS.find(o => o.v === skin)?.label}
+                    </div>
+                  </div>
+                  <AppearancePreview skin={skin} accent={ACCENT} academy={academy.trim() || 'Your academy'} logo={logo} />
+                </div>
+              </div>
               <div style={{ border: `1px solid ${partnerLogin ? ACCENT : '#1F2937'}`, background: partnerLogin ? `${ACCENT}10` : 'transparent', borderRadius: 12, padding: '14px 16px' }}>
                 <label style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer' }}>
                   <input type="checkbox" checked={partnerLogin} onChange={e => setPartnerLogin(e.target.checked)} style={{ marginTop: 3, width: 16, height: 16, accentColor: ACCENT, flex: 'none' }} />
@@ -689,15 +737,15 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
               if (wantStaff === true && team.length === 0) { setErr('Add at least one coach — or choose “No — solo coach”.'); return }
               if (partnerLogin && !logo) { setErr('Add your logo for your sign-in page — or untick it to use the standard Lumio sign-in.'); return }
               setErr(''); setStep(2)
-            }} style={primary(true)}>Continue →</button>
+            }} style={primary(true, ACCENT)}>Continue →</button>
           )}
           {step === 2 && (
             setupType === 'self'
-              ? <button onClick={() => { if (!dpa) { setErr('Please accept the Data Processing Agreement to continue.'); return } setErr(''); setStep(3) }} style={primary(true)}>Continue →</button>
-              : <button onClick={finish} disabled={!setupType || saving || !dpa} style={primary(!!setupType && !saving && dpa)}>{saving ? 'Saving…' : 'Finish →'}</button>
+              ? <button onClick={() => { if (!dpa) { setErr('Please accept the Data Processing Agreement to continue.'); return } setErr(''); setStep(3) }} style={primary(true, ACCENT)}>Continue →</button>
+              : <button onClick={finish} disabled={!setupType || saving || !dpa} style={primary(!!setupType && !saving && dpa, ACCENT)}>{saving ? 'Saving…' : 'Finish →'}</button>
           )}
           {step === 3 && (
-            <button onClick={finish} disabled={saving || !dpa} style={primary(!saving && dpa)}>{saving ? 'Saving…' : 'Go to my portal →'}</button>
+            <button onClick={finish} disabled={saving || !dpa} style={primary(!saving && dpa, ACCENT)}>{saving ? 'Saving…' : 'Go to my portal →'}</button>
           )}
         </div>
       </div>
@@ -705,6 +753,39 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
   )
 }
 
-function primary(enabled: boolean): React.CSSProperties {
-  return { padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, border: 'none', cursor: enabled ? 'pointer' : 'default', background: enabled ? ACCENT : '#374151', color: '#fff' }
+function primary(enabled: boolean, accent: string): React.CSSProperties {
+  return { padding: '12px 28px', borderRadius: 10, fontWeight: 700, fontSize: 14, border: 'none', cursor: enabled ? 'pointer' : 'default', background: enabled ? accent : '#374151', color: '#fff' }
+}
+
+// A thumbnail of the portal in the chosen look: sidebar, a heading, a card and
+// a button. Colours come from the same theme tokens the portal uses, so what
+// they see here is what they get.
+function AppearancePreview({ skin, accent, academy, logo }: { skin: Skin; accent: string; academy: string; logo: string | null }) {
+  const T = THEMES[skin]
+  const side = T.isDark ? '#0a0c14' : T.panel2
+  const bar = (w: string | number, c: string, h = 5) => <div style={{ width: w, height: h, borderRadius: 3, background: c }} />
+  return (
+    <div aria-label="Preview of your portal" style={{ flex: '1 1 180px', minWidth: 170, maxWidth: 240, minHeight: 150, borderRadius: 12, overflow: 'hidden', display: 'flex', background: T.bg, border: '1px solid #1F2937' }}>
+      <div style={{ width: 44, background: side, borderRight: `1px solid ${T.border}`, padding: '10px 7px', display: 'flex', flexDirection: 'column', gap: 7, alignItems: 'center' }}>
+        {logo
+          // eslint-disable-next-line @next/next/no-img-element
+          ? <img src={logo} alt="" style={{ width: 24, height: 24, objectFit: 'contain', borderRadius: 5, background: '#fff' }} />
+          : <div style={{ width: 24, height: 24, borderRadius: 6, background: accent }} />}
+        <div style={{ width: 28, height: 8, borderRadius: 4, background: accent }} />
+        {bar(24, T.border, 6)}{bar(24, T.border, 6)}{bar(24, T.border, 6)}
+      </div>
+      <div style={{ flex: 1, minWidth: 0, padding: 10, display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 800, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{academy}</div>
+        <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 7, padding: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div style={{ fontSize: 8, fontWeight: 800, letterSpacing: '0.1em', color: accent }}>TODAY</div>
+          {bar('80%', T.borderHi)}{bar('55%', T.borderHi)}
+          <div style={{ height: 5, borderRadius: 3, background: T.border, overflow: 'hidden' }}><div style={{ width: '62%', height: '100%', background: accent }} /></div>
+        </div>
+        <div style={{ display: 'flex', gap: 5, marginTop: 'auto' }}>
+          <div style={{ fontSize: 8.5, fontWeight: 700, color: '#fff', background: accent, borderRadius: 5, padding: '4px 8px' }}>Book session</div>
+          <div style={{ fontSize: 8.5, fontWeight: 700, color: accent, background: accent + '22', borderRadius: 5, padding: '4px 8px' }}>Camps</div>
+        </div>
+      </div>
+    </div>
+  )
 }

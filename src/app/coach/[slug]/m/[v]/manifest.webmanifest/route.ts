@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { partnerBrandBySlug } from '@/lib/coach/partner-login'
 
 // Per-slug PWA manifest for the COACH portal. Mirrors the tennis player
 // portal's manifest route (display: standalone, portrait, icons) but
@@ -20,10 +21,14 @@ export async function GET(
   { params }: { params: Promise<{ slug: string; v: string }> },
 ) {
   const { slug } = await params
+  // Partner sign-in switched on + a logo uploaded → the installed app carries
+  // the academy's name and badge, not Lumio's. Same rule as the tab favicon.
+  const brand = slug === 'demo' ? null : await partnerBrandBySlug(slug)
+  const icon = brand?.iconUrl || null
 
   const manifest = {
-    name:             `Lumio Coach — ${slug}`,
-    short_name:       'Lumio Coach',
+    name:             icon && brand ? brand.name : `Lumio Coach — ${slug}`,
+    short_name:       icon && brand ? brand.name.slice(0, 24) : 'Lumio Coach',
     description:      'Your coaching OS — sessions, players, camps, GPS & video.',
     // Stable, coach-specific app identity so the installed PWA is a distinct
     // app (not colliding with the site root or other portals) and always
@@ -38,7 +43,10 @@ export async function GET(
     orientation:      'portrait',
     background_color: '#07080F',
     theme_color:      '#3A8EE0',
-    icons: [
+    icons: icon ? [
+      { src: `${icon}&size=192`, sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: `${icon}&size=512`, sizes: '512x512', type: 'image/png', purpose: 'any' },
+    ] : [
       { src: '/tennis_coach_logo.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: '/tennis_coach_logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
       { src: '/tennis_coach_logo.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },

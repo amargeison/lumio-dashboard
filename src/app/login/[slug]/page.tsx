@@ -32,11 +32,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     robots: { index: false },
     // The academy's own badge in the browser tab, so the page a parent keeps
     // open (or saves to their home screen) is theirs, not Lumio's.
-    ...(brand.emailLogoUrl ? {
+    ...(brand.iconUrl ? {
       icons: {
-        icon: [{ url: brand.emailLogoUrl }],
-        shortcut: brand.emailLogoUrl,
-        apple: brand.emailLogoUrl,
+        icon: [
+          { url: `${brand.iconUrl}&size=32`, sizes: '32x32', type: 'image/png' },
+          { url: `${brand.iconUrl}&size=64`, sizes: '64x64', type: 'image/png' },
+        ],
+        apple: `${brand.iconUrl}&size=180`,
       },
     } : {}),
   }

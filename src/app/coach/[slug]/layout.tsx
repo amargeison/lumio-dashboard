@@ -36,21 +36,34 @@ export async function generateMetadata(
         description: 'The coaching portal for tennis coaches and academies: bookings, session plans, lesson summaries, player progress, camps and parent messaging.',
         image: ogImageUrl({ page: 'tennis-coach' }),
       })
+  // An academy that has switched its partner sign-in page on and uploaded a
+  // logo gets its own badge in the browser tab and on the home screen — the
+  // same switch that puts its brand on the sign-in page. Everyone else, and the
+  // demo, keeps Lumio's.
+  const icon = brand?.iconUrl
   return {
     ...share,
     manifest: `/coach/${slug}/m/anon/manifest.webmanifest`,
     appleWebApp: {
       capable:        true,
-      title:          'Lumio Coach',
+      title:          icon && brand ? brand.name : 'Lumio Coach',
       statusBarStyle: 'black-translucent',
     },
-    icons: {
-      icon: [
-        { url: '/lumio-favicon-32.png', sizes: '32x32', type: 'image/png' },
-        { url: '/lumio-favicon-64.png', sizes: '64x64', type: 'image/png' },
-      ],
-      apple: '/tennis_coach_logo.png',
-    },
+    icons: icon
+      ? {
+          icon: [
+            { url: `${icon}&size=32`, sizes: '32x32', type: 'image/png' },
+            { url: `${icon}&size=64`, sizes: '64x64', type: 'image/png' },
+          ],
+          apple: `${icon}&size=180`,
+        }
+      : {
+          icon: [
+            { url: '/lumio-favicon-32.png', sizes: '32x32', type: 'image/png' },
+            { url: '/lumio-favicon-64.png', sizes: '64x64', type: 'image/png' },
+          ],
+          apple: '/tennis_coach_logo.png',
+        },
   }
 }
 
