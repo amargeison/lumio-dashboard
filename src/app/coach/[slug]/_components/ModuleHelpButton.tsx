@@ -18,6 +18,10 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { helpFor } from '../_lib/module-help'
 
+// Which mounted instance owns the page's one ⓘ (see the effect below).
+let ownerSeq = 0
+let owner = 0
+
 const TABS = [
   { id: 'what', label: 'What it’s for' },
   { id: 'how', label: 'How to use it' },
@@ -56,13 +60,26 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
     if (!help) return
     const host = anchor.current?.parentElement
     if (!host) return
+    // Only ever one button. The newest instance owns the slot; an older one that
+    // has not unmounted yet simply stands down rather than fighting over it.
+    //
+    // (An earlier version cleared every slot in the document before adding its
+    // own. Two instances alive at the same moment then deleted each other's slot
+    // on every DOM change, forever — which froze the whole page.)
+    const me = ++ownerSeq
+    owner = me
     let current: HTMLElement | null = null
+    let placements = 0
+    let frame = 0
     const place = () => {
+      frame = 0
+      if (owner !== me) { if (current) { current.remove(); current = null; setSlot(null) } return }
       if (current && current.isConnected) return
       const heading = host.querySelector('h1, h2') as HTMLElement | null
       if (!heading) { if (current) { current = null; setSlot(null) } return }
-      // One button, ever: clear any slot a previous page left in the document.
-      document.querySelectorAll('[data-module-help-slot]').forEach(el => el.remove())
+      // A hard stop, so no page can ever turn this into a loop: a heading that
+      // keeps being re-created simply loses its ⓘ after a while.
+      if (++placements > 25) { mo?.disconnect(); return }
       const el = document.createElement('span')
       el.setAttribute('data-module-help-slot', '')
       el.style.cssText = 'display:inline-flex;vertical-align:middle;margin-left:10px;position:relative;top:-2px;line-height:0'
@@ -70,10 +87,17 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
       current = el
       setSlot(el)
     }
+    // Batched to one check per frame, however many DOM changes arrive.
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(place) }
+    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(schedule) : null
     place()
-    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(place) : null
     mo?.observe(host, { childList: true, subtree: true })
-    return () => { mo?.disconnect(); current?.remove(); current = null }
+    return () => {
+      mo?.disconnect()
+      if (frame) cancelAnimationFrame(frame)
+      current?.remove(); current = null
+      if (owner === me) owner = 0
+    }
   }, [moduleId, help])
 
   // Escape closes it, because a panel you have to aim at to dismiss is a panel
