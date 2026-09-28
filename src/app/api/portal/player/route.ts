@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getMembership, scopedDb, signAvatar, sendWelcomeMessage } from '@/lib/coach/membership'
 import { bookById } from '@/lib/coach/books'
 import { isLumioResource } from '@/lib/coach/lumio-resources-data'
+import { resourceHref } from '@/lib/coach/resource-files'
 import { buildNextSession } from '@/lib/student/next-session'
 
 export const runtime = 'nodejs'
@@ -125,6 +126,11 @@ export async function GET() {
     .filter(r => !(lumioOff && isLumioResource(r as { title?: string | null })))
     .filter(r => (stage && r.racket === stage) || (!r.racket && String(r.level || '').toLowerCase().startsWith('all')))
     .slice(0, 9)
+    // A coach's own uploaded file opens through the checked, signed route; a
+    // "link" that is not a web address (a filename typed into an import) is
+    // dropped rather than shown as a link that goes nowhere. Lumio printables
+    // keep their lumio: address for the app to open.
+    .map(r => ({ ...r, url: String(r.url || '').startsWith('lumio:') ? r.url : resourceHref(r.url as string | null) }))
 
   // Books the coach put in this player's hands. The shelf lives in code, so the
   // row's own title/author is trusted and only the cover colour is looked up —

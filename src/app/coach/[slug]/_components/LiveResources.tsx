@@ -5,7 +5,7 @@
 // plus Add resource. The Lumio starter library is loaded via onboarding or
 // Settings; an empty library still shows the tabs.
 
-import { useState, type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
@@ -15,6 +15,21 @@ import { isPrintable, openPrintable } from '../_lib/resource-printables'
 import { DrillLibrary } from './DrillLibrary'
 import { useCoachSettings } from '../_lib/use-settings'
 import { isLumioResource } from '../_lib/lumio-resources'
+import { resourceHref, resourceFileName, isResourceFile, normaliseWebLink, RESOURCE_FILE_ACCEPT } from '@/lib/coach/resource-files'
+import { invalidateCoachTable } from '../_lib/coach-db'
+
+// Upload a file for a resource. With an id it is attached to that resource
+// straight away; without one (a resource still being written) the caller keeps
+// the returned "file:…" url and saves it with the rest of the form.
+async function uploadResourceFile(file: File, resourceId?: string): Promise<string> {
+  const fd = new FormData()
+  fd.append('file', file)
+  if (resourceId) fd.append('resourceId', resourceId)
+  const r = await fetch('/api/coach/resources/file', { method: 'POST', body: fd })
+  const d = await r.json().catch(() => ({}))
+  if (!r.ok || !d.url) throw new Error(d.error || 'Could not upload that file.')
+  return d.url as string
+}
 import { BookShelf } from './BookShelf'
 
 type Res = { id: string; title: string; category?: string | null; format?: string | null; level?: string | null; duration?: string | null; racket?: string | null; tags?: string | null; url?: string | null; notes?: string | null }
@@ -39,6 +54,34 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
   const [edit, setEdit] = useState<Res | 'new' | null>(null)
   const [q, setQ] = useState('')
   const [racket, setRacket] = useState('all')
+  // "+ Add the file" on a card: one hidden picker, pointed at whichever card
+  // asked for it.
+  const picker = useRef<HTMLInputElement>(null)
+  const [fileFor, setFileFor] = useState<string | null>(null)
+  const [uploading, setUploading] = useState<string | null>(null)
+  const [fileErr, setFileErr] = useState<{ id: string; msg: string } | null>(null)
+  const askForFile = (id: string) => { setFileFor(id); setFileErr(null); picker.current?.click() }
+  // "+ Add link" on a card opens a box right there — most coaches point at a
+  // YouTube video or a Google Doc rather than upload a file.
+  const [linkFor, setLinkFor] = useState<string | null>(null)
+  const [linkDraft, setLinkDraft] = useState('')
+  const saveLink = async (id: string) => {
+    const url = normaliseWebLink(linkDraft)
+    if (!url) { setFileErr({ id, msg: 'That isn’t a web address — paste the link from your browser, e.g. youtube.com/watch?v=…' }); return }
+    setUploading(id); setFileErr(null)
+    try { await resources.edit(id, { url }); setLinkFor(null); setLinkDraft('') }
+    catch { setFileErr({ id, msg: 'Could not save that link — try again.' }) }
+    finally { setUploading(null) }
+  }
+  const onPicked = async (f: File | undefined) => {
+    const id = fileFor
+    if (picker.current) picker.current.value = ''
+    if (!f || !id) return
+    setUploading(id)
+    try { await uploadResourceFile(f, id); invalidateCoachTable('coach_resources'); await resources.reload() }
+    catch (e) { setFileErr({ id, msg: e instanceof Error ? e.message : 'Could not upload that file.' }) }
+    finally { setUploading(null); setFileFor(null) }
+  }
 
   const levelColour = (l?: string | null) => l === 'Beginner' ? T.good : l === 'Intermediate' ? '#3A8EE0' : l === 'Advanced' ? T.bad : T.text3
   const needle = q.trim().toLowerCase()
@@ -68,7 +111,9 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 14 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Resource Centre</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the {stageWords().noun} ladder.</p>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>{lumioOn
+            ? <>Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the {stageWords().noun} ladder.</>
+            : <>Your own drills, videos, plans and documents — links or files, tagged to the {stageWords().noun} ladder and shared to your players&rsquo; app.</>}</p>
         </div>
         <button onClick={() => setEdit('new')} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ Add resource</button>
       </div>
@@ -98,6 +143,13 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
         <Chip id="all" label="All rackets" />
         {RACKET_STAGES.map(s => <Chip key={s.id} id={s.id} label={s.name} colour={s.colour} />)}
       </div>
+
+      <input ref={picker} type="file" accept={RESOURCE_FILE_ACCEPT} style={{ display: 'none' }} onChange={e => { void onPicked(e.target.files?.[0]) }} />
+      {!asCoach && rows.some(r => !isPrintable(r.url) && !resourceHref(r.url)) && (
+        <div style={{ fontSize: 12, color: T.text2, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '9px 13px', marginBottom: 14, lineHeight: 1.5 }}>
+          {(() => { const n = rows.filter(r => !isPrintable(r.url) && !resourceHref(r.url)).length; return `${n} resource${n === 1 ? ' has' : 's have'} nothing to open yet.` })()} Press <strong style={{ color: T.text }}>+ Add link</strong> or <strong style={{ color: T.text }}>Upload file</strong> on the card — players can open it from their app straight away.
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '44px 20px', background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 12 }}>
@@ -137,8 +189,33 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
                       nothing yet. */}
                   {isPrintable(r.url)
                     ? <button onClick={() => openPrintable(r)} style={{ appearance: 'none', border: 0, background: 'transparent', padding: 0, fontSize: 12, fontWeight: 600, color: accent.hex, cursor: 'pointer', fontFamily: 'inherit' }}>▸ Open printable →</button>
-                    : r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: accent.hex, textDecoration: 'none' }}>▸ {actionLabel(r.format)} →</a>
-                    : <span style={{ fontSize: 11.5, color: T.text3 }}>▸ {r.format || 'Resource'} · preview coming soon</span>}
+                    : resourceHref(r.url)
+                      ? <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <a href={resourceHref(r.url)!} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: accent.hex, textDecoration: 'none' }}>▸ {isResourceFile(r.url) ? 'Open file' : actionLabel(r.format)} →</a>
+                          {isResourceFile(r.url) && !asCoach && <button onClick={() => askForFile(r.id)} disabled={uploading === r.id} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', padding: 0, fontSize: 11, color: T.text3, cursor: 'pointer', fontFamily: 'inherit' }}>{uploading === r.id ? 'Uploading…' : 'Replace file'}</button>}
+                        </div>
+                      // Nothing to open yet — a resource added by hand or
+                      // imported from a spreadsheet, whose file was never
+                      // attached. Say so, and let the head coach add it here.
+                      : asCoach
+                        ? <span style={{ fontSize: 11.5, color: T.text3 }}>▸ Nothing attached yet</span>
+                        : linkFor === r.id
+                          ? <div style={{ display: 'flex', gap: 6 }}>
+                              <input autoFocus value={linkDraft} onChange={e => setLinkDraft(e.target.value)} placeholder="Paste a link — youtube.com/…"
+                                onKeyDown={e => { if (e.key === 'Enter') void saveLink(r.id); if (e.key === 'Escape') { setLinkFor(null); setFileErr(null) } }}
+                                style={{ flex: 1, minWidth: 0, background: T.panel2, color: T.text, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '6px 9px', fontSize: 12, fontFamily: 'inherit', outline: 'none' }} />
+                              <button onClick={() => void saveLink(r.id)} disabled={uploading === r.id} style={{ flexShrink: 0, appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 8, padding: '6px 11px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>{uploading === r.id ? '…' : 'Save'}</button>
+                              <button onClick={() => { setLinkFor(null); setFileErr(null) }} aria-label="Cancel" style={{ flexShrink: 0, appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 15, cursor: 'pointer', padding: '0 2px' }}>×</button>
+                            </div>
+                          : <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              <button onClick={() => { setLinkFor(r.id); setLinkDraft(''); setFileErr(null) }}
+                                style={{ appearance: 'none', border: `1px dashed ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '6px 11px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>+ Add link</button>
+                              <button onClick={() => askForFile(r.id)} disabled={uploading === r.id}
+                                style={{ appearance: 'none', border: `1px dashed ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '6px 11px', fontSize: 12, fontWeight: 600, cursor: uploading === r.id ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                                {uploading === r.id ? 'Uploading…' : '⬆ Upload file'}
+                              </button>
+                            </div>}
+                  {fileErr?.id === r.id && <div style={{ fontSize: 11, color: T.bad, marginTop: 6 }}>{fileErr.msg}</div>}
                 </div>
               </div>
             )
@@ -148,7 +225,7 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
       </>
       )}
 
-      {edit && <ResourceForm T={T} accent={accent} res={edit === 'new' ? null : edit}
+      {edit && <ResourceForm T={T} accent={accent} res={edit === 'new' ? null : edit} canUpload={!asCoach}
         onClose={() => setEdit(null)}
         onDelete={edit !== 'new' ? async () => { await resources.remove(edit.id); setEdit(null) } : undefined}
         onSave={async v => { if (edit === 'new') await resources.add(v); else await resources.edit(edit.id, v); setEdit(null) }} />}
@@ -156,13 +233,23 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
   )
 }
 
-function ResourceForm({ T, accent, res, onClose, onSave, onDelete }: { T: ThemeTokens; accent: AccentTokens; res: Res | null; onClose: () => void; onSave: (v: Record<string, any>) => Promise<void>; onDelete?: () => Promise<void> }) {
+function ResourceForm({ T, accent, res, canUpload, onClose, onSave, onDelete }: { T: ThemeTokens; accent: AccentTokens; res: Res | null; canUpload: boolean; onClose: () => void; onSave: (v: Record<string, any>) => Promise<void>; onDelete?: () => Promise<void> }) {
   const [d, setD] = useState<Record<string, any>>({ title: res?.title || '', category: res?.category || 'Drill', format: res?.format || 'Video', level: res?.level || 'All levels', racket: res?.racket || '', duration: res?.duration || '', tags: res?.tags || '', url: res?.url || '', notes: res?.notes || '' })
   const [saving, setSaving] = useState(false)
+  const [up, setUp] = useState<'idle' | 'busy' | string>('idle')
+  const fileRef = useRef<HTMLInputElement>(null)
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
   const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box', outline: 'none' }
   const lab: CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 5px' }
-  const save = async () => { if (!String(d.title).trim() || saving) return; setSaving(true); try { await onSave({ title: d.title, category: d.category, format: d.format, level: d.level, racket: d.racket || null, duration: d.duration, tags: d.tags, url: d.url, notes: d.notes }) } finally { setSaving(false) } }
+  const attach = async (f: File | undefined) => {
+    if (fileRef.current) fileRef.current.value = ''
+    if (!f) return
+    setUp('busy')
+    try { const url = await uploadResourceFile(f); set('url', url); if (d.format === 'Video') set('format', /\.pdf$/i.test(f.name) ? 'PDF' : 'Worksheet'); setUp('idle') }
+    catch (e) { setUp(e instanceof Error ? e.message : 'Could not upload that file.') }
+  }
+  const hasFile = isResourceFile(d.url)
+  const save = async () => { if (!String(d.title).trim() || saving || up === 'busy') return; setSaving(true); try { await onSave({ title: d.title, category: d.category, format: d.format, level: d.level, racket: d.racket || null, duration: d.duration, tags: d.tags, url: isResourceFile(d.url) ? d.url : (normaliseWebLink(d.url) || (String(d.url || '').trim() ? d.url : '')), notes: d.notes }) } finally { setSaving(false) } }
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '4vh 16px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 460, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
@@ -179,7 +266,29 @@ function ResourceForm({ T, accent, res, onClose, onSave, onDelete }: { T: ThemeT
             <div><label style={lab}>Duration</label><input value={d.duration} onChange={e => set('duration', e.target.value)} placeholder="e.g. 6 min" style={field} /></div>
           </div>
           <div><label style={lab}>Tags (comma separated)</label><input value={d.tags} onChange={e => set('tags', e.target.value)} placeholder="volley, net" style={field} /></div>
-          <div><label style={lab}>Link / URL</label><input value={d.url} onChange={e => set('url', e.target.value)} placeholder="https://…" style={field} /></div>
+          {/* A file of their own, or a link — one or the other. */}
+          <div>
+            <label style={lab}>File or link</label>
+            {hasFile ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, ...field }}>
+                <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: T.text }}>📎 {resourceFileName(d.url) || 'File attached'}</span>
+                {canUpload && <button type="button" onClick={() => fileRef.current?.click()} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, padding: 0 }}>Replace</button>}
+                <button type="button" onClick={() => set('url', '')} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 12, cursor: 'pointer', fontFamily: FONT, padding: 0 }}>Remove</button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input value={d.url} onChange={e => set('url', e.target.value)} placeholder="Paste a link — https://…" style={{ ...field, flex: 1 }} />
+                {canUpload && <button type="button" onClick={() => fileRef.current?.click()} disabled={up === 'busy'}
+                  style={{ flexShrink: 0, appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '0 12px', fontSize: 12.5, fontWeight: 600, cursor: up === 'busy' ? 'wait' : 'pointer', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                  {up === 'busy' ? 'Uploading…' : '⬆ Upload a file'}
+                </button>}
+              </div>
+            )}
+            <input ref={fileRef} type="file" accept={RESOURCE_FILE_ACCEPT} style={{ display: 'none' }} onChange={e => { void attach(e.target.files?.[0]) }} />
+            {up !== 'idle' && up !== 'busy' && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 5 }}>{up}</div>}
+            {!hasFile && d.url && !resourceHref(d.url) && <div style={{ fontSize: 11.5, color: T.warn, marginTop: 5 }}>That isn&rsquo;t a web address, so it won&rsquo;t open. Upload the file instead, or paste the link to where it lives online.</div>}
+            {!hasFile && !d.url && <div style={{ fontSize: 11, color: T.text3, marginTop: 5 }}>Paste a link (YouTube, Google Drive, your website) or upload a PDF, Word, PowerPoint, Excel or image file. Players open it from their app.</div>}
+          </div>
           <div><label style={lab}>Description</label><textarea value={d.notes} onChange={e => set('notes', e.target.value)} rows={2} style={{ ...field, resize: 'vertical' }} /></div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 18 }}>

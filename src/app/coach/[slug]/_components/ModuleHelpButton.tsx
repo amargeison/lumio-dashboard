@@ -17,6 +17,7 @@ import { createPortal } from 'react-dom'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { helpFor } from '../_lib/module-help'
+import { useCoachSettings } from '../_lib/use-settings'
 
 // Which mounted instance owns the page's one ⓘ (see the effect below).
 let ownerSeq = 0
@@ -36,7 +37,10 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
 }) {
   const [open, setOpen] = useState(false)
   const [tab, setTab] = useState<(typeof TABS)[number]['id']>('how')
-  const help = helpFor(moduleId)
+  // The Resource Centre explains itself differently when Lumio's library is
+  // switched off — there is nothing of Lumio's on the page to talk about.
+  const lumioLibrary = useCoachSettings().resourcesPreloaded !== false
+  const help = helpFor(moduleId === 'resources' && !lumioLibrary ? 'resources_own' : moduleId)
 
   // ── Where the button sits ─────────────────────────────────────────────────
   // Beside the page's NAME — that is where somebody looks when they want to know

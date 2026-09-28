@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { normaliseWebLink } from '@/lib/coach/resource-files'
 
 export const runtime = 'nodejs'
 
@@ -74,6 +75,11 @@ export async function POST(req: NextRequest) {
     return out
   }).filter(r => Object.keys(r).length > 0)
     .map(r => ({ ...r, coach_id: academyId, ...(staffId && spec.assignable ? { staff_id: staffId } : {}) }))
+    // A spreadsheet can only carry a web link, not the file itself. Links typed
+    // without https:// ("riverside.co.uk/handbook") are completed so they open;
+    // a bare filename ("handbook.pdf") is left empty, so the Resource Centre
+    // offers "+ Add link" / "Upload file" rather than a link that 404s.
+    .map((r: Record<string, unknown>) => spec.table === 'coach_resources' && r.url ? { ...r, url: normaliseWebLink(String(r.url)) } : r)
 
   if (!clean.length) return NextResponse.json({ inserted: 0 })
   const { data: saved, error } = await admin.from(spec.table).insert(clean).select('id')
@@ -94,5 +100,7 @@ export async function POST(req: NextRequest) {
       calendar = { synced: results.filter(r => r.synced.length).length, failed: results.filter(r => r.failed.length).length }
     } catch (e) { console.error('[coach/import/save] camp calendar', e) }
   }
-  return NextResponse.json({ inserted: clean.length, ...(calendar ? { calendar } : {}) })
+  // Resources that arrived without a file, so the import can say so.
+  const needFiles = spec.table === 'coach_resources' ? clean.filter((r: Record<string, unknown>) => !r.url).length : 0
+  return NextResponse.json({ inserted: clean.length, ...(calendar ? { calendar } : {}), ...(needFiles ? { needFiles } : {}) })
 }
