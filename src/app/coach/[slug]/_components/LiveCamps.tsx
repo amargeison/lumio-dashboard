@@ -17,7 +17,8 @@ import { CampPromote } from './CampPromote'
 import { CampEmails } from './CampEmails'
 import { CampTrip } from './CampTrip'
 import { CampDiscord } from './CampDiscord'
-import { getSettings } from '../_lib/settings-store'
+import { getSettings, setSettings } from '../_lib/settings-store'
+import { useCoachSettings } from '../_lib/use-settings'
 import { stageWords } from '../_lib/stage-words'
 import { AUDIENCES, campAudience } from '@/lib/coach/camp-audience'
 import { flagFor } from '@/lib/coach/country-flag'
@@ -123,6 +124,16 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   })
   const [tab, setTab] = useState('overview')
   const [formOpen, setFormOpen] = useState(false)
+  // Discord is opt-in per camp — see campDiscord in settings-store.
+  const settings = useCoachSettings()
+  const { rows: campChannelRows } = useCoachTable<{ camp_id: string }>('coach_camp_channels')
+  const discordLinked = (id?: string) => !!id && campChannelRows.some(r => r.camp_id === id)
+  const discordOn = (id?: string) => !!id && (discordLinked(id) || (settings.campDiscord || []).includes(id))
+  const setDiscord = (id: string, on: boolean) => {
+    const cur = new Set(getSettings().campDiscord || [])
+    if (on) cur.add(id); else cur.delete(id)
+    setSettings({ campDiscord: Array.from(cur) })
+  }
 
   // ── Catch-up calendar sync ────────────────────────────────────────────────
   // Camps only started syncing to Google / Outlook / iCloud in this release, and
@@ -158,13 +169,14 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
           <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Create your first camp — Lumio’s AI will design the itinerary, kit and targets for you.</div>
           <button onClick={() => setFormOpen(true)} style={{ marginTop: 14, appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ New camp</button>
         </div>
-        {formOpen && <CampForm T={T} accent={accent} camp={null} onClose={() => setFormOpen(false)} onSave={async v => { await camps.add(v); setFormOpen(false) }} />}
+        {formOpen && <CampForm T={T} accent={accent} camp={null} discord={false} onClose={() => setFormOpen(false)} onSave={async (v, o) => { const r = await camps.add(v) as { id?: string } | undefined; if (r?.id && o.discord) setDiscord(r.id, true); setFormOpen(false) }} />}
       </div>
     )
   }
 
   const booked = (c: Camp) => attendees.rows.filter(a => a.camp_id === c.id).length
   const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['coaches', `Coaches${Array.isArray(sel!.coach_ids) && (sel!.coach_ids as string[]).length ? ` · ${(sel!.coach_ids as string[]).length}` : ''}`], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['trip', 'Trip hub'], ['emails', 'Emails'], ['discord', 'Discord'], ['promote', 'Promote'], ['finance', 'Finance']]
+    .filter(([id]) => id !== 'discord' || discordOn(sel?.id))
 
   return (
     <div style={{ fontFamily: FONT }}>
@@ -216,6 +228,10 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginBottom: 16, width: 'fit-content', flexWrap: 'wrap' }}>
           {TABS.map(([id, label]) => <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 14px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: FONT, background: tab === id ? T.panel : 'transparent', color: tab === id ? T.text : T.text2, fontWeight: tab === id ? 600 : 400, boxShadow: tab === id ? `0 0 0 1px ${T.border}` : 'none' }}>{label}</button>)}
+          {!discordOn(sel.id) && (
+            <button onClick={() => { setDiscord(sel.id, true); setTab('discord') }} title="Run this camp's group chat on your Discord server"
+              style={{ appearance: 'none', border: `1px dashed ${T.border}`, padding: '5px 12px', margin: '1px 2px', borderRadius: 7, fontSize: 11.5, cursor: 'pointer', fontFamily: FONT, background: 'transparent', color: T.text3 }}>+ Discord</button>
+          )}
         </div>
 
         {tab === 'overview' && <Overview T={T} accent={accent} camp={sel} booked={campAttendees.length} attendees={campAttendees} />}
@@ -252,7 +268,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
             link is what every announcement points at, so you set it up first.
             It used to live on Overview, where a coach reading camp facts had to
             scroll past his own public URL. */}
-        {tab === 'discord' && <CampDiscord T={T} accent={accent} campId={sel.id} campName={sel.name} />}
+        {tab === 'discord' && discordOn(sel.id) && <CampDiscord T={T} accent={accent} campId={sel.id} campName={sel.name} />}
         {tab === 'promote' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <SignupPanel T={T} accent={accent} camp={sel} booked={campAttendees.length}
@@ -268,10 +284,10 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
           <button onClick={async () => { if (confirm(`Delete ${sel.name}?`)) { await camps.remove(sel.id); setSelId(null) } }} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.bad, borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>Delete camp</button>
         </div>
 
-        {editOpen && <CampForm T={T} accent={accent} camp={sel} onClose={() => setEditOpen(false)} onSave={async v => { await camps.edit(sel.id, v); setEditOpen(false) }} />}
+        {editOpen && <CampForm T={T} accent={accent} camp={sel} discord={discordOn(sel.id)} discordLocked={discordLinked(sel.id)} onClose={() => setEditOpen(false)} onSave={async (v, o) => { await camps.edit(sel.id, v); if (!discordLinked(sel.id)) setDiscord(sel.id, o.discord); setEditOpen(false) }} />}
       </>}
 
-      {formOpen && <CampForm T={T} accent={accent} camp={null} onClose={() => setFormOpen(false)} onSave={async v => { const r = await camps.add(v) as any; if (r?.id) setSelId(r.id); setFormOpen(false) }} />}
+      {formOpen && <CampForm T={T} accent={accent} camp={null} discord={false} onClose={() => setFormOpen(false)} onSave={async (v, o) => { const r = await camps.add(v) as { id?: string } | undefined; if (r?.id) { setSelId(r.id); if (o.discord) setDiscord(r.id, true) } setFormOpen(false) }} />}
     </div>
   )
 }
@@ -730,7 +746,8 @@ function Packs({ T, accent, camp, attendees, players, skillMap, skillDates, attR
   )
 }
 
-function CampForm({ T, accent, camp, onClose, onSave }: { T: ThemeTokens; accent: AccentTokens; camp: Camp | null; onClose: () => void; onSave: (v: Record<string, any>) => Promise<void> }) {
+function CampForm({ T, accent, camp, discord = false, discordLocked = false, onClose, onSave }: { T: ThemeTokens; accent: AccentTokens; camp: Camp | null; discord?: boolean; discordLocked?: boolean; onClose: () => void; onSave: (v: Record<string, any>, opts: { discord: boolean }) => Promise<void> }) {
+  const [useDiscord, setUseDiscord] = useState(discord)
   const [d, setD] = useState<Record<string, any>>({ name: camp?.name || '', location: camp?.location || '', region: camp?.region || '', start_date: camp?.start_date || '', end_date: camp?.end_date || '', capacity: camp?.capacity || 16, price: camp?.price || 0, surface: camp?.surface || '', courts: camp?.courts || '', board: camp?.board || '', description: camp?.description || '', audience: campAudience(camp) })
   const [saving, setSaving] = useState(false)
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
@@ -739,7 +756,7 @@ function CampForm({ T, accent, camp, onClose, onSave }: { T: ThemeTokens; accent
   const save = async () => {
     if (!String(d.name).trim() || saving) return
     setSaving(true)
-    try { await onSave({ name: d.name, location: d.location, region: d.region, start_date: d.start_date || null, end_date: d.end_date || null, capacity: Number(d.capacity) || null, price: Number(d.price) || null, surface: d.surface, courts: Number(d.courts) || null, board: d.board, description: d.description, audience: d.audience }) }
+    try { await onSave({ name: d.name, location: d.location, region: d.region, start_date: d.start_date || null, end_date: d.end_date || null, capacity: Number(d.capacity) || null, price: Number(d.price) || null, surface: d.surface, courts: Number(d.courts) || null, board: d.board, description: d.description, audience: d.audience }, { discord: useDiscord }) }
     finally { setSaving(false) }
   }
   return (
@@ -784,6 +801,28 @@ function CampForm({ T, accent, camp, onClose, onSave }: { T: ThemeTokens; accent
             </div>
           </div>
           <div><label style={lab}>Description</label><textarea value={d.description} onChange={e => set('description', e.target.value)} rows={2} placeholder="A line about the camp — the AI uses this to design the plan." style={{ ...field, resize: 'vertical' }} /></div>
+          {/* Comms. Messages in Lumio, the player app, camp emails and the
+              sign-up page come with every camp. Discord is the extra some
+              academies already run their trips on — off unless they want it. */}
+          <div>
+            <label style={lab}>Comms</label>
+            <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.5 }}>
+                Every camp comes with a group chat in Lumio and the player app, camp emails to families, and a sign-up page to share.
+              </div>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: discordLocked ? 'default' : 'pointer' }}>
+                <input type="checkbox" checked={useDiscord} disabled={discordLocked} onChange={e => setUseDiscord(e.target.checked)} style={{ marginTop: 2, accentColor: accent.hex }} />
+                <span>
+                  <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: T.text }}>Discord group chat</span>
+                  <span style={{ display: 'block', fontSize: 11.5, color: T.text3, lineHeight: 1.5, marginTop: 2 }}>
+                    {discordLocked
+                      ? 'On — this camp has Discord channels linked. Unlink them in the Discord tab to turn it off.'
+                      : 'Already run your trips on Discord? Link your server and messages and photos flow both ways with the player app. Leave off if you don’t use it.'}
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
         <div style={{ fontSize: 10.5, color: T.text3, marginTop: 10 }}>After creating, open the Itinerary tab and tap “Design with AI” to generate the full plan, kit and targets.</div>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
