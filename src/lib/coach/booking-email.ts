@@ -87,6 +87,10 @@ export function buildConfirmationHtml(o: {
   forCoach?: boolean
   /** Add-to-calendar buttons, prebuilt by the caller (it knows the origin). */
   calendarHtml?: string | null
+  /** Where the family signs in to the player app — set only when this player
+      (or their parent) has app access, so we never point someone at a sign-in
+      that will turn them away. */
+  appUrl?: string | null
 }): string {
   const accent = o.accent || '#3A8EE0'
   const { day, time } = whenLine(o.booking.booking_date, o.booking.start_time, o.booking.duration_min)
@@ -98,7 +102,11 @@ export function buildConfirmationHtml(o: {
   const homework = r?.homework || null
   const lastFocus = r?.focus || o.last?.focus || null
   const lastRecap = r?.recap || r?.assessment || (o.last?.ai_review ? String(o.last.ai_review).split('\n\n')[0] : null) || o.last?.summary || null
-  const next = r?.nextFocus || o.booking.notes || null
+  // The plan for THIS session is the coach's own "next focus" from the last
+  // write-up — nothing else. It used to fall back to the booking's notes, which
+  // on a booking made online are admin ("Phone: 0778… Booked online by …"), so
+  // families got a phone number under "What we'll work on this session".
+  const next = r?.nextFocus || null
 
   const section = (title: string, body: string) => `
     <tr><td style="padding:18px 26px 0">
@@ -117,7 +125,26 @@ export function buildConfirmationHtml(o: {
           <div style="color:#5c4708">${esc(homework)}</div></div>` : '',
     ].join('')) : ''
 
-  const nextBlock = next ? section(o.forCoach ? 'Planned focus' : "What we'll work on this session", `<p style="margin:0">${esc(next)}</p>`) : ''
+  // What this session covers. A confirmation goes out the moment the booking is
+  // made — it never waits for a plan, and most bookings do not have one yet.
+  // So for families: the focus if the coach has already set one, and either
+  // way a pointer to the player app, which is where the plan lands once the
+  // coach writes it. The coach's copy shows the planned focus and the booking
+  // notes, which are theirs to read.
+  const appButton = (label: string) => o.appUrl
+    ? `<div style="margin-top:12px"><a href="${esc(o.appUrl)}" style="display:inline-block;background:${accent};color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:10px 16px;border-radius:9px">${esc(label)}</a></div>`
+    : ''
+  const who = o.coachName ? esc(o.coachName.split(' ')[0]) : 'Your coach'
+  const nextBlock = o.forCoach
+    ? [
+        next ? section('Planned focus', `<p style="margin:0">${esc(next)}</p>`) : '',
+        o.booking.notes ? section('Booking notes', `<p style="margin:0;white-space:pre-line">${esc(o.booking.notes)}</p>`) : '',
+      ].join('')
+    : section("What we'll work on this session", next
+        ? `<p style="margin:0">${esc(next)}</p>${o.appUrl ? `<p style="margin:10px 0 0;color:#6b7280;font-size:13px">The full plan and anything to bring will be in the player app.</p>` : ''}${appButton('Open the player app')}`
+        : o.appUrl
+          ? `<p style="margin:0">${who} adds the plan for each session to the player app — sign in to see what you'll be covering${o.toParent ? `, and how ${esc(o.playerName.split(' ')[0])} is getting on` : ''}.</p>${appButton('See the session plan')}`
+          : `<p style="margin:0">${who} will share what you'll be working on before the session.</p>`)
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#eef0f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
@@ -138,8 +165,8 @@ export function buildConfirmationHtml(o: {
 
         ${o.forCoach ? '' : `<tr><td style="padding:20px 26px 0">
           <p style="margin:0;font-size:14.5px;line-height:1.65;color:#374151">${o.toParent
-            ? `${esc(o.playerName)}'s next session is booked in. Everything you need is below — including what we worked on last time.`
-            : `Your next session is booked in. Everything you need is below — including what we worked on last time.`}</p>
+            ? `${esc(o.playerName)}'s next session is booked in. Everything you need is below${lastBlock ? ' — including what we worked on last time' : ''}.`
+            : `Your next session is booked in. Everything you need is below${lastBlock ? ' — including what we worked on last time' : ''}.`}</p>
         </td></tr>`}
 
         <tr><td style="padding:18px 26px 0">
@@ -218,5 +245,15 @@ export async function gatherBookingContext(coachId: string, booking: BookingRow)
   // buildings — see src/lib/coach/booking-venue.ts.
   const venue = matchVenue((venues ?? []) as VenueRow[], booking.court)
 
-  return { player, last, venue, profile: profile ?? null }
+  // Does this player (or their parent) have the player app? Only then does the
+  // email send them to sign in — a family never invited would just be told
+  // "no access yet".
+  let hasApp = false
+  if (player?.id) {
+    const { data: m } = await db.from('coach_members').select('id')
+      .eq('academy_id', coachId).eq('scope_player_id', player.id).neq('status', 'revoked').limit(1)
+    hasApp = !!(m && m.length)
+  }
+
+  return { player, last, venue, profile: profile ?? null, hasApp }
 }

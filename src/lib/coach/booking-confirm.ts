@@ -27,6 +27,7 @@ import {
 } from './booking-email'
 import { calendarButtonsHtml, googleCalendarUrl, icsUrl, type CalendarEvent } from './calendar-links'
 import { notifyBooked } from './booking-notify'
+import { partnerBrandByCoach, STANDARD_SIGN_IN } from './partner-login'
 
 export type ConfirmInput = {
   coachId: string
@@ -41,7 +42,16 @@ export type ConfirmInput = {
 export async function sendBookingConfirmation(
   { coachId, booking: b, origin, db, override }: ConfirmInput,
 ): Promise<Record<string, unknown>> {
-  const { player, last, venue, profile } = await gatherBookingContext(coachId, b)
+  const { player, last, venue, profile, hasApp } = await gatherBookingContext(coachId, b)
+  // The academy's own look: its accent colour (the email used to be Lumio blue
+  // whatever the academy had chosen) and its logo at a real web address (the
+  // stored one is a data URL, which Gmail and Outlook refuse to show).
+  const brand = await partnerBrandByCoach(coachId)
+  const accent = brand?.accent
+  const logoUrl = brand?.emailLogoUrl || profile?.brand_logo_url
+  // The player app, via the academy's own sign-in page when it has one.
+  const signIn = hasApp ? (brand?.signInUrl || STANDARD_SIGN_IN) : null
+  const appUrl = signIn ? `${signIn}?redirectTo=${encodeURIComponent('/portal')}` : null
   const academy = profile?.brand_name || 'Your academy'
   const coachName = profile?.display_name || ''
   const playerName = player?.name || b.player_name || b.title || 'your player'
@@ -82,9 +92,9 @@ export async function sendBookingConfirmation(
   // ── 1. Player / parent ──────────────────────────────────────────────────
   if (rec.to) {
     const html = buildConfirmationHtml({
-      academy, coachName, logoUrl: profile?.brand_logo_url, playerName,
+      academy, coachName, logoUrl, accent, playerName,
       greetingName: rec.toParent ? (player?.parent_name || 'there') : playerName.split(' ')[0],
-      toParent: rec.toParent, booking: b, venue, last, calendarHtml,
+      toParent: rec.toParent, booking: b, venue, last, calendarHtml, appUrl,
     })
     const subject = `Session booked — ${playerName} · ${b.booking_date || ''}`.trim()
     const sent = await sendAsCoach(coachId, { to: rec.to, subject, html })
@@ -108,7 +118,7 @@ export async function sendBookingConfirmation(
   const coachTo = profile?.contact_email || null
   if (coachTo) {
     const html = buildConfirmationHtml({
-      academy, coachName, logoUrl: profile?.brand_logo_url, playerName,
+      academy, coachName, logoUrl, accent, playerName,
       greetingName: coachName || 'Coach', toParent: false, booking: b, venue, last, forCoach: true, calendarHtml,
     })
     const note = rec.to ? `Confirmation sent to ${rec.to} (${rec.reason}).` : `NOT sent to the player — ${rec.reason}.`

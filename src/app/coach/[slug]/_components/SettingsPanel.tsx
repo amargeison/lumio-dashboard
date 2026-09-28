@@ -224,11 +224,11 @@ function ResourceCentreSettings({ T, accent }: { T: ThemeTokens; accent: AccentT
     <>
       <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 8px' }}>Library</div>
       <Toggle T={T} accent={accent} on={on} onChange={v => { void toggleLibrary(v) }} label="Lumio starter library"
-        desc={on ? `${LUMIO_RESOURCES.length} drills, plans and worksheets in your live Resource Centre, tagged to the racket system.` : 'Off — your Resource Centre shows only the resources you add yourself.'} />
+        desc={on ? `${LUMIO_RESOURCES.length} drills, plans and worksheets in your live Resource Centre, tagged to the racket system.` : 'Off — Lumio’s library, drill library and book shelf are hidden. Your Resource Centre and the player app show only what you add yourself.'} />
       {seed === 'busy' && <div style={{ ...note, color: T.text3 }}>Loading the library into your Resource Centre…</div>}
       {typeof seed === 'object' && <div style={{ ...note, color: T.good }}>✓ Added {seed.added} resource{seed.added === 1 ? '' : 's'}{seed.added === 0 ? ' — you already had the full library' : ''}.</div>}
       {seed === 'error' && <div style={{ ...note, color: T.bad }}>Couldn’t load the library — try again.</div>}
-      <div style={{ ...note, color: T.text3, marginBottom: 16 }}>Switching this off leaves the resources you already have — it only stops Lumio’s library being added. To empty the Centre, use Clear all resources.</div>
+      <div style={{ ...note, color: T.text3, marginBottom: 16 }}>Switching this off hides Lumio’s resources straight away — nothing is deleted, and your own stay put. Switch it back on to bring them back. To delete everything for good, use Clear all resources.</div>
 
       <div style={{ fontSize: 10, fontWeight: 700, color: T.bad, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Danger zone</div>
       <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '11px 12px' }}>

@@ -13,6 +13,8 @@ import { stageWords } from '../_lib/stage-words'
 import { useCoachTable, RACKET_STAGES } from '../_lib/coach-db'
 import { isPrintable, openPrintable } from '../_lib/resource-printables'
 import { DrillLibrary } from './DrillLibrary'
+import { useCoachSettings } from '../_lib/use-settings'
+import { isLumioResource } from '../_lib/lumio-resources'
 import { BookShelf } from './BookShelf'
 
 type Res = { id: string; title: string; category?: string | null; format?: string | null; level?: string | null; duration?: string | null; racket?: string | null; tags?: string | null; url?: string | null; notes?: string | null }
@@ -26,6 +28,13 @@ const actionLabel = (f?: string | null) => f === 'Video' ? 'Watch video' : f ===
 
 export function LiveResources({ T, accent, density, asCoach = false }: { T: ThemeTokens; accent: AccentTokens; density: Density; asCoach?: boolean }) {
   const resources = useCoachTable<Res>('coach_resources')
+  // Settings → Resource Centre → Lumio starter library. Off means off: Lumio's
+  // resources, its drill library and its book shelf all leave the page, and the
+  // coach sees only what they added. Nothing is deleted — switch it back on and
+  // it all returns.
+  const lumioOn = useCoachSettings().resourcesPreloaded !== false
+  const rows = lumioOn ? resources.rows : resources.rows.filter(r => !isLumioResource(r))
+  const tabs = lumioOn ? TABS : TABS.filter(([id]) => id !== 'Drill Library' && id !== 'Books')
   const [tab, setTab] = useState('all')
   const [edit, setEdit] = useState<Res | 'new' | null>(null)
   const [q, setQ] = useState('')
@@ -33,7 +42,7 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
 
   const levelColour = (l?: string | null) => l === 'Beginner' ? T.good : l === 'Intermediate' ? '#3A8EE0' : l === 'Advanced' ? T.bad : T.text3
   const needle = q.trim().toLowerCase()
-  const filtered = resources.rows.filter(r => {
+  const filtered = rows.filter(r => {
     if (!(tab === 'all' ? true : r.category === tab)) return false
     if (racket !== 'all' && r.racket !== racket) return false
     if (needle) {
@@ -66,13 +75,13 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
-        {TABS.map(([id, label]) => <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: `1px solid ${tab === id ? accent.border : T.border}`, padding: '6px 13px', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontFamily: FONT, background: tab === id ? accent.dim : 'transparent', color: tab === id ? accent.hex : T.text2, fontWeight: tab === id ? 600 : 400 }}>{id === 'Drill Library' ? '🎾 ' : ''}{label}</button>)}
+        {tabs.map(([id, label]) => <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: `1px solid ${tab === id ? accent.border : T.border}`, padding: '6px 13px', borderRadius: 8, fontSize: 12, cursor: 'pointer', fontFamily: FONT, background: tab === id ? accent.dim : 'transparent', color: tab === id ? accent.hex : T.text2, fontWeight: tab === id ? 600 : 400 }}>{id === 'Drill Library' ? '🎾 ' : ''}{label}</button>)}
       </div>
 
-      {tab === 'Books' ? (
+      {tab === 'Books' && lumioOn ? (
         // A shelf, not a file list — covers, who each book is for, and why.
         <BookShelf T={T} accent={accent} density={density} />
-      ) : tab === 'Drill Library' ? (
+      ) : tab === 'Drill Library' && lumioOn ? (
         // The flagship Lumio drill library — search, racket filter, grouped sections, printable drill sheets.
         <DrillLibrary T={T} accent={accent} density={density} />
       ) : (
@@ -95,9 +104,9 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
           {/* The Resource Centre is the ACADEMY's, shared by everyone in it. A coach
               cannot load the Lumio library or reach Settings → Resource Centre, so
               pointing them there is an instruction they cannot follow. */}
-          <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text }}>{resources.rows.length === 0 ? 'No resources yet' : 'Nothing in this category yet'}</div>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text }}>{rows.length === 0 ? 'No resources yet' : 'Nothing in this category yet'}</div>
           <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4, lineHeight: 1.6 }}>
-            {resources.rows.length > 0 ? 'Add a resource to this category.'
+            {rows.length > 0 ? 'Add a resource to this category.'
               : asCoach ? 'Your head coach hasn\u2019t added the academy\u2019s library yet. Anything they load appears here straight away \u2014 and you can still add your own.'
               : 'Add your own, or load the Lumio starter library in Settings \u2192 Resource Centre.'}
           </div>

@@ -12,7 +12,8 @@
 // remembers nothing else — help that tracks whether you have read it is help
 // that argues with you.
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { helpFor } from '../_lib/module-help'
@@ -34,100 +35,46 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
   const help = helpFor(moduleId)
 
   // ── Where the button sits ─────────────────────────────────────────────────
-  // It belongs beside the page's NAME — that is where somebody looks when they
-  // want to know what a page is. Parking it in the top corner of the content
-  // area put it behind "Add booking" on half the pages and made it invisible on
-  // the rest.
+  // Beside the page's NAME — that is where somebody looks when they want to know
+  // what a page is.
   //
-  // Seventeen modules render their own heading, so rather than editing all of
-  // them (and every page added later), this measures the first heading in the
-  // content column and places itself just after the last word of it. A Range
-  // over the heading's text is what gives the TEXT width — the element is a
-  // block and its right edge is the far side of the column, which is exactly
-  // the wrong answer.
-  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
-  // Nothing is drawn until we know where it goes. The button used to appear at
-  // its fallback spot and then jump across the page the moment the heading was
-  // measured, which looks broken even though it is only a frame or two.
-  const [ready, setReady] = useState(false)
-  const holder = useRef<HTMLDivElement | null>(null)
+  // It used to float over the page, absolutely positioned, re-measured every
+  // time the page changed and moved to the end of the heading. On live pages,
+  // which fill in as their data arrives, it moved a dozen times in the first
+  // second, and some browsers (Safari in particular, under the portal's zoom)
+  // left a painted copy behind at every stop: a row of ghost ⓘs across the
+  // title. Now it is placed INSIDE the heading, as a small inline element after
+  // the text, so it flows with the words and never has to be moved at all.
+  //
+  // Seventeen modules render their own heading, so rather than editing them all
+  // this finds the first h1/h2 in the content column and appends a slot to it.
+  // If the page re-renders the heading away, the observer finds the new one.
+  const [slot, setSlot] = useState<HTMLElement | null>(null)
+  const anchor = useRef<HTMLSpanElement | null>(null)
 
-  // The dashboard (and a few other pages) fetch before they render a heading,
-  // so the FIRST measurement after navigating finds nothing at all. The old
-  // code revealed the button at its fallback corner in that case and only
-  // corrected itself if something happened to resize the column — which is why
-  // it sat in the top-left until you refreshed, when the cached render already
-  // had the title in place. So: never reveal on a miss, and keep watching the
-  // column until a heading actually turns up.
-  const found = useRef(false)
-  const last = useRef<{ left: number; top: number } | null>(null)
-
-  const measure = useCallback(() => {
-    const host = holder.current?.parentElement
-    if (!host) return
-    const heading = host.querySelector('h1, h2') as HTMLElement | null
-    if (!heading) return                       // not rendered yet — wait for it
-    let next: { left: number; top: number } | null = null
-    try {
-      const r = document.createRange()
-      r.selectNodeContents(heading)
-      const text = r.getBoundingClientRect()
-      const box = host.getBoundingClientRect()
-      if (!text.width) return                  // fonts still loading
-      next = {
-        left: text.right - box.left + host.scrollLeft + 12,
-        top: text.top - box.top + host.scrollTop + (text.height - 30) / 2,
-      }
-    } catch { return }
-    // Only touch state when it has actually moved: the observers below fire on
-    // every content change, and a fresh object each time would re-render the
-    // whole page for nothing.
-    const prev = last.current
-    if (!prev || Math.abs(prev.left - next.left) > 0.5 || Math.abs(prev.top - next.top) > 0.5) {
-      last.current = next
-      setPos(next)
-    }
-    found.current = true
-    setReady(true)
-  }, [])
-
-  useLayoutEffect(() => {
-    if (!help) return
-    // No reset needed: the shell mounts this fresh for each page (key={active}),
-    // so state never carries over from the last module.
-    //
-    // Measuring in a layout effect and setting state from it is the point — the
-    // position has to be known BEFORE the browser paints, or the button appears
-    // in one place and jumps to another.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    measure()
-    // A short ladder of retries covers the common cases — a frame later, once
-    // fonts swap, once a quick fetch lands — without a permanent timer.
-    const ts = [0, 60, 150, 350, 800, 1500].map(ms => setTimeout(measure, ms))
-    // Last resort: if two seconds pass with still no heading on the page, show
-    // the button at the fallback spot rather than hiding help forever.
-    const giveUp = setTimeout(() => { if (!found.current) setReady(true) }, 2000)
-    window.addEventListener('resize', measure)
-    return () => {
-      ts.forEach(clearTimeout); clearTimeout(giveUp)
-      window.removeEventListener('resize', measure)
-    }
-  }, [moduleId, help, measure])
-
-  // Two observers, because they catch different things: the heading ARRIVING
-  // (a childList change that need not alter the column's box, so ResizeObserver
-  // stays silent), and the heading MOVING when content above it loads.
   useEffect(() => {
-    const host = holder.current?.parentElement
+    if (!help) return
+    const host = anchor.current?.parentElement
     if (!host) return
-    const mo = typeof MutationObserver !== 'undefined'
-      ? new MutationObserver(() => measure()) : null
-    mo?.observe(host, { childList: true, subtree: true, characterData: true })
-    const ro = typeof ResizeObserver !== 'undefined'
-      ? new ResizeObserver(() => measure()) : null
-    ro?.observe(host)
-    return () => { mo?.disconnect(); ro?.disconnect() }
-  }, [moduleId, measure])
+    let current: HTMLElement | null = null
+    const place = () => {
+      if (current && current.isConnected) return
+      const heading = host.querySelector('h1, h2') as HTMLElement | null
+      if (!heading) { if (current) { current = null; setSlot(null) } return }
+      // One button, ever: clear any slot a previous page left in the document.
+      document.querySelectorAll('[data-module-help-slot]').forEach(el => el.remove())
+      const el = document.createElement('span')
+      el.setAttribute('data-module-help-slot', '')
+      el.style.cssText = 'display:inline-flex;vertical-align:middle;margin-left:10px;position:relative;top:-2px;line-height:0'
+      heading.appendChild(el)
+      current = el
+      setSlot(el)
+    }
+    place()
+    const mo = typeof MutationObserver !== 'undefined' ? new MutationObserver(place) : null
+    mo?.observe(host, { childList: true, subtree: true })
+    return () => { mo?.disconnect(); current?.remove(); current = null }
+  }, [moduleId, help])
 
   // Escape closes it, because a panel you have to aim at to dismiss is a panel
   // people stop opening.
@@ -140,32 +87,26 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
 
   if (!help) return null
 
-  return (
-    // zIndex, because the page's own cards are painted after this and were
-    // swallowing the click; pointerEvents none so the rest of the overlay never
-    // steals one.
-    <div ref={holder} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 30 }}>
-      <button onClick={() => setOpen(true)} title={`How ${label} works`} aria-label={`How ${label} works`}
-        style={{
-          position: 'absolute',
-          // No heading found on the page? Sit at the top-left of the content,
-          // which is still beside where a title would be and never under a button.
-          left: pos ? pos.left : 24, top: pos ? pos.top : 26,
-          opacity: ready ? 1 : 0, transition: 'opacity .15s ease',
-          pointerEvents: ready ? 'auto' : 'none',
-          appearance: 'none', width: 30, height: 30, borderRadius: '50%',
-          border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex,
-          fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: FONT, lineHeight: 1,
-          display: 'grid', placeItems: 'center', flexShrink: 0,
-        }}>
-        i
-      </button>
+  const button = (
+    <button onClick={() => setOpen(true)} title={`How ${label} works`} aria-label={`How ${label} works`}
+      style={{
+        appearance: 'none', width: 26, height: 26, borderRadius: '50%', padding: 0,
+        border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex,
+        fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: FONT, lineHeight: 1,
+        display: 'grid', placeItems: 'center', flexShrink: 0, letterSpacing: 0, textTransform: 'none',
+      }}>
+      i
+    </button>
+  )
 
-      {open && (
-        // pointerEvents has to be turned back ON here: this panel lives inside
-        // the positioning overlay above, which is pointer-transparent so it
-        // never eats a click meant for the page. Without this the tabs and the
-        // close button were visible and completely dead.
+  return (
+    // An invisible marker in the content column — only there so the effect
+    // above knows which column's heading to attach to.
+    <span ref={anchor} style={{ display: 'none' }}>
+      {slot && createPortal(button, slot)}
+      {open && createPortal(
+        // Rendered on the page body, not inside the heading the button sits in —
+        // a panel inside an h1 would inherit its type and its stacking.
         <div onClick={e => { if (e.target === e.currentTarget) setOpen(false) }}
           style={{ position: 'fixed', inset: 0, zIndex: 1200, pointerEvents: 'auto', background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '8vh 16px', overflowY: 'auto', fontFamily: FONT }}>
           <div style={{ width: '100%', maxWidth: 520, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 22 }}>
@@ -218,8 +159,9 @@ export function ModuleHelpButton({ T, accent, moduleId, label }: {
               Done with these? Settings → Help &amp; guidance turns the ⓘ buttons off everywhere.
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
-    </div>
+    </span>
   )
 }
