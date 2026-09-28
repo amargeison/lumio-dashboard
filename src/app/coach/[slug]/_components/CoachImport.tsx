@@ -48,6 +48,7 @@ type FileState = { name: string; state: 'waiting' | 'reading' | 'done' | 'failed
 export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent: AccentTokens; onImported?: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState<'idle' | 'reading' | 'preview' | 'importing' | 'done'>('idle')
+  const [fileNote, setFileNote] = useState('')
   const [files, setFiles] = useState<FileState[]>([])
   const [extracted, setExtracted] = useState<Record<string, Record<string, unknown>[]>>({})
   const [picked, setPicked] = useState<Record<string, boolean>>({})
@@ -105,6 +106,7 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
   const doImport = async () => {
     setStatus('importing'); setErr('')
     let inserted = 0
+    let needFiles = 0
     const failures: string[] = []
     for (const c of CATEGORIES) {
       if (!picked[c.key] || !(extracted[c.key]?.length)) continue
@@ -122,6 +124,7 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
         const data = await res.json().catch(() => ({}))
         if (!res.ok) throw new Error(data.error || `Could not save ${c.label.toLowerCase()}`)
         inserted += Number(data.inserted) || 0
+        needFiles += Number(data.needFiles) || 0
         invalidateCoachTable(c.table)
         setPicked(p => ({ ...p, [c.key]: false }))
       } catch (e) {
@@ -135,6 +138,8 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
       return
     }
     setResult(`Imported ${inserted} record${inserted === 1 ? '' : 's'} ✓`)
+    // A spreadsheet carries the list of resources, not the files themselves.
+    setFileNote(needFiles ? `${needFiles} resource${needFiles === 1 ? '' : 's'} came in without a working link. Open the Resource Centre and press “+ Add link” or “Upload file” on each card.` : '')
     setStatus('done')
     onImported?.()
   }
@@ -213,6 +218,7 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
       {status === 'done' && (
         <div>
           <p style={{ fontSize: 14, fontWeight: 700, color: '#22C55E', margin: '0 0 12px' }}>{result}</p>
+          {fileNote && <p style={{ fontSize: 12.5, color: T.text2, margin: '-4px 0 12px', lineHeight: 1.55 }}>📎 {fileNote}</p>}
           <button onClick={reset} style={{ padding: '10px 16px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Import more files</button>
         </div>
       )}

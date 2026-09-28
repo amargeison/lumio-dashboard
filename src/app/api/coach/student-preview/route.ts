@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { bookById } from '@/lib/coach/books'
 import { isLumioResource } from '@/lib/coach/lumio-resources-data'
+import { resourceHref } from '@/lib/coach/resource-files'
 import { buildNextSession } from '@/lib/student/next-session'
 
 export const runtime = 'nodejs'
@@ -138,6 +139,11 @@ export async function GET(req: NextRequest) {
     .filter(r => !(lumioOff && isLumioResource(r as { title?: string | null })))
     .filter(r => (stage && r.racket === stage) || (!r.racket && String(r.level || '').toLowerCase().startsWith('all')))
     .slice(0, 9)
+    // A coach's own uploaded file opens through the checked, signed route; a
+    // "link" that is not a web address (a filename typed into an import) is
+    // dropped rather than shown as a link that goes nowhere. Lumio printables
+    // keep their lumio: address for the app to open.
+    .map(r => ({ ...r, url: String(r.url || '').startsWith('lumio:') ? r.url : resourceHref(r.url as string | null) }))
 
   // Camps they actually hold a place on. A cancelled attendee row is not a camp,
   // and a camp with no record of them is somebody else's.

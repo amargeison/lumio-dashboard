@@ -198,6 +198,20 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
     ],
     worth: ['Recommendations are matched to the player’s colour, so a Green player is not handed a performance drill.'],
   },
+  // Resource Centre with Lumio's starter library switched off: the page is
+  // only what the coach adds, so the help talks about adding, not browsing.
+  resources_own: {
+    what: 'Your own library of drills, plans, worksheets and guides — the ones you already use, in one place and in your players’ app.',
+    how: [
+      'Press + Add resource, give it a title, then paste a link (YouTube, Google Drive, your website) or upload a file.',
+      'Tag it with a racket colour and level so it reaches the right players.',
+      'Adding a lot at once? Settings → Import data takes a spreadsheet of titles and links. Anything without a working link shows + Add link and Upload file on its card.',
+    ],
+    worth: [
+      'Players see resources tagged to their racket colour in their app, and can open the file there.',
+      'Want a head start? Switch on the Lumio starter library in Settings → Resource Centre — your own resources stay as they are.',
+    ],
+  },
   staff: {
     what: 'Your coaching team: who they are, where they work and their DBS record.',
     how: [
