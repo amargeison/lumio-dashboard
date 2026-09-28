@@ -232,7 +232,7 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
           <span style={{ fontSize: 28, lineHeight: 1 }}>{tab === 'audio' ? '🎙️' : '🎬'}</span>
           <div style={{ flex: 1, minWidth: 200 }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: T.text }}>{tab === 'audio' ? 'Record match audio' : 'Record court video'}</div>
-            <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>{tab === 'audio' ? 'Capture session audio for review — record, play back &amp; download.' : 'Point at the court and capture the session — record, play back &amp; download.'}</div>
+            <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>{tab === 'audio' ? 'Capture session audio for review — record, play back & download.' : 'Point at the court and capture the session — record, play back & download.'}</div>
           </div>
         </div>
         {/* Capture mode — fixed to the active tab (Video tab = video+audio, Audio tab = audio) */}
@@ -288,7 +288,8 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
                 {m.shot_type && <span style={{ position: 'absolute', bottom: 6, right: 8, fontSize: 9.5, fontWeight: 700, color: m.shot_confirmed ? T.good : accent.hex, background: m.shot_confirmed ? `${T.good}1f` : accent.dim, border: `1px solid ${(m.shot_confirmed ? T.good : accent.hex)}55`, borderRadius: 5, padding: '2px 7px', textTransform: 'capitalize' }}>{m.shot_confirmed ? '✓ ' : ''}{m.shot_type}</span>}
               </div>
               <div style={{ padding: '8px 10px' }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.title || 'Clip'}</div>
+                <ClipTitle T={T} accent={accent} title={m.title || ''}
+                  onSave={async t => { await dbUpdate('coach_media', m.id, { title: t }); media.reload() }} />
                 {m.clip_of && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
                     <select value={m.shot_type || ''} onChange={e => confirmShot(m, e.target.value)} title="Correct the shot — your fix trains the model and publishes the clip" style={{ flex: 1, appearance: 'none', cursor: 'pointer', background: T.panel2, color: T.text, border: `1px solid ${m.shot_confirmed ? T.good : T.border}`, borderRadius: 7, padding: '4px 8px', fontSize: 11.5, fontFamily: FONT }}>
@@ -346,5 +347,41 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
         </div>
       )}
     </div>
+  )
+}
+
+// The clip's name, renamed in place: click it, type, Enter (or click away) to
+// save, Escape to leave it as it was. Uploads arrive named after the file
+// ("Pete 1st lessonAUDIO-2026-06-…"), which is rarely what a coach wants to
+// see in a list, or what a player sees in their app.
+function ClipTitle({ T, accent, title, onSave }: { T: ThemeTokens; accent: AccentTokens; title: string; onSave: (t: string) => Promise<void> }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(title)
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState(false)
+  const start = () => { setDraft(title); setErr(false); setEditing(true) }
+  const commit = async () => {
+    const t = draft.trim().slice(0, 120)
+    if (!t || t === title) { setEditing(false); return }
+    setSaving(true)
+    try { await onSave(t); setEditing(false) } catch { setErr(true) } finally { setSaving(false) }
+  }
+  if (editing) return (
+    <div>
+      <input autoFocus value={draft} disabled={saving} aria-label="Clip name"
+        onChange={e => setDraft(e.target.value)}
+        onFocus={e => e.target.select()}
+        onBlur={() => { void commit() }}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); void commit() } if (e.key === 'Escape') { setEditing(false); setErr(false) } }}
+        style={{ width: '100%', boxSizing: 'border-box', fontSize: 12, fontWeight: 600, color: T.text, background: T.panel2, border: `1px solid ${accent.border}`, borderRadius: 6, padding: '3px 6px', fontFamily: FONT, outline: 'none', opacity: saving ? 0.6 : 1 }} />
+      {err && <div style={{ fontSize: 10.5, color: T.bad, marginTop: 3 }}>Couldn&rsquo;t rename — try again.</div>}
+    </div>
+  )
+  return (
+    <button type="button" onClick={start} title="Click to rename"
+      style={{ display: 'flex', alignItems: 'center', gap: 5, width: '100%', appearance: 'none', border: 0, background: 'transparent', padding: 0, cursor: 'text', textAlign: 'left', fontFamily: FONT }}>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title || 'Clip'}</span>
+      <span aria-hidden style={{ flexShrink: 0, fontSize: 11, color: T.text3 }}>✎</span>
+    </button>
   )
 }
