@@ -8,6 +8,7 @@ import { ls, isDemoPath } from './storage-scope'
 
 export type AccentKey = 'purple' | 'blue' | 'green' | 'bronze' | 'claret'
   | 'pgorange' | 'teal' | 'navy' | 'gold' | 'pink'
+  | 'red' | 'crimson' | 'coral' | 'amber' | 'lime' | 'forest' | 'sky' | 'indigo' | 'magenta' | 'slate'
 // dim/border are the hex at 16% and 45% — kept as literals so a colour reads
 // the same on a card as in the picker.
 const accent = (hex: string, label: string) => {
@@ -15,19 +16,33 @@ const accent = (hex: string, label: string) => {
   const rgb = `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`
   return { hex, dim: `rgba(${rgb},0.16)`, border: `rgba(${rgb},0.45)`, label }
 }
+// Listed round the colour wheel — reds, oranges and yellows, greens, blues,
+// purples, then a neutral — which is also the order the picker shows them, so a
+// coach looking for "a red" finds every red side by side. The keys are what is
+// stored in settings, so an existing key must never be renamed.
 export const ACCENT_PRESETS: Record<AccentKey, { hex: string; dim: string; border: string; label: string }> = {
-  purple:   { hex: '#a855f7', dim: 'rgba(168,85,247,0.16)', border: 'rgba(168,85,247,0.45)', label: 'Purple' },
-  blue:     { hex: '#3A8EE0', dim: 'rgba(58,142,224,0.16)', border: 'rgba(58,142,224,0.45)', label: 'Ocean' },
-  green:    { hex: '#3D9A6E', dim: 'rgba(61,154,110,0.16)', border: 'rgba(61,154,110,0.45)', label: 'Court green' },
-  bronze:   { hex: '#B07A36', dim: 'rgba(176,122,54,0.16)', border: 'rgba(176,122,54,0.45)', label: 'Bronze' },
+  red:      accent('#E0312F', 'Red'),
+  crimson:  accent('#B3202A', 'Crimson'),
   claret:   { hex: '#B0455C', dim: 'rgba(176,69,92,0.16)', border: 'rgba(176,69,92,0.45)', label: 'Claret' },
+  pink:     accent('#D9467D', 'Rose'),
+  magenta:  accent('#C2359E', 'Magenta'),
+  coral:    accent('#F06A5A', 'Coral'),
   // Sampled straight from the PG Tennis logo (#EE5A22), so the portal and the
   // badge on the kit are the same orange rather than two near-misses.
   pgorange: accent('#EE5A22', 'Clay orange'),
-  teal:     accent('#1FA2A6', 'Teal'),
-  navy:     accent('#2F4A8A', 'Navy'),
+  amber:    accent('#F59E0B', 'Amber'),
   gold:     accent('#D4A017', 'Ball yellow'),
-  pink:     accent('#D9467D', 'Rose'),
+  bronze:   { hex: '#B07A36', dim: 'rgba(176,122,54,0.16)', border: 'rgba(176,122,54,0.45)', label: 'Bronze' },
+  lime:     accent('#7DB928', 'Lime'),
+  green:    { hex: '#3D9A6E', dim: 'rgba(61,154,110,0.16)', border: 'rgba(61,154,110,0.45)', label: 'Court green' },
+  forest:   accent('#2A7446', 'Forest'),
+  teal:     accent('#1FA2A6', 'Teal'),
+  sky:      accent('#1EA7E1', 'Sky'),
+  blue:     { hex: '#3A8EE0', dim: 'rgba(58,142,224,0.16)', border: 'rgba(58,142,224,0.45)', label: 'Ocean' },
+  navy:     accent('#2F4A8A', 'Navy'),
+  indigo:   accent('#5A5FD6', 'Indigo'),
+  purple:   { hex: '#a855f7', dim: 'rgba(168,85,247,0.16)', border: 'rgba(168,85,247,0.45)', label: 'Purple' },
+  slate:    accent('#5F7285', 'Slate'),
 }
 
 // Coaching accreditations for the Settings dropdowns (head coach + sub-coaches).

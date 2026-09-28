@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { ACCENT_PRESETS, type AccentKey } from '@/app/coach/[slug]/_lib/settings-store'
 
@@ -25,6 +26,12 @@ export type PartnerBrand = {
   accent: string
   theme: 'dark' | 'light' | 'white'
   enabled: boolean
+  /**
+   * Their badge as a square icon (favicon, home-screen icon), when the page is
+   * switched on and a logo is uploaded — null means "use Lumio's". Add &size=.
+   * The ?v= changes with the logo, so browsers pick up a new upload.
+   */
+  iconUrl: string | null
   /** Their page when it is switched on, the standard sign-in when it is not. */
   signInUrl: string
 }
@@ -58,6 +65,9 @@ async function build(profile: Profile): Promise<PartnerBrand> {
     accent: ACCENT_PRESETS[key].hex,
     theme,
     enabled,
+    iconUrl: enabled && logoUrl
+      ? `/api/coach/brand-icon?slug=${encodeURIComponent(slug)}&v=${createHash('sha1').update(logoUrl).digest('hex').slice(0, 10)}`
+      : null,
     signInUrl: enabled ? `${SITE}/login/${slug}` : STANDARD_SIGN_IN,
   }
 }
