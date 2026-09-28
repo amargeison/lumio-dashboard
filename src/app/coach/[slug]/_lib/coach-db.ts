@@ -394,6 +394,25 @@ function _fetchList<T>(table: CoachTable, force = false): Promise<T[]> {
   return p
 }
 
+// What the cache already holds for a table, without touching the network.
+export function cachedRows<T = unknown>(table: CoachTable): T[] | undefined {
+  return _tableCache.get(table) as T[] | undefined
+}
+
+// Read a table through the shared cache (de-duped with any read already in
+// flight). `force` skips a request that is already running and asks again.
+export function loadRows<T = unknown>(table: CoachTable, force = false): Promise<T[]> {
+  return _fetchList<T>(table, force)
+}
+
+// Warm the cache for a set of tables in parallel. The portal calls this once it
+// knows who is signed in, so opening a page afterwards is instant instead of a
+// fresh round trip per module — and a page never renders its "nothing here yet"
+// state just because its rows had not arrived.
+export function prefetchCoachTables(tables: CoachTable[]): Promise<void> {
+  return Promise.all(tables.map(t => _tableCache.has(t) ? null : _fetchList(t).catch(() => null))).then(() => undefined)
+}
+
 // Clear cached rows (e.g. after sign-out or a bulk import) so the next read is fresh.
 export function invalidateCoachTable(table?: CoachTable) {
   if (table) { _tableCache.delete(table); _inflight.delete(table) }
