@@ -52,7 +52,7 @@ export default function RevenueCalculator() {
   const [stages, setStages] = useState(2)
   const [margin, setMargin] = useState(8)
 
-  // Stream 2 — Student app resale
+  // Stream 2 — Player app resale
   const [families, setFamilies] = useState(18)
   const [appMargin, setAppMargin] = useState(6)
   const [sub, setSub] = useState(9)
@@ -101,7 +101,7 @@ export default function RevenueCalculator() {
           What could two revenue streams add to your coaching?
         </h2>
         <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', maxWidth: 720, margin: '0 auto', lineHeight: 1.6 }}>
-          Lumio doesn&apos;t just run your week — it pays you back. Move the sliders to see the extra income you&apos;d control from the Racket Progression reward kit and reselling the Student app to your families.
+          Lumio doesn&apos;t just run your week — it pays you back. Move the sliders to see the extra income you&apos;d control from Racket Progression rewards and reselling the player app to your families.
         </p>
 
         {/* Month / Year toggle */}
@@ -140,7 +140,7 @@ export default function RevenueCalculator() {
               Stream 1 — Racket rewards
             </div>
             <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.55, marginBottom: 18 }}>
-              You award a coloured racket keyring + dampener + certificate as players climb the 9 stages. Parents fund the journey; you keep the margin on every set.
+              You reward players as they climb the 9 stages — your own rewards with Lumio certificates now, or Lumio keyring + dampener sets in V2. Parents fund the journey; you keep the margin.
             </p>
 
             <Slider id="roi-players" label="Players in your programme" value={players} min={5} max={300} step={5}
@@ -156,16 +156,16 @@ export default function RevenueCalculator() {
             </div>
           </div>
 
-          {/* Stream 2 — Student app resale */}
+          {/* Stream 2 — Player app resale */}
           <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24, boxShadow: `0 20px 50px ${PURPLE}14` }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
-              Stream 2 — Student app resale
+              Stream 2 — Player app resale
             </div>
             <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.55, marginBottom: 18 }}>
               Give families the player &amp; parent view of everything you capture — highlights, progress, homework. Resell it as recurring margin you keep.
             </p>
 
-            <Slider id="roi-families" label="Families on the Student app" value={families} min={0} max={200} step={1}
+            <Slider id="roi-families" label="Families on the player app" value={families} min={0} max={200} step={1}
               display={String(families)} hint="Usually a share of your players' families — start with your keenest." onChange={setFamilies} />
             <Slider id="roi-appmargin" label="Your margin per family / month (£)" value={appMargin} min={2} max={15} step={1}
               display={'£' + appMargin} hint="Suggested price £9.99/family — you set it and keep the margin, not Lumio." onChange={setAppMargin} />
@@ -195,7 +195,7 @@ export default function RevenueCalculator() {
           <div className="roi-breakdown">
             {[
               { n: gbp(rewardMonth * mult), l: 'Racket rewards' },
-              { n: gbp(appMonth * mult), l: 'Student app resale' },
+              { n: gbp(appMonth * mult), l: 'Player app resale' },
               { n: '–' + gbp(sub * mult), l: 'Less Lumio subscription' },
             ].map(b => (
               <div key={b.l} style={{ backgroundColor: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 14 }}>
@@ -225,7 +225,7 @@ export default function RevenueCalculator() {
 
         {/* Small print */}
         <p style={{ marginTop: 22, textAlign: 'center', fontSize: 11.5, color: '#64748B', maxWidth: 760, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
-          Illustrative only. Figures are estimates based on the numbers you enter and Lumio&apos;s published pricing (reorder set of 9 ~£45; suggested Student app £9.99/family; tiers from £9/month). Actual income depends on your own pricing and uptake. Not a guarantee of earnings.
+          Illustrative only. Figures are estimates based on the numbers you enter and Lumio&apos;s published pricing (Lumio reward set of 9 ~£45 in V2; suggested player app £9.99/family; tiers from £9/month). Actual income depends on your own pricing and uptake. Not a guarantee of earnings.
         </p>
       </div>
     </section>
