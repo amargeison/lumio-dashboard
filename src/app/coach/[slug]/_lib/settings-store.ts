@@ -135,6 +135,11 @@ export type CoachSettings = {
   // academy that has not asked for it gets the standard Lumio sign-in, and its
   // welcome emails link there too.
   partnerLogin: boolean
+  // Camps with the Discord tab switched on. Most coaches never use Discord, so a
+  // camp starts without it and the coach turns it on (New camp → Comms, or the
+  // "+ Discord" button beside the tabs). A camp with channels already linked
+  // always shows it, whatever this says.
+  campDiscord: string[]
   sectionsOff: Record<string, string[]>  // per-module hidden sections (moduleId → section keys turned off)
   // The head coach's own contact + DBS / safeguarding record (the account owner).
   // Empty by default so a new head is correctly flagged until they record it.
@@ -177,6 +182,7 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   // The demo academy's badge. Live portals start blank (LIVE_DEFAULT_SETTINGS).
   brandLogo: '/tennis_coach_logo.png',
   partnerLogin: false,
+  campDiscord: [],
   sectionsOff: {},
   head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '', avatarUrl: '' },
 }
