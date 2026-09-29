@@ -1,5 +1,6 @@
 import { emailLayout, ctaButton } from './layout'
 import { coachGuidesHtml } from './coach-guides'
+import { followLumioHtml } from './follow-lumio'
 
 // The email a coach, parent or player gets when a head coach gives them access.
 //
@@ -133,7 +134,8 @@ ${ctaButton('Explore the demo portal &rarr;', DEMO_URL, '#374151')}
 
 <p style="margin:24px 0 0;font-size:13px;color:rgba(255,255,255,0.4);line-height:1.6;">
   Not expecting this? Ignore this email &mdash; nothing is set up until you sign in.
-</p>`,
+</p>
+${followLumioHtml()}`,
       }),
     }
   }

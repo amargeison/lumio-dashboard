@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import RevenueCalculator from './RevenueCalculator'
 import SpotlightTabsClient from './SpotlightTabs'
+import { SOCIAL_LINKS } from '@/lib/social-links'
 
 // "Ocean" accent — matches the coach portal's blue accent preset (#3A8EE0).
 const PURPLE = '#1F6FCC'        // primary (buttons, shadows) — deep ocean
@@ -851,6 +852,21 @@ export default function TennisCoachPage() {
             </Link>
           </div>
           <p style={{ fontSize: 12, color: MUTED, opacity: 0.7 }}>Demo academy · All player data is illustrative · Effort rewards logged in-app (smartwatch sync coming soon) · video via Lumio Vision (BETA)</p>
+
+          {/* Follow the build — every account, one place. */}
+          <div style={{ marginTop: 48, paddingTop: 28, borderTop: `1px solid ${BORDER}` }}>
+            <p style={{ fontSize: 13, fontWeight: 800, color: TEXT, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Follow the build</p>
+            <p style={{ fontSize: 14, color: MUTED, marginBottom: 16 }}>New features, founding-coach stories and coaching tips, most weeks.</p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {SOCIAL_LINKS.map(sl => (
+                <a key={sl.key} href={sl.url} target="_blank" rel="noopener noreferrer" aria-label={`Lumio Sports on ${sl.label}`}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 999, border: `1px solid ${BORDER}`, color: TEXT, fontSize: 13.5, fontWeight: 700, textDecoration: 'none', backgroundColor: '#ffffff08' }}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d={sl.path} /></svg>
+                  {sl.label}
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
     </div>
