@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Twitter, Linkedin, Github, ArrowUpRight } from 'lucide-react'
+import { Menu, X, ArrowUpRight } from 'lucide-react'
 import { NavDropdown } from '@/app/(website)/components/NavDropdown'
+import { SOCIAL_LINKS } from '@/lib/social-links'
 
 const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',      href: '/sports-product' },
@@ -413,17 +414,23 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
               {isSports ? 'The club management platform for professional sport.' : 'The AI operating system for sport, business and education.'}
             </p>
-            <div className="flex items-center gap-3">
-              {[Twitter, Linkedin, Github].map((Icon, i) => (
-                <a key={i} href="#"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
-                  style={{ backgroundColor: '#111318', color: '#6B7280' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#6B7280' }}>
-                  <Icon size={15} />
-                </a>
-              ))}
-            </div>
+            {/* Lumio Sports' real accounts. These used to be three icons (X,
+                LinkedIn, GitHub) all pointing at "#". The business site has no
+                accounts of its own yet, so it shows none rather than dead links. */}
+            {isSports && (
+              <div className="flex flex-wrap items-center gap-3">
+                {SOCIAL_LINKS.map(sl => (
+                  <a key={sl.key} href={sl.url} target="_blank" rel="noopener noreferrer"
+                    aria-label={`Lumio Sports on ${sl.label}`} title={`${sl.label} · ${sl.handle}`}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
+                    style={{ backgroundColor: '#111318', color: '#9CA3AF' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#F9FAFB' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#9CA3AF' }}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d={sl.path} /></svg>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Links */}
@@ -487,7 +494,7 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
 
         <div className="mt-12 pt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
           style={{ borderTop: '1px solid #1F2937' }}>
-          <p className="text-xs" style={{ color: '#4B5563' }}>© Lumio 2025. All rights reserved.</p>
+          <p className="text-xs" style={{ color: '#4B5563' }}>© Lumio {new Date().getFullYear()}. All rights reserved.</p>
           <div className="flex items-center gap-6">
             {LEGAL_LINKS.map(l => (
               <Link key={l.label} href={l.href} className="text-xs transition-colors"
