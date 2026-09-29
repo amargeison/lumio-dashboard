@@ -66,8 +66,8 @@ const PARENT_FEATURES = [
   'Progress & racket journey',
   'Homework & lesson summaries',
 ]
-// Reward + capture kit. Tracking now uses the player's own smartwatch, so there
-// is no extra tracking hardware — the bundle is the reward keyrings/dampeners/trophy
+// Reward + capture kit. Effort is logged in the app (smartwatch sync is not
+// built yet — say "coming soon" wherever it comes up), so there is no tracking hardware — the bundle is the reward keyrings/dampeners/trophy
 // plus the video capture stand and mic, framed as a one-off bundle from £85
 // (indicative — the mic spec is still under field test).
 const KIT_PARTS = [
@@ -239,7 +239,7 @@ function EffortRewardsMockup() {
   return (
     <MockupFrame>
       <div style={{ fontSize: 11, fontWeight: 800, color: TEXT, marginBottom: 2 }}>⌚ Effort &amp; Rewards</div>
-      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Mia Chen · last session · Apple Watch</div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Mia Chen · last session · logged in app</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, background: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 10, padding: '9px 11px' }}>
         <div style={{ flexShrink: 0 }}>
           <div style={{ fontSize: 8, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total XP</div>
@@ -768,7 +768,7 @@ export default function TennisCoachPage() {
               <div style={{ maxWidth: 560 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 10 }}>Lumio Coach Kit</div>
                 <h3 style={{ fontSize: 26, fontWeight: 900, color: TEXT, marginBottom: 8, lineHeight: 1.15 }}>Everything you need to start capturing.</h3>
-                <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>The capture stand, microphone, your first set of reward keyrings &amp; dampeners and the Black-stage trophy — one bundle, out of the box and onto the court. Effort tracking uses the player’s own smartwatch, so there’s no tracker to buy.</p>
+                <p style={{ fontSize: 14.5, color: MUTED, lineHeight: 1.6 }}>The capture stand, microphone, your first set of reward keyrings &amp; dampeners and the Black-stage trophy — one bundle, out of the box and onto the court. Effort is logged in the app in seconds, so there’s no tracker to buy — automatic smartwatch sync is coming soon.</p>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, justifyContent: 'flex-end' }}>
