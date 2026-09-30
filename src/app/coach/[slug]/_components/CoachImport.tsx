@@ -7,6 +7,8 @@
 
 import { useRef, useState } from 'react'
 import { invalidateCoachTable, type CoachTable } from '../_lib/coach-db'
+import { IMPORT_FIELDS, applyPlan, type SheetPlan } from '@/lib/coach/import-records'
+import { readWorkbook, sheetSample, sheetChunks, SPREADSHEET_RE, type SheetData } from '@/lib/coach/read-workbook'
 
 type ThemeTokens = { text: string; text2: string; text3: string; panel: string; panel2: string; border: string; btnText: string; isDark: boolean }
 type AccentTokens = { hex: string; dim: string }
@@ -27,23 +29,21 @@ const labelField: Record<string, string> = { players: 'name', staff: 'name', cou
 export const IMPORT_TEMPLATE_URL = '/templates/lumio-coach-import-template.xlsx'
 // Whitelist of columns per table — guards against unexpected AI keys breaking inserts.
 // (The server applies the same list again: /api/coach/import/save.)
-const FIELDS: Record<string, string[]> = {
-  players: ['name', 'category', 'age', 'parent_name', 'racket_stage', 'goal', 'level', 'email', 'phone', 'notes'],
-  staff: ['name', 'role', 'email', 'phone', 'qualifications', 'notes'],
-  courts: ['name', 'surface', 'location', 'hours', 'status', 'notes'],
-  camps: ['name', 'start_date', 'end_date', 'capacity', 'price', 'location', 'notes'],
-  equipment: ['item', 'category', 'quantity', 'status', 'notes'],
-  payments: ['player_name', 'item', 'amount', 'status', 'due_date', 'notes'],
-  resources: ['title', 'type', 'url', 'category', 'notes'],
-}
+const FIELDS: Record<string, string[]> = IMPORT_FIELDS
 
 // Up to ten files in one go — a coach's players, coaches and camps usually live
 // in separate spreadsheets, and asking for them one at a time (with a full
 // import between each) was the slowest part of onboarding.
 const MAX_FILES = 10
-const ACCEPT = '.csv,.tsv,.txt,.xlsx,.xls,.docx,.pdf,.png,.jpg,.jpeg,.webp'
+const ACCEPT = '.csv,.tsv,.txt,.xlsx,.xlsm,.xlsb,.xls,.ods,.docx,.pdf,.png,.jpg,.jpeg,.webp'
+// A tab that is not one record per row is read by the AI in pieces. This caps
+// how many pieces one file can take (about 400,000 characters of such tabs).
+const MAX_CHUNKS = 60
+const SAVE_BATCH = 500
 
-type FileState = { name: string; state: 'waiting' | 'reading' | 'done' | 'failed'; found?: number; error?: string }
+type Extracted = Record<string, Record<string, unknown>[]>
+
+type FileState = { name: string; state: 'waiting' | 'reading' | 'done' | 'failed'; found?: number; error?: string; detail?: string; note?: string }
 
 export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent: AccentTokens; onImported?: () => void }) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -56,16 +56,108 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
   const [result, setResult] = useState('')
   const [dragOver, setDragOver] = useState(false)
 
-  const readOne = async (f: File): Promise<Record<string, Record<string, unknown>[]>> => {
+  const postJson = async <T,>(url: string, body: unknown): Promise<T> => {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const raw = await res.text()
+    let data: { error?: string } = {}
+    try { data = raw ? JSON.parse(raw) : {} } catch { /* non-JSON response */ }
+    if (!res.ok) throw new Error(data.error || (raw ? raw.slice(0, 200) : `Import failed (HTTP ${res.status})`))
+    return data as T
+  }
+
+  const merge = (into: Extracted, from: Extracted) => {
+    for (const c of CATEGORIES) {
+      const rows = Array.isArray(from[c.key]) ? from[c.key] : []
+      if (rows.length) into[c.key] = [...(into[c.key] || []), ...rows]
+    }
+  }
+
+  // PDFs, Word files and photos: the file goes to the server and the AI reads it.
+  const readDocument = async (f: File): Promise<{ extracted: Extracted; note?: string }> => {
     const fd = new FormData(); fd.append('file', f)
     const res = await fetch('/api/coach/import', { method: 'POST', body: fd })
     // Read as text first so a non-JSON response (timeout / proxy error page)
     // surfaces a real message instead of a cryptic "Unexpected token <".
     const raw = await res.text()
-    let data: { error?: string; extracted?: Record<string, Record<string, unknown>[]> } = {}
+    let data: { error?: string; extracted?: Extracted; truncated?: boolean } = {}
     try { data = raw ? JSON.parse(raw) : {} } catch { /* non-JSON response */ }
-    if (!res.ok) throw new Error(data.error || (raw ? raw.slice(0, 200) : `Import failed (HTTP ${res.status})`))
-    return data.extracted || {}
+    if (!res.ok) throw new Error(data.error || (res.status === 413 ? 'That file is too big to upload — try a smaller PDF, or a spreadsheet.' : raw ? raw.slice(0, 200) : `Import failed (HTTP ${res.status})`))
+    return { extracted: data.extracted || {}, note: data.truncated ? 'Long file — the last part may be missing' : undefined }
+  }
+
+  // Spreadsheets: opened here, every tab. The AI sees a sample of each tab and
+  // says what the columns mean; the rows are turned into records in the
+  // browser, so a workbook of any size costs one short AI call per few tabs.
+  const readSpreadsheet = async (f: File, say: (d: string) => void): Promise<{ extracted: Extracted; note?: string }> => {
+    say('Opening…')
+    let sheets: SheetData[]
+    try { sheets = await readWorkbook(f) }
+    catch { throw new Error('Could not open this spreadsheet. If it is password-protected, remove the password and try again.') }
+    if (!sheets.length) throw new Error('This spreadsheet has no data in it.')
+
+    // Group the tab samples so each AI call stays small.
+    const samples = sheets.map(sh => ({ name: sh.name, sample: sheetSample(sh) }))
+    const groups: typeof samples[] = []
+    let cur: typeof samples = []; let size = 0
+    for (const s of samples) {
+      if (cur.length && (size + s.sample.length > 50000 || cur.length >= 8)) { groups.push(cur); cur = []; size = 0 }
+      cur.push(s); size += s.sample.length
+    }
+    if (cur.length) groups.push(cur)
+
+    const plans: SheetPlan[] = []
+    for (let g = 0; g < groups.length; g++) {
+      say(sheets.length === 1 ? 'Working out the columns…' : `Working out ${sheets.length} tabs${groups.length > 1 ? ` (${g + 1}/${groups.length})` : ''}…`)
+      try {
+        const { plans: p } = await postJson<{ plans: SheetPlan[] }>('/api/coach/import/map', { fileName: f.name, sheets: groups[g] })
+        plans.push(...(p || []))
+      } catch (e) {
+        // Could not map this group — its tabs are read the slower way below.
+        console.warn('[import] map', e)
+      }
+    }
+
+    const extracted: Extracted = {}
+    const toRead: SheetData[] = []
+    let used = 0, skipped = 0
+    for (const sh of sheets) {
+      const mine = plans.filter(p => p.sheet === sh.name)
+      if (!mine.length) { if (sh.rows.length > 1) toRead.push(sh); continue }
+      if (mine.some(p => p.irregular)) { toRead.push(sh); continue }
+      if (mine.every(p => p.category === 'skip')) { skipped++; continue }
+      let n = 0
+      for (const p of mine) {
+        if (p.category === 'skip') continue
+        const recs = applyPlan(p, sh.rows)
+        if (recs.length) { extracted[p.category] = [...(extracted[p.category] || []), ...recs]; n += recs.length }
+      }
+      // Mapped but nothing came out — read it properly rather than lose it.
+      if (n) used++; else if (sh.rows.length > 1) toRead.push(sh)
+    }
+
+    // Tabs that are not one record per row: the AI reads them in pieces.
+    const pieces = toRead.flatMap(sh => sheetChunks(sh).map(text => ({ tab: sh.name, text })))
+    const todo = pieces.slice(0, MAX_CHUNKS)
+    let done = 0, failed = 0
+    const worker = async () => {
+      while (todo.length) {
+        const piece = todo.shift()!
+        say(`Reading “${piece.tab}” (${done + 1}/${Math.min(pieces.length, MAX_CHUNKS)})…`)
+        try {
+          const { extracted: ex } = await postJson<{ extracted?: Extracted }>('/api/coach/import', { text: piece.text, label: `${f.name} — ${piece.tab}` })
+          merge(extracted, ex || {})
+        } catch (e) { failed++; console.warn('[import] piece', e) }
+        done++
+      }
+    }
+    await Promise.all([worker(), worker(), worker()])
+    used += toRead.length
+
+    const notes: string[] = []
+    if (sheets.length > 1) notes.push(`${used} of ${sheets.length} tabs used${skipped ? `, ${skipped} skipped` : ''}`)
+    if (pieces.length > MAX_CHUNKS) notes.push('some very long tabs were only partly read')
+    if (failed) notes.push(`${failed} part${failed === 1 ? '' : 's'} could not be read`)
+    return { extracted, note: notes.join(' · ') || undefined }
   }
 
   const onFiles = async (list: FileList | File[]) => {
@@ -79,17 +171,19 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
     // the rate limit and time out together.
     const merged: Record<string, Record<string, unknown>[]> = {}
     for (let i = 0; i < chosen.length; i++) {
+      const f = chosen[i]
+      const say = (detail: string) => setFiles(fs => fs.map((x, j) => j === i ? { ...x, detail } : x))
       setFiles(fs => fs.map((x, j) => j === i ? { ...x, state: 'reading' } : x))
       try {
-        const ex = await readOne(chosen[i])
+        const { extracted: ex, note } = SPREADSHEET_RE.test(f.name) ? await readSpreadsheet(f, say) : await readDocument(f)
         let found = 0
         for (const c of CATEGORIES) {
           const rows = Array.isArray(ex[c.key]) ? ex[c.key] : []
           if (rows.length) { merged[c.key] = [...(merged[c.key] || []), ...rows]; found += rows.length }
         }
-        setFiles(fs => fs.map((x, j) => j === i ? { ...x, state: 'done', found } : x))
+        setFiles(fs => fs.map((x, j) => j === i ? { ...x, state: 'done', found, note, detail: undefined } : x))
       } catch (e) {
-        setFiles(fs => fs.map((x, j) => j === i ? { ...x, state: 'failed', error: e instanceof Error ? e.message : 'Could not read this file' } : x))
+        setFiles(fs => fs.map((x, j) => j === i ? { ...x, state: 'failed', error: e instanceof Error ? e.message : 'Could not read this file', detail: undefined } : x))
       }
     }
     setExtracted(merged)
@@ -117,14 +211,18 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
         return clean
       }).filter(r => Object.keys(r).length)
       try {
-        const res = await fetch('/api/coach/import/save', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ category: c.key, rows }),
-        })
-        const data = await res.json().catch(() => ({}))
-        if (!res.ok) throw new Error(data.error || `Could not save ${c.label.toLowerCase()}`)
-        inserted += Number(data.inserted) || 0
-        needFiles += Number(data.needFiles) || 0
+        // Big imports go up in batches, so 3,000 players is six quick saves
+        // rather than one request the server refuses.
+        for (let b = 0; b < rows.length; b += SAVE_BATCH) {
+          const res = await fetch('/api/coach/import/save', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category: c.key, rows: rows.slice(b, b + SAVE_BATCH) }),
+          })
+          const data = await res.json().catch(() => ({}))
+          if (!res.ok) throw new Error(data.error || `Could not save ${c.label.toLowerCase()}`)
+          inserted += Number(data.inserted) || 0
+          needFiles += Number(data.needFiles) || 0
+        }
         invalidateCoachTable(c.table)
         setPicked(p => ({ ...p, [c.key]: false }))
       } catch (e) {
@@ -151,8 +249,8 @@ export function CoachImport({ T, accent, onImported }: { T: ThemeTokens; accent:
       {files.map((f, i) => (
         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12, color: T.text2 }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📄 {f.name}</span>
-          <span style={{ flex: 'none', color: f.state === 'failed' ? '#EF4444' : f.state === 'done' ? '#22C55E' : T.text3 }} title={f.error}>
-            {f.state === 'waiting' ? 'Waiting…' : f.state === 'reading' ? 'Reading…' : f.state === 'done' ? `${f.found} found` : 'Could not read'}
+          <span style={{ flex: 'none', maxWidth: '60%', textAlign: 'right', color: f.state === 'failed' ? '#EF4444' : f.state === 'done' ? '#22C55E' : T.text3 }} title={f.error || f.note}>
+            {f.state === 'waiting' ? 'Waiting…' : f.state === 'reading' ? (f.detail || 'Reading…') : f.state === 'done' ? `${f.found} found${f.note ? ` · ${f.note}` : ''}` : (f.error || 'Could not read')}
           </span>
         </div>
       ))}
