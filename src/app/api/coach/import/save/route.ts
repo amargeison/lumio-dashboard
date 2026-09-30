@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { normaliseWebLink } from '@/lib/coach/resource-files'
+import { cleanRecord, type ImportCategory } from '@/lib/coach/import-records'
 
 export const runtime = 'nodejs'
 
@@ -30,6 +31,7 @@ const TABLES: Record<string, { table: string; fields: string[]; headOnly?: boole
   resources: { table: 'coach_resources', fields: ['title', 'type', 'url', 'category', 'notes'], headOnly: true },
 }
 
+// Per request. The browser sends big imports in batches of 500.
 const MAX_ROWS = 1000
 
 export async function POST(req: NextRequest) {
@@ -66,14 +68,10 @@ export async function POST(req: NextRequest) {
   if (!academyId) return NextResponse.json({ error: 'We could not find an academy for your account to import into.' }, { status: 403 })
   if (staffId && spec.headOnly) return NextResponse.json({ error: 'Only the head coach can import these.' }, { status: 403 })
 
-  const clean = rows.map(r => {
-    const out: Record<string, unknown> = {}
-    for (const k of spec.fields) {
-      const v = (r as Record<string, unknown>)[k]
-      if (v !== undefined && v !== null && v !== '') out[k] = v
-    }
-    return out
-  }).filter(r => Object.keys(r).length > 0)
+  // Every row made to fit its table: an age of "U10" or a date of "next
+  // Tuesday" used to fail the whole batch; now it moves into the notes.
+  const clean = rows.map(r => cleanRecord(body.category as ImportCategory, (r || {}) as Record<string, unknown>))
+    .filter((r): r is Record<string, unknown> => !!r)
     .map(r => ({ ...r, coach_id: academyId, ...(staffId && spec.assignable ? { staff_id: staffId } : {}) }))
     // A spreadsheet can only carry a web link, not the file itself. Links typed
     // without https:// ("riverside.co.uk/handbook") are completed so they open;

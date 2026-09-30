@@ -57,7 +57,9 @@ export async function fileToContent(file: File): Promise<{ blocks: ContentBlock[
     // Every sheet, named. A coach's workbook routinely has the schedule on one
     // tab and the kit list on another, and losing the tab names loses the point.
     const text = wb.SheetNames
-      .map(sn => `# Sheet: ${sn}\n${XLSX.utils.sheet_to_csv(wb.Sheets[sn])}`)
+      // No blank rows, no trailing commas: a formatted-but-empty range used to
+      // fill the whole text budget with ",,,,,," before any real rows.
+      .map(sn => `# Sheet: ${sn}\n${XLSX.utils.sheet_to_csv(wb.Sheets[sn], { blankrows: false }).split('\n').map(l => l.replace(/,+$/, '')).filter(Boolean).join('\n')}`)
       .join('\n\n')
     return { kind: 'spreadsheet', blocks: [{ type: 'text', text: `${header('spreadsheet')}\n${trim(text)}` }] }
   }
