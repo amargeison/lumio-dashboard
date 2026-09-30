@@ -29,12 +29,21 @@ export async function POST(req: NextRequest) {
     const caller = await resolveCaller(email)
     if (!caller.ok) return NextResponse.json({ error: 'Not permitted' }, { status: caller.status })
 
-    const updates: Record<string, string | null> = { last_seen: new Date().toISOString() }
-    if (nickname !== undefined) updates.nickname = nickname
-    if (avatar_url !== undefined) updates.avatar_url = avatar_url
-    if (logo_url !== undefined) updates.logo_url = logo_url
+    // The photo and logo arrive as base64 images (often 100KB+ each) and this
+    // runs on every demo sign-in. Writing them back unchanged every time was
+    // the single biggest source of database writes in the whole project, so
+    // they are only written when they have actually changed.
+    const db = getSupabase()
+    const { data: current } = await db.from('sports_demo_leads')
+      .select('nickname, avatar_url, logo_url')
+      .eq('email', caller.email).eq('sport', sport).maybeSingle()
 
-    await getSupabase().from('sports_demo_leads')
+    const updates: Record<string, string | null> = { last_seen: new Date().toISOString() }
+    if (nickname !== undefined && nickname !== current?.nickname) updates.nickname = nickname
+    if (avatar_url !== undefined && avatar_url !== current?.avatar_url) updates.avatar_url = avatar_url
+    if (logo_url !== undefined && logo_url !== current?.logo_url) updates.logo_url = logo_url
+
+    await db.from('sports_demo_leads')
       .update(updates)
       .eq('email', caller.email)
       .eq('sport', sport)
