@@ -12,7 +12,7 @@
 // One helper, read from the feature flag, so a camp pack, a squad matrix and a
 // certificate can never disagree about what to call it.
 
-import { getFlags } from './feature-flags'
+import { getFlags, NEW_ACCOUNT_TIER, type TierKey } from './feature-flags'
 
 export type StageWords = {
   /** "Racket" / "Colour" — for a label or a table heading. */
@@ -25,7 +25,7 @@ export type StageWords = {
   racket: boolean
 }
 
-export function stageWords(fallbackTier: 'prolite' | 'elite' = 'prolite'): StageWords {
+export function stageWords(fallbackTier: TierKey = NEW_ACCOUNT_TIER): StageWords {
   const racket = getFlags(fallbackTier).racket
   return {
     racket,

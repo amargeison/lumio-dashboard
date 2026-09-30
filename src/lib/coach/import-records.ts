@@ -180,6 +180,13 @@ export type SheetPlan = {
   values?: Record<string, Record<string, string>>
   default?: Record<string, string>
   irregular?: boolean
+  /** How sure the AI is about the category. Anything but "high" is shown to the coach to confirm. */
+  confidence?: 'high' | 'medium' | 'low'
+  /** One plain-English line on why — shown with the question. */
+  reason?: string
+  /** A record for the tab as a whole: a tab per camp holds its attendees in the
+   *  rows and the camp itself in the tab name and title lines. */
+  tab_record?: { category: ImportCategory } & Record<string, unknown>
 }
 
 /** Every row of a mapped tab as records. Pure, so a 20,000-row tab costs nothing but a loop. */
@@ -217,4 +224,60 @@ export function applyPlan(plan: SheetPlan, rows: string[][]): Record<string, unk
     if (clean) out.push(clean)
   }
   return out
+}
+
+// ── Tidying what was found ───────────────────────────────────────────────────
+
+/**
+ * One record per real thing. A camp listed on every attendee's row, or a venue
+ * on every lesson, arrives hundreds of times; it is one camp and one venue.
+ * Records with the same label are merged: the first value of each field wins
+ * and notes are combined. Payments are only merged when every field matches —
+ * two £30 lessons for the same child are two payments.
+ */
+export function dedupeRecords(category: ImportCategory, recs: Record<string, unknown>[]): Record<string, unknown>[] {
+  const label = LABEL_FIELD[category]
+  const byKey = new Map<string, Record<string, unknown>>()
+  for (const r of recs) {
+    const key = category === 'payments'
+      ? JSON.stringify(IMPORT_FIELDS.payments.map(f => String(r[f] ?? '').trim().toLowerCase()))
+      : String(r[label] ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
+    if (!key) continue
+    const have = byKey.get(key)
+    if (!have) { byKey.set(key, { ...r }); continue }
+    for (const [k, v] of Object.entries(r)) {
+      if (v === undefined || v === null || v === '') continue
+      if (k === 'notes' && have.notes && have.notes !== v) {
+        const parts = new Set([...String(have.notes).split(' · '), ...String(v).split(' · ')])
+        have.notes = [...parts].join(' · ').slice(0, 4000)
+      } else if (have[k] === undefined || have[k] === null || have[k] === '') {
+        have[k] = v
+      }
+    }
+  }
+  return [...byKey.values()]
+}
+
+/**
+ * Move a record to another category when the coach says "no, these are camps".
+ * The label carries across (a resource's title becomes the camp's name), any
+ * field both categories share comes too, and the rest goes into the notes so
+ * nothing the sheet held is dropped.
+ */
+export function convertRecord(from: ImportCategory, to: ImportCategory, rec: Record<string, unknown>): Record<string, unknown> | null {
+  if (from === to) return rec
+  const out: Record<string, unknown> = { [LABEL_FIELD[to]]: rec[LABEL_FIELD[from]] }
+  const spill: string[] = []
+  for (const [k, v] of Object.entries(rec)) {
+    if (k === LABEL_FIELD[from] || k === 'notes' || v === undefined || v === null || v === '') continue
+    if (IMPORT_FIELDS[to].includes(k)) out[k] = v
+    else spill.push(`${k.replace(/_/g, ' ')}: ${v}`)
+  }
+  out.notes = [rec.notes, ...spill].filter(Boolean).join(' · ') || undefined
+  return cleanRecord(to, out)
+}
+
+export const CATEGORY_LABEL: Record<ImportCategory, string> = {
+  players: 'Players', staff: 'Coaches & staff', courts: 'Courts & venues', camps: 'Training camps',
+  equipment: 'Equipment', payments: 'Payments', resources: 'Resources',
 }

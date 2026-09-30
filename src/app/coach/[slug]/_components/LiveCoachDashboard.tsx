@@ -13,7 +13,7 @@ import { ModuleSkeleton } from './ModuleSkeleton'
 import { getSettings } from '../_lib/settings-store'
 import { campSpans, campsBetween, campsOn, campDayLabel, CAMP_COLOUR } from '@/lib/coach/camp-dates'
 import { campMoney } from '@/lib/coach/camp-money'
-import { getFlags, subscribe as subscribeFeatures } from '../_lib/feature-flags'
+import { getFlags, subscribe as subscribeFeatures, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
 import { EmptyCoachDashboard } from './EmptyCoachDashboard'
 import { EmptyCoachHome } from './EmptyCoachHome'
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
@@ -31,7 +31,7 @@ const wmo = (c: number): string => c === 0 ? 'clear' : c <= 3 ? 'cloudy' : c <= 
 // Everything the dashboard reads, in the order it destructures them.
 const DASH_TABLES: CoachTable[] = ['coach_players', 'coach_bookings', 'coach_sessions', 'coach_payments', 'coach_attendance', 'coach_player_skills', 'coach_messages', 'coach_equipment', 'coach_staff', 'coach_venues', 'coach_camps', 'coach_camp_attendees']
 
-export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard, asCoach }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void; asCoach?: { name: string; profileDone: boolean; staffId?: string | null } | null }) {
+export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard, asCoach, canNavigate }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void; asCoach?: { name: string; profileDone: boolean; staffId?: string | null } | null; canNavigate?: (id: string) => boolean }) {
   const profile = useCoachProfile()
   // Shared cache first: coming back to the dashboard from another page paints
   // straight away from what is already loaded, then refreshes underneath.
@@ -54,8 +54,8 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   // rackets is noise at an academy without the reward system, and switching the
   // module on has to change what Lumio Coach talks about without waiting for the
   // three-hour cache to lapse.
-  const [feat, setFeat] = useState(() => getFlags('prolite'))
-  useEffect(() => { const r = () => setFeat(getFlags('prolite')); r(); return subscribeFeatures(r) }, [])
+  const [feat, setFeat] = useState(() => getFlags(NEW_ACCOUNT_TIER))
+  useEffect(() => { const r = () => setFeat(getFlags(NEW_ACCOUNT_TIER)); r(); return subscribeFeatures(r) }, [])
   useEffect(() => { fetch('/api/coach/pay/status').then(r => r.json()).then(d => setPayConnected(!!d.chargesEnabled)).catch(() => setPayConnected(false)) }, [])
   const reloadBookings = async () => { const bookings = await loadRows('coach_bookings', true); setD(v => ({ ...v, bookings })) }
   const reloadMessages = async () => { const messages = await loadRows('coach_messages', true); setD(v => ({ ...v, messages })) }
@@ -74,16 +74,23 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
     }, () => { /* denied — no weather */ }, { timeout: 8000, maximumAge: 1800000 })
   }, [])
 
+  // Everything the dashboard shows, fetched together. Also run after a bulk
+  // import from the welcome page, so the imported academy appears straight away.
+  const loadAll = async () => {
+    const [players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees] = await Promise.all(
+      DASH_TABLES.map(t => loadRows(t).catch(() => cachedRows(t) ?? [])),
+    )
+    return { players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees, loading: false }
+  }
+  const reloadAll = () => { loadAll().then(setD).catch(() => { /* keep what is shown */ }) }
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const [players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees] = await Promise.all(
-        DASH_TABLES.map(t => loadRows(t).catch(() => cachedRows(t) ?? [])),
-      )
-      if (cancelled) return
-      setD({ players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees, loading: false })
+      const next = await loadAll()
+      if (!cancelled) setD(next)
     })()
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Inbound replies arrive via webhook; refresh the inbox every ~2 min so they show.
@@ -113,11 +120,34 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
 
   if (d.loading) return <ModuleSkeleton T={T} variant="dashboard" />
 
+  // ── Getting started (worked out before the empty check: a brand-new
+  // academy sees the same checklist on its welcome page) ────────────────────────────────────────────────────────
+  // Each step is a FACT about their account, not a flag we set when they looked
+  // at a screen. That is the whole reason this can be trusted: it cannot say
+  // "done" for something they have not done, and it cannot nag about something
+  // they have.
+  const hasVenue = (d.venues || []).length > 0
+  const hasPlayers = d.players.length > 0
+  const hasPlan = (d.lessons || []).length > 0 || (d.bookings || []).length > 0
+  const hasSummary = (d.lessons || []).length > 0
+  const hasMessage = (d.messages || []).length > 0
+  const hasBooking = (d.bookings || []).length > 0
+  const startSteps: StartStep[] = [
+    { id: 'mailbox', label: 'Connect your calendar & email', why: 'Bookings land in the calendar on your phone, and confirmations, camp emails and lesson write-ups arrive from your own address instead of ours — which is the difference between a parent trusting the email and deleting it.', done: hasMailbox, nav: 'settings', cta: 'Connect' },
+    { id: 'venue', label: 'Set your home court', why: 'Everything with an address on it — a confirmation email, the map link a player taps, free-slot suggestions — comes from your venue. Two minutes, once.', done: hasVenue, nav: 'venues', cta: 'Add it' },
+    { id: 'players', label: 'Add the players you coach', why: 'A player record is what every booking, summary, payment and message hangs off. Add a handful to start — you do not need the whole roster today.', done: hasPlayers, nav: 'roster', cta: 'Add players' },
+    { id: 'booking', label: 'Put a session in the diary', why: 'Book one lesson and you will see the confirmation, the calendar link and the player\u2019s own page all fill in behind it.', done: hasBooking, nav: 'calendar', cta: 'Open calendar' },
+    { id: 'plan', label: 'Build a session plan', why: 'Open a booking in the Session Planner and Lumio Coach writes the plan and the run-sheet from that player\u2019s history. This is the bit coaches say they would pay for on its own.', done: hasPlan, nav: 'planner', cta: 'Plan one' },
+    { id: 'summary', label: 'Write up a lesson', why: 'Record the hour, or tick what you covered when you finish. The write-up lands with the player and is the thing they value most.', done: hasSummary, nav: 'lessons', cta: 'Write one' },
+    { id: 'message', label: 'Message a player or parent', why: 'Send one message and they get it in their app as well as their inbox \u2014 which is how conversations move off WhatsApp.', done: hasMessage, nav: 'messages', cta: 'Send one' },
+  ]
+
   const total = d.players.length + d.bookings.length + d.lessons.length + d.payments.length
   // An assistant coach gets a different empty state: the head coach's setup grid
   // is a list of things they cannot do.
   if (total === 0 && asCoach) return <EmptyCoachHome T={T} accent={accent} coachName={asCoach.name} clubName={clubName} onNavigate={onNavigate} profileDone={asCoach.profileDone} />
-  if (total === 0) return <EmptyCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={onNavigate} onStartWizard={onStartWizard} />
+  if (total === 0) return <EmptyCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={onNavigate} onStartWizard={onStartWizard}
+    steps={startSteps} canNavigate={canNavigate} onImported={reloadAll} />
 
   const today = new Date().toLocaleDateString('en-CA') // local YYYY-MM-DD
   const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
@@ -192,27 +222,6 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const campList = campSpans(d.camps || [])
   const upcomingCamps = campsBetween(campList, today, weekAhead)
   const todayCamps = campsOn(campList, today)
-
-  // ── Getting started ────────────────────────────────────────────────────────
-  // Each step is a FACT about their account, not a flag we set when they looked
-  // at a screen. That is the whole reason this can be trusted: it cannot say
-  // "done" for something they have not done, and it cannot nag about something
-  // they have.
-  const hasVenue = (d.venues || []).length > 0
-  const hasPlayers = d.players.length > 0
-  const hasPlan = (d.lessons || []).length > 0 || (d.bookings || []).length > 0
-  const hasSummary = (d.lessons || []).length > 0
-  const hasMessage = (d.messages || []).length > 0
-  const hasBooking = (d.bookings || []).length > 0
-  const startSteps: StartStep[] = [
-    { id: 'mailbox', label: 'Connect your calendar & email', why: 'Bookings land in the calendar on your phone, and confirmations, camp emails and lesson write-ups arrive from your own address instead of ours — which is the difference between a parent trusting the email and deleting it.', done: hasMailbox, nav: 'settings', cta: 'Connect' },
-    { id: 'venue', label: 'Set your home court', why: 'Everything with an address on it — a confirmation email, the map link a player taps, free-slot suggestions — comes from your venue. Two minutes, once.', done: hasVenue, nav: 'venues', cta: 'Add it' },
-    { id: 'players', label: 'Add the players you coach', why: 'A player record is what every booking, summary, payment and message hangs off. Add a handful to start — you do not need the whole roster today.', done: hasPlayers, nav: 'roster', cta: 'Add players' },
-    { id: 'booking', label: 'Put a session in the diary', why: 'Book one lesson and you will see the confirmation, the calendar link and the player\u2019s own page all fill in behind it.', done: hasBooking, nav: 'calendar', cta: 'Open calendar' },
-    { id: 'plan', label: 'Build a session plan', why: 'Open a booking in the Session Planner and Lumio Coach writes the plan and the run-sheet from that player\u2019s history. This is the bit coaches say they would pay for on its own.', done: hasPlan, nav: 'planner', cta: 'Plan one' },
-    { id: 'summary', label: 'Write up a lesson', why: 'Record the hour, or tick what you covered when you finish. The write-up lands with the player and is the thing they value most.', done: hasSummary, nav: 'lessons', cta: 'Write one' },
-    { id: 'message', label: 'Message a player or parent', why: 'Send one message and they get it in their app as well as their inbox \u2014 which is how conversations move off WhatsApp.', done: hasMessage, nav: 'messages', cta: 'Send one' },
-  ]
 
   // ── The camp, on the dashboard ──────────────────────────────────────────────
   // A camp is the largest single thing in a coach's year — the most money, the

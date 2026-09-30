@@ -6,13 +6,13 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { sb, forgetIdentity } from '../_lib/coach-db'
-import { CoachImport, IMPORT_TEMPLATE_URL } from './CoachImport'
+import { CoachImport, IMPORT_TEMPLATE_URL, ImportPendingDialog, type PendingImport } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
 import { setSettings, getSettings, ACCREDITATIONS, PLAYER_LEVELS, ACCENT_PRESETS, type AccentKey } from '../_lib/settings-store'
 import { THEMES } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { seedLumioResources } from '../_lib/lumio-resources'
 import { seedLumioPackages } from '../_lib/lumio-packages'
-import { applyTier } from '../_lib/feature-flags'
+import { applyTier, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
 
 const IMPORT_THEME = { text: '#fff', text2: '#D1D5DB', text3: '#9CA3AF', panel: '#0d1117', panel2: '#111318', border: '#1F2937', btnText: '#fff', isDark: true }
 type Skin = 'dark' | 'light' | 'white'
@@ -45,6 +45,9 @@ const SELF_SETUP_ENABLED = true
 
 export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', defaultEmail = '', onClose, onDone }: Props) {
   const [step, setStep] = useState(1)
+  // Records found by the upload on step 3 but not yet imported (see ImportPendingDialog).
+  const [pendingImport, setPendingImport] = useState<PendingImport | null>(null)
+  const [askImport, setAskImport] = useState(false)
   const [academy, setAcademy] = useState(defaultAcademy)
   const [name, setName] = useState(defaultName)
   const [accreditation, setAccreditation] = useState('')
@@ -319,10 +322,9 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       // Coaches is always visible now (a solo coach simply sees themselves), so we
       // no longer hide it during onboarding.
 
-      // New founders start on Pro Lite — Racket Progression only. Video & Audio
-      // and Effort & Rewards (smartwatch GPS) stay off until those features are
-      // tested and signed off; they can be re-enabled later in Settings.
-      applyTier('prolite')
+      // The modules a new account starts with — everything during the founder
+      // period. See NEW_ACCOUNT_TIER in feature-flags.ts.
+      applyTier(NEW_ACCOUNT_TIER)
 
       // Resource Centre: preload Lumio's library (live), or start empty for own content.
       setSettings({ resourcesPreloaded })
@@ -676,7 +678,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
             <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Add your players</h2>
             <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 16 }}>Have a spreadsheet? Upload it and we&apos;ll add everyone for you — or add a few by hand below. All optional.</p>
             <div style={{ marginBottom: 18 }}>
-              <CoachImport T={IMPORT_THEME} accent={IMPORT_ACCENT} />
+              <CoachImport T={IMPORT_THEME} accent={IMPORT_ACCENT} onPendingChange={setPendingImport} />
             </div>
             <div style={{ fontSize: 12, color: '#4B5563', textAlign: 'center', margin: '0 0 14px' }}>— or add manually —</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12, maxHeight: 200, overflowY: 'auto' }}>
@@ -720,6 +722,14 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
 
         {err && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 14 }}>{err}</p>}
 
+        {/* Records found in an upload but never imported — the Import button is
+            easy to miss, so leaving the step asks first. */}
+        {askImport && pendingImport && (
+          <ImportPendingDialog pending={pendingImport}
+            onDone={() => { setAskImport(false); setPendingImport(null); finish() }}
+            onCancel={() => setAskImport(false)} />
+        )}
+
         {/* Nav */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 30 }}>
           {step > 1 ? <button onClick={() => setStep(s => s - 1)} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 14, cursor: 'pointer' }}>← Back</button> : <div />}
@@ -745,7 +755,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
               : <button onClick={finish} disabled={!setupType || saving || !dpa} style={primary(!!setupType && !saving && dpa, ACCENT)}>{saving ? 'Saving…' : 'Finish →'}</button>
           )}
           {step === 3 && (
-            <button onClick={finish} disabled={saving || !dpa} style={primary(!saving && dpa, ACCENT)}>{saving ? 'Saving…' : 'Go to my portal →'}</button>
+            <button onClick={() => { if (pendingImport) setAskImport(true); else finish() }} disabled={saving || !dpa} style={primary(!saving && dpa, ACCENT)}>{saving ? 'Saving…' : 'Go to my portal →'}</button>
           )}
         </div>
       </div>
