@@ -41,7 +41,8 @@ function AiSpendTile() {
     const load = () => fetch('/api/sports-admin/ai-spend', { headers: { 'x-admin-token': getToken() } })
       .then(r => r.ok ? r.json() : null).then(setData).catch(() => {})
     load()
-    const t = setInterval(load, 60000)
+    // Hourly, plus on every page load (was every minute — see AiSpendTile).
+    const t = setInterval(load, 60 * 60 * 1000)
     return () => clearInterval(t)
   }, [])
 

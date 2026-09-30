@@ -69,7 +69,9 @@ export default function AiSpendTile() {
 
   useEffect(() => {
     load()
-    const id = setInterval(load, 30_000)
+    // Hourly, plus on every page load. It was every 30 seconds, which kept the
+    // database awake all day for a number that moves a few pence an hour.
+    const id = setInterval(load, 60 * 60 * 1000)
     return () => clearInterval(id)
   }, [load])
 
