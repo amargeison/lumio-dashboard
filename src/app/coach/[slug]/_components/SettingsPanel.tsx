@@ -13,14 +13,14 @@ import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-da
 import { getAddedVenues } from '../_lib/venues-store'
 import { AddVenueModal } from './AddVenueModal'
 import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
-import { getFlags, setFlag, subscribe as subscribeFeatures, DEMO_FLAGS } from '../_lib/feature-flags'
+import { getFlags, setFlag, subscribe as subscribeFeatures, DEMO_FLAGS, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
 import { IntegrationsPanel } from './IntegrationsPanel'
 import { CoachContactSettings } from './CoachContactSettings'
 import { CoachVenuesSettings } from './CoachVenuesSettings'
 import { CoachDevelopmentSettings } from './CoachDevelopmentSettings'
 import { TakePayments } from './TakePayments'
 import { CoachCompliance } from './CoachCompliance'
-import { CoachImport } from './CoachImport'
+import { CoachImport, ImportPendingDialog, type PendingImport } from './CoachImport'
 import { seedLumioResources, LUMIO_RESOURCES } from '../_lib/lumio-resources'
 import { seedLumioEquipment, EQUIPMENT_KIT_CHOICES, EQUIPMENT_CATEGORY_CHOICES } from '../_lib/lumio-equipment'
 import { seedLumioPackages, LUMIO_PACKAGES } from '../_lib/lumio-packages'
@@ -480,6 +480,9 @@ const KIT_OFFERS = [
 export function SettingsPanel({ T, accent, density, demo = false }: Common & { demo?: boolean }) {
   const s = useCoachSettings()
   const [open, setOpen] = useState<string | null>(null)
+  // Records found by Import data but not yet imported — closing the modal asks first.
+  const [pendingImport, setPendingImport] = useState<PendingImport | null>(null)
+  const [askImport, setAskImport] = useState(false)
   const [addVenueOpen, setAddVenueOpen] = useState(false)
   // Demo "order" state — which kit items the coach has added to their order.
   const [ordered, setOrdered] = useState<string[]>([])
@@ -487,7 +490,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
   // matches page.tsx (demo = elite/all-on, live founder = prolite).
   // Pinned on the demo, so the tier reads Elite and every feature shows ON —
   // matching the portal, which also ignores stored flags there.
-  const featFallback = demo ? 'elite' : 'prolite'
+  const featFallback = demo ? 'elite' : NEW_ACCOUNT_TIER
   const [feat, setFeat] = useState(() => demo ? DEMO_FLAGS : getFlags(featFallback))
   useEffect(() => {
     if (demo) { setFeat(DEMO_FLAGS); return }
@@ -673,7 +676,12 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {open === 'venuescfg' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Venues & courts" onClose={() => setOpen(null)}><CoachVenuesSettings T={T} accent={accent} /></Modal>)}
       {open === 'devcfg' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Coaching, rewards & modules" onClose={() => setOpen(null)}><CoachDevelopmentSettings T={T} accent={accent} /></Modal>)}
       {open === 'privacy' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Privacy & compliance" onClose={() => setOpen(null)}><CoachCompliance T={T} accent={accent} demo={demo} /></Modal>)}
-      {open === 'import' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Import data" onClose={() => setOpen(null)}><CoachImport T={T} accent={accent} /></Modal>)}
+      {open === 'import' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Import data" onClose={() => { if (pendingImport) setAskImport(true); else setOpen(null) }}><CoachImport T={T} accent={accent} onPendingChange={setPendingImport} /></Modal>)}
+      {open === 'import' && askImport && pendingImport && (
+        <ImportPendingDialog pending={pendingImport}
+          onDone={() => { setAskImport(false); setPendingImport(null); setOpen(null) }}
+          onCancel={() => setAskImport(false)} />
+      )}
       {open === 'integrations' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Connected accounts" sub="Connect your mailbox & calendar to add bookings to your calendar and send as you" onClose={() => setOpen(null)}>
           <IntegrationsPanel T={T} accent={accent} />

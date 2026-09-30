@@ -39,7 +39,7 @@ import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
 import { clearDemoSession, wipeDemoSurvivors, markDemoSignedOut } from '@/lib/demo-session/clear'
 import { useCoachStats, RACKET_STAGES, dbList, setPreviewStaff } from './_lib/coach-db'
-import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, DEMO_FLAGS, type FeatureFlags } from './_lib/feature-flags'
+import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, DEMO_FLAGS, NEW_ACCOUNT_TIER, type FeatureFlags } from './_lib/feature-flags'
 import { ModuleHelpButton } from './_components/ModuleHelpButton'
 
 // ── Lazy-loaded modules ─────────────────────────────────────────────────────
@@ -609,7 +609,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // the demo defaults to Elite so it keeps showing Video/Audio + Effort & Rewards.
   // The demo is pinned to Elite with everything on and ignores stored flags
   // entirely — see DEMO_FLAGS. A live portal reads the coach's own plan.
-  const featFallback = isEmpty ? 'prolite' : 'elite'
+  const featFallback = isEmpty ? NEW_ACCOUNT_TIER : 'elite'
   const [feat, setFeat] = useState<FeatureFlags>(isEmpty ? getFeatureFlags(featFallback) : DEMO_FLAGS)
   useEffect(() => {
     if (!isEmpty) { setFeat(DEMO_FLAGS); return }
@@ -810,6 +810,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
           </>
         )
         case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)}
+          canNavigate={id => visibleSidebar.some(i => i.id === id)}
           asCoach={viewStaff ? { name: viewStaff.name, profileDone: true, staffId: viewStaff.id }
             : isHeadUser === false ? { name: myIdentity?.displayName || coachName, profileDone: profileDone !== false, staffId: myIdentity?.staffId ?? null }
             : null} />

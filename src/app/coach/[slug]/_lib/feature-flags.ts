@@ -34,11 +34,21 @@ const KEY = 'lumio_coach_features'
 const EVT = 'lumio-coach-features-changed'
 const DEFAULT: FeatureFlags = { ...TIERS[3].features } // Elite
 
+// The modules a NEW live account starts with — the one switch to change when
+// that policy changes.
+//
+// Founder period: every account is a founding account with everything
+// unlocked, so this is 'elite' (all modules on). When payments go live, change
+// it to 'essential': new accounts then start with the essentials, and buying a
+// plan switches the rest on with applyTier(<plan>).
+//
+// Existing academies keep whatever is stored for them. Migration
+// 187_founders_all_modules switched every account that already existed on.
+export const NEW_ACCOUNT_TIER: TierKey = 'elite'
+
 function read(fallback: TierKey = 'elite'): FeatureFlags {
   // `fallback` is the tier to assume when NOTHING is stored yet. The demo passes
-  // 'elite' (show everything); live/founder portals pass 'prolite' so a new
-  // founder starts on Pro Lite (Racket Progression only — Video/Audio and
-  // Effort & Rewards stay off until those features are tested and signed off).
+  // 'elite' (show everything); live portals pass NEW_ACCOUNT_TIER.
   const fb = TIERS.find(t => t.key === fallback)?.features ?? DEFAULT
   if (typeof window === 'undefined') return { ...fb }
   try {

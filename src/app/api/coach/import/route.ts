@@ -25,7 +25,14 @@ Output ONE record per line as a JSON object (JSON Lines) — no array, no markdo
   payments:  player_name, item, amount, status, due_date, notes
   resources: title, type, url, category, notes
 Example line: {"type":"players","name":"Amy Clark","age":11,"racket_stage":"orange"}
+What each type means:
+- players: people who take lessons or go on camps. staff: the academy's coaches.
+- courts: the coach's OWN regular courts — never hotels, resorts, clubs abroad or holiday venues.
+- camps: holiday camps, tours and trips — ONE line per camp, never one per attendee. A club or resort abroad hosting a camp is that camp's location.
+- payments: money a player or family owes or paid. Court hire, hotels, flights and other costs the academy pays are NOT payments — leave them out.
+- resources: drills, videos, documents, links, books — never places, clubs or people.
 Rules:
+- One line per real thing. Do not repeat a camp, venue or coach for every row it appears on.
 - "category" for players is one of: Junior, Performance, Adult (infer from age/level if not explicit).
 - "racket_stage" is one of: white, yellow, orange, green, blue, purple, brown, red, black (map any belt/level colour; lowercase).
 - Dates as YYYY-MM-DD (British day-first when ambiguous). Amounts as plain numbers (no currency symbol).
@@ -100,8 +107,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const client = new Anthropic({ apiKey })
+    // Pieces of a spreadsheet are plain rows to copy out — the fast model does
+    // that well and several times quicker. Whole PDFs, photos and Word files
+    // keep the stronger model, which has the harder job of finding the records.
     const res = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: isChunk ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-6',
       max_tokens: 16000,
       messages: [{ role: 'user', content: content as any }],
     })

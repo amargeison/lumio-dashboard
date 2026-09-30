@@ -64,7 +64,7 @@ export async function readWorkbook(file: File): Promise<SheetData[]> {
  * the different values found anywhere in it — enough to tell a status column
  * from a notes column without sending the whole tab.
  */
-export function sheetSample(s: SheetData, maxRows = 25, maxCols = 40) {
+export function sheetSample(s: SheetData, maxRows = 15, maxCols = 40) {
   const clip = (v: string, n: number) => (v.length > n ? v.slice(0, n) + '…' : v)
   const head = s.rows.slice(0, maxRows).map((r, i) => `${i}: ${r.slice(0, maxCols).map(c => clip(c, 50)).join(' | ')}`)
   const width = Math.min(maxCols, Math.max(0, ...s.rows.slice(0, 200).map(r => r.length)))
@@ -74,7 +74,7 @@ export function sheetSample(s: SheetData, maxRows = 25, maxCols = 40) {
     for (const r of s.rows) {
       const v = r[c]
       if (v) seen.add(clip(v, 30))
-      if (seen.size >= 12) break
+      if (seen.size >= 8) break
     }
     if (seen.size) columns.push(`col ${c}: ${[...seen].join(' ; ')}`)
   }

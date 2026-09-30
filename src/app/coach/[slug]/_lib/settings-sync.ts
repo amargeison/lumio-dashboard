@@ -17,7 +17,7 @@
 // fix is per-key timestamps — not worth the complexity today.
 
 import { sb, currentCoachId } from './coach-db'
-import { getFlags, primeFeatures, setFeaturesPersist } from './feature-flags'
+import { getFlags, primeFeatures, setFeaturesPersist, NEW_ACCOUNT_TIER } from './feature-flags'
 import {
   rawSettings, primeSettingsCache, setSettingsPersist, isDemoPortal,
   type CoachSettings,
@@ -39,10 +39,10 @@ async function flush() {
   // too, where the cache has just been cleared and the correct thing to store is
   // an empty blob rather than the defaults object passed in.
   // The feature flags ride along in the same blob. They are what tells the
-  // family's app whether a module is live — see feature-flags.ts. 'prolite' is
-  // the fallback the LIVE portal itself uses when nothing is stored, so the
+  // family's app whether a module is live — see feature-flags.ts. NEW_ACCOUNT_TIER
+  // is the fallback the LIVE portal itself uses when nothing is stored, so the
   // mirror always matches what the coach is actually looking at.
-  const data = { ...rawSettings(), features: getFlags('prolite') }
+  const data = { ...rawSettings(), features: getFlags(NEW_ACCOUNT_TIER) }
   const { error } = await sb().from(TABLE).upsert(
     { coach_id: coachId, data, updated_at: new Date().toISOString() },
     { onConflict: 'coach_id' },

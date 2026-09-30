@@ -5,7 +5,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { IMPORT_FIELDS, IMPORT_CATEGORIES, ENUMS, type SheetPlan } from '@/lib/coach/import-records'
 
 export const runtime = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 120
 
 // Works out what each tab of a coach's workbook holds, from a sample of it.
 //
@@ -18,25 +18,44 @@ export const maxDuration = 60
 const FIELD_LIST = IMPORT_CATEGORIES.map(c => `  ${c}: ${IMPORT_FIELDS[c].join(', ')}`).join('\n')
 const ENUM_LIST = Object.entries(ENUMS).map(([k, v]) => `  ${k}: ${v.join(' | ')}`).join('\n')
 
+// What each category IS, in the coach's terms. The first version only listed
+// field names, and a holiday workbook came back with 567 "resources" that were
+// clubs abroad, 933 "courts" that were one venue per booking, and "payments"
+// that were court-hire bills. The definitions below are what stops that.
+const MEANINGS = `What each category means:
+- players: people who take lessons or go on camps (children or adults). One per person.
+- staff: coaches and assistants who work for the academy.
+- courts: the coach's OWN regular courts/venues where weekly coaching happens — normally a handful. NOT hotels, resorts, clubs abroad, holiday destinations or one-off hire.
+- camps: holiday camps, camp weeks, tours, trips and residential or overseas camps. One per camp, NOT one per attendee. A club, resort or place abroad that hosts a camp or tour is a camp's location, not a court or a resource.
+- equipment: kit the academy owns, stocks or sells (balls, rackets, shirts, prizes).
+- payments: money a PLAYER or family owes or has paid — player_name is that person. Costs the academy pays out (court hire, hotels, flights, coach wages, suppliers) are NOT payments.
+- resources: coaching material — drills, videos, documents, web links, books. NEVER places, clubs, venues or people.
+- skip: anything else — expense and cost sheets, budgets, supplier or hotel contact lists, summaries, dropdown lists, instructions.`
+
 const PROMPT = `You are setting up a tennis coach's academy software from their own spreadsheet. Below is a sample of each tab: the first rows (row index: cells separated by " | ") and, per column, some of the different values found in that column.
 
-For EVERY tab, decide what it holds and how its columns map to these fields:
+For EVERY tab, decide what ONE ROW represents, and how its columns map to these fields:
 ${FIELD_LIST}
+
+${MEANINGS}
 
 Allowed values for enumerated fields:
 ${ENUM_LIST}
 
 Return ONLY JSON, no commentary:
-{"plans":[{"sheet":"<exact tab name>","category":"players|staff|courts|camps|equipment|payments|resources|skip","header_row":<0-based row index of the column headings, -1 if none>,"first_data_row":<row index of the first record>,"columns":{"<field>":<column index> or [column indexes to join]},"notes_columns":[<other useful column indexes to keep in notes>],"values":{"<field>":{"<value as written>":"<allowed value>"}},"default":{"<field>":"<value for every row>"},"irregular":false}]}
+{"plans":[{"sheet":"<exact tab name>","category":"players|staff|courts|camps|equipment|payments|resources|skip","confidence":"high|medium|low","reason":"<one short sentence for the coach, e.g. 'Lists children with ages and racket colours'>","header_row":<0-based row index of the column headings, -1 if none>,"first_data_row":<row index of the first record>,"columns":{"<field>":<column index> or [column indexes to join]},"notes_columns":[<other useful column indexes to keep in notes>],"values":{"<field>":{"<value as written>":"<allowed value>"}},"default":{"<field>":"<value for every row>"},"tab_record":null,"irregular":false}]}
 
 Rules:
-- One plan per tab, in the order given. A tab that holds two kinds of record side by side may have two plans with the same sheet name.
-- "skip": instructions, totals/summary/pivot tabs, dropdown or lookup lists, charts, empty templates.
-- "irregular": true when the tab is NOT one record per row (a timetable grid, a form, several stacked tables, free text). Those are read another way, so leave columns empty.
+- The category is what ONE ROW is. A column that repeats the same few values on every row (the venue, the camp name, the coach) describes the row — map it to a field such as location, or to notes. It never becomes records of its own.
+- A tab per camp (its name or title rows name the camp, the rows list who is going): category "players" for the rows, plus "tab_record":{"category":"camps","name":"<camp name>","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","location":"<place>","price":<number>} using only what the tab shows. Use tab_record in the same way whenever the tab as a whole is one camp or trip.
+- One plan per tab, in the order given. A tab holding two kinds of record side by side may have two plans with the same sheet name.
+- confidence: "high" only when it is obvious. "medium" when it is a reasonable guess, "low" when unsure. The coach is asked to confirm anything that is not high, so do not overclaim.
+- Map every tab you can. A title row, blank rows or notes ABOVE the headings do not make a tab irregular — just set header_row to the headings' row. Nor do merged cells, colour-coding or a totals row at the bottom.
+- "irregular": true ONLY when there is no heading row with one record per row below it (a timetable grid, a form laid out down the page, free text). Those tabs are read row by row, which is very slow, so use it sparingly and leave columns empty.
 - Map by meaning, not exact heading ("Surname" + "First name" → name as [first, surname]; "Mum/Dad" → parent_name; "Balance" → amount).
 - Use notes_columns for columns worth keeping that have no field (DOB, medical, club, school, availability…). Never put a column in both.
 - For enumerated fields (category, racket_stage, status) add a "values" entry for every sample value that is not already an allowed value, e.g. {"status":{"Owes":"due","✓":"paid"}}.
-- A tab of juniors with no category column may use "default":{"category":"Junior"}; a payments tab where every row is paid may default status. Only when it is clearly true.
+- A tab of juniors with no category column may use "default":{"category":"Junior"}. Only when it is clearly true.
 - Do not invent columns. Use only indexes you can see.`
 
 export async function POST(req: NextRequest) {
@@ -71,8 +90,15 @@ export async function POST(req: NextRequest) {
     const names = new Set(sheets.map(s => s.name))
     const cats = new Set<string>([...IMPORT_CATEGORIES, 'skip'])
     const isIdx = (n: unknown) => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n < 500
-    const plans = (parsed.plans || []).filter(p => p && names.has(p.sheet) && cats.has(p.category)).map(p => ({
+    // Tab names matched loosely ("Players " is the tab "Players").
+    const norm = (n: unknown) => String(n ?? '').trim().toLowerCase()
+    const realName = (n: unknown) => [...names].find(x => norm(x) === norm(n))
+    const plans = (parsed.plans || []).filter(p => p && realName(p.sheet) && cats.has(p.category)).map(p => ({
       ...p,
+      sheet: realName(p.sheet)!,
+      confidence: p.confidence === 'high' || p.confidence === 'low' ? p.confidence : 'medium',
+      reason: typeof p.reason === 'string' ? p.reason.slice(0, 200) : undefined,
+      tab_record: p.tab_record && typeof p.tab_record === 'object' && (IMPORT_CATEGORIES as string[]).includes(p.tab_record.category) ? p.tab_record : undefined,
       header_row: typeof p.header_row === 'number' ? p.header_row : -1,
       columns: Object.fromEntries(Object.entries(p.columns || {}).filter(([, c]) => Array.isArray(c) ? c.every(isIdx) : isIdx(c))),
       notes_columns: (p.notes_columns || []).filter(isIdx),
