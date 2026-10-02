@@ -20,7 +20,16 @@ export type SmtpMail = {
   html: string
   replyTo?: string
   bcc?: string
+  // Optional extras, used by admin outreach. Everything that already calls this
+  // leaves them unset and gets exactly the message it always did.
+  fromName?: string                    // display name for the From: header
+  text?: string                        // plain-text alternative → multipart/alternative
+  headers?: Record<string, string>     // extra headers, e.g. List-Unsubscribe
 }
+
+// A header value must never contain a line break — that is how one header
+// becomes two.
+const oneLine = (s: string) => s.replace(/[\r\n]+/g, ' ').trim()
 
 function encodeHeaderWord(s: string): string {
   // RFC 2047 for non-ASCII header values (subjects with emoji/accents).
@@ -28,20 +37,29 @@ function encodeHeaderWord(s: string): string {
 }
 
 function buildMime(m: SmtpMail): string {
-  const headers = [
-    `From: ${m.from}`,
+  const dot = (body: string) => body.replace(/\r?\n/g, '\r\n').replace(/^\./gm, '..')
+  const from = m.fromName ? `${encodeHeaderWord(oneLine(m.fromName).replace(/["<>]/g, ''))} <${m.from}>` : m.from
+  const extra = Object.entries(m.headers || {}).map(([k, v]) => `${oneLine(k)}: ${oneLine(v)}`)
+  const base = [
+    `From: ${from}`,
     `To: ${m.to}`,
     m.replyTo ? `Reply-To: ${m.replyTo}` : '',
-    `Subject: ${encodeHeaderWord(m.subject)}`,
+    `Subject: ${encodeHeaderWord(oneLine(m.subject))}`,
     `Date: ${new Date().toUTCString()}`,
+    ...extra,
     'MIME-Version: 1.0',
-    'Content-Type: text/html; charset="UTF-8"',
-    'Content-Transfer-Encoding: 8bit',
-  ].filter(Boolean).join('\r\n')
+  ].filter(Boolean)
+  if (m.text) {
+    const boundary = `=_lumio_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`
+    const headers = [...base, `Content-Type: multipart/alternative; boundary="${boundary}"`].join('\r\n')
+    const part = (type: string, body: string) =>
+      `--${boundary}\r\nContent-Type: ${type}; charset="UTF-8"\r\nContent-Transfer-Encoding: 8bit\r\n\r\n${dot(body)}\r\n`
+    return `${headers}\r\n\r\n${part('text/plain', m.text)}${part('text/html', m.html)}--${boundary}--`
+  }
+  const headers = [...base, 'Content-Type: text/html; charset="UTF-8"', 'Content-Transfer-Encoding: 8bit'].join('\r\n')
   // Normalise newlines and dot-stuff (lines starting with "." → "..") so the
   // body can't prematurely terminate the DATA command.
-  const body = m.html.replace(/\r?\n/g, '\r\n').replace(/^\./gm, '..')
-  return `${headers}\r\n\r\n${body}`
+  return `${headers}\r\n\r\n${dot(m.html)}`
 }
 
 export async function sendMailSmtp(m: SmtpMail): Promise<{ ok: boolean; error?: string }> {
