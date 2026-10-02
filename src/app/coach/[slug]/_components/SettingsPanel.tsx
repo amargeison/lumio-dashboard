@@ -115,6 +115,135 @@ function Modal({ T, accent, title, sub, onClose, children, readOnly = false, wid
   )
 }
 
+// "Start again" for an import that went wrong.
+//
+// A coach who imports the wrong file, or the right file twice, used to have one
+// way back: open each player and delete them, 380 times. This removes whole
+// lists in one go so the import can be run again cleanly.
+//
+// Deliberately narrow: only the lists an import fills that are safe to empty.
+// Payment history is never touched (no Settings button may wipe it), nor are
+// staff (their logins hang off those rows); resources, kit and packages have
+// their own Clear buttons in their module settings. It takes ticking the list
+// AND typing DELETE, because unlike those this one takes the roster with it.
+// Only the head coach ever sees Settings → Import, and it is hidden in the demo.
+const START_AGAIN: { key: string; table: 'coach_players' | 'coach_camps' | 'coach_courts' | 'coach_equipment'; label: string; note: string }[] = [
+  { key: 'players', table: 'coach_players', label: 'Players', note: 'with their skills, attendance, racket progress and app access' },
+  { key: 'camps', table: 'coach_camps', label: 'Camps', note: 'with their attendee lists and camp messages' },
+  { key: 'courts', table: 'coach_courts', label: 'Courts', note: 'your venues stay' },
+  { key: 'equipment', table: 'coach_equipment', label: 'Equipment', note: 'individual items; kit bags stay' },
+]
+function ImportStartAgain({ T }: { T: ThemeTokens }) {
+  const [shown, setShown] = useState(false)
+  const [counts, setCounts] = useState<Record<string, number> | null>(null)
+  const [picked, setPicked] = useState<string[]>([])
+  const [word, setWord] = useState('')
+  const [state, setState] = useState<'idle' | 'busy' | 'error' | { removed: Record<string, number> }>('idle')
+  const [errMsg, setErrMsg] = useState('')
+
+  const loadCounts = async () => {
+    const uid = await currentCoachId()
+    if (!uid) return
+    const out: Record<string, number> = {}
+    for (const t of START_AGAIN) {
+      const { count } = await sb().from(t.table).select('id', { count: 'exact', head: true }).eq('coach_id', uid)
+      out[t.key] = count ?? 0
+    }
+    setCounts(out)
+  }
+  const openUp = () => { setShown(true); setState('idle'); setWord(''); setPicked([]); void loadCounts() }
+
+  const run = async () => {
+    if (state === 'busy' || !picked.length || word.trim().toUpperCase() !== 'DELETE') return
+    setState('busy'); setErrMsg('')
+    const removed: Record<string, number> = {}
+    try {
+      const uid = await currentCoachId()
+      if (!uid) throw new Error('You are not signed in.')
+      for (const t of START_AGAIN.filter(x => picked.includes(x.key))) {
+        // Scoped to this academy to match RLS; .select() returns what was
+        // deleted so the coach gets a real number back.
+        const { data, error } = await sb().from(t.table).delete().eq('coach_id', uid).select('id')
+        if (error) throw new Error(`${t.label}: ${error.message}`)
+        removed[t.label] = (data ?? []).length
+        if (t.table === 'coach_camps') {
+          // Same clean-up a single camp delete does: take it off the connected calendar.
+          for (const row of (data ?? []) as { id: string }[]) {
+            fetch(`/api/coach/camps/sync?campId=${encodeURIComponent(row.id)}`, { method: 'DELETE' }).catch(() => { /* the camp is gone either way */ })
+          }
+        }
+      }
+      invalidateCoachTable()   // every cached list — rosters, attendance, skills all hang off these
+      setState({ removed }); setWord(''); setPicked([])
+      void loadCounts()
+    } catch (e) {
+      invalidateCoachTable()
+      setErrMsg(e instanceof Error ? e.message : 'Something went wrong.')
+      setState('error'); void loadCounts()
+    }
+  }
+
+  const ready = picked.length > 0 && word.trim().toUpperCase() === 'DELETE' && state !== 'busy'
+  const total = picked.reduce((n, k) => n + (counts?.[k] ?? 0), 0)
+  return (
+    <div style={{ marginTop: 22 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: T.bad, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Start again</div>
+      <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '11px 12px' }}>
+        <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>Delete imported data</div>
+        <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2, lineHeight: 1.5 }}>Imported the wrong file, or the same one twice? Empty a whole list in one go, then import again. There is no undo.</div>
+        {!shown ? (
+          <button onClick={openUp}
+            style={{ marginTop: 10, appearance: 'none', background: 'transparent', color: T.bad, border: `1px solid ${T.bad}`, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: 'pointer' }}>
+            Choose what to delete…
+          </button>
+        ) : (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {START_AGAIN.map(t => {
+                const n = counts?.[t.key]
+                const on = picked.includes(t.key)
+                const none = n === 0
+                return (
+                  <label key={t.key} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 9, border: `1px solid ${on ? T.bad : T.border}`, cursor: none ? 'default' : 'pointer', opacity: none ? 0.5 : 1 }}>
+                    <input type="checkbox" checked={on} disabled={none || state === 'busy'}
+                      onChange={e => setPicked(p => e.target.checked ? [...p, t.key] : p.filter(k => k !== t.key))} />
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>{t.label}</span>
+                      <span style={{ fontSize: 10.5, color: T.text3 }}> — {t.note}</span>
+                    </span>
+                    <span style={{ fontSize: 11.5, color: T.text2, fontVariantNumeric: 'tabular-nums' }}>{n === undefined ? '…' : n}</span>
+                  </label>
+                )
+              })}
+            </div>
+            <div style={{ fontSize: 10.5, color: T.text3, margin: '9px 0', lineHeight: 1.5 }}>
+              Not touched: payments and payment history, staff, bookings and lesson notes already written (they keep the player’s name), resources, kit bags and packages.
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <input value={word} onChange={e => setWord(e.target.value)} placeholder="Type DELETE to confirm" disabled={state === 'busy'}
+                style={{ flex: '1 1 180px', minWidth: 0, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '8px 10px', color: T.text, fontSize: 12.5, fontFamily: FONT }} />
+              <button onClick={() => { void run() }} disabled={!ready}
+                style={{ appearance: 'none', background: ready ? T.bad : 'transparent', color: ready ? '#fff' : T.bad, border: `1px solid ${T.bad}`, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: ready ? 'pointer' : 'default', opacity: ready ? 1 : 0.5 }}>
+                {state === 'busy' ? 'Deleting…' : picked.length ? `Delete ${total} record${total === 1 ? '' : 's'}` : 'Delete'}
+              </button>
+              <button onClick={() => setShown(false)} disabled={state === 'busy'}
+                style={{ appearance: 'none', background: 'transparent', color: T.text3, border: `1px solid ${T.border}`, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontFamily: FONT, cursor: 'pointer' }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+        {typeof state === 'object' && (
+          <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8 }}>
+            Deleted {Object.entries(state.removed).map(([k, v]) => `${v} ${k.toLowerCase()}`).join(', ')}. You can import again above.
+          </div>
+        )}
+        {state === 'error' && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 8 }}>Couldn’t finish — {errMsg} Anything listed as 0 above has already gone.</div>}
+      </div>
+    </div>
+  )
+}
+
 // Resource Centre module settings. Both controls act on the coach's OWN live
 // Resource Centre (the coach_resources rows behind /resources), not on a preview.
 //
@@ -676,7 +805,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {open === 'venuescfg' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Venues & courts" onClose={() => setOpen(null)}><CoachVenuesSettings T={T} accent={accent} /></Modal>)}
       {open === 'devcfg' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Coaching, rewards & modules" onClose={() => setOpen(null)}><CoachDevelopmentSettings T={T} accent={accent} /></Modal>)}
       {open === 'privacy' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Privacy & compliance" onClose={() => setOpen(null)}><CoachCompliance T={T} accent={accent} demo={demo} /></Modal>)}
-      {open === 'import' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Import data" onClose={() => { if (pendingImport) setAskImport(true); else setOpen(null) }}><CoachImport T={T} accent={accent} onPendingChange={setPendingImport} /></Modal>)}
+      {open === 'import' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Import data" onClose={() => { if (pendingImport) setAskImport(true); else setOpen(null) }}><CoachImport T={T} accent={accent} onPendingChange={setPendingImport} />{!demo && <ImportStartAgain T={T} />}</Modal>)}
       {open === 'import' && askImport && pendingImport && (
         <ImportPendingDialog pending={pendingImport}
           onDone={() => { setAskImport(false); setPendingImport(null); setOpen(null) }}

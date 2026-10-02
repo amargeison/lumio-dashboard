@@ -8,7 +8,7 @@ import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { V2_LABEL, V2_NOTES } from '@/lib/coach/v2'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, sb, currentCoachId } from '../_lib/coach-db'
+import { useCoachTable, sb, currentCoachId, currentIdentity, getPreviewStaff } from '../_lib/coach-db'
 import { getSettings, setSettings, isDemoPortal } from '../_lib/settings-store'
 import { seedLumioPackages, PACKAGE_CHOICES } from '../_lib/lumio-packages'
 import { SetupWizard } from './SetupWizard'
@@ -58,6 +58,11 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const [assignPrefill, setAssignPrefill] = useState<string | null>(null)
   const [pay, setPay] = useState<{ amount?: number; description?: string; player_name?: string; payment_id?: string } | null>(null)
   const [payConnected, setPayConnected] = useState<boolean | null>(null)
+  // A coach sees, takes and marks paid the payments for THEIR players (the rows
+  // are limited to those — migration 188). The price list is the academy's: they
+  // can put a player on a pack, but only the head coach changes the prices.
+  const [canPrice, setCanPrice] = useState(true)
+  useEffect(() => { currentIdentity().then(me => setCanPrice(!getPreviewStaff() && (me?.isHead ?? true))).catch(() => {}) }, [])
   useEffect(() => { fetch('/api/coach/pay/status').then(r => r.json()).then(d => setPayConnected(!!d.chargesEnabled)).catch(() => setPayConnected(false)) }, [])
 
   // Returning from Stripe checkout (success_url `?paid=1`): the webhook is the
@@ -86,7 +91,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   // was also redundant: showSetup already requires an empty price list, so a coach
   // with packages never sees the wizard regardless of the flag.
 
-  const showSetup = !isDemoPortal()
+  const showSetup = !isDemoPortal() && canPrice
     && !packages.loading && packages.rows.length === 0
     && !setupAnswered && !getSettings().packagesSeeded
 
@@ -167,16 +172,16 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
       <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 16, display: showSec('packages') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Packages on offer</div>
-          <span style={{ fontSize: 11.5, color: T.text3 }}>Your price list — what players can buy.</span>
-          <button onClick={() => setEditPkg('new')} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ Add package</button>
+          <span style={{ fontSize: 11.5, color: T.text3 }}>{canPrice ? 'Your price list — what players can buy.' : 'The academy’s price list — set by the head coach.'}</span>
+          {canPrice && <button onClick={() => setEditPkg('new')} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ Add package</button>}
         </div>
-        {packages.rows.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3, padding: '6px 0' }}>No packages yet — add your first to build your price list.</div> : (
+        {packages.rows.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3, padding: '6px 0' }}>{canPrice ? 'No packages yet — add your first to build your price list.' : 'The head coach hasn’t set up any packages yet.'}</div> : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }}>
             {packages.rows.map(pk => (
               <div key={pk.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: 14, position: 'relative' }}>
-                <button onClick={async () => { if (confirm(`Remove ${pk.name}?`)) packages.remove(pk.id) }} style={{ position: 'absolute', top: 8, right: 8, appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15 }}>×</button>
+                {canPrice && <button onClick={async () => { if (confirm(`Remove ${pk.name}?`)) packages.remove(pk.id) }} style={{ position: 'absolute', top: 8, right: 8, appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15 }}>×</button>}
                 {pk.kind && <span style={{ fontSize: 8.5, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase' }}>{pk.kind}</span>}
-                <div onClick={() => setEditPkg(pk)} style={{ cursor: 'pointer' }}>
+                <div onClick={() => { if (canPrice) setEditPkg(pk) }} style={{ cursor: canPrice ? 'pointer' : 'default' }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginTop: 8 }}>{pk.name}</div>
                   <div style={{ marginTop: 6 }}><span style={{ fontSize: 20, fontWeight: 700, color: T.text }}>{money(pk.price || 0)}</span><span style={{ fontSize: 11, color: T.text3 }}> {pk.period || ''}{pk.sessions ? ` · ${pk.sessions} sessions` : ''}</span></div>
                   {pk.description && <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8, lineHeight: 1.45 }}>{pk.description}</div>}

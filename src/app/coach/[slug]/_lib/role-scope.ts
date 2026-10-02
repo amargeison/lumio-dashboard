@@ -40,7 +40,10 @@ export const COACH_VIEW_COACH_ID = 'rachel'
 // Settings is NOT hidden: a coach gets their OWN settings page (CoachMyProfile)
 // rather than the academy's — photo, accreditation, DBS, safeguarding. Hiding it
 // left them with no way to add a photo or record a DBS number at all.
-export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues', 'payments']
+// Payments is NOT hidden: a coach takes, records and marks paid the payments for
+// THEIR players (migration 188 limits the rows to those). The academy's other
+// balances and the price list's editing stay with the head coach.
+export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues']
 
 // Normalise whatever the session carries (may be a legacy role like
 // 'assistant'/'manager', or undefined) to one of the three view roles.

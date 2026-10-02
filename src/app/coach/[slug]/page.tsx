@@ -592,7 +592,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
   useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
   // Live data stats for the rail (real coach portal only; skipped on demo).
-  const liveStats = useCoachStats(isEmpty)
+  const liveStats = useCoachStats(isEmpty, viewStaffId)
   // Onboarding wizard overlay (real coach portal).
   const [showWizard, setShowWizard] = useState(false)
   // Auto-open the wizard on a real coach's first visit (before onboarding is
