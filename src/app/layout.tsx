@@ -15,6 +15,9 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
   subsets: ['latin'],
   display: 'swap',
+  // Only the portals use the mono face; don't make every marketing page
+  // download it before first paint.
+  preload: false,
 })
 
 // Root metadata feeds <link rel="manifest">, theme-color, apple-web-app and
