@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe, getCoach, admin } from '../_stripe'
+import { stripe, getCoach, admin, getAcademy, assertOwnPlayer } from '../_stripe'
 import { publicSiteOrigin } from '@/lib/public-origin'
 
 export const runtime = 'nodejs'
@@ -16,9 +16,18 @@ export async function POST(req: NextRequest) {
   const pennies = Math.round(Number(amount) * 100)
   if (!pennies || pennies < 50) return NextResponse.json({ error: 'Enter an amount of at least £0.50' }, { status: 400 })
 
+  // The academy's account takes the money, whoever is holding the phone. An
+  // assistant coach can only charge for one of their own players.
+  const who = await getAcademy(user.id)
+  if (!who) return NextResponse.json({ error: 'We could not find your academy.' }, { status: 403 })
+  if (who.staffId && !(await assertOwnPlayer(who.academyId, who.staffId, player_name))) {
+    return NextResponse.json({ error: 'Choose one of your own players to take a payment.' }, { status: 403 })
+  }
+  const academyId = who.academyId
+
   const db = admin()
-  const { data: row } = await db.from('coach_stripe').select('*').eq('coach_id', user.id).maybeSingle()
-  if (!row?.stripe_account_id || !row.charges_enabled) return NextResponse.json({ error: 'Connect your bank first (Settings → Payments & Packages).' }, { status: 400 })
+  const { data: row } = await db.from('coach_stripe').select('*').eq('coach_id', academyId).maybeSingle()
+  if (!row?.stripe_account_id || !row.charges_enabled) return NextResponse.json({ error: who.staffId ? 'Card payments aren’t switched on for the academy yet — ask your head coach.' : 'Connect your bank first (Settings → Payments & Packages).' }, { status: 400 })
 
   const origin = publicSiteOrigin(new URL(req.url).origin)
   try {
@@ -28,12 +37,12 @@ export async function POST(req: NextRequest) {
       success_url: `${origin}${returnPath}?paid=1`,
       cancel_url: `${origin}${returnPath}?paid=0`,
       // Carry the reconciliation link so the webhook can mark the actual pack paid.
-      metadata: { coach_id: user.id, ...(payment_id ? { payment_id } : {}), ...(package_id ? { package_id } : {}), ...(player_name ? { player_name } : {}) },
+      metadata: { coach_id: academyId, ...(payment_id ? { payment_id } : {}), ...(package_id ? { package_id } : {}), ...(player_name ? { player_name } : {}) },
       // application_fee_amount: 0,  // no per-transaction Lumio fee — payments are plan-gated
     }, { stripeAccount: row.stripe_account_id })
 
     await db.from('coach_charges').insert({
-      coach_id: user.id, player_name, package_id, description, amount_pennies: pennies,
+      coach_id: academyId, player_name, package_id, description, amount_pennies: pennies,
       status: 'pending', stripe_checkout_session_id: session.id,
     })
     return NextResponse.json({ url: session.url })

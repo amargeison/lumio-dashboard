@@ -189,6 +189,15 @@ export async function dbList<T = any>(table: CoachTable): Promise<T[]> {
   // are academy-wide by design, so filtering them would show the coach less than
   // they really get.
   if (_previewStaffId && ASSIGNABLE.has(table)) q = q.eq('staff_id', _previewStaffId)
+  // Payments have no coach of their own — they belong to a player. Previewing a
+  // coach shows only what their players owe, which is exactly what that coach
+  // can read when signed in (migration 188).
+  if (_previewStaffId && table === 'coach_payments') {
+    const { data: mine } = await sb().from('coach_players').select('id').eq('staff_id', _previewStaffId)
+    const ids = (mine ?? []).map((r: { id: string }) => r.id)
+    if (!ids.length) return []
+    q = q.in('player_id', ids)
+  }
   const { data, error } = await q.order('created_at', { ascending: false })
   if (error) { console.error('[coach-db] list', table, error.message); return [] }
   return (data ?? []) as T[]
@@ -475,7 +484,12 @@ export interface CoachStats {
 const emptyStats: CoachStats = { players: 0, lessonsThisWeek: 0, staff: 0, upcomingBookings: 0, loading: true, sessionsToday: 0, racketsReady: 0, outstandingPayments: 0, newPlayers: 0, summariesDue: 0, racketCounts: [] }
 const dayKey = (d?: string | null) => String(d ?? '').slice(0, 10)
 
-export function useCoachStats(enabled = true): CoachStats {
+/**
+ * `scope` is whose portal is on screen (the coach being previewed, or null).
+ * The numbers are re-read when it changes — they used to be read once, so
+ * switching to "View as coach" left the academy's totals in the rail.
+ */
+export function useCoachStats(enabled = true, scope: string | null = null): CoachStats {
   const [s, setS] = useState<CoachStats>(emptyStats)
 
   useEffect(() => {
@@ -536,7 +550,7 @@ export function useCoachStats(enabled = true): CoachStats {
       })
     })()
     return () => { cancelled = true }
-  }, [enabled])
+  }, [enabled, scope])
 
   return s
 }

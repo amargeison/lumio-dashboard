@@ -90,8 +90,10 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
       if (!cancelled) setD(next)
     })()
     return () => { cancelled = true }
+    // Re-read when the head coach switches whose view this is — the rows are
+    // scoped to the coach being previewed, so the old ones are the wrong ones.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [asCoach?.staffId])
 
   // Inbound replies arrive via webhook; refresh the inbox every ~2 min so they show.
   useEffect(() => {
@@ -267,6 +269,9 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   // zero-states) so the briefing reads the same on a fresh account as a busy
   // one; Payments joins them only for the person who can act on it.
   const briefing: { tag: string; pri: 'high' | 'med' | 'low'; text: string }[] = []
+  // A coach hears only about their own players' balances — the rows are already
+  // limited to those (migration 188), so the wording is what changes.
+  if (myStaffId && dueTotal > 0) briefing.push({ tag: 'payments', pri: 'med', text: `${due.length} of your players ${due.length > 1 ? 'have' : 'has'} an outstanding balance — £${dueTotal.toLocaleString()}. Worth collecting at their next session.` })
   if (!myStaffId) briefing.push({ tag: 'payments', pri: dueTotal > 0 ? 'high' : 'low', text: dueTotal > 0 ? `${due.length} player${due.length > 1 ? 's have' : ' has'} an outstanding balance — £${dueTotal.toLocaleString()} to collect.` : 'No outstanding balances — payments are up to date.' })
   if (feat.racket) briefing.push({ tag: 'rackets', pri: myReady.length ? 'high' : 'low', text: myReady.length ? `${myReady.length} player${myReady.length > 1 ? 's are' : ' is'} ready to move up a racket — book ${myReady.length > 1 ? 'assessments' : 'an assessment'}: ${myReady.slice(0, 3).map(p => p.name).join(', ')}.` : 'No players ready to move up a racket yet — keep logging skill progress.' })
   // A camp in the diary outranks almost everything else in the week, and the
@@ -429,7 +434,10 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           { l: 'Next session', v: next ? `${fmtDate(next.booking_date)}${next.start_time ? ' ' + next.start_time : ''}` : '—', nav: 'calendar', small: true },
           { l: 'Players', v: d.players.length, nav: 'roster' },
           { l: 'Nothing booked', v: unbooked.length, nav: 'roster' },
-          { l: 'Payments due', v: `£${dueTotal.toLocaleString()}`, nav: 'payments' },
+          // A coach only ever has their own players' balances (migration 188).
+          asCoach?.staffId
+            ? { l: 'Due from my players', v: `£${dueTotal.toLocaleString()}`, nav: 'payments' }
+            : { l: 'Payments due', v: `£${dueTotal.toLocaleString()}`, nav: 'payments' },
         ].map(s => (
           <button key={s.l} onClick={() => onNavigate(s.nav)} style={{ ...card, textAlign: 'left', cursor: 'pointer', appearance: 'none' }}>
             <div style={{ fontSize: 11.5, color: T.text3 }}>{s.l}</div>
