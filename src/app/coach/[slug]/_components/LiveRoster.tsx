@@ -53,6 +53,8 @@ function DuplicatePlayers({ T, accent, players, skills, attendance, onMerged }: 
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [dismissed, setDismissed] = useState<string[]>([])
+  const [all, setAll] = useState<{ done: number; total: number } | null>(null)
+  const [allErr, setAllErr] = useState('')
 
   const groups = new Map<string, any[]>()
   for (const p of players) {
@@ -100,6 +102,43 @@ function DuplicatePlayers({ T, accent, players, skills, attendance, onMerged }: 
       onMerged()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Could not merge those profiles.') }
     setBusy(false)
+  }
+
+  // Merge every remaining name in one go. After a big import a coach can have
+  // dozens of these, and opening each one to press the same button is no way
+  // to spend an evening. Each name keeps its suggested (fullest) profile —
+  // exactly what pressing "Merge them" and accepting the suggestion does — and
+  // names already marked "Different people" are left alone. One at a time, so
+  // a failure stops at that name with everything before it safely merged.
+  const mergeAll = async () => {
+    if (busy || all) return
+    const todo = dupes.map(([, group]) => group)
+    const extra = todo.reduce((n, g) => n + g.length - 1, 0)
+    if (!confirm(`Merge all ${todo.length} names? For each one the fullest profile is kept and the other${extra === 1 ? '' : 's'} (${extra} in total) merged into it.\n\nIf two different people share a name, press Cancel and mark them "Different people" first. This cannot be undone.`)) return
+    setBusy(true); setErr(''); setAllErr(''); setOpenName(null)
+    let done = 0
+    try {
+      for (const group of todo) {
+        setAll({ done, total: todo.length })
+        const sorted = [...group].sort((a, b) => weight(b) - weight(a))
+        const keep = sorted[0].id
+        const rest = sorted.slice(1).map(p => p.id)
+        // The merge call takes up to 20 at a time.
+        for (let i = 0; i < rest.length; i += 20) {
+          const res = await fetch('/api/coach/players/merge', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keepId: keep, mergeIds: rest.slice(i, i + 20) }),
+          })
+          const d = await res.json().catch(() => ({}))
+          if (!res.ok) throw new Error(`${group[0].name}: ${d.error || 'could not merge'}`)
+        }
+        done++
+      }
+    } catch (e) {
+      setAllErr(`Stopped after ${done} of ${todo.length} — ${e instanceof Error ? e.message : 'could not merge'}. The ones already merged are saved; press Merge all to carry on.`)
+    }
+    setAll(null); setBusy(false); setKeepId('')
+    onMerged()
   }
 
   return (
@@ -169,6 +208,19 @@ function DuplicatePlayers({ T, accent, players, skills, attendance, onMerged }: 
           )
         })}
       </div>
+
+      {(dupes.length > 1 || !!allErr) && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
+          <button onClick={() => { void mergeAll() }} disabled={busy}
+            style={{ appearance: 'none', border: 0, borderRadius: 9, padding: '9px 14px', background: busy ? T.hover : T.warn, color: busy ? T.text3 : '#1a1d29', fontSize: 12, fontWeight: 700, cursor: busy ? 'wait' : 'pointer' }}>
+            {all ? `Merging ${all.done + 1} of ${all.total}…` : `Merge all ${dupes.length}`}
+          </button>
+          <span style={{ flex: 1, minWidth: 200, fontSize: 10.5, color: T.text3, lineHeight: 1.5 }}>
+            Keeps the suggested (fullest) profile for every name above. Two different people with the same name? Mark them “Different people” first.
+          </span>
+          {!!allErr && <div style={{ flexBasis: '100%', fontSize: 11.5, color: T.bad }}>{allErr}</div>}
+        </div>
+      )}
     </div>
   )
 }
