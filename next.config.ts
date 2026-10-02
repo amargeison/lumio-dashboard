@@ -49,6 +49,13 @@ const nextConfig: NextConfig = {
         { key: 'Content-Security-Policy', value: 'frame-ancestors *;' },
       ],
     },
+    // Pre-shrunk marketing images. Everything else is no-store (above), which
+    // also covers /public — so a logo was re-downloaded on every page view.
+    // This folder is safe to cache hard: a changed image gets a new filename.
+    {
+      source: '/opt/:path*',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+    },
     // Allow service worker to be served (with its own short TTL so SW updates propagate quickly)
     {
       source: '/sw.js',

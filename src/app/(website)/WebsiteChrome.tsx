@@ -209,10 +209,16 @@ function Nav({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
         className={`w-full mx-auto flex max-w-7xl items-center justify-between ${isSports ? 'px-6 py-2 min-h-[84px] md:min-h-[150px] lg:min-h-[200px]' : ''}`}
         style={isSports ? {} : { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', width: '100%', boxSizing: 'border-box', overflow: 'hidden', minHeight: 96 }}
       >
-        {/* Logo */}
+        {/* Logo — the small WebP copies in /public/opt, not the original PNGs.
+              The originals are 0.3–2.5MB each (the footer one alone was 2.5MB,
+              fetched on every page and never cached), which is what made the
+              site take seconds to appear on a phone. If a logo changes, save
+              the new one under a NEW filename in /public/opt — that folder is
+              cached for a year (see next.config.ts). */}
         <Link href="/" className="flex items-center gap-2" style={{ flexShrink: 0, overflow: 'visible' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={isTennis ? '/tennis_transparent_logo.png' : isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isTennis ? 'Lumio Tennis' : isSports ? 'Lumio Sports' : 'Lumio'}
+          <img src={isTennis ? '/opt/tennis_transparent_logo.webp' : isSports ? '/opt/lumio_logo_ultra_clean.webp' : '/opt/lumio-transparent-new.webp'} alt={isTennis ? 'Lumio Tennis' : isSports ? 'Lumio Sports' : 'Lumio'}
+            decoding="async"
             className={isSports ? 'h-14 md:h-28 lg:h-40' : 'h-12 md:h-16 lg:h-20'}
             style={{ width: 'auto', maxHeight: 'none', objectFit: 'contain', display: 'block', flexShrink: 0 }} />
           {/* BETA pill removed on both domains — it was a launch signal. */}
@@ -409,7 +415,8 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
           {/* Brand */}
           <div className="md:col-span-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={isSports ? '/lumio_logo_ultra_clean.png' : '/lumio-transparent-new.png'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
+            <img src={isSports ? '/opt/lumio_logo_ultra_clean.webp' : '/opt/lumio-transparent-new.webp'} alt={isSports ? 'Lumio Sports' : 'Lumio'}
+              loading="lazy" decoding="async"
               style={{ width: '200px', height: 'auto', objectFit: 'contain', display: 'block', marginBottom: 16 }} />
             <p className="text-sm leading-relaxed mb-6" style={{ color: '#6B7280' }}>
               {isSports ? 'The club management platform for professional sport.' : 'The AI operating system for sport, business and education.'}

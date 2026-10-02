@@ -41,7 +41,7 @@ const DEMO_PORTALS = SPORTS
 // (The old Tennis Coach line advertised GPS heatmaps, which belong to a football
 // portal, not to a coach standing on a court.)
 const LIVE_PRODUCTS: Array<{name:string;href:string;logo:string;accent:string;hook:string;line:string;tags:string[];cta:string}> = [
-  {name:'Tennis Coach', href:'/tennis-coach', logo:'/tennis_coach_logo.png', accent:'#3A8EE0',
+  {name:'Tennis Coach', href:'/tennis-coach', logo:'/opt/tennis_coach_logo.webp', accent:'#3A8EE0',
    // The hook has to fit a coach with four adults on a Tuesday as well as a head
    // coach with sixty juniors and eight staff — the first version spoke only to
    // the academy and read as "not for you" to everybody else, which is most of
@@ -50,7 +50,7 @@ const LIVE_PRODUCTS: Array<{name:string;href:string;logo:string;accent:string;ho
    line:'Plan the hour on the way to court. Talk the review through as you pack the balls away and it is written up, sent and logged before you are off the car park — with what they are working on next. Then the parts nobody trains you for: what is booked, who has paid, and where the next block of income comes from.',
    tags:['Session planner','AI lesson reviews','Player & parent app','Bookings & payments','Camps & retention'],
    cta:'See it running'},
-  {name:'Impact', href:'/impact', logo:'/impact_logo.png', accent:'#a855f7',
+  {name:'Impact', href:'/impact', logo:'/opt/impact_logo.webp', accent:'#a855f7',
    hook:'The funding is only safe if you can prove what it did.',
    line:'Take the register on your phone at the side of the pitch. Attendance, postcodes and outcomes count themselves, so the report that used to eat a fortnight of somebody’s evenings is an afternoon — and the next bid opens with real numbers.',
    tags:['Digital registers','Funder-ready reporting','Fundraising','Parent app'],
@@ -116,9 +116,11 @@ export default function SportsLandingPage() {
       `}</style>
 
       {/* ═══ SECTION 1: HERO ═══ */}
+      {/* The glow orbs are still, un-blurred gradients on purpose: a 120px blur on an
+          animated 600px layer made the page slow to appear on phones. */}
       <section className="relative overflow-hidden pt-32 pb-20 px-6">
-        <div className="absolute top-[-100px] left-[-100px] w-[600px] h-[600px] rounded-full" style={{background:'radial-gradient(circle, #8B5CF6, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite'}}/>
-        <div className="absolute bottom-[-80px] right-[-80px] w-[500px] h-[500px] rounded-full" style={{background:'radial-gradient(circle, #06B6D4, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite 4s'}}/>
+        <div className="absolute top-[-100px] left-[-100px] w-[600px] h-[600px] rounded-full" style={{background:'radial-gradient(circle, #8B5CF6 0%, transparent 65%)',opacity:.2,pointerEvents:'none'}}/>
+        <div className="absolute bottom-[-80px] right-[-80px] w-[500px] h-[500px] rounded-full" style={{background:'radial-gradient(circle, #06B6D4 0%, transparent 65%)',opacity:.2,pointerEvents:'none'}}/>
 
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           {/* Eyebrow */}
@@ -190,7 +192,7 @@ export default function SportsLandingPage() {
               <Link key={i} href={pr.href} className="rounded-2xl p-8 flex flex-col items-start transition-all hover:opacity-90"
                 style={{background:'#0D1117',border:'1px solid #1E293B',borderTop:`4px solid ${pr.accent}`,textDecoration:'none'}}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={pr.logo} alt={pr.name} style={{width:64,height:64,objectFit:'contain',marginBottom:18}}/>
+                <img src={pr.logo} alt={pr.name} width={64} height={64} loading="lazy" decoding="async" style={{width:64,height:64,objectFit:'contain',marginBottom:18}}/>
                 <div className="text-2xl font-bold text-white mb-2">{pr.name}</div>
                 <div className="text-base font-bold leading-snug mb-2" style={{color:pr.accent}}>{pr.hook}</div>
                 <div className="text-sm leading-relaxed mb-5" style={{color:'#94A3B8'}}>{pr.line}</div>
@@ -297,8 +299,8 @@ export default function SportsLandingPage() {
 
       {/* ═══ SECTION 7: FINAL CTA ═══ */}
       <section className="relative overflow-hidden px-6 py-32" style={{borderTop:'1px solid #1E293B'}}>
-        <div className="absolute top-[-80px] left-[-60px] w-[500px] h-[500px] rounded-full" style={{background:'radial-gradient(circle, #8B5CF6, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite'}}/>
-        <div className="absolute bottom-[-60px] right-[-60px] w-[400px] h-[400px] rounded-full" style={{background:'radial-gradient(circle, #06B6D4, transparent 70%)',filter:'blur(120px)',animation:'pulse-orb 8s ease-in-out infinite 4s'}}/>
+        <div className="absolute top-[-80px] left-[-60px] w-[500px] h-[500px] rounded-full" style={{background:'radial-gradient(circle, #8B5CF6 0%, transparent 65%)',opacity:.2,pointerEvents:'none'}}/>
+        <div className="absolute bottom-[-60px] right-[-60px] w-[400px] h-[400px] rounded-full" style={{background:'radial-gradient(circle, #06B6D4 0%, transparent 65%)',opacity:.2,pointerEvents:'none'}}/>
         <div className="relative z-10 max-w-3xl mx-auto text-center">
           <h2 className="font-black leading-tight mb-4" style={{fontSize:'clamp(2.5rem, 6vw, 5rem)'}}>
             Thirteen portals.<br/>One platform.
