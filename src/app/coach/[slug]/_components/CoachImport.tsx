@@ -200,7 +200,7 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
           if (rec) { out.push(newGroup({ file: f.name, tab: sh.name, category, records: [rec], confidence: conf, reason: p.reason })); n++ }
         }
         if (p.category === 'skip') continue
-        const recs = applyPlan(p, sh.rows)
+        const recs = applyPlan(p, sh.rows, sh.banners)
         if (recs.length) { out.push(newGroup({ file: f.name, tab: sh.name, category: p.category, records: recs, confidence: conf, reason: p.reason })); n += recs.length }
       }
       // Mapped but nothing came out — read it properly rather than lose it.

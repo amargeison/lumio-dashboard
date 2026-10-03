@@ -30,7 +30,7 @@ const MEANINGS = `What each category means:
 - equipment: kit the academy owns, stocks or sells (balls, rackets, shirts, prizes).
 - payments: money a PLAYER or family owes or has paid — player_name is that person. Costs the academy pays out (court hire, hotels, flights, coach wages, suppliers) are NOT payments.
 - resources: coaching material — drills, videos, documents, web links, books. NEVER places, clubs, venues or people.
-- skip: anything else — expense and cost sheets, budgets, supplier or hotel contact lists, summaries, dropdown lists, instructions.`
+- skip: anything else — expense and cost sheets, budgets, supplier or hotel contact lists, summaries and dashboards, dropdown lists, instructions, and TIMETABLES (a grid of times down the side and days across the top, with a group or coach in each box — those boxes are sessions, not players, staff or courts).`
 
 const PROMPT = `You are setting up a tennis coach's academy software from their own spreadsheet. Below is a sample of each tab: the first rows (row index: cells separated by " | ") and, per column, some of the different values found in that column.
 
@@ -51,7 +51,10 @@ Rules:
 - One plan per tab, in the order given. A tab holding two kinds of record side by side may have two plans with the same sheet name.
 - confidence: "high" only when it is obvious. "medium" when it is a reasonable guess, "low" when unsure. The coach is asked to confirm anything that is not high, so do not overclaim.
 - Map every tab you can. A title row, blank rows or notes ABOVE the headings do not make a tab irregular — just set header_row to the headings' row. Nor do merged cells, colour-coding or a totals row at the bottom.
-- "irregular": true ONLY when there is no heading row with one record per row below it (a timetable grid, a form laid out down the page, free text). Those tabs are read row by row, which is very slow, so use it sparingly and leave columns empty.
+- "irregular": true ONLY when there is no heading row with one record per row below it AND the tab still holds records worth importing (a form laid out down the page, a list typed as free text). Those tabs are read row by row, which is very slow, so use it sparingly and leave columns empty. A weekly timetable or rota is NOT irregular — it is "skip".
+- Rows marked "merged title/section row" are headings, never records. A tab laid out in BLOCKS (a merged banner naming a venue or group, then that block's own heading row and rows) is still a normal tab: map the columns from the first block's heading row and set header_row to it — the banners and repeated headings are handled for you, and for courts the banner becomes the court's location.
+- A camp's own tab (attendee list): its rows are players who are almost always already on the main register; still map them as players (they are matched up by name), and give the camp in tab_record with the SAME name as it has on the camps list if you can see one.
+- A totals or "average" line at the bottom is not a record; set nothing for it (it is filtered out).
 - Map by meaning, not exact heading ("Surname" + "First name" → name as [first, surname]; "Mum/Dad" → parent_name; "Balance" → amount).
 - Use notes_columns for columns worth keeping that have no field (DOB, medical, club, school, availability…). Never put a column in both.
 - For enumerated fields (category, racket_stage, status) add a "values" entry for every sample value that is not already an allowed value, e.g. {"status":{"Owes":"due","✓":"paid"}}.

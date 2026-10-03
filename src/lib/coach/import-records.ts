@@ -124,6 +124,37 @@ function toEnum(key: string, v: unknown): string | null {
   return null
 }
 
+/**
+ * "SMITH, Sarah" → "Sarah Smith"; "Matilda CAMPBELL" → "Matilda Campbell".
+ * Registers are typed by many hands; the roster should not show three styles,
+ * and the same child written two ways must still be recognised as one child.
+ */
+export function tidyPersonName(raw: string): string {
+  let s = raw.replace(/\s+/g, ' ').trim()
+  const m = s.match(/^([^,]{1,40}),\s*([^,]{1,40})$/)
+  if (m && m[1].split(' ').length <= 3 && m[2].split(' ').length <= 3) s = `${m[2].trim()} ${m[1].trim()}`
+  return s.split(' ').map(w => (w.length > 2 && /^[A-Z][A-Z'’-]+$/.test(w)
+    ? w.toLowerCase().replace(/(^|[-'’])([a-z])/g, (_, p: string, c: string) => p + c.toUpperCase())
+    : w)).join(' ')
+}
+
+/**
+ * Is this plausibly a person? A totals line ("TOTAL BOOKED: 37 / 48"), a group
+ * on a timetable ("Orange Squad – Priya (Ct 3)", "COURTS CLOSED") and a section
+ * heading ("▼ RED STAGE") all land in a name column sooner or later. None of
+ * them is a player, and a roster with "Average age" on it is worse than one
+ * that is a row short.
+ */
+export function isPersonName(name: string): boolean {
+  const s = name.trim()
+  if (s.length < 2 || s.length > 60 || s.split(' ').length > 5) return false
+  // A bracketed aside is fine on a real name — "Sam Lee (U12)", "Alison Hannah (Taylor)".
+  const bare = s.replace(/\([^)]*\)/g, ' ')
+  if (/\d|[:/@▼►■•]| [–—-] /.test(bare)) return false
+  if (/\b(total|totals|average|avg|booked|squad|group|sessions?|tennis|cardio|closed|maintenance|improvers|beginners|lessons?|timetable|various|tbc|tba|register|n\/a|unknown)\b/i.test(s)) return false
+  return /\p{L}{2}/u.test(s)
+}
+
 const LABELS: Record<string, string> = {
   age: 'Age', category: 'Category', racket_stage: 'Racket stage', status: 'Status', capacity: 'Capacity', price: 'Price',
   amount: 'Amount', quantity: 'Quantity', start_date: 'Start', end_date: 'End', due_date: 'Due',
@@ -158,10 +189,15 @@ export function cleanRecord(category: ImportCategory, raw: Record<string, unknow
       out[f] = String(v).trim().slice(0, 4000)
     }
   }
+  if (category === 'players' || category === 'staff') {
+    if (typeof out.name === 'string') out.name = tidyPersonName(out.name)
+    if (typeof out.name !== 'string' || !isPersonName(out.name)) return null
+  }
   const label = out[LABEL_FIELD[category]]
   if (!label || typeof label !== 'string' || !label.trim()) return null
   // A repeated heading row or a totals line is not a record.
-  if (/^(total|totals|sub-?total|grand total|name|player|player name|item|title)$/i.test(label.trim())) return null
+  if (/^(total|totals|sub-?total|grand total|name|player|player name|item|title|court|camp|traveller|child)$/i.test(label.trim())) return null
+  if (/^(total|totals|sub-?total|grand total|average|avg)\b/i.test(label.trim())) return null
   if (category === 'players' && !out.category && typeof out.age === 'number') out.category = out.age < 18 ? 'Junior' : 'Adult'
   if (spill.length) out.notes = [out.notes, spill.join(' · ')].filter(Boolean).join(' · ').slice(0, 4000)
   return out
@@ -190,7 +226,7 @@ export type SheetPlan = {
 }
 
 /** Every row of a mapped tab as records. Pure, so a 20,000-row tab costs nothing but a loop. */
-export function applyPlan(plan: SheetPlan, rows: string[][]): Record<string, unknown>[] {
+export function applyPlan(plan: SheetPlan, rows: string[][], banners: number[] = []): Record<string, unknown>[] {
   if (plan.category === 'skip' || plan.irregular) return []
   const cat = plan.category
   const allowed = new Set(IMPORT_FIELDS[cat])
@@ -200,10 +236,38 @@ export function applyPlan(plan: SheetPlan, rows: string[][]): Record<string, unk
   const lower = (m?: Record<string, string>) => m ? Object.fromEntries(Object.entries(m).map(([k, v]) => [k.trim().toLowerCase(), v])) : undefined
   const maps: Record<string, Record<string, string> | undefined> = {}
   for (const [f, m] of Object.entries(plan.values || {})) maps[f] = lower(m)
+  // Section rows. A sheet laid out in blocks — a banner per venue with its
+  // courts underneath, a "▼ RED STAGE" divider between groups — has rows that
+  // are headings, not records. A banner is a merged row (the reader marks
+  // those) or a row whose only cell is not in the column the name comes from.
+  // Each one is skipped, and remembered as the block the rows below belong to.
+  const labelCol = plan.columns?.[LABEL_FIELD[cat]]
+  const labelCols = new Set((Array.isArray(labelCol) ? labelCol : [labelCol]).filter((c): c is number => typeof c === 'number'))
+  const merged = new Set(banners)
+  const mappedCols = Object.keys(plan.columns || {}).length
+  const sectionOf = (r: number): string | null => {
+    const row = rows[r]; if (!row) return null
+    const filled = row.map((c, i) => (c && String(c).trim() ? i : -1)).filter(i => i !== -1)
+    if (filled.length !== 1) return null
+    if (!merged.has(r) && (labelCols.has(filled[0]) || mappedCols < 2)) return null
+    return String(row[filled[0]]).split('|')[0].replace(/^[\s▼►■•–—-]+/, '').trim().slice(0, 120) || null
+  }
+  let section: string | null = null
+  let blocks = 0
+  for (let r = Math.max(0, start); r <= end; r++) if (sectionOf(r)) blocks++
+  // The banner for the FIRST block sits above the headings, so it is only a
+  // section (and not the sheet's title) when there are more blocks below.
+  if (blocks && plan.header_row > 0) section = sectionOf(plan.header_row - 1)
+  const headLabel = [...labelCols].map(c => String(header[c] ?? '').trim().toLowerCase()).filter(Boolean)
+
   const out: Record<string, unknown>[] = []
   for (let r = Math.max(0, start); r <= end; r++) {
     const row = rows[r]
     if (!row || !row.some(c => c && String(c).trim())) continue
+    const sec = sectionOf(r)
+    if (sec) { section = sec; continue }
+    // The headings again, repeated at the top of each block.
+    if (headLabel.length && [...labelCols].every(c => String(row[c] ?? '').trim().toLowerCase() === String(header[c] ?? '').trim().toLowerCase())) continue
     const rec: Record<string, unknown> = {}
     for (const [field, col] of Object.entries(plan.columns || {})) {
       if (!allowed.has(field)) continue
@@ -220,6 +284,8 @@ export function applyPlan(plan: SheetPlan, rows: string[][]): Record<string, unk
       .filter(c => typeof c === 'number' && row[c] && String(row[c]).trim())
       .map(c => `${header[c] ? String(header[c]).trim() + ': ' : ''}${String(row[c]).trim()}`)
     if (extra.length) rec.notes = [rec.notes, ...extra].filter(Boolean).join(' · ')
+    // Which venue a court is at is, in a block layout, only ever said by the banner.
+    if (cat === 'courts' && section && !rec.location) rec.location = section
     const clean = cleanRecord(cat, rec)
     if (clean) out.push(clean)
   }
@@ -237,14 +303,17 @@ export function applyPlan(plan: SheetPlan, rows: string[][]): Record<string, unk
  */
 export function dedupeRecords(category: ImportCategory, recs: Record<string, unknown>[]): Record<string, unknown>[] {
   const label = LABEL_FIELD[category]
-  const byKey = new Map<string, Record<string, unknown>>()
-  for (const r of recs) {
-    const key = category === 'payments'
-      ? JSON.stringify(IMPORT_FIELDS.payments.map(f => String(r[f] ?? '').trim().toLowerCase()))
-      : String(r[label] ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
-    if (!key) continue
-    const have = byKey.get(key)
-    if (!have) { byKey.set(key, { ...r }); continue }
+  const norm = (v: unknown) => String(v ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
+  const keyOf = (r: Record<string, unknown>): string => {
+    // Payments and kit: only an identical line is a duplicate. Two £30 lessons
+    // for one child are two payments; "Junior rackets" in 23", 25" and 26" are
+    // three lines of stock.
+    if (category === 'payments' || category === 'equipment') return JSON.stringify(IMPORT_FIELDS[category].map(f => norm(r[f])))
+    // "Court 1" exists at every venue.
+    if (category === 'courts') return `${norm(r[label])}|${norm(r.location)}`
+    return norm(r[label])
+  }
+  const merge = (have: Record<string, unknown>, r: Record<string, unknown>) => {
     for (const [k, v] of Object.entries(r)) {
       if (v === undefined || v === null || v === '') continue
       if (k === 'notes' && have.notes && have.notes !== v) {
@@ -252,6 +321,58 @@ export function dedupeRecords(category: ImportCategory, recs: Record<string, unk
         have.notes = [...parts].join(' · ').slice(0, 4000)
       } else if (have[k] === undefined || have[k] === null || have[k] === '') {
         have[k] = v
+      }
+    }
+  }
+  const byKey = new Map<string, Record<string, unknown>>()
+  for (const r0 of recs) {
+    let r = r0
+    if (category === 'players' || category === 'staff') {
+      // Applied here as well as when a row is first read, so records the AI
+      // read for itself (a PDF, a photo, an untidy tab) get the same checks.
+      const name = typeof r.name === 'string' ? tidyPersonName(r.name) : ''
+      if (!isPersonName(name)) continue
+      r = { ...r, name }
+    }
+    const key = keyOf(r)
+    if (!key || key === '|') continue
+    const have = byKey.get(key)
+    if (!have) { byKey.set(key, { ...r }); continue }
+    merge(have, r)
+  }
+
+  // Staff written by first name only on another tab ("Jess" on the timetable)
+  // are the same person as the one full name that starts with it.
+  if (category === 'staff') {
+    for (const [key, rec] of [...byKey]) {
+      if (key.includes(' ')) continue
+      const full = [...byKey.keys()].filter(k => k.startsWith(key + ' '))
+      if (full.length === 1) { merge(byKey.get(full[0])!, { ...rec, name: undefined }); byKey.delete(key) }
+    }
+  }
+
+  // A camp named slightly differently on its own tab ("OCTOBER HALF-TERM CAMP —
+  // Mon 26 to Fri 30 October 2026") is the camp on the planner. Same start
+  // date and overlapping names, or — when one has no date — one name wholly
+  // inside the other. Two weeks of the same summer camp have different dates
+  // and different week numbers, so they stay two camps.
+  if (category === 'camps') {
+    const MONTH: Record<string, string> = { jan: 'january', feb: 'february', mar: 'march', apr: 'april', jun: 'june', jul: 'july', aug: 'august', sep: 'september', sept: 'september', oct: 'october', nov: 'november', dec: 'december', xmas: 'christmas' }
+    const words = (r: Record<string, unknown>) => new Set(norm(r.name).replace(/[^a-z0-9 ]+/g, ' ').split(' ')
+      .filter(w => w && !/^(the|a|of|and|camp|camps|tennis|to|mon|tue|wed|thu|fri|sat|sun|\d{4})$/.test(w)).map(w => MONTH[w] || w))
+    const entries = [...byKey]
+    for (let i = 0; i < entries.length; i++) {
+      const [ka, a] = entries[i]
+      if (!byKey.has(ka)) continue
+      for (let j = i + 1; j < entries.length; j++) {
+        const [kb, b] = entries[j]
+        if (!byKey.has(kb)) continue
+        const wa = words(a), wb = words(b)
+        const shared = [...wa].filter(w => wb.has(w)).length
+        const inside = shared >= 2 && (shared === wa.size || shared === wb.size)
+        const sameStart = !!a.start_date && a.start_date === b.start_date
+        const oneUndated = !a.start_date || !b.start_date
+        if ((sameStart && shared >= 2) || (oneUndated && inside)) { merge(a, { ...b, name: undefined }); byKey.delete(kb) }
       }
     }
   }
