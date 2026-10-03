@@ -12,7 +12,15 @@
 // turned into records here, in a loop, however many there are.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type SheetData = { name: string; rows: string[][] }
+export type SheetData = {
+  name: string
+  rows: string[][]
+  /** Indexes into `rows` of merged banner rows — a title or a section heading
+   *  ("▼ RED STAGE", "Riverside Tennis Centre — 6 courts") stretched across the
+   *  sheet. They are never records, and inside the data they say which block
+   *  the rows beneath belong to. */
+  banners?: number[]
+}
 
 export const SPREADSHEET_RE = /\.(xlsx|xlsm|xlsb|xls|ods|csv|tsv)$/i
 
@@ -47,14 +55,24 @@ export async function readWorkbook(file: File): Promise<SheetData[]> {
         }
       }
     }
-    const aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: false, defval: '', blankrows: false })
+    // Blank rows are kept while reading so merged ranges (which are given by
+    // sheet row number) can be matched to rows, then dropped as before.
+    const aoa = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, raw: false, defval: '', blankrows: true })
+    const first = XLSX.utils.decode_range(ws['!ref']).s.r
+    const merged = new Set<number>()
+    for (const m of (ws['!merges'] || []) as { s: { r: number; c: number }; e: { r: number; c: number } }[]) {
+      if (m.e.c - m.s.c >= 2 && m.e.r === m.s.r) merged.add(m.s.r - first)
+    }
     const rows: string[][] = []
-    for (const r of aoa) {
+    const banners: number[] = []
+    aoa.forEach((r, i) => {
       const cells = (r as unknown[]).map(c => (c === null || c === undefined ? '' : String(c).replace(/\s+/g, ' ').trim()))
       while (cells.length && !cells[cells.length - 1]) cells.pop()
-      if (cells.length) rows.push(cells)
-    }
-    if (rows.length) out.push({ name: sn, rows })
+      if (!cells.length) return
+      if (merged.has(i) && cells.filter(Boolean).length === 1) banners.push(rows.length)
+      rows.push(cells)
+    })
+    if (rows.length) out.push({ name: sn, rows, banners })
   }
   return out
 }
@@ -66,7 +84,8 @@ export async function readWorkbook(file: File): Promise<SheetData[]> {
  */
 export function sheetSample(s: SheetData, maxRows = 15, maxCols = 40) {
   const clip = (v: string, n: number) => (v.length > n ? v.slice(0, n) + '…' : v)
-  const head = s.rows.slice(0, maxRows).map((r, i) => `${i}: ${r.slice(0, maxCols).map(c => clip(c, 50)).join(' | ')}`)
+  const banner = new Set(s.banners || [])
+  const head = s.rows.slice(0, maxRows).map((r, i) => `${i}: ${r.slice(0, maxCols).map(c => clip(c, 50)).join(' | ')}${banner.has(i) ? '   ⟵ merged title/section row, not a record' : ''}`)
   const width = Math.min(maxCols, Math.max(0, ...s.rows.slice(0, 200).map(r => r.length)))
   const columns: string[] = []
   for (let c = 0; c < width; c++) {
@@ -78,7 +97,9 @@ export function sheetSample(s: SheetData, maxRows = 15, maxCols = 40) {
     }
     if (seen.size) columns.push(`col ${c}: ${[...seen].join(' ; ')}`)
   }
-  return `### Tab "${s.name}" — ${s.rows.length} rows\n${head.join('\n')}\n-- sample values per column --\n${columns.join('\n')}`
+  const inData = (s.banners || []).filter(i => i >= 3).length
+  const blocks = inData ? `\n-- ${inData} more merged section rows further down split the rows into blocks (e.g. one block per venue or group) --` : ''
+  return `### Tab "${s.name}" — ${s.rows.length} rows\n${head.join('\n')}${blocks}\n-- sample values per column --\n${columns.join('\n')}`
 }
 
 /** A tab as plain text in pieces small enough for one quick AI read each. */
