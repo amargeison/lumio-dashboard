@@ -243,26 +243,34 @@ export async function publicUrl(raw: string): Promise<URL | null> {
 
 // Says plainly who is asking, in the form websites expect from an honest robot.
 const UA = 'Mozilla/5.0 (compatible; LumioOutreach/1.0; +https://lumiosports.com)'
-/** Fetch one public web page as text. Follows a few redirects, checking each hop; gives up quietly. */
-export async function getPage(raw: string): Promise<{ url: string; html: string } | null> {
+/**
+ * Fetch one public web page as text, saying why when it cannot. Follows a few
+ * redirects, checking each hop.
+ */
+export async function getPageWhy(raw: string): Promise<{ url: string; html: string } | { fail: string }> {
   let target = raw
   for (let hop = 0; hop < 4; hop++) {
     const u = await publicUrl(target)
-    if (!u) return null
+    if (!u) return { fail: 'no such address' }
     let res: Response
     try {
-      res = await fetch(u, { redirect: 'manual', signal: AbortSignal.timeout(9000), headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' } })
-    } catch { return null }
+      res = await fetch(u, { redirect: 'manual', signal: AbortSignal.timeout(9000), headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'en-GB,en;q=0.8' } })
+    } catch (e) {
+      const cause = (e as { cause?: { code?: string } })?.cause?.code
+      return { fail: (e as Error)?.name === 'TimeoutError' ? 'timed out' : cause || 'could not connect' }
+    }
     if (res.status >= 300 && res.status < 400) {
       const loc = res.headers.get('location')
-      if (!loc) return null
-      try { target = new URL(loc, u).toString() } catch { return null }
+      if (!loc) return { fail: `redirect with nowhere to go (${res.status})` }
+      try { target = new URL(loc, u).toString() } catch { return { fail: 'bad redirect' } }
       continue
     }
-    if (!res.ok || !/html|text\/plain/i.test(res.headers.get('content-type') || 'text/html')) return null
-    // Read at most ~500KB: a contact page is small, and nothing here needs a video.
+    if (!res.ok) return { fail: res.status === 403 || res.status === 429 ? `refused us (${res.status})` : `error ${res.status}` }
+    if (!/html|text\/plain/i.test(res.headers.get('content-type') || 'text/html')) return { fail: 'not a web page' }
+    // Read at most ~1.5MB. Site-builder pages (Wix, Squarespace) are routinely
+    // 800KB of scripts with the contact email somewhere in the middle.
     const reader = res.body?.getReader()
-    if (!reader) return null
+    if (!reader) return { fail: 'empty response' }
     const chunks: Uint8Array[] = []
     let size = 0
     try {
@@ -270,12 +278,16 @@ export async function getPage(raw: string): Promise<{ url: string; html: string 
         const { done, value } = await reader.read()
         if (done) break
         chunks.push(value); size += value.length
-        if (size > 500_000) { await reader.cancel().catch(() => { /* ignore */ }); break }
+        if (size > 1_500_000) { await reader.cancel().catch(() => { /* ignore */ }); break }
       }
-    } catch { if (!chunks.length) return null }
+    } catch { if (!chunks.length) return { fail: 'connection dropped' } }
     return { url: u.toString(), html: Buffer.concat(chunks).toString('utf8') }
   }
-  return null
+  return { fail: 'too many redirects' }
+}
+export async function getPage(raw: string): Promise<{ url: string; html: string } | null> {
+  const r = await getPageWhy(raw)
+  return 'fail' in r ? null : r
 }
 
 const textOf = (html: string) => html.replace(/<(script|style|noscript|svg)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')
@@ -283,27 +295,62 @@ const textOf = (html: string) => html.replace(/<(script|style|noscript|svg)[\s\S
 
 const PARKED = /domain (is|may be) for sale|buy this domain|this domain (name )?(is|has been) (parked|registered)|domain parking|hugedomains|sedo\.com|dan\.com|afternic|parkingcrew|website coming soon|site is under construction|account (has been )?suspended|index of \//i
 
-/** Does this page belong to the organisation with this name? */
-export function pageIsTheirs(html: string, url: string, p: { org_name: string; town?: string | null; district?: string | null; company_number?: string | null }): boolean {
+// Words that describe what an organisation does rather than which one it is.
+const TOPIC_WORDS = /^(tennis|lawn|club|clubs|ltc|tc|coaching|coach|academy|school|centre|center|sports?|squash|racquets?|rackets|padel|pickleball|services|community|association|performance|training|fitness|leisure|foundation)$/
+
+/** The page's words: visible text plus its title and description (site builders put little else in the HTML). */
+function pageWords(html: string): string {
+  const meta = [...html.matchAll(/<meta[^>]+(?:name|property)="(?:description|og:title|og:description|og:site_name)"[^>]*content="([^"]*)"/gi)].map(m => m[1]).join(' ')
+  return `${textOf(html)} ${meta.toLowerCase()}`
+}
+
+/**
+ * Does this page belong to the organisation with this name?
+ *
+ * `guess` is the address we tried, when we made it up from the name. That
+ * matters, because the address is itself evidence: mptennis.co.uk IS "MP Tennis"
+ * run together, even though the page calls itself "Matthew Perry Tennis" and
+ * never prints the letters "MP". Demanding the registered name in the page's
+ * text — the first version of this — threw away nearly every real match.
+ *
+ *   exact address   the whole name run together is the address → the page only
+ *                   has to be a real site about the same thing (one of the
+ *                   name's own words on it, e.g. "tennis")
+ *   shortened one   bracknelltennis.co.uk for "Bracknell Lawn Tennis Club" →
+ *                   the words that make the name theirs ("bracknell") must be
+ *                   on the page too
+ *
+ * A parked or for-sale domain is never theirs, and a .com must also look British.
+ */
+export function pageIsTheirs(html: string, url: string, p: { org_name: string; town?: string | null; district?: string | null; company_number?: string | null }, guess?: string): boolean {
   if (PARKED.test(html.slice(0, 60_000))) return false
-  const text = textOf(html)
-  if (text.length < 200) return false                                  // an empty shell or a redirect stub
+  if (html.length < 1500) return false                                 // an empty shell or a redirect stub
+  const text = pageWords(html)
   const words = nameWords(p.org_name)
   if (!words.length) return false
-  const squashed = text.replace(/[^a-z0-9]+/g, '')
   const has = (ws: string[]) => ws.length > 0 && ws.every(w => new RegExp(`\\b${w}\\b`).test(text))
+  const squashed = text.replace(/[^a-z0-9]+/g, '')
+
   // Clubs shorten themselves: "Bracknell Lawn Tennis Club" is "Bracknell LTC" on its own site.
   const short = words.join(' ').replace(/\blawn tennis club\b/, 'ltc').replace(/\btennis club\b/, 'tc').split(' ')
   const nolawn = words.filter(w => w !== 'lawn')
-  const named = has(words) || squashed.includes(words.join('')) || (short.length < words.length && short.length >= 2 && has(short)) || (nolawn.length < words.length && nolawn.length >= 3 && has(nolawn))
+  const fullName = has(words) || squashed.includes(words.join('')) || (short.length < words.length && short.length >= 2 && has(short)) || (nolawn.length < words.length && nolawn.length >= 3 && has(nolawn))
+
+  const stem = (guess || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '').replace(/\.(co\.uk|org\.uk|com|uk|org)$/, '')
+  const exactAddress = !!stem && (stem === words.join('') || stem === words.join('-'))
+  const own = words.filter(w => !TOPIC_WORDS.test(w))                   // "bracknell", "hotshots"
+  const topical = words.some(w => w.length >= 4 && new RegExp(`\\b${w}`).test(text))
+
+  const named = fullName
+    || (exactAddress && topical)
+    || (!!stem && own.length > 0 && has(own) && topical)
   if (!named) return false
   if (p.company_number && text.includes(p.company_number.toLowerCase())) return true
-  // A .uk address with their name on it is theirs. A .com could be a company
-  // of the same name in another country, so it must also look British.
+  // A .uk address is British. A .com could be a company of the same name in
+  // another country, so it must also look British.
   if (/\.uk$/i.test(new URL(url).hostname)) return true
-  const british = /\b[a-z]{1,2}\d[a-z\d]? ?\d[a-z]{2}\b/.test(text) || /\+44|united kingdom|\bengland\b|\bscotland\b|\bwales\b|\blta\b|£\s?\d/.test(text)
+  return /\b[a-z]{1,2}\d[a-z\d]? ?\d[a-z]{2}\b/.test(text) || /\+44|united kingdom|\bengland\b|\bscotland\b|\bwales\b|\blta\b|\buk\b|£\s?\d/.test(text)
     || (!!p.town && text.includes(p.town.toLowerCase())) || (!!p.district && text.includes(p.district.toLowerCase() + ' '))
-  return british
 }
 
 const JUNK_DOMAIN = /(^|\.)(example\.(com|org|co\.uk)|domain\.com|email\.com|yourdomain\.[a-z.]+|sentry\.io|sentry-next\.wixpress\.com|wixpress\.com|wix\.com|squarespace\.com|godaddy\.com|schema\.org|w3\.org|google\.com|gstatic\.com|cloudflare\.com|jquery\.com|wordpress\.(com|org)|gravatar\.com|facebook\.com|instagram\.com|sentry\.wixpress\.com|clubspark\.(uk|net|com)|lta\.org\.uk)$/i
@@ -372,9 +419,10 @@ export async function emailFromSite(home: { url: string; html: string }): Promis
  *   no_email    their website, with no email address published on it
  *   found       their website and an email
  */
-export type FreeLook = { website: string | null; email: string | null; segment: Segment | null; why: 'found' | 'no_email' | 'not_theirs' | 'no_site' }
+export type FreeLook = { website: string | null; email: string | null; segment: Segment | null; why: 'found' | 'no_email' | 'not_theirs' | 'no_site'; detail?: string }
 export async function lookUpFree(p: Pick<Prospect, 'org_name' | 'town' | 'district' | 'company_number' | 'website'>): Promise<FreeLook> {
   let tries = p.website ? [p.website] : guessDomains(p.org_name)
+  const guessed = tries.length
   if (!p.website) {
     // Ask the name service about every guess at once (quick, and most do not
     // exist), then only fetch the few that are real addresses.
@@ -382,25 +430,46 @@ export async function lookUpFree(p: Pick<Prospect, 'org_name' | 'town' | 'distri
     tries = live.filter((t): t is string => !!t).slice(0, 6)
   }
   let sawSomething = false
+  const seen: string[] = []                 // what happened at each address, for the list
   for (const t of tries) {
     // Small clubs' sites are sometimes http-only, or have a broken certificate.
-    const page = await getPage(t) || (/^https?:/i.test(t) ? null : await getPage(`http://${t}`))
-    if (!page) continue
+    let page = await getPageWhy(t)
+    if ('fail' in page && !/^https?:/i.test(t)) { const plain = await getPageWhy(`http://${t}`); if (!('fail' in plain)) page = plain }
+    if ('fail' in page) { seen.push(`${t}: ${page.fail}`); continue }
     sawSomething = true
     // A website someone gave us is taken as theirs unless it is plainly a
     // parked page; a guessed one has to prove it.
-    if (p.website ? PARKED.test(page.html.slice(0, 60_000)) : !pageIsTheirs(page.html, page.url, p)) continue
+    if (p.website ? PARKED.test(page.html.slice(0, 60_000)) : !pageIsTheirs(page.html, page.url, p, t)) { seen.push(`${t}: ${PARKED.test(page.html.slice(0, 60_000)) ? 'parked or for sale' : 'a different organisation'}`); continue }
     const site = new URL(page.url).origin
     const email = await emailFromSite(page)
     return { website: site, email, segment: segmentFromPage(page.html), why: email ? 'found' : 'no_email' }
   }
-  return { website: p.website || null, email: null, segment: null, why: sawSomething ? 'not_theirs' : 'no_site' }
+  return {
+    website: p.website || null, email: null, segment: null, why: sawSomething ? 'not_theirs' : 'no_site',
+    detail: p.website ? seen.join('; ') : seen.length ? seen.slice(0, 4).join('; ') : `none of ${guessed} likely addresses exists`,
+  }
 }
 
 const WHY_NOTE: Record<FreeLook['why'], string> = {
   found: '', no_email: 'Their website has no email address on it.',
-  not_theirs: 'A website exists at the likely address but does not look like theirs.',
-  no_site: 'No website at the likely addresses.',
+  not_theirs: 'Found a website, but not theirs',
+  no_site: 'No website found',
+}
+
+/**
+ * Can this server load a web page at all? Checked before each batch, because
+ * the alternative is what happened the first time: six hundred prospects
+ * quietly marked "nothing found" when the looking itself was what had failed.
+ */
+async function canBrowse(): Promise<string | null> {
+  let last = 'unknown'
+  // Two well-known sites, so one of them being down is not mistaken for us being offline.
+  for (const probe of ['https://example.com/', 'https://www.gov.uk/']) {
+    const r = await getPageWhy(probe)
+    if (!('fail' in r)) return null
+    last = r.fail
+  }
+  return last
 }
 
 /** Run the free look over the next few prospects that have not had one. */
@@ -408,6 +477,10 @@ export async function freeLookBatch(size = 6) {
   const sb = db()
   const { data } = await sb.from('outreach_prospects').select('*').eq('state', 'new').order('created_at').order('id').limit(Math.max(1, Math.min(10, size)))
   const batch = (data || []) as Prospect[]
+  if (batch.length) {
+    const blocked = await canBrowse()
+    if (blocked) throw new Error(`The server could not load a test web page (${blocked}), so nothing was looked up and nothing has been marked. This is a server network problem, not a problem with the list.`)
+  }
   const tally = { found: 0, no_email: 0, not_theirs: 0, no_site: 0 }
   await Promise.all(batch.map(async p => {
     const r = await lookUpFree(p).catch((): FreeLook => ({ website: p.website, email: null, segment: null, why: 'no_site' }))
@@ -417,7 +490,7 @@ export async function freeLookBatch(size = 6) {
       website: r.website, email: r.email, state: r.email ? 'found' : 'no_email', updated_at: new Date().toISOString(),
       // What their own site says they are beats what their name suggests.
       ...(r.segment ? { segment: r.segment } : {}),
-      notes: [sic, WHY_NOTE[r.why]].filter(Boolean).join(' · ') || null,
+      notes: [sic, [WHY_NOTE[r.why], r.detail].filter(Boolean).join(' — ')].filter(Boolean).join(' · ').slice(0, 600) || null,
     }).eq('id', p.id).eq('state', 'new')
   }))
   const { count } = await sb.from('outreach_prospects').select('id', { count: 'exact', head: true }).eq('state', 'new')
