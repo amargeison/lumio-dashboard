@@ -94,7 +94,7 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
       if (!d.checked || !d.left || stop.current) break
     }
     // Says where the rest stopped, so "found nothing" can be told from "is not working".
-    return { note: `Looked up ${checked} for free: ${found} email${found === 1 ? '' : 's'} found · ${t.no_email} have a website with no email on it · ${t.not_theirs} had someone else’s website at that address · ${t.no_site} have no website at the likely addresses.${stop.current ? ' Stopped.' : ''}` }
+    return { note: `Looked up ${checked} for free: ${found} email${found === 1 ? '' : 's'} found · ${t.no_email} have a website with no email on it · ${t.not_theirs} had a website at that address that is not theirs · ${t.no_site} have no website at the likely addresses.${stop.current ? ' Stopped.' : ''}` }
   })
 
   // PAID: only ever called from the "Run paid search" button below.
@@ -294,7 +294,11 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
                     <td style={{ padding: '7px 10px', color: p.corporate_ok ? C.sub : C.warn, whiteSpace: 'nowrap' }}>{p.legal_form || 'Unknown'}{p.corporate_ok ? '' : ' — will be held'}</td>
                     <td style={{ padding: '7px 10px' }}>{p.website ? <a href={p.website} target="_blank" rel="noreferrer" style={{ color: C.sub, textDecoration: 'underline' }}>{p.website.replace(/^https?:\/\/(www\.)?/, '')}</a> : <span style={{ color: C.dim }}>—</span>}</td>
                     <td style={{ padding: '7px 10px', color: p.email ? C.text : C.dim, wordBreak: 'break-all' }}>{p.email || '—'}</td>
-                    <td style={{ padding: '7px 10px', color: STATE[p.state][1], whiteSpace: 'nowrap' }} title={p.notes || ''}>{STATE[p.state][0]}{p.searched_paid && p.state !== 'found' && p.state !== 'unsure' ? ' (searched)' : ''}</td>
+                    <td style={{ padding: '7px 10px', color: STATE[p.state][1], maxWidth: 320 }}>
+                      {STATE[p.state][0]}{p.searched_paid && p.state !== 'found' && p.state !== 'unsure' ? ' (searched)' : ''}
+                      {/* Why it stopped there — so "nothing found" can be checked rather than taken on trust. */}
+                      {!!p.notes && p.state !== 'found' && <div style={{ color: C.dim, fontSize: 11, lineHeight: 1.4, marginTop: 2, wordBreak: 'break-word' }}>{p.notes.replace(/^SIC [\d, ]+( · )?/, '')}</div>}
+                    </td>
                     <td style={{ padding: '7px 10px', whiteSpace: 'nowrap', textAlign: 'right' }}>
                       {p.state === 'unsure' && <button disabled={working} style={{ ...btn('ghost', working), padding: '3px 8px', marginRight: 6 }} onClick={() => { void run('row', () => call('accept', { ids: [p.id] })) }}>Use it</button>}
                       {(p.state === 'no_email' || p.state === 'nothing' || p.state === 'new') && <button disabled={working} style={{ ...btn('ghost', working), padding: '3px 8px', marginRight: 6 }}
