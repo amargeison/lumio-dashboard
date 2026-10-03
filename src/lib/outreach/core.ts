@@ -182,7 +182,7 @@ export function render(c: Contact, camp: EmailContent, settings: Settings, base:
     `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#EEF1F6"><tr><td align="center" style="padding:24px 12px">`,
     `<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:14px;overflow:hidden;font-family:Arial,Helvetica,sans-serif">`,
     `<tr><td align="left" style="background:#0B0F1A;padding:18px 28px">`,
-    `<img src="${base}/opt/email-logo-tennis.png" width="134" height="56" alt="Lumio Tennis Coach" style="display:block;border:0;outline:none;height:56px;width:134px">`,
+    `<img src="${base}/opt/email-logo-tennis-coach.png" width="166" height="72" alt="Lumio Tennis Coach" style="display:block;border:0;outline:none;height:72px;width:166px">`,
     `</td></tr>`,
     image ? `<tr><td style="padding:0"><img src="${esc(image)}" width="600" alt="" style="display:block;border:0;outline:none;width:100%;max-width:600px;height:auto"></td></tr>` : '',
     `<tr><td style="padding:30px 28px 8px">`,
