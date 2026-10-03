@@ -43,7 +43,7 @@ Allowed values for enumerated fields:
 ${ENUM_LIST}
 
 Return ONLY JSON, no commentary:
-{"plans":[{"sheet":"<exact tab name>","category":"players|staff|courts|camps|equipment|payments|resources|skip","confidence":"high|medium|low","reason":"<one short sentence for the coach, e.g. 'Lists children with ages and racket colours'>","header_row":<0-based row index of the column headings, -1 if none>,"first_data_row":<row index of the first record>,"columns":{"<field>":<column index> or [column indexes to join]},"notes_columns":[<other useful column indexes to keep in notes>],"values":{"<field>":{"<value as written>":"<allowed value>"}},"default":{"<field>":"<value for every row>"},"tab_record":null,"irregular":false}]}
+{"plans":[{"sheet":"<exact tab name>","category":"players|staff|courts|camps|equipment|payments|resources|skip","confidence":"high|medium|low","reason":"<one short sentence for the coach, e.g. 'Lists children with ages and racket colours'>","header_row":<0-based row index of the column headings, -1 if none>,"first_data_row":<row index of the first record>,"columns":{"<field>":<column index> or [column indexes to join]},"notes_columns":[<other useful column indexes to keep in notes>],"values":{"<field>":{"<value as written>":"<allowed value>"}},"default":{"<field>":"<value for every row>"},"tab_record":null,"paid_column":null,"irregular":false}]}
 
 Rules:
 - The category is what ONE ROW is. A column that repeats the same few values on every row (the venue, the camp name, the coach) describes the row — map it to a field such as location, or to notes. It never becomes records of its own.
@@ -55,7 +55,10 @@ Rules:
 - Rows marked "merged title/section row" are headings, never records. A tab laid out in BLOCKS (a merged banner naming a venue or group, then that block's own heading row and rows) is still a normal tab: map the columns from the first block's heading row and set header_row to it — the banners and repeated headings are handled for you, and for courts the banner becomes the court's location.
 - A camp's own tab (attendee list): its rows are players who are almost always already on the main register; still map them as players (they are matched up by name), and give the camp in tab_record with the SAME name as it has on the camps list if you can see one.
 - A totals or "average" line at the bottom is not a record; set nothing for it (it is filtered out).
-- Map by meaning, not exact heading ("Surname" + "First name" → name as [first, surname]; "Mum/Dad" → parent_name; "Balance" → amount).
+- payments.amount is what was CHARGED — the invoice total (Net, Amount, Fee, Total, Price). When a tab has a total AND a "Paid"/"Balance"/"Outstanding" column, amount is the total, never the balance: a paid invoice has a balance of 0 and must still show what it was for. Use a balance column only when it is the only money column. status says whether it has been paid.
+- On a camp's attendee tab (one with a tab_record for the camp), if a column says whether each child has paid ("Paid?", "✓", "Owes"), give its index as "paid_column".
+- racket_stage is this product's OWN nine-colour racket pathway (white, yellow, orange, green, blue, purple, brown, red, black — white is the start, black the top). The LTA Youth BALL colours (Blue/tots, Red, Orange, Green, Yellow — "stage", "ball colour") are a different scale: a six-year-old on Red ball is a beginner, not near the top. Never map a ball-colour or LTA-stage column to racket_stage; put it in notes_columns instead. Only map racket_stage when the heading says racket, belt or pathway colour.
+- Map by meaning, not exact heading ("Surname" + "First name" → name as [first, surname]; "Mum/Dad" → parent_name).
 - Use notes_columns for columns worth keeping that have no field (DOB, medical, club, school, availability…). Never put a column in both.
 - For enumerated fields (category, racket_stage, status) add a "values" entry for every sample value that is not already an allowed value, e.g. {"status":{"Owes":"due","✓":"paid"}}.
 - A tab of juniors with no category column may use "default":{"category":"Junior"}. Only when it is clearly true.
@@ -105,6 +108,7 @@ export async function POST(req: NextRequest) {
       header_row: typeof p.header_row === 'number' ? p.header_row : -1,
       columns: Object.fromEntries(Object.entries(p.columns || {}).filter(([, c]) => Array.isArray(c) ? c.every(isIdx) : isIdx(c))),
       notes_columns: (p.notes_columns || []).filter(isIdx),
+      paid_column: isIdx(p.paid_column) ? p.paid_column : undefined,
     }))
     return NextResponse.json({ plans })
   } catch (err) {

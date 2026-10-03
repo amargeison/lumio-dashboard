@@ -57,6 +57,8 @@ type Group = {
   confidence: Confidence
   reason?: string
   decision: 'pending' | 'yes' | 'skip'
+  /** A camp's own tab: the players in `records` are booked on this camp. */
+  attendeesOf?: Rec
 }
 type FileState = { name: string; state: 'waiting' | 'reading' | 'done' | 'failed'; found?: number; error?: string; detail?: string; note?: string }
 
@@ -201,7 +203,10 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
         }
         if (p.category === 'skip') continue
         const recs = applyPlan(p, sh.rows, sh.banners)
-        if (recs.length) { out.push(newGroup({ file: f.name, tab: sh.name, category: p.category, records: recs, confidence: conf, reason: p.reason })); n += recs.length }
+        // A tab that is one camp, with its children listed underneath: those
+        // children are that camp's attendees, not just more players.
+        const campRec = p.category === 'players' && p.tab_record?.category === 'camps' ? cleanRecord('camps', p.tab_record) : null
+        if (recs.length) { out.push(newGroup({ file: f.name, tab: sh.name, category: p.category, records: recs, confidence: conf, reason: p.reason, ...(campRec ? { attendeesOf: campRec } : {}) })); n += recs.length }
       }
       // Mapped but nothing came out — read it properly rather than lose it.
       if (n) used++; else if (sh.rows.length > 1) toRead.push(sh)
@@ -283,6 +288,11 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
     return out
   }
   const final = finalRecords(groups)
+  // Camp places: for every camp tab the coach is importing as players.
+  const campLists = groups
+    .filter(g => g.decision === 'yes' && g.target === 'players' && g.attendeesOf)
+    .map(g => ({ camp: g.attendeesOf!, tab: g.tab, attendees: g.records.map(r => ({ name: String(r.name ?? ''), paid: r._paid === true })).filter(a => a.name) }))
+    .filter(l => l.attendees.length)
   const toCheck = groups.filter(g => g.decision === 'pending')
   const totalSelected = IMPORT_CATEGORIES.reduce((s, c) => s + (picked[c] ? (final[c]?.length ?? 0) : 0), 0)
 
@@ -309,9 +319,31 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
           needFiles += Number(data.needFiles) || 0
         }
         invalidateCoachTable(TABLE[c])
+        if (c === 'courts') invalidateCoachTable('coach_venues')   // importing courts creates their venues
         setPicked(p => ({ ...p, [c]: false }))
       } catch (e) {
         failures.push(e instanceof Error ? e.message : `Could not save ${CATEGORY_LABEL[c].toLowerCase()}`)
+      }
+    }
+    // Last, once the camps and the players both exist: put each camp tab's
+    // children onto their camp. Skipped if the coach unticked either side.
+    let places = ''
+    if (campLists.length && !failures.length) {
+      try {
+        const res = await fetch('/api/coach/import/attendees', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lists: campLists.map(l => ({ camp: { name: l.camp.name, start_date: l.camp.start_date }, attendees: l.attendees })) }),
+        })
+        const data = await res.json().catch(() => ({})) as { error?: string; added?: number; camps?: { camp: string; added: number }[]; unmatched?: string[] }
+        if (!res.ok) throw new Error(data.error || 'Could not add the camp attendees')
+        const done = (data.camps || []).filter(c => c.added)
+        if (done.length) {
+          places = `${done.map(c => `${c.added} booked onto ${c.camp}`).join(', ')}. Automatic camp emails are paused for ${done.length === 1 ? 'that camp' : 'those camps'} — switch them on from the camp’s Emails tab when you are ready.`
+          invalidateCoachTable('coach_camp_attendees'); invalidateCoachTable('coach_camps')
+        }
+        if (data.unmatched?.length) places += ` Could not find a camp called ${data.unmatched.map(n => `“${n}”`).join(', ')} to book onto.`
+      } catch (e) {
+        failures.push(e instanceof Error ? e.message : 'Could not add the camp attendees')
       }
     }
     if (failures.length) {
@@ -322,7 +354,7 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
     }
     setResult(`Imported ${inserted} record${inserted === 1 ? '' : 's'} ✓`)
     // A spreadsheet carries the list of resources, not the files themselves.
-    setFileNote(needFiles ? `${needFiles} resource${needFiles === 1 ? '' : 's'} came in without a working link. Open the Resource Centre and press “+ Add link” or “Upload file” on each card.` : '')
+    setFileNote([places, needFiles ? `${needFiles} resource${needFiles === 1 ? '' : 's'} came in without a working link. Open the Resource Centre and press “+ Add link” or “Upload file” on each card.` : ''].filter(Boolean).join(' '))
     setStatus('done')
     onImported?.()
     return true
@@ -448,6 +480,12 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
               )
             })}
           </div>
+          {campLists.length > 0 && !!picked.players && (
+            <p style={{ fontSize: 12, color: T.text3, margin: '-4px 0 12px', lineHeight: 1.5 }}>
+              Camp places: {campLists.map(l => `${l.attendees.length} player${l.attendees.length === 1 ? '' : 's'} will be booked onto ${String(l.camp.name)}`).join('; ')}.
+              Automatic camp emails will be paused for {campLists.length === 1 ? 'that camp' : 'those camps'}.
+            </p>
+          )}
           {err && <p style={{ color: '#EF4444', fontSize: 12, margin: '0 0 10px' }}>{err}</p>}
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <button onClick={() => { void doImport() }} disabled={totalSelected === 0} style={{ padding: '12px 22px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 14, fontWeight: 800, cursor: totalSelected ? 'pointer' : 'default', opacity: totalSelected === 0 ? 0.5 : 1, boxShadow: totalSelected ? `0 6px 18px ${accent.hex}55` : 'none' }}>Import {totalSelected} record{totalSelected === 1 ? '' : 's'}</button>

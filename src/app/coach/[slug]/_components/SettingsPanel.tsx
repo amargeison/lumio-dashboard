@@ -121,17 +121,23 @@ function Modal({ T, accent, title, sub, onClose, children, readOnly = false, wid
 // way back: open each player and delete them, 380 times. This removes whole
 // lists in one go so the import can be run again cleanly.
 //
-// Deliberately narrow: only the lists an import fills that are safe to empty.
-// Payment history is never touched (no Settings button may wipe it), nor are
-// staff (their logins hang off those rows); resources, kit and packages have
-// their own Clear buttons in their module settings. It takes ticking the list
-// AND typing DELETE, because unlike those this one takes the roster with it.
-// Only the head coach ever sees Settings → Import, and it is hidden in the demo.
-const START_AGAIN: { key: string; table: 'coach_players' | 'coach_camps' | 'coach_courts' | 'coach_equipment'; label: string; note: string }[] = [
+// It covers every list an import can fill — an import that went wrong has to be
+// fully undoable, or the second attempt lands on top of the first (84 payments
+// become 168). Two things are never taken: the head coach's own staff row, and
+// any coach who has a portal login (their access hangs off that row — remove
+// those one by one in Coaches & Staff). It takes ticking the list AND typing
+// DELETE. Only the head coach ever sees Settings → Import, and it is hidden in
+// the demo.
+type StartAgainTable = 'coach_players' | 'coach_staff' | 'coach_courts' | 'coach_venues' | 'coach_camps' | 'coach_equipment' | 'coach_payments' | 'coach_resources'
+const START_AGAIN: { key: string; table: StartAgainTable; label: string; note: string }[] = [
   { key: 'players', table: 'coach_players', label: 'Players', note: 'with their skills, attendance, racket progress and app access' },
+  { key: 'staff', table: 'coach_staff', label: 'Coaches & staff', note: 'not you, and not anyone with a portal login' },
   { key: 'camps', table: 'coach_camps', label: 'Camps', note: 'with their attendee lists and camp messages' },
-  { key: 'courts', table: 'coach_courts', label: 'Courts', note: 'your venues stay' },
+  { key: 'courts', table: 'coach_courts', label: 'Courts', note: 'every court at every venue' },
+  { key: 'venues', table: 'coach_venues', label: 'Venues', note: 'including your home venue — add it again in Court Planner' },
   { key: 'equipment', table: 'coach_equipment', label: 'Equipment', note: 'individual items; kit bags stay' },
+  { key: 'payments', table: 'coach_payments', label: 'Payments', note: 'every invoice and assigned package, paid or not' },
+  { key: 'resources', table: 'coach_resources', label: 'Resources', note: 'including the Lumio library — switch it back on in Resource settings' },
 ]
 function ImportStartAgain({ T }: { T: ThemeTokens }) {
   const [shown, setShown] = useState(false)
@@ -145,11 +151,24 @@ function ImportStartAgain({ T }: { T: ThemeTokens }) {
     const uid = await currentCoachId()
     if (!uid) return
     const out: Record<string, number> = {}
+    const keep = await staffToKeep(uid)
     for (const t of START_AGAIN) {
-      const { count } = await sb().from(t.table).select('id', { count: 'exact', head: true }).eq('coach_id', uid)
+      const q = sb().from(t.table).select('id', { count: 'exact', head: true }).eq('coach_id', uid)
+      const { count } = await (t.table === 'coach_staff' ? onlyRemovableStaff(q, keep) : q)
       out[t.key] = count ?? 0
     }
     setCounts(out)
+  }
+  // Coaches who can sign in. Their coach_staff row is what their login is tied
+  // to, so a bulk delete must step round them.
+  const staffToKeep = async (uid: string): Promise<string[]> => {
+    const { data } = await sb().from('coach_members').select('staff_id').eq('academy_id', uid).not('staff_id', 'is', null)
+    return [...new Set(((data ?? []) as { staff_id: string | null }[]).map(r => r.staff_id).filter((x): x is string => !!x))]
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onlyRemovableStaff = (q: any, keep: string[]) => {
+    const notHead = q.or('is_head.is.null,is_head.eq.false')
+    return keep.length ? notHead.not('id', 'in', `(${keep.join(',')})`) : notHead
   }
   const openUp = () => { setShown(true); setState('idle'); setWord(''); setPicked([]); void loadCounts() }
 
@@ -163,9 +182,12 @@ function ImportStartAgain({ T }: { T: ThemeTokens }) {
       for (const t of START_AGAIN.filter(x => picked.includes(x.key))) {
         // Scoped to this academy to match RLS; .select() returns what was
         // deleted so the coach gets a real number back.
-        const { data, error } = await sb().from(t.table).delete().eq('coach_id', uid).select('id')
+        const del = sb().from(t.table).delete().eq('coach_id', uid)
+        const { data, error } = await (t.table === 'coach_staff' ? onlyRemovableStaff(del, await staffToKeep(uid)) : del).select('id')
         if (error) throw new Error(`${t.label}: ${error.message}`)
         removed[t.label] = (data ?? []).length
+        // The Lumio library went with the rest, so its toggle must stop reading "on".
+        if (t.table === 'coach_resources') setSettings({ resourcesPreloaded: false })
         if (t.table === 'coach_camps') {
           // Same clean-up a single camp delete does: take it off the connected calendar.
           for (const row of (data ?? []) as { id: string }[]) {
@@ -198,6 +220,10 @@ function ImportStartAgain({ T }: { T: ThemeTokens }) {
           </button>
         ) : (
           <div style={{ marginTop: 10 }}>
+            <button onClick={() => { const all = START_AGAIN.filter(t => (counts?.[t.key] ?? 0) > 0).map(t => t.key); setPicked(p => p.length === all.length ? [] : all) }} disabled={state === 'busy' || !counts}
+              style={{ appearance: 'none', background: 'transparent', border: 0, padding: 0, margin: '0 0 8px', color: T.text2, fontSize: 11.5, fontWeight: 600, fontFamily: FONT, cursor: 'pointer', textDecoration: 'underline' }}>
+              {picked.length > 0 && picked.length === START_AGAIN.filter(t => (counts?.[t.key] ?? 0) > 0).length ? 'Untick all' : 'Tick everything'}
+            </button>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {START_AGAIN.map(t => {
                 const n = counts?.[t.key]
@@ -217,7 +243,7 @@ function ImportStartAgain({ T }: { T: ThemeTokens }) {
               })}
             </div>
             <div style={{ fontSize: 10.5, color: T.text3, margin: '9px 0', lineHeight: 1.5 }}>
-              Not touched: payments and payment history, staff, bookings and lesson notes already written (they keep the player’s name), resources, kit bags and packages.
+              Not touched: you and any coach with a portal login, bookings and lesson notes already written (they keep the player’s name), kit bags, your package price list, and card payments already taken through your payment provider.
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <input value={word} onChange={e => setWord(e.target.value)} placeholder="Type DELETE to confirm" disabled={state === 'busy'}
