@@ -293,7 +293,7 @@ export async function getPage(raw: string): Promise<{ url: string; html: string 
 const textOf = (html: string) => html.replace(/<(script|style|noscript|svg)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ')
   .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#0?39;|&rsquo;|&apos;/g, "'").replace(/\s+/g, ' ').toLowerCase()
 
-const PARKED = /domain (is|may be) for sale|buy this domain|this domain (name )?(is|has been) (parked|registered)|domain parking|hugedomains|sedo\.com|dan\.com|afternic|parkingcrew|website coming soon|site is under construction|account (has been )?suspended|index of \//i
+const PARKED = /domain (is|may be) for sale|buy this domain|this domain (name )?(is|has been) (parked|registered)|domain parking|hugedomains|sedo\.com|dan\.com|afternic|parkingcrew|website coming soon|site is under construction|account (has been )?suspended|index of \/|recently registered with namecheap|lander\.parity\.domains|utm_source=parkingpage|parked free|courtesy of godaddy|this domain has expired/i
 
 // A page that is a robot check rather than the site: "Just a moment…", a
 // CAPTCHA, a hosting firewall. It arrives with a normal "200 OK", so it has to
