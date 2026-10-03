@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   adminFor, db, mailbox, linkBase, getSettings, sentToday, todaysLimit, pending, render, deliver, runBatch,
   looksCorporate, eligible, SEGMENTS, MAX_DAILY, type Contact, type Campaign, type Segment,
+  syncInbox,
 } from '@/lib/outreach/core'
 
 export const runtime = 'nodejs'
@@ -228,6 +229,18 @@ export async function POST(req: NextRequest) {
       case 'sendNow': {
         const result = await runBatch({ max: Math.max(1, Math.min(8, Number(body.max) || 5)), reqOrigin: new URL(req.url).origin, respectHours: false })
         return NextResponse.json({ ok: true, ...result })
+      }
+      case 'syncInbox': {
+        const r = await syncInbox()
+        if (!r.ok) throw new Error(`Could not read the mailbox: ${r.error || 'unknown error'}`)
+        const list = (xs: string[]) => xs.slice(0, 6).join(', ') + (xs.length > 6 ? ` and ${xs.length - 6} more` : '')
+        const bits = [
+          r.replies.length ? `${r.replies.length} repl${r.replies.length === 1 ? 'y' : 'ies'} (${list(r.replies)})` : '',
+          r.stops.length ? `${r.stops.length} asked to stop (${list(r.stops)})` : '',
+          r.bounces.length ? `${r.bounces.length} bounced (${list(r.bounces)})` : '',
+          r.auto ? `${r.auto} automatic repl${r.auto === 1 ? 'y' : 'ies'} ignored` : '',
+        ].filter(Boolean)
+        return NextResponse.json({ ...r, note: `Checked ${r.checked} message${r.checked === 1 ? '' : 's'} in the mailbox. ${bits.length ? bits.join('; ') + '.' : 'Nothing new.'}` })
       }
       default:
         return NextResponse.json({ error: 'Unknown action' }, { status: 400 })

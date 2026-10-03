@@ -9,6 +9,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { NextRequest } from 'next/server'
 import { sendMailSmtp } from '@/lib/coach/smtp'
 import { publicSiteOrigin } from '@/lib/public-origin'
+import { readInbox, type InboxMessage } from '@/lib/outreach/imap'
 
 export const SEGMENTS = ['academy', 'venue', 'coach'] as const
 export type Segment = typeof SEGMENTS[number]
@@ -54,6 +55,9 @@ export function mailbox() {
     ready: !!(host && user && pass && from),
     host, user, pass, from,
     port: Number(process.env.OUTREACH_SMTP_PORT) || 587,
+    // Reading the answers uses the same mailbox and the same app password;
+    // smtp.gmail.com → imap.gmail.com unless the server says otherwise.
+    imapHost: process.env.OUTREACH_IMAP_HOST || host.replace(/^smtp\./i, 'imap.'),
     fromName: process.env.OUTREACH_FROM_NAME || 'Lumio',
   }
 }
@@ -284,6 +288,9 @@ export async function runBatch(o: { max: number; reqOrigin: string; respectHours
         .insert({ campaign_id: camp.id, contact_id: c.id, email, status: 'sending' }).select('id').maybeSingle()
       if (claimErr || !claim) continue
       if (sent + failed > 0) await sleep(4000 + Math.random() * 5000)
+      // Counted again at the last moment: the ten-minute run and a press of
+      // "Send now" can overlap, and each had room when it started.
+      if (await sentToday() >= limit) { await sb.from('outreach_sends').delete().eq('id', claim.id); budget = 0; break }
       const res = await deliver(email, render(c, camp, settings, base))
       budget--
       if (res.ok) {
@@ -314,4 +321,120 @@ export async function unsubscribe(token: string): Promise<boolean> {
   await sb.from('outreach_suppressions').upsert({ email, reason: 'unsubscribed' }, { onConflict: 'email' })
   await sb.from('outreach_contacts').update({ status: 'unsubscribed', updated_at: new Date().toISOString() }).eq('id', c.id)
   return true
+}
+
+// ── Reading the answers ──────────────────────────────────────────────────────
+// Replies, out-of-office notes and bounces all land in the outreach mailbox.
+// This reads the last fortnight of the inbox (read-only — nothing is marked as
+// read) and files each one against the contact it is about:
+//
+//   bounce         "address not found" from the mail system → contact bounced,
+//                  and the address is suppressed so it is never tried again
+//   reply          a person wrote back → contact replied (no further campaigns)
+//   asks to stop   a reply saying "unsubscribe" / "remove me" → unsubscribed,
+//                  permanently, exactly as if they had pressed the link
+//   auto-reply     out of office, "thanks, we'll be in touch" → counted and
+//                  otherwise ignored: nobody has actually answered yet
+//
+// A contact is only ever moved off "active", and only by a message newer than
+// the last time the contact was changed — so putting someone back to active by
+// hand sticks, and running this twice changes nothing the second time.
+const FREEMAIL = /^(gmail|googlemail|yahoo|ymail|hotmail|outlook|live|msn|icloud|me|mac|aol|btinternet|btopenworld|sky|talktalk|virginmedia|ntlworld|blueyonder|protonmail|proton|gmx|mail|zoho)\./i
+const STOP_WORDS = /\b(unsubscribe|remove (me|us)\b|take (me|us) off|stop (emailing|e-mailing|contacting|sending|mailing)|do not (email|e-mail|contact|send)|don'?t (email|e-mail|contact) (me|us)|no (more|further) (emails?|e-mails?|contact|messages))/i
+
+export function isBounce(m: Pick<InboxMessage, 'from' | 'subject'>): boolean {
+  return /mailer-daemon|postmaster@/i.test(m.from)
+    || /^(delivery status notification|undeliver|mail delivery (failed|failure|subsystem)|returned mail|failure notice|delivery (has )?failed|message not delivered|address not found)/i.test(m.subject.trim())
+}
+/** "Still trying" notices are not failures. */
+export function isSoftBounce(m: Pick<InboxMessage, 'subject' | 'text'>): boolean {
+  return /\((delay|warning)\)|delayed|delivery incomplete|still (trying|being retried)/i.test(m.subject) && !/fail/i.test(m.subject)
+}
+export function bouncedAddresses(m: Pick<InboxMessage, 'headers' | 'text'>): string[] {
+  const out = new Set<string>()
+  for (const a of (m.headers['x-failed-recipients'] || '').split(/[,;\s]+/)) if (/@/.test(a)) out.add(a.trim().toLowerCase())
+  for (const x of m.text.matchAll(/(?:Final|Original)-Recipient:\s*rfc822;\s*<?([^\s<>;]+@[^\s<>;]+)>?/gi)) out.add(x[1].toLowerCase())
+  if (!out.size) for (const x of m.text.matchAll(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g)) out.add(x[0].toLowerCase().replace(/\.$/, ''))
+  return [...out]
+}
+export function isAutoReply(m: Pick<InboxMessage, 'headers' | 'subject'>): boolean {
+  const h = m.headers
+  if (h['auto-submitted'] && !/^no\b/i.test(h['auto-submitted'])) return true
+  if (h['x-autoreply'] || h['x-autorespond']) return true
+  if (/auto[_-]?reply|bulk|junk/i.test(h.precedence || '')) return true
+  return /^\s*(auto(matic)?[ -]?(reply|response)|autoreply|out of (the )?office|ooo\b|away from|on (annual )?leave|thank(s| you) for (your )?(e-?mail|message|enquiry|inquiry|contacting|getting in touch)|we('ve| have) received your)/i.test(m.subject)
+}
+/** What the person themselves wrote: everything above the quoted original. */
+export function ownWords(text: string): string {
+  const cut = text.search(/\n\s*>|\nOn [^\n]{0,200}wrote:|\n-{2,} ?(Original|Forwarded) Message|\nFrom: [^\n]*\n(Sent|Date): |\n_{10,}/i)
+  return (cut >= 0 ? text.slice(0, cut) : text).slice(0, 1500)
+}
+
+export type InboxSync = { ok: boolean; error?: string; checked: number; replies: string[]; stops: string[]; bounces: string[]; auto: number }
+
+export async function syncInbox(): Promise<InboxSync> {
+  const empty: InboxSync = { ok: false, checked: 0, replies: [], stops: [], bounces: [], auto: 0 }
+  const box = mailbox()
+  if (!box.ready || !box.imapHost) return { ...empty, error: 'The outreach mailbox is not set up on the server.' }
+  const read = await readInbox({ host: box.imapHost, port: Number(process.env.OUTREACH_IMAP_PORT) || 993, user: box.user, pass: box.pass, sinceDays: 14, max: 300 })
+  if (!read.ok) return { ...empty, error: read.error }
+
+  const sb = db()
+  const [{ data: cs }, { data: ss }] = await Promise.all([
+    sb.from('outreach_contacts').select('id, email, org_name, status, updated_at').limit(20000),
+    sb.from('outreach_sends').select('contact_id, sent_at').eq('status', 'sent').order('sent_at', { ascending: false }).limit(20000),
+  ])
+  type Row = { id: string; email: string; org_name: string | null; status: string; updated_at: string }
+  const contacts = (cs || []) as Row[]
+  const byEmail = new Map(contacts.map(c => [c.email.trim().toLowerCase(), c]))
+  const sentAt = new Map<string, number[]>()
+  for (const s of (ss || []) as { contact_id: string; sent_at: string | null }[]) {
+    if (s.sent_at) sentAt.set(s.contact_id, [...(sentAt.get(s.contact_id) || []), new Date(s.sent_at).getTime()])
+  }
+  // Someone answering from a colleague's address: same organisation domain,
+  // as long as it is the organisation's own domain and not gmail.com.
+  const byDomain = new Map<string, Row[]>()
+  for (const c of contacts) {
+    const d = c.email.split('@')[1]?.toLowerCase()
+    if (d && !FREEMAIL.test(d) && sentAt.has(c.id)) byDomain.set(d, [...(byDomain.get(d) || []), c])
+  }
+
+  const out: InboxSync = { ok: true, checked: read.messages.length, replies: [], stops: [], bounces: [], auto: 0 }
+  const us = new Set([box.user.toLowerCase(), box.from.toLowerCase()])
+  const label = (c: Row) => c.org_name || c.email
+  const move = async (c: Row, status: 'replied' | 'unsubscribed' | 'bounced', when: Date | null): Promise<boolean> => {
+    if (c.status !== 'active') return false
+    if (when && new Date(c.updated_at).getTime() > when.getTime() + 60_000) return false     // changed by hand since
+    const { error } = await sb.from('outreach_contacts').update({ status, updated_at: new Date().toISOString() }).eq('id', c.id).eq('status', 'active')
+    if (error) return false
+    c.status = status
+    if (status !== 'replied') {
+      await sb.from('outreach_suppressions').upsert({ email: c.email.trim().toLowerCase(), reason: status === 'bounced' ? 'bounced' : 'unsubscribed' }, { onConflict: 'email' })
+    }
+    return true
+  }
+
+  for (const m of read.messages) {
+    if (isBounce(m)) {
+      if (isSoftBounce(m)) continue
+      for (const a of bouncedAddresses(m)) {
+        const c = byEmail.get(a)
+        if (c && sentAt.has(c.id) && await move(c, 'bounced', m.date)) out.bounces.push(label(c))
+      }
+      continue
+    }
+    if (!m.from || us.has(m.from)) continue
+    const dom = m.from.split('@')[1] || ''
+    const c = byEmail.get(m.from) || ((byDomain.get(dom) || []).length === 1 ? byDomain.get(dom)![0] : undefined)
+    if (!c) continue
+    const sends = sentAt.get(c.id) || []
+    const at = m.date ? m.date.getTime() : Date.now()
+    if (!sends.some(t => t <= at + 60_000)) continue                 // nothing of ours for this to be an answer to
+    // An answer inside two minutes of our email is a machine, whatever its headers say.
+    const instant = sends.some(t => at - t >= -60_000 && at - t < 120_000)
+    if (isAutoReply(m) || instant) { if (c.status === 'active') out.auto++; continue }
+    if (STOP_WORDS.test(ownWords(m.text))) { if (await move(c, 'unsubscribed', m.date)) out.stops.push(label(c)) }
+    else if (await move(c, 'replied', m.date)) out.replies.push(label(c))
+  }
+  return out
 }
