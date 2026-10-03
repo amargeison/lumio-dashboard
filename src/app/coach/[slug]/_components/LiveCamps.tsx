@@ -16,6 +16,7 @@ import { campOrg, printParentBrief, printRunSheet, printPlayerReport, printCerti
 import { CampPromote } from './CampPromote'
 import { CampEmails } from './CampEmails'
 import { CampTrip } from './CampTrip'
+import { CampInfoForm } from './CampInfoForm'
 import { CampDiscord } from './CampDiscord'
 import { getSettings, setSettings } from '../_lib/settings-store'
 import { useCoachSettings } from '../_lib/use-settings'
@@ -48,6 +49,8 @@ type Camp = {
   // rewriting the week-to-go email for a Portugal trip must not change it for
   // next summer's day camp.
   emails_paused?: boolean | null; overseas?: boolean | null; balance_link?: string | null
+  /** The player-information form when the coach has changed it; null = the standard one. See camp-form.ts. */
+  info_form?: unknown
   outcomes?: string[] | null
   // The structured kit checklist, the cost base and the installment schedule
   // (migration 173). `equipment` above stays as the older loose text and is
@@ -91,6 +94,9 @@ type Attendee = {
   // when they land, what the week is for, and what has actually been received —
   // including the money that never went near Stripe.
   room?: string | null; arrival?: string | null; camp_goal?: string | null; paid_pennies?: number | null
+  // The player-information form (migration 192): their own link, and what came back.
+  form_token?: string | null; form_answers?: Record<string, string | string[]> | null
+  form_submitted_at?: string | null; form_sent_at?: string | null
 }
 type Player = {
   id: string; name: string; age?: number | null; racket_stage?: string | null; avatar_url?: string | null
@@ -175,7 +181,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   }
 
   const booked = (c: Camp) => attendees.rows.filter(a => a.camp_id === c.id).length
-  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['coaches', `Coaches${Array.isArray(sel!.coach_ids) && (sel!.coach_ids as string[]).length ? ` · ${(sel!.coach_ids as string[]).length}` : ''}`], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['trip', 'Trip hub'], ['emails', 'Emails'], ['discord', 'Discord'], ['promote', 'Promote'], ['finance', 'Finance']]
+  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['coaches', `Coaches${Array.isArray(sel!.coach_ids) && (sel!.coach_ids as string[]).length ? ` · ${(sel!.coach_ids as string[]).length}` : ''}`], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['trip', 'Trip hub'], ['form', `Info form${campAttendees.length ? ` · ${campAttendees.filter(a => a.form_submitted_at).length}/${campAttendees.length}` : ''}`], ['emails', 'Emails'], ['discord', 'Discord'], ['promote', 'Promote'], ['finance', 'Finance']]
     .filter(([id]) => id !== 'discord' || discordOn(sel?.id))
 
   return (
@@ -264,6 +270,10 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
         {tab === 'packs' && <Packs T={T} accent={accent} camp={sel} attendees={campAttendees} players={players} skillMap={skillMap} skillDates={skillDates} attRows={attRows} />}
         {tab === 'trip' && <CampTrip T={T} accent={accent} camp={sel} onSave={v => camps.edit(sel.id, v)} />}
         {tab === 'emails' && <CampEmails T={T} accent={accent} camp={sel} attendees={campAttendees} onSave={v => camps.edit(sel.id, v)} />}
+        {/* Saving anything here also re-reads the attendees, so "filled in" and
+            "emailed" dates are current the moment a coach presses a button. */}
+        {tab === 'form' && <CampInfoForm T={T} accent={accent} camp={sel} attendees={campAttendees}
+          onSave={async v => { if (Object.keys(v).length) await camps.edit(sel.id, v); await attendees.reload() }} />}
         {/* The sign-up page sits above the announcement writer on purpose: the
             link is what every announcement points at, so you set it up first.
             It used to live on Overview, where a coach reading camp facts had to

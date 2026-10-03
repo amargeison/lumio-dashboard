@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { formLinkFor } from '@/lib/coach/camp-form-server'
+import { formEmailBlock } from '@/lib/coach/camp-form'
+import { publicSiteOrigin } from '@/lib/public-origin'
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { sendAsCoach } from '@/lib/coach/mail'
 import { sendEmail } from '@/lib/emails/send'
@@ -94,6 +97,8 @@ export async function POST(req: NextRequest) {
     let sentTo: string | null = null
     if (to) {
       const accent = '#3A8EE0'
+      // Their own player-information form, so it goes out with the welcome.
+      const formLink = await formLinkFor(db, a.id, publicSiteOrigin(origin))
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#eef0f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef0f5;padding:22px 12px"><tr><td align="center">
@@ -118,6 +123,7 @@ export async function POST(req: NextRequest) {
         <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:${accent};font-weight:700;padding-bottom:10px">Put it in the diary</div>
         ${calendarButtonsHtml(event, origin, 'camp', camp.id)}
       </td></tr>` : ''}
+      ${formLink ? `<tr><td style="padding:4px 26px 0">${formEmailBlock(formLink, { toParent: !isAdult, playerName })}</td></tr>` : ''}
       <tr><td style="padding:22px 26px 26px">
         <div style="border-top:1px solid #eceef3;padding-top:14px;font-size:12.5px;color:#6b7280;line-height:1.6">
           What to bring and how the days run are on ${isAdult ? 'your' : `${esc(playerName)}'s`} page, and we'll send a reminder nearer the time.

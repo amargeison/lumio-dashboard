@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { formLinkFor } from '@/lib/coach/camp-form-server'
+import { publicSiteOrigin } from '@/lib/public-origin'
 import { isAdult } from '@/lib/coach/camp-audience'
 import { stripe, admin } from '../_stripe'
 import { sendCampSignupEmails } from '@/lib/coach/camp-signup-email'
@@ -90,6 +92,7 @@ async function notifyCampSignup(db: ReturnType<typeof admin>, att: Record<string
       // somebody gets after handing over £1,500 is the one still calling them a
       // parent.
       audience: camp.audience, toParent: !isAdult(camp, att.player_age),
+      formUrl: await formLinkFor(db, att.id, publicSiteOrigin('https://www.lumiosports.com')),
     })
   } catch (e) { console.error('[pay/webhook] camp signup email', e) }
 }

@@ -12,6 +12,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { campEmailTask } from '@/lib/coach/agent-persona'
+import { formEmailBlock, formEnabled, formUrl } from '@/lib/coach/camp-form'
 import { STAGES, type Stage, type StageId } from '@/lib/coach/camp-lifecycle'
 import { isAdult, usesGuardians, audienceBrief } from '@/lib/coach/camp-audience'
 import { balanceOwed } from '@/lib/coach/camp-money'
@@ -96,6 +97,9 @@ export function chaseReasons(camp: Camp, a: Attendee): string[] {
   if (!a.consent_medical && a.medical_notes) out.push(guardians ? 'Consent to hold their medical information has not been given yet' : 'Permission to hold their medical information has not been given yet')
   if (!a.emergency_contact) out.push(guardians ? 'No emergency contact on file yet' : 'No next of kin on file yet')
   if (camp.overseas) out.push('This trip is abroad — passport in date, and travel insurance sorted')
+  // The player-information form: worth a chase on its own, because the rooming
+  // list and the groups are built from it.
+  if (a.form_token && !a.form_submitted_at && formEnabled(camp)) out.push('The player information form has not been filled in yet — the link is in this email')
   return out
 }
 
@@ -218,6 +222,11 @@ export function renderCampEmail(opts: {
     // given somewhere to pay it.
     stageId === 'two_weeks' && owed > 0 && camp.balance_link
       ? `<div style="margin:18px 0"><a href="${esc(camp.balance_link)}" style="display:inline-block;background:#3A8EE0;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 20px;border-radius:10px">Pay the ${money(owed)} balance</a></div>`
+      : '',
+    // Their player-information form, until they have filled it in. Not on the
+    // night-before email (too late to act on) or the one after the camp.
+    attendee.form_token && !attendee.form_submitted_at && opts.origin && formEnabled(camp) && ['details', 'two_weeks', 'one_week'].includes(stageId)
+      ? formEmailBlock(formUrl(opts.origin, String(attendee.form_token)), { toParent: !isAdult(camp, attendee.player_age), playerName: attendee.player_name })
       : '',
     // The trip hub. Once a coach has published one it is the single most useful
     // link in any of these emails — the hotel, the transfers, who to ring — so
