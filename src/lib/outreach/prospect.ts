@@ -181,7 +181,7 @@ export async function confirmOnRegister(name: string): Promise<{ company_number:
 }
 
 // ── The organisation's own website ───────────────────────────────────────────
-const LEGAL_WORDS = /^(ltd|limited|llp|plc|cic|cio|co|company|the|uk|and|of|c|i|gb|group|holdings)$/
+const LEGAL_WORDS = /^(ltd|limited|llp|plc|cic|cio|co|company|the|uk|and|of|gb|group|holdings)$/
 /** The words that make the name this organisation's own. */
 export function nameWords(name: string): string[] {
   return name.toLowerCase().replace(/&/g, ' and ').replace(/['’.]/g, '').replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(w => w && !LEGAL_WORDS.test(w))
@@ -295,6 +295,32 @@ const textOf = (html: string) => html.replace(/<(script|style|noscript|svg)[\s\S
 
 const PARKED = /domain (is|may be) for sale|buy this domain|this domain (name )?(is|has been) (parked|registered)|domain parking|hugedomains|sedo\.com|dan\.com|afternic|parkingcrew|website coming soon|site is under construction|account (has been )?suspended|index of \//i
 
+// A page that is a robot check rather than the site: "Just a moment…", a
+// CAPTCHA, a hosting firewall. It arrives with a normal "200 OK", so it has to
+// be recognised by what it says. We do not try to get past these. (Deliberately
+// NOT matched: the word "captcha" or Cloudflare's script path, which sit on
+// plenty of ordinary pages with a contact form.)
+const CHALLENGE = /<title>\s*(just a moment|attention required|access denied|bot verification|verifying you are human|security check|one moment|please wait|robot check|403 forbidden|blocked)|checking your browser|enable javascript and cookies to continue|imunify360|sgcaptcha|ddos protection by/i
+
+/** Where a "this site lives over there" stub points: a meta refresh, a full-page frame, or a script redirect. */
+export function stubTarget(html: string, base: string): string | null {
+  if (html.length > 6000) return null                                   // a real page, not a stub
+  const m = html.match(/<meta[^>]+http-equiv=["']?refresh["']?[^>]*content=["'][^"']*url=([^"'>\s]+)/i)
+    || html.match(/<i?frame[^>]+src=["']([^"']+)["']/i)
+    || html.match(/(?:window\.|document\.|top\.)?location(?:\.href)?\s*=\s*["']([^"']+)["']/i)
+    || html.match(/location\.replace\(\s*["']([^"']+)["']/i)
+  if (!m) return null
+  try { const u = new URL(m[1].replace(/&amp;/g, '&'), base); return /^https?:$/.test(u.protocol) && u.toString() !== base ? u.toString() : null } catch { return null }
+}
+
+/** A few words on what a rejected page actually was, for the list. */
+function describe(html: string): string {
+  const title = (html.match(/<title[^>]*>([^<]{0,80})/i)?.[1] || '').replace(/\s+/g, ' ').trim()
+  if (PARKED.test(html.slice(0, 60_000))) return 'parked or for sale'
+  if (CHALLENGE.test(html.slice(0, 20_000))) return `a robot check, not the site${title ? ` (“${title}”)` : ''}`
+  return `not recognised as theirs${title ? ` (titled “${title}”)` : ' (no title)'}, ${html.length < 1000 ? `${html.length} bytes` : `${Math.round(html.length / 1000)}KB`}`
+}
+
 // Words that describe what an organisation does rather than which one it is.
 const TOPIC_WORDS = /^(tennis|lawn|club|clubs|ltc|tc|coaching|coach|academy|school|centre|center|sports?|squash|racquets?|rackets|padel|pickleball|services|community|association|performance|training|fitness|leisure|foundation)$/
 
@@ -323,9 +349,9 @@ function pageWords(html: string): string {
  * A parked or for-sale domain is never theirs, and a .com must also look British.
  */
 export function pageIsTheirs(html: string, url: string, p: { org_name: string; town?: string | null; district?: string | null; company_number?: string | null }, guess?: string): boolean {
-  if (PARKED.test(html.slice(0, 60_000))) return false
-  if (html.length < 1500) return false                                 // an empty shell or a redirect stub
+  if (PARKED.test(html.slice(0, 60_000)) || CHALLENGE.test(html.slice(0, 20_000))) return false
   const text = pageWords(html)
+  if (text.trim().length < 40) return false                            // an empty shell or a redirect stub
   const words = nameWords(p.org_name)
   if (!words.length) return false
   const has = (ws: string[]) => ws.length > 0 && ws.every(w => new RegExp(`\\b${w}\\b`).test(text))
@@ -349,7 +375,10 @@ export function pageIsTheirs(html: string, url: string, p: { org_name: string; t
   // A .uk address is British. A .com could be a company of the same name in
   // another country, so it must also look British.
   if (/\.uk$/i.test(new URL(url).hostname)) return true
-  return /\b[a-z]{1,2}\d[a-z\d]? ?\d[a-z]{2}\b/.test(text) || /\+44|united kingdom|\bengland\b|\bscotland\b|\bwales\b|\blta\b|\buk\b|£\s?\d/.test(text)
+  // "LTC" and "lawn tennis" are British usages in themselves; so are a UK
+  // phone number, a link to a .uk site, and a ClubSpark booking page.
+  return /\b[a-z]{1,2}\d[a-z\d]? ?\d[a-z]{2}\b/.test(text) || /\+44|united kingdom|\bengland\b|\bscotland\b|\bwales\b|\blta\b|\buk\b|£\s?\d|\bltc\b|lawn tennis|\b0\d{3,4}[ -]?\d{3}[ -]?\d{3,4}\b/.test(text)
+    || /ltc$|lawntennis/.test(stem) || /https?:\/\/[a-z0-9.-]+\.uk[\/"']|clubspark/i.test(html.slice(0, 400_000))
     || (!!p.town && text.includes(p.town.toLowerCase())) || (!!p.district && text.includes(p.district.toLowerCase() + ' '))
 }
 
@@ -437,9 +466,20 @@ export async function lookUpFree(p: Pick<Prospect, 'org_name' | 'town' | 'distri
     if ('fail' in page && !/^https?:/i.test(t)) { const plain = await getPageWhy(`http://${t}`); if (!('fail' in plain)) page = plain }
     if ('fail' in page) { seen.push(`${t}: ${page.fail}`); continue }
     sawSomething = true
+    // A club's own address is often just a signpost to where its site really
+    // lives (a ClubSpark page, a Facebook page). Follow the signpost once: the
+    // owner of the address chose where it points, so that page is theirs.
+    const onward = p.website ? null : stubTarget(page.html, page.url)
+    if (onward) {
+      const there = await getPageWhy(onward)
+      if (!('fail' in there) && !PARKED.test(there.html.slice(0, 60_000)) && !CHALLENGE.test(there.html.slice(0, 20_000)) && pageIsTheirs(there.html, 'https://x.uk/', p, t)) {
+        const email = await emailFromSite(there)
+        return { website: there.url.replace(/[?#].*$/, ''), email, segment: segmentFromPage(there.html), why: email ? 'found' : 'no_email' }
+      }
+    }
     // A website someone gave us is taken as theirs unless it is plainly a
     // parked page; a guessed one has to prove it.
-    if (p.website ? PARKED.test(page.html.slice(0, 60_000)) : !pageIsTheirs(page.html, page.url, p, t)) { seen.push(`${t}: ${PARKED.test(page.html.slice(0, 60_000)) ? 'parked or for sale' : 'a different organisation'}`); continue }
+    if (p.website ? PARKED.test(page.html.slice(0, 60_000)) : !pageIsTheirs(page.html, page.url, p, t)) { seen.push(`${t}: ${describe(page.html)}`); continue }
     const site = new URL(page.url).origin
     const email = await emailFromSite(page)
     return { website: site, email, segment: segmentFromPage(page.html), why: email ? 'found' : 'no_email' }
