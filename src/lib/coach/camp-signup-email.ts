@@ -9,6 +9,7 @@
 // confirmations, so a parent recognises the sender.
 
 import { sendAsCoach } from '@/lib/coach/mail'
+import { formEmailBlock } from '@/lib/coach/camp-form'
 import { sendEmail } from '@/lib/emails/send'
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string))
@@ -30,6 +31,9 @@ export type SignupMailInput = {
   // the player, so the whole email flips from third person to second.
   audience?: string | null
   toParent?: boolean
+  // This attendee's own player-information form (see camp-form.ts). Null when
+  // the camp has no form, or they have already filled it in.
+  formUrl?: string | null
   // Set ONLY for a late sign-up — someone who booked after the "everything you
   // need" email had already gone out to everyone else. Rather than send them a
   // burst of countdown emails whose dates have passed, that email's contents are
@@ -120,6 +124,7 @@ export function parentHtml(i: SignupMailInput) {
     ${mapLink}
     ${payLine}
     ${essentialsBlock(i)}
+    ${i.formUrl ? formEmailBlock(i.formUrl, { toParent: !direct, playerName: i.playerName }) : ''}
     <p style="margin:16px 0 0;font-size:14px;line-height:1.6;color:#6b7280">
       Anything we should know before the first morning — ${direct ? 'a niggle, a late arrival, a dietary requirement' : 'a change of collection arrangements, a new injury'} — just reply to this email and it comes straight to ${esc(i.coachName || 'the coaching team')}.
     </p>

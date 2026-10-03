@@ -539,7 +539,6 @@ export type Resource = {
 
 export const RESOURCES: Resource[] = [
   { id: 'r1',  title: 'Split-step & first-move reaction',  category: 'Drill',        level: 'Beginner',     format: 'Video',     duration: '4 min',  belt: 'white',  tags: ['movement','warm-up'],        desc: 'Reaction-cue split-step ladder for foundation movers.', video: 'J1UhPl1UrYs' },
-  { id: 'r2',  title: 'Low-to-high topspin forehand',      category: 'Technique',    level: 'Intermediate', format: 'Video',     duration: '7 min',  belt: 'blue',   tags: ['forehand','spin'],           desc: 'Frame-by-frame swing path for heavy topspin.', video: 'KV9DTSNkLAg' },
   { id: 'r3',  title: 'Kick serve in 5 steps',             category: 'Technique',    level: 'Advanced',     format: 'Video',     duration: '9 min',  belt: 'brown',  tags: ['serve','spin'],              desc: 'Build a reliable kick serve from toss to pronation.' },
   { id: 'r4',  title: '8-week Green-racket block',         category: 'Training plan',level: 'Intermediate', format: 'Plan',      duration: '8 weeks',belt: 'green',  tags: ['serve','periodisation'],     desc: 'Periodised plan to earn the Green racket serve criteria.' },
   { id: 'r5',  title: 'Cross-court rally targets',         category: 'Drill',        level: 'All levels',   format: 'PDF',       duration: '—',      belt: 'yellow', tags: ['consistency','rally'],       desc: 'Printable court targets for rally depth & direction.' },

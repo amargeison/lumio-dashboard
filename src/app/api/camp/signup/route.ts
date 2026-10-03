@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { formLinkFor } from '@/lib/coach/camp-form-server'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
 import { publicSiteOrigin } from '@/lib/public-origin'
@@ -182,6 +183,7 @@ export async function POST(req: NextRequest) {
     const { data: prof } = await sb.from('sports_profiles')
       .select('brand_name, brand_logo_url, display_name, contact_email').eq('id', camp.coach_id).maybeSingle()
     const mail: SignupMailInput = {
+      formUrl: attendee?.id ? await formLinkFor(sb, attendee.id, publicSiteOrigin(new URL(req.url).origin)) : null,
       academy: prof?.brand_name || 'Tennis camp', logoUrl: prof?.brand_logo_url,
       coachName: prof?.display_name, coachEmail: prof?.contact_email,
       campName: camp.name, startDate: camp.start_date, endDate: camp.end_date,
