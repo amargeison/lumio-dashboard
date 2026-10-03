@@ -29,6 +29,34 @@ type Row = {
   device_type: string | null
   browser: string | null
   bot: boolean
+  full_url?: string | null
+}
+
+// Lumio Tennis Coach is a product of its own that happens to live under
+// /tennis/coach (the portal) and /tennis-coach (its marketing page), so the
+// `sport` column files all of it under "tennis". These two filters pull them
+// apart by path — which also works for every page view already recorded.
+//   tennis-coach → the coach product only
+//   tennis       → the tennis pro portal, without the coach product
+function applySport<Q>(q: Q, sport: string | null): Q {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const b = q as any
+  if (!sport || sport === 'all') return q
+  if (sport === 'tennis-coach') return b.or('path.ilike./tennis/coach%,path.ilike./tennis-coach%')
+  if (sport === 'tennis') return b.eq('sport', 'tennis').not('path', 'ilike', '/tennis/coach%')
+  return b.eq('sport', sport)
+}
+
+/** "?utm_source=instagram&utm_campaign=launch" on the landing page → "instagram · launch". */
+function taggedSource(fullUrl: string | null | undefined): string | null {
+  if (!fullUrl || !fullUrl.includes('utm_')) return null
+  try {
+    const q = new URL(fullUrl).searchParams
+    const src = (q.get('utm_source') || '').trim().toLowerCase().slice(0, 40)
+    if (!src) return null
+    const camp = (q.get('utm_campaign') || '').trim().toLowerCase().slice(0, 40)
+    return camp ? `${src} · ${camp}` : src
+  } catch { return null }
 }
 
 function resolvePeriod(period: string, startRaw: string | null, endRaw: string | null): { start: Date; end: Date } {
@@ -128,13 +156,13 @@ export async function GET(req: NextRequest) {
 
   let q = supabase
     .from('page_views')
-    .select('path, session_hash, created_at, is_demo, sport, referrer_host, country, device_type, browser, bot')
+    .select('path, session_hash, created_at, is_demo, sport, referrer_host, country, device_type, browser, bot, full_url')
     .gte('created_at', windowStart.toISOString())
     .lte('created_at', end.toISOString())
     .order('created_at', { ascending: false })
     .limit(50000)
 
-  if (sport && sport !== 'all') q = q.eq('sport', sport)
+  q = applySport(q, sport)
   if (excludeBots) q = q.eq('bot', false)
   if (excludeAdmin) q = q.not('path', 'ilike', '/admin%').not('path', 'ilike', '/sports-admin%')
 
@@ -147,7 +175,7 @@ export async function GET(req: NextRequest) {
 
   // All-time page views — cheap count, honoring the same filters.
   let totalCountQ = supabase.from('page_views').select('*', { count: 'exact', head: true })
-  if (sport && sport !== 'all') totalCountQ = totalCountQ.eq('sport', sport)
+  totalCountQ = applySport(totalCountQ, sport)
   if (excludeBots) totalCountQ = totalCountQ.eq('bot', false)
   if (excludeAdmin) totalCountQ = totalCountQ.not('path', 'ilike', '/admin%').not('path', 'ilike', '/sports-admin%')
   const { count: allTimeCount } = await totalCountQ
@@ -176,6 +204,8 @@ export async function GET(req: NextRequest) {
   const topPaths     = topN(periodRows, r => r.path, 10)
   const topReferrers = topN(periodRows, r => r.referrer_host || 'direct', 10)
   const topCountries = topN(periodRows, r => r.country, 10)
+  // Visits that arrived on a link we tagged (an email button, a social post).
+  const topSources   = topN(periodRows, r => taggedSource(r.full_url), 10)
   const devices      = topN(periodRows, r => r.device_type, 10)
   const browsers     = topN(periodRows, r => r.browser, 10)
 
@@ -187,7 +217,7 @@ export async function GET(req: NextRequest) {
     .gte('created_at', start.toISOString())
     .lte('created_at', end.toISOString())
     .eq('bot', true)
-  if (sport && sport !== 'all') botSliceQ = botSliceQ.eq('sport', sport)
+  botSliceQ = applySport(botSliceQ, sport)
   if (excludeAdmin) botSliceQ = botSliceQ.not('path', 'ilike', '/admin%').not('path', 'ilike', '/sports-admin%')
   const { count: botCount } = await botSliceQ
 
@@ -196,7 +226,7 @@ export async function GET(req: NextRequest) {
     .select('*', { count: 'exact', head: true })
     .gte('created_at', start.toISOString())
     .lte('created_at', end.toISOString())
-  if (sport && sport !== 'all') totalSliceQ = totalSliceQ.eq('sport', sport)
+  totalSliceQ = applySport(totalSliceQ, sport)
   if (excludeAdmin) totalSliceQ = totalSliceQ.not('path', 'ilike', '/admin%').not('path', 'ilike', '/sports-admin%')
   const { count: totalSlice } = await totalSliceQ
 
@@ -211,6 +241,7 @@ export async function GET(req: NextRequest) {
     topPaths,
     topReferrers,
     topCountries,
+    topSources,
     devices,
     browsers,
     botPct,

@@ -20,7 +20,7 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import { db, type Segment } from '@/lib/outreach/core'
-import { confirmOnRegister, emailsOn, getPage, lookUpFree, nameWords, publicUrl, type Prospect } from '@/lib/outreach/prospect'
+import { confirmOnRegister, emailsOn, getPage, lookUpFree, nameWords, publicUrl, segmentFromName, type FreeLook, type Prospect } from '@/lib/outreach/prospect'
 
 export const paidSearchReady = () => !!process.env.ANTHROPIC_API_KEY
 const MODEL = () => process.env.OUTREACH_SEARCH_MODEL || 'claude-sonnet-4-6'
@@ -91,7 +91,7 @@ const jsonIn = (text: string, open: '{' | '['): unknown => {
  * a person to accept or throw away — a made-up address must never reach the
  * send list.
  */
-export async function paidLookup(p: Prospect): Promise<{ state: Prospect['state']; email: string | null; website: string | null }> {
+export async function paidLookup(p: Prospect): Promise<{ state: Prospect['state']; email: string | null; website: string | null; segment?: Segment | null }> {
   const text = await ask('lookup', [
     `Find the official website of this UK organisation and, if it publishes one, its public contact email address.`,
     `Organisation: ${p.org_name}${p.town ? `, ${p.town}` : ''}${p.company_number ? ` (Companies House number ${p.company_number})` : ''}.`,
@@ -105,16 +105,16 @@ export async function paidLookup(p: Prospect): Promise<{ state: Prospect['state'
   const suggested = typeof ans.email === 'string' ? (ans.email.trim().toLowerCase().match(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/) || [])[0] || null : null
 
   // Free from here on: read their site ourselves.
-  const free = site ? await lookUpFree({ ...p, website: site }).catch(() => ({ website: site, email: null as string | null })) : { website: null, email: null }
-  if (free.email) return { state: 'found', email: free.email, website: free.website }
+  const free: FreeLook = site ? await lookUpFree({ ...p, website: site }).catch((): FreeLook => ({ website: site, email: null, segment: null, why: 'no_site' })) : { website: null, email: null, segment: null, why: 'no_site' }
+  if (free.email) return { state: 'found', email: free.email, website: free.website, segment: free.segment }
   if (suggested) {
     // Did the page it named really show that address?
     const where = typeof ans.email_seen_at === 'string' ? await getPage(ans.email_seen_at) : null
     const host = site ? new URL(site).hostname : where ? new URL(where.url).hostname : ''
-    if (where && emailsOn(where.html, host).includes(suggested)) return { state: 'found', email: suggested, website: site }
-    return { state: 'unsure', email: suggested, website: site }
+    if (where && emailsOn(where.html, host).includes(suggested)) return { state: 'found', email: suggested, website: site, segment: free.segment }
+    return { state: 'unsure', email: suggested, website: site, segment: free.segment }
   }
-  return { state: 'nothing', email: null, website: site }
+  return { state: 'nothing', email: null, website: site, segment: free.segment }
 }
 
 /** PAID. Run paid look-ups over a few prospects, stopping at the monthly limit. */
@@ -139,6 +139,7 @@ export async function paidLookupBatch(o: { size: number; ids?: string[] }) {
     if (r.state === 'unsure') unsure++
     await sb.from('outreach_prospects').update({
       state: r.state, email: r.email, website: r.website || p.website, updated_at: new Date().toISOString(),
+      ...(r.segment ? { segment: r.segment } : {}),
       notes: r.state === 'unsure' ? 'Email suggested by web search — not seen on their website. Check before using.' : p.notes,
     }).eq('id', p.id)
   }))
@@ -154,7 +155,7 @@ export async function paidLookupBatch(o: { size: number; ids?: string[] }) {
  * the register → confirmed as a company; not on it → kept, but it will be HELD
  * when added, because a club that is not a company may not be cold emailed.
  */
-export async function paidDiscover(o: { description: string; segment: Segment; count: number }) {
+export async function paidDiscover(o: { description: string; segment: Segment | 'auto'; count: number }) {
   const want = Math.max(3, Math.min(25, Math.round(o.count) || 15))
   const money = await spendThisMonth()
   if (money.cap <= 0) throw new Error('Paid search is switched off (the monthly limit is $0).')
@@ -171,9 +172,10 @@ export async function paidDiscover(o: { description: string; segment: Segment; c
     `"${o.description.replace(/\s+/g, ' ').trim().slice(0, 400)}"`,
     `List up to ${want} real organisations — companies, clubs, academies, charities, operators. NOT individual people, NOT directories or governing bodies.`,
     seen.size ? `Skip any of these, which we already have: ${[...seen].slice(0, 150).join('; ')}.` : '',
-    `Reply with JSON only: [{"name": "the organisation's name as it trades", "website": "https://…" or null, "town": "…" or null}]`,
+    `For each say which kind it is: "venue" (a club or facility with its own courts and members), "academy" (a coaching business with a team of coaches), or "coach" (one coach trading alone).`,
+    `Reply with JSON only: [{"name": "the organisation's name as it trades", "website": "https://…" or null, "town": "…" or null, "kind": "venue" | "academy" | "coach"}]`,
   ].filter(Boolean).join('\n'), 4, 1800, o.description)
-  const list = (Array.isArray(jsonIn(text, '[')) ? jsonIn(text, '[') : []) as { name?: unknown; website?: unknown; town?: unknown }[]
+  const list = (Array.isArray(jsonIn(text, '[')) ? jsonIn(text, '[') : []) as { name?: unknown; website?: unknown; town?: unknown; kind?: unknown }[]
   const rows: Record<string, unknown>[] = []
   let already = 0
   for (const it of list.slice(0, want)) {
@@ -186,7 +188,8 @@ export async function paidDiscover(o: { description: string; segment: Segment; c
     rows.push({
       org_name: name, company_number: reg?.company_number ?? null, legal_form: reg?.form ?? 'Unknown', corporate_ok: !!reg?.corporate,
       town: reg?.town || (typeof it.town === 'string' ? it.town.trim().slice(0, 80) : null) || null, district: reg?.district ?? null,
-      segment: o.segment, website: site, source: `Web search: “${o.description.replace(/\s+/g, ' ').trim().slice(0, 80)}”`,
+      segment: o.segment !== 'auto' ? o.segment : (['venue', 'academy', 'coach'] as const).find(k => k === it.kind) || segmentFromName(name),
+      website: site, source: `Web search: “${o.description.replace(/\s+/g, ' ').trim().slice(0, 80)}”`,
     })
   }
   let added = 0

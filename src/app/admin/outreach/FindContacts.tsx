@@ -22,7 +22,7 @@ type Prospect = {
   state: 'new' | 'no_email' | 'unsure' | 'found' | 'nothing' | 'added' | 'dismissed'; searched_paid: boolean; notes: string | null
 }
 type Overview = {
-  prospects: Prospect[]; counts: Record<string, number>; searchable: number
+  prospects: Prospect[]; counts: Record<string, number>; open: number; segments: Record<Segment, number>; searchable: number
   spend: { spent: number; cap: number; perLookup: number; perDiscover: number }
   ready: { companiesHouse: boolean; paid: boolean }
 }
@@ -57,22 +57,22 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
   const [busy, setBusy] = useState('')
   const [progress, setProgress] = useState('')
   const stop = useRef(false)
+  const [view, setView] = useState<'all' | Prospect['state']>('all')
   // free search
   const [words, setWords] = useState('tennis'); const [exclude, setExclude] = useState('table tennis, construction, surfaces, courts ltd'); const [location, setLocation] = useState('')
-  const [segment, setSegment] = useState<Segment>('academy'); const [max, setMax] = useState('100')
+  const [segment, setSegment] = useState<Segment | 'auto'>('auto'); const [max, setMax] = useState('100')
   // paid
   const [paidOpen, setPaidOpen] = useState<'' | 'lookup' | 'discover'>('')
   const [howMany, setHowMany] = useState('25'); const [desc, setDesc] = useState(''); const [count, setCount] = useState('15'); const [cap, setCap] = useState('20')
-  const [view, setView] = useState<'all' | Prospect['state']>('all')
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/outreach/find', { headers: { 'x-admin-token': token() } })
+      const res = await fetch(`/api/admin/outreach/find?state=${encodeURIComponent(view)}`, { headers: { 'x-admin-token': token() } })
       const d = await res.json()
       if (!res.ok) throw new Error(d.error || 'Could not load.')
       setData(d); setCap(String(d.spend.cap)); setErr('')
     } catch (e) { setErr(e instanceof Error ? e.message : 'Could not load.') }
-  }, [])
+  }, [view])
   useEffect(() => { void load() }, [load])
 
   const run = async (name: string, fn: () => Promise<Record<string, unknown> | void>) => {
@@ -85,13 +85,16 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
   // FREE: a few at a time until there are none left, or Stop is pressed.
   const freeLook = () => run('free', async () => {
     let checked = 0, found = 0
+    const t = { no_email: 0, not_theirs: 0, no_site: 0 }
     for (;;) {
-      const d = await call('freeLook') as { checked: number; found: number; left: number }
+      const d = await call('freeLook') as { checked: number; found: number; left: number; tally?: typeof t }
       checked += d.checked; found += d.found
+      if (d.tally) { t.no_email += d.tally.no_email; t.not_theirs += d.tally.not_theirs; t.no_site += d.tally.no_site }
       setProgress(`Checked ${checked}, found ${found} email${found === 1 ? '' : 's'} — ${d.left} to go`)
       if (!d.checked || !d.left || stop.current) break
     }
-    return { note: `Looked up ${checked} for free: ${found} email${found === 1 ? '' : 's'} found.${stop.current ? ' Stopped.' : ''}` }
+    // Says where the rest stopped, so "found nothing" can be told from "is not working".
+    return { note: `Looked up ${checked} for free: ${found} email${found === 1 ? '' : 's'} found · ${t.no_email} have a website with no email on it · ${t.not_theirs} had someone else’s website at that address · ${t.no_site} have no website at the likely addresses.${stop.current ? ' Stopped.' : ''}` }
   })
 
   // PAID: only ever called from the "Run paid search" button below.
@@ -119,7 +122,9 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
   const n = (s: string) => data.counts[s] || 0
   const total = Math.max(1, Math.min(data.searchable, Number(howMany) || 0))
   const room = Math.max(0, data.spend.cap - data.spend.spent)
-  const shown = data.prospects.filter(p => view === 'all' || p.state === view)
+  const shown = data.prospects
+  const shownTotal = view === 'all' ? data.open : n(view)
+  const SEG_LABEL: Record<Segment, string> = { academy: 'Academy', venue: 'Venue', coach: 'Coach' }
   const working = !!busy
 
   return (
@@ -141,8 +146,8 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
         <div><label style={label}>But not (comma separated)</label><input value={exclude} onChange={e => setExclude(e.target.value)} placeholder="table tennis, construction" style={input} /></div>
         <div><label style={label}>Area (optional)</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Manchester" style={input} /></div>
         <div><label style={label}>File them under</label>
-          <select value={segment} onChange={e => setSegment(e.target.value as Segment)} style={input}>
-            <option value="academy">Tennis academies</option><option value="venue">Venues that manage coaches</option><option value="coach">Individual coaches</option>
+          <select value={segment} onChange={e => setSegment(e.target.value as Segment | 'auto')} style={input}>
+            <option value="auto">Work it out for each one</option><option value="academy">All as tennis academies</option><option value="venue">All as venues that manage coaches</option><option value="coach">All as individual coaches</option>
           </select></div>
         <div><label style={label}>How many new ones</label><input type="number" min={1} max={500} value={max} onChange={e => setMax(e.target.value)} style={input} /></div>
       </div>
@@ -168,6 +173,25 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
       </div>
       <div className="text-xs mt-2" style={{ color: C.dim }}>
         It guesses the web address from the company name, checks the page really is theirs, and reads the email they publish. It will miss companies whose web address is nothing like their name — that is what the paid search is for.
+      </div>
+
+      {/* ── Which group each one is in ── */}
+      <div className="text-xs font-semibold mt-5 mb-2" style={{ color: C.sub }}>3 · Academy, venue or coach? <span style={{ color: C.good }}>· free</span></div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs" style={{ color: C.text, fontVariantNumeric: 'tabular-nums' }}>
+          {data.segments.academy || 0} academies · {data.segments.venue || 0} venues · {data.segments.coach || 0} coaches
+        </span>
+        <button disabled={working || !data.open} style={btn('ghost', working || !data.open)} onClick={() => { void run('resort', () => call('resort')) }}>
+          {busy === 'resort' ? 'Sorting…' : 'Sort the list again'}
+        </button>
+        {n('no_email') - data.searchable < n('no_email') && data.searchable > 0 && (
+          <button disabled={working} style={btn('ghost', working)} onClick={() => { void run('retry', () => call('retryFree')) }}>
+            {busy === 'retry' ? 'Resetting…' : `Give the ${data.searchable} without an email another free look`}
+          </button>
+        )}
+      </div>
+      <div className="text-xs mt-2" style={{ color: C.dim }}>
+        Each one is sorted twice: first from its name and the activity it registered (a “Lawn Tennis Club” is a venue, “Sam Marland Tennis Ltd” is one coach), then again from what its own website says once the free look has read it. It is a best guess — change any of them in the list below.
       </div>
 
       {/* ── Paid ── */}
@@ -220,8 +244,8 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
             <div className="flex flex-wrap items-end gap-3 mt-2">
               <div style={{ width: 120 }}><label style={label}>Up to how many</label><input type="number" min={3} max={25} value={count} onChange={e => setCount(e.target.value)} style={input} /></div>
               <div style={{ width: 220 }}><label style={label}>File them under</label>
-                <select value={segment} onChange={e => setSegment(e.target.value as Segment)} style={input}>
-                  <option value="academy">Tennis academies</option><option value="venue">Venues that manage coaches</option><option value="coach">Individual coaches</option>
+                <select value={segment} onChange={e => setSegment(e.target.value as Segment | 'auto')} style={input}>
+                  <option value="auto">Work it out for each one</option><option value="academy">All as tennis academies</option><option value="venue">All as venues that manage coaches</option><option value="coach">All as individual coaches</option>
                 </select></div>
               <div className="text-xs" style={{ color: C.text, lineHeight: 1.6 }}>
                 About <b>{usd(data.spend.perDiscover)}</b> a run.
@@ -242,11 +266,11 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
       {!!note && <div className="text-xs rounded-lg px-3 py-2 mt-3" style={{ background: '#0A0B10', border: `1px solid ${C.line}`, color: C.sub }}>{note}</div>}
 
       {/* ── The list ── */}
-      {data.prospects.length > 0 && (
+      {(data.open > 0 || data.prospects.length > 0) && (
         <div className="mt-4">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             {(['all', 'found', 'unsure', 'no_email', 'new', 'nothing'] as const).map(s => {
-              const c = s === 'all' ? data.prospects.length : n(s)
+              const c = s === 'all' ? data.open : n(s)
               if (s !== 'all' && !c) return null
               return <button key={s} onClick={() => setView(s)} style={{ ...btn(), borderColor: view === s ? C.accent : C.line, color: view === s ? C.accent : C.sub }}>{s === 'all' ? 'All' : STATE[s][0]} {c}</button>
             })}
@@ -254,12 +278,19 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
             <button disabled={working} style={btn('danger', working)} onClick={() => { if (window.confirm('Clear everything on this list that has not been added to contacts? They will not be offered again.')) void run('clear', () => call('clear')) }}>Clear list</button>
           </div>
           <div style={{ overflowX: 'auto', maxHeight: 420, overflowY: 'auto', border: `1px solid ${C.line}`, borderRadius: 8 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 760, fontSize: 12 }}>
-              <thead><tr>{['Organisation', 'Legal form', 'Website', 'Email', 'Where it is up to', ''].map(h => <th key={h} style={{ textAlign: 'left', fontSize: 10, color: C.dim, fontWeight: 600, padding: '7px 10px', textTransform: 'uppercase', letterSpacing: '0.05em', position: 'sticky', top: 0, background: C.card }}>{h}</th>)}</tr></thead>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 860, fontSize: 12 }}>
+              <thead><tr>{['Organisation', 'Group', 'Legal form', 'Website', 'Email', 'Where it is up to', ''].map(h => <th key={h} style={{ textAlign: 'left', fontSize: 10, color: C.dim, fontWeight: 600, padding: '7px 10px', textTransform: 'uppercase', letterSpacing: '0.05em', position: 'sticky', top: 0, background: C.card }}>{h}</th>)}</tr></thead>
               <tbody>
-                {shown.slice(0, 300).map(p => (
+                {shown.map(p => (
                   <tr key={p.id} style={{ borderTop: `1px solid ${C.line}` }}>
                     <td style={{ padding: '7px 10px', color: C.text }}>{p.org_name}{p.town ? <span style={{ color: C.dim }}> · {p.town}</span> : null}</td>
+                    <td style={{ padding: '5px 10px' }}>
+                      <select value={p.segment} disabled={working} aria-label={`Group for ${p.org_name}`}
+                        onChange={e => { void run('row', () => call('setSegment', { ids: [p.id], segment: e.target.value })) }}
+                        style={{ ...input, width: 'auto', padding: '3px 6px', fontSize: 12, color: C.sub }}>
+                        {(['academy', 'venue', 'coach'] as Segment[]).map(g => <option key={g} value={g}>{SEG_LABEL[g]}</option>)}
+                      </select>
+                    </td>
                     <td style={{ padding: '7px 10px', color: p.corporate_ok ? C.sub : C.warn, whiteSpace: 'nowrap' }}>{p.legal_form || 'Unknown'}{p.corporate_ok ? '' : ' — will be held'}</td>
                     <td style={{ padding: '7px 10px' }}>{p.website ? <a href={p.website} target="_blank" rel="noreferrer" style={{ color: C.sub, textDecoration: 'underline' }}>{p.website.replace(/^https?:\/\/(www\.)?/, '')}</a> : <span style={{ color: C.dim }}>—</span>}</td>
                     <td style={{ padding: '7px 10px', color: p.email ? C.text : C.dim, wordBreak: 'break-all' }}>{p.email || '—'}</td>
@@ -275,7 +306,7 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
               </tbody>
             </table>
           </div>
-          {shown.length > 300 && <div className="text-xs mt-1" style={{ color: C.dim }}>Showing the first 300 of {shown.length}.</div>}
+          {shownTotal > shown.length && <div className="text-xs mt-1" style={{ color: C.dim }}>Showing {shown.length} of {shownTotal}. Use the buttons above to narrow it down.</div>}
         </div>
       )}
     </div>

@@ -158,7 +158,18 @@ export function render(c: Contact, camp: EmailContent, settings: Settings, base:
   const headline = designed ? fill(camp.headline || '', c).replace(/\s+/g, ' ').trim() : ''
   const abs = (u: string | null | undefined) => { const v = (u || '').trim(); return !v ? '' : /^https?:\/\//i.test(v) ? v : v.startsWith('/') ? `${base}${v}` : '' }
   const image = designed ? abs(camp.image_url) : ''
-  const buttonUrl = designed ? abs(camp.button_url) : ''
+  // The button's link to our own site carries a plain source tag, so admin
+  // Analytics can tell "came from an outreach email" from "typed the address".
+  // It names the channel, never the person: no id, no per-contact token.
+  const tagged = (u: string) => {
+    try {
+      const x = new URL(u)
+      if (!/(^|\.)lumiosports\.com$/i.test(x.hostname) || x.pathname.startsWith('/api/') || x.searchParams.has('utm_source')) return u
+      x.searchParams.set('utm_source', 'email'); x.searchParams.set('utm_medium', 'outreach'); x.searchParams.set('utm_campaign', c.segment)
+      return x.toString()
+    } catch { return u }
+  }
+  const buttonUrl = designed ? tagged(abs(camp.button_url)) : ''
   const buttonText = (camp.button_text || '').replace(/\s+/g, ' ').trim()
 
   const text = `${headline ? `${headline}\n\n` : ''}${body}${buttonUrl ? `\n\n${buttonText || 'Find out more'}: ${buttonUrl}` : ''}\n\n--\n${sender}\n${whyText}\nIf you would rather not hear from me again: ${unsub}\n`

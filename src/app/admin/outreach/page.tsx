@@ -332,6 +332,7 @@ export default function OutreachPage() {
   const [filter, setFilter] = useState<'all' | Segment | 'held'>('all')
   const [company, setCompany] = useState(''); const [limit, setLimit] = useState('250'); const [warmup, setWarmup] = useState(true)
   const [busy, setBusy] = useState('')
+  const [tab, setTab] = useState<'main' | 'setup'>('main')
 
   const load = useCallback(async () => {
     try {
@@ -375,6 +376,19 @@ export default function OutreachPage() {
 
       {!!note && <div className="text-xs rounded-lg px-3 py-2" style={{ background: '#0A0B10', border: `1px solid ${C.line}`, color: C.sub }}>{note}</div>}
 
+      {/* Two tabs: the everyday work, and the things set up once. Both stay
+          mounted (hidden, not removed) so a half-chosen import file or a
+          look-up in progress survives a glance at the other tab. */}
+      <div className="flex gap-1" style={{ borderBottom: `1px solid ${C.line}` }}>
+        {([['main', 'Campaigns & contacts'], ['setup', 'Settings & import']] as const).map(([id, label]) => (
+          <button key={id} onClick={() => setTab(id)}
+            style={{ appearance: 'none', background: 'transparent', border: 0, borderBottom: `2px solid ${tab === id ? C.accent : 'transparent'}`, marginBottom: -1, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: tab === id ? C.text : C.dim }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-6" hidden={tab !== 'main'}>
       <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
         <Card>
           <div className="text-xs" style={{ color: C.dim }}>Mailbox</div>
@@ -440,30 +454,7 @@ export default function OutreachPage() {
           ))}</div>}
       </Card>
 
-      {/* Settings */}
-      <Card>
-        <div className="text-sm font-semibold mb-3">Settings</div>
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'minmax(0,3fr) minmax(0,1fr) auto', alignItems: 'end' }}>
-          <div>
-            <div className="text-xs mb-1" style={{ color: C.dim }}>Sender details at the foot of every email (optional) — left blank, it shows your name, “Lumio Tennis Coach” and your reply address</div>
-            <input value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Arron Margeison · Lumio Tennis Coach · London — or your registered company details once you have them" style={input} />
-          </div>
-          <div>
-            <div className="text-xs mb-1" style={{ color: C.dim }}>Emails per day</div>
-            <input value={limit} onChange={e => setLimit(e.target.value.replace(/\D/g, ''))} style={input} />
-          </div>
-          <button onClick={() => { void run('set', () => api('settings', { company_line: company, daily_limit: Math.min(data.maxDaily, Number(limit) || 0), warmup }), 'Settings saved.') }} style={btn('primary')}>Save</button>
-        </div>
-        <label className="flex items-start gap-2 text-xs mt-3" style={{ color: C.sub, lineHeight: 1.5, cursor: 'pointer' }}>
-          <input type="checkbox" checked={warmup} onChange={e => setWarmup(e.target.checked)} style={{ marginTop: 2 }} />
-          <span><b style={{ color: C.text }}>Warm up a new mailbox.</b> Starts at 30 a day and adds 15 each day until it reaches your limit (250 takes about three weeks). Turn this off only once the mailbox has been sending for a while — a brand-new address that sends hundreds on day one is the surest way to land in spam or have the mailbox suspended.</span>
-        </label>
-        <div className="text-xs mt-2" style={{ color: C.dim }}>Up to {data.maxDaily} a day. Sent a few at a time every ten minutes, Mon–Fri 9am–5pm UK. Unsubscribe links point at {data.linkBase}.</div>
-      </Card>
-
       <FindContacts onContactsChanged={() => { void load() }} />
-
-      <ImportBox onDone={() => { void load() }} total={contacts.length} />
 
       {/* Contacts */}
       <Card style={{ padding: 0 }}>
@@ -529,6 +520,33 @@ export default function OutreachPage() {
           </tbody></table>
         )}
       </Card>
+
+      </div>
+
+      <div className="space-y-6" hidden={tab !== 'setup'}>
+      {/* Settings */}
+      <Card>
+        <div className="text-sm font-semibold mb-3">Settings</div>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'minmax(0,3fr) minmax(0,1fr) auto', alignItems: 'end' }}>
+          <div>
+            <div className="text-xs mb-1" style={{ color: C.dim }}>Sender details at the foot of every email (optional) — left blank, it shows your name, “Lumio Tennis Coach” and your reply address</div>
+            <input value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Arron Margeison · Lumio Tennis Coach · London — or your registered company details once you have them" style={input} />
+          </div>
+          <div>
+            <div className="text-xs mb-1" style={{ color: C.dim }}>Emails per day</div>
+            <input value={limit} onChange={e => setLimit(e.target.value.replace(/\D/g, ''))} style={input} />
+          </div>
+          <button onClick={() => { void run('set', () => api('settings', { company_line: company, daily_limit: Math.min(data.maxDaily, Number(limit) || 0), warmup }), 'Settings saved.') }} style={btn('primary')}>Save</button>
+        </div>
+        <label className="flex items-start gap-2 text-xs mt-3" style={{ color: C.sub, lineHeight: 1.5, cursor: 'pointer' }}>
+          <input type="checkbox" checked={warmup} onChange={e => setWarmup(e.target.checked)} style={{ marginTop: 2 }} />
+          <span><b style={{ color: C.text }}>Warm up a new mailbox.</b> Starts at 30 a day and adds 15 each day until it reaches your limit (250 takes about three weeks). Turn this off only once the mailbox has been sending for a while — a brand-new address that sends hundreds on day one is the surest way to land in spam or have the mailbox suspended.</span>
+        </label>
+        <div className="text-xs mt-2" style={{ color: C.dim }}>Up to {data.maxDaily} a day. Sent a few at a time every ten minutes, Mon–Fri 9am–5pm UK. Unsubscribe links point at {data.linkBase}.</div>
+      </Card>
+
+      <ImportBox onDone={() => { void load() }} total={contacts.length} />
+      </div>
 
       {editing && <Editor camp={editing} onClose={() => setEditing(null)} onSaved={() => { void load() }} />}
     </div>
