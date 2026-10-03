@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { runBatch, getSettings, todaysLimit } from '@/lib/outreach/core'
+import { runBatch, getSettings, todaysLimit, syncInbox } from '@/lib/outreach/core'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -21,7 +21,18 @@ export async function POST(req: NextRequest) {
   if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+  // Read the answers three times a day — 7am, 4pm and 11pm UK — rather than on
+  // every run. This route is hit every ten minutes, so "the first run of that
+  // hour" is the one whose minute is under ten. The 7am read comes before the
+  // day's sending starts at nine, so anyone who bounced or asked to stop
+  // overnight is off the list first. Never allowed to stop the sending.
+  // ("Check now" on the Outreach page reads the mailbox on demand.)
+  const uk = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: 'numeric', minute: 'numeric', hour12: false }).formatToParts(new Date())
+  const hour = Number(uk.find(p => p.type === 'hour')?.value) % 24, minute = Number(uk.find(p => p.type === 'minute')?.value)
+  const inbox = [7, 16, 23].includes(hour) && minute < 10
+    ? await syncInbox().catch(e => ({ ok: false, error: e instanceof Error ? e.message : 'inbox check failed' }))
+    : null
   const perRun = Math.max(1, Math.min(8, Math.ceil(await todaysLimit(await getSettings()) / 48)))
   const result = await runBatch({ max: perRun, reqOrigin: new URL(req.url).origin, respectHours: true })
-  return NextResponse.json(result)
+  return NextResponse.json({ ...result, inbox })
 }

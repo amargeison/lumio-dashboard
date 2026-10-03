@@ -80,8 +80,32 @@ const btn = (T: ThemeTokens, accent: AccentTokens, primary?: boolean): CSSProper
 })
 
 /** An input that saves when you leave it, not on every keystroke. */
-function CellInput({ T, value, placeholder, onSave, width }: {
+// Ready-made camp goals. A coach with forty children on a camp should be able
+// to pick one in two clicks; the box still takes anything they type instead.
+export const CAMP_GOALS = [
+  'Serve — a reliable first serve',
+  'Forehand — topspin and depth',
+  'Backhand — confidence and control',
+  'Volleys and net play',
+  'Footwork and movement',
+  'Rally consistency — keep the ball in play',
+  'Return of serve',
+  'Match play and point construction',
+  'Doubles play and teamwork',
+  'Move up a racket stage',
+  'Get ready for a first tournament',
+  'Fitness and stamina',
+  'Confidence on court',
+  'Make friends and enjoy the week',
+]
+const CAMP_GOALS_LIST = 'lumio-camp-goals'
+/** Rendered once per table; every goal box points at it with list="…". */
+const CampGoalOptions = () => <datalist id={CAMP_GOALS_LIST}>{CAMP_GOALS.map(g => <option key={g} value={g} />)}</datalist>
+
+function CellInput({ T, value, placeholder, onSave, width, list }: {
   T: ThemeTokens; value: string; placeholder: string; onSave: (v: string) => void; width?: number
+  /** id of a <datalist>: the box becomes a drop-down that still takes free text. */
+  list?: string
 }) {
   const [v, setV] = useState(value)
   const [seen, setSeen] = useState(value)
@@ -92,8 +116,14 @@ function CellInput({ T, value, placeholder, onSave, width }: {
   if (value !== seen) { setSeen(value); setV(value) }
   return (
     <input
-      value={v} placeholder={placeholder}
-      onChange={e => setV(e.target.value)}
+      value={v} placeholder={placeholder} list={list}
+      onChange={e => {
+        const nv = e.target.value
+        setV(nv)
+        // Picking from the drop-down saves there and then — nobody thinks to
+        // click away afterwards.
+        if (list && nv !== seen && CAMP_GOALS.includes(nv)) { setSeen(nv); onSave(nv) }
+      }}
       onBlur={() => { if (v !== seen) { setSeen(v); onSave(v) } }}
       onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
       style={{ ...input(T), width: width ?? '100%', minWidth: width ?? 90, background: 'transparent', border: '1px solid transparent', padding: '5px 6px' }}
@@ -277,6 +307,10 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
   const [pick, setPick] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
   const [err, setErr] = useState('')
+  // One goal for the whole camp, set in one go.
+  const [allGoal, setAllGoal] = useState('')
+  const [keepOwn, setKeepOwn] = useState(true)
+  const [applying, setApplying] = useState('')
   const taken = new Set(attendees.map(a => a.player_name.toLowerCase()))
   const cap = Number(camp.capacity) || 0
   const left = cap ? Math.max(0, cap - attendees.length) : null
@@ -284,6 +318,21 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
   const save = async (id: string, v: Record<string, unknown>) => {
     setErr('')
     try { await editAtt(id, v) } catch (e) { setErr(e instanceof Error ? e.message : 'Could not save that') }
+  }
+
+  const goalTargets = attendees.filter(a => !keepOwn || !(a.camp_goal || '').trim())
+  const applyGoal = async () => {
+    const goal = allGoal.trim()
+    if (!goal || applying || !goalTargets.length) return
+    setErr(''); setApplying(`Setting 0 of ${goalTargets.length}…`)
+    let done = 0, failed = 0
+    // A few at a time: quick for forty children, and one failure does not stop the rest.
+    for (let i = 0; i < goalTargets.length; i += 6) {
+      await Promise.all(goalTargets.slice(i, i + 6).map(a => editAtt(a.id, { camp_goal: goal }).then(() => { done++ }, () => { failed++ })))
+      setApplying(`Setting ${done} of ${goalTargets.length}…`)
+    }
+    setApplying('')
+    if (failed) setErr(`${failed} could not be saved — try again.`); else setAllGoal('')
   }
 
   const th: CSSProperties = { ...lbl(T), textAlign: 'left', padding: '0 8px 8px', whiteSpace: 'nowrap' }
@@ -336,6 +385,26 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
         <button onClick={async () => { const p = players.find(x => x.id === pick); if (p) { await addPlayer(p.name, p.id); setPick('') } }}
           disabled={!pick} style={{ ...btn(T, accent, true), opacity: pick ? 1 : 0.5, cursor: pick ? 'pointer' : 'not-allowed' }}>+ Add</button>
       </div>
+
+      {/* One goal for everyone. Most camps have a theme, and typing it into
+          forty boxes is exactly the job a coach gives up on. */}
+      {attendees.length > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '9px 12px', marginBottom: 12 }}>
+          <span style={{ ...lbl(T), padding: 0 }}>Camp goal for everyone</span>
+          <input value={allGoal} onChange={e => setAllGoal(e.target.value)} list={CAMP_GOALS_LIST} placeholder="Pick a goal or type your own"
+            onKeyDown={e => { if (e.key === 'Enter') void applyGoal() }}
+            style={{ ...input(T), flex: '1 1 240px', minWidth: 0, padding: '7px 10px', fontSize: 12.5 }} />
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: T.text2, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <input type="checkbox" checked={keepOwn} onChange={e => setKeepOwn(e.target.checked)} />
+            Keep goals already written
+          </label>
+          <button onClick={() => { void applyGoal() }} disabled={!allGoal.trim() || !!applying || !goalTargets.length}
+            style={{ ...btn(T, accent, true), opacity: allGoal.trim() && !applying && goalTargets.length ? 1 : 0.5, cursor: allGoal.trim() && !applying && goalTargets.length ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap' }}>
+            {applying || (goalTargets.length === attendees.length ? `Apply to all ${attendees.length}` : goalTargets.length ? `Apply to ${goalTargets.length} without a goal` : 'Everyone has a goal')}
+          </button>
+        </div>
+      )}
+      <CampGoalOptions />
 
       {!!err && <div style={{ fontSize: 12, color: T.bad, marginBottom: 8 }}>{err}</div>}
 
@@ -398,7 +467,7 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
                       <td style={{ ...td, fontSize: 12, fontFamily: FONT_MONO, color: owed > 0 ? T.warn : T.text3 }}>{owed > 0 ? money(owed) : '—'}</td>
                       <td style={td}><CellInput T={T} value={a.room || ''} placeholder="—" onSave={v => void save(a.id, { room: v || null })} width={110} /></td>
                       <td style={td}><CellInput T={T} value={a.arrival || ''} placeholder="—" onSave={v => void save(a.id, { arrival: v || null })} width={120} /></td>
-                      <td style={{ ...td, minWidth: 220 }}><CellInput T={T} value={a.camp_goal || ''} placeholder="What is this week for?" onSave={v => void save(a.id, { camp_goal: v || null })} /></td>
+                      <td style={{ ...td, minWidth: 220 }}><CellInput T={T} value={a.camp_goal || ''} placeholder="Pick a goal or type your own" list={CAMP_GOALS_LIST} onSave={v => void save(a.id, { camp_goal: v || null })} /></td>
                       <td style={{ ...td, whiteSpace: 'nowrap', textAlign: 'right' }}>
                         {details.length > 0 && (
                           <button onClick={() => setOpenId(showing ? null : a.id)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 7, padding: '3px 9px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>{showing ? 'Hide' : 'Details'}</button>
@@ -612,7 +681,8 @@ export function TargetsBoard({ T, accent, camp, attendees, players, onSave, onRe
             <div style={{ ...box(T), marginBottom: 12 }}>
               <div style={lbl(T)}>Their goal for the week</div>
               <div style={{ marginTop: 4 }}>
-                <CellInput T={T} value={openAtt?.camp_goal || ''} placeholder="Type the one thing this week is for…"
+                <CampGoalOptions />
+                <CellInput T={T} value={openAtt?.camp_goal || ''} placeholder="Pick a goal or type the one thing this week is for…" list={CAMP_GOALS_LIST}
                   onSave={v => { if (openAtt) void editAtt(openAtt.id, { camp_goal: v || null }) }} />
               </div>
               <div style={{ fontSize: 10.5, color: T.text3, marginTop: 4 }}>Shows on the attendee list and on their camp pack.</div>

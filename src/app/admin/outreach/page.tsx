@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { readWorkbook, SPREADSHEET_RE, type SheetData } from '@/lib/coach/read-workbook'
+import FindContacts from './FindContacts'
 
 type Segment = 'academy' | 'venue' | 'coach'
 type Contact = {
@@ -397,7 +398,12 @@ export default function OutreachPage() {
           <div className="text-2xl font-bold mt-1">
             {contacts.filter(c => c.status === 'replied').length} · {contacts.filter(c => c.status === 'unsubscribed').length} · {contacts.filter(c => c.status === 'bounced').length}
           </div>
-          <div className="text-xs mt-1" style={{ color: C.sub }}>Replies and bounces arrive in the mailbox — mark them below.</div>
+          <div className="text-xs mt-1" style={{ color: C.sub }}>
+            Read from the mailbox at 7am, 4pm and 11pm. Out-of-office replies are not counted.{' '}
+            <button onClick={() => { void run('inbox', () => api('syncInbox')) }} disabled={!!busy} style={{ background: 'none', border: 0, padding: 0, color: C.text, textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}>
+              {busy === 'inbox' ? 'Checking…' : 'Check now'}
+            </button>
+          </div>
         </Card>
       </div>
 
@@ -454,6 +460,8 @@ export default function OutreachPage() {
         </label>
         <div className="text-xs mt-2" style={{ color: C.dim }}>Up to {data.maxDaily} a day. Sent a few at a time every ten minutes, Mon–Fri 9am–5pm UK. Unsubscribe links point at {data.linkBase}.</div>
       </Card>
+
+      <FindContacts onContactsChanged={() => { void load() }} />
 
       <ImportBox onDone={() => { void load() }} total={contacts.length} />
 

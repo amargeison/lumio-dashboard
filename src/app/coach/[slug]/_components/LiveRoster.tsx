@@ -259,6 +259,7 @@ export function LiveRoster({ T, accent, density }: Common) {
     || (typeof window !== 'undefined' ? `${window.location.origin}/tennis_transparent_logo.png` : '')
   const wpOrg = { academy: wpProfile.brand_name || 'Lumio Tennis Academy', coach: wpProfile.display_name || 'Your Coach', logo: wpLogo }
   const [group, setGroup] = useState<'All' | typeof CATEGORIES[number]>('All')
+  const [query, setQuery] = useState('')
   const [sel, setSel] = useState<any | null>(null)
   const [editing, setEditing] = useState<any | null | undefined>(undefined) // undefined = closed
   // Head coach or assistant — decides which "no players" story is the true one.
@@ -278,7 +279,13 @@ export function LiveRoster({ T, accent, density }: Common) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [players.loading])
 
-  const list = group === 'All' ? players.rows : players.rows.filter(p => p.category === group)
+  const inGroup = group === 'All' ? players.rows : players.rows.filter(p => p.category === group)
+  // Search by the player's name, or by the parent's — a coach is as likely to
+  // remember "Mrs Campbell's boy" as the boy. Every word typed has to match.
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hay = (p: any) => [p.name, p.parent_name, p.email, p.assigned_coach].filter(Boolean).join(' ').toLowerCase()
+  const list = terms.length ? inGroup.filter(p => { const h = hay(p); return terms.every(t => h.includes(t)) }) : inGroup
   const tabs = ['All', ...CATEGORIES] as const
 
   const skillMapFor = (pid: string) => Object.fromEntries(skills.rows.filter(s => s.player_id === pid).map(s => [s.skill, s.score])) as Record<string, number>
@@ -307,6 +314,12 @@ export function LiveRoster({ T, accent, density }: Common) {
               <button key={t} onClick={() => setGroup(t)} style={{ appearance: 'none', border: 0, padding: '5px 12px', borderRadius: 6, fontSize: 11.5, cursor: 'pointer', background: group === t ? T.panel : 'transparent', color: group === t ? T.text : T.text2, fontWeight: group === t ? 600 : 400 }}>{t}</button>
             ))}
           </div>
+          <div style={{ position: 'relative' }}>
+            <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search players…" aria-label="Search players"
+              onKeyDown={e => { if (e.key === 'Escape') setQuery('') }}
+              style={{ width: 200, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 9, padding: '7px 28px 7px 11px', color: T.text, fontSize: 12.5, outline: 'none' }} />
+            {!!query && <button onClick={() => setQuery('')} aria-label="Clear search" style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15, lineHeight: 1, padding: '2px 6px' }}>×</button>}
+          </div>
           <button onClick={() => setEditing(null)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
             <Icon name="plus" size={14} stroke={2} /> Add player
           </button>
@@ -321,6 +334,12 @@ export function LiveRoster({ T, accent, density }: Common) {
 
       {players.loading ? (
         <p style={{ color: T.text3, fontSize: 13, padding: '40px 0', textAlign: 'center' }}>Loading…</p>
+      ) : terms.length && list.length === 0 && inGroup.length > 0 ? (
+        <div style={{ border: `1px dashed ${T.border}`, borderRadius: 14, padding: 40, textAlign: 'center' }}>
+          <p style={{ color: T.text2, fontSize: 14, fontWeight: 600, margin: '0 0 4px' }}>No players match “{query.trim()}”</p>
+          <p style={{ color: T.text3, fontSize: 13, margin: '0 0 16px' }}>{group === 'All' ? 'Check the spelling, or search by a parent’s name.' : `Searching ${group} players only — try All.`}</p>
+          <button onClick={() => setQuery('')} style={{ padding: '9px 18px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Clear search</button>
+        </div>
       ) : list.length === 0 && me && !me.isHead ? (
         // An assistant coach sees only players assigned to them (migration 166).
         // "No players yet — add your first" is the wrong story here: the academy
