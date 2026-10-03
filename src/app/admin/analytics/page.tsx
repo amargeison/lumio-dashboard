@@ -5,7 +5,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { Users, Eye, Sparkles, Trophy, Clock } from 'lucide-react'
 
 type Period = '1d' | '7d' | '30d' | '90d'
-type Sport = 'all' | 'tennis' | 'golf' | 'darts' | 'boxing' | 'cricket' | 'rugby' | 'football' | 'nonleague' | 'grassroots' | 'womens'
+type Sport = 'all' | 'tennis-coach' | 'tennis' | 'golf' | 'darts' | 'boxing' | 'cricket' | 'rugby' | 'football' | 'nonleague' | 'grassroots' | 'womens'
 
 type Summary = {
   views: number
@@ -31,13 +31,14 @@ type ApiResponse = {
   topPaths: { key: string; count: number }[]
   topReferrers: { key: string; count: number }[]
   topCountries: { key: string; count: number }[]
+  topSources?: { key: string; count: number }[]
   devices: { key: string; count: number }[]
   browsers: { key: string; count: number }[]
   botPct: number
   rowCapHit: boolean
 }
 
-const SPORTS: Sport[] = ['all', 'tennis', 'golf', 'darts', 'boxing', 'cricket', 'rugby', 'football', 'nonleague', 'grassroots', 'womens']
+const SPORTS: Sport[] = ['all', 'tennis-coach', 'tennis', 'golf', 'darts', 'boxing', 'cricket', 'rugby', 'football', 'nonleague', 'grassroots', 'womens']
 const PERIODS: { id: Period; label: string }[] = [
   { id: '1d', label: 'Today' },
   { id: '7d', label: '7d' },
@@ -137,7 +138,7 @@ export default function AdminAnalytics() {
           <select value={sport} onChange={e => setSport(e.target.value as Sport)}
             className="text-xs px-3 py-2 rounded-lg outline-none"
             style={{ backgroundColor: '#111318', border: '1px solid #1F2937', color: '#F9FAFB' }}>
-            {SPORTS.map(s => <option key={s} value={s}>{s === 'all' ? 'All sports' : s[0].toUpperCase() + s.slice(1)}</option>)}
+            {SPORTS.map(s => <option key={s} value={s}>{s === 'all' ? 'All sports' : s === 'tennis-coach' ? 'Tennis Coach' : s === 'tennis' ? 'Tennis (pro portal)' : s[0].toUpperCase() + s.slice(1)}</option>)}
           </select>
 
           {/* Toggles */}
@@ -200,6 +201,22 @@ export default function AdminAnalytics() {
         <TopTable title="Top paths" rows={data?.topPaths || []} />
         <TopTable title="Top referrers" rows={data?.topReferrers || []} />
         <TopTable title="Top countries" rows={data?.topCountries || []} />
+      </div>
+
+      {/* Campaign links. A click from an email or an app usually arrives as
+          "direct", so the only way to know a post or an email brought someone
+          is to tag the link itself. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <TopTable title="Tagged links (campaigns)" rows={data?.topSources || []} />
+        <div className="rounded-xl p-4 lg:col-span-2" style={{ backgroundColor: '#111318', border: '1px solid #1F2937' }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#6B7280' }}>How to see which post or email worked</p>
+          <p className="text-xs" style={{ color: '#9CA3AF', lineHeight: 1.7 }}>
+            Add a tag to the end of any link you share and visits from it are counted on the left:<br />
+            <code style={{ color: '#F9FAFB' }}>https://lumiosports.com/tennis-coach?utm_source=instagram</code><br />
+            <code style={{ color: '#F9FAFB' }}>https://lumiosports.com/tennis-coach?utm_source=linkedin&amp;utm_campaign=founders</code><br />
+            The button in a designed Outreach email is tagged <code style={{ color: '#F9FAFB' }}>email</code> automatically. Links typed into the body of an email are left exactly as you wrote them.
+          </p>
+        </div>
       </div>
 
       {/* Secondary breakdowns */}

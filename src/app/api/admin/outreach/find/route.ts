@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminFor, db } from '@/lib/outreach/core'
-import { addProspects, companiesHouseReady, findCompanies, freeLookBatch, toSeg, type Prospect } from '@/lib/outreach/prospect'
+import { addProspects, companiesHouseReady, findCompanies, freeLookBatch, resortProspects, retryFree, toSeg, type Prospect } from '@/lib/outreach/prospect'
+import { SEGMENTS } from '@/lib/outreach/core'
 import { paidDiscover, paidLookupBatch, paidSearchReady, spendThisMonth } from '@/lib/outreach/paid-search'
 
 export const runtime = 'nodejs'
@@ -10,7 +11,7 @@ export const maxDuration = 120
 //
 // Two kinds of action live here and they are kept visibly apart:
 //
-//   FREE   findCompanies, freeLook, add, accept, dismiss, clear, cap
+//   FREE   findCompanies, freeLook, retryFree, resort, setSegment, add, accept, setEmail, dismiss, clear, cap
 //   PAID   paidLookup, paidDiscover
 //
 // A paid action runs only when the request says `confirm: 'paid'` — which the
@@ -20,16 +21,27 @@ export const maxDuration = 120
 
 const STATES = ['new', 'no_email', 'unsure', 'found', 'nothing', 'added', 'dismissed'] as const
 
-async function overview() {
+const OPEN = ['new', 'no_email', 'unsure', 'found', 'nothing'] as const
+/** 'auto' = work out which kind each one is; otherwise file them all where told. */
+const segChoice = (v: unknown) => v === 'auto' || v === undefined || v === null || v === '' ? 'auto' as const : toSeg(v)
+
+async function overview(view: string) {
   const sb = db()
-  const [{ data: list }, counts, money] = await Promise.all([
-    sb.from('outreach_prospects').select('*').neq('state', 'added').neq('state', 'dismissed').order('created_at', { ascending: false }).limit(400),
+  // The list is filtered here, not in the browser: with a thousand prospects
+  // the page only ever holds one screenful, and "No email found 130" has to
+  // show those 130 — not whichever of them happen to be in the newest 400.
+  let listQ = sb.from('outreach_prospects').select('*').order('created_at', { ascending: false }).order('id').limit(300)
+  listQ = (STATES as readonly string[]).includes(view) ? listQ.eq('state', view) : listQ.in('state', [...OPEN])
+  const [{ data: list }, counts, segs, money] = await Promise.all([
+    listQ,
     Promise.all(STATES.map(async s => [s, (await sb.from('outreach_prospects').select('id', { count: 'exact', head: true }).eq('state', s)).count ?? 0] as const)),
+    Promise.all(SEGMENTS.map(async g => [g, (await sb.from('outreach_prospects').select('id', { count: 'exact', head: true }).eq('segment', g).in('state', [...OPEN])).count ?? 0] as const)),
     spendThisMonth(),
   ])
   const { count: searchable } = await sb.from('outreach_prospects').select('id', { count: 'exact', head: true }).eq('state', 'no_email').eq('searched_paid', false)
+  const c = Object.fromEntries(counts) as Record<string, number>
   return {
-    prospects: (list || []) as Prospect[], counts: Object.fromEntries(counts), searchable: searchable ?? 0,
+    prospects: (list || []) as Prospect[], counts: c, open: OPEN.reduce((n, s) => n + (c[s] || 0), 0), segments: Object.fromEntries(segs), searchable: searchable ?? 0,
     spend: { ...money, perLookup: Math.round(money.perLookup * 1000) / 1000, perDiscover: Math.round(money.perDiscover * 100) / 100 },
     ready: { companiesHouse: companiesHouseReady(), paid: paidSearchReady() },
   }
@@ -37,7 +49,7 @@ async function overview() {
 
 export async function GET(req: NextRequest) {
   if (!await adminFor(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  try { return NextResponse.json(await overview()) }
+  try { return NextResponse.json(await overview(req.nextUrl.searchParams.get('state') || 'all')) }
   catch (e) { return NextResponse.json({ error: e instanceof Error ? e.message : 'Could not load.' }, { status: 500 }) }
 }
 
@@ -53,13 +65,26 @@ export async function POST(req: NextRequest) {
     switch (body.action) {
       // ── FREE ─────────────────────────────────────────────────────────────
       case 'findCompanies': {
-        const r = await findCompanies({ words: String(body.words ?? ''), exclude: String(body.exclude ?? ''), location: String(body.location ?? ''), segment: toSeg(body.segment), max: Number(body.max) || 100 })
+        const r = await findCompanies({ words: String(body.words ?? ''), exclude: String(body.exclude ?? ''), location: String(body.location ?? ''), segment: segChoice(body.segment), max: Number(body.max) || 100 })
         return NextResponse.json({ ok: true, ...r, note: r.added
           ? `Added ${r.added} compan${r.added === 1 ? 'y' : 'ies'} from the register.${r.already ? ` ${r.already} we already had.` : ''}${r.excluded ? ` ${r.excluded} left out by your “but not” words.` : ''}`
           : r.matched ? `Nothing new — all ${r.matched} matching companies are already here or were left out.` : 'The register has no active company with those words in its name.' })
       }
       case 'freeLook':
         return NextResponse.json({ ok: true, ...await freeLookBatch(6) })
+      case 'retryFree': {
+        const r = await retryFree()
+        return NextResponse.json({ ok: true, ...r, note: r.reset ? `${r.reset} put back in the queue for another free look.` : 'Nothing to try again.' })
+      }
+      case 'resort': {
+        const r = await resortProspects()
+        return NextResponse.json({ ok: true, ...r, note: `Looked at ${r.total} by name and activity code: ${r.moved} moved to a different group.` })
+      }
+      case 'setSegment': {
+        if (!(SEGMENTS as readonly string[]).includes(String(body.segment)) || !ids.length) throw new Error('Pick academy, venue or coach.')
+        await sb.from('outreach_prospects').update({ segment: body.segment, updated_at: now }).in('id', ids)
+        return NextResponse.json({ ok: true })
+      }
       case 'add': {
         const r = await addProspects(ids.length ? ids : undefined)
         return NextResponse.json({ ok: true, ...r, note: `Added ${r.added} to your contacts.${r.held ? ` ${r.held} are held back until you confirm they are a company or organisation.` : ''}${r.dupes ? ` ${r.dupes} were already contacts.` : ''}${r.suppressed ? ` ${r.suppressed} skipped — they unsubscribed or bounced before.` : ''}` })
@@ -101,7 +126,7 @@ export async function POST(req: NextRequest) {
         if (body.action === 'paidLookup') return NextResponse.json({ ok: true, ...await paidLookupBatch({ size: 3, ids: ids.length ? ids : undefined }) })
         const description = String(body.description ?? '').trim()
         if (description.length < 8) throw new Error('Describe who you are looking for, e.g. “padel clubs in the north west with their own coaching team”.')
-        const r = await paidDiscover({ description, segment: toSeg(body.segment), count: Number(body.count) || 15 })
+        const r = await paidDiscover({ description, segment: segChoice(body.segment), count: Number(body.count) || 15 })
         return NextResponse.json({ ok: true, ...r, note: r.added
           ? `Found ${r.added} new organisation${r.added === 1 ? '' : 's'} — ${r.onRegister} confirmed as companies on the register.${r.already ? ` ${r.already} we already had.` : ''} Now run the free look for their emails.`
           : 'The search did not turn up any organisations we do not already have.' })
