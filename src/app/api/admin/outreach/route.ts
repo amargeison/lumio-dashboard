@@ -19,9 +19,14 @@ const firstEmail = (v: unknown) => (String(v ?? '').match(/[A-Z0-9._%+-]+@[A-Z0-
 function toSegment(v: unknown): Segment | null {
   const s = clean(v).toLowerCase()
   if ((SEGMENTS as readonly string[]).includes(s)) return s as Segment
+  // A one-person coaching business first: "coach_business" and "Solo coach"
+  // both contain words ("business", "coach") that the broader rules below would
+  // otherwise file under academies — which matters, because single coaches are
+  // the group that must not be cold emailed.
+  if (/^coach[_ ]business$|solo|independent|individual|sole/.test(s)) return 'coach'
   if (/venue|operator|club|leisure|park|centre|center/.test(s)) return 'venue'
   if (/academy|multi|company|business|school/.test(s)) return 'academy'
-  if (/coach|solo|independent/.test(s)) return 'coach'
+  if (/coach/.test(s)) return 'coach'
   return null
 }
 
@@ -129,6 +134,25 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, removed: (data || []).length })
       }
 
+      case 'wipeContacts': {
+        // Clear the list to start an import again. Contacts that have already
+        // been emailed are KEPT: their send history is what guarantees nobody
+        // gets the same campaign twice, and deleting them would let a re-import
+        // email them again as if for the first time. Unsubscribes live in their
+        // own table and are untouched either way.
+        const { data: sent } = await sb.from('outreach_sends').select('contact_id').limit(50000)
+        const keep = new Set((sent || []).map(x => x.contact_id as string))
+        const { data: all } = await sb.from('outreach_contacts').select('id').limit(20000)
+        const ids = (all || []).map(x => x.id as string).filter(id => !keep.has(id))
+        let removed = 0
+        for (let i = 0; i < ids.length; i += 200) {
+          const { data, error } = await sb.from('outreach_contacts').delete().in('id', ids.slice(i, i + 200)).select('id')
+          if (error) throw new Error(error.message)
+          removed += (data || []).length
+        }
+        return NextResponse.json({ ok: true, removed, kept: keep.size })
+      }
+
       // ── campaigns ────────────────────────────────────────────────────────
       case 'campaign': {
         const seg = toSegment(body.segment)
@@ -191,11 +215,15 @@ export async function POST(req: NextRequest) {
           headline: clean(body.headline, 160), image_url: clean(body.image_url, 600), button_text: clean(body.button_text, 60), button_url: clean(body.button_url, 600),
         }, settings, base)
         if (body.action === 'preview') return NextResponse.json({ ok: true, subject: m.subject, html: m.html, as: sample.org_name || sample.email })
-        // A test only ever goes to the admin who pressed the button — the test
-        // button must not be a way to send one-off mail to anyone.
-        const res = await deliver(admin.email, { subject: `[TEST] ${m.subject}`, text: m.text, html: m.html })
+        // A test goes to the outreach mailbox itself (or OUTREACH_TEST_TO if one is
+        // set on the server) — never to an address typed into the page, so the
+        // test button cannot be used to send one-off mail to anyone. It used to
+        // go to the signed-in admin's address, but that is whatever the admin
+        // account was created with, which need not be a mailbox anyone reads.
+        const to = (process.env.OUTREACH_TEST_TO || mailbox().from || admin.email).trim()
+        const res = await deliver(to, { subject: `[TEST] ${m.subject}`, text: m.text, html: m.html })
         if (!res.ok) return NextResponse.json({ error: `Could not send the test: ${res.error || 'unknown error'}` }, { status: 502 })
-        return NextResponse.json({ ok: true, to: admin.email })
+        return NextResponse.json({ ok: true, to })
       }
       case 'sendNow': {
         const result = await runBatch({ max: Math.max(1, Math.min(8, Number(body.max) || 5)), reqOrigin: new URL(req.url).origin, respectHours: false })

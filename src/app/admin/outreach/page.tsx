@@ -141,7 +141,7 @@ function rowsFrom(sheets: SheetData[]) {
   return best
 }
 
-function ImportBox({ onDone }: { onDone: () => void }) {
+function ImportBox({ onDone, total }: { onDone: () => void; total: number }) {
   const [found, setFound] = useState<{ sheet: string; rows: Record<string, string>[]; columns: string[] } | null>(null)
   const [segment, setSegment] = useState<Segment>('academy')
   const [optIn, setOptIn] = useState(false)
@@ -169,9 +169,24 @@ function ImportBox({ onDone }: { onDone: () => void }) {
     } catch (e) { setMsg(e instanceof Error ? e.message : 'Import failed.') }
     setBusy(false)
   }
+  const wipe = async () => {
+    if (busy || !total) return
+    if (!confirm(`Delete all ${total} contacts and start again?\n\nAnyone already emailed is kept, so they cannot be emailed twice. Unsubscribes are kept. This cannot be undone.`)) return
+    setBusy(true); setMsg('')
+    try {
+      const d = await api('wipeContacts')
+      setMsg(`Deleted ${d.removed} contact${d.removed === 1 ? '' : 's'}.${d.kept ? ` Kept ${d.kept} already emailed.` : ''} You can import again.`)
+      setFound(null); if (file.current) file.current.value = ''
+      onDone()
+    } catch (e) { setMsg(e instanceof Error ? e.message : 'Could not delete the contacts.') }
+    setBusy(false)
+  }
   return (
     <Card>
-      <div className="text-sm font-semibold mb-1">Import contacts</div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="text-sm font-semibold mb-1">Import contacts</div>
+        {total > 0 && <button onClick={() => { void wipe() }} disabled={busy} style={{ ...btn('danger'), padding: '5px 10px' }}>Delete all contacts…</button>}
+      </div>
       <div className="text-xs mb-3" style={{ color: C.dim }}>A spreadsheet with an email column — the target list works as it is. Organisation, contact, segment and legal form are picked up when present.</div>
       <input ref={file} type="file" accept=".xlsx,.xls,.csv" onChange={e => { void pick(e.target.files?.[0]) }} className="text-xs" style={{ color: C.sub }} />
       {found && (
@@ -287,7 +302,7 @@ function Editor({ camp, onClose, onSaved }: { camp: Partial<Campaign> & { segmen
             <div className="flex flex-wrap gap-2">
               <button onClick={() => { void act('save') }} disabled={!!busy} style={btn('primary')}>{busy === 'save' ? 'Saving…' : 'Save'}</button>
               <button onClick={() => { void act('preview') }} disabled={!!busy} style={btn()}>{busy === 'preview' ? 'Loading…' : 'Preview'}</button>
-              <button onClick={() => { void act('test') }} disabled={!!busy} style={btn()}>{busy === 'test' ? 'Sending…' : 'Send a test to me'}</button>
+              <button onClick={() => { void act('test') }} disabled={!!busy} style={btn()}>{busy === 'test' ? 'Sending…' : 'Send a test to the outreach inbox'}</button>
             </div>
             {!!msg && <div className="text-xs" style={{ color: C.sub }}>{msg}</div>}
           </div>
@@ -440,7 +455,7 @@ export default function OutreachPage() {
         <div className="text-xs mt-2" style={{ color: C.dim }}>Up to {data.maxDaily} a day. Sent a few at a time every ten minutes, Mon–Fri 9am–5pm UK. Unsubscribe links point at {data.linkBase}.</div>
       </Card>
 
-      <ImportBox onDone={() => { void load() }} />
+      <ImportBox onDone={() => { void load() }} total={contacts.length} />
 
       {/* Contacts */}
       <Card style={{ padding: 0 }}>
