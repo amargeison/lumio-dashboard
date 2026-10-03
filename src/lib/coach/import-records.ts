@@ -116,6 +116,15 @@ function toEnum(key: string, v: unknown): string | null {
   if (hit) return hit
   const syn = SYNONYMS[key]?.[s.toLowerCase()]
   if (syn) return syn
+  if (key === 'payments.status') {
+    // "Paid ✓", "PAID in full", "Owes £40" — a status cell is rarely the bare
+    // word. "Part paid" and "Refunded" are left for the notes: neither is
+    // simply paid or simply owed, and the coach should see the original.
+    if (/overdue|arrears|past due|\blate\b/i.test(s)) return 'overdue'
+    if (/part|refund|cancel|void|written off/i.test(s)) return null
+    if (saysPaid(s)) return 'paid'
+    if (/owe|owing|unpaid|outstanding|pending|invoiced|\bdue\b/i.test(s)) return 'due'
+  }
   if (key === 'players.racket_stage') {
     // "Orange racket", "Stage 3 – Orange", "orange ball"
     const found = allowed.find(a => new RegExp(`\\b${a}\\b`, 'i').test(s))
@@ -223,6 +232,8 @@ export type SheetPlan = {
   /** A record for the tab as a whole: a tab per camp holds its attendees in the
    *  rows and the camp itself in the tab name and title lines. */
   tab_record?: { category: ImportCategory } & Record<string, unknown>
+  /** On a camp's attendee tab: the column saying whether each child has paid for the camp. */
+  paid_column?: number
 }
 
 /** Every row of a mapped tab as records. Pure, so a 20,000-row tab costs nothing but a loop. */
@@ -287,12 +298,44 @@ export function applyPlan(plan: SheetPlan, rows: string[][], banners: number[] =
     // Which venue a court is at is, in a block layout, only ever said by the banner.
     if (cat === 'courts' && section && !rec.location) rec.location = section
     const clean = cleanRecord(cat, rec)
-    if (clean) out.push(clean)
+    if (!clean) continue
+    // Not a column of any table — carried alongside so an attendee list knows
+    // who has paid. The save route only writes known columns, so it never lands.
+    if (typeof plan.paid_column === 'number') clean._paid = saysPaid(row[plan.paid_column])
+    out.push(clean)
   }
   return out
 }
 
 // ── Tidying what was found ───────────────────────────────────────────────────
+
+const CAMP_MONTH: Record<string, string> = { jan: 'january', feb: 'february', mar: 'march', apr: 'april', jun: 'june', jul: 'july', aug: 'august', sep: 'september', sept: 'september', oct: 'october', nov: 'november', dec: 'december', xmas: 'christmas' }
+const campWords = (name: unknown) => new Set(String(name ?? '').trim().toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\bht\b/g, 'half term').split(' ')
+  .filter(w => w && !/^(the|a|of|and|camp|camps|tennis|to|mon|tue|wed|thu|fri|sat|sun|\d{4})$/.test(w)).map(w => CAMP_MONTH[w] || w))
+
+/**
+ * Are these the same camp? The same name; or the same start date with names
+ * that overlap; or — when one has no date — one name wholly inside the other.
+ * Shared by the importer's de-duplication and by the step that puts attendees
+ * onto a camp, so both agree on which camp a tab is about.
+ */
+export function campsMatch(a: { name?: unknown; start_date?: unknown }, b: { name?: unknown; start_date?: unknown }): boolean {
+  const na = String(a.name ?? '').trim().toLowerCase().replace(/\s+/g, ' '), nb = String(b.name ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
+  if (na && na === nb) return true
+  const wa = campWords(a.name), wb = campWords(b.name)
+  const shared = [...wa].filter(w => wb.has(w)).length
+  const inside = shared >= 2 && (shared === wa.size || shared === wb.size)
+  const sameStart = !!a.start_date && String(a.start_date) === String(b.start_date)
+  const oneUndated = !a.start_date || !b.start_date
+  return (sameStart && shared >= 2) || (oneUndated && inside)
+}
+
+/** "✓", "Paid", "Yes", "PAID" → true; "Owes", "part (£75)", "BACS pending", "" → false. */
+export function saysPaid(v: unknown): boolean {
+  const s = String(v ?? '').trim().toLowerCase()
+  if (!s || /owe|part|pending|unpaid|due|no\b|chase|deposit only|✗|x$/.test(s)) return false
+  return /✓|✔|paid|yes|^y$|received|settled|full/.test(s)
+}
 
 /**
  * One record per real thing. A camp listed on every attendee's row, or a venue
@@ -357,9 +400,6 @@ export function dedupeRecords(category: ImportCategory, recs: Record<string, unk
   // inside the other. Two weeks of the same summer camp have different dates
   // and different week numbers, so they stay two camps.
   if (category === 'camps') {
-    const MONTH: Record<string, string> = { jan: 'january', feb: 'february', mar: 'march', apr: 'april', jun: 'june', jul: 'july', aug: 'august', sep: 'september', sept: 'september', oct: 'october', nov: 'november', dec: 'december', xmas: 'christmas' }
-    const words = (r: Record<string, unknown>) => new Set(norm(r.name).replace(/[^a-z0-9 ]+/g, ' ').split(' ')
-      .filter(w => w && !/^(the|a|of|and|camp|camps|tennis|to|mon|tue|wed|thu|fri|sat|sun|\d{4})$/.test(w)).map(w => MONTH[w] || w))
     const entries = [...byKey]
     for (let i = 0; i < entries.length; i++) {
       const [ka, a] = entries[i]
@@ -367,12 +407,7 @@ export function dedupeRecords(category: ImportCategory, recs: Record<string, unk
       for (let j = i + 1; j < entries.length; j++) {
         const [kb, b] = entries[j]
         if (!byKey.has(kb)) continue
-        const wa = words(a), wb = words(b)
-        const shared = [...wa].filter(w => wb.has(w)).length
-        const inside = shared >= 2 && (shared === wa.size || shared === wb.size)
-        const sameStart = !!a.start_date && a.start_date === b.start_date
-        const oneUndated = !a.start_date || !b.start_date
-        if ((sameStart && shared >= 2) || (oneUndated && inside)) { merge(a, { ...b, name: undefined }); byKey.delete(kb) }
+        if (campsMatch(a, b)) { merge(a, { ...b, name: undefined }); byKey.delete(kb) }
       }
     }
   }

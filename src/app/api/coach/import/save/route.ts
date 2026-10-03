@@ -80,6 +80,54 @@ export async function POST(req: NextRequest) {
     .map((r: Record<string, unknown>) => spec.table === 'coach_resources' && r.url ? { ...r, url: normaliseWebLink(String(r.url)) } : r)
 
   if (!clean.length) return NextResponse.json({ inserted: 0 })
+
+  // The Payments page reads the `paid` tick, not the word in `status` — so an
+  // imported "Paid ✓" used to arrive as an unpaid line with a MARK PAID button.
+  // `status` on that page means the plan's state (active / expiring / overdue),
+  // so only "overdue" is kept there; paid and due become the tick.
+  if (spec.table === 'coach_payments') {
+    for (const r of clean as Record<string, unknown>[]) {
+      // A refunded or cancelled invoice is not owed: it is ticked off so it
+      // never shows as money to chase, with the original word kept in the notes.
+      r.paid = r.status === 'paid' || /status: (refund|cancel|void|written off)/i.test(String(r.notes ?? ''))
+      r.status = r.status === 'overdue' ? 'overdue' : null
+    }
+  }
+
+  // Courts belong to a venue, and the Court Planner is built from venues — a
+  // court saved without one is counted but never shown. So each court's
+  // location becomes a venue (found by name if the coach already has it,
+  // created if not) and the court is attached to it. Courts with no location
+  // at all go to the coach's home venue, or a "Main venue" made for them.
+  let venuesAdded = 0
+  if (spec.table === 'coach_courts') {
+    try {
+      const { data: have } = await admin.from('coach_venues').select('id, name, is_home').eq('coach_id', academyId)
+      const key = (n: unknown) => String(n ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
+      const venues = new Map<string, string>((have || []).map(v => [key(v.name), v.id as string]))
+      let fallback = (have || []).find(v => v.is_home)?.id as string | undefined
+      const venueFor = async (location: string): Promise<string | undefined> => {
+        // "Riverside Tennis Centre — Kingsmead KT1" → the name, and where it is.
+        const [name, ...rest] = location.split(/\s+[—–-]\s+/)
+        const k = key(name)
+        if (!k) return undefined
+        if (venues.has(k)) return venues.get(k)
+        const { data: made, error: vErr } = await admin.from('coach_venues')
+          .insert({ coach_id: academyId, name: name.trim().slice(0, 120), address: rest.join(' — ').trim().slice(0, 300) || null, is_home: !have?.length && venues.size === 0 })
+          .select('id').maybeSingle()
+        if (vErr || !made) { console.error('[coach/import/save] venue', vErr?.message); return undefined }
+        venues.set(k, made.id as string); venuesAdded++
+        return made.id as string
+      }
+      for (const r of clean as Record<string, unknown>[]) {
+        const loc = String(r.location ?? '').trim()
+        let id = loc ? await venueFor(loc) : undefined
+        if (!id) { fallback = fallback || await venueFor('Main venue'); id = fallback }
+        if (id) r.venue_id = id
+      }
+    } catch (e) { console.error('[coach/import/save] venues', e) }
+  }
+
   const { data: saved, error } = await admin.from(spec.table).insert(clean).select('id')
   if (error) {
     console.error('[coach/import/save]', spec.table, error.message)
@@ -100,5 +148,5 @@ export async function POST(req: NextRequest) {
   }
   // Resources that arrived without a file, so the import can say so.
   const needFiles = spec.table === 'coach_resources' ? clean.filter((r: Record<string, unknown>) => !r.url).length : 0
-  return NextResponse.json({ inserted: clean.length, ...(calendar ? { calendar } : {}), ...(needFiles ? { needFiles } : {}) })
+  return NextResponse.json({ inserted: clean.length, ...(calendar ? { calendar } : {}), ...(needFiles ? { needFiles } : {}), ...(venuesAdded ? { venuesAdded } : {}) })
 }
