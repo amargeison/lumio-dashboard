@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { campAudience, audienceBrief } from '@/lib/coach/camp-audience'
 
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
@@ -38,6 +39,8 @@ const reportShape = (adultCamp: boolean) => `Return ONLY valid JSON (no markdown
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
 
   const b = (await req.json().catch(() => ({}))) as { campId?: string; mode?: 'targets' | 'report'; playerName?: string }
   const mode = b.mode === 'report' ? 'report' : 'targets'

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
@@ -27,6 +28,8 @@ export async function POST(req: NextRequest) {
   )
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(user.id)) return notAnAcademy()
 
   const { recipients = [], channels = [], subject = '', body = '', ccCoach = true, campId, channel: discordChannel } =
     (await req.json().catch(() => ({}))) as { recipients: Recipient[]; channels: string[]; subject?: string; body?: string; ccCoach?: boolean; campId?: string; channel?: string }

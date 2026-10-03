@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 import { createClient } from '@supabase/supabase-js'
 
 interface TransferTarget {
@@ -118,6 +119,9 @@ function tryParseTargets(text: string): TransferTarget[] | null {
 }
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'football:transfer-researcher', maxTokens: 4000, calls: 2 })
+  if (overLimit) return overLimit
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {

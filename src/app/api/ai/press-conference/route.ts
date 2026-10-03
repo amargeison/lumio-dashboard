@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 
 interface PressQuestion {
   question: string
@@ -73,6 +74,9 @@ function tryParseQuestions(text: string): PressQuestion[] | null {
 }
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'football:press-conference', maxTokens: 1500 })
+  if (overLimit) return overLimit
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { runCoachAgent, extractJson } from '@/lib/coach/agent'
@@ -32,6 +33,8 @@ type Body = { campId?: string; stage?: string; attendeeId?: string; draft?: Draf
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
 
   const { campId, stage: stageId, attendeeId, draft: given } = (await req.json().catch(() => ({}))) as Body
   if (!campId || !stageId) return NextResponse.json({ error: 'campId and stage are required' }, { status: 400 })

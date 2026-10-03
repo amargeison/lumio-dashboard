@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { demoAttendeeByFormToken } from '@/lib/coach/demo-public'
 import { createClient } from '@supabase/supabase-js'
 import { askedForm, attendeePatch, cleanAnswers, formEnabled } from '@/lib/coach/camp-form'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
@@ -27,7 +28,11 @@ export async function POST(req: NextRequest) {
     const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
     const { data: a } = await sb.from('coach_camp_attendees')
       .select('id, camp_id, status, parent_phone, camp_goal').eq('form_token', token).maybeSingle()
-    if (!a || a.status === 'cancelled') return NextResponse.json({ error: 'This link does not work.' }, { status: 404 })
+    if (!a || a.status === 'cancelled') {
+      // A form filled in on one of the DEMO academy's links: thanked, and thrown away.
+      if (!a && demoAttendeeByFormToken(token)) return NextResponse.json({ ok: true, demo: true })
+      return NextResponse.json({ error: 'This link does not work.' }, { status: 404 })
+    }
     const { data: camp } = await sb.from('coach_camps').select('audience, overseas, info_form, start_date, end_date').eq('id', a.camp_id).maybeSingle()
     if (!camp) return NextResponse.json({ error: 'This link does not work.' }, { status: 404 })
     const ended = camp.end_date || camp.start_date

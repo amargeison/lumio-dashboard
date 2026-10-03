@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { spendGate } from '@/lib/ai/guards'
 import Anthropic from '@anthropic-ai/sdk';
 
 const anthropic = new Anthropic();
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'cms:club-staff', maxTokens: 1000 })
+  if (overLimit) return overLimit
   const { clubName, league } = await req.json();
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',

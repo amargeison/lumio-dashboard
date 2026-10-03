@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { demoCampBySignupSlug } from '@/lib/coach/demo-public'
 import { campAudience } from '@/lib/coach/camp-audience'
 import { createClient } from '@supabase/supabase-js'
 import CampSignupView, { type CampPublic } from './CampSignupView'
@@ -54,7 +55,11 @@ async function load(slug: string) {
   try {
     const sb = db()
     const { data: camp } = await sb.from('coach_camps').select('*').ilike('signup_slug', slug).maybeSingle()
-    if (!camp || !camp.signup_open) return null
+    if (!camp || !camp.signup_open) {
+      // One of the DEMO academy's camps, opened from the demo portal.
+      const demo = camp ? null : demoCampBySignupSlug(slug)
+      return demo ? toPublic(demo.camp, demo.profile, demo.attendees.filter(a => a.status !== 'cancelled').length) : null
+    }
     const [{ data: profile }, { count }] = await Promise.all([
       sb.from('sports_profiles').select('brand_name, brand_logo_url').eq('id', camp.coach_id).maybeSingle(),
       sb.from('coach_camp_attendees').select('id', { count: 'exact', head: true }).eq('camp_id', camp.id).neq('status', 'cancelled'),

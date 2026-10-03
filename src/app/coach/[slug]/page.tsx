@@ -22,7 +22,7 @@ import { avatarSrc } from '@/lib/avatar'
 import { THEMES, DENSITY } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import {
-  COACH_ORG, COACH_SIDEBAR, COACH_GROUPS, PLAYERS, BELTS, demoAvatarUrl,
+  COACH_ORG, COACH_SIDEBAR, COACH_GROUPS, demoAvatarUrl,
 } from './_lib/coach-data'
 import { useCoachSettings } from './_lib/use-settings'
 import { ACCENT_PRESETS } from './_lib/settings-store'
@@ -32,7 +32,6 @@ import { getSession as getDemoSession, saveSession as saveDemoSession } from '@/
 import {
   normalizeRole, viewFromRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole, type CoachView,
 } from './_lib/role-scope'
-import { coachById, coachStats } from './_lib/coaches-data'
 import { currentIdentity, identityProblem, identityMessage, IDENTITY_CHANGED, saveCoachProfile, type CoachIdentity } from './_lib/coach-db'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { CoachProfileMenu } from './_components/CoachProfileMenu'
@@ -53,27 +52,9 @@ function lazyNamed<M, K extends keyof M>(loader: () => Promise<M>, key: K): M[K]
   return dynamic(() => loader().then(m => ({ default: (m as any)[key] })), { ssr: false, loading: ModuleLoading }) as unknown as M[K]
 }
 
-// Demo views
-const StudentView = lazyNamed(() => import('./_components/StudentView'), 'StudentView')
-// ...and its live counterpart, the page a real family actually gets.
+// The page a real family actually gets.
 const LiveStudentPreview = lazyNamed(() => import('./_components/LiveStudentPreview'), 'LiveStudentPreview')
-const DashboardView = lazyNamed(() => import('./_components/CoachModules'), 'DashboardView')
-const LessonsView = lazyNamed(() => import('./_components/CoachModules'), 'LessonsView')
-const DevelopmentView = lazyNamed(() => import('./_components/CoachModules'), 'DevelopmentView')
-const BeltsView = lazyNamed(() => import('./_components/CoachModules'), 'BeltsView')
-const CalendarView = lazyNamed(() => import('./_components/CoachModules'), 'CalendarView')
-const RosterView = lazyNamed(() => import('./_components/CoachModules'), 'RosterView')
-const MessagesView = lazyNamed(() => import('./_components/CoachModules'), 'MessagesView')
-const ResourcesView = lazyNamed(() => import('./_components/CoachModules'), 'ResourcesView')
-const PaymentsView = lazyNamed(() => import('./_components/CoachModules'), 'PaymentsView')
 const SettingsView = lazyNamed(() => import('./_components/CoachModules'), 'SettingsView')
-const CampsView = lazyNamed(() => import('./_components/CoachModules'), 'CampsView')
-const SessionPlannerView = lazyNamed(() => import('./_components/SessionPlanner'), 'SessionPlannerView')
-const CourtPlannerView = lazyNamed(() => import('./_components/CourtPlanner'), 'CourtPlannerView')
-const EquipmentView = lazyNamed(() => import('./_components/Equipment'), 'EquipmentView')
-const VideoAudioView = lazyNamed(() => import('./_components/CoachVideoAudio'), 'VideoAudioView')
-const HeatmapsView = lazyNamed(() => import('./_components/CoachHeatmaps'), 'HeatmapsView')
-const StaffView = lazyNamed(() => import('./_components/StaffView'), 'StaffView')
 // Live (real-coach) views
 const LiveCoachDashboard = lazyNamed(() => import('./_components/LiveCoachDashboard'), 'LiveCoachDashboard')
 const CoachMyProfile = lazyNamed(() => import('./_components/CoachMyProfile'), 'CoachMyProfile')
@@ -373,7 +354,13 @@ const LIVE_MODULE_TABLES: Record<string, CoachTable[]> = {
 const ALL_LIVE_TABLES = Array.from(new Set(Object.values(LIVE_MODULE_TABLES).flat()))
 
 // ─── Portal shell ───────────────────────────────────────────────────────────
-function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?: SportsDemoSession; isEmpty?: boolean; slugClubName?: string }) {
+function CoachPortalInner({ session, isEmpty: realAccount = false, slugClubName }: { session?: SportsDemoSession; isEmpty?: boolean; slugClubName?: string }) {
+  // The demo is the LIVE portal on an in-memory academy (see _lib/demo). Every
+  // module, the rail, the switcher and the stats below are the real ones in both
+  // cases — so the demo can never fall behind the product again. What still
+  // differs is only what belongs to a real account: who is signed in, how they
+  // sign out, first-run setup, and the "this is a demo" banner.
+  const isDemo = !realAccount
   const settings = useCoachSettings()
   const T = THEMES[settings.theme]
   const accent = ACCENT_PRESETS[settings.accentKey]
@@ -385,10 +372,9 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // between pages is instant rather than a fresh load each time. Deferred a
   // moment so the dashboard's own reads go first.
   useEffect(() => {
-    if (!isEmpty) return
     const t = setTimeout(() => { void prefetchCoachTables(ALL_LIVE_TABLES) }, 1200)
     return () => clearTimeout(t)
-  }, [isEmpty])
+  }, [])
 
   // Empty (brand-new) portals must show NO demo data — no demo coach photo,
   // name or credential. Only the account's own real values (or blanks) appear
@@ -401,8 +387,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // whoever is looking at it. It used to take the visitor's sign-in name and any
   // renamed academy on this browser, so a coach who also ran a real portal saw
   // their own name and club dressed up as the demo.
-  const customHeadName = isEmpty && session?.role === 'head' && settings.coach && settings.coach !== COACH_ORG.coach ? settings.coach : ''
-  const coachName = !isEmpty ? COACH_ORG.coach : (customHeadName || session?.userName || slugClubName || '')
+  const customHeadName = realAccount && session?.role === 'head' && settings.coach && settings.coach !== COACH_ORG.coach ? settings.coach : ''
+  const coachName = isDemo ? COACH_ORG.coach : (customHeadName || session?.userName || slugClubName || '')
   const coachInitials = coachName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
   // Live: the head coach's uploaded photo (settings). Demo: a name-seeded avatar
   // so the top-right rail matches the coach cards in the grid.
@@ -412,14 +398,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // The settings copy is written the moment the upload succeeds and repaints
   // straight away; the session value stays as the fallback for a coach who has
   // only ever set a photo during onboarding.
-  const coachPhoto = !isEmpty ? demoAvatarUrl(coachName) : (settings.head?.avatarUrl || session?.photoDataUrl || null)
+  const coachPhoto = isDemo ? demoAvatarUrl(coachName) : (settings.head?.avatarUrl || session?.photoDataUrl || null)
   // The name the head coach typed in Settings wins over the one captured when
   // they signed in. session.clubName is a snapshot from sign-in, so while it
   // came first, renaming the academy to "PG Tennis" changed nothing on screen —
   // the sidebar and the dashboard banner kept "Penrith Tennis Club" until the
   // next login. Same rule the coach's own name already follows just above.
-  const customClubName = isEmpty && session?.role === 'head' && settings.academy && settings.academy !== COACH_ORG.academy ? settings.academy : ''
-  const clubName = !isEmpty ? COACH_ORG.academy : (customClubName || session?.clubName || slugClubName || '')
+  const customClubName = realAccount && session?.role === 'head' && settings.academy && settings.academy !== COACH_ORG.academy ? settings.academy : ''
+  const clubName = isDemo ? COACH_ORG.academy : (customClubName || session?.clubName || slugClubName || '')
 
   // …and carry a rename through to the account itself. The sidebar reads the
   // setting, but certificates, camp packs, emails and the player app read the
@@ -428,7 +414,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // per change, when the two disagree; never for the demo, never for staff.
   const syncedNames = useRef('')
   useEffect(() => {
-    if (!isEmpty || session?.role !== 'head') return
+    if (!realAccount || session?.role !== 'head') return
     const patch: Record<string, string> = {}
     if (customClubName && customClubName !== session?.clubName) patch.brand_name = customClubName
     if (customHeadName && customHeadName !== session?.userName) patch.display_name = customHeadName
@@ -436,8 +422,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
     if (key === '{}' || key === syncedNames.current) return
     syncedNames.current = key
     saveCoachProfile(patch).catch(() => { syncedNames.current = '' })
-  }, [isEmpty, session?.role, session?.clubName, session?.userName, customClubName, customHeadName])
-  const showDemoBanner = !isEmpty && session?.isDemoShell !== false
+  }, [realAccount, session?.role, session?.clubName, session?.userName, customClubName, customHeadName])
+  const showDemoBanner = isDemo && session?.isDemoShell !== false
 
   // The avatar takes an override so the sidebar can show whoever is being
   // VIEWED. Without it the switcher changed the banner and the right-hand rail
@@ -477,7 +463,9 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   //
   // `role` and `viewStaffId` still exist below, derived — so every read in this
   // file keeps working — but nothing can write one without the other.
-  const [view, setView] = useState<CoachView>(() => viewFromRole(normalizeRole(session?.role)))
+  // The demo always opens as the head coach: a role remembered from an earlier
+  // visit ("coach") names nobody now that the switcher lists real staff.
+  const [view, setView] = useState<CoachView>(() => viewFromRole(isDemo ? 'head' : normalizeRole(session?.role)))
   const role: CoachViewRole = view.kind
   const setRole = (r: CoachViewRole) => setView(viewFromRole(r))
   // Is the signed-in user actually the academy owner? Until this resolves we
@@ -499,7 +487,6 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // Derived, never set on its own. Null unless a specific coach is being viewed.
   const viewStaffId = view.kind === 'coach' ? view.staffId : null
   useEffect(() => {
-    if (!isEmpty) return
     let alive = true
     dbList('coach_staff').then(rows => {
       if (!alive) return
@@ -508,7 +495,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         .map(r => ({ id: String(r.id), name: String(r.name ?? ''), qualifications: (r.qualifications as string) ?? null, avatar_url: (r.avatar_url as string) ?? null })))
     }).catch(() => {})
     return () => { alive = false }
-  }, [isEmpty])
+  }, [])
   const viewStaff = viewStaffId ? liveStaff.find(c => c.id === viewStaffId) ?? null : null
 
   // That coach's own numbers. Without this the card carried their face and the
@@ -592,14 +579,14 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
   useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
   // Live data stats for the rail (real coach portal only; skipped on demo).
-  const liveStats = useCoachStats(isEmpty, viewStaffId)
+  const liveStats = useCoachStats(true, viewStaffId)
   // Onboarding wizard overlay (real coach portal).
   const [showWizard, setShowWizard] = useState(false)
   // Auto-open the wizard on a real coach's first visit (before onboarding is
   // complete). Skipping it just closes for now; it reopens next visit until
   // finished. Never fires on the demo portal.
   useEffect(() => {
-    if (isEmpty && session?.isDemoShell === false && session?.onboardingComplete === false) {
+    if (realAccount && session?.isDemoShell === false && session?.onboardingComplete === false) {
       setShowWizard(true)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -609,12 +596,12 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // the demo defaults to Elite so it keeps showing Video/Audio + Effort & Rewards.
   // The demo is pinned to Elite with everything on and ignores stored flags
   // entirely — see DEMO_FLAGS. A live portal reads the coach's own plan.
-  const featFallback = isEmpty ? NEW_ACCOUNT_TIER : 'elite'
-  const [feat, setFeat] = useState<FeatureFlags>(isEmpty ? getFeatureFlags(featFallback) : DEMO_FLAGS)
+  const featFallback = realAccount ? NEW_ACCOUNT_TIER : 'elite'
+  const [feat, setFeat] = useState<FeatureFlags>(realAccount ? getFeatureFlags(featFallback) : DEMO_FLAGS)
   useEffect(() => {
-    if (!isEmpty) { setFeat(DEMO_FLAGS); return }
+    if (isDemo) { setFeat(DEMO_FLAGS); return }
     const r = () => setFeat(getFeatureFlags(featFallback)); r(); return subscribeFeatures(r)
-  }, [featFallback, isEmpty])
+  }, [featFallback, isDemo])
   const featureHidden = (id: string) =>
     (id === 'gpsheatmaps' && !feat.effort) ||
     (id === 'belts' && !feat.racket) ||
@@ -643,9 +630,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // impersonatedCoach names the coach the Coach role is viewing as, for the
   // "viewing as" banner.
   const impersonatedCoach = role !== 'coach' ? null
-    // Live portal: whichever real coach was picked in the switcher.
-    : isEmpty ? (viewStaff?.name ?? null)
-    : (coachById(coachIdForRole(role) ?? '')?.name ?? null)
+    // Whichever real coach was picked in the switcher.
+    : (viewStaff?.name ?? null)
   // ─── Right-rail profile follows the ACTIVE role ───────────────────────────
   // The rail used to be hardwired to the head coach, so impersonating Rachel
   // left the page saying "Viewing as Rachel Adeyemi" while the rail still
@@ -655,8 +641,6 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   //
   // DEMO ONLY: COACHES/coachStats are demo data, so a real academy keeps its own
   // head-coach card — a live portal must never render Rachel.
-  const railCoach = !isEmpty && role === 'coach' ? coachById(coachIdForRole(role) ?? '') : undefined
-  const railStats = railCoach ? coachStats(railCoach.id) : null
   // Live portal equivalent: the card follows the coach being viewed rather than
   // staying on the head coach, which made "Viewing as Freya" sit above Arron's
   // photo, qualification and numbers.
@@ -665,21 +649,19 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // adding a staff member unlocks Coach; adding a player unlocks Student. The demo
   // keeps all three. Student is additionally opt-in (Settings → Parent & player
   // app, off by default) on both, so it never appears unless the coach asks for it.
-  const availableRoles = (isEmpty
-    ? COACH_ROLES.filter(r => r.id === 'head' || (r.id === 'coach' && liveStats.staff > 0) || (r.id === 'student' && liveStats.players > 0))
-    : COACH_ROLES
+  const availableRoles = (COACH_ROLES.filter(r => r.id === 'head' || (r.id === 'coach' && liveStats.staff > 0) || (r.id === 'student' && liveStats.players > 0))
     // The parent & player app is opt-in for a REAL academy (Settings → Parent &
     // player app). The DEMO is not an academy — it exists to show the whole
     // product, and settings live in one localStorage bucket per browser, so
     // opening a live portal first was quietly switching Student off in the demo
     // too. The demo always offers all three.
-  ).filter(r => r.id !== 'student' || !isEmpty || settings.studentApp)
+  ).filter(r => r.id !== 'student' || isDemo || settings.studentApp)
   // If the active role is no longer available (data removed), drop back to Head.
   useEffect(() => {
-    if (!isEmpty || liveStats.loading) return
+    if (liveStats.loading) return
     if (role === 'coach' && liveStats.staff === 0) { if (isHeadUser !== false) setRole('head') }
     if (role === 'student' && liveStats.players === 0) { if (isHeadUser !== false) setRole('head') }
-  }, [isEmpty, role, liveStats.loading, liveStats.staff, liveStats.players])
+  }, [role, liveStats.loading, liveStats.staff, liveStats.players])
   // Turning the player app off while viewing it must not strand the coach there.
   //
   // LIVE PORTALS ONLY. On the demo this fired the instant Student was selected —
@@ -689,9 +671,9 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // all three views unconditionally (see availableRoles), so the guard that can
   // withdraw one has to be scoped the same way.
   useEffect(() => {
-    if (!isEmpty) return
+    if (isDemo) return
     if (role === 'student' && !settings.studentApp) { if (isHeadUser !== false) setRole('head') }
-  }, [isEmpty, role, settings.studentApp])
+  }, [isDemo, role, settings.studentApp])
   // Switching view persists back into the demo session blob — the same key the
   // gate restores from — so the choice survives a reload. (This is what the shared
   // RoleSwitcher used to do before the switcher moved into the profile menu.)
@@ -721,23 +703,19 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   // "Switch to Coach" is meaningless in an academy with four of them, and it was
   // the reason the generic entry had to resolve to a hardcoded demo person.
   const switchableRoles = isHeadUser === false ? undefined
-    : isEmpty
-      ? (() => {
+    : (() => {
           const head = availableRoles.find(r => r.id === 'head')
           const student = availableRoles.find(r => r.id === 'student')
           const coaches = liveStaff.map(c => ({ id: `coach:${c.id}`, label: c.name, icon: '🧑‍🏫', description: [c.qualifications, 'their players & sessions'].filter(Boolean).join(' — ') }))
           const list = [...(head ? [head] : []), ...coaches, ...(student ? [student] : [])]
           return list.length > 1 ? list : undefined
         })()
-      : (role === 'head' && availableRoles.length > 1 ? availableRoles : undefined)
   // Who the profile block is showing RIGHT NOW. Follows the switcher on a live
   // portal (viewStaff), the impersonated demo coach otherwise, and falls back to
   // the signed-in person.
-  const shownName = viewStaff?.name || railCoach?.name || coachName
+  const shownName = viewStaff?.name || coachName
   const shownRole = viewStaff ? (viewStaff.qualifications || 'Coach') : roleLabel
-  const shownPhoto = viewStaff ? (viewStaff.avatar_url ?? null)
-    : railCoach ? demoAvatarUrl(railCoach.name)
-    : coachPhoto
+  const shownPhoto = viewStaff ? (viewStaff.avatar_url ?? null) : coachPhoto
 
   const profileMenu = (variant: 'sidebar' | 'compact', avatarSize: number) => (
     <CoachProfileMenu
@@ -745,10 +723,10 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       avatar={<CoachAvatar size={avatarSize} src={shownPhoto} name={shownName} />}
       coachName={shownName} roleLabel={shownRole}
       roles={switchableRoles}
-      activeRole={isEmpty && role === 'coach' && viewStaffId ? `coach:${viewStaffId}` : role}
+      activeRole={role === 'coach' && viewStaffId ? `coach:${viewStaffId}` : role}
       onSelectRole={changeRole}
-      onLogout={() => { void signOutCoach(isEmpty) }}
-      logoutLabel={isEmpty ? 'Log out' : 'Exit demo'}
+      onLogout={() => { void signOutCoach(realAccount) }}
+      logoutLabel={realAccount ? 'Log out' : 'Exit demo'}
     />
   )
   // Shown only when the ACADEMY OWNER is looking through somebody else's eyes.
@@ -774,12 +752,9 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
   const onLeave = () => { leaveTimer.current = setTimeout(() => setHovered(false), 350) }
 
   const renderView = () => {
-    if (isEmpty) {
-      const view = renderLiveModule()
-      const tables = LIVE_MODULE_TABLES[active]
-      return tables ? <ModuleGate key={active} T={T} tables={tables}>{view}</ModuleGate> : view
-    }
-    return renderDemoModule()
+    const view = renderLiveModule()
+    const tables = LIVE_MODULE_TABLES[active]
+    return tables ? <ModuleGate key={active} T={T} tables={tables}>{view}</ModuleGate> : view
   }
   const renderLiveModule = () => {
     {
@@ -806,10 +781,10 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         case 'settings':    if (isHeadUser === false || viewStaffId) return <CoachSettings T={T} accent={accent} onNavigate={setActive} />
                             return (
           <>
-            <SettingsView T={T} accent={accent} density={density} demo={!isEmpty} />
+            <SettingsView T={T} accent={accent} density={density} demo={isDemo} />
           </>
         )
-        case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => setShowWizard(true)}
+        case 'dashboard':   return <LiveCoachDashboard T={T} accent={accent} density={density} clubName={clubName} onNavigate={setActive} onStartWizard={() => { if (realAccount) setShowWizard(true) }}
           canNavigate={id => visibleSidebar.some(i => i.id === id)}
           asCoach={viewStaff ? { name: viewStaff.name, profileDone: true, staffId: viewStaff.id }
             : isHeadUser === false ? { name: myIdentity?.displayName || coachName, profileDone: profileDone !== false, staffId: myIdentity?.staffId ?? null }
@@ -820,35 +795,6 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
       return <EmptyModule T={T} accent={accent} density={density} title={title} onNavigate={setActive} />
     }
   }
-  const renderDemoModule = () => {
-    switch (active) {
-      case 'dashboard':   return <DashboardView T={T} accent={accent} density={density} onNavigate={setActive} />
-      case 'lessons':     return <LessonsView T={T} accent={accent} density={density} />
-      case 'planner':     return <SessionPlannerView T={T} accent={accent} density={density} onNavigate={setActive} />
-      case 'staff':       return <StaffView T={T} accent={accent} density={density} onNavigate={setActive} />
-      case 'development': return <DevelopmentView T={T} accent={accent} density={density} />
-      case 'belts':       return <BeltsView T={T} accent={accent} density={density} />
-      case 'calendar':    return <CalendarView T={T} accent={accent} density={density} />
-      case 'venues':      return <CourtPlannerView T={T} accent={accent} density={density} />
-      case 'camps':       return <CampsView T={T} accent={accent} density={density} />
-      case 'roster':      return <RosterView T={T} accent={accent} density={density} onNavigate={setActive} />
-      case 'videoaudio':  return <VideoAudioView T={T} accent={accent} density={density} videoOn={feat.video} audioOn={feat.audio} />
-      case 'gpsheatmaps': return <HeatmapsView T={T} accent={accent} density={density} />
-      case 'messages':    return <MessagesView T={T} accent={accent} density={density} />
-      case 'resources':   return <ResourcesView T={T} accent={accent} density={density} />
-      case 'equipment':   return <EquipmentView T={T} accent={accent} density={density} />
-      case 'payments':    return <PaymentsView T={T} accent={accent} density={density} />
-      case 'settings':    return (
-        <>
-          <SettingsView T={T} accent={accent} density={density} demo={!isEmpty} />
-        </>
-      )
-      default:            return <DashboardView T={T} accent={accent} density={density} onNavigate={setActive} />
-    }
-  }
-
-  const beltCounts = BELTS.map((_b, bi) => PLAYERS.filter(p => p.beltIndex === bi).length)
-
   const responsiveStyle = `.tnum{font-variant-numeric:tabular-nums}
     @media (max-width: 1100px){ .coach-rail{ display:none !important } }
     @media (max-width: 768px){
@@ -880,15 +826,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         {ViewingAsBanner}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ maxWidth: 1080, margin: '0 auto', padding: isMobile ? '14px 12px 36px' : '24px 24px 44px' }}>
-            {isEmpty ? (
-              // Real portal: the real page, read from this academy's own data —
-              // never the demo's. The demo keeps its own richer version because
-              // it is showing features (heatmaps, GPS blocks) that a live
-              // academy has no data for yet.
-              <LiveStudentPreview T={T} accent={accent} density={density} onNavigate={id => { setRole('head'); setActive(id) }} />
-            ) : (
-              <StudentView T={T} accent={accent} density={density} playerId="p1" />
-            )}
+            {/* The page a real family gets, read from this academy's own data. */}
+            <LiveStudentPreview T={T} accent={accent} density={density} onNavigate={id => { setRole('head'); setActive(id) }} />
           </div>
         </div>
       </div>
@@ -931,7 +870,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
         <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${line}`, minHeight: 56, padding: expanded ? '12px 12px' : '12px 4px', gap: expanded ? 8 : 0, justifyContent: expanded ? 'flex-start' : 'center' }}>
           <div style={{ width: 32, height: 32, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0, overflow: 'hidden' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={!isEmpty ? '/tennis_coach_logo.png' : (settings.brandLogo || session?.logoDataUrl || '/tennis_transparent_logo.png')} alt={clubName || 'Lumio'} style={{ width: 26, height: 26, objectFit: 'contain' }} />
+            <img src={isDemo ? '/tennis_coach_logo.png' : (settings.brandLogo || session?.logoDataUrl || '/tennis_transparent_logo.png')} alt={clubName || 'Lumio'} style={{ width: 26, height: 26, objectFit: 'contain' }} />
           </div>
           {expanded && (
             <div style={{ minWidth: 0 }}>
@@ -1045,11 +984,6 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
                   : myIdentity && !myIdentity.isHead && myIdentity.avatarUrl
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={avatarSrc(myIdentity.avatarUrl)} alt={myIdentity.displayName || ''} width={72} height={72} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
-                  : railCoach
-                  // Same avatar source as the Staff page, so a coach's face is the
-                  // same one wherever they appear in the demo.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={demoAvatarUrl(railCoach.name)} alt={railCoach.name} width={72} height={72} style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover' }} />
                   : <CoachAvatar size={72} />}
               </div>
               {(() => {
@@ -1060,8 +994,8 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
                 const asCoach = myIdentity && !myIdentity.isHead ? myIdentity : null
                 // viewStaff wins: the head coach has explicitly asked to look
                 // through this person's eyes, so the card must be theirs.
-                const name = viewStaff ? viewStaff.name : asCoach ? (asCoach.displayName || coachName) : (railCoach ? railCoach.name : coachName)
-                const cert = viewStaff ? viewStaff.qualifications : asCoach ? asCoach.accreditation : (railCoach ? railCoach.accreditation : settings.cert)
+                const name = viewStaff ? viewStaff.name : asCoach ? (asCoach.displayName || coachName) : coachName
+                const cert = viewStaff ? viewStaff.qualifications : asCoach ? asCoach.accreditation : settings.cert
                 return (
                   <>
                     <div style={{ fontSize: 16, fontWeight: 600, color: T.text, marginTop: 10 }}>{name}</div>
@@ -1077,19 +1011,11 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
                     <RailStat T={T} label="Lessons/wk" value={viewStats.week} />
                     <RailStat T={T} label="Retention" value="—" />
                   </>
-                ) : railStats ? (
-                  <>
-                    {/* This coach's own week — retention is an academy-wide figure,
-                        so utilisation (hours booked vs contracted) takes its slot. */}
-                    <RailStat T={T} label="Players" value={railStats.players} />
-                    <RailStat T={T} label="Lessons/wk" value={railStats.week} />
-                    <RailStat T={T} label="Utilisation" value={`${railStats.utilisation}%`} />
-                  </>
                 ) : (
                   <>
-                    <RailStat T={T} label="Players" value={isEmpty ? liveStats.players : COACH_ORG.season.activePlayers} />
-                    <RailStat T={T} label="Lessons/wk" value={isEmpty ? liveStats.lessonsThisWeek : COACH_ORG.season.lessonsThisWeek} />
-                    <RailStat T={T} label="Retention" value={isEmpty ? '—' : `${COACH_ORG.season.retention}%`} />
+                    <RailStat T={T} label="Players" value={liveStats.players} />
+                    <RailStat T={T} label="Lessons/wk" value={liveStats.lessonsThisWeek} />
+                    <RailStat T={T} label="Retention" value="—" />
                   </>
                 )}
               </div>
@@ -1097,9 +1023,7 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
 
             {/* Racket distribution — live counts for the real portal, demo counts otherwise */}
             {feat.racket && (() => {
-              const dist = isEmpty
-                ? RACKET_STAGES.map((st, i) => ({ id: st.id, name: st.name, colour: st.colour, count: liveStats.racketCounts[i] || 0 }))
-                : BELTS.map((b, bi) => ({ id: b.id, name: b.name, colour: b.colour, count: beltCounts[bi] }))
+              const dist = RACKET_STAGES.map((st, i) => ({ id: st.id, name: st.name, colour: st.colour, count: liveStats.racketCounts[i] || 0 }))
               const shown = dist.filter(r => r.count > 0)
               if (!shown.length) return null
               return (
@@ -1119,15 +1043,9 @@ function CoachPortalInner({ session, isEmpty = false, slugClubName }: { session?
             {/* This week — combines the demo's totals with the dashboard's summary items */}
             <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16 }}>
               <div style={{ fontSize: 10.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 8 }}>This week</div>
-              {(isEmpty
-                // "Rackets ready" only means something to an academy running the
-                // reward ladder. With it off, the slot goes to the number that is
-                // actionable every single day and exists for everyone: lessons
-                // that have happened and still have no summary written.
-                ? [['Sessions today', String(liveStats.sessionsToday)], ['Lessons this week', String(liveStats.lessonsThisWeek)],
+              {([['Sessions today', String(liveStats.sessionsToday)], ['Lessons this week', String(liveStats.lessonsThisWeek)],
                    feat.racket ? ['Rackets ready', String(liveStats.racketsReady)] : ['Needs a summary', String(liveStats.summariesDue)],
                    ['New players', `+${liveStats.newPlayers}`], ['Outstanding', `£${liveStats.outstandingPayments.toLocaleString()}`]] as [string, string][]
-                : [['Rackets awarded', String(COACH_ORG.season.beltsAwarded)], ['Sessions', String(COACH_ORG.season.lessonsThisWeek)], ['New players', '+3']] as [string, string][]
               ).map(([k, v], i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, padding: '3px 0' }}>
                   <span style={{ color: T.text3 }}>{k}</span><span style={{ color: T.text, fontWeight: 600 }}>{v}</span>

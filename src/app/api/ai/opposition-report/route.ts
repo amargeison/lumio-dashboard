@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 import { createClient } from '@supabase/supabase-js'
 
 interface KeyThreat {
@@ -101,6 +102,9 @@ function tryParseReport(text: string): OppositionReport | null {
 }
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'football:opposition-report', maxTokens: 2000 })
+  if (overLimit) return overLimit
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {

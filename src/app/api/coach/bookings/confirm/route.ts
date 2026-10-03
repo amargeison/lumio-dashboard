@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { publicSiteOrigin } from '@/lib/public-origin'
@@ -17,6 +18,8 @@ import { sendBookingConfirmation } from '@/lib/coach/booking-confirm'
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
 
   const { bookingId } = (await req.json().catch(() => ({}))) as { bookingId?: string }
   if (!bookingId) return NextResponse.json({ error: 'bookingId is required' }, { status: 400 })

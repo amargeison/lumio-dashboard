@@ -7,6 +7,9 @@
 // only ever touches the signed-in coach's own rows. No API routes needed.
 
 import { useState, useEffect, useCallback } from 'react'
+import { isDemoPath } from './storage-scope'
+import { demoClient } from './demo/client'
+import { installDemoFetch } from './demo/fetch'
 import { createBrowserClient } from '@supabase/ssr'
 import { getSettings } from './settings-store'
 
@@ -39,8 +42,18 @@ export type CoachTable =
   | 'coach_player_resources'
   | 'coach_camp_channels'
 
+// The demo portal runs these same components against an in-memory academy.
+// Its coach-API calls are answered in the browser from the moment this module
+// loads (see demo/fetch.ts); on a real portal the wrapper passes everything
+// through untouched.
+installDemoFetch()
+
 let _sb: ReturnType<typeof createBrowserClient> | null = null
 export function sb() {
+  // On the demo there is no database: every read and write goes to the demo
+  // store. Checked per call, so one browser tab moving between the demo and a
+  // real academy always gets the right one.
+  if (isDemoPath()) return demoClient() as unknown as ReturnType<typeof createBrowserClient>
   if (!_sb) {
     _sb = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

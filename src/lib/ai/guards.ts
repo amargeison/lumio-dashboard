@@ -10,7 +10,7 @@
 // when we have more than one node handling traffic.
 // ───────────────────────────────────────────────────────────────────────────
 
-import { clientIp } from '@/lib/rate-limit'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
 
 export const DAILY_CAP_USD = 5.0
 export const IP_LIMIT = 10
@@ -167,4 +167,130 @@ export function capReachedResponse(spent: number): Response {
     }),
     { status: 503, headers: { 'Content-Type': 'application/json' } },
   )
+}
+
+// ─── Gate for every other route that spends on our keys ────────────────────
+//
+// The sport routes above check the cap, call the model, then record what it
+// cost. That leaves a gap: a burst of requests all pass the check before any
+// of them has recorded a penny. The routes below are the ones that had no
+// protection at all (CMS, schools, CRM, football tools, text-to-speech), and
+// several can be reached without signing in, so they get the stricter form:
+//
+//   · the cost of a call is RESERVED before the call is made, at the most it
+//     could cost (every output token used). The cap therefore trips early,
+//     never late, and a burst cannot overshoot it.
+//   · the reservation lands in the SAME daily total as the sport routes, so
+//     the figure on the admin AI-spend page is one total for everything public
+//     and that total cannot pass DAILY_CAP_USD.
+//
+// It reads headers only, so it can be the first line of a handler — before the
+// body is parsed and before anything is looked up.
+
+export const OPEN_IP_LIMIT = 20            // calls per IP per window, across all of these routes
+const WEB_SEARCH_USD = 0.06                // one search: the $0.01 fee plus the results it feeds back in
+
+export type GateOpts = {
+  label: string            // shown on the admin AI-spend page, e.g. 'cms:overview'
+  maxTokens: number        // the route's max_tokens
+  calls?: number           // model calls one request can make (retries count)
+  model?: string
+  searches?: number        // web searches one request can trigger
+  inputTokens?: number     // prompt the SERVER adds (templates, database rows)
+  limit?: number           // per-IP calls per window, if not the default
+}
+
+export function estimateUsd(req: Request, o: GateOpts): number {
+  const rates = rateForModel(o.model)
+  const raw = req.headers.get('content-length')
+  const len = raw == null ? NaN : Number(raw)
+  // ~3 bytes a token is deliberately pessimistic. No length on a request that
+  // has a body means we cannot see how big it is, so assume a large one.
+  const bodyTokens = Number.isFinite(len) && len >= 0
+    ? Math.ceil(len / 3)
+    : (req.method === 'GET' ? 0 : 20_000)
+  const input = (o.inputTokens ?? 3000) + bodyTokens
+  const one = (input / 1_000_000) * rates.input + (o.maxTokens / 1_000_000) * rates.output
+  return one * Math.max(1, o.calls ?? 1) + (o.searches ?? 0) * WEB_SEARCH_USD
+}
+
+function reserve(usd: number, label: string) {
+  spendState.spendUsd += usd
+  spendState.calls += 1
+  spendState.lastCallAt = Date.now()
+  const entry = bySport[label] ?? { spendUsd: 0, calls: 0 }
+  entry.spendUsd += usd
+  entry.calls += 1
+  bySport[label] = entry
+}
+
+function gate(req: Request, label: string, usd: number, limit: number, bucket = 'ai-open'): Response | null {
+  const rl = rateLimit(`${bucket}:${getClientIp(req)}`, limit, WINDOW_MS)
+  if (!rl.ok) return rateLimitedResponse(rl.retryAfterSeconds)
+  rollIfNewDay()
+  if (spendState.spendUsd + usd > DAILY_CAP_USD) return capReachedResponse(spendState.spendUsd)
+  reserve(usd, label)
+  return null
+}
+
+// Returns a Response to send back when the caller is over the limit or the
+// day's money is spent; null when the call may go ahead (and is now paid for).
+export function spendGate(req: Request, o: GateOpts): Response | null {
+  return gate(req, o.label, estimateUsd(req, o), o.limit ?? OPEN_IP_LIMIT)
+}
+
+// Text-to-speech is billed per character, not per token.
+const TTS_USD_PER_CHAR = 0.00015
+export function ttsGate(req: Request, chars: number, limit = 30): Response | null {
+  return gate(req, 'tts', Math.max(0, chars) * TTS_USD_PER_CHAR, limit, 'ai-tts')
+}
+
+// A limit with no charge, for a route that calls a paid service's free
+// endpoint. It still should not be hammered.
+export function rateGate(req: Request, limit = OPEN_IP_LIMIT): Response | null {
+  const rl = rateLimit(`ai-open:${getClientIp(req)}`, limit, WINDOW_MS)
+  return rl.ok ? null : rateLimitedResponse(rl.retryAfterSeconds)
+}
+
+// ─── Bounding a body the BROWSER wrote ─────────────────────────────────────
+//
+// Two routes forward the browser's JSON straight to the model. Left as they
+// were, the caller chose the model, the output length, the tools and the
+// system prompt — a free general-purpose assistant on our key. This keeps what
+// the real pages send (one user message, a length up to the route's ceiling,
+// and the two mailbox/calendar connectors) and drops everything else.
+
+const PASSTHROUGH_MODEL = 'claude-sonnet-4-6'
+const PASSTHROUGH_MAX_CHARS = 16_000
+const MCP_ALLOWED = new Set(['https://gmail.mcp.claude.com/mcp', 'https://gcal.mcp.claude.com/mcp'])
+
+export class OpenBodyError extends Error {
+  status: number
+  constructor(message: string, status = 400) { super(message); this.status = status }
+}
+
+export function boundOpenBody(raw: unknown, ceiling: number): Record<string, unknown> {
+  const b = (raw ?? {}) as Record<string, unknown>
+  if (!Array.isArray(b.messages) || b.messages.length !== 1) {
+    throw new OpenBodyError('This endpoint takes a single message.')
+  }
+  const m = b.messages[0] as Record<string, unknown>
+  const content = typeof m?.content === 'string' ? m.content : ''
+  if (!content.trim()) throw new OpenBodyError('messages[0].content is required.')
+  if (content.length > PASSTHROUGH_MAX_CHARS) throw new OpenBodyError('That request is too long.', 413)
+
+  const asked = Math.round(Number(b.max_tokens) || 1000)
+  const out: Record<string, unknown> = {
+    model: PASSTHROUGH_MODEL,
+    max_tokens: Math.min(ceiling, Math.max(1, asked)),
+    messages: [{ role: 'user', content }],
+  }
+  if (Array.isArray(b.mcp_servers)) {
+    const servers = (b.mcp_servers as Record<string, unknown>[])
+      .filter(s => typeof s?.url === 'string' && MCP_ALLOWED.has(s.url as string))
+      .slice(0, 2)
+      .map(s => ({ type: 'url', url: s.url, name: String(s.name || '').slice(0, 20) }))
+    if (servers.length) out.mcp_servers = servers
+  }
+  return out
 }

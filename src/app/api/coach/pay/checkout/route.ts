@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { stripe, getCoach, admin, getAcademy, assertOwnPlayer } from '../_stripe'
 import { publicSiteOrigin } from '@/lib/public-origin'
 
@@ -9,6 +10,8 @@ export const runtime = 'nodejs'
 export async function POST(req: NextRequest) {
   const user = await getCoach()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(user.id)) return notAnAcademy()
 
   const { amount, description = 'Tennis coaching', player_name = null, package_id = null, payment_id = null, returnPath = '/' } =
     (await req.json().catch(() => ({}))) as { amount: number; description?: string; player_name?: string | null; package_id?: string | null; payment_id?: string | null; returnPath?: string }

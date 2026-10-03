@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { campAudience, audienceBrief } from '@/lib/coach/camp-audience'
 
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
@@ -55,6 +56,8 @@ type Body = { campId?: string }
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json({ error: 'Lumio Coach is not configured on this server.' }, { status: 503 })
   }

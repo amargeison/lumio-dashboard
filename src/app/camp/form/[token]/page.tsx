@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { demoAttendeeByFormToken } from '@/lib/coach/demo-public'
 import { createClient } from '@supabase/supabase-js'
 import { askedForm, formEnabled, type Answers } from '@/lib/coach/camp-form'
 import CampFormView, { type FormPublic } from './CampFormView'
@@ -26,24 +27,30 @@ async function load(token: string): Promise<FormPublic | 'closed' | null> {
     const sb = db()
     const { data: a } = await sb.from('coach_camp_attendees')
       .select('id, camp_id, coach_id, player_name, status, form_answers, form_submitted_at').eq('form_token', token).maybeSingle()
-    if (!a || a.status === 'cancelled') return null
-    const [{ data: camp }, { data: profile }] = await Promise.all([
-      sb.from('coach_camps').select('name, start_date, end_date, location, region, audience, overseas, info_form').eq('id', a.camp_id).maybeSingle(),
-      sb.from('sports_profiles').select('brand_name, brand_logo_url, display_name').eq('id', a.coach_id).maybeSingle(),
-    ])
+    if (a?.status === 'cancelled') return null
+    // Not in the database: it may be one of the DEMO academy's links.
+    const demo = a ? null : demoAttendeeByFormToken(token)
+    if (!a && !demo) return null
+    const who = (a || demo!.attendee) as { player_name: string; form_answers?: unknown; form_submitted_at?: string | null }
+    const [{ data: camp }, { data: profile }] = a
+      ? await Promise.all([
+          sb.from('coach_camps').select('name, start_date, end_date, location, region, audience, overseas, info_form').eq('id', a.camp_id).maybeSingle(),
+          sb.from('sports_profiles').select('brand_name, brand_logo_url, display_name').eq('id', a.coach_id).maybeSingle(),
+        ])
+      : [{ data: demo!.camp }, { data: demo!.profile }]
     if (!camp) return null
     // Switched off by the coach, or the camp finished more than a fortnight ago.
     const ended = camp.end_date || camp.start_date
     if (!formEnabled(camp) || (ended && Date.now() > new Date(`${ended}T23:59:59`).getTime() + 14 * 86400000)) return 'closed'
     const form = askedForm(camp)
     return {
-      token, playerName: a.player_name,
+      token, playerName: who.player_name,
       academy: profile?.brand_name || 'Tennis camp', logoUrl: profile?.brand_logo_url || null, coachName: profile?.display_name || null,
       campName: camp.name, startDate: camp.start_date || null, endDate: camp.end_date || null,
       location: [camp.location, camp.region].filter(Boolean).join(', ') || null,
       adult: camp.audience === 'adult',
       intro: form.intro || null, sections: form.sections,
-      answers: (a.form_answers || {}) as Answers, submittedAt: a.form_submitted_at || null,
+      answers: (who.form_answers || {}) as Answers, submittedAt: who.form_submitted_at || null,
     }
   } catch { return null }
 }

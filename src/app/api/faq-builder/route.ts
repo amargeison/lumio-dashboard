@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 import Anthropic from '@anthropic-ai/sdk'
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'cms:faq-builder', maxTokens: 2000 })
+  if (overLimit) return overLimit
   try {
     const { title, tone, maxQuestions } = await req.json()
 

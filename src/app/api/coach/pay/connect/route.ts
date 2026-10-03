@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { stripe, getCoach, admin } from '../_stripe'
 import { publicSiteOrigin } from '@/lib/public-origin'
 
@@ -8,6 +9,8 @@ export const runtime = 'nodejs'
 export async function POST(req: NextRequest) {
   const user = await getCoach()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(user.id)) return notAnAcademy()
   if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: 'Payments not configured yet' }, { status: 500 })
 
   const { returnPath = '/' } = (await req.json().catch(() => ({}))) as { returnPath?: string }

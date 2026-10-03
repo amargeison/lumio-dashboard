@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'cms:voice-command', maxTokens: 512, model: 'claude-haiku-4-5' })
+  if (overLimit) return overLimit
   const { transcript, dept, company } = await req.json()
 
   if (!transcript) {

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 import Anthropic from '@anthropic-ai/sdk'
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'schools:lesson-plan', maxTokens: 2000 })
+  if (overLimit) return overLimit
   const { subject, yearGroup, topic, duration, objective, priorKnowledge, sendConsiderations, resources } = await req.json()
 
   const apiKey = process.env.ANTHROPIC_API_KEY

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 
 const RECS_SYSTEM = 'You are a fan engagement strategist for a football club. You give specific, actionable recommendations to improve attendance, NPS, social sentiment, and season ticket renewal. Always respond with valid JSON only — no preamble, no markdown.'
 const NEWSLETTER_SYSTEM = 'You are the communications officer for a football club. You write warm, conversational fan newsletters that celebrate the team and engage supporters. Plain text only.'
@@ -45,6 +46,9 @@ function tryParseJson(text: string): any | null {
 }
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'football:fan-insights', maxTokens: 1200 })
+  if (overLimit) return overLimit
   try {
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 503 })

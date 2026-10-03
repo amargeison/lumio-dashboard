@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
+import { rateGate } from '@/lib/ai/guards'
 
-export async function GET() {
+export async function GET(req: Request) {
+  const overLimit = rateGate(req, 5)
+  if (overLimit) return overLimit
   const apiKey = process.env.ELEVENLABS_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'No API key' }, { status: 500 })
 
