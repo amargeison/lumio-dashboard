@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -32,6 +33,10 @@ export async function POST(req: NextRequest) {
     if (!name && !email && !company) {
       return NextResponse.json({ error: 'At least one of name, email, or company is required' }, { status: 400 })
     }
+
+    // Spends on our key: limit it and count it against the daily total.
+    const overLimit = spendGate(req, { label: 'crm:enrich', maxTokens: 1000 })
+    if (overLimit) return overLimit
 
     const anthropic = new Anthropic()
 

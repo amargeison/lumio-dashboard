@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { demoCampByTripSlug } from '@/lib/coach/demo-public'
 import { notFound } from 'next/navigation'
 import TripView, { type TripPublic } from './TripView'
 import { campAudience } from '@/lib/coach/camp-audience'
@@ -64,7 +65,11 @@ async function load(slug: string): Promise<TripPublic | null> {
 
     // Same answer whether the trip is missing or closed — a closed trip should
     // not be distinguishable from one that never existed.
-    if (!camp || !camp.trip_open) return null
+    if (!camp || !camp.trip_open) {
+      // …unless it is one of the DEMO academy's trips, opened from the demo portal.
+      const demo = camp ? null : demoCampByTripSlug(slug)
+      return demo ? toPublic(demo.camp, demo.profile) : null
+    }
 
     const { data: profile } = await sb.from('sports_profiles')
       .select('brand_name, brand_logo_url, display_name').eq('id', camp.coach_id).maybeSingle()

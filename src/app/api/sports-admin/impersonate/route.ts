@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sportsAdminOk } from '@/lib/sports-admin/auth'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { portalUrlFor } from '@/lib/sports-admin/portal-url'
 
-const ADMIN_TOKEN = process.env.SPORTS_ADMIN_TOKEN || 'lumio-sports-admin-2026'
 
 // Superadmin impersonation. Opened in a new tab from the sports-admin Impersonate
 // buttons. Mints a real Supabase session for the target account (same Path C
@@ -15,7 +15,7 @@ const ADMIN_TOKEN = process.env.SPORTS_ADMIN_TOKEN || 'lumio-sports-admin-2026'
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token')
   const userId = req.nextUrl.searchParams.get('userId')
-  if (token !== ADMIN_TOKEN) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!sportsAdminOk(token)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

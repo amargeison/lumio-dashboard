@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { formLinkFor } from '@/lib/coach/camp-form-server'
 import { formEmailBlock } from '@/lib/coach/camp-form'
 import { publicSiteOrigin } from '@/lib/public-origin'
@@ -30,6 +31,8 @@ const prettyDate = (iso?: string | null) => {
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
 
   const { attendeeId } = (await req.json().catch(() => ({}))) as { attendeeId?: string }
   if (!attendeeId) return NextResponse.json({ error: 'attendeeId is required' }, { status: 400 })

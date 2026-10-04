@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sportsAdminOk } from '@/lib/sports-admin/auth'
 import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 
-const ADMIN_TOKEN = process.env.SPORTS_ADMIN_TOKEN || 'lumio-sports-admin-2026'
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -11,7 +11,7 @@ function getSupabase() {
 // Mirrors /api/admin/insights/[slug] but for sports accounts (keyed by id).
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = req.headers.get('x-admin-token')
-  if (token !== ADMIN_TOKEN) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!sportsAdminOk(token)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
   const supabase = getSupabase()

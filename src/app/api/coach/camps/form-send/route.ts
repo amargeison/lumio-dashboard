@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { sendAsCoach } from '@/lib/coach/mail'
 import { sendEmail } from '@/lib/emails/send'
@@ -21,6 +22,8 @@ const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&am
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
   const body = await req.json().catch(() => ({})) as { campId?: string; attendeeId?: string }
   if (!body.campId) return NextResponse.json({ error: 'campId is required' }, { status: 400 })
 

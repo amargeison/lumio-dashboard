@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sportsAdminOk } from '@/lib/sports-admin/auth'
 import { createClient } from '@supabase/supabase-js'
 
-const ADMIN_TOKEN = process.env.SPORTS_ADMIN_TOKEN || 'lumio-sports-admin-2026'
 
 // Demo signups are captured in `sports_demo_leads` (separate from sports_profiles).
 export async function GET(req: NextRequest) {
   const token = req.headers.get('x-admin-token')
-  if (token !== ADMIN_TOKEN) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!sportsAdminOk(token)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 // deleting one must not silently take the other.
 export async function DELETE(req: NextRequest) {
   const token = req.headers.get('x-admin-token')
-  if (token !== ADMIN_TOKEN) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!sportsAdminOk(token)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { email, sport, block, reason } = (await req.json().catch(() => ({}))) as
     { email?: string; sport?: string; block?: boolean; reason?: string }

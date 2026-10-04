@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'crm:company-finder', maxTokens: 2000 })
+  if (overLimit) return overLimit
   try {
     const { query, filters } = await req.json()
     if (!query) return NextResponse.json({ error: 'Query required' }, { status: 400 })

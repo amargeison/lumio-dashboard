@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { isReservedEmail } from '@/lib/demo-visitor'
 
 export const runtime = 'nodejs'
 
@@ -18,11 +20,13 @@ export async function POST(req: NextRequest) {
   )
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(user.id)) return notAnAcademy()
 
   const { email, role, scopePlayerId = null, scopeCoachName = null, staffId = null, name = '' } =
     (await req.json().catch(() => ({}))) as { email?: string; role?: string; scopePlayerId?: string | null; scopeCoachName?: string | null; staffId?: string | null; name?: string }
 
-  if (!email || !/.+@.+\..+/.test(email)) return NextResponse.json({ error: 'A valid email is required' }, { status: 400 })
+  if (!email || !/.+@.+\..+/.test(email) || isReservedEmail(email)) return NextResponse.json({ error: 'A valid email is required' }, { status: 400 })
   if (!['coach', 'parent', 'student'].includes(role || '')) return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
   if ((role === 'parent' || role === 'student') && !scopePlayerId) return NextResponse.json({ error: 'A player must be chosen for a parent/student invite' }, { status: 400 })
 

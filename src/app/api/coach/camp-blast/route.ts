@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { isAdult } from '@/lib/coach/camp-audience'
 
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
@@ -71,6 +72,8 @@ function buildHtml(o: {
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
 
   const b = (await req.json().catch(() => ({}))) as Body
   const subject = String(b.subject ?? '').trim().slice(0, 160)

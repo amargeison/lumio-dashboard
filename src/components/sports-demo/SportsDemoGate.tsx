@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect, memo } from 'react'
+import { visibleEmail } from '@/lib/demo-visitor-client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
@@ -673,7 +674,7 @@ export default function SportsDemoGate({
 
       const displayName = (sbSession.user.user_metadata as Record<string, unknown> | undefined)?.display_name
       const built: SportsDemoSession = {
-        email: sbSession.user.email ?? '',
+        email: visibleEmail(sbSession.user),
         userName: savedName || (typeof displayName === 'string' ? displayName : ''),
         clubName: savedClubName,
         role: savedRole,

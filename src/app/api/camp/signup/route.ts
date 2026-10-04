@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { demoCampBySignupSlug } from '@/lib/coach/demo-public'
 import { formLinkFor } from '@/lib/coach/camp-form-server'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
@@ -75,6 +76,9 @@ export async function POST(req: NextRequest) {
     // Same response whether the camp is missing or closed — a closed camp should
     // not be distinguishable from one that never existed.
     if (!camp || !camp.signup_open) {
+      // A sign-up on one of the DEMO academy's camp pages: thanked, and thrown
+      // away. Nothing is stored, nobody is emailed, no payment is started.
+      if (!camp && demoCampBySignupSlug(slug)) return NextResponse.json({ ok: true, status: 'confirmed', demo: true })
       return NextResponse.json({ error: 'Sign-ups for this camp are not open.' }, { status: 404 })
     }
 

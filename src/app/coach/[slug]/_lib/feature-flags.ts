@@ -1,5 +1,6 @@
 'use client'
 import { ls } from './storage-scope'
+import { isDemoPath } from './storage-scope'
 
 // Coach product feature flags + plan tiers (demo — localStorage only).
 // Four toggleable features gate whole modules and their linked data across the
@@ -104,7 +105,9 @@ export function primeFeatures(flags: Partial<FeatureFlags> | null | undefined) {
 // at it has not chosen a plan yet.
 export const DEMO_FLAGS: FeatureFlags = { effort: true, video: true, audio: true, racket: true }
 
-export function getFlags(fallback: TierKey = 'elite'): FeatureFlags { return read(fallback) }
+// The demo shows the whole product, whatever plan was last looked at on this
+// browser — so it never reads stored flags.
+export function getFlags(fallback: TierKey = 'elite'): FeatureFlags { return isDemoPath() ? { ...DEMO_FLAGS } : read(fallback) }
 export function setFlag(key: FeatureKey, on: boolean) { write({ ...read(), [key]: on }) }
 export function applyTier(key: TierKey) {
   const tier = TIERS.find(t => t.key === key)

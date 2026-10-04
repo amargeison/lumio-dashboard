@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ttsGate } from '@/lib/ai/guards'
 import { createClient } from '@supabase/supabase-js'
 
 // Default ElevenLabs voice — "Dallin" (positive, inspiring & clear)
@@ -29,6 +30,11 @@ export async function POST(req: NextRequest) {
     if (text.length > 500) {
       return NextResponse.json({ error: 'Text too long — max 500 characters' }, { status: 400 })
     }
+
+    // Billed per character on our key, and open to anyone: limit it and count
+    // it against the same daily total as the AI routes.
+    const overLimit = ttsGate(req, text.length)
+    if (overLimit) return overLimit
 
     // Skip rate limit for voice previews
     const isPreview = preview === true || req.headers.get('x-preview') === 'true'

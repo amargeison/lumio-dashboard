@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 function getSupabase() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
 export async function POST(req: NextRequest) {
+  // A six-digit PIN can be found by trying. Five goes in ten minutes.
+  if (!rateLimit(`admin-pin:${clientIp(req.headers)}`, 5, 10 * 60_000).ok) {
+    return NextResponse.json({ error: 'Too many attempts. Try again in a few minutes.' }, { status: 429 })
+  }
   const { code } = await req.json().catch(() => ({ code: '' }))
   if (!code || code.length < 6) {
     return NextResponse.json({ error: 'PIN required' }, { status: 400 })
@@ -13,8 +18,10 @@ export async function POST(req: NextRequest) {
 
   // Dev bypass
   const isDev = process.env.NEXT_PUBLIC_ENV === 'dev' || process.env.NODE_ENV !== 'production'
-  const pin = process.env.ADMIN_PIN || '291847'
-  const valid = code === pin || (isDev && code === '000000')
+  // No fallback PIN: one written in the source is a password anyone with the
+  // code has. If ADMIN_PIN is not set on the server, nobody gets in this way.
+  const pin = process.env.ADMIN_PIN
+  const valid = (!!pin && code === pin) || (isDev && code === '000000')
 
   if (!valid) {
     return NextResponse.json({ error: 'Invalid PIN' }, { status: 401 })

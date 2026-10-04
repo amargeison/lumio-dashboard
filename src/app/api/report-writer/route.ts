@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 import Anthropic from '@anthropic-ai/sdk'
 
 const SAMPLE_PUPILS = [
@@ -10,6 +11,9 @@ const SAMPLE_PUPILS = [
 ]
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'schools:report-writer', maxTokens: 2000 })
+  if (overLimit) return overLimit
   const { reportType, yearGroup, subject, tone, wordLimit, themes } = await req.json()
 
   const apiKey = process.env.ANTHROPIC_API_KEY

@@ -32,6 +32,7 @@
 // "Meridian Sports" broadcast brand.
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { visibleEmail } from '@/lib/demo-visitor-client'
 import { useParams } from 'next/navigation'
 import SportsDemoGate, { type SportsDemoSession } from '@/components/sports-demo/SportsDemoGate'
 import RoleSwitcher from '@/components/sports-demo/RoleSwitcher'
@@ -7118,7 +7119,7 @@ export default function BoxingPortalPage() {
           if (profile && profile.sport === 'boxing') {
             if (!profile.onboarding_complete) { window.location.href = '/boxing/app'; return }
             setAuthSession({
-              email: user.email ?? '',
+              email: visibleEmail(user),
               userName: profile.display_name ?? '',
               clubName: profile.brand_name ?? '',
               role: 'player',

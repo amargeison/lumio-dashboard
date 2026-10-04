@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 import { createClient } from '@supabase/supabase-js'
 
 const SYSTEM_PROMPT = `You are an experienced UK primary/secondary school teacher with expertise in lesson planning and curriculum design. Your task is to generate appropriate cover work for a class when their usual teacher is absent.
@@ -12,6 +13,9 @@ Always structure your response as valid JSON with exactly these keys:
 Format each section clearly with headings. Keep language age-appropriate for the specified year group. Follow the UK national curriculum where relevant.`
 
 export async function POST(request: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(request, { label: 'schools:cover-work', maxTokens: 2048 })
+  if (overLimit) return overLimit
   let body: Record<string, unknown>
   try {
     body = await request.json()

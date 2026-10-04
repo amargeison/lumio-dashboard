@@ -6,8 +6,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { LayoutDashboard, Users2, Building2, Rocket, Activity, Settings, LogOut, Search, Bell, FlaskConical } from 'lucide-react'
 
-const ADMIN_TOKEN = 'lumio-sports-admin-2026'
-
 const NAV = [
   { href: '/sports-admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/sports-admin/users', label: 'Sports', icon: Users2 },
@@ -25,18 +23,30 @@ export default function SportsAdminLayout({ children }: { children: React.ReactN
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
 
+  // The password is checked by the server, never here. A saved one is checked
+  // again on every visit, so changing the password signs every browser out.
   useEffect(() => {
     const saved = localStorage.getItem('sports_admin_token')
-    if (saved === ADMIN_TOKEN) setAuthed(true)
+    if (!saved) return
+    fetch('/api/sports-admin/login', { headers: { 'x-admin-token': saved } })
+      .then(r => { if (r.ok) setAuthed(true); else localStorage.removeItem('sports_admin_token') })
+      .catch(() => {})
   }, [])
 
-  const handleLogin = () => {
-    if (pin === ADMIN_TOKEN || pin === '071711') {
-      localStorage.setItem('sports_admin_token', ADMIN_TOKEN)
-      setAuthed(true)
-    } else {
-      setError('Incorrect password')
-    }
+  const handleLogin = async () => {
+    setError('')
+    try {
+      const r = await fetch('/api/sports-admin/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pin }),
+      })
+      if (r.ok) {
+        localStorage.setItem('sports_admin_token', pin)
+        setAuthed(true)
+      } else {
+        const d = await r.json().catch(() => ({}))
+        setError(d.error || 'Incorrect password')
+      }
+    } catch { setError('Could not reach the server. Try again.') }
   }
 
   if (!authed) return (

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sportsAdminOk } from '@/lib/sports-admin/auth'
 import { createClient } from '@supabase/supabase-js'
 
-const ADMIN_TOKEN = process.env.SPORTS_ADMIN_TOKEN || 'lumio-sports-admin-2026'
 
 export async function POST(req: NextRequest) {
   const token = req.headers.get('x-admin-token')
-  if (token !== ADMIN_TOKEN) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!sportsAdminOk(token)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id, updates } = await req.json()
   if (!id || !updates || typeof updates !== 'object') return NextResponse.json({ error: 'Missing id or updates' }, { status: 400 })

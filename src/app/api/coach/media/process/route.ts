@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import Anthropic from '@anthropic-ai/sdk'
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { transcribeMediaTimed, type TranscriptSegment } from '@/lib/coach/transcribe'
@@ -20,6 +21,8 @@ export const maxDuration = 300
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
 
   const body = (await req.json().catch(() => ({}))) as { id?: string; ids?: string[] }
   const idList = (Array.isArray(body.ids) && body.ids.length ? body.ids : (body.id ? [body.id] : [])).filter(Boolean)

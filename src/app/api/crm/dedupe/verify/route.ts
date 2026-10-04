@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY
 
@@ -48,6 +49,9 @@ function deriveWebsite(record: Record<string, unknown>): string | null {
 }
 
 export async function POST(req: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(req, { label: 'crm:dedupe', maxTokens: 1000, inputTokens: 6000 })
+  if (overLimit) return overLimit
   try {
     const { type, recordA, recordB } = await req.json() as {
       type: 'contact' | 'company'

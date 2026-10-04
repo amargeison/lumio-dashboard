@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { randomBytes } from 'crypto'
 import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 import { publicSiteOrigin } from '@/lib/public-origin'
@@ -59,6 +60,8 @@ function inviteHtml(o: {
 export async function POST(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
 
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>
   const playerId = clean(b.playerId, 40) || null
@@ -179,6 +182,8 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
   try {
     const db = serviceClient()
     const { data } = await db.from('coach_booking_links')
@@ -197,6 +202,8 @@ export async function GET(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const coachId = await sessionCoachId()
   if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // A demo account is signed in too. Only a real academy may use this.
+  if (!await isAcademyUser(coachId)) return notAnAcademy()
   const id = req.nextUrl.searchParams.get('id')
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
   try {

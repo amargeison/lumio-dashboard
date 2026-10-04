@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 function getSupabase() {
   return createClient(
@@ -9,6 +10,15 @@ function getSupabase() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit(`dev-auth:${clientIp(req.headers)}`, 5, 10 * 60_000).ok) {
+    return NextResponse.json({ error: 'Too many attempts. Try again in a few minutes.' }, { status: 429 })
+  }
+  // This is a development convenience: it opens the newest workspace to whoever
+  // has the dev PIN. It has no business answering on the live sites.
+  const host = (req.headers.get('host') || '').replace(/:\d+$/, '').toLowerCase()
+  if (/(^|\.)lumiosports\.com$|(^|\.)lumiocms\.com$/.test(host)) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
   const { pin } = await req.json().catch(() => ({ pin: '' }))
   const devPin = process.env.DEV_ACCESS_PIN
 

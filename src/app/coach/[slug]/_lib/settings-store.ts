@@ -161,6 +161,12 @@ export type CoachSettings = {
   head: { phone: string; email: string; contractedHours: number | null; dbsNumber: string; dbsIssued: string; dbsExpiry: string; safeguardingTrained: boolean; safeguardingDate: string; avatarUrl: string }
 }
 
+/** A date `days` from today as YYYY-MM-DD — for the demo persona's records. */
+function demoDate(days: number): string {
+  const d = new Date(Date.now() + days * 86400000)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 export const DEFAULT_SETTINGS: CoachSettings = {
   theme: 'dark',
   accentKey: 'blue',
@@ -199,7 +205,10 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   partnerLogin: false,
   campDiscord: [],
   sectionsOff: {},
-  head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '', avatarUrl: '' },
+  // The demo head coach is fully vetted: his card on the Coaches page reads
+  // these, and "No DBS on file" on the showcase's own head coach looked like a
+  // bug. Dates are worked out from today so they never drift into "expired".
+  head: { phone: '07700 900100', email: 'vincent@lumiotennisclub.example', contractedHours: 38, dbsNumber: '001734509812', dbsIssued: demoDate(-420), dbsExpiry: demoDate(675), safeguardingTrained: true, safeguardingDate: demoDate(-200), avatarUrl: '' },
 }
 
 // ── Demo seed vs live academy ───────────────────────────────────────────────
@@ -240,6 +249,8 @@ export const LIVE_DEFAULT_SETTINGS: CoachSettings = {
   messaging: { ...DEFAULT_SETTINGS.messaging, senderEmail: '', senderPhone: '' },
   syncedVenues: [],
   brandLogo: '',
+  // The head coach's own record starts empty for a real academy.
+  head: { phone: '', email: '', contractedHours: null, dbsNumber: '', dbsIssued: '', dbsExpiry: '', safeguardingTrained: false, safeguardingDate: '', avatarUrl: '' },
 }
 
 // The seed this portal should fall back to for anything the coach hasn't set.

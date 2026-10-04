@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 import { createClient } from '@supabase/supabase-js'
 
 // ─── Term label helper ─────────────────────────────────────────────────────────
@@ -33,6 +34,9 @@ function periodStartDate(period: string): string {
 // ─── POST handler ──────────────────────────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(request, { label: 'schools:governor-report', maxTokens: 4096, inputTokens: 8000 })
+  if (overLimit) return overLimit
   let body: Record<string, unknown>
   try {
     body = await request.json()

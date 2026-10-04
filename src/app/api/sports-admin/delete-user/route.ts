@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { sportsAdminOk } from '@/lib/sports-admin/auth'
 import { NextRequest, NextResponse } from 'next/server'
 
 const supabase = createClient(
@@ -6,11 +7,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const ADMIN_TOKEN = process.env.SPORTS_ADMIN_TOKEN || 'lumio-sports-admin-2026'
 
 export async function POST(req: NextRequest) {
   const token = req.headers.get('x-admin-token')
-  if (token !== ADMIN_TOKEN) {
+  if (!sportsAdminOk(token)) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { spendGate } from '@/lib/ai/guards'
 import { createClient } from '@supabase/supabase-js'
 
 // ─── RAG helpers ───────────────────────────────────────────────────────────────
@@ -237,6 +238,9 @@ export async function GET() {
 // ─── POST: Generate Mock Ofsted Pack ──────────────────────────────────────────
 
 export async function POST(request: NextRequest) {
+  // Spends on our key and can be reached by anyone: limit it and count it.
+  const overLimit = spendGate(request, { label: 'schools:ofsted', maxTokens: 3000 })
+  if (overLimit) return overLimit
   let body: Record<string, unknown>
   try { body = await request.json() } catch { body = {} }
 
