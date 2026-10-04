@@ -61,6 +61,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect, useRef } from 'react';
+import { visibleEmail } from '@/lib/demo-visitor-client'
 import { useParams } from 'next/navigation'
 import { Sparkles, ChevronUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
@@ -7881,7 +7882,7 @@ export default function TennisTourPage() {
           if (profile && profile.sport === 'tennis') {
             if (!profile.onboarding_complete) { window.location.href = '/tennis/app'; return }
             setAuthSession({
-              email: user.email ?? '',
+              email: visibleEmail(user),
               userName: profile.display_name ?? '',
               clubName: profile.brand_name ?? '',
               role: 'player',

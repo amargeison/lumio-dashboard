@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { randomInt } from 'crypto'
+import { isReservedEmail } from '@/lib/demo-visitor'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 function getSupabase() {
   return createClient(
@@ -22,6 +25,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || isReservedEmail(email)) {
+      return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 })
+    }
+    // One connection may ask for ten codes in ten minutes, whichever addresses
+    // they are for. Without this the limit below is per address only, and the
+    // route would email a code to as many strangers as somebody cared to type.
+    if (!rateLimit(`otp-send-ip:${clientIp(req.headers)}`, 10, 10 * 60_000).ok) {
+      return NextResponse.json({ error: 'Too many attempts. Try again in a few minutes.' }, { status: 429 })
+    }
+
     // Barred addresses get no code. Checked here rather than at verify so a
     // blocked person never receives an email from us at all.
     const { isEmailBlocked, BLOCKED_MESSAGE, isAcademyMember } = await import('@/lib/blocked-emails')
@@ -33,7 +46,7 @@ export async function POST(req: NextRequest) {
     // Generate 6-digit OTP (dev always returns 000000 for bypass)
     const code = process.env.NODE_ENV !== 'production'
       ? '000000'
-      : Math.floor(100000 + Math.random() * 900000).toString()
+      : randomInt(100000, 1000000).toString()
 
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 

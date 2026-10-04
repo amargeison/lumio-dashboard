@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sportsAdminOk } from '@/lib/sports-admin/auth'
 import { createClient } from '@supabase/supabase-js'
 
-const ADMIN_TOKEN = process.env.SPORTS_ADMIN_TOKEN || 'lumio-sports-admin-2026'
 
 // Returns a unified activity feed for a sports account, shaped like the CMS
 // activity_log ({ action, department, created_at }) so the shared intelligence
 // UI can render it. Merges sports_logins (as 'login') with sports_events.
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = req.headers.get('x-admin-token')
-  if (token !== ADMIN_TOKEN) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!sportsAdminOk(token)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { id } = await params
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL

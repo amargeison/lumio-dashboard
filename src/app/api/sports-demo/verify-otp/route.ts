@@ -6,6 +6,8 @@ import { cookies } from 'next/headers'
 import { trackSportsEvent } from '@/lib/sports-events'
 import { generateSportsWelcomeEmail } from '@/lib/emails/welcome-sports'
 import { signInstallToken, type InstallTokenPayload } from '@/lib/pwa-install-token'
+import { demoVisitorEmail, isReservedEmail, isSharedDemoCode } from '@/lib/demo-visitor'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
 
 function getAnonClient() {
   return createClient(
@@ -90,7 +92,18 @@ export async function POST(req: NextRequest) {
     // does not know them.
     let isMember = purpose === 'member'
 
-    const normalisedEmail = email.toLowerCase()
+    const normalisedEmail = String(email).trim().toLowerCase()
+    if (isReservedEmail(normalisedEmail)) {
+      return NextResponse.json({ error: 'Invalid or expired code' }, { status: 400 })
+    }
+
+    // A six-digit code is only safe if it cannot be guessed at. Thirty tries
+    // per connection in ten minutes; and below, eight WRONG codes for one
+    // address cancel the code that was emailed, so guessing has nothing left to
+    // hit. A right code is never refused for somebody else's wrong ones.
+    if (!rateLimit(`otp-verify-ip:${clientIp(req.headers)}`, 30, 10 * 60_000).ok) {
+      return NextResponse.json({ error: 'Too many attempts. Try again in a few minutes.' }, { status: 429 })
+    }
 
     // Checked again here: somebody blocked between asking for a code and
     // entering it must not be let in on a code that was valid when issued.
@@ -103,14 +116,29 @@ export async function POST(req: NextRequest) {
       if (!isMember && await isAcademyMember(normalisedEmail)) isMember = true
     }
 
-    // Dev bypass
-    const isDev = process.env.NODE_ENV !== 'production' ||
-      code === process.env.DEV_ACCESS_PIN ||
-      code === '071711'
+    // The shared demo code.
+    //
+    // On the live site it used to sign the caller in AS whatever address they
+    // typed — a real coach's included — because a real session was minted for
+    // that address below. A code everybody knows proves nothing about who owns
+    // an address, so on the live site it now only ever opens the demo:
+    //   · it is refused outright on a real sign-in (a coach, parent or founder)
+    //   · otherwise the session is for a stand-in account, never the address
+    //     typed (see demo-visitor.ts)
+    // Off the live site (local development) it behaves as it always did.
+    const isProd = process.env.NODE_ENV === 'production'
+    const sharedCode = isSharedDemoCode(code)
+    const sharedOnLive = isProd && sharedCode
+    if (sharedOnLive && (isMember || purpose === 'member' || purpose === 'founder')) {
+      return NextResponse.json({ error: 'That code only opens the demo. Enter the 6-digit code we emailed you.' }, { status: 400 })
+    }
+    if (sharedOnLive) { isFounder = false; isMember = false }
+    // Who the session is for.
+    const sessionEmail = sharedOnLive ? demoVisitorEmail(normalisedEmail) : normalisedEmail
 
     let otpVerified = false
 
-    if (isDev && (code === '000000' || code === '071711' || code === process.env.DEV_ACCESS_PIN)) {
+    if (sharedCode || (!isProd && code === '000000')) {
       await anon.from('demo_magic_links').update({ used: true })
         .eq('email', normalisedEmail).eq('slug', `sports-demo-${sport}`)
       otpVerified = true
@@ -126,6 +154,11 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
 
       if (error || !link) {
+        if (!rateLimit(`otp-wrong:${normalisedEmail}`, 8, 10 * 60_000).ok) {
+          await anon.from('demo_magic_links').update({ used: true })
+            .eq('email', normalisedEmail).eq('used', false)
+          return NextResponse.json({ error: 'Too many wrong codes. Ask for a new code.' }, { status: 429 })
+        }
         return NextResponse.json({ error: 'Invalid or expired code' }, { status: 400 })
       }
 
@@ -156,7 +189,7 @@ export async function POST(req: NextRequest) {
       try {
         let { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
           type: 'magiclink',
-          email: normalisedEmail,
+          email: sessionEmail,
         })
 
         // THE TWO-ROUND SIGN-IN LOOP LIVES HERE.
@@ -183,7 +216,7 @@ export async function POST(req: NextRequest) {
           if (needsCreate) {
             console.warn('[verify-otp] no auth user, creating:', linkErr?.message)
             const { error: createErr } = await admin.auth.admin.createUser({
-              email: normalisedEmail,
+              email: sessionEmail,
               email_confirm: true,
             })
             // "already registered" means a parallel request won the race — the
@@ -192,7 +225,7 @@ export async function POST(req: NextRequest) {
               console.error('[verify-otp] createUser failed:', createErr.message)
             }
           } else if (linkUserPre) {
-            console.warn('[verify-otp] auth user unconfirmed, confirming:', normalisedEmail)
+            console.warn('[verify-otp] auth user unconfirmed, confirming:', sessionEmail)
             const { error: confErr } = await admin.auth.admin.updateUserById(linkUserPre.id, { email_confirm: true })
             if (confErr) console.error('[verify-otp] confirm failed:', confErr.message)
           }
@@ -201,7 +234,7 @@ export async function POST(req: NextRequest) {
           // could not verify it, and regenerating invalidates it anyway.
           ;({ data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
             type: 'magiclink',
-            email: normalisedEmail,
+            email: sessionEmail,
           }))
         }
 
@@ -216,16 +249,20 @@ export async function POST(req: NextRequest) {
           // refresh demo_last_login only.
           const priorMeta = (linkUser.app_metadata ?? {}) as Record<string, unknown>
           const priorRole = typeof priorMeta.role === 'string' ? priorMeta.role : null
-          if (priorRole === 'founder') isFounder = true
+          // A stand-in account is never a founder, whatever is on it.
+          if (priorRole === 'founder' && !sharedOnLive) isFounder = true
           // …and never for a member. Writing role:'demo' onto an invited coach's
           // auth user marks a real account as a demo one, which then steers
           // identify-user down the demo path on their NEXT sign-in.
-          if (priorRole !== 'founder' && !isFounder && !isMember) {
+          if (sharedOnLive || (priorRole !== 'founder' && !isFounder && !isMember)) {
             const nowIso = new Date().toISOString()
             const nextMeta: Record<string, unknown> = {
               ...priorMeta,
               role: 'demo',
               sport,
+              // The address the visitor typed, for the demo to show. Kept in
+              // app_metadata because only the server can write there.
+              ...(sharedOnLive ? { demo_email: normalisedEmail } : {}),
               demo_last_login: nowIso,
               ...(priorRole ? {} : { demo_created_at: nowIso }),
             }
@@ -261,7 +298,7 @@ export async function POST(req: NextRequest) {
           // One decisive line per sign-in. If a person is ever asked for their
           // email twice again, this says immediately whether the cookie was
           // minted (a client problem) or not (a server one).
-          console.log(`[verify-otp] ${normalisedEmail} member=${isMember} founder=${isFounder} sessionMinted=${sessionMinted}`)
+          console.log(`[verify-otp] ${normalisedEmail} member=${isMember} founder=${isFounder} sharedCode=${sharedCode} sessionMinted=${sessionMinted}`)
         }
       } catch (provisionErr) {
         // Non-fatal — OTP flow succeeds, the client still gets the demo
@@ -337,7 +374,9 @@ export async function POST(req: NextRequest) {
     // !isMember as well as !isFounder: an invited coach never asked to see the
     // demo, and telling them "your demo is ready" right after their head coach
     // gave them a real login is confusing and looks like a mix-up.
-    if (process.env.RESEND_API_KEY && !isFounder && !isMember) {
+    // Not on the shared code either: nobody has shown they own that address,
+    // so we would be emailing a stranger because somebody typed their address.
+    if (process.env.RESEND_API_KEY && !isFounder && !isMember && !sharedOnLive) {
       try {
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
@@ -406,7 +445,7 @@ export async function POST(req: NextRequest) {
       try {
         installToken = signInstallToken({
           sub:   supabaseUserId,
-          eml:   normalisedEmail,
+          eml:   sessionEmail,
           sport: sport as InstallTokenPayload['sport'],
           slug:  resolvedSlug,
         })

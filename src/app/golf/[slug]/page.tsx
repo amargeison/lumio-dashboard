@@ -29,6 +29,7 @@
 // "Meridian Sports" (matching the boxing portal's same swap).
 
 import React, { useState, useEffect, useRef } from 'react';
+import { visibleEmail } from '@/lib/demo-visitor-client'
 import { useParams } from 'next/navigation'
 import { Clipboard, Activity, Heart, BarChart, Map, DollarSign, Handshake, Star, TrendingUp, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
@@ -7141,7 +7142,7 @@ export default function GolfTourPage() {
           if (profile && profile.sport === 'golf') {
             if (!profile.onboarding_complete) { window.location.href = '/golf/app'; return }
             setAuthSession({
-              email: user.email ?? '',
+              email: visibleEmail(user),
               userName: profile.display_name ?? '',
               clubName: profile.brand_name ?? '',
               role: 'player',

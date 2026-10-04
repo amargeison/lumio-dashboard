@@ -65,6 +65,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { use, useState, useEffect, useRef } from 'react';
+import { visibleEmail } from '@/lib/demo-visitor-client'
 import { Target, Trophy, TrendingUp, Calendar, Users, DollarSign, Plane, Settings, Star, Award, BarChart2, Clock, MapPin, Phone, Mail, ChevronRight, FileText, Video, Brain, Zap, AlertCircle, CheckCircle, Package, Mic, Globe, Shield, Activity, Hash, ClipboardList, Volume2 } from 'lucide-react';
 import { SportsDemoGate, RoleSwitcher } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
@@ -8870,7 +8871,7 @@ export default function DartsPortalPage({ params }: { params: Promise<{ slug: st
               return
             }
             setAuthSession({
-              email: user.email ?? '',
+              email: visibleEmail(user),
               userName: profile.display_name ?? '',
               clubName: profile.brand_name ?? '',
               role: 'player',

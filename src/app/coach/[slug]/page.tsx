@@ -12,6 +12,7 @@
 // Centre, Payments.
 
 import { useState, useRef, useEffect, use } from 'react'
+import { visibleEmail } from '@/lib/demo-visitor-client'
 import dynamic from 'next/dynamic'
 import { createBrowserClient } from '@supabase/ssr'
 import { SportsDemoGate, type SportsDemoSession } from '@/components/sports-demo'
@@ -169,7 +170,7 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
           // public demo gate below.
           if (profile && profile.sport === 'coach') {
             setAuthSession({
-              email: user.email ?? '',
+              email: visibleEmail(user),
               userName: profile.display_name ?? '',
               clubName: profile.brand_name ?? '',
               role: 'head',
@@ -201,12 +202,12 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
               // with no exit, which is what a coach hit after following the
               // invite. Better to stop and say why.
               setSignedInDenied({
-                email: user.email ?? '',
+                email: visibleEmail(user),
                 reason: identityMessage() || 'We could not work out your access to this academy.',
               })
             } else if (!me.isHead) {
               setAuthSession({
-                email: user.email ?? '',
+                email: visibleEmail(user),
                 userName: me.displayName ?? '',
                 clubName: me.brandName ?? '',
                 role: 'coach',

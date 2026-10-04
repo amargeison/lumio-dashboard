@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { generateSportsWelcomeEmail } from '@/lib/emails/welcome-sports'
 import { slugify } from '@/lib/sports-admin/portal-url'
+import { isReservedEmail } from '@/lib/demo-visitor'
 
 // All sport IDs the picker exposes
 const ALLOWED_SPORTS = new Set([
@@ -42,6 +43,10 @@ export async function POST(req: NextRequest) {
 
     if (!email || !displayName || !sport) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
+    }
+    // The stand-in accounts behind the shared demo code can never become real.
+    if (isReservedEmail(email)) {
+      return NextResponse.json({ error: 'That email address cannot be used to sign up.' }, { status: 400 })
     }
     if (!ALLOWED_SPORTS.has(sport)) {
       return NextResponse.json({ error: `Invalid sport: ${sport}` }, { status: 400 })
