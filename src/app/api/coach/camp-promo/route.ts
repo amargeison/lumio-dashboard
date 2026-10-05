@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { campAudience, audienceBrief } from '@/lib/coach/camp-audience'
 
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { serviceClient } from '@/lib/coach/oauth'
+import { coachGate } from '@/lib/coach/membership'
 import { runCoachAgent } from '@/lib/coach/agent'
 import { publicSiteOrigin } from '@/lib/public-origin'
 import { rateLimit } from '@/lib/rate-limit'
@@ -54,8 +55,12 @@ const shapeFor = (adult: boolean) => `Return ONLY valid JSON (no markdown, no co
 type Body = { campId?: string }
 
 export async function POST(req: NextRequest) {
-  const coachId = await sessionCoachId()
-  if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // The academy in the portal's address, and only its head coach (see coachGate):
+  // a coach who also helps at another academy must not act on their own club
+  // from inside the other one's portal.
+  const seat = await coachGate({ headOnly: true })
+  if (!seat.ok) return NextResponse.json({ error: seat.error }, { status: seat.status })
+  const coachId = seat.seat.academyId
   // A demo account is signed in too. Only a real academy may use this.
   if (!await isAcademyUser(coachId)) return notAnAcademy()
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -140,6 +145,11 @@ export async function POST(req: NextRequest) {
       if (s < 0 || e <= s) throw new Error('unparseable')
       plan = JSON.parse(json.slice(s, e + 1))
     }
+
+    // A reply with no email in it is a failed attempt, not an announcement to
+    // edit: the coach would be looking at an empty message with a Send button.
+    const paras = Array.isArray(plan?.email?.paragraphs) ? plan.email.paragraphs.filter((x: unknown) => String(x ?? '').trim()) : []
+    if (!paras.length) throw new Error('no announcement in the reply')
 
     return NextResponse.json({ ok: true, promo: plan, signupUrl, campName: camp.name })
   } catch (err) {

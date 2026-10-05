@@ -2,16 +2,20 @@
 
 // Live data layer for the Lumio Tennis Coach portal.
 //
-// Every table is owned per-coach and protected by Supabase RLS
-// (coach_id = auth.uid()), so the browser client can read/write directly and
-// only ever touches the signed-in coach's own rows. No API routes needed.
+// Every table is owned per-academy and protected by Supabase RLS, so the
+// browser client can read/write directly and can only ever reach rows the
+// signed-in coach is allowed. RLS is the boundary; it is NOT the scope. A coach
+// who belongs to two academies is allowed rows in both, so every read here also
+// asks for ONE academy by name — the one in the portal's address — and every
+// write is filed under it (see "Whose academy am I working in?" below).
 
 import { useState, useEffect, useCallback } from 'react'
-import { isDemoPath } from './storage-scope'
+import { isDemoPath, stillOwner, loseTab } from './storage-scope'
 import { demoClient } from './demo/client'
 import { installDemoFetch } from './demo/fetch'
 import { createBrowserClient } from '@supabase/ssr'
-import { getSettings } from './settings-store'
+import { ukDate, ukWeek } from '@/lib/coach/uk-date'
+import { paymentOwedPennies } from '@/lib/coach/money'
 
 export type CoachTable =
   | 'coach_players'
@@ -47,6 +51,49 @@ export type CoachTable =
 // loads (see demo/fetch.ts); on a real portal the wrapper passes everything
 // through untouched.
 installDemoFetch()
+
+// ── Which academy is this page showing? ─────────────────────────────────────
+// The address after /coach/ — /tennis/coach/<address>. Null on the demo and
+// anywhere that is not a coach portal.
+export function portalAddress(): string | null {
+  if (typeof window === 'undefined') return null
+  const parts = window.location.pathname.split('/').filter(Boolean)
+  const i = parts.indexOf('coach')
+  const slug = i >= 0 ? (parts[i + 1] || '').toLowerCase() : ''
+  // Portal addresses are letters, digits and hyphens. Anything else is not an
+  // academy, and could not be sent in a header anyway.
+  return slug && slug !== 'demo' && /^[a-z0-9-]+$/.test(slug) ? slug : null
+}
+
+// Every request the portal makes to the coach API says which academy it is for.
+//
+// The server routes used to work out "the caller's academy" by themselves: their
+// own, else the newest one they joined. For a coach at two academies that is a
+// guess, and a wrong one sends a message, takes a payment or imports a
+// spreadsheet into the club they were not looking at. Forty components call
+// those routes with a plain fetch, so — like the demo stand-in above — the
+// address is added in one place rather than at every call. The server checks it
+// against the caller's own memberships (lib/coach/membership.ts → coachSeat);
+// it only ever chooses between academies they already belong to.
+const ACADEMY_HEADER = 'x-lumio-academy'   // the same name membership.ts reads
+const ACADEMY_ROUTES = /^\/api\/(coach|portal)\//
+let _academyFetch = false
+function installAcademyFetch() {
+  if (_academyFetch || typeof window === 'undefined') return
+  _academyFetch = true
+  const inner = window.fetch.bind(window)
+  window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const here = portalAddress()
+    if (!here) return inner(input, init)
+    let url: URL
+    try { url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url, window.location.origin) } catch { return inner(input, init) }
+    if (url.origin !== window.location.origin || !ACADEMY_ROUTES.test(url.pathname)) return inner(input, init)
+    const headers = new Headers(init?.headers ?? (typeof input === 'object' && 'headers' in input ? input.headers : undefined))
+    headers.set(ACADEMY_HEADER, here)
+    return inner(input, { ...init, headers })
+  }
+}
+installAcademyFetch()
 
 let _sb: ReturnType<typeof createBrowserClient> | null = null
 export function sb() {
@@ -98,9 +145,14 @@ export type CoachIdentity = {
   brandLogoUrl?: string | null
   staffRole?: string | null
   accreditation?: string | null
+  /** Every academy this person coaches at — only sent when there is more than one. */
+  academies?: { slug: string; name: string | null; isHead: boolean; current: boolean }[]
 }
 
 let _me: CoachIdentity | null = null
+// The address `_me` was worked out for. The answer belongs to one academy, so
+// it is thrown away if this tab moves to another academy's portal.
+let _meFor: string | null | undefined
 let _mePending: Promise<CoachIdentity | null> | null = null
 
 // Why the last whoami produced no identity. The difference matters:
@@ -119,12 +171,24 @@ export function identityProblem(): IdentityProblem { return _problem }
 export function identityMessage(): string | null { return _problemMessage }
 
 export async function currentIdentity(): Promise<CoachIdentity | null> {
+  const here = portalAddress()
+  const moved = _meFor !== undefined && here !== _meFor
+  _meFor = here
+  if (moved) {
+    // A different academy's address: nothing remembered or cached for the last
+    // one may be shown here.
+    _me = null; _mePending = null; _problem = null; _problemMessage = null
+    invalidateCoachTable()
+  }
   if (_me) return _me
   // De-duped: the portal mounts a dozen data hooks at once and they all ask.
   if (!_mePending) {
-    _mePending = (async () => {
+    let mine: Promise<CoachIdentity | null> | null = null
+    mine = (async () => {
       try {
-        const r = await fetch('/api/coach/whoami')
+        // Asked about THIS address: the academy is the one in the URL, not
+        // whichever the coach joined most recently.
+        const r = await fetch(here ? `/api/coach/whoami?slug=${encodeURIComponent(here)}` : '/api/coach/whoami')
         if (!r.ok) {
           _problem = r.status === 401 ? 'anon' : 'denied'
           if (_problem === 'denied') {
@@ -134,18 +198,44 @@ export async function currentIdentity(): Promise<CoachIdentity | null> {
           return null
         }
         const d = await r.json()
+        // The tab moved to another academy while this was on its way.
+        if (portalAddress() !== here) return null
         _problem = null; _problemMessage = null
         _me = d as CoachIdentity
         return _me
       } catch { _problem = 'error'; return null }
-      finally { _mePending = null }
+      finally { if (!mine || _mePending === mine) _mePending = null }
     })()
+    _mePending = mine
   }
   return _mePending
 }
 
+// ── Is this tab still signed in as the person it was opened for? ────────────
+// The sign-in belongs to the browser, so somebody else signing in in another
+// tab changes who THIS tab is, mid-page. Everything typed here was then saved
+// into the new person's account. Asked before every write (and whenever the
+// tab is looked at again): the first signed-in person this tab sees is its
+// owner, and a different one means the tab stops and asks for a reload.
+// stillOwner() covers the other half — the browser cache changing hands.
+let _tabUser: string | null = null
+export const TAB_LOST_MESSAGE = 'You\u2019ve been signed out in this tab. Reload to continue.'
+export async function tabStillMine(): Promise<boolean> {
+  if (typeof window === 'undefined' || isDemoPath()) return true
+  if (!stillOwner()) return false
+  try {
+    const { data } = await sb().auth.getSession()
+    const uid: string | null = data.session?.user?.id ?? null
+    if (uid && _tabUser && uid !== _tabUser) { loseTab(); return false }
+    if (uid && !_tabUser) _tabUser = uid
+  } catch { /* could not tell — row level security still checks every write */ }
+  return true
+}
+
 /** The academy id every coach_* row is filed under. */
 export async function currentCoachId(): Promise<string | null> {
+  // Nobody to read or write as, once the tab is somebody else's.
+  if (!(await tabStillMine())) return null
   const me = await currentIdentity()
   if (me?.academyId) return me.academyId
   // Fallback for anything running before/without the whoami route — the old
@@ -196,24 +286,90 @@ export function setPreviewStaff(id: string | null) {
 }
 export function getPreviewStaff() { return _previewStaffId }
 
+// ── One kit list per view ───────────────────────────────────────────────────
+// Equipment is either the academy's list (staff_id null) or one coach's own
+// (migration 168) — never both at once. Row level security lets the head coach
+// read every coach's list, and lets a coach read the academy's beside their own,
+// so without this the two were shown merged: every item twice, every count
+// doubled, on the Equipment page and on the dashboard.
+//
+// Returns the staff id whose list this view shows, null for the academy's, or
+// undefined when nobody is identified (the demo) and nothing should be narrowed.
+const KIT_TABLES = new Set<CoachTable>(['coach_equipment', 'coach_kit_items'])
+async function kitListOwner(): Promise<string | null | undefined> {
+  const me = await currentIdentity()
+  if (!me) return undefined
+  if (!me.isHead) return me.equipmentOwn && me.staffId ? me.staffId : null
+  if (!_previewStaffId) return null
+  // "View as coach": that coach's own list if they have set one up, else the
+  // academy's — which is what they see themselves.
+  const { data } = await sb().from('coach_staff').select('equipment_own').eq('id', _previewStaffId).maybeSingle()
+  return (data as { equipment_own?: boolean } | null)?.equipment_own ? _previewStaffId : null
+}
+
 export async function dbList<T = any>(table: CoachTable): Promise<T[]> {
-  let q = sb().from(table).select('*')
-  // Only the tables that carry an assignment. Venues, resources and the kit list
-  // are academy-wide by design, so filtering them would show the coach less than
+  // THIS academy's rows, asked for by name. Row level security alone is not
+  // enough: a coach who belongs to two academies is allowed rows in both, and
+  // without this the roster, bookings and payments of both clubs were merged on
+  // one screen.
+  const academy = await currentCoachId()
+  if (!academy) {
+    // Nobody to ask as. If that is because the check itself failed (offline),
+    // it is a failed load, not an empty academy.
+    markLoad(table, identityProblem() !== 'error')
+    return []
+  }
+  let q = sb().from(table).select('*').eq('coach_id', academy)
+  if (KIT_TABLES.has(table)) {
+    const owner = await kitListOwner()
+    if (owner !== undefined) q = owner ? q.eq('staff_id', owner) : q.is('staff_id', null)
+  }
+  // Only the tables that carry an assignment. Venues and resources are
+  // academy-wide by design, so filtering them would show the coach less than
   // they really get.
-  if (_previewStaffId && ASSIGNABLE.has(table)) q = q.eq('staff_id', _previewStaffId)
+  else if (_previewStaffId && ASSIGNABLE.has(table)) q = q.eq('staff_id', _previewStaffId)
   // Payments have no coach of their own — they belong to a player. Previewing a
   // coach shows only what their players owe, which is exactly what that coach
-  // can read when signed in (migration 188).
-  if (_previewStaffId && table === 'coach_payments') {
-    const { data: mine } = await sb().from('coach_players').select('id').eq('staff_id', _previewStaffId)
+  // can read when signed in (migration 188). Messages are the same: that coach
+  // reads the conversations of their own players and no others (migration 196),
+  // so the preview must not list the head coach's whole inbox.
+  if (_previewStaffId && (table === 'coach_payments' || table === 'coach_messages')) {
+    const { data: mine } = await sb().from('coach_players').select('id').eq('coach_id', academy).eq('staff_id', _previewStaffId)
     const ids = (mine ?? []).map((r: { id: string }) => r.id)
     if (!ids.length) return []
     q = q.in('player_id', ids)
   }
   const { data, error } = await q.order('created_at', { ascending: false })
-  if (error) { console.error('[coach-db] list', table, error.message); return [] }
+  if (error) { console.error('[coach-db] list', table, error.message); markLoad(table, false); return [] }
+  // "Nothing here" is only believed when we know whose academy was asked for.
+  // If that check could not be made, the id above was a fallback (the person's
+  // own), which finds nothing for a coach in somebody else's academy.
+  if (!data?.length && identityProblem() === 'error') { markLoad(table, false); return [] }
+  markLoad(table, true)
   return (data ?? []) as T[]
+}
+
+// ── Reads that FAILED ───────────────────────────────────────────────────────
+// A read that fails still returns [] above, so no caller has to change — but
+// "could not load" is not "nothing there". With no signal the roster showed
+// "No players yet" to a coach with forty players. The portal shell listens for
+// this and says the data could not be loaded, with a way to try again.
+export const LOAD_FAILED = 'lumio-coach-load-failed'
+const _failed = new Set<CoachTable>()
+export function failedTables(): CoachTable[] { return Array.from(_failed) }
+function markLoad(table: CoachTable, ok: boolean) {
+  const was = _failed.has(table)
+  if (ok) _failed.delete(table); else _failed.add(table)
+  const failing = !ok
+  if (was !== failing && typeof window !== 'undefined') window.dispatchEvent(new Event(LOAD_FAILED))
+}
+
+// What to say when a save could not reach the server. The raw text was
+// "TypeError: Failed to fetch".
+function saveError(message: string): string {
+  return /failed to fetch|networkerror|load failed|network request failed/i.test(message)
+    ? 'That was not saved — you appear to be offline. Check your connection and try again.'
+    : message
 }
 
 export async function dbInsert(table: CoachTable, row: Record<string, any>) {
@@ -225,15 +381,18 @@ export async function dbInsert(table: CoachTable, row: Record<string, any>) {
   const stamp = (!me?.isHead && me?.staffId && ASSIGNABLE.has(table) && row.staff_id === undefined)
     ? { staff_id: me.staffId } : {}
   const { data, error } = await sb().from(table).insert({ ...clean(row), ...stamp, coach_id }).select().single()
-  if (error) { console.error('[coach-db] insert', table, error.message); throw new Error(error.message) }
-  // Confirmation email fires on CREATE only — dbUpdate deliberately does not call
-  // it, because editing a booking should not re-thank somebody for making it.
+  if (error) { console.error('[coach-db] insert', table, error.message); throw new Error(saveError(error.message)) }
+  rowsChanged(table)
+  // The server decides what the family is told — see sendBookingConfirmation.
   if (table === 'coach_bookings') { syncBookingCalendar(data); sendBookingConfirmation(data) }
   if (table === 'coach_camps') syncCampCalendar(data)
   return data
 }
 
 export async function dbUpdate(table: CoachTable, id: string, row: Record<string, any>) {
+  // Only ever a row of the academy on screen — the same scope the reads use.
+  const coach_id = await currentCoachId()
+  if (!coach_id) throw new Error('Not signed in')
   const patch = clean(row)
 
   // `updated_at` is stamped on every write, but not every table has the column —
@@ -247,20 +406,26 @@ export async function dbUpdate(table: CoachTable, id: string, row: Record<string
   // belt: the next table created without it degrades to "saved, not stamped"
   // instead of "the button does nothing".
   let { data, error } = await sb().from(table)
-    .update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id).select().single()
+    .update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id).eq('coach_id', coach_id).select().single()
 
   if (error && /updated_at/i.test(error.message)) {
     console.warn('[coach-db] %s has no updated_at column — saving without it', table)
-    ;({ data, error } = await sb().from(table).update(patch).eq('id', id).select().single())
+    ;({ data, error } = await sb().from(table).update(patch).eq('id', id).eq('coach_id', coach_id).select().single())
   }
 
-  if (error) { console.error('[coach-db] update', table, error.message); throw new Error(error.message) }
+  if (error) { console.error('[coach-db] update', table, error.message); throw new Error(saveError(error.message)) }
+  rowsChanged(table)
   if (table === 'coach_bookings') {
     syncBookingCalendar(data)
+    // A moved or cancelled booking has to reach the family too. The server
+    // compares the booking with what they were last told and sends "moved",
+    // "cancelled", a first confirmation — or nothing, for an edit that changes
+    // none of those.
+    sendBookingConfirmation(data)
     // Moving a booking moves its session plan — the database does that (migration
     // 179), so the copy in this tab is now out of date. Drop it rather than let
     // the planner keep showing the old date and look like it lost the plan.
-    invalidateCoachTable('coach_session_plans')
+    rowsChanged('coach_session_plans')
   }
   // Moving a camp's dates has to move the event, not leave last month's block
   // sitting on the coach's phone.
@@ -269,8 +434,24 @@ export async function dbUpdate(table: CoachTable, id: string, row: Record<string
 }
 
 export async function dbRemove(table: CoachTable, id: string) {
-  const { error } = await sb().from(table).delete().eq('id', id)
-  if (error) { console.error('[coach-db] remove', table, error.message); throw new Error(error.message) }
+  const coach_id = await currentCoachId()
+  if (!coach_id) throw new Error('Not signed in')
+  // Deleting a booking the family has been told about is, to them, a
+  // cancellation — and once the row is gone the server has nothing left to say
+  // who to tell. So it is asked FIRST, and waited for. If that fails the delete
+  // still goes ahead: the coach asked for it, and a note that could not be sent
+  // must not leave a booking they cannot remove.
+  if (table === 'coach_bookings') {
+    try {
+      await fetch('/api/coach/bookings/confirm', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: id, removing: true }),
+      })
+    } catch { /* delete anyway */ }
+  }
+  const { error } = await sb().from(table).delete().eq('id', id).eq('coach_id', coach_id)
+  if (error) { console.error('[coach-db] remove', table, error.message); throw new Error(saveError(error.message)) }
+  rowsChanged(table)
   if (table === 'coach_bookings') removeBookingCalendar(id)
   if (table === 'coach_camps') {
     fetch(`/api/coach/camps/sync?campId=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => { /* the camp is gone either way */ })
@@ -326,8 +507,10 @@ function setCalSync(s: CalSyncState) {
 function sendBookingConfirmation(row: any) {
   try {
     if (!row?.id) return
-    if ((row.status || '').toLowerCase() === 'cancelled') return
-    if (getSettings().bookingEmails === false) return   // coach has switched them off
+    // No checks here on purpose. Whether the academy has booking emails switched
+    // on, and whether this booking is pending, cancelled, moved or unchanged, is
+    // decided by the server from the database — a check made in this browser was
+    // only ever true for this browser.
     fetch('/api/coach/bookings/confirm', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bookingId: row.id }),
@@ -406,14 +589,82 @@ function removeBookingCalendar(id: string) {
 // are de-duped into a single request.
 const _tableCache = new Map<CoachTable, any[]>()
 const _inflight = new Map<CoachTable, Promise<any[]>>()
+// The newest read started for each table. A read asked for after a save can
+// overtake one that set off before it; the older answer must not be the one
+// that is kept.
+const _newest = new Map<CoachTable, Promise<any[]>>()
 
 function _fetchList<T>(table: CoachTable, force = false): Promise<T[]> {
   if (!force && _inflight.has(table)) return _inflight.get(table) as Promise<T[]>
+  const gen = _cacheGen
   const p = dbList<T>(table)
-    .then(rows => { _tableCache.set(table, rows); if (_inflight.get(table) === (p as Promise<any[]>)) _inflight.delete(table); return rows })
+    .then(rows => {
+      if (_inflight.get(table) === (p as Promise<any[]>)) _inflight.delete(table)
+      // A newer read of this table has started since (something was saved in
+      // between): these rows are from before it, so hand back the newer ones.
+      const newer = _newest.get(table)
+      if (gen === _cacheGen && newer && newer !== (p as Promise<any[]>)) return newer as Promise<T[]>
+      // Everything was cleared while this read was on its way — the head coach
+      // switched whose view this is, so these rows were read for the previous
+      // view. Read again rather than hand back (and cache) the wrong coach's rows.
+      if (gen !== _cacheGen) return _fetchList<T>(table)
+      // A failed read must not replace rows that loaded earlier with nothing,
+      // and must not be remembered as "this table is empty".
+      if (_failed.has(table)) return (_tableCache.get(table) as T[] | undefined) ?? rows
+      _tableCache.set(table, rows)
+      return rows
+    })
     .catch(err => { if (_inflight.get(table) === (p as Promise<any[]>)) _inflight.delete(table); throw err })
   _inflight.set(table, p as Promise<any[]>)
+  _newest.set(table, p as Promise<any[]>)
   return p
+}
+
+// ── "These rows have changed" ───────────────────────────────────────────────
+// Each screen used to refresh only its own copy after a save, so anything else
+// built from the same rows — the right-hand rail, the dashboard tiles, a second
+// list of the same table — kept its old numbers until the whole page was
+// reloaded: 16 players on the roster, 15 in the rail beside it.
+//
+// Every save, edit and delete that goes through this file now says which table
+// it touched. One fresh read is started for it, and everything showing that
+// table (useCoachTable, useCoachStats, the dashboard) takes its rows from that
+// same read. A screen that changes rows some other way — a server route that
+// deletes or merges players — calls rowsChanged() itself with the tables the
+// route touched.
+type ChangeListener = (table: CoachTable | null) => void
+const _changeSubs = new Set<ChangeListener>()
+
+/** Be told when a table's rows change (null: every table). Returns the unsubscribe. */
+export function onRowsChanged(fn: ChangeListener): () => void {
+  _changeSubs.add(fn)
+  return () => { _changeSubs.delete(fn) }
+}
+function tellChanged(table: CoachTable | null) {
+  _changeSubs.forEach(fn => { try { fn(table) } catch { /* one bad listener must not stop the rest */ } })
+}
+
+/** Rows of these tables were just changed on the server: read them again and tell every screen. */
+export function rowsChanged(...tables: CoachTable[]) {
+  for (const table of new Set(tables)) {
+    // Started here, so every listener shares the one read. What is on screen
+    // stays until the fresh rows arrive — nothing blinks empty.
+    _fetchList(table, true).catch(() => { /* a failed refresh keeps the rows already shown */ })
+    tellChanged(table)
+  }
+}
+
+// Everything that hangs off a player. Deleting or merging players is done by a
+// server route and changes all of these at once.
+export const PLAYER_TABLES: CoachTable[] = ['coach_players', 'coach_player_skills', 'coach_attendance', 'coach_bookings', 'coach_sessions', 'coach_payments', 'coach_messages', 'coach_camp_attendees', 'coach_media', 'coach_development']
+
+// The freshest rows without asking twice: the read that is already on its way
+// if there is one, else what is cached, else a first read.
+export function latestRows<T = unknown>(table: CoachTable): Promise<T[]> {
+  const going = _inflight.get(table)
+  if (going) return going as Promise<T[]>
+  const have = _tableCache.get(table)
+  return have !== undefined ? Promise.resolve(have as T[]) : _fetchList<T>(table)
 }
 
 // What the cache already holds for a table, without touching the network.
@@ -436,9 +687,13 @@ export function prefetchCoachTables(tables: CoachTable[]): Promise<void> {
 }
 
 // Clear cached rows (e.g. after sign-out or a bulk import) so the next read is fresh.
+let _cacheGen = 0   // counts full clears, so a read already in flight can tell it is out of date
 export function invalidateCoachTable(table?: CoachTable) {
-  if (table) { _tableCache.delete(table); _inflight.delete(table) }
-  else { _tableCache.clear(); _inflight.clear() }
+  if (table) { _tableCache.delete(table); _inflight.delete(table); _newest.delete(table) }
+  else { _tableCache.clear(); _inflight.clear(); _newest.clear(); _cacheGen++ }
+  // Whatever is on screen was built from the rows just dropped (a bulk import,
+  // a "delete everything", a switch of view), so it reads them again.
+  tellChanged(table ?? null)
 }
 
 // ── React hook: rows + CRUD for one table ──────────────────────────────────
@@ -448,10 +703,16 @@ export function useCoachTable<T = any>(table: CoachTable) {
   const [loading, setLoading] = useState(cached === undefined)
   const [error, setError] = useState<string | null>(null)
 
-  // Force-fresh reload (after a mutation or an explicit refresh).
+  // Force-fresh reload (an explicit refresh, e.g. after a server route changed
+  // rows). Everything else showing this table is told too.
   const reload = useCallback(async () => {
     if (_tableCache.get(table) === undefined) setLoading(true)
-    try { setRows(await _fetchList<T>(table, true)) } finally { setLoading(false) }
+    try { rowsChanged(table); setRows(await latestRows<T>(table)) } finally { setLoading(false) }
+  }, [table])
+  // After a save made through this file: the fresh read has already been
+  // started (see rowsChanged), so wait for that one rather than asking again.
+  const settle = useCallback(async () => {
+    try { setRows(await latestRows<T>(table)) } finally { setLoading(false) }
   }, [table])
 
   // On mount: show cache instantly, then revalidate in the background (de-duped).
@@ -465,20 +726,31 @@ export function useCoachTable<T = any>(table: CoachTable) {
     return () => { alive = false }
   }, [table])
 
+  // Rows of this table changed somewhere else — another screen's save, a server
+  // route, a bulk import. Show the same fresh rows everything else is showing.
+  useEffect(() => {
+    let alive = true
+    const off = onRowsChanged(t => {
+      if (t !== null && t !== table) return
+      latestRows<T>(table).then(d => { if (alive) { setRows(d); setLoading(false) } }).catch(() => { /* keep what is shown */ })
+    })
+    return () => { alive = false; off() }
+  }, [table])
+
   const add = useCallback(async (row: Record<string, any>) => {
-    try { await dbInsert(table, row); await reload() }
+    try { await dbInsert(table, row); await settle() }
     catch (e) { setError(e instanceof Error ? e.message : 'Save failed'); throw e }
-  }, [table, reload])
+  }, [table, settle])
 
   const edit = useCallback(async (id: string, row: Record<string, any>) => {
-    try { await dbUpdate(table, id, row); await reload() }
+    try { await dbUpdate(table, id, row); await settle() }
     catch (e) { setError(e instanceof Error ? e.message : 'Save failed'); throw e }
-  }, [table, reload])
+  }, [table, settle])
 
   const remove = useCallback(async (id: string) => {
-    try { await dbRemove(table, id); await reload() }
+    try { await dbRemove(table, id); await settle() }
     catch (e) { setError(e instanceof Error ? e.message : 'Delete failed'); throw e }
-  }, [table, reload])
+  }, [table, settle])
 
   return { rows, loading, error, reload, add, edit, remove }
 }
@@ -501,32 +773,42 @@ const dayKey = (d?: string | null) => String(d ?? '').slice(0, 10)
  * `scope` is whose portal is on screen (the coach being previewed, or null).
  * The numbers are re-read when it changes — they used to be read once, so
  * switching to "View as coach" left the academy's totals in the rail.
+ *
+ * They are also worked out again whenever one of the tables they are built
+ * from changes (see rowsChanged). They used not to be: add a player and the
+ * roster said 16 while the rail beside it said 15 until the page was reloaded.
  */
+const STATS_TABLES: CoachTable[] = ['coach_players', 'coach_staff', 'coach_sessions', 'coach_bookings', 'coach_player_skills', 'coach_payments']
+
 export function useCoachStats(enabled = true, scope: string | null = null): CoachStats {
   const [s, setS] = useState<CoachStats>(emptyStats)
 
   useEffect(() => {
     if (!enabled) { setS(v => ({ ...v, loading: false })); return }
     let cancelled = false
-    ;(async () => {
-      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
-      const today = new Date().toLocaleDateString('en-CA') // local YYYY-MM-DD
+    // Several tables can change at once (a deleted player takes bookings and
+    // payments with them): only the last run to start may set the numbers.
+    let run = 0
+    const work = async () => {
+      const mine = ++run
+      // "Today" is the UK date and "this week" is Monday to Sunday — the same
+      // definitions the dashboard tile and the calendar use (lib/coach/uk-date).
+      const today = ukDate()
+      const week = ukWeek(today)
+      const inWeek = (d?: string | null) => { const k = d ? (String(d).length > 10 ? ukDate(d) : dayKey(d)) : ''; return k >= week.start && k <= week.end }
       // Read via the shared per-table cache (plain GETs, de-duped with the rest of
       // the portal). We deliberately do NOT use `{ count:'exact', head:true }` HEAD
       // requests here — under the dashboard's load those were returning 503 and
       // breaking the Staff and Lessons-this-week tiles. Counts are derived from the
       // arrays instead.
-      const [prows, staff, sessions, brows, srows, pays] = await Promise.all([
-        _fetchList<any>('coach_players'),
-        _fetchList<any>('coach_staff'),
-        _fetchList<any>('coach_sessions'),
-        _fetchList<any>('coach_bookings'),
-        _fetchList<any>('coach_player_skills'),
-        _fetchList<any>('coach_payments'),
-      ])
-      if (cancelled) return
+      // latestRows: the read already on its way after a save, else the cached
+      // rows — so a change to one table does not re-read the other five.
+      const [prows, staff, sessions, brows, srows, pays] = await Promise.all(STATS_TABLES.map(t => latestRows<any>(t)))
+      if (cancelled || mine !== run) return
       const skillFor = (pid: string) => Object.fromEntries(srows.filter((r: any) => r.player_id === pid).map((r: any) => [r.skill, r.score]))
-      const awardThreshold = getSettings().awardThreshold  // 3 = Consistent, 4 = Mastered (matches Settings + dashboard)
+      // 4 = Consistent on every skill: the rule the Racket Progression page uses
+      // for "100%" and its award button, so this count and that page agree.
+      const awardThreshold = 4
       const racketsReady = prows.filter((p: any) => {
         const list = SKILLS_BY_STAGE[p.racket_stage] || []
         if (!list.length) return false
@@ -551,18 +833,24 @@ export function useCoachStats(enabled = true, scope: string | null = null): Coac
       setS({
         players: prows.length,
         staff: staff.length,
-        lessonsThisWeek: sessions.filter((r: any) => dayKey(r.session_date) >= weekAgo).length,
+        lessonsThisWeek: sessions.filter((r: any) => inWeek(r.session_date)).length,
         upcomingBookings: brows.filter((b: any) => dayKey(b.booking_date) >= today && b.status !== 'cancelled').length,
         sessionsToday: brows.filter((b: any) => dayKey(b.booking_date) === today && b.status !== 'cancelled').length,
         racketsReady,
-        outstandingPayments: pays.filter((p: any) => !p.paid && (Number(p.amount) || 0) > 0).reduce((t: number, p: any) => t + (Number(p.amount) || 0), 0),
-        newPlayers: prows.filter((p: any) => dayKey(p.created_at) >= weekAgo).length,
+        // Added up in pennies, so the total is exact; held in pounds as before.
+        // The same rule as the Payments page: a refunded or cancelled line is not owed.
+        outstandingPayments: pays.reduce((t: number, p: any) => t + paymentOwedPennies(p), 0) / 100,
+        newPlayers: prows.filter((p: any) => inWeek(p.created_at)).length,
         summariesDue,
         racketCounts: RACKET_STAGES.map(st => prows.filter((p: any) => p.racket_stage === st.id).length),
         loading: false,
       })
-    })()
-    return () => { cancelled = true }
+    }
+    // A read that fails outright leaves the numbers as they were.
+    const again = () => { work().catch(() => { /* keep what is shown */ }) }
+    again()
+    const off = onRowsChanged(t => { if (t === null || STATS_TABLES.includes(t)) again() })
+    return () => { cancelled = true; off() }
   }, [enabled, scope])
 
   return s
@@ -615,6 +903,8 @@ export function useCoachProfile(): CoachProfile & { reload: () => void } {
 }
 
 export async function saveCoachProfile(updates: Record<string, any>) {
+  // Never into the account of whoever signed in after this tab was opened.
+  if (!(await tabStillMine())) throw new Error(TAB_LOST_MESSAGE)
   const uid = await currentCoachId()
   if (!uid) throw new Error('Not signed in')
   const { error } = await sb().from('sports_profiles').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', uid)
@@ -715,6 +1005,7 @@ export async function setSkillScore(playerId: string, skill: string, score: numb
   const { error } = await sb().from('coach_player_skills')
     .upsert({ coach_id, player_id: playerId, skill, score, updated_at: new Date().toISOString() }, { onConflict: 'player_id,skill' })
   if (error) { console.error('[coach-db] setSkillScore', error.message); throw new Error(error.message) }
+  rowsChanged('coach_player_skills')   // "Rackets ready" in the rail is built from these
 }
 
 // When a lesson summary is created, the session happened — auto-mark the player
@@ -742,11 +1033,13 @@ export async function ensureRosterPlayer(
     const coach_id = await currentCoachId()
     if (!coach_id) return null
     const { data } = await sb().from('coach_players')
-      .select('id').eq('coach_id', coach_id).ilike('name', clean).limit(1)
+      .select('id').eq('coach_id', coach_id).ilike('name', clean).limit(2)
+    // Two players already share this name: a typed name cannot say which one is
+    // meant, so the row is attached to neither rather than to a guess.
+    if (((data as any[]) || []).length > 1) return null
     const existing = (data as any)?.[0]?.id as string | undefined
     if (existing) return existing
-    const created = await dbInsert('coach_players', { name: clean, ...extra })
-    invalidateCoachTable('coach_players')
+    const created = await dbInsert('coach_players', { name: clean, ...extra })   // tells every screen (rowsChanged)
     return (created as any)?.id ?? null
   } catch (e) {
     console.error('[coach-db] ensureRosterPlayer', e)
@@ -754,17 +1047,26 @@ export async function ensureRosterPlayer(
   }
 }
 
-export async function logSessionAttendance(playerName: string | null | undefined, sessionDate?: string | null) {
+// By the player's ID. It used to look the player up by name, so a lesson written
+// for one of two players called the same marked the OTHER one present. A lesson
+// with no player attached marks nobody.
+export async function logSessionAttendance(playerId: string | null | undefined, sessionDate?: string | null) {
   try {
-    if (!playerName) return
+    if (!playerId) return
     const coach_id = await currentCoachId()
     if (!coach_id) return
-    const date = sessionDate || new Date().toISOString().slice(0, 10)
-    const p = await sb().from('coach_players').select('id').eq('coach_id', coach_id).ilike('name', playerName.trim()).limit(1)
+    const date = sessionDate || ukDate()   // the UK date — the UTC one is still yesterday at 00:30 in summer
+    const p = await sb().from('coach_players').select('id').eq('coach_id', coach_id).eq('id', playerId).limit(1)
     const pid = (p.data as any)?.[0]?.id
     if (!pid) return
     const ex = await sb().from('coach_attendance').select('id').eq('coach_id', coach_id).eq('player_id', pid).eq('session_date', date).limit(1)
     if ((ex.data as any)?.length) return
-    await sb().from('coach_attendance').insert({ coach_id, player_id: pid, session_date: date, present: true })
+    // An invited coach's mark carries their coach record, as dbInsert stamps
+    // it — without it the database refuses the row and the lesson they just
+    // wrote up left no attendance behind.
+    const me = await currentIdentity()
+    const stamp = !me?.isHead && me?.staffId ? { staff_id: me.staffId } : {}
+    const { error } = await sb().from('coach_attendance').insert({ coach_id, ...stamp, player_id: pid, session_date: date, present: true })
+    if (!error) rowsChanged('coach_attendance')
   } catch (e) { console.warn('[coach-db] logSessionAttendance', e) }
 }

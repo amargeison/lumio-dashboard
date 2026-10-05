@@ -1,22 +1,68 @@
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { portalUrlFor } from '@/lib/sports-admin/portal-url'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
+import { findAuthUserByEmail, isValidEmail, exactEmailPattern } from '../_lib/account'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// Which kind of account an address has — the one thing the sign-in page must
+// know BEFORE a code is sent, so it asks for the right kind of code.
+//
+// This is open to anyone who can reach the sign-in page, so a stranger gets
+// that and nothing more: no academy name, no portal address, no head coach's
+// name, not whether the person is a parent, a student or a coach. It used to
+// return all of them for any address typed in.
+//
+// Everything else is the account holder's own business, and they get it by
+// asking again once they are signed in: the session proves the address is
+// theirs, and the answer then says where their portal is.
+async function signedInAs(): Promise<{ id: string; email: string } | null> {
+  try {
+    const cookieStore = await cookies()
+    if (!cookieStore.getAll().some(c => c.name.startsWith('sb-'))) return null
+    const ssr = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
+    )
+    const { data: { user } } = await ssr.auth.getUser()
+    return user?.email ? { id: user.id, email: user.email.toLowerCase() } : null
+  } catch { return null }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json()
-    if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 })
+    const body = await req.json().catch(() => null)
+    const email = (body as { email?: unknown } | null)?.email
+    if (!isValidEmail(email)) return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 })
 
     const normalised = email.toLowerCase().trim()
 
+    // Asking about your own address, while signed in as it.
+    const session = await signedInAs()
+    const self = session?.email === normalised
+
+    // Anyone else: thirty questions per connection in ten minutes. Enough for a
+    // club's shared wifi on enrolment night; not enough to work through a list
+    // of addresses looking for which ones have accounts.
+    if (!self) {
+      const verdict = rateLimit(`identify-ip:${clientIp(req.headers)}`, 30, 10 * 60_000)
+      if (!verdict.ok) {
+        return NextResponse.json(
+          { error: 'Too many attempts. Try again in a few minutes.' },
+          { status: 429, headers: { 'Retry-After': String(verdict.retryAfterSeconds) } },
+        )
+      }
+    }
+
     // Check 1: Is this a founding member? (exists in auth.users + sports_profiles)
-    const { data: authUsers } = await supabase.auth.admin.listUsers()
-    const authUser = authUsers?.users?.find(u => u.email === normalised)
+    const authUser = self ? { id: session!.id } : await findAuthUserByEmail(supabase, normalised)
 
     let founderSport: string | null = null
     let founderProfile: { sport: string; portal_slug: string | null; brand_name: string | null; display_name: string | null } | null = null
@@ -28,7 +74,7 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
       if (profile) { founderSport = profile.sport; founderProfile = profile }
     }
-    const founderFields = founderProfile ? {
+    const founderFields = self && founderProfile ? {
       founderSlug: founderProfile.portal_slug,
       founderBrand: founderProfile.brand_name,
       founderDisplayName: founderProfile.display_name,
@@ -43,8 +89,17 @@ export async function POST(req: NextRequest) {
     const { data: member } = await supabase
       .from('coach_members')
       .select('role, status, academy_id')
-      .ilike('email', normalised)
+      // The whole address, whatever its case — and nothing else. This is a
+      // pattern match, and "%" and "_" used to go into it as typed: "%@club.com"
+      // or "t%@club.com" answered "member", so addresses could be worked out a
+      // character at a time. See exactEmailPattern.
+      .ilike('email', exactEmailPattern(normalised))
       .neq('status', 'revoked')
+      // One address can hold several memberships now (a parent has one per
+      // child; a coach can also be a parent). A coach membership wins — 'coach'
+      // sorts before 'parent' and 'student' — so a coach whose own child is
+      // invited later is still sent to the coach portal.
+      .order('role', { ascending: true })
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -65,9 +120,7 @@ export async function POST(req: NextRequest) {
         founderSport,
         ...founderFields,
         demoSport: demoLead.sport,
-        userName: demoLead.user_name,
-        clubName: demoLead.club_name,
-        role: demoLead.role,
+        ...(self ? { userName: demoLead.user_name, clubName: demoLead.club_name, role: demoLead.role } : {}),
       })
     }
 
@@ -78,6 +131,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (member) {
+      if (!self) return NextResponse.json({ type: 'member', sport: 'coach' })
       const { data: academy } = await supabase
         .from('sports_profiles')
         .select('brand_name, display_name, portal_slug, sport')
@@ -105,9 +159,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         type: 'demo',
         sport: demoLead.sport,
-        userName: demoLead.user_name,
-        clubName: demoLead.club_name,
-        role: demoLead.role,
+        ...(self ? { userName: demoLead.user_name, clubName: demoLead.club_name, role: demoLead.role } : {}),
       })
     }
 

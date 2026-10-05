@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { bookById } from '@/lib/coach/books'
 import { isLumioResource } from '@/lib/coach/lumio-resources-data'
 import { resourceHref } from '@/lib/coach/resource-files'
 import { buildNextSession } from '@/lib/student/next-session'
+import { familyLesson } from '@/lib/student/family-lesson'
+import { nameIsUnique, coachSeats, pickSeat, requestedAcademy } from '@/lib/coach/membership'
 
 export const runtime = 'nodejs'
 
@@ -24,22 +26,14 @@ export const runtime = 'nodejs'
 
 type Member = { academyId: string; staffId: string | null; isHead: boolean }
 
-async function resolveAcademy(admin: SupabaseClient, userId: string, email?: string | null): Promise<Member | null> {
+async function resolveAcademy(userId: string, email?: string | null): Promise<Member | null> {
   // Owning an academy is the strong case and is checked first, so a coach who
   // runs their own club AND helps at another lands in their own.
-  const { data: own } = await admin.from('sports_profiles')
-    .select('id, sport').eq('id', userId).maybeSingle()
-  if (own && own.sport === 'coach') return { academyId: own.id, staffId: null, isHead: true }
-
-  const { bindPendingInvites } = await import('@/lib/coach/membership')
-  await bindPendingInvites(userId, email)
-
-  const { data: rows } = await admin.from('coach_members')
-    .select('academy_id, staff_id, role, status')
-    .eq('member_user_id', userId).eq('status', 'active').eq('role', 'coach')
-  const m = (rows || [])[0]
+  // …unless the portal says which academy it is showing: a coach at more than
+  // one then previews the one they are in (see coachSeats / pickSeat).
+  const m = pickSeat(await coachSeats(userId, email), await requestedAcademy())
   if (!m) return null
-  return { academyId: m.academy_id as string, staffId: (m.staff_id as string) ?? null, isHead: false }
+  return { academyId: m.academyId, staffId: m.staffId, isHead: m.isHead }
 }
 
 export async function GET(req: NextRequest) {
@@ -61,7 +55,7 @@ export async function GET(req: NextRequest) {
     { auth: { persistSession: false } },
   )
 
-  const me = await resolveAcademy(admin, user.id, user.email)
+  const me = await resolveAcademy(user.id, user.email)
   if (!me) return NextResponse.json({ error: 'No academy' }, { status: 403 })
 
   const { data: player } = await admin.from('coach_players')
@@ -72,11 +66,16 @@ export async function GET(req: NextRequest) {
   // An assistant coach previews their own players and nobody else's — the same
   // boundary their portal already draws, restated where the service key is in
   // play and row level security is therefore not watching.
-  if (!me.isHead && me.staffId && player.staff_id && player.staff_id !== me.staffId) {
+  // Fails closed, matching the database rule (lumio_can_see): a coach with no
+  // staff link, or a player assigned to nobody, is not "theirs".
+  if (!me.isHead && (!me.staffId || player.staff_id !== me.staffId)) {
     return NextResponse.json({ error: 'Not your player' }, { status: 403 })
   }
 
   const name = (player.name || '').trim()
+  // The same rule the family's own route applies: a row that carries only a
+  // name is theirs only if nobody else at the academy has that name.
+  const soleName = await nameIsUnique(admin, me.academyId, name)
   const safe = async (q: PromiseLike<{ data: unknown }>) => { try { const { data } = await q; return (data as Record<string, unknown>[]) || [] } catch { return [] } }
 
   // Lessons and media are keyed by player_id on anything written since migration
@@ -87,15 +86,15 @@ export async function GET(req: NextRequest) {
     const base = () => { const q = admin.from(table).select(cols).eq('coach_id', me.academyId); return extra ? extra(q) : q }
     const [byId, legacy] = await Promise.all([
       safe(base().eq('player_id', playerId).order(orderCol, { ascending: false }).limit(50)),
-      name ? safe(base().is('player_id', null).eq('player_name', name).order(orderCol, { ascending: false }).limit(50)) : Promise.resolve([]),
+      soleName ? safe(base().is('player_id', null).eq('player_name', name).order(orderCol, { ascending: false }).limit(50)) : Promise.resolve([]),
     ])
     const seen = new Set(byId.map(r => r.id as string))
     return [...byId, ...legacy.filter(r => !seen.has(r.id as string))]
   }
 
-  const [skills, lessons, clipRows, voiceRows, watch, attendees] = await Promise.all([
+  const [skills, lessonRows, clipRows, voiceRows, watch, attendees] = await Promise.all([
     safe(admin.from('coach_player_skills').select('skill, score').eq('player_id', playerId)),
-    byPlayer('coach_sessions', 'id, session_date, focus, summary, ai_review, review_json, rating', 'session_date'),
+    byPlayer('coach_sessions', 'id, session_date, focus, summary, review_json, rating', 'session_date'),
     byPlayer('coach_media', 'id, title, shot_type, duration_seconds, storage_path, created_at', 'created_at',
       q => q.not('clip_of', 'is', null).eq('shot_confirmed', true)),
     byPlayer('coach_media', 'id, title, duration_seconds, storage_path, created_at', 'created_at',
@@ -109,6 +108,11 @@ export async function GET(req: NextRequest) {
       .eq('coach_id', me.academyId).eq('player_id', playerId)),
   ])
 
+  // Exactly what the family gets: the private coach note and the raw review text
+  // are left out here too. A preview that showed them would tell the coach the
+  // family can see them.
+  const lessons = lessonRows.map(familyLesson)
+
   const sign = async (path: unknown): Promise<string | null> => {
     if (typeof path !== 'string' || !path) return null
     try {
@@ -116,11 +120,11 @@ export async function GET(req: NextRequest) {
       return data?.signedUrl ?? null
     } catch { return null }
   }
-  const clips = await Promise.all(clipRows.slice(0, 8).map(async c => ({
+  const clips = await Promise.all(clipRows.map(async c => ({
     id: c.id, title: c.title, shot_type: c.shot_type, duration_seconds: c.duration_seconds,
     created_at: c.created_at, url: await sign(c.storage_path),
   })))
-  const voiceNotes = await Promise.all(voiceRows.slice(0, 5).map(async a => ({
+  const voiceNotes = await Promise.all(voiceRows.map(async a => ({
     id: a.id, title: a.title, duration_seconds: a.duration_seconds,
     created_at: a.created_at, url: await sign(a.storage_path),
   })))
@@ -133,11 +137,27 @@ export async function GET(req: NextRequest) {
   const lumioOff = await safe(admin.from('coach_settings').select('data').eq('coach_id', me.academyId).limit(1))
     .then(r => ((r[0] as { data?: { resourcesPreloaded?: boolean } } | undefined)?.data?.resourcesPreloaded === false))
   const allRes = await safe(admin.from('coach_resources')
-    .select('id, title, category, format, racket, level, duration, notes, url')
+    .select('id, title, category, format, racket, level, duration, notes, url, given_only')
     .eq('coach_id', me.academyId).limit(300))
-  const resources = allRes
+  // Resources the coach gave to THIS player (Resource Centre → "Give to a
+  // player"). They lead the list, and carry the coach's own note where there is
+  // one — somebody picked them on purpose. A resource that has since been
+  // deleted simply is not there to show.
+  const givenRows = await safe(admin.from('coach_player_resources')
+    .select('ref_id, note, created_at')
+    .eq('coach_id', me.academyId).eq('player_id', playerId).eq('kind', 'resource')
+    .order('created_at', { ascending: false }).limit(9))
+  const given = (givenRows as { ref_id?: string; note?: string | null }[])
+    .map((g): Record<string, unknown> | null => { const r = (allRes as Record<string, unknown>[]).find(x => String(x.id) === String(g.ref_id)); return r ? { ...r, notes: g.note || r.notes } : null })
+    .filter((r): r is Record<string, unknown> => !!r)
+  const givenIds = new Set(given.map(r => String(r.id)))
+  const resources = [...given, ...(allRes as Record<string, unknown>[])
+    .filter(r => !givenIds.has(String(r.id)))
+    // Kept for the players it was given to (Resource Centre → Give to a player,
+    // migration 207): it is on nobody else's page, whatever its level says.
+    .filter(r => !r.given_only)
     .filter(r => !(lumioOff && isLumioResource(r as { title?: string | null })))
-    .filter(r => (stage && r.racket === stage) || (!r.racket && String(r.level || '').toLowerCase().startsWith('all')))
+    .filter(r => (stage && r.racket === stage) || (!r.racket && String(r.level || '').toLowerCase().startsWith('all')))]
     .slice(0, 9)
     // A coach's own uploaded file opens through the checked, signed route; a
     // "link" that is not a web address (a filename typed into an import) is
@@ -151,7 +171,7 @@ export async function GET(req: NextRequest) {
   let camps: Record<string, unknown>[] = []
   if (campIds.length) {
     camps = await safe(admin.from('coach_camps')
-      .select('id, name, start_date, end_date, location, region, audience, board, daily_rhythm, description, intent, objectives, outcomes, itinerary, equipment, parent_brief, balance_link, overseas, trip, player_targets')
+      .select('id, name, start_date, end_date, location, region, audience, board, daily_rhythm, description, intent, objectives, outcomes, itinerary, equipment, parent_brief, balance_link, overseas, trip, player_targets, coach_ids')
       .eq('coach_id', me.academyId).in('id', campIds))
     const statusOf = new Map(attendees.map(a => [a.camp_id as string, a]))
     const playerName = String(player.name || '').trim().toLowerCase()
@@ -161,8 +181,12 @@ export async function GET(req: NextRequest) {
       // will see, and what they will see is their own child's targets and no
       // other child's. A preview that shows more than the real page is not a
       // preview, it is a leak the coach cannot see coming.
+      // (A row with a player id is that player's; a name-only row counts only
+      // when the name is theirs alone — exactly as the family's route does.)
       const targets = Array.isArray(c.player_targets)
-        ? (c.player_targets as Record<string, unknown>[]).filter(t => String(t?.player_name ?? '').trim().toLowerCase() === playerName)
+        ? (c.player_targets as Record<string, unknown>[]).filter(t => t?.player_id
+            ? String(t.player_id) === String(playerId)
+            : soleName && String(t?.player_name ?? '').trim().toLowerCase() === playerName)
         : []
       return {
         ...c,
@@ -198,16 +222,23 @@ export async function GET(req: NextRequest) {
       .select('id, ref_id, title, author, note, created_at')
       .eq('coach_id', me.academyId).eq('player_id', playerId).eq('kind', 'book')
       .order('created_at', { ascending: false }).limit(12)),
-    // thread_key is the address; `recipients` is the legacy fallback for rows
-    // written before sending threaded per person. TWO EXACT QUERIES, merged —
-    // never one `.or()` with the name interpolated into a filter string, which
-    // a name containing a comma or bracket would quietly rewrite.
-    name ? msgSelect(cols => admin.from('coach_messages').select(cols)
-      .eq('coach_id', me.academyId).eq('thread_key', name)
-      .order('created_at', { ascending: false }).limit(20)) : Promise.resolve([]),
-    name ? msgSelect(cols => admin.from('coach_messages').select(cols)
-      .eq('coach_id', me.academyId).is('thread_key', null).eq('recipients', name)
-      .order('created_at', { ascending: false }).limit(20)) : Promise.resolve([]),
+    // The player's own thread, found the way the family's route finds it: by
+    // player id, plus rows from before messages carried one (name in
+    // thread_key, or in `recipients` for the oldest) ONLY when the name is this
+    // player's alone. EXACT QUERIES, merged — never one `.or()` with the name
+    // interpolated into a filter string, which a name containing a comma or
+    // bracket would quietly rewrite.
+    msgSelect(cols => admin.from('coach_messages').select(cols)
+      .eq('coach_id', me.academyId).is('camp_id', null).eq('player_id', playerId)
+      .order('created_at', { ascending: false }).limit(50)),
+    soleName ? Promise.all([
+      msgSelect(cols => admin.from('coach_messages').select(cols)
+        .eq('coach_id', me.academyId).is('camp_id', null).is('player_id', null).eq('thread_key', name)
+        .order('created_at', { ascending: false }).limit(50)),
+      msgSelect(cols => admin.from('coach_messages').select(cols)
+        .eq('coach_id', me.academyId).is('camp_id', null).is('player_id', null).is('thread_key', null).eq('recipients', name)
+        .order('created_at', { ascending: false }).limit(50)),
+    ]).then(([a, b]) => [...a, ...b]) : Promise.resolve([]),
   ])
   const messages = [...threaded, ...legacy]
     .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
@@ -219,7 +250,7 @@ export async function GET(req: NextRequest) {
 
   // Same builder as the family's own route, so the preview cannot promise a
   // session, a venue or a plan that the real page does not show.
-  const nextSession = await buildNextSession(admin, me.academyId, playerId, name)
+  const nextSession = await buildNextSession(admin, me.academyId, playerId, soleName ? name : '')
 
   // The coaching team and the camp threads, so the preview shows the same
   // choices the family has — a preview that cannot see the camp conversation is
@@ -270,7 +301,11 @@ export async function GET(req: NextRequest) {
       .select('channel_name, created_at').eq('coach_id', me.academyId).eq('camp_id', c.id)
       .order('created_at', { ascending: true }))) as { channel_name: string | null }[])
       .map(x => x.channel_name).filter(Boolean) as string[]
-    return { campId: String(c.id), name: String(c.name || 'Camp'), people: 0, messages: rows, channels: linkedNames }
+    // Counted the way the family's route counts it, so the tab reads the same.
+    const { count } = await admin.from('coach_camp_attendees')
+      .select('id', { count: 'exact', head: true }).eq('camp_id', c.id).neq('status', 'cancelled')
+    const coachCount = Array.isArray(c.coach_ids) ? (c.coach_ids as unknown[]).length : 0
+    return { campId: String(c.id), name: String(c.name || 'Camp'), people: (count ?? 0) + coachCount, messages: rows, channels: linkedNames }
   }))
 
   return NextResponse.json({

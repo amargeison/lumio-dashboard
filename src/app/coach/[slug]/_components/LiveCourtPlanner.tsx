@@ -9,18 +9,30 @@
 import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, sb, currentIdentity, type CoachIdentity } from '../_lib/coach-db'
+import { useCoachTable, useCoachProfile, sb, currentIdentity, type CoachIdentity } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
+import { ukDate, ukTime } from '@/lib/coach/uk-date'
+import { useAskBeforeClose } from '../_lib/ask-before-close'
 
 type Venue = { id: string; name: string; address?: string | null; contact_name?: string | null; contact_phone?: string | null; contact_email?: string | null; facilities?: string | null; access_note?: string | null; is_home?: boolean | null }
 type Court = { id: string; venue_id?: string | null; name: string; surface?: string | null; status?: string | null; notes?: string | null }
-type Booking = { player_name?: string | null; court?: string | null; booking_date?: string | null; start_time?: string | null; duration_min?: number | null; status?: string | null; type?: string | null }
+type Booking = { id: string; title?: string | null; player_name?: string | null; court?: string | null; court_id?: string | null; venue_id?: string | null; staff_id?: string | null; assigned_coach?: string | null; booking_date?: string | null; start_time?: string | null; duration_min?: number | null; status?: string | null; type?: string | null }
 type Staff = { id: string; name: string; role?: string | null; home_venue?: string | null; is_head?: boolean | null }
 
-const todayISO = () => new Date().toISOString().slice(0, 10)
-const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
+// Today in the UK (ukDate), not the UTC date: between midnight and 1am in
+// summer the UTC date is still yesterday, and the planner showed yesterday's
+// lessons.
+const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => Array.from(w)[0]?.toUpperCase()).join('') || '?'
 const toMins = (t?: string | null) => { if (!t) return null; const m = t.match(/(\d{1,2})\s*:\s*(\d{2})/) || t.match(/^(\d{1,2})(\d{2})$/); return m ? Math.min(23, +m[1]) * 60 + Math.min(59, +m[2]) : null }
-const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+const hhmm = (m: number) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+const lc = (x?: string | null) => (x || '').trim().toLowerCase()
+
+// "Settings → Venues" has to land on Venues & courts, not at the top of the
+// Settings page — SettingsPanel opens the panel named here.
+function openVenueSettings(onNavigate?: (s: string) => void) {
+  try { sessionStorage.setItem('lumio_open_settings', 'venuescfg') } catch { /* ignore */ }
+  onNavigate?.('settings')
+}
 
 export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; accent: AccentTokens; onNavigate?: (s: string) => void }) {
   const { rows: venues } = useCoachTable<Venue>('coach_venues')
@@ -100,13 +112,38 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
   const sectOff = getSettings().sectionsOff?.venues || []
   const showSec = (k: string) => !sectOff.includes(k)
 
-  const today = todayISO()
+  const today = ukDate()
   const todaysBookings = bookings.filter(b => b.booking_date === today && b.status !== 'cancelled')
-  const lessonsToday = todaysBookings.length
+  // "Your lessons": the ones this coach is taking. A head coach's list holds the
+  // whole academy's bookings, so the tile was counting everyone's. An unassigned
+  // booking is the head coach's (the same rule as the Coaches page).
+  const isMine = (b: Booking) => b.staff_id ? b.staff_id === me?.staffId : !!me?.isHead
+  const lessonsToday = todaysBookings.filter(isMine).length
 
+  // ── Which court a booking is on ─────────────────────────────────────────────
+  // By the court's id, which the booking form now records. A lesson used to be
+  // matched on the court's NAME alone, so one booking on "Court 1" lit up every
+  // court called "Court 1" at every venue. Bookings made before the id existed
+  // (and ones where the court was typed by hand) are placed by venue + name,
+  // or by name when only one court in the academy has it; a name shared by two
+  // venues with nothing to say which goes to the home venue, never to both.
+  const placed = courts.filter(c => !!c.venue_id)
+  const courtOf = (b: Booking): Court | null => {
+    if (b.court_id) return placed.find(c => c.id === b.court_id) || null
+    const named = lc(b.court) ? placed.filter(c => lc(c.name) === lc(b.court)) : []
+    if (b.venue_id) return named.find(c => c.venue_id === b.venue_id) || null
+    if (named.length <= 1) return named[0] || null
+    return named.find(c => c.venue_id === homeVenue?.id) || null
+  }
+  const lessonsOn = (court: Court) => todaysBookings.filter(b => courtOf(b)?.id === court.id)
+
+  // Only courts on the venue cards below are counted. A court whose venue was
+  // deleted is on no card, and used to make this number larger than what the
+  // coach could see.
+  const shownIds = new Set(mine.map(v => v.id))
   const tiles = [
     { label: 'Sites', value: mine.length },
-    { label: 'Courts total', value: courts.length },
+    { label: 'Courts total', value: courts.filter(c => !!c.venue_id && shownIds.has(c.venue_id)).length },
     { label: 'Your lessons today', value: lessonsToday },
     { label: 'Coaches', value: staff.length },
   ]
@@ -115,7 +152,7 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
     <div style={{ fontFamily: FONT }}>
       <div style={{ marginBottom: 14 }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Court Planner</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>The sites you coach across — contacts, facilities and your lessons. Manage venues &amp; courts in <button onClick={() => onNavigate?.('settings')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 13, fontFamily: FONT }}>Settings → Venues</button>. (Customer bookings live in the Booking Calendar.)</p>
+        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>The sites you coach across — contacts, facilities and your lessons. Manage venues &amp; courts in <button onClick={() => openVenueSettings(onNavigate)} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 13, fontFamily: FONT }}>Settings → Venues</button>. (Customer bookings live in the Booking Calendar.)</p>
       </div>
 
       {/* Stats */}
@@ -138,14 +175,14 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
       ) : mine.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 20px', background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 12 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>No venues yet</div>
-          <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Add the sites you coach across in <button onClick={() => onNavigate?.('settings')} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 12.5, fontFamily: FONT }}>Settings → Venues</button>.</div>
+          <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Add the sites you coach across in <button onClick={() => openVenueSettings(onNavigate)} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: 12.5, fontFamily: FONT }}>Settings → Venues</button>.</div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: 16 }}>
           {mine.map(v => (
             <VenueCard key={v.id} T={T} accent={accent} venue={v} showSec={showSec}
               courts={courts.filter(c => c.venue_id === v.id)}
-              todaysBookings={todaysBookings}
+              lessonsOn={lessonsOn} isMine={isMine}
               coaches={coachesAt(v.id)}
               onRequest={() => setReqVenue(v)} />
           ))}
@@ -164,19 +201,31 @@ export function LiveCourtPlanner({ T, accent, onNavigate }: { T: ThemeTokens; ac
   )
 }
 
-function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onRequest, showSec }: {
-  T: ThemeTokens; accent: AccentTokens; venue: Venue; courts: Court[]; todaysBookings: Booking[]; coaches: Staff[]; onRequest: () => void; showSec: (k: string) => boolean
+function VenueCard({ T, accent, venue, courts, lessonsOn, isMine, coaches, onRequest, showSec }: {
+  T: ThemeTokens; accent: AccentTokens; venue: Venue; courts: Court[]
+  lessonsOn: (c: Court) => Booking[]; isMine: (b: Booking) => boolean
+  coaches: Staff[]; onRequest: () => void; showSec: (k: string) => boolean
 }) {
   const facilities = (venue.facilities || '').split(',').map(s => s.trim()).filter(Boolean)
-  // A court shows "Your lesson" if there's a confirmed booking today whose court matches.
-  const lessonFor = (court: Court) => todaysBookings.find(b => (b.court || '').trim().toLowerCase() === court.name.trim().toLowerCase())
-  const courtState = (court: Court): { label: string; colour: string } => {
-    const l = lessonFor(court)
-    if (l) { const s = toMins(l.start_time); const end = s != null ? hhmm(s + (l.duration_min || 60)) : null; return { label: `Your lesson${end ? ` · til ${end}` : ''}`, colour: accent.hex } }
+  // What a court is doing NOW. A lesson colours the court only while it is on;
+  // one later today is named underneath ("Next: 19:00"), and one that has ended
+  // is not shown at all. It used to read "Your lesson" from midnight for a
+  // lesson at seven in the evening.
+  const nowT = toMins(ukTime()) ?? 0
+  const courtState = (court: Court): { label: string; colour: string; next?: string } => {
+    const timed = lessonsOn(court)
+      .map(b => { const s = toMins(b.start_time); return s == null ? null : { b, s, e: s + (b.duration_min || 60) } })
+      .filter(Boolean) as { b: Booking; s: number; e: number }[]
+    timed.sort((a, b) => a.s - b.s)
+    const on = timed.find(x => x.s <= nowT && nowT < x.e)
+    const later = timed.find(x => x.s > nowT)
+    const whose = (b: Booking) => isMine(b) ? 'Your lesson' : `${b.assigned_coach || 'Another coach'}’s lesson`
+    const next = later ? `Next: ${whose(later.b).replace(/^Your lesson$/, 'your lesson')} ${hhmm(later.s)}–${hhmm(later.e)}` : undefined
+    if (on) return { label: `${whose(on.b)} · until ${hhmm(on.e)}`, colour: isMine(on.b) ? accent.hex : T.warn, next }
     const st = (court.status || 'free').toLowerCase()
-    if (st.includes('book')) return { label: 'Booked', colour: T.warn }
-    if (st.includes('maint')) return { label: 'Maintenance', colour: T.bad }
-    return { label: 'Free', colour: T.good }
+    if (st.includes('book')) return { label: 'Booked', colour: T.warn, next }
+    if (st.includes('maint')) return { label: 'Maintenance', colour: T.bad, next }
+    return { label: 'Free', colour: T.good, next }
   }
   const cbtn: CSSProperties = { appearance: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 11px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, textDecoration: 'none' }
 
@@ -209,9 +258,9 @@ function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onReques
           <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Site contact</div>
           {venue.contact_name && <div style={{ fontSize: 13, fontWeight: 600, color: T.text, margin: '3px 0 8px' }}>{venue.contact_name}</div>}
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {venue.contact_phone && <a href={`tel:${venue.contact_phone}`} style={{ ...cbtn, border: `1px solid ${accent.border}`, background: 'transparent', color: accent.hex }}>📞 Call</a>}
-            {venue.contact_email && <a href={`mailto:${venue.contact_email}`} style={{ ...cbtn, border: `1px solid ${accent.border}`, background: 'transparent', color: accent.hex }}>✉️ Email</a>}
-            <button onClick={onRequest} style={{ ...cbtn, border: 0, background: accent.hex, color: T.btnText }}>🎾 Request courts</button>
+            {venue.contact_phone && <a href={`tel:${venue.contact_phone}`} style={{ ...cbtn, minHeight: 38, boxSizing: 'border-box', border: `1px solid ${accent.border}`, background: 'transparent', color: accent.hex }}>📞 Call</a>}
+            {venue.contact_email && <a href={`mailto:${venue.contact_email}`} style={{ ...cbtn, minHeight: 38, boxSizing: 'border-box', border: `1px solid ${accent.border}`, background: 'transparent', color: accent.hex }}>✉️ Email</a>}
+            <button onClick={onRequest} style={{ ...cbtn, minHeight: 38, border: 0, background: accent.hex, color: T.btnText }}>🎾 Request courts</button>
           </div>
         </div>
       )}
@@ -228,7 +277,7 @@ function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onReques
       <div style={{ display: showSec('courts') ? undefined : 'none', marginTop: 14 }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Courts · {courts.length}</div>
         {courts.length === 0 ? <div style={{ fontSize: 11.5, color: T.text3 }}>No courts added for this venue yet (add them in Settings → Venues).</div> : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 8 }}>
             {courts.map(c => {
               const s = courtState(c)
               return (
@@ -238,6 +287,7 @@ function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onReques
                   </div>
                   <div style={{ fontSize: 9.5, color: T.text3 }}>{[c.surface, c.notes].filter(Boolean).join(' · ') || '—'}</div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: s.colour, marginTop: 4 }}>{s.label}</div>
+                  {s.next && <div style={{ fontSize: 9.5, color: T.text3, marginTop: 2 }}>{s.next}</div>}
                 </div>
               )
             })}
@@ -266,24 +316,28 @@ function VenueCard({ T, accent, venue, courts, todaysBookings, coaches, onReques
 function RequestCourtsModal({ T, accent, venue, onClose }: { T: ThemeTokens; accent: AccentTokens; venue: Venue; onClose: () => void }) {
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
-  const field: CSSProperties = { background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, outline: 'none' }
+  const profile = useCoachProfile()
+  const closeOutside = useAskBeforeClose(JSON.stringify([date, time]), onClose)
+  const field: CSSProperties = { minWidth: 0, background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, outline: 'none' }
   const send = () => {
-    const when = [date && new Date(date).toLocaleDateString('en-GB'), time].filter(Boolean).join(' at ') || 'a date that suits'
+    const when = [date && new Date(`${date}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), time].filter(Boolean).join(' at ') || 'a date that suits'
     const subject = `Court request — ${venue.name}`
-    const body = `Hi ${venue.contact_name || 'there'},\n\nI'd like to request court time at ${venue.name} on ${when}.\n\nPlease let me know what's available.\n\nMany thanks,`
+    // Signed. The email used to end "Many thanks," and nothing after it.
+    const from = [profile.display_name, profile.brand_name].filter(Boolean).join('\n')
+    const body = `Hi ${venue.contact_name || 'there'},\n\nI'd like to request court time at ${venue.name} on ${when}.\n\nPlease let me know what's available.\n\nMany thanks,${from ? `\n${from}` : ''}`
     window.open(`mailto:${venue.contact_email || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`)
     onClose()
   }
   return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: 16 }}>
-      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, width: 380, maxWidth: '100%' }}>
+    <div onClick={e => { if (e.target === e.currentTarget) closeOutside() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: 16 }}>
+      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, width: 380, maxWidth: '100%', boxSizing: 'border-box' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Request courts</div>
         <div style={{ fontSize: 12, color: T.text3, margin: '4px 0 14px' }}>{venue.name}{venue.contact_email ? ` · ${venue.contact_email}` : ''}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <label style={{ fontSize: 11, color: T.text3, fontWeight: 600 }}>When would you like the courts?</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} style={{ ...field, flex: 1 }} />
-            <input type="time" value={time} onChange={e => setTime(e.target.value)} style={{ ...field, flex: 1 }} />
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input type="date" aria-label="Date" value={date} onChange={e => setDate(e.target.value)} style={{ ...field, flex: '1 1 130px' }} />
+            <input type="time" aria-label="Time" value={time} onChange={e => setTime(e.target.value)} style={{ ...field, flex: '1 1 110px' }} />
           </div>
         </div>
         <div style={{ fontSize: 10.5, color: T.text3, marginTop: 10 }}>Opens your email to {venue.contact_email || 'the venue'} with the request pre-written.</div>

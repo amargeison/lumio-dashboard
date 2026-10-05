@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { imageTypeOf } from '@/lib/coach/image-check'
 
 export const runtime = 'nodejs'
 
-// Signing proxy for player/staff photos (the `avatars` bucket is PRIVATE).
+// Player/staff photos for the coach's screens (the `avatars` bucket is PRIVATE).
 // The coach's browser requests /api/coach/avatar-img?p=<storage path>; we verify
-// the signed-in coach owns that path (it lives under their own uid folder), mint
-// a short-lived signed URL, and 302-redirect the <img> to it. Parents never use
-// this route — the portal routes sign their child's avatar server-side.
+// the signed-in coach owns that path (it lives under their own uid folder) and
+// send the picture back from here. Parents never use this route — the portal
+// has its own (/api/portal/avatar).
 export async function GET(req: NextRequest) {
   const path = req.nextUrl.searchParams.get('p')
   if (!path) return NextResponse.json({ error: 'Missing path' }, { status: 400 })
@@ -42,7 +43,17 @@ export async function GET(req: NextRequest) {
   if (path.includes('..') || path.split('/').some(seg => !seg) || !allowed.has(prefix)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
-  const { data, error } = await admin.storage.from('avatars').createSignedUrl(path, 3600)
-  if (error || !data?.signedUrl) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  return NextResponse.redirect(data.signedUrl, 302)
+  // The picture is sent from here rather than by pointing the browser at the
+  // file store, so it always goes out as an image (worked out from the bytes,
+  // not from a label) and the browser is told not to guess otherwise. A stored
+  // file that is not a picture is not served at all.
+  const { data: file, error } = await admin.storage.from('avatars').download(path)
+  if (error || !file) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const bytes = Buffer.from(await file.arrayBuffer())
+  const type = imageTypeOf(bytes)
+  if (!type) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  return new NextResponse(new Uint8Array(bytes), { headers: {
+    'Content-Type': type, 'X-Content-Type-Options': 'nosniff', 'Content-Disposition': 'inline',
+    'Content-Security-Policy': "default-src 'none'; sandbox", 'Cache-Control': 'private, max-age=3600',
+  } })
 }

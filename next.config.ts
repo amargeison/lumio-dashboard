@@ -49,6 +49,35 @@ const nextConfig: NextConfig = {
         { key: 'Content-Security-Policy', value: 'frame-ancestors *;' },
       ],
     },
+    // The catch-all above keeps PAGES and /api answers out of every cache: a
+    // page names the build files it needs, so a stored page after a release
+    // asks for files that no longer exist, and an API answer belongs to whoever
+    // is signed in. But it also covered the build files themselves, and Next
+    // only applies its own "keep for ever" header when nothing else has set
+    // one — so every script was downloaded again on every page view, and the
+    // installed app's service worker (which rightly refuses to keep anything
+    // marked no-store) held nothing: with no signal, opening a module replaced
+    // the whole app with "This page couldn't load".
+    //
+    // Build files carry a fingerprint of their contents in their name, so a
+    // stored copy can never be out of date; a release ships new names, and the
+    // (never-stored) page asks for those. Production builds only: in
+    // development the names do NOT change when the code does.
+    ...(process.env.NODE_ENV === 'production' ? [{
+      source: '/_next/static/:path*',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+    }] : []),
+    // Logos, icons and other images served from /public (top level and
+    // /icons). Their names do not change, so they are kept for a day rather
+    // than for ever — a 600 KB logo was fetched again on every page view.
+    {
+      source: '/:file([^/]+\\.(?:png|jpg|jpeg|webp|svg|ico|gif))',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=86400' }],
+    },
+    {
+      source: '/icons/:path*',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=86400' }],
+    },
     // Pre-shrunk marketing images. Everything else is no-store (above), which
     // also covers /public — so a logo was re-downloaded on every page view.
     // This folder is safe to cache hard: a changed image gets a new filename.

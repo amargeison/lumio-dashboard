@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   try {
     const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
     const { data: a } = await sb.from('coach_camp_attendees')
-      .select('id, camp_id, status, parent_phone, camp_goal').eq('form_token', token).maybeSingle()
+      .select('id, camp_id, status, parent_phone, camp_goal, medical_notes, form_answers').eq('form_token', token).maybeSingle()
     if (!a || a.status === 'cancelled') {
       // A form filled in on one of the DEMO academy's links: thanked, and thrown away.
       if (!a && demoAttendeeByFormToken(token)) return NextResponse.json({ ok: true, demo: true })
@@ -44,10 +44,19 @@ export async function POST(req: NextRequest) {
     const { answers, missing } = cleanAnswers(form, body.answers)
     if (missing.length) return NextResponse.json({ error: 'Some questions still need an answer.', missing }, { status: 400 })
 
+    // Answers already given to questions that are NOT being asked at the moment
+    // are kept as they are. The coach may have switched a section off for now
+    // ("this camp is abroad" unticked, a question removed and put back); saving
+    // the form used to delete those answers, and the family was asked for their
+    // flight details all over again. Only questions on today's form are replaced.
+    const asked = new Set(form.sections.flatMap(sec => sec.questions.map(q => q.id)))
+    const before = (a.form_answers && typeof a.form_answers === 'object' && !Array.isArray(a.form_answers) ? a.form_answers : {}) as Record<string, unknown>
+    const kept = Object.fromEntries(Object.entries(before).filter(([id]) => !asked.has(id)))
+
     const now = new Date().toISOString()
     const { error } = await sb.from('coach_camp_attendees').update({
       ...attendeePatch(form, answers, a),
-      form_answers: answers, form_submitted_at: now, updated_at: now,
+      form_answers: { ...kept, ...answers }, form_submitted_at: now, updated_at: now,
     }).eq('id', a.id)
     if (error) throw new Error(error.message)
     return NextResponse.json({ ok: true })

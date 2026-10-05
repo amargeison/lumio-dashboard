@@ -10,18 +10,29 @@
 // /api/coach/calendar/event). One-way only: nothing is imported back from the
 // calendar, so the banner must never claim two-way sync.
 
-import { useState, useEffect, useMemo, type CSSProperties } from 'react'
+import { useState, useEffect, useMemo, useRef, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, ensureRosterPlayer, useCoachProfile, subscribeCalendarSync, type CalSyncState } from '../_lib/coach-db'
+import { useCoachTable, ensureRosterPlayer, useCoachProfile, subscribeCalendarSync, currentIdentity, type CalSyncState, type CoachIdentity } from '../_lib/coach-db'
+import { playerLabels } from '../_lib/tell-apart'
 import { getSettings } from '../_lib/settings-store'
 import { campSpans, campsOn, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 import { BookingLinkModal } from './BookingLinkModal'
+import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { useIsMobile } from '@/hooks/useIsMobile'
+import { ukDate } from '@/lib/coach/uk-date'
 
 type Booking = {
   id: string; title: string | null; player_name: string | null; player_id?: string | null; court: string | null
+  // WHERE: the venue and the court by id (migrations 197 and 198). `court` keeps
+  // the court's name as text — it is what is printed, and it may be typed by hand.
+  venue_id?: string | null; court_id?: string | null
   booking_date: string | null; start_time: string | null; duration_min: number | null
   status: string | null; type: string | null; notes: string | null
+  /** What the family was last told (set by the server). Read only here. */
+  told_state?: string | null
+  /** Whose session it is. The database keeps the name in step with the record; empty is the head coach. */
+  staff_id?: string | null; assigned_coach?: string | null
 }
 const TYPES = ['Private', 'Group', 'Cardio', 'Match play', 'Block'] as const
 
@@ -40,7 +51,8 @@ const parseMins = (t: string | null): number | null => {
   if (m) return Math.min(23, +m[1]) * 60 + Math.min(59, +m[2])
   const h = t.match(/^(\d{1,2})$/); return h ? +h[1] * 60 : null
 }
-const minsToHHMM = (mins: number) => `${pad(Math.floor(mins / 60))}:${pad(mins % 60)}`
+// Wraps past midnight, so a lesson from 23:30 ends at "00:30" rather than "24:30".
+const minsToHHMM = (mins: number) => `${pad(Math.floor(mins / 60) % 24)}:${pad(mins % 60)}`
 // What a booking is called, wherever it is shown. A title alone ("1:1", "Junior
 // squad") does not say who it is with, and a court full of identical titles is
 // unreadable — so the player's name rides along unless it IS the title.
@@ -50,24 +62,71 @@ const bookingLabel = (b: { title?: string | null; player_name?: string | null })
   return t || who || 'Booking'
 }
 
+// The week grid shows 07:00–22:00 by default and stretches to fit any booking
+// outside those hours (see WeekGrid) — an early or late lesson is drawn at its
+// real time rather than pinned to 07:00 or dropped off the bottom.
 const HOUR_START = 7, HOUR_END = 21, ROW_H = 44
-const HOURS = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_START + i)
+
+// Side-by-side columns for bookings that overlap in time. Each run of
+// overlapping bookings is split into as many lanes as it needs; a booking with
+// nothing beside it keeps the full width. Without this every block took the full
+// width, so three overlapping lessons were drawn on top of each other and only
+// the last could be seen or clicked.
+function layoutLanes(items: { id: string; start: number; end: number }[]): Record<string, { lane: number; of: number }> {
+  const out: Record<string, { lane: number; of: number }> = {}
+  const sorted = [...items].sort((a, b) => a.start - b.start || a.end - b.end)
+  let cluster: typeof sorted = [], laneEnds: number[] = [], clusterEnd = -1
+  const flush = () => { for (const it of cluster) out[it.id].of = laneEnds.length; cluster = []; laneEnds = [] }
+  for (const it of sorted) {
+    if (cluster.length && it.start >= clusterEnd) flush()
+    let lane = laneEnds.findIndex(e => e <= it.start)
+    if (lane < 0) { lane = laneEnds.length; laneEnds.push(it.end) } else laneEnds[lane] = it.end
+    out[it.id] = { lane, of: 1 }
+    cluster.push(it); clusterEnd = Math.max(clusterEnd, it.end)
+  }
+  flush()
+  return out
+}
 
 export function LiveBookingCalendar({ T, accent, onNavigate }: {
   T: ThemeTokens; accent: AccentTokens; onNavigate?: (section: string) => void
 }) {
   const { rows, add, edit, remove, reload } = useCoachTable<Booking>('coach_bookings')
   const { rows: playerRows } = useCoachTable<{ id: string; name: string; email?: string | null; parent_email?: string | null; contact_email?: string | null }>('coach_players')
-  const { rows: venueRows } = useCoachTable<{ id: string; name: string }>('coach_venues')
-  const players = playerRows.map(p => ({ id: p.id, name: p.name }))
-  const { rows: staffRows } = useCoachTable<{ id: string; name: string }>('coach_staff')
+  const { rows: venueRows } = useCoachTable<{ id: string; name: string; is_home?: boolean | null }>('coach_venues')
+  const { rows: courtRows } = useCoachTable<{ id: string; name: string; venue_id?: string | null }>('coach_courts')
+  const isMobile = useIsMobile()
+  // Two players with the same name are told apart in the picker ("Jack Taylor (age 10, parent Sam)").
+  const labelOf = playerLabels(playerRows)
+  const players = playerRows.map(p => ({ id: p.id, name: p.name, label: labelOf.get(p.id) || p.name }))
+  const { rows: staffRows } = useCoachTable<{ id: string; name: string; is_head?: boolean | null }>('coach_staff')
   // Camps are read here, never written here — see src/lib/coach/camp-dates.ts.
   const { rows: campRows } = useCoachTable<CampRow>('coach_camps')
   const profile = useCoachProfile()
-  const coaches = [profile.display_name || 'Head Coach', ...staffRows.map(s => s.name)]
+  // The head coach has a row in the coaches table too, and is already first in
+  // this list ("Head coach (you)") — without the filter they were offered twice.
+  const coaches = [profile.display_name || 'Head Coach', ...staffRows.filter(s => !s.is_head).map(s => s.name)]
+  // Who is signed in. An invited coach books for themselves, so their form
+  // shows their own name rather than "Head coach (you)".
+  const [me, setMe] = useState<CoachIdentity | null>(null)
+  useEffect(() => { let on = true; currentIdentity().then(v => { if (on) setMe(v) }).catch(() => {}); return () => { on = false } }, [])
+  const myName = me && !me.isHead ? (staffRows.find(s => s.id === me.staffId)?.name || me.displayName || '') : ''
+  // Every name the head coach goes by — a booking carrying one of them, or none, is the head coach's.
+  const headNames = [profile.display_name || '', ...staffRows.filter(s => s.is_head).map(s => s.name)]
 
   const [view, setView] = useState<'week' | 'month'>('week')
-  const [cursor, setCursor] = useState(() => new Date())
+  // The dashboard's Upcoming rows name the day they want, so the calendar
+  // opens on the week that holds that booking rather than on this week.
+  const [cursor, setCursor] = useState(() => {
+    try {
+      const want = sessionStorage.getItem('lumio_open_date')
+      if (want) { const d = new Date(`${want}T12:00:00`); if (!Number.isNaN(d.getTime())) return d }
+    } catch { /* ignore */ }
+    return new Date()
+  })
+  // Used once: cleared after the page has mounted (not while reading it above,
+  // because a first render can be thrown away and run again).
+  useEffect(() => { try { sessionStorage.removeItem('lumio_open_date') } catch { /* ignore */ } }, [])
   const [editing, setEditing] = useState<Booking | 'new' | null>(null)
   const [linkOpen, setLinkOpen] = useState(false)
   const [connected, setConnected] = useState<string[] | null>(null)
@@ -131,8 +190,8 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   useEffect(() => subscribeCalendarSync(setSyncState), [])
 
   const modals = editing && (
-    <BookingFormModal T={T} accent={accent} players={players} coaches={coaches} typeColour={TYPE_COLOUR}
-      bookings={rows} camps={camps}
+    <BookingFormModal T={T} accent={accent} players={players} coaches={coaches} myName={myName} headNames={headNames} typeColour={TYPE_COLOUR}
+      bookings={rows} camps={camps} venues={venueRows} courts={courtRows}
       booking={editing === 'new' ? null : editing}
       defaultDate={newSlot?.date || iso(cursor)}
       defaultStart={newSlot?.start}
@@ -163,7 +222,8 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 14 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Booking Calendar</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Your week across all courts — private lessons, group squads, cardio and match play.</p>
+          {/* Left off on a phone: the grid is what the coach came for, and it was starting two-thirds of the way down the screen. */}
+          {!isMobile && <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Your week across all courts — private lessons, group squads, cardio and match play.</p>}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {/* A player who wants a lesson should not have to go through the coach's
@@ -176,15 +236,15 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
 
       {/* Toolbar: month heading + nav, Week/Month switch */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
           <NavBtn T={T} onClick={() => step(-1)}>‹</NavBtn>
-          <div style={{ fontSize: 17, fontWeight: 700, color: T.text, minWidth: 168, textAlign: 'center' }}>{heading}</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: T.text, minWidth: isMobile ? 132 : 168, textAlign: 'center' }}>{heading}</div>
           <NavBtn T={T} onClick={() => step(1)}>›</NavBtn>
-          <button onClick={() => setCursor(new Date())} style={{ marginLeft: 6, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>Today</button>
+          <button onClick={() => setCursor(new Date())} style={{ marginLeft: 6, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '0 12px', height: 40, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>Today</button>
         </div>
         <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginLeft: 'auto', width: 'fit-content' }}>
           {(['week', 'month'] as const).map(v => (
-            <button key={v} onClick={() => setView(v)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: FONT, textTransform: 'capitalize', background: view === v ? T.panel : 'transparent', color: view === v ? T.text : T.text2, fontWeight: view === v ? 600 : 400, boxShadow: view === v ? `0 0 0 1px ${T.border}` : 'none' }}>{v}</button>
+            <button key={v} onClick={() => setView(v)} style={{ appearance: 'none', border: 0, padding: '10px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', fontFamily: FONT, textTransform: 'capitalize', background: view === v ? T.panel : 'transparent', color: view === v ? T.text : T.text2, fontWeight: view === v ? 600 : 400, boxShadow: view === v ? `0 0 0 1px ${T.border}` : 'none' }}>{v}</button>
           ))}
         </div>
       </div>
@@ -208,6 +268,12 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
               <span>Your Lumio bookings are added to your {provLabel(calProvider)}{busy.length ? ` · ${busy.length} busy ${busy.length === 1 ? 'block' : 'blocks'} this week shown striped` : ''}.</span>
             </div>
           )
+        ) : isMobile ? (
+          // One line on a phone — the full banner took two rows above a grid
+          // that already started more than half-way down the screen.
+          <button onClick={() => onNavigate?.('settings')} style={{ appearance: 'none', display: 'flex', alignItems: 'center', width: '100%', minHeight: 40, marginBottom: 10, padding: '0 13px', borderRadius: 10, background: accent.dim, border: `1px solid ${accent.border}`, fontSize: 12, fontWeight: 700, color: accent.hex, cursor: 'pointer', fontFamily: FONT, textAlign: 'left' }}>
+            🔗 Connect your calendar<span style={{ marginLeft: 'auto' }}>→</span>
+          </button>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12, padding: '9px 13px', borderRadius: 10, background: accent.dim, border: `1px solid ${accent.border}`, fontSize: 11.5, color: T.text2 }}>
             <span style={{ fontWeight: 700, color: accent.hex }}>🔗 Connect your calendar</span>
@@ -218,17 +284,17 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
       )}
 
       {view === 'week'
-        ? <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={rows} busy={busy} typeColour={TYPE_COLOUR}
+        ? <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={rows} busy={busy} typeColour={TYPE_COLOUR} isMobile={isMobile}
             camps={camps} onCamp={openCamp}
             onOpen={b => setEditing(b)}
             onSlotClick={(dayKey, mins) => { setNewSlot({ date: dayKey, start: minsToHHMM(mins) }); setEditing('new') }} />
-        : <MonthGrid T={T} accent={accent} cursor={cursor} today={today} bookingsOn={bookingsOn} typeColour={TYPE_COLOUR} camps={camps} onCamp={openCamp} onOpen={b => setEditing(b)} onDay={d => { setCursor(d); setView('week') }} />}
+        : <MonthGrid T={T} accent={accent} cursor={cursor} today={today} bookingsOn={bookingsOn} isMobile={isMobile} typeColour={TYPE_COLOUR} camps={camps} onCamp={openCamp} onOpen={b => setEditing(b)} onDay={d => { setCursor(d); setView('week') }} />}
 
       {/* Legend */}
       <div style={{ display: showSec('legend') ? 'flex' : 'none', gap: 14, marginTop: 12, flexWrap: 'wrap', fontSize: 11, color: T.text3 }}>
         {TYPES.map(t => <span key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: TYPE_COLOUR(t) }} />{t}</span>)}
         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 10, height: 10, borderRadius: 3, background: CAMP_COLOUR }} />Camp</span>
-        <span style={{ marginLeft: 'auto' }}>{view === 'week' ? 'Faint fill = pending confirmation' : 'Click a day to open its week'}</span>
+        <span style={{ marginLeft: 'auto' }}>{view === 'week' ? 'Faint fill = pending confirmation' : isMobile ? 'Tap a day to open its week' : 'Click a day to open its week'}</span>
       </div>
 
       {modals}
@@ -239,25 +305,57 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
 }
 
 function NavBtn({ T, onClick, children }: { T: ThemeTokens; onClick: () => void; children: React.ReactNode }) {
-  return <button onClick={onClick} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, width: 30, height: 30, fontSize: 18, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{children}</button>
+  return <button onClick={onClick} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, width: 40, height: 40, flexShrink: 0, fontSize: 18, lineHeight: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{children}</button>
 }
 
 // ── Week grid ─────────────────────────────────────────────────────────────────
-function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, onCamp, onOpen, onSlotClick }: {
+function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, onCamp, onOpen, onSlotClick, isMobile }: {
   T: ThemeTokens; accent: AccentTokens; days: Date[]; today: Date
   bookings: Booking[]; busy: { date: string; start: number; end: number }[]
   typeColour: (t: string | null) => string
   camps: ReturnType<typeof campSpans>; onCamp: (id: string) => void
   onOpen: (b: Booking) => void
   onSlotClick: (dayKey: string, mins: number) => void
+  isMobile: boolean
 }) {
-  const yFor = (mins: number) => Math.max(0, Math.min((mins / 60 - HOUR_START) * ROW_H, HOURS.length * ROW_H))
+  // This week's bookings with a readable start time, and when each one ends
+  // (never past midnight: the grid is one day tall).
+  const dayKeys = days.map(iso)
+  const timed = bookings
+    .filter(b => !!b.booking_date && dayKeys.includes(b.booking_date))
+    .map(b => { const s = parseMins(b.start_time); return s == null ? null : { b, start: s, end: Math.min(24 * 60, s + Math.max(b.duration_min || 60, 15)) } })
+    .filter(Boolean) as { b: Booking; start: number; end: number }[]
+  // The hours drawn: 07:00–22:00, stretched to cover anything booked earlier or
+  // later this week. The grid used to clamp instead, which drew a 05:00 lesson
+  // at 07:00 and put a 22:30 one a pixel below the last row, where it could not
+  // be seen or opened.
+  const hourStart = Math.min(HOUR_START, ...timed.map(x => Math.floor(x.start / 60)))
+  const hourEnd = Math.max(HOUR_END, ...timed.map(x => Math.ceil(x.end / 60) - 1))
+  const HOURS = Array.from({ length: hourEnd - hourStart + 1 }, (_, i) => hourStart + i)
+  const yFor = (mins: number) => Math.max(0, Math.min((mins / 60 - hourStart) * ROW_H, HOURS.length * ROW_H))
+
+  // On a phone the seven columns do not fit, so the grid scrolls sideways. It
+  // opened on Monday whatever the day, with today off-screen and nothing to say
+  // so. It now opens with today's column first, and the hours stay pinned on
+  // the left as it scrolls.
+  const scroller = useRef<HTMLDivElement>(null)
+  const todayIdx = days.findIndex(d => sameDay(d, today))
+  const weekKey = dayKeys[0]
+  useEffect(() => {
+    const el = scroller.current
+    if (!el || el.scrollWidth <= el.clientWidth + 1) return
+    const col = (el.scrollWidth - 56) / 7
+    el.scrollLeft = todayIdx > 0 ? Math.round(col * todayIdx) : 0
+  }, [weekKey, todayIdx])
+  const gutter: CSSProperties = { position: 'sticky', left: 0, zIndex: 4, background: T.panel }
+
   return (
-    <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 0, overflowX: 'auto' }}>
+    <>
+    <div ref={scroller} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 0, overflowX: 'auto' }}>
       <div style={{ minWidth: 720 }}>
         {/* header */}
-        <div style={{ display: 'grid', gridTemplateColumns: `56px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}` }}>
-          <div />
+        <div style={{ display: 'grid', gridTemplateColumns: `56px repeat(7, minmax(0, 1fr))`, borderBottom: `1px solid ${T.border}` }}>
+          <div style={gutter} />
           {days.map((d, i) => {
             const isToday = sameDay(d, today)
             return (
@@ -272,8 +370,8 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, o
             the hour grid; it sits above it as a band, the way every calendar
             draws a multi-day event. The row only exists on weeks that have one. */}
         {days.some(d => campsOn(camps, iso(d)).length > 0) && (
-          <div style={{ display: 'grid', gridTemplateColumns: `56px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}`, background: T.hover }}>
-            <div style={{ fontSize: 9, color: T.text3, fontFamily: FONT_MONO, padding: '7px 6px', textAlign: 'right' }}>ALL DAY</div>
+          <div style={{ display: 'grid', gridTemplateColumns: `56px repeat(7, minmax(0, 1fr))`, borderBottom: `1px solid ${T.border}`, background: T.hover }}>
+            <div style={{ ...gutter, background: T.hover, fontSize: 9, color: T.text3, fontFamily: FONT_MONO, padding: '7px 6px', textAlign: 'right' }}>ALL DAY</div>
             {days.map((d, i) => (
               <div key={i} style={{ borderLeft: `1px solid ${T.border}`, padding: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {campsOn(camps, iso(d)).map(c => <CampBand key={c.id} T={T} camp={c} onClick={() => onCamp(c.id)} />)}
@@ -282,12 +380,16 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, o
           </div>
         )}
         {/* grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: `56px repeat(7, 1fr)` }}>
-          <div>{HOURS.map(h => <div key={h} style={{ height: ROW_H, fontSize: 10, color: T.text3, fontFamily: FONT_MONO, padding: '2px 6px', textAlign: 'right' }}>{pad(h)}:00</div>)}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: `56px repeat(7, minmax(0, 1fr))` }}>
+          <div style={gutter}>{HOURS.map(h => <div key={h} style={{ height: ROW_H, fontSize: 10, color: T.text3, fontFamily: FONT_MONO, padding: '2px 6px', textAlign: 'right' }}>{pad(h)}:00</div>)}</div>
           {days.map((d, di) => {
             const dayKey = iso(d)
             const dayBusy = busy.filter(b => b.date === dayKey)
-            const dayBookings = bookings.filter(b => b.booking_date === dayKey)
+            const dayTimed = timed.filter(x => x.b.booking_date === dayKey)
+            // Lanes are worked out on what is DRAWN: a block is never shorter
+            // than 20px (about half an hour), so two short lessons one after the
+            // other must not be laid over each other either.
+            const lanes = layoutLanes(dayTimed.map(x => ({ id: x.b.id, start: x.start, end: Math.max(x.end, x.start + 30) })))
             // Clicking anywhere empty in this column starts a booking there: the
             // vertical position IS the time, converted from the click offset and
             // snapped to the nearest half hour. Bookings on top stopPropagation so
@@ -305,10 +407,10 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, o
                   // column; the column itself has to mean it.
                   if (onCamp) return
                   const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
-                  const raw = HOUR_START * 60 + ((e.clientY - rect.top) / ROW_H) * 60
+                  const raw = hourStart * 60 + ((e.clientY - rect.top) / ROW_H) * 60
                   const snapped = Math.round(raw / 30) * 30
-                  const first = HOUR_START * 60
-                  const last = (HOUR_START + HOURS.length) * 60 - 30
+                  const first = hourStart * 60
+                  const last = (hourStart + HOURS.length) * 60 - 30
                   onSlotClick(dayKey, Math.max(first, Math.min(snapped, last)))
                 }}
                 style={{ position: 'relative', borderLeft: `1px solid ${T.border}`, cursor: onCamp ? 'not-allowed' : 'pointer' }}>
@@ -321,14 +423,13 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, o
                   if (h <= 0) return null
                   return <div key={`busy-${bi}`} title="Busy in your connected calendar" style={{ position: 'absolute', left: 0, right: 0, top, height: h, background: `repeating-linear-gradient(45deg, ${T.text3}1f, ${T.text3}1f 5px, transparent 5px, transparent 10px)`, borderTop: `1px solid ${T.text3}33`, borderBottom: `1px solid ${T.text3}33`, pointerEvents: 'none', zIndex: 0 }} />
                 })}
-                {dayBookings.map(b => {
-                  const startM = parseMins(b.start_time); if (startM == null) return null
-                  const dur = b.duration_min || 60
-                  const top = yFor(startM), height = Math.max(yFor(startM + dur) - top - 2, 20)
+                {dayTimed.map(({ b, start: startM, end: endM }) => {
+                  const top = yFor(startM), height = Math.max(yFor(endM) - top - 2, 20)
                   const c = typeColour(b.type)
+                  const { lane, of } = lanes[b.id] || { lane: 0, of: 1 }
                   return (
-                    <div key={b.id} onClick={e => { e.stopPropagation(); onOpen(b) }} title={`${bookingLabel(b)} · ${minsToHHMM(startM)}`}
-                      style={{ position: 'absolute', left: 3, right: 3, top: top + 1, height, background: b.status === 'pending' ? `${c}14` : `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '3px 6px', overflow: 'hidden', opacity: b.status === 'cancelled' ? 0.45 : 1, cursor: 'pointer', zIndex: 1 }}>
+                    <div key={b.id} onClick={e => { e.stopPropagation(); onOpen(b) }} title={`${bookingLabel(b)} · ${minsToHHMM(startM)}–${minsToHHMM(endM)}`}
+                      style={{ position: 'absolute', left: `calc(${(lane / of) * 100}% + 3px)`, width: `calc(${100 / of}% - 6px)`, boxSizing: 'border-box', top: top + 1, height, background: b.status === 'pending' ? `${c}14` : `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '3px 6px', overflow: 'hidden', opacity: b.status === 'cancelled' ? 0.45 : 1, cursor: 'pointer', zIndex: 1 }}>
                       {/* A 30-minute block is about 22px tall and three lines
                           do not fit in it — which is why the time and court were
                           being sliced off mid-character. So the block spends the
@@ -362,6 +463,8 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, o
         </div>
       </div>
     </div>
+    {isMobile && <div style={{ fontSize: 11, color: T.text3, marginTop: 6, textAlign: 'center' }}>Swipe sideways to see the rest of the week</div>}
+    </>
   )
 }
 
@@ -391,8 +494,8 @@ function CampBand({ T, camp, onClick }: { T: ThemeTokens; camp: CampDay; onClick
 }
 
 // ── Month grid ────────────────────────────────────────────────────────────────
-function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, camps, onCamp, onOpen, onDay }: {
-  T: ThemeTokens; accent: AccentTokens; cursor: Date; today: Date
+function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, camps, onCamp, onOpen, onDay, isMobile }: {
+  T: ThemeTokens; accent: AccentTokens; cursor: Date; today: Date; isMobile: boolean
   bookingsOn: (d: Date) => Booking[]; typeColour: (t: string | null) => string
   camps: ReturnType<typeof campSpans>; onCamp: (id: string) => void
   onOpen: (b: Booking) => void; onDay: (d: Date) => void
@@ -403,20 +506,25 @@ function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, camps, on
   const month = cursor.getMonth()
   return (
     <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: `1px solid ${T.border}` }}>
-        {WD.map(d => <div key={d} style={{ padding: '8px 6px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: T.text3 }}>{d}</div>)}
+      {/* minmax(0, 1fr), not 1fr. A bare 1fr column is never narrower than its
+          widest unbreakable content, and the booking chips do not wrap — so the
+          body columns grew to fit the longest label, stopped lining up with the
+          weekday headings and pushed Sunday off the edge (and, on a phone, every
+          day after Tuesday). */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', borderBottom: `1px solid ${T.border}` }}>
+        {WD.map(d => <div key={d} style={{ padding: '8px 2px', textAlign: 'center', fontSize: 11, fontWeight: 600, color: T.text3 }}>{isMobile ? d.slice(0, 2) : d}</div>)}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
         {cells.map((d, i) => {
           const inMonth = d.getMonth() === month
           const isToday = sameDay(d, today)
           const items = bookingsOn(d).slice().sort((a, b) => (parseMins(a.start_time) ?? 0) - (parseMins(b.start_time) ?? 0))
           return (
-            <div key={i} onClick={() => onDay(d)} style={{ minHeight: 96, borderLeft: i % 7 ? `1px solid ${T.border}` : 'none', borderTop: i >= 7 ? `1px solid ${T.border}` : 'none', padding: 5, background: inMonth ? 'transparent' : T.hover, cursor: 'pointer', opacity: inMonth ? 1 : 0.55 }}>
+            <div key={i} onClick={() => onDay(d)} style={{ minHeight: isMobile ? 78 : 96, minWidth: 0, overflow: 'hidden', borderLeft: i % 7 ? `1px solid ${T.border}` : 'none', borderTop: i >= 7 ? `1px solid ${T.border}` : 'none', padding: isMobile ? 2 : 5, background: inMonth ? 'transparent' : T.hover, cursor: 'pointer', opacity: inMonth ? 1 : 0.55 }}>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <span style={{ fontSize: 12, fontWeight: isToday ? 700 : 500, color: isToday ? T.btnText : T.text2, background: isToday ? accent.hex : 'transparent', borderRadius: 999, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{d.getDate()}</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2, minWidth: 0 }}>
                 {/* Camps first: a camp owns the whole day, so it belongs above
                     the hour-by-hour list rather than sorted into it. */}
                 {campsOn(camps, iso(d)).map(c => (
@@ -428,10 +536,13 @@ function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, camps, on
                 ))}
                 {items.slice(0, 3).map(b => {
                   const c = typeColour(b.type)
+                  const m = parseMins(b.start_time), at = m == null ? '' : minsToHHMM(m)
+                  // A phone column is about 50px: room for the time, not the
+                  // name. The name is one tap away (the chip opens the booking).
                   return (
-                    <div key={b.id} onClick={e => { e.stopPropagation(); onOpen(b) }} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 10, color: T.text, background: `${c}22`, borderLeft: `2px solid ${c}`, borderRadius: 4, padding: '1px 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', opacity: b.status === 'cancelled' ? 0.45 : 1 }}>
-                      <span style={{ fontFamily: FONT_MONO, color: T.text3, fontSize: 9 }}>{(() => { const m = parseMins(b.start_time); return m == null ? '' : minsToHHMM(m) })()}</span>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{bookingLabel(b)}</span>
+                    <div key={b.id} onClick={e => { e.stopPropagation(); onOpen(b) }} title={`${at} ${bookingLabel(b)}`.trim()} style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, fontSize: 10, color: T.text, background: `${c}22`, borderLeft: `2px solid ${c}`, borderRadius: 4, padding: isMobile ? '3px 2px' : '1px 4px', whiteSpace: 'nowrap', overflow: 'hidden', opacity: b.status === 'cancelled' ? 0.45 : 1 }}>
+                      <span style={{ fontFamily: FONT_MONO, color: isMobile ? T.text : T.text3, fontSize: 9, flexShrink: 0 }}>{at}</span>
+                      {(!isMobile || !at) && <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{bookingLabel(b)}</span>}
                     </div>
                   )
                 })}
@@ -446,35 +557,92 @@ function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, camps, on
 }
 
 // ── Add / Edit booking modal ──────────────────────────────────────────────────
-function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, camps, booking, defaultDate, defaultStart, onClose, onSave, onDelete }: {
-  T: ThemeTokens; accent: AccentTokens; players: { id: string; name: string }[]; coaches: string[]
+function BookingFormModal({ T, accent, players, coaches, myName, headNames, typeColour, bookings, camps, venues, courts, booking, defaultDate, defaultStart, onClose, onSave, onDelete }: {
+  T: ThemeTokens; accent: AccentTokens; players: { id: string; name: string; label?: string }[]; coaches: string[]
+  /** The signed-in coach's own name when they are an invited coach; '' for the head coach. */
+  myName: string
+  headNames: string[]
   typeColour: (t: string | null) => string
   bookings: Booking[]
   camps: ReturnType<typeof campSpans>
+  venues: { id: string; name: string; is_home?: boolean | null }[]
+  courts: { id: string; name: string; venue_id?: string | null }[]
   booking: Booking | null; defaultDate: string; defaultStart?: string
   onClose: () => void
   onSave: (vals: Record<string, any>, newPlayer: string | null) => Promise<void>
   onDelete?: () => Promise<void>
 }) {
-  const known = players.some(p => p.name === booking?.player_name)
+  const same = (a?: string | null, b?: string | null) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase()
+  // The dropdown holds the player's ID, not their name: two players can share a
+  // name, and the booking has to be tied to one of them.
+  const known = (booking?.player_id && players.find(p => String(p.id) === String(booking.player_id)))
+    // An older booking holds only a name: it is that player only when one player has it.
+    || (booking?.player_name && players.filter(p => same(p.name, booking.player_name)).length === 1 ? players.find(p => same(p.name, booking.player_name)) : null)
+    || null
   const [title, setTitle] = useState(booking?.title || '')
-  const [playerSel, setPlayerSel] = useState(booking ? (known ? booking.player_name || '' : (booking.player_name ? '__new__' : '')) : '')
+  const [playerSel, setPlayerSel] = useState(booking ? (known ? known.id : (booking.player_name ? '__new__' : '')) : '')
   const [newPlayer, setNewPlayer] = useState(booking && !known ? booking.player_name || '' : '')
+
+  // ── Where ───────────────────────────────────────────────────────────────────
+  // The venue and court come from the academy's own list (Settings → Venues),
+  // and the booking records both by id. That is what lets the confirmation name
+  // the right venue and the Court Planner show the lesson on the right court,
+  // rather than on every court called "Court 1". A court that is not on the list
+  // can still be typed.
+  const OTHER = '__other__'
+  const hasList = venues.length > 0 || courts.some(c => !!c.venue_id)
+  const firstCourt = (() => {
+    if (!booking) return null
+    if (booking.court_id) return courts.find(c => String(c.id) === String(booking.court_id)) || null
+    if (!(booking.court || '').trim()) return null
+    // An older booking holds only the court's name. It is matched to a listed
+    // court when exactly one fits (at its venue, if it has one).
+    const fits = courts.filter(c => same(c.name, booking.court) && (!booking.venue_id || c.venue_id === booking.venue_id))
+    return fits.length === 1 ? fits[0] : null
+  })()
+  const [venueId, setVenueId] = useState<string>(() => {
+    if (booking) return booking.venue_id || firstCourt?.venue_id || ''
+    // A new booking starts at the home venue (or the only one).
+    return venues.find(v => v.is_home)?.id || (venues.length === 1 ? venues[0].id : '')
+  })
+  const [courtSel, setCourtSel] = useState<string>(firstCourt ? firstCourt.id : ((booking?.court || '').trim() ? OTHER : ''))
   const [court, setCourt] = useState(booking?.court || '')
+  const venueCourts = courts.filter(c => (c.venue_id || '') === venueId)
   const [date, setDate] = useState(booking?.booking_date || defaultDate)
   const [start, setStart] = useState(() => {
     const m = parseMins(booking?.start_time ?? null)
     if (m != null) return minsToHHMM(m)
     return defaultStart || '16:00'   // defaultStart = the grid cell the coach clicked
   })
-  const [dur, setDur] = useState(String(booking?.duration_min ?? 60))
-  const [type, setType] = useState(booking?.type || 'Private')
+  // Two choices from Settings that this form used to ignore: how long a lesson
+  // usually is (Booking calendar → Default lesson length) and which kinds the
+  // academy offers (Availability → Lesson types offered). A block is not a
+  // lesson, so it is always on the list; so is the type an existing booking
+  // already has. If none of the lesson types is ticked, all are offered.
+  const [cfg] = useState(() => getSettings())
+  const offered = TYPES.filter(t => t !== 'Block' && (cfg.lessonTypes || []).includes(t))
+  const typeOptions = offered.length ? TYPES.filter(t => t === 'Block' || t === booking?.type || offered.includes(t)) : TYPES
+  const [dur, setDur] = useState(String(booking?.duration_min ?? (Number(cfg.booking?.defaultDuration) > 0 ? Number(cfg.booking.defaultDuration) : 60)))
+  const [type, setType] = useState<string>(booking?.type || typeOptions[0])
   const [status, setStatus] = useState(booking?.status || 'confirmed')
   const [coach, setCoach] = useState((booking as any)?.assigned_coach || '')
   const [notes, setNotes] = useState(booking?.notes || '')
   const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
 
-  const who = (playerSel === '__new__' ? newPlayer : playerSel).trim()
+  const selPlayer = players.find(p => p.id === playerSel) || null
+  const who = (playerSel === '__new__' ? newPlayer : selPlayer?.name || '').trim()
+
+  // Tapping outside, or pressing Escape, closes the form — after asking, if
+  // anything in it has been changed.
+  const closeOutside = useAskBeforeClose(JSON.stringify([title, playerSel, newPlayer, venueId, courtSel, court, date, start, dur, type, status, coach, notes]), onClose)
+  const closeRef = useRef(closeOutside)
+  closeRef.current = closeOutside
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [])
 
   // ── Availability for the chosen day ────────────────────────────────────────
   // "Busy" means BOTH the coach's connected calendar (iCloud/Google/Outlook
@@ -511,21 +679,45 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, c
     return () => { cancelled = true }
   }, [date])
 
-  const durMins = Math.max(15, Number(dur) || 60)
+  // For the clash check and the free-slot list only; what is SAVED is checked
+  // properly in save() below.
+  const durMins = Math.min(600, Math.max(15, Math.round(Number(dur)) || 60))
   const startMins = parseMins(start) ?? 0
   const overlaps = (aS: number, aE: number, bS: number, bE: number) => aS < bE && bS < aE
 
-  // Other Lumio bookings that day. Excludes the booking being edited (it cannot
-  // clash with itself) and anything cancelled.
+  // Other Lumio bookings that day that would really be a clash with THIS one:
+  // the same coach, the same court at the same venue, or the same player. It
+  // used to be every lesson in the academy, so with several coaches nearly every
+  // booking carried the warning (a different coach on a different court is not
+  // a clash) and the genuine double-bookings no longer stood out. Excludes the
+  // booking being edited (it cannot clash with itself) and anything cancelled.
+  const norm = (v?: string | null) => (v || '').trim().toLowerCase()
+  const coachKey = (name?: string | null) => (!norm(name) || headNames.some(h => norm(h) === norm(name)) ? '' : norm(name))
+  const thisCoach = myName ? norm(myName) : coachKey(coach)
+  const thisCourt = courtSel && courtSel !== OTHER ? courts.find(c => c.id === courtSel) || null : null
+  const thisCourtName = thisCourt ? '' : norm(courtSel === OTHER || !hasList ? court : '')
+  const thisVenue = thisCourt?.venue_id || venueId || ''
+  const whyClash = (b: Booking): string[] => {
+    const why: string[] = []
+    if (coachKey(b.assigned_coach) === thisCoach) why.push('same coach')
+    if (thisCourt ? (b.court_id ? String(b.court_id) === String(thisCourt.id) : (same(b.court, thisCourt.name) && (b.venue_id || '') === thisVenue))
+      : (!!thisCourtName && !b.court_id && norm(b.court) === thisCourtName && (b.venue_id || '') === thisVenue)) why.push('same court')
+    if (selPlayer ? (b.player_id ? String(b.player_id) === String(selPlayer.id) : same(b.player_name, selPlayer.name))
+      : (!!who && !b.player_id && same(b.player_name, who))) why.push('same player')
+    return why
+  }
   const lumioBusy = bookings
     .filter(b => b.booking_date === date && b.id !== booking?.id && b.status !== 'cancelled')
     .map(b => {
       const s = parseMins(b.start_time)
-      return s == null ? null : { start: s, end: s + (b.duration_min || 60), label: bookingLabel(b) || 'another lesson' }
+      const why = whyClash(b)
+      return s == null || !why.length ? null : { start: s, end: s + (b.duration_min || 60), label: bookingLabel(b) || 'another lesson', why: why.join(' and ') }
     })
-    .filter(Boolean) as { start: number; end: number; label: string }[]
+    .filter(Boolean) as { start: number; end: number; label: string; why: string }[]
 
-  const allBusy = [...lumioBusy, ...(extBusy ?? []).map(b => ({ ...b, label: 'your connected calendar' }))]
+  // The connected calendar is the signed-in coach's own, so it only counts when the session is theirs.
+  const forMe = myName ? true : thisCoach === ''
+  const allBusy = [...lumioBusy, ...(forMe ? (extBusy ?? []) : []).map(b => ({ ...b, label: 'your connected calendar', why: '' }))]
   const clash = allBusy.find(b => overlaps(startMins, startMins + durMins, b.start, b.end))
 
   // Free starts on the hour/half-hour within coaching hours that fit the duration.
@@ -539,7 +731,8 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, c
     if (!allBusy.some(b => overlaps(t, t + durMins, b.start, b.end))) freeSlots.push(t)
   }
 
-  const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box' }
+  // minWidth 0 lets a date or time box shrink inside its column on a phone.
+  const field: CSSProperties = { width: '100%', minWidth: 0, background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box' }
   const lbl: CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 6px' }
   // A camp on this date is a hard stop, not a warning. Everything else here
   // warns and lets the coach overrule it — a double-booking can be deliberate.
@@ -549,27 +742,44 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, c
 
   const save = async () => {
     if (!canSave) return
+    setErr('')
+    // Checked before anything is written. A booking with no date appeared on no
+    // view; a length of -30 or 100,000 minutes was saved as typed; and 1.5 was
+    // refused by the database with nothing shown on screen.
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(new Date(`${date}T12:00:00`).getTime())) { setErr('Choose a date for this booking.'); return }
+    if (!/^\d{1,2}:\d{2}$/.test(start) || parseMins(start) == null) { setErr('Choose a start time.'); return }
+    const mins = Number(String(dur).trim())
+    if (String(dur).trim() === '' || !Number.isInteger(mins) || mins < 5 || mins > 600) { setErr('Enter the length in whole minutes, between 5 and 600.'); return }
+
+    // WHO. A typed name that is already on the roster — in any case, with or
+    // without stray spaces — is that player, and the booking carries their id.
+    const typed = playerSel === '__new__'
+    const hits = typed ? players.filter(p => same(p.name, who)) : []
+    if (hits.length > 1) { setErr(`There is more than one player called ${hits[0].name}. Pick the right one from the Player list.`); return }
+    const picked = typed ? (hits[0] || null) : selPlayer
+    const isNewPlayer = typed && !!who && !picked
+
+    // WHERE.
+    const listed = courtSel && courtSel !== OTHER ? courts.find(c => c.id === courtSel) || null : null
+    const courtName = listed ? listed.name : (courtSel === OTHER || !hasList ? court.trim() : '')
+
     setSaving(true)
-    const isNewPlayer = playerSel === '__new__' && who && !players.some(p => p.name.toLowerCase() === who.toLowerCase())
     try {
-      // player_id, not just the name. A name is how this booking has always
-      // been tied to a person, and a name is why the confirmation email
-      // sometimes went nowhere: a coach who types "Sven " or picks the wrong
-      // one of two Joneses gets no match, and nothing is sent. The dropdown
-      // knows exactly who was chosen, so record it.
-      const picked = players.find(p => p.name === who) || null
       await onSave({
-        title: title.trim() || who, player_name: who || null, player_id: picked?.id ?? null,
-        court: court.trim() || null,
-        booking_date: date, start_time: start, duration_min: Number(dur) || 60,
+        title: title.trim() || who, player_name: picked?.name || who || null, player_id: picked?.id ?? null,
+        court: courtName || null, court_id: listed?.id ?? null, venue_id: (listed?.venue_id || venueId) || null,
+        booking_date: date, start_time: start, duration_min: mins,
         type, status, assigned_coach: coach || null, notes: notes.trim() || null,
       }, isNewPlayer ? who : null)
+    } catch (e) {
+      console.error('[calendar] save booking', e)
+      setErr('The booking could not be saved. Check your connection and try again.')
     } finally { setSaving(false) }
   }
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, width: 460, maxWidth: '100%', maxHeight: '92vh', overflow: 'auto' }}>
+    <div onClick={e => { if (e.target === e.currentTarget) closeOutside() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: 16 }}>
+      <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20, width: 460, maxWidth: '100%', maxHeight: '92vh', overflow: 'auto' }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>{booking ? 'Edit booking' : 'Add booking'}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div><label style={lbl}>Title</label><input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. 1:1 with Sam, Junior Squad" style={field} /></div>
@@ -577,23 +787,42 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, c
             <label style={lbl}>Player</label>
             <select value={playerSel} onChange={e => setPlayerSel(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
               <option value="">— (optional)</option>
-              {players.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+              {players.map(p => <option key={p.id} value={p.id}>{p.label || p.name}</option>)}
               <option value="__new__">+ New player…</option>
             </select>
             {playerSel === '__new__' && <input value={newPlayer} onChange={e => setNewPlayer(e.target.value)} placeholder="New player's name" style={{ ...field, marginTop: 8 }} />}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div><label style={lbl}>Type</label>
-              <select value={type} onChange={e => setType(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
-                {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div><label style={lbl}>Court</label><input value={court} onChange={e => setCourt(e.target.value)} placeholder="e.g. Court 1" style={field} /></div>
+          <div><label style={lbl}>Type</label>
+            <select value={type} onChange={e => setType(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
+              {typeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            <div><label style={lbl}>Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} style={field} /></div>
-            <div><label style={lbl}>Start</label><input type="time" value={start} onChange={e => setStart(e.target.value)} style={field} /></div>
-            <div><label style={lbl}>Mins</label><input type="number" min={15} step={15} value={dur} onChange={e => setDur(e.target.value)} style={field} /></div>
+          {hasList ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+              <div><label style={lbl}>Venue</label>
+                <select aria-label="Venue" value={venueId} onChange={e => { setVenueId(e.target.value); if (courtSel !== OTHER) setCourtSel('') }} style={{ ...field, cursor: 'pointer' }}>
+                  <option value="">— (not set)</option>
+                  {venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                </select>
+              </div>
+              <div><label style={lbl}>Court</label>
+                <select aria-label="Court" value={courtSel} onChange={e => setCourtSel(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
+                  <option value="">— (not set)</option>
+                  {venueCourts.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  <option value={OTHER}>Another court (type it)…</option>
+                </select>
+                {courtSel === OTHER && <input value={court} onChange={e => setCourt(e.target.value)} placeholder="e.g. Court 1" style={{ ...field, marginTop: 8 }} />}
+              </div>
+            </div>
+          ) : (
+            <div><label style={lbl}>Court</label><input value={court} onChange={e => setCourt(e.target.value)} placeholder="e.g. Court 1" style={field} /></div>
+          )}
+          {/* auto-fit, so on a phone the date takes a row of its own instead of
+              squeezing the length box down to one visible digit. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: 10 }}>
+            <div style={{ minWidth: 0 }}><label style={lbl}>Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} style={field} /></div>
+            <div style={{ minWidth: 0 }}><label style={lbl}>Start</label><input type="time" value={start} onChange={e => setStart(e.target.value)} style={field} /></div>
+            <div style={{ minWidth: 0 }}><label style={lbl}>Mins</label><input type="number" inputMode="numeric" min={5} max={600} step={5} value={dur} onChange={e => setDur(e.target.value)} style={field} /></div>
           </div>
 
           {/* Availability. Warns, never blocks — a coach may deliberately
@@ -607,7 +836,7 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, c
               <div style={{ fontSize: 11.5, color: T.text3 }}>Checking your calendar…</div>
             ) : clash ? (
               <div style={{ fontSize: 11.5, color: T.warn, background: `${T.warn}14`, border: `1px solid ${T.warn}33`, borderRadius: 9, padding: '8px 10px' }}>
-                ⚠ {minsToHHMM(startMins)}–{minsToHHMM(startMins + durMins)} clashes with {clash.label} ({minsToHHMM(clash.start)}–{minsToHHMM(clash.end)}). You can still save.
+                ⚠ {minsToHHMM(startMins)}–{minsToHHMM(startMins + durMins)}{startMins + durMins > 24 * 60 ? ' (next day)' : ''} clashes with {clash.label} ({minsToHHMM(clash.start)}–{minsToHHMM(clash.end)}){clash.why ? ` — ${clash.why}` : ''}. You can still save.
               </div>
             ) : (
               <div style={{ fontSize: 11.5, color: T.good }}>✓ {minsToHHMM(startMins)}–{minsToHHMM(startMins + durMins)} is free</div>
@@ -621,7 +850,7 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, c
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                   {freeSlots.slice(0, 12).map(t => (
                     <button key={t} type="button" onClick={() => setStart(minsToHHMM(t))}
-                      style={{ appearance: 'none', border: `1px solid ${t === startMins ? accent.hex : T.border}`, background: t === startMins ? accent.dim : 'transparent', color: t === startMins ? accent.hex : T.text2, borderRadius: 7, padding: '4px 8px', fontSize: 11.5, fontFamily: FONT_MONO, cursor: 'pointer' }}>
+                      style={{ appearance: 'none', border: `1px solid ${t === startMins ? accent.hex : T.border}`, background: t === startMins ? accent.dim : 'transparent', color: t === startMins ? accent.hex : T.text2, borderRadius: 7, padding: '0 10px', minHeight: 38, minWidth: 58, fontSize: 12, fontFamily: FONT_MONO, cursor: 'pointer' }}>
                       {minsToHHMM(t)}
                     </button>
                   ))}
@@ -641,15 +870,20 @@ function BookingFormModal({ T, accent, players, coaches, typeColour, bookings, c
             </div>
             <div><label style={lbl}>Coach</label>
               <select value={coach} onChange={e => setCoach(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
-                <option value="">Head coach (you)</option>
-                {coaches.slice(1).map(c => <option key={c} value={c}>{c}</option>)}
+                {/* An invited coach books their own sessions (the booking is saved
+                    against them), so the box shows their name and nothing else. */}
+                {myName ? <option value={coach}>{myName} (you)</option> : <>
+                  <option value="">Head coach (you)</option>
+                  {coaches.slice(1).map(c => <option key={c} value={c}>{c}</option>)}
+                </>}
               </select>
             </div>
           </div>
           <div><label style={lbl}>Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} style={{ ...field, resize: 'vertical' }} /></div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 18 }}>
-          {onDelete && <button onClick={async () => { if (confirm('Delete this booking?')) await onDelete() }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
+        {err && <div role="alert" style={{ fontSize: 12, color: T.bad, marginTop: 12 }}>{err}</div>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: err ? 10 : 18 }}>
+          {onDelete && <button onClick={async () => { if (confirm(`Delete this booking?${/\|booked(\||$)/.test(String(booking?.told_state || '')) && String(booking?.booking_date || '').slice(0, 10) >= ukDate() ? '\n\nThe family has been told about this session, so they will be sent a note that it is cancelled.' : ''}`)) await onDelete() }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
           <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
           <button onClick={save} disabled={!canSave} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: canSave ? 'pointer' : 'not-allowed', opacity: canSave ? 1 : 0.5, fontFamily: FONT }}>{saving ? 'Saving…' : 'Save'}</button>
         </div>

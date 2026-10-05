@@ -4,11 +4,16 @@
 // installed PWA redeems the token (via a magic-link) to mint a fresh
 // session inside the PWA's cookie jar — zero OTP for the user.
 //
-// Tokens are short-lived (5 min) and single-use in practice: on
-// redemption we generate a fresh Supabase magic-link which can only be
-// consumed once by Supabase's own /verify endpoint. After that the JWT
-// payload is still verifiable but has no effect — the redeem route
-// short-circuits cleanly when the session already exists.
+// Tokens are short-lived (5 min) and single-use. Single use is enforced by
+// the redeem route (/api/pwa/consume-token), not here: it refuses a token
+// whose owner has signed in since the token was issued — and redeeming a
+// token IS a sign-in, so the first use kills it — and it also remembers the
+// tokens this server process has already redeemed. That is why the token
+// carries `iat` and `jti`.
+//
+// The token is readable by anyone who sees the URL (it is signed, not
+// encrypted), so it carries no more identity than the redeem route needs:
+// the user id, and no email address. The route looks the email up itself.
 //
 // Storage: none. No new table, no Redis. The HMAC secret lives in the
 // service-role key (fallback to a dedicated PWA_INSTALL_SECRET env if
@@ -18,11 +23,19 @@ import crypto from 'node:crypto'
 
 export type InstallTokenPayload = {
   sub:  string           // user_id
-  eml:  string           // email (needed for generateLink magiclink)
-  sport: 'tennis' | 'golf' | 'darts' | 'boxing'
+  // 'coach' is the Tennis Coach portal, which lives at /tennis/coach/<slug>
+  // rather than /<sport>/<slug> — see installTokenPath below.
+  sport: 'tennis' | 'golf' | 'darts' | 'boxing' | 'coach'
   slug:  string
+  iat:   number          // unix seconds, when it was issued (replay defence)
   exp:   number          // unix seconds
-  jti:   string          // random nonce (future: replay defence via a consumed-set)
+  jti:   string          // random nonce (replay defence)
+}
+
+// The one page a token may open. Everything that checks "is this token for
+// this portal" must compare against this, exactly.
+export function installTokenPath(p: Pick<InstallTokenPayload, 'sport' | 'slug'>): string {
+  return p.sport === 'coach' ? `/tennis/coach/${p.slug}` : `/${p.sport}/${p.slug}`
 }
 
 const TOKEN_TTL_SECONDS = 5 * 60
@@ -44,12 +57,18 @@ function b64urlDecode(s: string): Buffer {
   return Buffer.from(b64, 'base64')
 }
 
+// Callers still pass `eml` (the portals' layouts and the sign-in route do); it
+// is accepted and deliberately NOT written into the token.
 export function signInstallToken(
-  input: Omit<InstallTokenPayload, 'exp' | 'jti'>,
+  input: Omit<InstallTokenPayload, 'iat' | 'exp' | 'jti'> & { eml?: string },
 ): string {
+  const now = Math.floor(Date.now() / 1000)
   const payload: InstallTokenPayload = {
-    ...input,
-    exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
+    sub:   input.sub,
+    sport: input.sport,
+    slug:  input.slug,
+    iat:   now,
+    exp:   now + TOKEN_TTL_SECONDS,
     jti: crypto.randomBytes(12).toString('hex'),
   }
   const body = b64url(JSON.stringify(payload))
@@ -74,7 +93,8 @@ export function verifyInstallToken(token: string): InstallTokenPayload | null {
   } catch {
     return null
   }
-  if (!payload.sub || !payload.eml || !payload.sport || !payload.slug || !payload.exp) return null
+  if (!payload.sub || !payload.sport || !payload.slug || !payload.exp || !payload.iat || !payload.jti) return null
+  if (typeof payload.exp !== 'number' || typeof payload.iat !== 'number') return null
   if (payload.exp < Math.floor(Date.now() / 1000)) return null
   return payload
 }

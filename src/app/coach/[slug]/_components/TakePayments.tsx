@@ -54,7 +54,7 @@ export function TakePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
       <p style={{ margin: '0 0 10px', fontSize: 12, color: T.text3, lineHeight: 1.55 }}>
         In V2 you&rsquo;ll connect your bank and take card, Apple Pay and Google Pay payments — straight into your
         own account, not ours, with none of the details ever touching Lumio. Everything else on the Payments
-        page works today: what is owed, what has been paid, chasers and reports.
+        page works today: what is owed and what has been paid.
       </p>
 
       {/* Founders access does not take card payments — see lib/coach/v2.ts. A

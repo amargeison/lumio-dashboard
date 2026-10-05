@@ -15,13 +15,16 @@ import { isPrintable, openPrintable } from '../_lib/resource-printables'
 import { DrillLibrary } from './DrillLibrary'
 import { useCoachSettings } from '../_lib/use-settings'
 import { isLumioResource } from '../_lib/lumio-resources'
-import { resourceHref, resourceFileName, isResourceFile, normaliseWebLink, RESOURCE_FILE_ACCEPT } from '@/lib/coach/resource-files'
-import { invalidateCoachTable } from '../_lib/coach-db'
+import { resourceHref, resourceFileName, isResourceFile, normaliseWebLink, RESOURCE_FILE_ACCEPT, RESOURCE_FILE_MAX_MB, RESOURCE_FILE_TOO_BIG, RESOURCE_FILE_PREFIX } from '@/lib/coach/resource-files'
+import { invalidateCoachTable, sb } from '../_lib/coach-db'
+import { useAskBeforeClose } from '../_lib/ask-before-close'
 
 // Upload a file for a resource. With an id it is attached to that resource
 // straight away; without one (a resource still being written) the caller keeps
 // the returned "file:…" url and saves it with the rest of the form.
 async function uploadResourceFile(file: File, resourceId?: string): Promise<string> {
+  // Said at once, before a second of uploading: the same limit the server keeps.
+  if (file.size > RESOURCE_FILE_MAX_MB * 1048576) throw new Error(RESOURCE_FILE_TOO_BIG)
   const fd = new FormData()
   fd.append('file', file)
   if (resourceId) fd.append('resourceId', resourceId)
@@ -30,9 +33,20 @@ async function uploadResourceFile(file: File, resourceId?: string): Promise<stri
   if (!r.ok || !d.url) throw new Error(d.error || 'Could not upload that file.')
   return d.url as string
 }
-import { BookShelf } from './BookShelf'
+import { BookShelf, RecommendModal, type Rec } from './BookShelf'
 
-type Res = { id: string; title: string; category?: string | null; format?: string | null; level?: string | null; duration?: string | null; racket?: string | null; tags?: string | null; url?: string | null; notes?: string | null }
+// Hand back uploaded files that are finished with — the file of a deleted
+// resource, one replaced or taken off in the form, one uploaded and then
+// cancelled. They used to stay in storage for good. The server removes only
+// those that no resource still uses, so offering one that is in use is harmless.
+function tidyResourceFiles(urls: (string | null | undefined)[]) {
+  const paths = [...new Set(urls.filter(isResourceFile).map(u => String(u).slice(RESOURCE_FILE_PREFIX.length)))]
+  if (!paths.length) return
+  void fetch('/api/coach/resources/file', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paths }) })
+    .catch(() => { /* a file left behind is tidied the next time it is offered */ })
+}
+
+type Res = { id: string; title: string; category?: string | null; format?: string | null; level?: string | null; duration?: string | null; racket?: string | null; tags?: string | null; url?: string | null; notes?: string | null; given_only?: boolean | null }
 // "Guides" is Lumio's own written material — the parent guides, the cheat
 // sheets, the reading notes. "Books" is a shelf of real published books, which
 // is what a coach means when they say "read this". They were the same tab, and
@@ -52,6 +66,12 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
   const tabs = lumioOn ? TABS : TABS.filter(([id]) => id !== 'Drill Library' && id !== 'Books')
   const [tab, setTab] = useState('all')
   const [edit, setEdit] = useState<Res | 'new' | null>(null)
+  // "Give to a player": one resource, for one player, on their own page —
+  // rather than everybody on a racket colour.
+  const { rows: players } = useCoachTable<{ id: string; name: string }>('coach_players')
+  const recs = useCoachTable<Rec>('coach_player_resources')
+  const [giving, setGiving] = useState<Res | null>(null)
+  const givenTo = (id: string) => recs.rows.filter(r => r.kind === 'resource' && r.ref_id === id)
   const [q, setQ] = useState('')
   const [racket, setRacket] = useState('all')
   // "+ Add the file" on a card: one hidden picker, pointed at whichever card
@@ -115,7 +135,10 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
             ? <>Your drill library, technique videos, training plans, worksheets and recommended reading — tagged to the {stageWords().noun} ladder.</>
             : <>Your own drills, videos, plans and documents — links or files, tagged to the {stageWords().noun} ladder and shared to your players&rsquo; app.</>}</p>
         </div>
-        <button onClick={() => setEdit('new')} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ Add resource</button>
+        {/* The library is the academy's: the head coach adds to it and changes
+            it, an invited coach reads it and gives things to their players. The
+            button used to be offered to them and Save was refused without a word. */}
+        {!asCoach && <button onClick={() => setEdit('new')} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ Add resource</button>}
       </div>
 
       {/* Tabs */}
@@ -156,10 +179,10 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
           {/* The Resource Centre is the ACADEMY's, shared by everyone in it. A coach
               cannot load the Lumio library or reach Settings → Resource Centre, so
               pointing them there is an instruction they cannot follow. */}
-          <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text }}>{rows.length === 0 ? 'No resources yet' : 'Nothing in this category yet'}</div>
+          <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text }}>{rows.length === 0 ? 'No resources yet' : needle || racket !== 'all' ? 'Nothing matches' : 'Nothing in this category yet'}</div>
           <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4, lineHeight: 1.6 }}>
-            {rows.length > 0 ? 'Add a resource to this category.'
-              : asCoach ? 'Your head coach hasn\u2019t added the academy\u2019s library yet. Anything they load appears here straight away \u2014 and you can still add your own.'
+            {rows.length > 0 ? (needle || racket !== 'all' ? 'No resource matches that search or racket. Clear them to see everything.' : 'Add a resource to this category.')
+              : asCoach ? 'Your head coach hasn\u2019t added the academy\u2019s library yet. Anything they add appears here straight away.'
               : 'Add your own, or load the Lumio starter library in Settings \u2192 Resource Centre.'}
           </div>
         </div>
@@ -167,13 +190,15 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {filtered.map(r => {
             const st = RACKET_STAGES.find(s => s.id === r.racket)
-            const tags = (r.tags || '').split(',').map(s => s.trim()).filter(Boolean)
+            // A tag typed as "#volley" is the tag "volley" — the # is added on display.
+            const tags = (r.tags || '').split(',').map(s => s.trim().replace(/^#+/, '').trim()).filter(Boolean)
             return (
               <div key={r.id} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <span style={{ width: 30, height: 30, borderRadius: 8, background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 14, flexShrink: 0 }}>{fmtIcon(r.format)}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, cursor: 'pointer' }} onClick={() => setEdit(r)}>{r.title}</div>
+                    {/* Three lines at most: a very long title used to make one card a screen tall. The whole of it is on the tooltip and in the form. */}
+                    <div title={r.title} style={{ fontSize: 13.5, fontWeight: 700, color: T.text, cursor: 'pointer', overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', ...(asCoach ? { cursor: 'default' } : {}) }} onClick={asCoach ? undefined : () => setEdit(r)}>{r.title}</div>
                     <div style={{ fontSize: 10.5, color: T.text3, marginTop: 1 }}>{[r.category, r.format, r.duration].filter(Boolean).join(' · ')}</div>
                   </div>
                 </div>
@@ -215,7 +240,15 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
                                 {uploading === r.id ? 'Uploading…' : '⬆ Upload file'}
                               </button>
                             </div>}
-                  {fileErr?.id === r.id && <div style={{ fontSize: 11, color: T.bad, marginTop: 6 }}>{fileErr.msg}</div>}
+                  {fileErr?.id === r.id && <div role="alert" style={{ fontSize: 11, color: T.bad, marginTop: 6 }}>{fileErr.msg}</div>}
+                  {(() => {
+                    const names = givenTo(r.id).map(g => players.find(p => p.id === g.player_id)?.name).filter(Boolean) as string[]
+                    return (
+                      <button onClick={() => setGiving(r)} style={{ display: 'block', marginTop: 8, appearance: 'none', border: 0, background: 'transparent', padding: 0, fontSize: 11, color: names.length ? T.good : T.text3, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                        {names.length ? `✓ ${r.given_only ? 'Only for' : 'Given to'} ${names.slice(0, 2).join(', ')}${names.length > 2 ? ` +${names.length - 2}` : ''} · change` : r.given_only ? 'Not on any player’s page · give to a player' : '+ Give to a player'}
+                      </button>
+                    )
+                  })()}
                 </div>
               </div>
             )
@@ -225,9 +258,37 @@ export function LiveResources({ T, accent, density, asCoach = false }: { T: Them
       </>
       )}
 
+      {giving && <RecommendModal T={T} accent={accent} players={players}
+        item={{ kind: 'resource', refId: giving.id, title: giving.title, why: giving.notes || '' }}
+        existing={givenTo(giving.id)}
+        everyone={(() => {
+          // Who else has this on their page because of its level. A resource
+          // with a racket colour was put there on purpose, so it starts ticked;
+          // "All levels" is only the form's default, so the first time one is
+          // given it starts unticked — given to Ben means for Ben.
+          const who = giving.racket ? `every ${RACKET_STAGES.find(s => s.id === giving.racket)?.name || giving.racket} racket player`
+            : String(giving.level || '').toLowerCase().startsWith('all') ? 'every player' : ''
+          if (!who) return undefined
+          const on = !giving.given_only
+          return {
+            who, on,
+            start: giving.racket || givenTo(giving.id).length ? on : false,
+            set: async (show: boolean) => { await resources.edit(giving.id, { given_only: !show }) },
+          }
+        })()}
+        onClose={() => setGiving(null)}
+        onDone={() => { setGiving(null); recs.reload(); resources.reload() }} />}
+
       {edit && <ResourceForm T={T} accent={accent} res={edit === 'new' ? null : edit} canUpload={!asCoach}
         onClose={() => setEdit(null)}
-        onDelete={edit !== 'new' ? async () => { await resources.remove(edit.id); setEdit(null) } : undefined}
+        onDelete={edit !== 'new' ? async () => {
+          await resources.remove(edit.id)
+          // What was given to players goes with it (the link is by id, with
+          // nothing in the database to clear it), and so does its file.
+          await sb().from('coach_player_resources').delete().eq('kind', 'resource').eq('ref_id', edit.id)
+          recs.reload()
+          setEdit(null)
+        } : undefined}
         onSave={async v => { if (edit === 'new') await resources.add(v); else await resources.edit(edit.id, v); setEdit(null) }} />}
     </div>
   )
@@ -237,25 +298,42 @@ function ResourceForm({ T, accent, res, canUpload, onClose, onSave, onDelete }: 
   const [d, setD] = useState<Record<string, any>>({ title: res?.title || '', category: res?.category || 'Drill', format: res?.format || 'Video', level: res?.level || 'All levels', racket: res?.racket || '', duration: res?.duration || '', tags: res?.tags || '', url: res?.url || '', notes: res?.notes || '' })
   const [saving, setSaving] = useState(false)
   const [up, setUp] = useState<'idle' | 'busy' | string>('idle')
+  const [err, setErr] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
-  const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
+  const set = (k: string, v: any) => { setErr(''); setD(p => ({ ...p, [k]: v })) }
+  // Every file this form has had to do with: the one the resource arrived
+  // with, and any uploaded while it was open. When the form closes — saved,
+  // deleted or cancelled — they are all offered for tidying, and the server
+  // keeps whichever one the resource still uses.
+  const files = useRef<string[]>(res?.url ? [res.url] : [])
+  const tidy = () => tidyResourceFiles(files.current)
+  const cancel = () => { tidy(); onClose() }
+  const closeOutside = useAskBeforeClose(JSON.stringify(d), cancel)
   const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box', outline: 'none' }
   const lab: CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 5px' }
   const attach = async (f: File | undefined) => {
     if (fileRef.current) fileRef.current.value = ''
     if (!f) return
     setUp('busy')
-    try { const url = await uploadResourceFile(f); set('url', url); if (d.format === 'Video') set('format', /\.pdf$/i.test(f.name) ? 'PDF' : 'Worksheet'); setUp('idle') }
+    try { const url = await uploadResourceFile(f); files.current.push(url); set('url', url); if (d.format === 'Video') set('format', /\.pdf$/i.test(f.name) ? 'PDF' : 'Worksheet'); setUp('idle') }
     catch (e) { setUp(e instanceof Error ? e.message : 'Could not upload that file.') }
   }
   const hasFile = isResourceFile(d.url)
-  const save = async () => { if (!String(d.title).trim() || saving || up === 'busy') return; setSaving(true); try { await onSave({ title: d.title, category: d.category, format: d.format, level: d.level, racket: d.racket || null, duration: d.duration, tags: d.tags, url: isResourceFile(d.url) ? d.url : (normaliseWebLink(d.url) || (String(d.url || '').trim() ? d.url : '')), notes: d.notes }) } finally { setSaving(false) } }
+  const save = async () => {
+    if (!String(d.title).trim() || saving || up === 'busy') return
+    setSaving(true); setErr('')
+    try {
+      await onSave({ title: String(d.title).trim(), category: d.category, format: d.format, level: d.level, racket: d.racket || null, duration: d.duration, tags: d.tags, url: isResourceFile(d.url) ? d.url : (normaliseWebLink(d.url) || (String(d.url || '').trim() ? d.url : '')), notes: d.notes })
+      tidy()
+    } catch { setErr('That was not saved. Check your connection and try again.') }
+    finally { setSaving(false) }
+  }
   return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '4vh 16px', overflowY: 'auto' }}>
+    <div onClick={e => { if (e.target === e.currentTarget) closeOutside() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '4vh 16px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 460, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>{res ? 'Edit resource' : 'Add resource'}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div><label style={lab}>Title *</label><input value={d.title} onChange={e => set('title', e.target.value)} style={field} /></div>
+          <div><label style={lab}>Title *</label><input value={d.title} onChange={e => set('title', e.target.value)} maxLength={160} style={field} /></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div><label style={lab}>Category</label><select value={d.category} onChange={e => set('category', e.target.value)} style={{ ...field, cursor: 'pointer' }}>{['Drill', 'Technique', 'Training plan', 'Fitness', 'Mental', 'Guides'].map(c => <option key={c} value={c}>{c}</option>)}</select></div>
             <div><label style={lab}>Format</label><select value={d.format} onChange={e => set('format', e.target.value)} style={{ ...field, cursor: 'pointer' }}>{['Video', 'PDF', 'Plan', 'Worksheet'].map(f => <option key={f} value={f}>{f}</option>)}</select></div>
@@ -287,13 +365,14 @@ function ResourceForm({ T, accent, res, canUpload, onClose, onSave, onDelete }: 
             <input ref={fileRef} type="file" accept={RESOURCE_FILE_ACCEPT} style={{ display: 'none' }} onChange={e => { void attach(e.target.files?.[0]) }} />
             {up !== 'idle' && up !== 'busy' && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 5 }}>{up}</div>}
             {!hasFile && d.url && !resourceHref(d.url) && <div style={{ fontSize: 11.5, color: T.warn, marginTop: 5 }}>That isn&rsquo;t a web address, so it won&rsquo;t open. Upload the file instead, or paste the link to where it lives online.</div>}
-            {!hasFile && !d.url && <div style={{ fontSize: 11, color: T.text3, marginTop: 5 }}>Paste a link (YouTube, Google Drive, your website) or upload a PDF, Word, PowerPoint, Excel or image file. Players open it from their app.</div>}
+            {!hasFile && !d.url && <div style={{ fontSize: 11, color: T.text3, marginTop: 5 }}>Paste a link (YouTube, Google Drive, your website) or upload a PDF, Word, PowerPoint, Excel or image file of up to {RESOURCE_FILE_MAX_MB}MB. Players open it from their app.</div>}
           </div>
           <div><label style={lab}>Description</label><textarea value={d.notes} onChange={e => set('notes', e.target.value)} rows={2} style={{ ...field, resize: 'vertical' }} /></div>
         </div>
+        {err && <div role="alert" style={{ fontSize: 12, color: T.bad, marginTop: 12 }}>{err}</div>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 18 }}>
-          {onDelete && <button onClick={async () => { if (confirm('Delete this resource?')) await onDelete() }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
-          <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
+          {onDelete && <button onClick={async () => { if (confirm('Delete this resource?')) { try { await onDelete(); tidy() } catch { setErr('That was not deleted. Try again.') } } }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
+          <button onClick={cancel} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
           <button onClick={save} disabled={!String(d.title).trim() || saving} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: String(d.title).trim() && !saving ? 1 : 0.5, fontFamily: FONT }}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
       </div>

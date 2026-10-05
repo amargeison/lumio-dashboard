@@ -15,11 +15,12 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable } from '../_lib/coach-db'
-import { STAGES, dueLabel, dueAt, type Stage, type StageId } from '@/lib/coach/camp-lifecycle'
+import { STAGES, dueLabel, dueAt, logOutOfDate, type Stage, type StageId } from '@/lib/coach/camp-lifecycle'
+import { unsafePayLink } from '@/lib/coach/camp-money'
 
 type EmailLog = {
   id: string; camp_id?: string | null; attendee_id?: string | null
-  stage: string; status: string; error?: string | null; subject?: string | null; sent_at?: string | null
+  stage: string; status: string; error?: string | null; subject?: string | null; sent_at?: string | null; due_at?: string | null
 }
 type Draft = { subject?: string; preheader?: string; paragraphs?: string[]; bullets?: string[]; cta?: string }
 // `draft` is the coach's own approved version. Where it exists the cron sends it
@@ -32,7 +33,7 @@ export function CampEmails({
 }: {
   T: ThemeTokens; accent: AccentTokens
   camp: {
-    id: string; name: string; start_date?: string | null
+    id: string; name: string; start_date?: string | null; end_date?: string | null
     emails_paused?: boolean | null; overseas?: boolean | null
     balance_link?: string | null; email_overrides?: Record<string, Override> | null
   }
@@ -43,8 +44,19 @@ export function CampEmails({
   const [open, setOpen] = useState<StageId | null>(null)
   const [link, setLink] = useState(camp.balance_link || '')
   const [linkSaved, setLinkSaved] = useState(false)
+  const [linkErr, setLinkErr] = useState('')
+  // "Send again" on a failed email: which row is going, and what came back.
+  const [resending, setResending] = useState('')
+  const [resendErr, setResendErr] = useState<{ id: string; text: string } | null>(null)
 
-  const mine = useMemo(() => logs.rows.filter(l => l.camp_id === camp.id), [logs.rows, camp.id])
+  // A row decided for the camp's OLD dates — the coach has since moved it — is
+  // cleared by the hourly job, which then decides that email again for the new
+  // date. Those rows are not counted here either (same test: logOutOfDate).
+  const mine = useMemo(() => logs.rows.filter(l => {
+    if (l.camp_id !== camp.id) return false
+    const st = STAGES.find(x => x.id === l.stage)
+    return !st || !logOutOfDate(l, st, camp.start_date, camp.end_date)
+  }), [logs.rows, camp.id, camp.start_date, camp.end_date])
   const names = useMemo(() => {
     const m: Record<string, string> = {}
     for (const a of attendees) m[a.id] = a.player_name
@@ -57,7 +69,8 @@ export function CampEmails({
       const s = (m[l.stage] ||= { sent: 0, skipped: 0, failed: 0 })
       if (l.status === 'sent') s.sent++
       else if (l.status === 'failed') s.failed++
-      else s.skipped++
+      // 'sending' is in hand this minute — neither sent nor skipped yet.
+      else if (l.status !== 'sending') s.skipped++
     }
     return m
   }, [mine])
@@ -76,6 +89,26 @@ export function CampEmails({
 
   const noStart = !camp.start_date
   const paused = !!camp.emails_paused
+
+  // One failed email, sent now. The confirmation has its own route (it is a
+  // receipt, not something Lumio Coach writes); the rest go through the same
+  // builder as the hourly job.
+  const resend = async (l: EmailLog) => {
+    if (resending || !l.attendee_id) return
+    setResending(l.id); setResendErr(null)
+    try {
+      const r = l.stage === 'signup'
+        ? await fetch('/api/coach/camps/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ attendeeId: l.attendee_id }) })
+        : await fetch('/api/coach/camp-email-resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campId: camp.id, attendeeId: l.attendee_id, stage: l.stage }) })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) setResendErr({ id: l.id, text: d.error || 'That did not send. Try again in a minute.' })
+      else if (l.stage === 'signup' && !d.emailedTo) setResendErr({ id: l.id, text: 'That did not send — check there is an email address on file for them.' })
+    } catch {
+      setResendErr({ id: l.id, text: 'Could not reach the server. Check your connection and try again.' })
+    }
+    await logs.reload()
+    setResending('')
+  }
 
   return (
     <div style={{ fontFamily: FONT, display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -129,7 +162,7 @@ export function CampEmails({
           {STAGES.map(st => {
             const c = byStage[st.id] || { sent: 0, skipped: 0, failed: 0 }
             const ov = overrides[st.id] || {}
-            const due = dueAt(st, camp.start_date)
+            const due = dueAt(st, camp.start_date, camp.end_date)
             const gone = due != null && Date.now() >= due
             const locked = st.id === 'signup'
             return (
@@ -154,7 +187,7 @@ export function CampEmails({
                       {st.offsetDays == null ? 'Trigger' : gone ? 'Was due' : 'Due'}
                     </div>
                     <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text, marginTop: 2 }}>
-                      {dueLabel(st, camp.start_date)}
+                      {dueLabel(st, camp.start_date, camp.end_date)}
                     </div>
                   </div>
 
@@ -197,17 +230,29 @@ export function CampEmails({
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <input
             value={link}
-            onChange={e => { setLink(e.target.value); setLinkSaved(false) }}
+            onChange={e => { setLink(e.target.value); setLinkSaved(false); setLinkErr('') }}
             placeholder="https://paypal.me/yourclub"
             style={{
               flex: 1, minWidth: 240, fontFamily: FONT, fontSize: 12.5, color: T.text,
               background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '9px 11px',
             }} />
           <button
-            onClick={async () => { await onSave({ balance_link: link.trim() || null }); setLinkSaved(true) }}
+            onClick={async () => {
+              // Only a web address can become the Pay button. Anything else
+              // that is trying to be a link is refused here, and the email
+              // builder refuses it again whatever is saved (payDestination).
+              if (unsafePayLink(link)) { setLinkErr('That is not a web link. Paste one that starts with https://, or type how you would like to be paid in words.'); return }
+              try { await onSave({ balance_link: link.trim() || null }); setLinkSaved(true) }
+              catch (e) { setLinkErr(e instanceof Error ? e.message : 'That was not saved. Try again.') }
+            }}
             style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 8, padding: '9px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
             {linkSaved ? 'Saved' : 'Save'}
           </button>
+        </div>
+        {linkErr && <div style={{ fontSize: 12, color: T.bad, marginTop: 8, lineHeight: 1.5 }}>{linkErr}</div>}
+        <div style={{ fontSize: 11.5, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>
+          A web link becomes a &ldquo;Pay&rdquo; button in the email. Anything else you type here &mdash; bank details, &ldquo;cash on the
+          first morning&rdquo; &mdash; is printed as you wrote it.
         </div>
         <div style={{ fontSize: 11.5, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>
           Lumio can&rsquo;t see money arriving through a link like this, so it keeps chasing until you mark the
@@ -240,11 +285,22 @@ export function CampEmails({
                     </span>
                     <span style={{ fontSize: 12, color: T.text2, flex: 1, minWidth: 150 }}>
                       {stage?.label || l.stage}
-                      {l.status !== 'sent' && l.error ? <span style={{ color: T.text3 }}> — {l.error}</span> : ''}
+                      {l.status === 'failed' ? <span style={{ color: T.bad }}> — did not send{l.error ? `: ${l.error}` : ''}</span>
+                        : l.status === 'sending' ? <span style={{ color: T.text3 }}> — sending now</span>
+                        : l.status !== 'sent' && l.error ? <span style={{ color: T.text3 }}> — {l.error}</span> : ''}
                     </span>
                     <span style={{ fontSize: 11, color: T.text3 }}>
                       {l.sent_at ? new Date(l.sent_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''}
                     </span>
+                    {/* A failed email is tried again by itself a couple of times.
+                        This is for the coach who would rather not wait, or whose
+                        email has run out of tries. */}
+                    {l.status === 'failed' && !!l.attendee_id && !!names[l.attendee_id] && (
+                      <button onClick={() => void resend(l)} disabled={!!resending} style={{ ...ghost(T), padding: '4px 10px', opacity: resending && resending !== l.id ? 0.5 : 1 }}>
+                        {resending === l.id ? 'Sending…' : 'Send again'}
+                      </button>
+                    )}
+                    {resendErr?.id === l.id && <div style={{ flexBasis: '100%', fontSize: 11.5, color: T.bad, lineHeight: 1.5 }}>{resendErr.text}</div>}
                   </div>
                 )
               })}
@@ -294,6 +350,10 @@ function EmailStudio({
   const [err, setErr] = useState('')
   const [fixed, setFixed] = useState(false)
   const [recipient, setRecipient] = useState<{ name: string; to: string | null } | null>(null)
+  // True while the preview is a NEW draft from Lumio Coach rather than the
+  // coach's own saved version. With a saved version on file that new draft is
+  // not what goes out, and the preview has to say so.
+  const [fresh, setFresh] = useState(false)
 
   // The editable fields. Paragraphs are one textarea split on blank lines —
   // a coach writes an email, he does not maintain an array.
@@ -323,6 +383,7 @@ function EmailStudio({
       const d = await r.json()
       if (!r.ok) { setErr(d.error || 'Could not build that preview.'); setBusy(false); return }
       setHtml(d.html || '')
+      setFresh(!opts.useDraft)
       setFixed(!!d.fixed)
       setRecipient(d.recipient || null)
       // Only adopt what came back when it was generated — otherwise we would
@@ -352,7 +413,7 @@ function EmailStudio({
 
   const save = async () => {
     await onSaveOverride({ draft: asDraft(), note: note.trim() || undefined })
-    setDirty(false); setSavedTick(true)
+    setDirty(false); setFresh(false); setSavedTick(true)
     setTimeout(() => setSavedTick(false), 2200)
   }
 
@@ -425,6 +486,12 @@ function EmailStudio({
                   This one is a receipt, not a letter — it goes out the instant somebody books, with their own
                   details and the exact amount. It isn&rsquo;t written by Lumio Coach, so there&rsquo;s nothing
                   to edit here.
+                </div>
+              )}
+              {!busy && !fixed && hasOwn && fresh && html && (
+                <div style={{ background: `${T.warn}1a`, border: `1px solid ${T.warn}55`, borderRadius: 9, padding: '9px 12px', fontSize: 12, color: T.text2, lineHeight: 1.55, marginBottom: 10 }}>
+                  <strong style={{ color: T.text }}>This is not what will be sent.</strong> It is a new draft from Lumio Coach. Your own saved
+                  version is still the one that goes out. To send this instead, open Edit and press &ldquo;Save my version&rdquo;.
                 </div>
               )}
               {busy ? (
@@ -510,13 +577,20 @@ function EmailStudio({
                   A car park change, a kit supplier, a message from you. He writes the email; this is what you
                   want in it. Quicker than writing the whole thing yourself, and it stays in your voice.
                 </div>
+                {hasOwn && (
+                  <div style={{ fontSize: 11.5, color: T.text2, marginBottom: 8, lineHeight: 1.55, background: `${T.warn}1a`, border: `1px solid ${T.warn}55`, borderRadius: 8, padding: '8px 10px' }}>
+                    You have saved your own version of this email, and that is what goes out word for word &mdash; a note
+                    cannot change it. Saving a note here hands the email back to Lumio Coach and drops your saved version.
+                    To keep your version, add the line to it on the Edit tab instead.
+                  </div>
+                )}
                 <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} maxLength={600}
                   placeholder="e.g. Park in the overflow car park this year, the main one is being resurfaced."
                   style={{ ...input(T), resize: 'vertical', lineHeight: 1.55 }} />
                 <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                  <button onClick={async () => { await onSaveOverride({ note: note.trim() || undefined }); void load({ useDraft: false }); setPane('preview') }}
+                  <button onClick={async () => { await onSaveOverride({ note: note.trim() || undefined, ...(hasOwn ? { draft: undefined } : {}) }); void load({ useDraft: false }); setPane('preview') }}
                     style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>
-                    Save and rewrite it
+                    {hasOwn ? 'Save, and let Lumio Coach write it again' : 'Save and rewrite it'}
                   </button>
                 </div>
               </div>

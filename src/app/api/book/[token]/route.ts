@@ -5,7 +5,8 @@ import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { freeSlots } from '@/lib/coach/booking-slots'
 import { sendBookingConfirmation } from '@/lib/coach/booking-confirm'
 import { syncBooking } from '@/lib/coach/calendar'
-import type { BookingRow } from '@/lib/coach/booking-email'
+import { bookingState, bookingPlace, type BookingRow } from '@/lib/coach/booking-email'
+import { matchVenue, type VenueRow } from '@/lib/coach/booking-venue'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -32,12 +33,31 @@ export const dynamic = 'force-dynamic'
 //     decided in somebody else's browser.
 //   • A personal link is single-use; a general one is reusable but still rate
 //     limited per IP and per link.
+//   • The check that the slot is free and the write of the booking are ONE step
+//     in the database (lumio_book_link_slot, migration 197), behind a lock. Two
+//     people pressing Book on the same time at the same moment get one booking
+//     and one "that time has just gone"; a single-use link is used once.
+//   • A shareable link never learns who used it. Nothing a visitor types is
+//     written on the link row or shown to the next visitor — each booking
+//     records the person who made it and the player THEY named.
 
 function db() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
 }
 const clean = (v: unknown, max = 200) => String(v ?? '').trim().slice(0, max)
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
+/** An address that could actually receive the confirmation: an ordinary local
+    part, and a domain made of letters, digits, dots and hyphens. */
+const EMAIL_RE = /^[a-z0-9._%+'-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/i
+/** A name as people type it: any capitals, stray spaces. */
+const sameName = (a: unknown, b: unknown) => {
+  const n = (v: unknown) => String(v ?? '').trim().replace(/\s+/g, ' ').toLowerCase()
+  return !!n(a) && n(a) === n(b)
+}
+/** A real calendar day, not just ten characters shaped like one. */
+const realDate = (d: string) => {
+  const t = new Date(`${d}T12:00:00Z`)
+  return !Number.isNaN(t.getTime()) && t.toISOString().slice(0, 10) === d
+}
 
 type LinkRow = {
   id: string; coach_id: string; staff_id: string | null; player_id: string | null
@@ -79,7 +99,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
   const problem = linkProblem(link)
   if (!link) return NextResponse.json({ error: problem }, { status: 404 })
 
-  const [{ data: profile }, { data: venue }, { data: staff }] = await Promise.all([
+  const [{ data: profile }, { data: venue }, { data: staff }, { data: settings }] = await Promise.all([
     sb.from('sports_profiles').select('brand_name, display_name, brand_logo_url, contact_email').eq('id', link.coach_id).maybeSingle(),
     link.venue_id
       ? sb.from('coach_venues').select('name, address').eq('id', link.venue_id).maybeSingle()
@@ -87,7 +107,13 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
     link.staff_id
       ? sb.from('coach_staff').select('name').eq('id', link.staff_id).maybeSingle()
       : Promise.resolve({ data: null } as { data: null }),
+    sb.from('coach_settings').select('data').eq('coach_id', link.coach_id).maybeSingle(),
   ])
+
+  // Only a link the coach sent to ONE named family fills the form in, and only
+  // with what the coach addressed it to — and not once it is closed. A shareable
+  // link is opened by anybody, so it never has anything to fill in.
+  const personal = !link.reusable && !problem
 
   const head = {
     academy: profile?.brand_name || 'Your coach',
@@ -97,10 +123,13 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
     sessionType: link.session_type || 'Private',
     venue: venue ? { name: venue.name as string, address: (venue.address as string) || null } : null,
     note: link.note || null,
-    invitedName: link.name || '',
-    invitedEmail: link.email || '',
+    invitedName: personal ? link.name || '' : '',
+    invitedEmail: personal ? link.email || '' : '',
     /** A link sent to a player on the roster already knows who they are. */
-    known: !!link.player_id,
+    known: personal && !!link.player_id,
+    /** False when the academy has switched booking emails off, so the page
+        does not promise an email that will not come. */
+    emails: (settings?.data as Record<string, unknown> | null)?.bookingEmails !== false,
   }
 
   if (problem) return NextResponse.json({ ...head, closed: problem, days: [] })
@@ -118,20 +147,23 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
   const date = clean(b.date, 10)
   const time = clean(b.time, 5)
   const forChild = !!b.for_child
-  const who = clean(b.player_name, 80)          // the player — the child, or the adult themselves
-  const contactName = clean(b.contact_name, 80) // whoever is filling the form in
+  // Names are stored tidy — one space between words — so "jenny  junior" finds
+  // Jenny Junior rather than becoming a second player.
+  const who = clean(b.player_name, 80).replace(/\s+/g, ' ')          // the player — the child, or the adult themselves
+  const contactName = clean(b.contact_name, 80).replace(/\s+/g, ' ') // whoever is filling the form in
   const email = clean(b.email, 120).toLowerCase()
   const phone = clean(b.phone, 40)
   const note = clean(b.note, 400)
 
-  if (!t || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(time)) {
+  if (!t || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !realDate(date) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
     return NextResponse.json({ error: 'Please choose a date and time.' }, { status: 400 })
   }
-  if (!who) return NextResponse.json({ error: forChild ? 'Please give your child’s name.' : 'Please give your name.' }, { status: 400 })
+  // A name has letters in it. "%" or "_" on their own are not somebody's name.
+  if (!who || !/\p{L}/u.test(who)) return NextResponse.json({ error: forChild ? 'Please give your child’s name.' : 'Please give your name.' }, { status: 400 })
   if (!EMAIL_RE.test(email)) return NextResponse.json({ error: 'That email address does not look right.' }, { status: 400 })
 
   const ip = clientIp(req.headers)
-  if (!rateLimit(`book-post:${ip}`, 6, 10 * 60_000).ok || !rateLimit(`book-post-link:${t}`, 10, 60 * 60_000).ok) {
+  if (!rateLimit(`book-post:${ip}`, 6, 10 * 60_000).ok) {
     return NextResponse.json({ error: 'Too many booking attempts. Please try again shortly.' }, { status: 429 })
   }
 
@@ -139,6 +171,13 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
   const link = await loadLink(sb, t)
   const problem = linkProblem(link)
   if (!link || problem) return NextResponse.json({ error: problem || 'This booking link isn’t valid any more.' }, { status: 410 })
+
+  // Per link as well as per visitor. A link sent to one family needs a handful
+  // of tries; one pinned to a club noticeboard is used by many different people
+  // in an evening, and ten an hour locked the eleventh family out.
+  if (!rateLimit(`book-post-link:${link.id}`, link.reusable ? 40 : 10, 60 * 60_000).ok) {
+    return NextResponse.json({ error: 'This link is very busy right now. Please try again in a little while.' }, { status: 429 })
+  }
 
   try {
     // ── The slot must still be free, right now ────────────────────────────
@@ -153,86 +192,93 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
     }
 
     // ── Who this is ───────────────────────────────────────────────────────
-    // A link sent to somebody on the roster already knows. Otherwise match on
-    // the email they typed before creating anybody: a parent who books twice
-    // should not become two players.
-    let playerId = link.player_id
+    // The booking is for the person named on the form. It is filed under an
+    // existing player only when the evidence is strong:
+    //
+    //   • a link sent to ONE family, used for the player it was sent about; or
+    //   • a player of that name whose record already holds the email typed.
+    //
+    // An email on its own is not enough. A parent with one child on the roster
+    // who books for a second child was having it filed under the first.
+    // Anybody else is new to the academy and goes on the roster as themselves.
+    let playerId: string | null = null
     let playerName = who
-    if (playerId) {
-      const { data: p } = await sb.from('coach_players').select('name').eq('id', playerId).maybeSingle()
-      if (p?.name) playerName = p.name
-    } else {
-      // PostgREST's `or` filter is a comma-separated string, so an address
-      // carrying a comma, quote or bracket would not be a filter any more — it
-      // would be extra filters. Anything outside the ordinary email characters
-      // simply skips the lookup and creates a new player, which is the safe half
-      // of the wrong answer.
-      if (/^[A-Za-z0-9._%+@-]+$/.test(email)) {
-        const { data: match } = await sb.from('coach_players')
-          .select('id, name')
-          .eq('coach_id', link.coach_id)
-          .or(`email.ilike.${email},contact_email.ilike.${email},parent_email.ilike.${email}`)
-          .limit(1).maybeSingle()
-        if (match?.id) { playerId = match.id; playerName = match.name || who }
-      }
+    if (!link.reusable && link.player_id) {
+      const { data: p, error } = await sb.from('coach_players').select('id, name')
+        .eq('id', link.player_id).eq('coach_id', link.coach_id).maybeSingle()
+      if (error) throw new Error(`player lookup: ${error.message}`)
+      if (p?.id && sameName(p.name, who)) { playerId = p.id; playerName = p.name }
     }
     if (!playerId) {
-      // New to the academy. They go on the roster, because a session in the
-      // diary for somebody who does not exist is how a coach ends up with a
-      // booking they cannot email, chase or write a summary for.
-      //
-      // The email goes where the person put it: a parent booking for a child is
-      // the parent's address (and the child has no address on file at all), an
-      // adult booking for themselves is their own.
-      const { data: created } = await sb.from('coach_players').insert({
-        coach_id: link.coach_id,
-        staff_id: link.staff_id,
-        name: who,
-        email: forChild ? null : email,
-        parent_name: forChild ? (contactName || null) : null,
-        parent_email: forChild ? email : null,
-        phone: phone || null,
-        category: forChild ? 'Junior' : 'Adult',
-        notes: 'Added from a booking link.',
-      }).select('id').single()
-      playerId = created?.id || null
+      // `ilike` reads % _ and * as "anything", so it is only used for a name
+      // with none of those in it; the result is compared again here either way.
+      const q = sb.from('coach_players').select('id, name, email, contact_email, parent_email').eq('coach_id', link.coach_id)
+      const { data: named, error } = await (/[%_*\\]/.test(who) ? q.eq('name', who) : q.ilike('name', who)).limit(50)
+      if (error) throw new Error(`player lookup: ${error.message}`)
+      const mine = (named || []).filter(p => sameName(p.name, who)
+        && [p.email, p.contact_email, p.parent_email].some(e => String(e ?? '').trim().toLowerCase() === email))
+      if (mine.length === 1) { playerId = mine[0].id; playerName = mine[0].name || who }
     }
+    // New to the academy. They go on the roster, because a session in the
+    // diary for somebody who does not exist is how a coach ends up with a
+    // booking they cannot email, chase or write a summary for.
+    //
+    // The email goes where the person put it: a parent booking for a child is
+    // the parent's address (and the child has no address on file at all), an
+    // adult booking for themselves is their own.
+    const newPlayer = playerId ? null : {
+      name: who,
+      email: forChild ? '' : email,
+      parent_name: forChild ? contactName : '',
+      parent_email: forChild ? email : '',
+      phone,
+      category: forChild ? 'Junior' : 'Adult',
+    }
+
+    // The coach's own settings: the gap they keep between lessons, and whether
+    // bookings are emailed at all.
+    const { data: settings, error: setErr } = await sb.from('coach_settings').select('data').eq('coach_id', link.coach_id).maybeSingle()
+    if (setErr) throw new Error(`settings: ${setErr.message}`)
+    const cfg = (settings?.data || {}) as Record<string, any>
+    const buffer = Math.max(0, Math.min(60, Number(cfg?.booking?.buffer) || 0))
 
     // ── The booking ───────────────────────────────────────────────────────
-    // Everything about the session comes from the link, not the request.
-    const title = `${link.session_type || 'Private'} — ${playerName}`
-    const { data: booking, error: bookErr } = await sb.from('coach_bookings').insert({
-      coach_id: link.coach_id,
-      staff_id: link.staff_id,
-      player_id: playerId,
-      player_name: playerName,
-      title,
-      type: link.session_type || 'Private',
-      court: link.court || null,
-      booking_date: date,
-      start_time: time,
-      duration_min: link.duration_min,
-      status: 'confirmed',
-      notes: [note, phone ? `Phone: ${phone}` : '', `Booked online by ${contactName || who} (${email}).`]
+    // Check-and-write in one locked step. Everything about the session comes
+    // from the link row inside the database; the request supplies the day, the
+    // time and the person.
+    const { data: made, error: bookErr } = await sb.rpc('lumio_book_link_slot', {
+      p_token: link.token,
+      p_date: date,
+      p_time: time,
+      p_buffer: buffer,
+      p_player_id: playerId,
+      p_new_player: newPlayer,
+      p_player_name: playerName,
+      p_notes: [note, phone ? `Phone: ${phone}` : '', `Booked online by ${contactName || who} (${email}).`]
         .filter(Boolean).join('\n'),
-    }).select('*').single()
-    if (bookErr || !booking) {
+    })
+    if (bookErr) {
       console.error('[book] could not write the booking', bookErr)
-      return NextResponse.json({ error: 'Could not save that booking — please try again.' }, { status: 500 })
+      return NextResponse.json({ error: 'We could not save that booking. Please try again.' }, { status: 500 })
     }
-
-    // The link has been used. Written before the emails so a mail failure cannot
-    // leave a single-use link open for a second booking.
-    await sb.from('coach_booking_links').update({
-      uses: (link.uses || 0) + 1,
-      used_at: new Date().toISOString(),
-      booking_id: link.booking_id || booking.id,
-      // Remember who used a link that was sent blind, so the coach's list says
-      // more than "somebody".
-      name: link.name || (contactName || who),
-      email: link.email || email,
-      player_id: link.player_id || playerId,
-    }).eq('id', link.id)
+    const result = (made as { result?: string; booking_id?: string } | null)?.result
+    if (result === 'taken') {
+      // Somebody else took it between the check above and the write.
+      const fresh = await freeSlots(sb, link.coach_id, { durationMin: link.duration_min, days: 21 })
+      return NextResponse.json({ error: 'That time has just gone — please pick another.', days: fresh }, { status: 409 })
+    }
+    if (result === 'link') {
+      return NextResponse.json({ error: linkProblem(await loadLink(sb, t)) || 'This booking link isn’t valid any more.' }, { status: 410 })
+    }
+    const bookingId = result === 'ok' ? (made as { booking_id?: string }).booking_id : null
+    const { data: booking, error: readErr } = bookingId
+      ? await sb.from('coach_bookings').select('*').eq('id', bookingId).maybeSingle()
+      : { data: null, error: null }
+    if (readErr || !booking) {
+      console.error('[book] could not write the booking', readErr || made)
+      return NextResponse.json({ error: 'We could not save that booking. Please try again.' }, { status: 500 })
+    }
+    const title = String(booking.title || '')
 
     const origin = publicSiteOrigin(new URL(req.url).origin)
 
@@ -252,9 +298,24 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
     } catch (e) { console.error('[book] calendar sync', e) }
 
     // Confirmations — the same ones a coach-made booking sends. The recipient is
-    // the adult who filled the form in; see lib/coach/booking-confirm.ts.
+    // the adult who filled the form in; see lib/coach/booking-confirm.ts. Not
+    // sent when the academy has switched booking emails off: that switch is the
+    // coach's, and it covers bookings made here as much as ones they type in.
+    //
+    // Either way the booking records what was said and to whom, so that if the
+    // coach later moves or cancels it the same person hears about it.
+    // Including WHERE, so a later change of venue or court alone is noticed.
+    const [{ data: venueRows }, { data: courtRows }] = await Promise.all([
+      sb.from('coach_venues').select('id,name,is_home').eq('coach_id', link.coach_id),
+      sb.from('coach_courts').select('name,venue_id').eq('coach_id', link.coach_id),
+    ])
+    const toldPlace = bookingPlace(booking as BookingRow, matchVenue((venueRows ?? []) as VenueRow[], (booking as BookingRow).court, { venueId: (booking as BookingRow).venue_id, courts: courtRows ?? [] }))
+    await sb.from('coach_bookings')
+      .update({ told_state: bookingState(booking as BookingRow, toldPlace), told_to: email })
+      .eq('id', booking.id)
+      .then(({ error }) => { if (error) console.error('[book] told_state', error.message) })
     let sent: Record<string, unknown> = {}
-    try {
+    if (cfg.bookingEmails !== false) try {
       sent = await sendBookingConfirmation({
         coachId: link.coach_id,
         booking: booking as BookingRow,

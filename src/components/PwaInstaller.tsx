@@ -47,6 +47,36 @@ function isStandalone(): boolean {
     || (window.navigator as Navigator & { standalone?: boolean }).standalone === true
 }
 
+// Call this when somebody signs out. A phone is shared: nothing the last
+// person loaded may still be on the device for the next one. The service
+// worker no longer stores anything private, but a phone can keep running an
+// OLDER worker (one that did) until its app is next closed, so sign-out empties
+// the caches itself rather than trusting whichever worker is in charge. The
+// "lumio-static-…" cache is kept: it holds only the offline page and public
+// logos, and without it there is no offline page until the next update. So is
+// "lumio-assets-…": the app's own build files and public images, the same for
+// everybody, which is what lets the app carry on with no signal.
+// Never throws — signing out must not fail because a cache could not be cleared.
+//
+// Also called when somebody signs IN, and when a signed-in page starts, before
+// its first request: an older worker answers from its store first, so the next
+// person to sign in on a phone left on the sign-in page was shown the last
+// family's child until they refreshed. With the store emptied there is nothing
+// for it to answer with.
+export async function clearPrivateCaches(): Promise<void> {
+  try {
+    if (typeof window === 'undefined' || !('caches' in window)) return
+    const keys = await caches.keys()
+    await Promise.all(keys.filter(k => !k.startsWith('lumio-static-') && !k.startsWith('lumio-assets-')).map(async k => {
+      await caches.delete(k)
+      // An older worker's private store is left behind EMPTY rather than gone:
+      // its name is how the new worker knows it is replacing one of those and
+      // must take over at once (public/sw.js, install), and it deletes it then.
+      if (k.startsWith('lumio-api-') || k.startsWith('lumio-html-')) await caches.open(k)
+    }))
+  } catch { /* nothing more we can do from the page */ }
+}
+
 export function PwaInstaller({ sport }: { sport: Sport }) {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [dismissed, setDismissed] = useState(false)
@@ -116,7 +146,7 @@ export function PwaInstaller({ sport }: { sport: Sport }) {
           role="status"
           aria-live="polite"
         >
-          📡 You&apos;re offline — showing cached data
+          📡 You&apos;re offline — reconnect to carry on
         </div>
       )}
 
@@ -127,7 +157,7 @@ export function PwaInstaller({ sport }: { sport: Sport }) {
         >
           <div className="text-sm font-bold text-white mb-1">Install {SPORT_LABEL[sport]}</div>
           <div className="text-xs text-gray-400 mb-3">
-            Get the app on your home screen for offline access to your morning briefing and today&apos;s schedule.
+            Add it to your home screen to open your portal full-screen with one tap.
           </div>
           <div className="flex gap-2">
             <button

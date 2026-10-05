@@ -14,6 +14,8 @@ import { RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
 import { seedLumioResources } from '../_lib/lumio-resources'
 import { seedLumioPackages } from '../_lib/lumio-packages'
 import { getSettings, setSettings } from '../_lib/settings-store'
+import { parseAmount } from '@/lib/coach/money'
+import { V2_LABEL } from '@/lib/coach/v2'
 
 export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18, marginBottom: 16, fontFamily: FONT }
@@ -149,14 +151,14 @@ export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent
           Message parents and players from one inbox. Three channels:
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-          {[['Lumio message', 'In-app · always on'], ['Email', 'Sends from your contact email — set it under Head coach profile / Connected accounts'], ['Text (SMS)', 'Live once Twilio is configured for your account'], ['WhatsApp', 'Coming soon']].map(([t, d]) => (
+          {[['Lumio message', 'In-app · always on'], ['Email', 'Sends from your own mailbox once it is connected (Connected accounts); until then from the Lumio address'], ['Text (SMS)', V2_LABEL], ['WhatsApp', 'Coming soon']].map(([t, d]) => (
             <div key={t} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 11px' }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{t}</div>
               <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2 }}>{d}</div>
             </div>
           ))}
         </div>
-        <p style={{ margin: '0 0 12px', fontSize: 11, color: T.text3, lineHeight: 1.5 }}>Replies thread back into your inbox automatically (email &amp; text), so you can reply, forward or react in-app.</p>
+        <p style={{ margin: '0 0 12px', fontSize: 11, color: T.text3, lineHeight: 1.5 }}>Email replies thread back into your inbox automatically, so you can reply, forward or react in-app.</p>
         <CcToggle T={T} />
       </div>
 
@@ -168,6 +170,15 @@ export function CoachDevelopmentSettings({ T, accent }: { T: ThemeTokens; accent
 
 function PaymentsSettingsCard({ T, accent, card }: { T: ThemeTokens; accent: AccentTokens; card: React.CSSProperties }) {
   const [rate, setRate] = useState<string>(String(getSettings().privateRate || ''))
+  // The same rule as Settings → Pricing & packages and the Payments page: this
+  // box took -5 and saved it. An amount it cannot read is not saved, and says why.
+  const [rateErr, setRateErr] = useState('')
+  const changeRate = (v: string) => {
+    setRate(v)
+    if (!v.trim()) { setRateErr(''); setSettings({ privateRate: 0 }); return }
+    const a = parseAmount(v, { max: 1000 })
+    if (a.ok) { setRateErr(''); setSettings({ privateRate: a.pounds }) } else setRateErr(a.error)
+  }
   const [pkgState, setPkgState] = useState<'idle' | 'loading' | { added: number } | 'error'>('idle')
   const loadPkgs = async () => { if (pkgState === 'loading') return; setPkgState('loading'); try { const added = await seedLumioPackages(); setPkgState({ added }) } catch { setPkgState('error') } }
   const field: React.CSSProperties = { background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, width: 120, boxSizing: 'border-box', outline: 'none' }
@@ -180,7 +191,7 @@ function PaymentsSettingsCard({ T, accent, card }: { T: ThemeTokens; accent: Acc
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
         <div>
           <label style={{ display: 'block', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.4, color: T.text3, marginBottom: 5 }}>Private lesson rate (£/hr)</label>
-          <input type="number" value={rate} onChange={e => { setRate(e.target.value); setSettings({ privateRate: Number(e.target.value) || 0 }) }} placeholder="e.g. 38" style={field} />
+          <input inputMode="decimal" value={rate} onChange={e => changeRate(e.target.value)} placeholder="e.g. 38.50" aria-invalid={!!rateErr} style={field} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={loadPkgs} disabled={pkgState === 'loading'} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>{pkgState === 'loading' ? 'Loading…' : '📦 Load default packages'}</button>
@@ -188,6 +199,8 @@ function PaymentsSettingsCard({ T, accent, card }: { T: ThemeTokens; accent: Acc
           {pkgState === 'error' && <span style={{ fontSize: 12, color: T.bad }}>Couldn’t load — try again.</span>}
         </div>
       </div>
+
+      {rateErr && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 6 }}>{rateErr} The rate has not been changed.</div>}
 
       {/* Take payments moved to Settings → Pricing & packages, where a coach
           actually looks for it. See TakePayments.tsx. */}

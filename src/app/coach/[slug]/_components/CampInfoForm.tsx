@@ -15,7 +15,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
-  askedForm, campForm, defaultInfoForm, formIsCustom, formUrl, Q_TYPES,
+  askedForm, campForm, defaultInfoForm, formDone, formIsCustom, formOutstanding, formUrl, Q_TYPES,
   type Answers, type FormQuestion, type FormSection, type InfoForm, type QType,
 } from '@/lib/coach/camp-form'
 
@@ -46,8 +46,11 @@ export function CampInfoForm({ T, accent, camp, attendees, onSave }: {
   const [note, setNote] = useState('')
 
   const live = attendees.filter(a => a.status !== 'cancelled')
-  const done = live.filter(a => !!a.form_submitted_at)
-  const waiting = live.filter(a => !a.form_submitted_at)
+  // "Filled in" means everything the form asks TODAY. Somebody who answered
+  // before a required question was added is back in the waiting list, and is
+  // asked for just the new ones (formDone, camp-form.ts).
+  const done = live.filter(a => formDone(camp, a))
+  const waiting = live.filter(a => !formDone(camp, a))
   const questions = useMemo(() => asked.sections.flatMap(s => s.questions), [asked])
 
   const card: CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }
@@ -111,7 +114,9 @@ export function CampInfoForm({ T, accent, camp, attendees, onSave }: {
         <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: T.text, cursor: 'pointer' }}>
             <input type="checkbox" checked={enabled} disabled={!!busy}
-              onChange={e => { void save('on', { info_form: { ...form, enabled: e.target.checked } }, e.target.checked ? 'The form is on for this camp.' : 'The form is off: no link goes out, and existing links are closed.') }} />
+              // The standard form saves only the switch — never a copy of its
+              // questions, which would stop it following the camp's settings.
+              onChange={e => { void save('on', { info_form: custom ? { ...form, enabled: e.target.checked } : (e.target.checked ? null : { enabled: false }) }, e.target.checked ? 'The form is on for this camp.' : 'The form is off: no link goes out, and existing links are closed.') }} />
             Send this form with this camp’s emails
           </label>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: T.text, cursor: 'pointer' }}>
@@ -142,12 +147,14 @@ export function CampInfoForm({ T, accent, camp, attendees, onSave }: {
                   return [
                     <tr key={a.id}>
                       <td style={{ padding: '8px 8px', borderTop: `1px solid ${T.border}`, fontSize: 12.5, fontWeight: 600, color: T.text }}>{a.player_name}</td>
-                      <td style={{ padding: '8px 8px', borderTop: `1px solid ${T.border}`, fontSize: 12, color: a.form_submitted_at ? T.good : T.text3, whiteSpace: 'nowrap' }}>
-                        {a.form_submitted_at ? `Filled in ${fmtD(a.form_submitted_at)}` : a.form_sent_at ? `Not yet · emailed ${fmtD(a.form_sent_at)}` : 'Not yet'}
+                      <td style={{ padding: '8px 8px', borderTop: `1px solid ${T.border}`, fontSize: 12, color: formDone(camp, a) ? T.good : a.form_submitted_at ? T.warn : T.text3, whiteSpace: 'nowrap' }}>
+                        {formDone(camp, a) ? `Filled in ${fmtD(a.form_submitted_at)}`
+                          : a.form_submitted_at ? `${formOutstanding(camp, a).length} new question${formOutstanding(camp, a).length === 1 ? '' : 's'} to answer`
+                          : a.form_sent_at ? `Not yet · emailed ${fmtD(a.form_sent_at)}` : 'Not yet'}
                       </td>
                       <td style={{ padding: '8px 8px', borderTop: `1px solid ${T.border}`, textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {a.form_submitted_at && <button onClick={() => setOpenId(open ? null : a.id)} style={{ ...mini, marginRight: 6 }}>{open ? 'Hide' : 'View answers'}</button>}
-                        {!a.form_submitted_at && enabled && <button onClick={() => { void send(a.id) }} disabled={!!busy} style={{ ...mini, marginRight: 6 }}>{busy === a.id ? 'Sending…' : 'Email it'}</button>}
+                        {!formDone(camp, a) && enabled && <button onClick={() => { void send(a.id) }} disabled={!!busy} style={{ ...mini, marginRight: 6 }}>{busy === a.id ? 'Sending…' : 'Email it'}</button>}
                         {!!a.form_token && <button onClick={() => { void copy(a) }} style={mini}>Copy link</button>}
                       </td>
                     </tr>,

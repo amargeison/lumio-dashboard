@@ -228,12 +228,12 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
     what: 'Packs, credits and what is outstanding.',
     how: [
       'Build your price list once; assign a pack to a player.',
-      'Record a payment when money comes in, however it came in.',
-      'Sessions tick down against a pack automatically.',
+      'Mark a line paid when the money comes in, however it came in.',
+      'Sessions tick down against a pack automatically, from the day the pack is added.',
     ],
     worth: [
-      'Card payments arrive in V2. Everything else — balances, chasers, reports — works now.',
-      'Outstanding balances show on your dashboard and in the briefing.',
+      'Card payments arrive in V2. Balances — what is owed and what has been paid — work now.',
+      'Outstanding balances show on your dashboard and in the briefing. Camp fees are kept on each camp.',
     ],
   },
   settings: {

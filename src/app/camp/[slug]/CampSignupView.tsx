@@ -8,6 +8,7 @@
 // coach. That is the whole reason the camp designer produces one.
 
 import { useState, useEffect, type CSSProperties } from 'react'
+import { useRouter } from 'next/navigation'
 
 export type CampPublic = {
   slug: string; name: string; academy: string; logoUrl: string | null
@@ -19,6 +20,8 @@ export type CampPublic = {
   intro: string | null; whatTheyWorkOn: string[]; whatToBring: string[]
   dailyShape: string | null; whatTheyLeaveWith: string[]
   days: { day: number; theme: string }[]
+  /** The camp's last day has gone — no form, just a line saying so. */
+  finished?: boolean
 }
 
 const ACCENT = '#3A8EE0'
@@ -34,6 +37,7 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [done, setDone] = useState<null | { status: string; note?: string }>(null)
+  const router = useRouter()
 
   // Coming back from Stripe. Without this the parent pays, lands back here and
   // sees the empty form again — which reads as "it didn't work" and gets you a
@@ -51,16 +55,21 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
   const submit = async () => {
     if (busy) return
     if (!f.player_name.trim() || !f.parent_email.trim()) { setErr(adult ? 'Please add your name and email address.' : 'Please add the player’s name and your email address.'); return }
+    if (f.player_age.trim() && !/^\d{1,3}$/.test(f.player_age.trim())) { setErr('Please give the age as a whole number of years, or leave it blank.'); return }
     setBusy(true); setErr('')
     try {
       const res = await fetch('/api/camp/signup', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...f, slug: camp.slug, player_age: Number(f.player_age) || null }),
+        body: JSON.stringify({ ...f, slug: camp.slug, player_age: f.player_age.trim() || null }),
       })
       const d = await res.json()
-      if (!res.ok) throw new Error(d.error || 'Could not sign up')
+      // Either way the number of places may have changed. Ask the server for the
+      // page's figures again, so "3 places left" does not sit above "You're in"
+      // (or above "this camp is now full") until somebody reloads.
+      if (!res.ok) { router.refresh(); throw new Error(d.error || 'Could not sign up') }
       if (d.url) { window.location.href = d.url; return }   // straight to payment
-      setDone({ status: d.already ? 'already' : d.status || 'confirmed', note: d.note })
+      setDone({ status: d.status || 'confirmed', note: d.note })
+      router.refresh()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Could not sign up'); setBusy(false) }
   }
 
@@ -94,7 +103,11 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
             {camp.ages && <Chip>Ages {camp.ages}</Chip>}
             {camp.surface && <Chip>{camp.surface}</Chip>}
             {due != null && <Chip>{camp.paymentMode === 'deposit' ? `${money(due)} deposit` : money(due)}</Chip>}
-            {camp.spacesLeft != null && <Chip highlight={camp.spacesLeft <= 3}>{camp.spacesLeft === 0 ? 'Full' : `${camp.spacesLeft} place${camp.spacesLeft === 1 ? '' : 's'} left`}</Chip>}
+            {/* What the camp costs, even when nothing is paid on this page — a
+                family signed up, and only then learned they owed the full price. */}
+            {due == null && Number(camp.price) > 0 && <Chip>{money(Number(camp.price))} a place</Chip>}
+            {camp.finished && <Chip>Finished</Chip>}
+            {camp.spacesLeft != null && !camp.finished && <Chip highlight={camp.spacesLeft <= 3}>{camp.spacesLeft === 0 ? 'Full' : `${camp.spacesLeft} place${camp.spacesLeft === 1 ? '' : 's'} left`}</Chip>}
           </div>
           {camp.intro && <p style={{ fontSize: 15.5, lineHeight: 1.65, color: '#374151', margin: 0 }}>{camp.intro}</p>}
           {camp.note && <p style={{ fontSize: 14.5, lineHeight: 1.6, color: '#6b7280', margin: '10px 0 0' }}>{camp.note}</p>}
@@ -142,16 +155,18 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
             <div style={{ textAlign: 'center', padding: '10px 0' }}>
               <div style={{ fontSize: 38 }}>🎾</div>
               <div style={{ fontSize: 19, fontWeight: 700, color: '#1a1d29', marginTop: 8 }}>
-                {done.status === 'already' ? 'Already signed up'
-                  : done.status === 'pending' ? 'Place reserved'
+                {done.status === 'pending' ? 'Place reserved'
                   : done.status === 'paid' ? 'Payment received — you’re booked in!'
                   : `${f.player_name.split(' ')[0]} is booked in!`}
               </div>
               <p style={{ fontSize: 14.5, color: '#6b7280', lineHeight: 1.6, marginTop: 8 }}>
-                {done.note || (done.status === 'already'
-                  ? 'We already have this player on the list for this camp — nothing more to do.'
-                  : 'You’ll get a confirmation email shortly with everything you need. See you on court.')}
+                {done.note || 'You’ll get a confirmation email shortly with everything you need. See you on court.'}
               </p>
+            </div>
+          ) : camp.finished ? (
+            <div style={{ textAlign: 'center', padding: '10px 0' }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#1a1d29' }}>This camp has finished</div>
+              <p style={{ fontSize: 14.5, color: '#6b7280', marginTop: 6 }}>Sign-ups are closed. Ask your coach about the next one.</p>
             </div>
           ) : full ? (
             <div style={{ textAlign: 'center', padding: '10px 0' }}>
@@ -164,7 +179,7 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
                   <div><label style={lbl}>{adult ? 'Your name *' : 'Player’s name *'}</label><input value={f.player_name} onChange={e => set('player_name', e.target.value)} style={field} /></div>
-                  <div><label style={lbl}>Age</label><input type="number" value={f.player_age} onChange={e => set('player_age', e.target.value)} style={field} /></div>
+                  <div><label style={lbl}>Age</label><input type="number" inputMode="numeric" min={2} max={110} step={1} value={f.player_age} onChange={e => set('player_age', e.target.value)} style={field} /></div>
                 </div>
                 {!adult && <div><label style={lbl}>Your name (parent or guardian)</label><input value={f.parent_name} onChange={e => set('parent_name', e.target.value)} style={field} /></div>}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -185,6 +200,13 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
                       ? <>A <strong>{money(due)} deposit</strong> secures the place{camp.price ? <> — the balance of {money(Number(camp.price) - due)} is due before the camp starts.</> : '.'}</>
                       : <>Places are <strong>{money(due)}</strong>, paid now to secure the spot.</>}
                     <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 4 }}>You’ll be taken to a secure payment page next.</div>
+                  </div>
+                )}
+
+                {due == null && Number(camp.price) > 0 && (
+                  <div style={{ background: '#f6f8fb', border: '1px solid #e5e9f0', borderRadius: 10, padding: '11px 13px', fontSize: 14, color: '#374151' }}>
+                    Places are <strong>{money(Number(camp.price))}</strong>.
+                    <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 4 }}>Nothing is paid on this page — the academy will be in touch about payment.</div>
                   </div>
                 )}
 

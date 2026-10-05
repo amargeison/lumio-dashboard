@@ -13,6 +13,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { COACH_AGENT_PERSONA, COACH_METHODOLOGY } from './agent-persona'
+import { sharedLessonText } from './lesson-recap'
 
 export const COACH_AGENT_SYSTEM = `${COACH_AGENT_PERSONA}\n\n${COACH_METHODOLOGY}`
 
@@ -112,56 +113,93 @@ export function extractJson<T = unknown>(text: string, fallback: T): T {
 type SessionRow = {
   player_name: string | null; session_date: string | null; focus: string | null
   rating: number | null; summary: string | null; ai_review: string | null
-  review_json: { nextFocus?: string; takeaways?: string[]; drills?: string[] } | null
+  review_json: { nextFocus?: string; takeaways?: string[]; drills?: string[]; coachNote?: string } | null
 }
 type SkillRow = { skill?: string | null; score?: number | null; mastery?: string | null }
 
 // Build a compact "what we know about this player" block from their real
 // history. Scoped by the coach's own Supabase session (RLS = coach_id = uid),
 // so it only ever sees this coach's data. Returns '' when there's nothing.
+//
+// Pass `playerId` whenever the caller has it. A name is not an identity: with
+// three players called "Sven Tester17" the first row back used to be taken, so
+// the model was briefed on a twelve-year-old's record while writing targets for
+// a forty-four-year-old. With only a name, the record is used when exactly ONE
+// player has that name; otherwise the model is told the name and nothing else —
+// no history is better than somebody else's.
 export async function buildPlayerContext(
   supabase: SupabaseClient,
   playerName?: string,
+  playerId?: string | null,
 ): Promise<string> {
   const name = (playerName || '').trim()
-  if (!name) return ''
+  if (!name && !playerId) return ''
   const parts: string[] = []
+  let id: string | null = null
+  // Does this name belong to one player only? Decides whether rows that carry a
+  // name and no id (written before ids existed) may be read as theirs.
+  let nameIsUnique = false
 
   try {
     // The player record (stage, standard, goal, age) if present.
-    const { data: players } = await supabase
-      .from('coach_players')
-      .select('*')
-      .ilike('name', name)
-      .limit(1)
-    const p = players?.[0] as Record<string, unknown> | undefined
+    const { data: named } = name
+      ? await supabase.from('coach_players').select('*').ilike('name', name.replace(/[\\%_]/g, m => `\\${m}`)).limit(20)
+      : { data: null }
+    const namesakes = ((named || []) as Record<string, unknown>[])
+      .filter(r => String(r.name || '').trim().toLowerCase() === name.toLowerCase())
+    nameIsUnique = namesakes.length === 1
+    let p: Record<string, unknown> | undefined
+    if (playerId) {
+      p = namesakes.find(r => r.id === playerId)
+      if (!p) {
+        const { data: byId } = await supabase.from('coach_players').select('*').eq('id', playerId).limit(1)
+        p = byId?.[0] as Record<string, unknown> | undefined
+      }
+    } else if (nameIsUnique) {
+      p = namesakes[0]
+    }
     if (p) {
+      id = String(p.id)
       const bits = [
         p.age ? `age ${p.age}` : '',
         p.racket_stage ? `stage ${p.racket_stage}` : '',
         p.standard ? `standard ${p.standard}` : '',
       ].filter(Boolean).join(', ')
-      parts.push(`Player: ${name}${bits ? ` (${bits})` : ''}.`)
+      parts.push(`Player: ${name || p.name}${bits ? ` (${bits})` : ''}.`)
       if (p.goal) parts.push(`Current development goal: ${p.goal}.`)
-      if (p.notes) parts.push(`Coach notes on file: ${p.notes}.`)
+      // NOT the roster note (coach_players.notes). It is the coach's own, and
+      // everything this context feeds — a session plan, a lesson write-up,
+      // targets, a welcome pack — is read by the family. It used to go in with
+      // an instruction not to repeat it; an instruction is not a guarantee, so
+      // the note is no longer sent at all.
     } else {
       parts.push(`Player: ${name}.`)
     }
   } catch { /* table/columns may vary — skip silently */ }
 
   try {
-    // Recent sessions = the running memory of what's been worked on.
-    const { data: sessions } = await supabase
-      .from('coach_sessions')
-      .select('player_name, session_date, focus, rating, summary, ai_review, review_json')
-      .ilike('player_name', name)
-      .order('session_date', { ascending: false })
-      .limit(5)
-    const rows = (sessions || []) as SessionRow[]
+    // Recent sessions = the running memory of what's been worked on. Theirs by
+    // id; plus name-only rows, but only when the name is nobody else's.
+    const cols = 'id, player_name, session_date, focus, rating, summary, ai_review, review_json'
+    const [{ data: mine }, { data: old }] = await Promise.all([
+      id
+        ? supabase.from('coach_sessions').select(cols).eq('player_id', id).order('session_date', { ascending: false }).limit(5)
+        : Promise.resolve({ data: null }),
+      name && nameIsUnique
+        ? supabase.from('coach_sessions').select(cols).is('player_id', null).ilike('player_name', name.replace(/[\\%_]/g, m => `\\${m}`)).order('session_date', { ascending: false }).limit(5)
+        : Promise.resolve({ data: null }),
+    ])
+    const rows = ([...(mine || []), ...(old || [])] as (SessionRow & { id?: string })[])
+      .sort((a, b) => String(b.session_date || '').localeCompare(String(a.session_date || '')))
+      .slice(0, 5)
     if (rows.length) {
       const lines = rows.map(s => {
         const next = s.review_json?.nextFocus
-        const note = (s.ai_review || s.summary || '').replace(/\s+/g, ' ').trim().slice(0, 180)
+        // What this context feeds is often read by the family (a review, targets,
+        // a welcome pack), so a lesson's text goes in without the coach's private
+        // note — older rows carry it inside these two columns.
+        const shared = sharedLessonText(s)
+        const note = (shared.aiReview || shared.summary).replace(/\s+/g, ' ').trim().slice(0, 180)
         return `- ${s.session_date || 'recent'}: focus "${s.focus || 'general'}"${s.rating ? `, rated ${s.rating}/5` : ''}${next ? `, next focus was "${next}"` : ''}${note ? `. ${note}` : ''}`
       })
       parts.push(`Recent session history (most recent first):\n${lines.join('\n')}`)
@@ -169,12 +207,11 @@ export async function buildPlayerContext(
   } catch { /* skip silently */ }
 
   try {
-    // Skill scores give a snapshot of technical strengths/gaps.
-    const { data: skills } = await supabase
-      .from('coach_player_skills')
-      .select('*')
-      .ilike('player_name', name)
-      .limit(40)
+    // Skill scores give a snapshot of technical strengths/gaps. They hang off
+    // the player's id — there is no name on a skill row to match.
+    const { data: skills } = id
+      ? await supabase.from('coach_player_skills').select('*').eq('player_id', id).limit(40)
+      : { data: null }
     const rows = (skills || []) as SkillRow[]
     if (rows.length) {
       const scored = rows.filter(s => s.skill).map(s => `${s.skill} ${s.mastery || (s.score != null ? `${s.score}` : '')}`.trim())

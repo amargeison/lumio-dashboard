@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { sessionCoachId, serviceClient, publicOrigin } from '@/lib/coach/oauth'
 import { exchangeInviteCode } from '@/lib/coach/discord'
+import { safeReturnPath } from '../../oauth/safe-return'
 
 export const runtime = 'nodejs'
 
@@ -15,7 +16,8 @@ export async function GET(req: NextRequest) {
   const origin = publicOrigin(req.nextUrl.origin)
   const store = await cookies()
   const saved = store.get('lumio_discord_state')?.value
-  const ret = store.get('lumio_discord_return')?.value || '/'
+  // A path on this site only — the cookie is copied from the address bar.
+  const ret = safeReturnPath(store.get('lumio_discord_return')?.value)
   const back = (status: string) => {
     const sep = ret.includes('?') ? '&' : '?'
     const res = NextResponse.redirect(new URL(`${ret}${sep}discord=${status}`, origin))

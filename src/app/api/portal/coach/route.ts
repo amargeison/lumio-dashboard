@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getMembership, scopedDb, signAvatar } from '@/lib/coach/membership'
+import { getMemberships, scopedDb, signAvatar } from '@/lib/coach/membership'
 
 export const runtime = 'nodejs'
 
@@ -7,8 +7,9 @@ export const runtime = 'nodejs'
 // academy AND to rows assigned to THIS coach only (assigned_coach). A sub-coach
 // never sees other coaches, other coaches' players, payments or academy admin.
 export async function GET() {
-  const m = await getMembership()
-  if (!m || m.role !== 'coach') return NextResponse.json({ error: 'No access' }, { status: 403 })
+  // Their COACH membership — the same person may also be a parent here.
+  const m = (await getMemberships())?.active.find(x => x.role === 'coach')
+  if (!m) return NextResponse.json({ error: 'No access' }, { status: 403 })
   if (!m.scopeCoachName) return NextResponse.json({ error: 'No coach scope' }, { status: 403 })
 
   const db = scopedDb()

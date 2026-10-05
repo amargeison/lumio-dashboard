@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { checkEffortInput, EFFORT_LIMITS } from '@/lib/coach/effort-score'
 
 // ─── Lumio Tennis Coach — smartwatch effort ingest ──────────────────────────
 // A player's own watch posts a per-session EFFORT summary here (via an Apple
@@ -118,50 +119,62 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Wearable consent not recorded for this player' }, { status: 403 })
   }
 
-  const duration = num(body.duration_min) ?? 0
-  if (duration < MIN_DURATION_MIN) {
-    return NextResponse.json({ error: `Session too short (min ${MIN_DURATION_MIN} min)` }, { status: 422 })
-  }
+  // Believable values only (the shared limits in effort-score.ts): a session of
+  // 999,999 minutes dated 2099 used to be stored and scored as it came.
+  const input = checkEffortInput(body, MIN_DURATION_MIN)
+  if (!input.ok) return NextResponse.json({ error: input.error }, { status: 422 })
+  const duration = input.duration
+  const distance = input.distance
 
-  const avgHr = num(body.avg_hr)
-  const maxHr = num(body.max_hr)
-  const kcal = num(body.active_kcal)
-  const distance = num(body.distance_m)
+  // A watch with no reading sends 0 or nothing: that is "no reading", not an
+  // error. Anything else outside what a body can do is refused.
+  const reading = (v: unknown, lo: number, hi: number): number | null | 'bad' => {
+    const n = num(v)
+    if (n == null || n === 0) return null
+    return n < lo || n > hi ? 'bad' : Math.round(n)
+  }
+  const avgHr = reading(body.avg_hr, 30, 250)
+  const maxHr = reading(body.max_hr, 30, 250)
+  const kcal = reading(body.active_kcal, 1, 10_000)
+  if (avgHr === 'bad' || maxHr === 'bad') return NextResponse.json({ error: 'Heart rate should be between 30 and 250.' }, { status: 422 })
+  if (kcal === 'bad') return NextResponse.json({ error: 'Calories should be between 0 and 10,000.' }, { status: 422 })
   const age = num((player as any).age)
 
   const s = score({ duration, avgHr, maxHr, kcal, distance, age })
 
-  const { error: insErr } = await db.from('coach_watch_sessions').insert({
-    coach_id: (player as any).coach_id,
-    player_id: (player as any).id,
-    source: body.source || 'apple_watch',
-    started_at: body.started_at || new Date().toISOString(),
-    duration_min: duration,
-    avg_hr: avgHr,
-    max_hr: maxHr,
-    active_kcal: kcal,
-    distance_m: distance,
-    effort_score: s.effort,
-    movement_score: s.movement,
-    consistency_score: s.consistency,
-    xp_awarded: s.xp,
-    estimated: s.estimated,
-    raw: body,
-  })
-  if (insErr) { console.error('[coach/watch/ingest]', insErr.message); return NextResponse.json({ error: 'Could not save session' }, { status: 500 }) }
+  // 'manual' is the typed-in kind and has its own daily limit; a watch cannot
+  // claim to be one.
+  const source = String(body.source || '').trim().slice(0, 40)
+  // The token is the secret that lets a watch post for this player. It is not
+  // kept with the session.
+  const { token: _token, ...raw } = body
+  void _token
 
-  // Bump the player's running XP total (atomic-ish read-modify-write; fine for
-  // the pilot volume — move to an RPC/trigger if contention ever matters).
-  const { data: cur } = await db.from('coach_players').select('xp_total').eq('id', (player as any).id).maybeSingle()
-  const newTotal = (Number((cur as any)?.xp_total) || 0) + s.xp
-  await db.from('coach_players').update({ xp_total: newTotal }).eq('id', (player as any).id)
+  // Saved and counted in one step in the database (migration 195): the same
+  // workout (same player, same start time) is counted once however many times
+  // the watch sends it, the daily limit holds, and the XP total is added to
+  // rather than read and written back.
+  const { data, error } = await db.rpc('lumio_log_effort', {
+    p_coach: (player as any).coach_id, p_player: (player as any).id,
+    p_source: !source || source === 'manual' ? 'apple_watch' : source, p_started: input.startedAt,
+    p_duration: duration, p_avg_hr: avgHr, p_max_hr: maxHr, p_kcal: kcal, p_distance: distance,
+    p_effort: s.effort, p_movement: s.movement, p_consistency: s.consistency, p_xp: s.xp, p_estimated: s.estimated,
+    p_raw: raw, p_daily_cap: EFFORT_LIMITS.watchPerDay,
+  })
+  const out = (data || {}) as { status?: string; xp_total?: number }
+  if (error || !out.status || out.status === 'no_player') { console.error('[coach/watch/ingest]', error?.message || out.status); return NextResponse.json({ error: 'Could not save session' }, { status: 500 }) }
+  if (out.status === 'cap') return NextResponse.json({ error: `${EFFORT_LIMITS.watchPerDay} watch sessions are already recorded for that day, which is the most that count.` }, { status: 429 })
+  // Already recorded: answer 200 so a watch that retries does not keep trying,
+  // but award nothing.
+  const duplicate = out.status === 'duplicate'
 
   return NextResponse.json({
     ok: true,
+    duplicate,
     player: String((player as any).name || '').trim().split(/\s+/)[0] || 'Player',
     scores: { effort: s.effort, movement: s.movement, consistency: s.consistency },
-    xp_awarded: s.xp,
-    xp_total: newTotal,
+    xp_awarded: duplicate ? 0 : s.xp,
+    xp_total: out.xp_total ?? null,
     estimated: s.estimated,
   })
 }

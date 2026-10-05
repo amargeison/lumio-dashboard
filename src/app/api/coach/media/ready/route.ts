@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { serviceClient } from '@/lib/coach/oauth'
+import { coachGate } from '@/lib/coach/membership'
+import { coachPlayerIds } from '@/lib/coach/media-rules'
 
 // Is the uploaded object actually readable back yet?
 //
@@ -15,21 +17,27 @@ import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
 // service-role signed URL), so a "ready" here means /process can genuinely open
 // the file — not merely that a row exists.
 export async function POST(req: NextRequest) {
-  const coachId = await sessionCoachId()
-  if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // The academy whose portal the coach is in; an invited coach, their own
+  // players' recordings only (see media-rules.ts).
+  const who = await coachGate()
+  if (!who.ok) return NextResponse.json({ error: who.error }, { status: who.status })
   // A demo account is signed in too. Only a real academy may use this.
-  if (!await isAcademyUser(coachId)) return notAnAcademy()
+  if (!await isAcademyUser(who.userId)) return notAnAcademy()
+  const coachId = who.seat.academyId
+  const mine = who.seat.isHead ? null : who.seat.staffId   // an invited coach: their own coach record
 
   const body = (await req.json().catch(() => ({}))) as { id?: string; ids?: string[] }
   const ids = (Array.isArray(body.ids) && body.ids.length ? body.ids : (body.id ? [body.id] : [])).filter(Boolean)
   if (!ids.length) return NextResponse.json({ error: 'Missing media id(s)' }, { status: 400 })
 
   const sb = serviceClient()
-  const { data: rows } = await sb.from('coach_media')
-    .select('id, storage_path').in('id', ids).eq('coach_id', coachId)
+  const { data: found } = await sb.from('coach_media')
+    .select('id, storage_path, player_id').in('id', ids).eq('coach_id', coachId)
+  const theirs = mine ? await coachPlayerIds(sb, coachId, mine) : null
+  const rows = (found || []).filter(r => !theirs || (!!r.player_id && theirs.has(r.player_id as string)))
 
   // A row we can't even see yet is "not ready" — never an error; the caller polls.
-  if (!rows || rows.length !== ids.length) {
+  if (rows.length !== ids.length) {
     return NextResponse.json({ ready: false, pending: ids })
   }
 

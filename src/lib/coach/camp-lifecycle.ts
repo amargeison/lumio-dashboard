@@ -15,9 +15,14 @@ export type StageId = 'signup' | 'details' | 'two_weeks' | 'one_week' | 'tomorro
 export type Stage = {
   id: StageId
   label: string
-  // Days relative to the camp START date. Negative is before, positive after.
-  // `null` means "not on the clock" — it fires from an event instead.
+  // Days relative to the camp START date (or to its last day, see `from`).
+  // Negative is before, positive after. `null` means "not on the clock" — it
+  // fires from an event instead.
   offsetDays: number | null
+  // 'end' counts from the camp's LAST day instead of its first. "How it went"
+  // is the only one: counted from the start it arrived on day three of a
+  // five-day camp, while the children were still on court.
+  from?: 'end'
   // What this email is for, in the coach's language. Shown in the Emails tab
   // and given to Lumio Coach as the brief.
   job: string
@@ -44,7 +49,7 @@ export const STAGES: Stage[] = [
     job: 'Turn admin into anticipation: what day one looks like and what they will work on first.' },
   { id: 'tomorrow', label: 'See you tomorrow', offsetDays: -1, lateStill: true,
     job: 'Short. Time, address, map, the coach’s number, and three things to pack tonight.' },
-  { id: 'after', label: 'How it went', offsetDays: 2,
+  { id: 'after', label: 'How it went', offsetDays: 2, from: 'end',
     job: 'Their report and certificate, what to keep working on, and the next camp if one is open.' },
 ]
 
@@ -60,16 +65,25 @@ export function dayStart(iso?: string | null): number | null {
   return Number.isNaN(t) ? null : t
 }
 
-/** When a stage is due for a camp, or null if it has no clock / no start date. */
-export function dueAt(stage: Stage, campStart?: string | null): number | null {
+/**
+ * When a stage is due for a camp, or null if it has no clock / no start date.
+ * A camp with no end date (or one typed before its start) is a one-day camp,
+ * so its last day is its first.
+ */
+export function dueAt(stage: Stage, campStart?: string | null, campEnd?: string | null): number | null {
   if (stage.offsetDays == null) return null
   const start = dayStart(campStart)
-  return start == null ? null : start + stage.offsetDays * DAY
+  if (start == null) return null
+  const end = dayStart(campEnd)
+  const anchor = stage.from === 'end' && end != null && end > start ? end : start
+  return anchor + stage.offsetDays * DAY
 }
 
 export type Attendee = {
   id: string
   signed_up_at?: string | null
+  /** When the row was made — the joining time of a child the coach added by hand. */
+  created_at?: string | null
   status?: string | null
 }
 
@@ -95,6 +109,7 @@ export function decide(opts: {
   stage: Stage
   now: number
   campStart?: string | null
+  campEnd?: string | null
   attendee: Attendee
   paused?: boolean | null
   alreadyLogged: boolean
@@ -102,11 +117,15 @@ export function decide(opts: {
   /** For conditional stages: is there actually anything to say? */
   hasReason?: boolean
 }): Decision {
-  const { stage, now, campStart, attendee, paused, alreadyLogged, overrideSkip, hasReason } = opts
+  const { stage, now, campStart, campEnd, attendee, paused, alreadyLogged, overrideSkip, hasReason } = opts
   const id = stage.id
 
   if (alreadyLogged) return { action: 'skip', stage: id, reason: 'already handled', terminal: false }
-  if (overrideSkip) return { action: 'skip', stage: id, reason: 'skipped by the coach', terminal: true }
+  // NOT terminal. "Don't send this one" is a switch the coach can turn back
+  // off, so it is re-read on every run like the pause below it. Written to the
+  // log as a decision, it was recorded for everybody at the next hourly run —
+  // weeks before the email was due — and unticking it then changed nothing.
+  if (overrideSkip) return { action: 'skip', stage: id, reason: 'skipped by the coach', terminal: false }
   if (paused) return { action: 'skip', stage: id, reason: 'emails paused for this camp', terminal: false }
   if ((attendee.status || '') === 'cancelled') return { action: 'skip', stage: id, reason: 'attendee cancelled', terminal: false }
 
@@ -117,7 +136,7 @@ export function decide(opts: {
     return { action: 'skip', stage: id, reason: 'payment still outstanding', terminal: false }
   }
 
-  const due = dueAt(stage, campStart)
+  const due = dueAt(stage, campStart, campEnd)
   if (due == null) return { action: 'skip', stage: id, reason: 'camp has no start date', terminal: false }
 
   // ── The late sign-up rule ──────────────────────────────────────────────────
@@ -134,7 +153,12 @@ export function decide(opts: {
     }
   }
 
-  const signedUp = attendee.signed_up_at ? Date.parse(attendee.signed_up_at) : null
+  // When they joined the camp: the sign-up time, or — for a child the coach
+  // added from the roster, which has no sign-up time — when that place was made.
+  // Without the second, a child added by the coach was sent a stage that two
+  // families who signed up online the same evening were (rightly) not.
+  const joined = attendee.signed_up_at || attendee.created_at
+  const signedUp = joined ? Date.parse(joined) : null
   if (signedUp != null && !Number.isNaN(signedUp) && due < signedUp && !stage.lateStill) {
     return {
       action: 'skip', stage: id,
@@ -165,10 +189,42 @@ export function foldedIntoConfirmation(campStart: string | null | undefined, sig
     .map(s => s.id)
 }
 
+/**
+ * Is this log row left over from the camp's OLD dates?
+ *
+ * A row records a decision — sent, skipped, failed — and a coach can move the
+ * camp afterwards. Two rules, and the first always wins:
+ *
+ *   • An email that was SENT stays sent, wherever the camp moves. It is a
+ *     record of something a family received: it is never removed, never
+ *     rewritten, and that email is never sent to them again for this camp.
+ *     (It used to be discarded whenever it had been written before the NEW
+ *     due date — which is every email already sent, the moment a camp is
+ *     postponed by a day. "A week to go" then went out twice and the older
+ *     ones were re-recorded as "skipped — too late to be useful".)
+ *   • A skip or a failure was a judgement about a particular date ("the camp
+ *     has already started", "too late to be useful"). If the date it was made
+ *     for is not the date now, it is made again. Rows from before the due date
+ *     was recorded are judged on when they were written.
+ */
+export function logOutOfDate(
+  row: { status?: string | null; sent_at?: string | null; due_at?: string | null },
+  stage: Stage, campStart?: string | null, campEnd?: string | null,
+): boolean {
+  // Sent, or being sent this minute: settled.
+  if (row.status === 'sent' || row.status === 'sending') return false
+  const due = dueAt(stage, campStart, campEnd)
+  if (due == null) return false
+  const dueThen = row.due_at ? Date.parse(row.due_at) : NaN
+  if (!Number.isNaN(dueThen)) return dueThen !== due
+  const written = row.sent_at ? Date.parse(row.sent_at) : NaN
+  return !Number.isNaN(written) && written < due
+}
+
 /** Human-readable due date for the coach's Emails tab. */
-export function dueLabel(stage: Stage, campStart?: string | null): string {
+export function dueLabel(stage: Stage, campStart?: string | null, campEnd?: string | null): string {
   if (stage.offsetDays == null) return 'On sign-up'
-  const due = dueAt(stage, campStart)
+  const due = dueAt(stage, campStart, campEnd)
   if (due == null) return 'Needs a start date'
   return new Date(due).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }

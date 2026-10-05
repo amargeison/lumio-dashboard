@@ -148,6 +148,24 @@ export function tidyPersonName(raw: string): string {
 }
 
 /**
+ * Text as it is COMPARED, never as it is saved. Differences in typing are not
+ * differences in meaning: Word and Excel turn O'Neill into O’Neill (a curly
+ * apostrophe), a hyphen into a long dash and a space into a no-break space, and
+ * the same child then looked like a second child. Capitals, doubled spaces and
+ * invisible characters are folded away too.
+ */
+export function foldText(v: unknown): string {
+  return String(v ?? '').normalize('NFKC')
+    .replace(/[\u2018\u2019\u201A\u201B\u02BC\u02B9\u0060\u00B4\u2032]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+    .replace(/[\u2010-\u2015\u2212]/g, '-')
+    .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '')
+    .replace(/\s+/g, ' ').trim().toLowerCase()
+}
+/** A person's name, for telling whether two rows are the same person. */
+export const personKey = (n: unknown): string => foldText(tidyPersonName(String(n ?? '')))
+
+/**
  * Is this plausibly a person? A totals line ("TOTAL BOOKED: 37 / 48"), a group
  * on a timetable ("Orange Squad – Priya (Ct 3)", "COURTS CLOSED") and a section
  * heading ("▼ RED STAGE") all land in a name column sooner or later. None of
@@ -162,6 +180,46 @@ export function isPersonName(name: string): boolean {
   if (/\d|[:/@▼►■•]| [–—-] /.test(bare)) return false
   if (/\b(total|totals|average|avg|booked|squad|group|sessions?|tennis|cardio|closed|maintenance|improvers|beginners|lessons?|timetable|various|tbc|tba|register|n\/a|unknown)\b/i.test(s)) return false
   return /\p{L}{2}/u.test(s)
+}
+
+/**
+ * Are these two the same person? The same name, and nothing that says
+ * otherwise: where both have an email they must share one, and where neither
+ * comparison can be made on email, ages more than a year apart mean two people.
+ * Two children called Amy Clark with different parents are two players; Amy
+ * Clark on a camp sheet with only her name is the Amy Clark on the roster.
+ *
+ * Shared by the tidy-up of what a file holds and by the save, which checks
+ * every record against what the academy already has.
+ */
+export function samePerson(
+  a: { name?: unknown; age?: unknown; email?: unknown; parent_email?: unknown; contact_email?: unknown },
+  b: { name?: unknown; age?: unknown; email?: unknown; parent_email?: unknown; contact_email?: unknown },
+): boolean {
+  const key = personKey
+  if (!key(a.name) || key(a.name) !== key(b.name)) return false
+  const emails = (p: typeof a) => [p.email, p.parent_email, p.contact_email].map(e => String(e ?? '').trim().toLowerCase()).filter(Boolean)
+  const ea = emails(a), eb = emails(b)
+  if (ea.length && eb.length) return ea.some(e => eb.includes(e))
+  const has = (v: unknown) => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v))
+  if (has(a.age) && has(b.age)) return Math.abs(Number(a.age) - Number(b.age)) <= 1
+  return true
+}
+
+/**
+ * Why a row that has something in its name column was left out — or null when
+ * it is only a blank line, a repeated heading or a totals row, which nobody
+ * needs telling about. A row dropped without a word looked like the importer
+ * losing a child.
+ */
+export function whyNotRecord(category: ImportCategory, raw: Record<string, unknown>): string | null {
+  const label = String(raw[LABEL_FIELD[category]] ?? '').replace(/\s+/g, ' ').trim()
+  if (!label) return null
+  if (/^(total|totals|sub-?total|grand total|average|avg|name|player|player name|item|title|court|camp|traveller|child)\b/i.test(label)) return null
+  if ((category === 'players' || category === 'staff') && !isPersonName(tidyPersonName(label))) {
+    return `“${label.slice(0, 60)}” does not look like a person’s name (a name cannot have numbers, slashes or symbols in it)`
+  }
+  return null
 }
 
 const LABELS: Record<string, string> = {
@@ -237,7 +295,7 @@ export type SheetPlan = {
 }
 
 /** Every row of a mapped tab as records. Pure, so a 20,000-row tab costs nothing but a loop. */
-export function applyPlan(plan: SheetPlan, rows: string[][], banners: number[] = []): Record<string, unknown>[] {
+export function applyPlan(plan: SheetPlan, rows: string[][], banners: number[] = [], skipped?: string[]): Record<string, unknown>[] {
   if (plan.category === 'skip' || plan.irregular) return []
   const cat = plan.category
   const allowed = new Set(IMPORT_FIELDS[cat])
@@ -298,7 +356,12 @@ export function applyPlan(plan: SheetPlan, rows: string[][], banners: number[] =
     // Which venue a court is at is, in a block layout, only ever said by the banner.
     if (cat === 'courts' && section && !rec.location) rec.location = section
     const clean = cleanRecord(cat, rec)
-    if (!clean) continue
+    if (!clean) {
+      // Left out — and said so, when the row plainly held something.
+      const why = skipped ? whyNotRecord(cat, rec) : null
+      if (why) skipped!.push(why)
+      continue
+    }
     // Not a column of any table — carried alongside so an attendee list knows
     // who has paid. The save route only writes known columns, so it never lands.
     if (typeof plan.paid_column === 'number') clean._paid = saysPaid(row[plan.paid_column])
@@ -330,6 +393,16 @@ export function campsMatch(a: { name?: unknown; start_date?: unknown }, b: { nam
   return (sameStart && shared >= 2) || (oneUndated && inside)
 }
 
+/**
+ * Is this camp already in the academy? campsMatch, except that two camps which
+ * both have a start date must start on the same day: "Summer Camp" in 2025 and
+ * "Summer Camp" in 2026 are two camps, and the second must still be imported.
+ */
+export function sameCamp(a: { name?: unknown; start_date?: unknown }, b: { name?: unknown; start_date?: unknown }): boolean {
+  if (a.start_date && b.start_date && String(a.start_date).slice(0, 10) !== String(b.start_date).slice(0, 10)) return false
+  return campsMatch(a, b)
+}
+
 /** "✓", "Paid", "Yes", "PAID" → true; "Owes", "part (£75)", "BACS pending", "" → false. */
 export function saysPaid(v: unknown): boolean {
   const s = String(v ?? '').trim().toLowerCase()
@@ -346,7 +419,7 @@ export function saysPaid(v: unknown): boolean {
  */
 export function dedupeRecords(category: ImportCategory, recs: Record<string, unknown>[]): Record<string, unknown>[] {
   const label = LABEL_FIELD[category]
-  const norm = (v: unknown) => String(v ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
+  const norm = foldText
   const keyOf = (r: Record<string, unknown>): string => {
     // Payments and kit: only an identical line is a duplicate. Two £30 lessons
     // for one child are two payments; "Junior rackets" in 23", 25" and 26" are
@@ -377,8 +450,16 @@ export function dedupeRecords(category: ImportCategory, recs: Record<string, unk
       if (!isPersonName(name)) continue
       r = { ...r, name }
     }
-    const key = keyOf(r)
+    let key = keyOf(r)
     if (!key || key === '|') continue
+    if (category === 'players') {
+      // One name, two families: kept as two players (see samePerson).
+      for (let n = 1; byKey.has(key) && !samePerson(byKey.get(key)!, r); n++) key = `${keyOf(r)}#${n}`
+    }
+    if (category === 'camps') {
+      // One name, two sets of dates: two camps (see sameCamp).
+      for (let n = 1; byKey.has(key) && !sameCamp(byKey.get(key)!, r); n++) key = `${keyOf(r)}#${n}`
+    }
     const have = byKey.get(key)
     if (!have) { byKey.set(key, { ...r }); continue }
     merge(have, r)
@@ -407,7 +488,7 @@ export function dedupeRecords(category: ImportCategory, recs: Record<string, unk
       for (let j = i + 1; j < entries.length; j++) {
         const [kb, b] = entries[j]
         if (!byKey.has(kb)) continue
-        if (campsMatch(a, b)) { merge(a, { ...b, name: undefined }); byKey.delete(kb) }
+        if (sameCamp(a, b)) { merge(a, { ...b, name: undefined }); byKey.delete(kb) }
       }
     }
   }

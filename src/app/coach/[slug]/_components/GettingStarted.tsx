@@ -54,7 +54,7 @@ export function GettingStarted({ T, accent, steps, onNavigate }: {
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 13.5, fontWeight: 800, color: T.text }}>Getting started</span>
         <span style={{ fontSize: 11.5, color: T.text3 }}>{done} of {total} done</span>
-        <button
+        <button className="cm-tap"
           onClick={() => setSettings({ gettingStarted: false })}
           title="Hide this — you can bring it back in Settings"
           style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 11.5, cursor: 'pointer', fontFamily: FONT }}>

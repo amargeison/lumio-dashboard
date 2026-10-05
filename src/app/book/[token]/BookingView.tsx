@@ -21,6 +21,8 @@ type Head = {
   venue: { name: string; address: string | null } | null
   note: string | null
   invitedName: string; invitedEmail: string; known: boolean
+  /** False when the academy does not email booking confirmations. */
+  emails?: boolean
   days: Day[]; closed?: string; error?: string
 }
 
@@ -121,7 +123,7 @@ export default function BookingView({ token }: { token: string }) {
   }
 
   if (done) {
-    const d = new Date(`${done.date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+    const d = new Date(`${done.date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
     return page(
       <div style={{ ...card, textAlign: 'center' }}>
         <div style={{ fontSize: 38 }}>🎾</div>
@@ -132,7 +134,9 @@ export default function BookingView({ token }: { token: string }) {
         <p style={{ fontSize: 14.5, color: '#6b7280', lineHeight: 1.6, marginTop: 14 }}>
           {done.emailed
             ? 'A confirmation is on its way to your inbox, with the address and an add-to-calendar link. See you on court.'
-            : 'Your coach has it in their diary. If a confirmation email doesn’t arrive, give them a nudge.'}
+            : head.emails === false
+              ? 'Your coach has it in their diary. Make a note of the day and time — this academy doesn’t send confirmation emails.'
+              : 'Your coach has it in their diary. If a confirmation email doesn’t arrive, give them a nudge.'}
         </p>
       </div>,
     )
@@ -180,9 +184,9 @@ export default function BookingView({ token }: { token: string }) {
                   border: `1px solid ${on ? ACCENT : '#dfe3ec'}`, background: on ? ACCENT : '#fff', color: on ? '#fff' : '#1a1d29',
                   borderRadius: 12, padding: '9px 6px', fontFamily: 'inherit',
                 }}>
-                <div style={{ fontSize: 11, opacity: .8 }}>{dt.toLocaleDateString('en-GB', { weekday: 'short' })}</div>
+                <div style={{ fontSize: 11, opacity: .8 }}>{dt.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' })}</div>
                 <div style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.2 }}>{dt.getUTCDate()}</div>
-                <div style={{ fontSize: 10.5, opacity: .8 }}>{dt.toLocaleDateString('en-GB', { month: 'short' })}</div>
+                <div style={{ fontSize: 10.5, opacity: .8 }}>{dt.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })}</div>
               </button>
             )
           })}
@@ -251,10 +255,10 @@ export default function BookingView({ token }: { token: string }) {
               background: busy ? '#9bbfe4' : ACCENT, color: '#fff', fontSize: 16, fontWeight: 700,
               cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit',
             }}>
-            {busy ? 'Booking…' : `Book ${time} on ${new Date(`${day!.date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}`}
+            {busy ? 'Booking…' : `Book ${time} on ${new Date(`${day!.date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })}`}
           </button>
           <div style={{ fontSize: 12, color: '#9aa1ad', textAlign: 'center', marginTop: 10, lineHeight: 1.5 }}>
-            Your coach gets this straight away, and you’ll get a confirmation email.
+            {head.emails === false ? 'Your coach gets this straight away.' : 'Your coach gets this straight away, and you’ll get a confirmation email.'}
           </div>
         </div>
       )}

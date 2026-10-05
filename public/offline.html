@@ -33,9 +33,28 @@
   <div class="card">
     <div class="icon">📡</div>
     <h1>You&rsquo;re offline</h1>
-    <p>Last cached portal data will load when you&rsquo;re back online. Briefings and recently-viewed pages stay available; live data resumes once connectivity returns.</p>
+    <p>Lumio needs a connection to show your portal, and nothing is kept on this device to show without one. This page will reload by itself as soon as you are back online.</p>
     <button onclick="location.reload()">Try again</button>
-    <div class="hint">Lumio Sports · Offline mode</div>
+    <div class="hint" id="state">Waiting for a connection&hellip;</div>
   </div>
+  <script>
+    // Come back without being asked. The browser's "online" event is the quick
+    // path; it is not reliable on every phone (and says nothing when the wifi
+    // is up but the internet is not), so also quietly test the page itself
+    // every few seconds and reload the moment the server answers.
+    (function () {
+      var busy = false
+      function check() {
+        if (busy) return
+        busy = true
+        fetch(location.href, { method: 'HEAD', cache: 'no-store' })
+          .then(function () { location.reload() })
+          .catch(function () { busy = false })
+      }
+      window.addEventListener('online', check)
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) check() })
+      setInterval(check, 5000)
+    })()
+  </script>
 </body>
 </html>

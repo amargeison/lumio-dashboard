@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { serviceClient } from '@/lib/coach/oauth'
+import { coachGate } from '@/lib/coach/membership'
 import { sendAsCoach } from '@/lib/coach/mail'
 import { sendEmail } from '@/lib/emails/send'
 import { publicSiteOrigin } from '@/lib/public-origin'
-import { formEmailBlock, formEnabled, formUrl } from '@/lib/coach/camp-form'
+import { formDone, formEmailBlock, formEnabled, formUrl } from '@/lib/coach/camp-form'
 import { recipientFor } from '@/lib/coach/camp-email-build'
 
 export const runtime = 'nodejs'
@@ -20,8 +21,12 @@ export const maxDuration = 120
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string))
 
 export async function POST(req: NextRequest) {
-  const coachId = await sessionCoachId()
-  if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // The academy in the portal's address, and only its head coach (see coachGate):
+  // a coach who also helps at another academy must not act on their own club
+  // from inside the other one's portal.
+  const seat = await coachGate({ headOnly: true })
+  if (!seat.ok) return NextResponse.json({ error: seat.error }, { status: seat.status })
+  const coachId = seat.seat.academyId
   // A demo account is signed in too. Only a real academy may use this.
   if (!await isAcademyUser(coachId)) return notAnAcademy()
   const body = await req.json().catch(() => ({})) as { campId?: string; attendeeId?: string }
@@ -33,13 +38,17 @@ export async function POST(req: NextRequest) {
     if (!camp) return NextResponse.json({ error: 'Camp not found' }, { status: 404 })
     if (!formEnabled(camp)) return NextResponse.json({ error: 'The form is switched off for this camp.' }, { status: 400 })
 
-    let q = db.from('coach_camp_attendees').select('*').eq('camp_id', camp.id).eq('coach_id', coachId).is('form_submitted_at', null)
+    // "Not filled in" means not finished AS ASKED TODAY — somebody who answered
+    // before a required question was added is asked for it with the others.
+    let q = db.from('coach_camp_attendees').select('*').eq('camp_id', camp.id).eq('coach_id', coachId)
     if (body.attendeeId) q = q.eq('id', body.attendeeId)
     const { data: rows } = await q
-    const attendees = (rows || []).filter(a => a.status !== 'cancelled' && a.form_token)
+    const attendees = (rows || []).filter(a => a.status !== 'cancelled' && a.form_token && !formDone(camp, a))
     const playerIds = attendees.map(a => a.player_id).filter(Boolean)
     const { data: players } = playerIds.length
-      ? await db.from('coach_players').select('id, name, age, parent_name, email, contact_email, parent_email').in('id', playerIds)
+      // This academy's players only — an attendee row pointing at somebody
+      // else's player must not hand over that family's address.
+      ? await db.from('coach_players').select('id, name, age, category, parent_name, email, contact_email, parent_email').in('id', playerIds).eq('coach_id', coachId)
       : { data: [] as Record<string, unknown>[] }
     const byId = new Map((players || []).map(p => [p.id as string, p]))
     const { data: profile } = await db.from('sports_profiles').select('brand_name, brand_logo_url, display_name, contact_email').eq('id', coachId).maybeSingle()

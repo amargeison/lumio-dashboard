@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
-import { stripe, getCoach, admin } from '../_stripe'
+import { stripe, getCoach, admin, getAcademy } from '../_stripe'
 import { publicSiteOrigin } from '@/lib/public-origin'
 
 export const runtime = 'nodejs'
@@ -11,6 +11,13 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
   // A demo account is signed in too. Only a real academy may use this.
   if (!await isAcademyUser(user.id)) return notAnAcademy()
+  // The academy's bank is the head coach's to connect. An assistant got as far
+  // as creating a Stripe account under their own id — one the academy would
+  // never be paid through and nobody would know existed.
+  const who = await getAcademy(user.id)
+  if (!who || who.staffId || who.academyId !== user.id) {
+    return NextResponse.json({ error: 'Only the head coach can connect the academy’s bank.' }, { status: 403 })
+  }
   if (!process.env.STRIPE_SECRET_KEY) return NextResponse.json({ error: 'Payments not configured yet' }, { status: 500 })
 
   const { returnPath = '/' } = (await req.json().catch(() => ({}))) as { returnPath?: string }
@@ -18,6 +25,7 @@ export async function POST(req: NextRequest) {
   // internal origin does not merely look wrong — it strands them on a dead URL at
   // the end of onboarding, with a Stripe account that exists but no way back.
   const origin = publicSiteOrigin(new URL(req.url).origin)
+  const backTo = typeof returnPath === 'string' && /^\/(?!\/)[\w\-./%]*$/.test(returnPath) ? returnPath : '/'
   const db = admin()
 
   try {
@@ -36,8 +44,8 @@ export async function POST(req: NextRequest) {
 
     const link = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}${returnPath}`,
-      return_url: `${origin}${returnPath}`,
+      refresh_url: `${origin}${backTo}`,
+      return_url: `${origin}${backTo}`,
       type: 'account_onboarding',
     })
     return NextResponse.json({ url: link.url })

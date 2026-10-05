@@ -2,6 +2,7 @@ import Stripe from 'stripe'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { coachSeat } from '@/lib/coach/membership'
 
 // Platform Stripe client (Lumio's account). Connected-account calls pass { stripeAccount }.
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, ({ apiVersion: '2024-06-20' }) as any)
@@ -27,16 +28,14 @@ export function admin() {
  * Whose bank a payment goes into. The head coach is the academy; an assistant
  * coach takes payments into the ACADEMY's connected account — only for their own
  * players (see assertOwnPlayer). staffId is null for the head coach.
+ *
+ * WHICH academy, for a coach at more than one: the one whose portal the request
+ * came from (see coachSeat). Money must never go to the academy the coach was
+ * not looking at.
  */
 export async function getAcademy(userId: string): Promise<{ academyId: string; staffId: string | null } | null> {
-  const db = admin()
-  const { data: own } = await db.from('sports_profiles').select('id, sport').eq('id', userId).maybeSingle()
-  if (own?.sport === 'coach') return { academyId: own.id, staffId: null }
-  const { data: m } = await db.from('coach_members')
-    .select('academy_id, staff_id, role').eq('member_user_id', userId).eq('status', 'active')
-    .order('created_at', { ascending: false }).limit(1).maybeSingle()
-  if (m?.role === 'coach' && m.staff_id) return { academyId: m.academy_id, staffId: m.staff_id }
-  return null
+  const seat = await coachSeat(userId)
+  return seat ? { academyId: seat.academyId, staffId: seat.staffId } : null
 }
 
 /** An assistant coach may only charge for a player assigned to them. */

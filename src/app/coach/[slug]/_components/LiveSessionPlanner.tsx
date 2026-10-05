@@ -9,12 +9,15 @@ import { useState, useEffect, useRef } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
-import { useCoachTable, useCoachProfile, dbInsert, dbRemove, invalidateCoachTable, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
+import { useCoachTable, useCoachProfile, dbInsert, dbUpdate, dbRemove, invalidateCoachTable, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
+import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 import { MediaCaptureModal } from './MediaCaptureModal'
 import { pollMedia } from '../_lib/media-upload'
 import { getSettings } from '../_lib/settings-store'
 import { stageWords } from '../_lib/stage-words'
+import { playerLabels } from '../_lib/tell-apart'
 import { avatarSrc } from '@/lib/avatar'
 import { campSpans, campsOn, campsBetween, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 
@@ -26,10 +29,34 @@ const isoD = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d
 const addD = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x }
 const mondayOfD = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); const wd = (x.getDay() + 6) % 7; x.setDate(x.getDate() - wd); return x }
 const toMins = (t: string | null) => { if (!t) return null; const m = t.match(/(\d{1,2})\s*:\s*(\d{2})/) || t.match(/^(\d{1,2})(\d{2})$/); if (m) return Math.min(23, +m[1]) * 60 + Math.min(59, +m[2]); const h = t.match(/^(\d{1,2})$/); return h ? +h[1] * 60 : null }
-const hhmm = (m: number) => `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`
+const hhmm = (m: number) => `${pad2(Math.floor(m / 60) % 24)}:${pad2(m % 60)}`
+// First LETTER of each word, by character — w[0] of a name that starts with an
+// emoji is half a character.
+const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => Array.from(w)[0]?.toUpperCase()).join('') || '?'
+const sameName = (a: unknown, b: unknown) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase()
+const ukDay = (d: string) => new Date(`${String(d).slice(0, 10)}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
 const WD3 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const typeCol = (T: ThemeTokens, accent: AccentTokens, t: string | null) => t === 'Group' ? '#3A8EE0' : t === 'Cardio' ? T.warn : t === 'Match play' ? T.good : t === 'Block' ? T.text3 : accent.hex
-const HRS = Array.from({ length: 14 }, (_, i) => 7 + i) // 07:00–20:00
+const HRS = Array.from({ length: 14 }, (_, i) => 7 + i) // 07:00–20:00, stretched by WeekGrid to fit earlier or later bookings
+
+// Side-by-side columns for bookings that overlap in time (the same rule as the
+// Booking Calendar): each run of overlapping bookings is split into the lanes it
+// needs, so none is drawn on top of another.
+function layoutLanes(items: { id: string; start: number; end: number }[]): Record<string, { lane: number; of: number }> {
+  const out: Record<string, { lane: number; of: number }> = {}
+  const sorted = [...items].sort((a, b) => a.start - b.start || a.end - b.end)
+  let cluster: typeof sorted = [], laneEnds: number[] = [], clusterEnd = -1
+  const flush = () => { for (const it of cluster) out[it.id].of = laneEnds.length; cluster = []; laneEnds = [] }
+  for (const it of sorted) {
+    if (cluster.length && it.start >= clusterEnd) flush()
+    let lane = laneEnds.findIndex(e => e <= it.start)
+    if (lane < 0) { lane = laneEnds.length; laneEnds.push(it.end) } else laneEnds[lane] = it.end
+    out[it.id] = { lane, of: 1 }
+    cluster.push(it); clusterEnd = Math.max(clusterEnd, it.end)
+  }
+  flush()
+  return out
+}
 const TYPES = ['Private', 'Group', 'Cardio', 'Match play', 'Mini / red ball'] as const
 type SType = typeof TYPES[number]
 
@@ -99,7 +126,15 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   const showSec = (k: string) => !sectOff.includes(k)
   const [open, setOpen] = useState(false)
   const [prefill, setPrefill] = useState<any | null>(null)
-  const [sel, setSel] = useState<any | null>(null)
+  const [editPlan, setEditPlan] = useState<any | null>(null)
+  const [selId, setSelId] = useState<string | null>(null)
+  // The open plan is looked up by id on every render, so an edit, a finished
+  // session or a moved booking shows at once instead of a stale copy.
+  const sel = selId ? plans.rows.find((pl: any) => String(pl.id) === selId) || null : null
+  const setSel = (pl: any | null) => setSelId(pl ? String(pl.id) : null)
+  const [showAllNeeds, setShowAllNeeds] = useState(false)
+  const [assignErr, setAssignErr] = useState('')
+  const isMobile = useIsMobile()
 
   const camps = campSpans(campRows.rows)
   const openCamp = (id: string) => { try { sessionStorage.setItem('lumio_open_camp', id) } catch { /* ignore */ } onNavigate?.('camps') }
@@ -115,25 +150,56 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   // they belonged to — it is also what used to lose a plan the moment a coach
   // moved the session, because a plan dated Tuesday matches nothing once the
   // lesson is on Thursday.
+  const legacyMatch = (pl: any, b: any) => !pl.booking_id
+    && !!(pl.group_name || '').trim() && sameName(pl.group_name, b.player_name)
+    // Two players can share a name: where both sides know who, it must be the same person.
+    && !(pl.player_id && b.player_id && String(pl.player_id) !== String(b.player_id))
+    && !!pl.session_date && pl.session_date === b.booking_date
   const planFor = (b: any) =>
     plans.rows.find((pl: any) => pl.booking_id && String(pl.booking_id) === String(b.id))
-    || plans.rows.find((pl: any) => !pl.booking_id
-      && (pl.group_name || '').trim().toLowerCase() === (b.player_name || '').trim().toLowerCase()
-      && pl.session_date === b.booking_date)
+    || plans.rows.find((pl: any) => legacyMatch(pl, b))
   const sortByTime = (a: any, b: any) => (toMins(a.start_time) ?? 9999) - (toMins(b.start_time) ?? 9999)
-  const upcoming = bookings.rows.filter(b => (b.booking_date || '') >= todayISO && b.status !== 'cancelled')
+  const live = bookings.rows.filter(b => b.status !== 'cancelled')
+  const upcoming = live.filter(b => (b.booking_date || '') >= todayISO)
     .sort((a, b) => (a.booking_date || '').localeCompare(b.booking_date || '') || sortByTime(a, b))
-  const nextUp = upcoming[0] || null
-  const needsPlan = upcoming.filter(b => !planFor(b)).slice(0, 8)
-  // Plans created (e.g. from a lesson's "Add to next session plan") that aren't
-  // tied to a booking yet — they wait here until the session is booked.
-  const unbookedPlans = plans.rows.filter((pl: any) => !pl.session_date)
+  // A session is over once it has been FINISHED (its plan carries completed_at)
+  // or its end time has passed. Neither was looked at before, so a lesson the
+  // coach had already written up — or one that ended hours ago — stayed as
+  // "Next up" with the Finish button still on it.
+  const nowMins = today.getHours() * 60 + today.getMinutes()
+  const isFinished = (b: any) => !!planFor(b)?.completed_at
+  const hasEnded = (b: any) => (b.booking_date || '') < todayISO
+    || (b.booking_date === todayISO && toMins(b.start_time) != null && (toMins(b.start_time) as number) + (b.duration_min || 60) <= nowMins)
+  const nextUp = upcoming.find(b => !isFinished(b) && !hasEnded(b)) || null
+  // Still to plan: not a Block (court time held, nothing to coach), not over.
+  // The header shows the real number, however many are listed underneath.
+  const needsPlanAll = upcoming.filter(b => !planFor(b) && b.type !== 'Block' && !hasEnded(b))
+  const needsPlan = showAllNeeds ? needsPlanAll : needsPlanAll.slice(0, 8)
+  // Plans with no booking behind them. That is any plan that is not finished
+  // and is not attached to a booking that still exists — NOT just "plans with no
+  // date". A plan given a date in New session, or one whose booking was deleted
+  // or cancelled, has a date and no booking, and used to be shown on no tab.
+  // "Attached" means exactly one thing: some booking that still exists opens
+  // THIS plan. (Not merely "a booking with the same name and date exists" — that
+  // booking may already have a plan of its own, which would hide this one.)
+  const shownFor = new Set(live.map(b => planFor(b)?.id).filter(Boolean).map(String))
+  const unbookedPlans = plans.rows.filter((pl: any) => !pl.completed_at && !shownFor.has(String(pl.id)))
   const assignPlanToBooking = async (planId: string, b: any) => {
-    await plans.edit(planId, { booking_id: b.id, session_date: b.booking_date, start_time: b.start_time || null, court: b.court || null, session_type: b.type || 'Private', group_name: b.player_name || null })
+    setAssignErr('')
+    // One plan per lesson. The list only offers bookings without one; this is
+    // for the case where another tab planned it in the meantime (the database
+    // refuses the second plan — migration 198).
+    if (planFor(b)) { setAssignErr('That booking already has a plan. Choose another booking.'); return }
+    try {
+      await plans.edit(planId, { booking_id: b.id, session_date: b.booking_date, start_time: b.start_time || null, court: b.court || null, session_type: b.type || 'Private', group_name: b.player_name || null, player_id: b.player_id || null })
+    } catch {
+      setAssignErr('That plan could not be assigned — the booking may already have a plan. Refresh the page and try again.')
+      plans.reload()
+    }
   }
-  const todays = bookings.rows.filter(b => b.booking_date === todayISO && b.status !== 'cancelled').sort(sortByTime)
+  const todays = live.filter(b => b.booking_date === todayISO).sort(sortByTime)
   const weekStartISO = isoD(weekStart)
-  const weekCount = bookings.rows.filter(b => (b.booking_date || '') >= weekStartISO && (b.booking_date || '') < weekEndISO && b.status !== 'cancelled').length
+  const weekCount = live.filter(b => (b.booking_date || '') >= weekStartISO && (b.booking_date || '') < weekEndISO).length
   const pending = bookings.rows.filter(b => b.status === 'pending').length
 
   // Rackets due = players sitting at 100% on their current racket (ready to award).
@@ -149,7 +215,8 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
     return sk.every(s => (sm[s.name] || 0) >= 4)
   }).length
 
-  const buildFrom = (b: any) => { setPrefill(b); setOpen(true) }
+  const buildFrom = (b: any) => { setEditPlan(null); setPrefill(b); setOpen(true) }
+  const editSaved = (pl: any) => { setPrefill(null); setEditPlan(pl); setOpen(true) }
   const openBooking = (b: any) => { const pl = planFor(b); if (pl) setSel(pl); else buildFrom(b) }
 
   const stat = (label: string, value: number, colour: string) => (
@@ -168,19 +235,19 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
           <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>Everything you need for the session you’re about to run — tap a session to load its plan.</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => { setPrefill(null); setOpen(true) }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Icon name="plus" size={14} /> New session</button>
-          <button onClick={() => printRunSheets(plans.rows.filter(p => p.session_date === todayISO))} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>🖨️ Print run-sheet</button>
+          <button onClick={() => { setPrefill(null); setEditPlan(null); setOpen(true) }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}><Icon name="plus" size={14} /> New session</button>
+          <button onClick={() => printRunSheets(plans.rows.filter(p => p.session_date === todayISO), `Today’s run-sheet · ${today.toLocaleDateString('en-GB')}`)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>🖨️ Print run-sheet</button>
         </div>
       </div>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginBottom: 16, width: 'fit-content' }}>
-        {TABS.map(t => <button key={t.id} onClick={() => setTab(t.id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === t.id ? T.panel : 'transparent', color: tab === t.id ? T.text : T.text2, fontWeight: tab === t.id ? 600 : 400, boxShadow: tab === t.id ? `0 0 0 1px ${T.border}` : 'none' }}>{t.label}</button>)}
+        {TABS.map(t => <button key={t.id} onClick={() => setTab(t.id)} style={{ appearance: 'none', border: 0, padding: isMobile ? '10px 12px' : '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === t.id ? T.panel : 'transparent', color: tab === t.id ? T.text : T.text2, fontWeight: tab === t.id ? 600 : 400, boxShadow: tab === t.id ? `0 0 0 1px ${T.border}` : 'none' }}>{t.label}</button>)}
       </div>
 
       {tab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: (showSec('nextup') || showSec('stats')) ? 'grid' : 'none', gridTemplateColumns: (showSec('nextup') && showSec('stats')) ? '1.6fr 1fr' : '1fr', gap: 16 }}>
+          <div className="cm-2" style={{ display: (showSec('nextup') || showSec('stats')) ? 'grid' : 'none', gridTemplateColumns: (showSec('nextup') && showSec('stats')) ? 'minmax(0, 1.6fr) minmax(0, 1fr)' : 'minmax(0, 1fr)', gap: 16 }}>
             {/* Next up */}
             <div style={{ display: showSec('nextup') ? undefined : 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18 }}>
               <div style={{ fontSize: 10, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700, marginBottom: 10 }}>Next up</div>
@@ -190,12 +257,14 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
                     // The player, not a title. A coach recognises a face before
                     // they read "Private · 26/09/2026".
                     const nm = String(nextUp.player_name || '').trim()
-                    const pl = players.rows.find((p: any) => String(p.name || '').trim().toLowerCase() === nm.toLowerCase())
+                    // By id where the booking has one; the name only for older bookings.
+                    const pl = (nextUp.player_id && players.rows.find((p: any) => String(p.id) === String(nextUp.player_id)))
+                      || players.rows.find((p: any) => sameName(p.name, nm))
                     return pl?.avatar_url
                       // eslint-disable-next-line @next/next/no-img-element
                       ? <img src={avatarSrc(pl.avatar_url)} alt="" style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                       : <span style={{ width: 46, height: 46, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
-                          {(nm || nextUp.title || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join('')}
+                          {initialsOf(nm || nextUp.title || '?')}
                         </span>
                   })()}
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -220,7 +289,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
           <div style={{ display: showSec('needsplan') ? undefined : 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 10 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Needs a plan</div>
-              <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{needsPlan.length}</div>
+              <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{needsPlanAll.length}</div>
             </div>
             {needsPlan.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>Every upcoming session has a plan. 🎾</div> : needsPlan.map(b => (
               <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: `1px solid ${T.border}` }}>
@@ -229,9 +298,14 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
                   <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{b.title || b.player_name || 'Session'}</div>
                   <div style={{ fontSize: 11, color: T.text3 }}>{[b.booking_date && new Date(b.booking_date).toLocaleDateString('en-GB'), b.start_time, b.type, b.court].filter(Boolean).join(' · ')}</div>
                 </div>
-                <button onClick={() => buildFrom(b)} style={{ appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Build session</button>
+                <button onClick={() => buildFrom(b)} style={{ appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '0 12px', minHeight: 38, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>+ Build session</button>
               </div>
             ))}
+            {needsPlanAll.length > 8 && (
+              <button onClick={() => setShowAllNeeds(v => !v)} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: '10px 0 2px', fontFamily: FONT }}>
+                {showAllNeeds ? 'Show fewer' : `Show all ${needsPlanAll.length}`}
+              </button>
+            )}
           </div>
 
           {/* Needs a booking — plans waiting for a session to be booked */}
@@ -242,19 +316,24 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
                 <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{unbookedPlans.length}</div>
               </div>
               <div style={{ fontSize: 11, color: T.text3, marginBottom: 8 }}>Plans ready to go — book the session, then assign the plan to it.</div>
+              {assignErr && <div role="alert" style={{ fontSize: 11.5, color: T.bad, marginBottom: 8 }}>{assignErr}</div>}
               {unbookedPlans.map((pl: any) => (
                 <div key={pl.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderTop: `1px solid ${T.border}`, flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: 140 }}>
                     <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>{pl.group_name || pl.title || 'Session plan'}</div>
                     {pl.focus && <div style={{ fontSize: 11, color: T.text3 }}>🎯 {pl.focus}</div>}
+                    {/* A dated plan with no booking: say the date it was written for. */}
+                    {pl.session_date && <div style={{ fontSize: 11, color: T.text3 }}>Planned for {ukDay(pl.session_date)}{pl.start_time ? ` · ${pl.start_time}` : ''} — no booking on that day</div>}
                   </div>
-                  <button onClick={() => setSel(pl)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '6px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}>View plan</button>
-                  {upcoming.length > 0 ? (
-                    <select defaultValue="" onChange={e => { const b = upcoming.find(x => x.id === e.target.value); if (b) assignPlanToBooking(pl.id, b) }} style={{ background: T.panel2, color: T.text2, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '6px 9px', fontSize: 11.5, cursor: 'pointer', fontFamily: FONT }}>
+                  <button onClick={() => setSel(pl)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '0 10px', minHeight: 38, fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}>View plan</button>
+                  {/* Only bookings that can take a plan: not already planned, not
+                      finished, not a Block. One plan per lesson. */}
+                  {needsPlanAll.length > 0 ? (
+                    <select value="" onChange={e => { const b = needsPlanAll.find(x => x.id === e.target.value); if (b) assignPlanToBooking(pl.id, b) }} style={{ background: T.panel2, color: T.text2, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '0 9px', minHeight: 38, maxWidth: '100%', fontSize: 11.5, cursor: 'pointer', fontFamily: FONT }}>
                       <option value="">Assign to booking…</option>
-                      {upcoming.map(b => <option key={b.id} value={b.id}>{[b.player_name || b.title, b.booking_date && new Date(b.booking_date).toLocaleDateString('en-GB'), b.start_time].filter(Boolean).join(' · ')}</option>)}
+                      {needsPlanAll.map(b => <option key={b.id} value={b.id}>{[b.player_name || b.title, b.booking_date && new Date(b.booking_date).toLocaleDateString('en-GB'), b.start_time].filter(Boolean).join(' · ')}</option>)}
                     </select>
-                  ) : <span style={{ fontSize: 11, color: T.text3 }}>No bookings yet — add one in the Booking Calendar</span>}
+                  ) : <span style={{ fontSize: 11, color: T.text3 }}>{upcoming.length ? 'Every upcoming booking already has a plan' : 'No bookings yet — add one in the Booking Calendar'}</span>}
                 </div>
               ))}
             </div>
@@ -267,6 +346,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
           {sel && (
             <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} lessons={sessions.rows} onNavigate={onNavigate} inline
               onCompleted={() => { setSel(null); plans.reload() }}
+              onEdit={() => editSaved(sel)}
               onClose={() => setSel(null)}
               onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />
           )}
@@ -278,6 +358,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
               <div style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>synced from Booking Calendar</div>
             </div>
             <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={bookings.rows} camps={camps} onCamp={openCamp} onOpen={openBooking} />
+            {isMobile && <div style={{ fontSize: 11, color: T.text3, padding: '0 12px 10px', textAlign: 'center' }}>Swipe sideways to see the rest of the week</div>}
           </div>
         </div>
       )}
@@ -309,13 +390,14 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
                   <button key={b.id} onClick={() => pl ? setSel(pl) : openBooking(b)} style={{ textAlign: 'left', appearance: 'none', cursor: 'pointer', background: isSel ? accent.dim : T.panel, border: `1px solid ${isSel ? accent.hex : (pl ? T.border : accent.border)}`, borderLeft: `3px solid ${typeCol(T, accent, b.type)}`, borderRadius: 10, padding: 14, boxShadow: isSel ? `0 0 0 1px ${accent.hex}` : 'none' }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{b.start_time || '—'} · {b.title || b.player_name || 'Session'}</div>
                     <div style={{ fontSize: 11, color: T.text3, marginTop: 3 }}>{[b.type, b.court, b.duration_min ? `${b.duration_min}m` : ''].filter(Boolean).join(' · ')}</div>
-                    <div style={{ fontSize: 11, color: pl ? T.good : accent.hex, fontWeight: 600, marginTop: 8 }}>{pl ? (isSel ? '✓ Plan — shown below' : '✓ Plan ready — view') : '+ Build session'}</div>
+                    <div style={{ fontSize: 11, color: pl ? T.good : accent.hex, fontWeight: 600, marginTop: 8 }}>{pl ? (pl.completed_at ? (isSel ? '✓ Finished — shown below' : '✓ Finished — view') : isSel ? '✓ Plan — shown below' : '✓ Plan ready — view') : '+ Build session'}</div>
                   </button>
                 )
               })}
             </div>
           )}
           {selPlan && <SessionRunSheet T={T} accent={accent} density={density} plan={selPlan} players={players.rows} lessons={sessions.rows} onNavigate={onNavigate} inline
+            onEdit={() => editSaved(selPlan)}
             onCompleted={() => { setSel(null); plans.reload() }}
             onClose={() => setSel(null)}
             onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', selPlan.id); setSel(null); plans.reload() } }} />}
@@ -326,6 +408,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
       {tab === 'week' && (
         <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
           <WeekGrid T={T} accent={accent} days={weekDays} today={today} bookings={bookings.rows} camps={camps} onCamp={openCamp} onOpen={openBooking} />
+          {isMobile && <div style={{ fontSize: 11, color: T.text3, padding: '0 12px 10px', textAlign: 'center' }}>Swipe sideways to see the rest of the week</div>}
         </div>
       )}
 
@@ -333,9 +416,10 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
         <MonthAgenda T={T} accent={accent} bookings={bookings.rows} camps={camps} onCamp={openCamp} fromISO={todayISO} onOpen={openBooking} />
       )}
 
-      {open && <NewSession T={T} accent={accent} density={density} players={players.rows} prefill={prefill}
-        onClose={() => { setOpen(false); setPrefill(null) }} onSaved={() => { setOpen(false); setPrefill(null); plans.reload() }} />}
-      {sel && tab !== 'today' && tab !== 'overview' && <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} lessons={sessions.rows} onNavigate={onNavigate}
+      {open && <NewSession key={editPlan?.id || prefill?.id || 'new'} T={T} accent={accent} density={density} players={players.rows} prefill={prefill} edit={editPlan}
+        onClose={() => { setOpen(false); setPrefill(null); setEditPlan(null) }} onSaved={() => { setOpen(false); setPrefill(null); setEditPlan(null); plans.reload() }} />}
+      {sel && !open && tab !== 'today' && tab !== 'overview' && <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} lessons={sessions.rows} onNavigate={onNavigate}
+        onEdit={() => editSaved(sel)}
         onCompleted={() => { setSel(null); plans.reload() }}
         onClose={() => setSel(null)}
         onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />}
@@ -345,13 +429,32 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
 
 // ── This-week grid (read-only mirror of the Booking Calendar) ───────────────
 function WeekGrid({ T, accent, days, today, bookings, camps, onCamp, onOpen }: { T: ThemeTokens; accent: AccentTokens; days: Date[]; today: Date; bookings: any[]; camps: ReturnType<typeof campSpans>; onCamp: (id: string) => void; onOpen: (b: any) => void }) {
-  const ROW = 42, START = HRS[0]
-  const yFor = (mins: number) => Math.max(0, Math.min((mins / 60 - START) * ROW, HRS.length * ROW))
+  const ROW = 42
+  const dayKeys = days.map(isoD)
+  const timed = bookings
+    .filter(b => b.status !== 'cancelled' && dayKeys.includes(b.booking_date))
+    .map(b => { const s = toMins(b.start_time); return s == null ? null : { b, start: s, end: Math.min(24 * 60, s + Math.max(b.duration_min || 60, 15)) } })
+    .filter(Boolean) as { b: any; start: number; end: number }[]
+  // 07:00–21:00, stretched to fit anything booked earlier or later this week —
+  // a 05:00 lesson was drawn at 07:00 and a 22:30 one was not drawn at all.
+  const START = Math.min(HRS[0], ...timed.map(x => Math.floor(x.start / 60)))
+  const END = Math.max(HRS[HRS.length - 1], ...timed.map(x => Math.ceil(x.end / 60) - 1))
+  const hours = Array.from({ length: END - START + 1 }, (_, i) => START + i)
+  const yFor = (mins: number) => Math.max(0, Math.min((mins / 60 - START) * ROW, hours.length * ROW))
+  // On a phone the week scrolls sideways: open it on today, hours pinned left.
+  const scroller = useRef<HTMLDivElement>(null)
+  const todayIdx = days.findIndex(d => isoD(d) === isoD(today))
+  useEffect(() => {
+    const el = scroller.current
+    if (!el || el.scrollWidth <= el.clientWidth + 1) return
+    el.scrollLeft = todayIdx > 0 ? Math.round(((el.scrollWidth - 24 - 48) / 7) * todayIdx) : 0
+  }, [todayIdx])
+  const gutter: React.CSSProperties = { position: 'sticky', left: 0, zIndex: 3, background: T.panel }
   return (
-    <div style={{ overflowX: 'auto', padding: 12 }}>
+    <div ref={scroller} style={{ overflowX: 'auto', padding: 12 }}>
       <div style={{ minWidth: 700 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}` }}>
-          <div />
+        <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, minmax(0, 1fr))`, borderBottom: `1px solid ${T.border}` }}>
+          <div style={gutter} />
           {days.map((d, i) => {
             const isToday = isoD(d) === isoD(today)
             return <div key={i} style={{ padding: '8px 4px', textAlign: 'center', borderLeft: `1px solid ${T.border}`, background: isToday ? accent.dim : 'transparent' }}>
@@ -361,8 +464,8 @@ function WeekGrid({ T, accent, days, today, bookings, camps, onCamp, onOpen }: {
           })}
         </div>
         {days.some(d => campsOn(camps, isoD(d)).length > 0) && (
-          <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, 1fr)`, borderBottom: `1px solid ${T.border}`, background: T.hover }}>
-            <div style={{ fontSize: 8.5, color: T.text3, padding: '6px 5px', textAlign: 'right' }}>ALL DAY</div>
+          <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, minmax(0, 1fr))`, borderBottom: `1px solid ${T.border}`, background: T.hover }}>
+            <div style={{ ...gutter, background: T.hover, fontSize: 8.5, color: T.text3, padding: '6px 5px', textAlign: 'right' }}>ALL DAY</div>
             {days.map((d, i) => (
               <div key={i} style={{ borderLeft: `1px solid ${T.border}`, padding: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {campsOn(camps, isoD(d)).map(c => (
@@ -376,20 +479,20 @@ function WeekGrid({ T, accent, days, today, bookings, camps, onCamp, onOpen }: {
             ))}
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, 1fr)` }}>
-          <div>{HRS.map(h => <div key={h} style={{ height: ROW, fontSize: 9.5, color: T.text3, padding: '2px 5px', textAlign: 'right' }}>{pad2(h)}:00</div>)}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: `48px repeat(7, minmax(0, 1fr))` }}>
+          <div style={gutter}>{hours.map(h => <div key={h} style={{ height: ROW, fontSize: 9.5, color: T.text3, padding: '2px 5px', textAlign: 'right' }}>{pad2(h)}:00</div>)}</div>
           {days.map((d, di) => {
-            const dayB = bookings.filter(b => b.booking_date === isoD(d) && b.status !== 'cancelled')
+            const dayB = timed.filter(x => x.b.booking_date === isoD(d))
+            const lanes = layoutLanes(dayB.map(x => ({ id: String(x.b.id), start: x.start, end: Math.max(x.end, x.start + 30) })))
             return (
               <div key={di} style={{ position: 'relative', borderLeft: `1px solid ${T.border}` }}>
-                {HRS.map(h => <div key={h} style={{ height: ROW, borderTop: `1px solid ${T.border}` }} />)}
-                {dayB.map(b => {
-                  const s = toMins(b.start_time); if (s == null) return null
-                  const dur = b.duration_min || 60
-                  const top = yFor(s), h = Math.max(yFor(s + dur) - top - 2, 18)
+                {hours.map(h => <div key={h} style={{ height: ROW, borderTop: `1px solid ${T.border}` }} />)}
+                {dayB.map(({ b, start: s, end }) => {
+                  const top = yFor(s), h = Math.max(yFor(end) - top - 2, 18)
                   const c = typeCol(T, accent, b.type)
+                  const { lane, of } = lanes[String(b.id)] || { lane: 0, of: 1 }
                   return (
-                    <div key={b.id} onClick={() => onOpen(b)} title={b.title || b.player_name || ''} style={{ position: 'absolute', left: 3, right: 3, top: top + 1, height: h, background: `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '2px 5px', overflow: 'hidden', cursor: 'pointer' }}>
+                    <div key={b.id} onClick={() => onOpen(b)} title={b.title || b.player_name || ''} style={{ position: 'absolute', left: `calc(${(lane / of) * 100}% + 3px)`, width: `calc(${100 / of}% - 6px)`, boxSizing: 'border-box', top: top + 1, height: h, background: `${c}26`, border: `1px solid ${c}`, borderLeft: `3px solid ${c}`, borderRadius: 6, padding: '2px 5px', overflow: 'hidden', cursor: 'pointer' }}>
                       {/* WHO first. A column of "1:1" tells a coach nothing. */}
                       <div style={{ fontSize: 10, color: T.text, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.player_name || b.title || 'Session'}</div>
                       <div style={{ fontSize: 8.5, color: T.text2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{hhmm(s)}{b.court ? ` · ${b.court}` : ''}</div>
@@ -487,9 +590,14 @@ function FinishSessionModal({ T, accent, plan, sheet, onClose, onDone, onRecord 
   const [writeUp, setWriteUp] = useState(true)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  // Set when the lesson was saved but there is something the coach must be told
+  // before moving on — most often that Lumio Coach could not write it up.
+  const [savedNote, setSavedNote] = useState('')
 
   const toggle = (list: string[], set: (v: string[]) => void, x: string) =>
     set(list.includes(x) ? list.filter(i => i !== x) : [...list, x])
+
+  const closeOutside = useAskBeforeClose(JSON.stringify([covered, didDrills, note, rating, writeUp]), onClose)
 
   const save = async () => {
     if (busy) return
@@ -499,9 +607,15 @@ function FinishSessionModal({ T, accent, plan, sheet, onClose, onDone, onRecord 
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planId: plan.id, covered, drills: didDrills, note, rating: rating || undefined, writeUp }),
       })
-      const d = await res.json()
+      const d = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(d.error || 'Could not save that session.')
       invalidateCoachTable('coach_sessions')
+      invalidateCoachTable('coach_session_plans')
+      // The lesson is saved either way. But a write-up that was asked for and
+      // did not arrive used to pass in silence: the coach landed on a bare
+      // summary with nothing to say why.
+      if (d.duplicate) { setSavedNote('This session was already finished, so nothing new was saved. Its summary is in Lesson Summaries.'); setBusy(false); return }
+      if (writeUp && d.aiError) { setSavedNote('The lesson is saved, but Lumio Coach could not write the summary just now. It has your note and rating only — open it in Lesson Summaries and choose Edit to add the detail.'); setBusy(false); return }
       onDone()
     } catch (e) { setErr(e instanceof Error ? e.message : 'Could not save that session.'); setBusy(false) }
   }
@@ -519,13 +633,19 @@ function FinishSessionModal({ T, accent, plan, sheet, onClose, onDone, onRecord 
   })
 
   return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    <div onClick={e => { if (e.target === e.currentTarget) { if (savedNote) onDone(); else closeOutside() } }}
       style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto', fontFamily: FONT }}>
       <div style={{ width: '100%', maxWidth: 600, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 22 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 3 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>Finish the session</div>
-          <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 28, height: 28, fontSize: 16 }}>×</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 3 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{savedNote ? 'Session saved' : 'Finish the session'}</div>
+          <button onClick={savedNote ? onDone : onClose} aria-label="Close" style={{ marginLeft: 'auto', appearance: 'none', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 40, height: 40, fontSize: 16, flexShrink: 0 }}>×</button>
         </div>
+        {savedNote ? (
+          <>
+            <p role="status" style={{ fontSize: 13, color: T.text2, lineHeight: 1.6, margin: '8px 0 16px' }}>{savedNote}</p>
+            <button onClick={onDone} style={{ appearance: 'none', border: 0, borderRadius: 10, padding: '11px 16px', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Go to Lesson Summaries</button>
+          </>
+        ) : (<>
         <p style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.55, margin: '0 0 14px' }}>
           Tick what you actually got through. Lumio Coach writes it up as a lesson summary from this — and only from this, so anything you untick is treated as not covered.
         </p>
@@ -573,13 +693,14 @@ function FinishSessionModal({ T, accent, plan, sheet, onClose, onDone, onRecord 
         <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
           placeholder="One or two lines — what moved, what did not, anything to remember. This is the strongest thing the summary is built from."
           style={{ width: '100%', boxSizing: 'border-box', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px', color: T.text, fontSize: 13, fontFamily: FONT, lineHeight: 1.5, outline: 'none', resize: 'vertical' }} />
+        <div style={{ fontSize: 10.5, color: T.text3, marginTop: 4 }}>This note is shared with the player along with the summary. Keep anything private for the coach note on the lesson summary itself.</div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11.5, color: T.text3 }}>Session rating</span>
-          <span style={{ display: 'flex', gap: 3 }}>
+          <span style={{ display: 'flex', gap: 0 }}>
             {[1, 2, 3, 4, 5].map(n => (
-              <button key={n} onClick={() => setRating(n === rating ? 0 : n)}
-                style={{ appearance: 'none', border: 0, background: 'transparent', cursor: 'pointer', fontSize: 18, color: n <= rating ? accent.hex : T.text4, padding: 0 }}>★</button>
+              <button key={n} onClick={() => setRating(n === rating ? 0 : n)} aria-label={`${n} out of 5`}
+                style={{ appearance: 'none', border: 0, background: 'transparent', cursor: 'pointer', fontSize: 22, lineHeight: 1, color: n <= rating ? accent.hex : T.text4, padding: 0, width: 38, height: 38 }}>★</button>
             ))}
           </span>
           <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: T.text2, cursor: 'pointer' }}>
@@ -600,16 +721,20 @@ function FinishSessionModal({ T, accent, plan, sheet, onClose, onDone, onRecord 
         <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8, textAlign: 'center' }}>
           Saved to Lesson Summaries, shared with the player, and attendance is marked.
         </div>
+        </>)}
       </div>
     </div>
   )
 }
 
 // Print today's run-sheets (one page) — the demo's "Print run-sheet".
-function printRunSheets(todayPlans: any[]) {
+// `heading` is what the page is called: "Today's run-sheet" from the button at
+// the top of the planner, or the session itself when one plan is printed —
+// every printed sheet used to say "Today's run-sheet" whatever day it was for.
+function printRunSheets(todayPlans: any[], heading: string) {
   if (typeof window === 'undefined') return
   const esc = (s: string) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!))
-  if (!todayPlans.length) { alert('No planned sessions for today to print.'); return }
+  if (!todayPlans.length) { alert('There are no planned sessions today to print.'); return }
   const blocks = todayPlans.map(p => {
     // Print what Lumio Coach designed. The template is only a fallback for plans
     // saved before he built them — a printed sheet that disagrees with the one on
@@ -620,61 +745,103 @@ function printRunSheets(todayPlans: any[]) {
     const kit = ((Array.isArray(p.kit) && p.kit.length ? p.kit : KIT_BY_TYPE[(p.session_type as SType) || 'Private']) || []).map((k: string) => `<span style="display:inline-block;border:1px solid #ccc;border-radius:20px;padding:2px 10px;margin:0 4px 6px;font-size:12px">${esc(k)}</span>`).join('')
     return `<div style="page-break-inside:avoid;margin-bottom:28px"><h2 style="margin:0">${esc(p.title || 'Session')}</h2><div style="color:#555;font-size:13px;margin:2px 0 6px">${esc([p.session_type, p.start_time, p.court, (p.duration_min || 60) + ' mins'].filter(Boolean).join(' · '))}</div>${p.focus ? `<div style="background:#eef3fb;border-radius:6px;padding:8px 10px;font-weight:600;margin-bottom:8px">${esc(p.focus)}</div>` : ''}<table style="width:100%;border-collapse:collapse">${rows}</table><div style="margin-top:10px"><b style="font-size:12px;color:#555">Kit:</b><br/>${kit}</div></div>`
   }).join('')
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Run-sheet — ${new Date().toLocaleDateString('en-GB')}</title><style>body{font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:720px;margin:32px auto;color:#111;padding:0 20px}td{padding:6px 4px;vertical-align:top;border-top:1px solid #eee}</style></head><body><h1>Today’s run-sheet · ${new Date().toLocaleDateString('en-GB')}</h1>${blocks}</body></html>`
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(heading)}</title><style>body{font-family:-apple-system,Segoe UI,Arial,sans-serif;max-width:720px;margin:32px auto;color:#111;padding:0 20px}td{padding:6px 4px;vertical-align:top;border-top:1px solid #eee}</style></head><body><h1>${esc(heading)}</h1>${blocks}</body></html>`
   const w = window.open('', '_blank'); if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 300) }
 }
 
 // ── New Session modal ────────────────────────────────────────────────────────
-function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: Common & { players: any[]; prefill?: any; onClose: () => void; onSaved: () => void }) {
-  const pfType = (TYPES as readonly string[]).includes(prefill?.type) ? prefill.type as SType : 'Private'
-  const pfPlayer = prefill?.player_name || ''
-  const pfKnown = players.some(p => p.name === pfPlayer)
+//
+// The same form edits a plan that is already saved (`edit`). A saved plan used
+// to be read-only: the focus, the drills, the timings and the date could not be
+// changed once "Add session" had been pressed, only deleted and rebuilt.
+function NewSession({ T, accent, density, players, prefill, edit, onClose, onSaved }: Common & { players: any[]; prefill?: any; edit?: any; onClose: () => void; onSaved: () => void }) {
+  // Where the form starts from: the saved plan being edited, or the booking the
+  // planner was opened from. The two have different column names for the same
+  // facts.
+  const src = edit
+    ? { type: edit.session_type, player: edit.group_name, court: edit.court, date: edit.session_date, time: edit.start_time, mins: edit.duration_min }
+    : { type: prefill?.type, player: prefill?.player_name, court: prefill?.court, date: prefill?.booking_date, time: prefill?.start_time, mins: prefill?.duration_min }
+  const pfType = (TYPES as readonly string[]).includes(src.type) ? src.type as SType : 'Private'
+  const pfPlayer = src.player || ''
+  const pfKnown = players.some(p => sameName(p.name, pfPlayer))
+  // The picker holds the player's ID. It used to hold their name, so of two
+  // players called the same only the first could ever be chosen. The id comes
+  // from the saved plan, else the booking; a name alone stands in only when
+  // exactly one player has it.
+  const pfId = (() => {
+    const id = edit ? edit.player_id : prefill?.player_id
+    if (id && players.some(p => String(p.id) === String(id))) return String(id)
+    const named = pfPlayer ? players.filter(p => sameName(p.name, pfPlayer)) : []
+    return named.length === 1 ? String(named[0].id) : ''
+  })()
+  const labelOf = playerLabels(players)
+  // A plan tied to a booking takes its day, time, court and player FROM the
+  // booking (the database keeps them in step), so they are changed there.
+  const tiedToBooking = !!edit?.booking_id
   const [mode, setMode] = useState<'roster' | 'new'>(pfPlayer && !pfKnown ? 'new' : 'roster')
-  const [player, setPlayer] = useState(pfPlayer)
+  const [player, setPlayer] = useState(pfKnown ? players.find(p => sameName(p.name, pfPlayer)).name : pfPlayer)
+  const [playerSel, setPlayerSel] = useState(pfId)
   const [type, setType] = useState<SType>(pfType)
-  const [court, setCourt] = useState(prefill?.court || '')
-  const [date, setDate] = useState(prefill?.booking_date || '')
-  const [time, setTime] = useState(prefill?.start_time || '')
-  const [duration, setDuration] = useState(Number(prefill?.duration_min) || 60)
-  const [racket, setRacket] = useState(players.find(p => p.name === pfPlayer)?.racket_stage || '')
-  const [standard, setStandard] = useState('')
-  const [focus, setFocus] = useState('')
-  const [note, setNote] = useState('')
-  const [focusPoints, setFocusPoints] = useState('')
-  const [drills, setDrills] = useState('')
+  const [court, setCourt] = useState(src.court || '')
+  const [date, setDate] = useState(src.date || '')
+  // A time box only takes HH:MM. Anything else already saved ("half past four")
+  // is not carried into it.
+  const [time, setTime] = useState(() => { const m = toMins(src.time || null); return m == null ? '' : hhmm(m) })
+  const [duration, setDuration] = useState(String(Number(src.mins) || 60))
+  const [racket, setRacket] = useState(edit?.racket_stage || players.find(p => String(p.id) === pfId)?.racket_stage || '')
+  const [standard, setStandard] = useState(edit?.standard || '')
+  const [focus, setFocus] = useState(edit?.focus || '')
+  const [note, setNote] = useState(edit?.notes || '')
+  const [focusPoints, setFocusPoints] = useState(edit?.focus_points || '')
+  const [drills, setDrills] = useState(edit?.drills || '')
   const [drafting, setDrafting] = useState(false)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
   // Lumio Coach's plan. `built` is the gate: a session plan is not savable until
   // he has designed it, because a run-sheet nobody wrote is the thing a coach
   // ends up standing on court holding.
-  const [aiSheet, setAiSheet] = useState<{ phase: string; mins: number; detail: string; cue?: string }[]>([])
-  const [aiKit, setAiKit] = useState<string[]>([])
-  const [coachNote, setCoachNote] = useState('')
-  const [built, setBuilt] = useState(false)
+  const editSheet: { phase: string; mins: number; detail: string; cue?: string }[] = Array.isArray(edit?.run_sheet) ? edit.run_sheet : []
+  const [aiSheet, setAiSheet] = useState<{ phase: string; mins: number; detail: string; cue?: string }[]>(editSheet)
+  const [aiKit, setAiKit] = useState<string[]>(Array.isArray(edit?.kit) ? edit.kit : [])
+  const [coachNote, setCoachNote] = useState(edit?.coach_note || '')
+  const [built, setBuilt] = useState(!!edit && edit.built_by === 'lumio-coach' && editSheet.length > 0)
+  const [rebuilt, setRebuilt] = useState(false)
   const [onHistory, setOnHistory] = useState(false)
-  const [manual, setManual] = useState(false)
-  const autoRan = useRef(false)
+  const [manual, setManual] = useState(!!edit && !(edit.built_by === 'lumio-coach' && editSheet.length > 0))
+  // A saved plan is never rebuilt behind the coach's back — only when asked.
+  const autoRan = useRef(!!edit)
+  // Set once the coach types in the player or focus box. See the effect below.
+  const typed = useRef(false)
+  const mins = Number(String(duration).trim())
+  // The same limits as the booking form, so any booking can be planned.
+  const minsOk = String(duration).trim() !== '' && Number.isInteger(mins) && mins >= 5 && mins <= 600
+  const sheetTotal = aiSheet.reduce((n, p) => n + (Number(p.mins) || 0), 0)
+  const playerId: string | undefined = mode === 'roster' && playerSel ? playerSel : undefined
+
+  const closeOutside = useAskBeforeClose(JSON.stringify([mode, player, type, court, date, time, duration, racket, standard, focus, note, focusPoints, drills, aiSheet, manual]), onClose)
 
   // The player's last lesson summary → its "next focus" is what this session should
   // pick up from, so the coach doesn't retype it.
   const sessions = useCoachTable<any>('coach_sessions')
-  const lastFocusFor = (name: string) => {
+  // THIS player's last lesson: by id, and by name only for a lesson with no
+  // player attached whose name belongs to nobody else.
+  const lastFocusFor = (name: string, id: string | undefined = playerId) => {
     if (!name) return ''
+    const soleName = players.filter(p => sameName(p.name, name)).length <= 1
     const last = sessions.rows
-      .filter((s: any) => (s.player_name || '').trim().toLowerCase() === name.trim().toLowerCase())
+      .filter((s: any) => s.player_id && id ? String(s.player_id) === String(id) : (soleName && (s.player_name || '').trim().toLowerCase() === name.trim().toLowerCase()))
       .sort((a: any, b: any) => (b.session_date || '').localeCompare(a.session_date || ''))[0]
     return last ? (last.review_json?.nextFocus || last.focus || '') : ''
   }
 
   // On open with a known player, seed the focus from their last summary (if blank).
   useEffect(() => {
-    if (!focus.trim() && player) { const f = lastFocusFor(player); if (f) setFocus(f) }
+    if (!edit && !typed.current && !focus.trim() && player) { const f = lastFocusFor(player); if (f) setFocus(f) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessions.rows])
 
   // Prefill racket + last-session focus from the chosen roster player.
-  const onPickPlayer = (name: string) => { setPlayer(name); const p = players.find(x => x.name === name); if (p?.racket_stage) setRacket(p.racket_stage); const f = lastFocusFor(name); if (f) setFocus(f) }
+  const onPickPlayer = (id: string) => { const p = players.find(x => String(x.id) === id); const name = p?.name || ''; setPlayerSel(p ? id : ''); setPlayer(name); if (p?.racket_stage) setRacket(p.racket_stage); const f = lastFocusFor(name, p ? id : undefined); if (f) setFocus(f) }
 
   const build = async () => {
     if (drafting) return
@@ -682,99 +849,150 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
     let useFocus = focus.trim()
     if (!useFocus) { useFocus = lastFocusFor(player); if (useFocus) setFocus(useFocus) }
     if (!useFocus) { setErr('Add a session focus first (or pick a player with a previous summary).'); return }
+    if (!minsOk) { setErr('Enter the length of the session in whole minutes, between 5 and 600.'); return }
+    autoRan.current = true
     setDrafting(true); setErr('')
     try {
-      const res = await fetch('/api/coach/session-draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, focus: useFocus, racket: RACKET_STAGES.find(s => s.id === racket)?.name, standard, duration, note, player }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Lumio Coach could not build the plan')
+      const res = await fetch('/api/coach/session-draft', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, focus: useFocus, racket: RACKET_STAGES.find(s => s.id === racket)?.name, standard, duration: mins, note, player, playerId }) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Lumio Coach could not build the plan just now. Try again, or choose “Write it myself”.')
+      // An answer with no run-sheet is not a plan, whatever the status code
+      // said. It is never shown as "Built by Lumio Coach" and never unlocks Save.
+      if (!Array.isArray(data.run_sheet) || data.run_sheet.length === 0) throw new Error('Lumio Coach could not build a plan from that. Try again, or choose “Write it myself”.')
       setFocusPoints((data.focus_points || []).join('\n'))
       setDrills((data.drills || []).join('\n'))
-      setAiSheet(data.run_sheet || [])
+      setAiSheet(data.run_sheet)
       setAiKit(data.kit || [])
       setCoachNote(data.coach_note || '')
       setOnHistory(!!data.built_on_history)
-      setBuilt(true)
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Lumio Coach could not build the plan') }
+      setBuilt(true); setRebuilt(true); setManual(false)
+    } catch (e) { setErr(e instanceof Error ? e.message : 'Lumio Coach could not build the plan just now. Try again, or choose “Write it myself”.') }
     setDrafting(false)
   }
 
-  // Build once, automatically, as soon as there is enough to plan from. A coach
-  // opening this modal wants a plan, not a button — but it fires ONCE per open
-  // (autoRan) so editing the focus afterwards does not quietly spend a call on
-  // every keystroke. Rebuild is explicit from there.
-  useEffect(() => {
+  // Build once, automatically, when the form OPENS with enough to plan from —
+  // a booking's player, and the focus carried over from their last lesson. A
+  // coach opening it that way wants a plan, not a button.
+  //
+  // But never while the coach is typing. This used to fire the moment both
+  // boxes were non-empty, which is the first letter of the focus: the plan was
+  // built for "F", marked as Lumio Coach's, and not rebuilt as the coach
+  // finished the word. Once either box has been typed in, building waits for
+  // the coach to leave the focus box (see onBlur) or press Build.
+  const autoBuild = () => {
     if (autoRan.current || built || drafting || manual) return
-    if (!player.trim() || !focus.trim()) return
-    autoRan.current = true
+    if (!player.trim() || !focus.trim() || !minsOk) return
     void build()
+  }
+  useEffect(() => {
+    if (typed.current) return
+    autoBuild()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [player, focus, built, drafting, manual])
 
   const save = async () => {
-    if (!focus.trim()) { setErr('Session focus is required'); return }
+    if (saving) return
+    if (!focus.trim()) { setErr('Add a session focus.'); return }
+    if (!minsOk) { setErr('Enter the length of the session in whole minutes, between 5 and 600.'); return }
+    if (time && toMins(time) == null) { setErr('Enter the start time as hours and minutes, for example 16:00.'); return }
     // The gate. Every plan is either designed by Lumio Coach or explicitly
     // written by the coach — never an unattributed template.
     if (!built && !manual) { setErr('Let Lumio Coach build the plan first, or choose to write it yourself.'); return }
+    const sheet = aiSheet
+      .map(p => ({ ...p, phase: String(p.phase || '').trim(), detail: String(p.detail || '').trim(), mins: Math.max(1, Math.round(Number(p.mins) || 0)) }))
+      .filter(p => p.phase || p.detail)
     setSaving(true); setErr('')
+    const row = {
+      title: `${player || type}${focus ? ' — ' + focus : ''}`.slice(0, 120),
+      session_date: date || null, start_time: time || null, session_type: type, court: court || null,
+      group_name: player.trim() || null, focus: focus.trim(), duration_min: mins, racket_stage: racket || null,
+      // WHO it is for, by id (migration 208) — the name cannot say which of two players called the same.
+      player_id: playerId || null,
+      standard: standard || null, focus_points: focusPoints || null, drills: drills || null, notes: note || null,
+      run_sheet: sheet.length ? sheet : null,
+      kit: aiKit.length ? aiKit : null,
+      coach_note: coachNote || null,
+    }
     try {
-      await dbInsert('coach_session_plans', {
-        title: `${player || type}${focus ? ' — ' + focus : ''}`.slice(0, 120),
-        // Planned FOR a booking when the planner was opened from one. This is
-        // what lets the session be moved later without the plan going missing.
-        booking_id: prefill?.id || null,
-        session_date: date || null, start_time: time || null, session_type: type, court: court || null,
-        group_name: player || null, focus, duration_min: duration || null, racket_stage: racket || null,
-        standard: standard || null, focus_points: focusPoints || null, drills: drills || null, notes: note || null,
-        run_sheet: aiSheet.length ? aiSheet : null,
-        kit: aiKit.length ? aiKit : null,
-        coach_note: coachNote || null,
-        built_by: built ? 'lumio-coach' : 'coach',
-        designed_at: new Date().toISOString(),
-        source: 'planner',
-      })
+      if (edit) {
+        // Whose plan it is only changes if Lumio Coach rebuilt it just now.
+        await dbUpdate('coach_session_plans', edit.id, { ...row, ...(rebuilt ? { built_by: 'lumio-coach', designed_at: new Date().toISOString() } : {}) })
+      } else {
+        await dbInsert('coach_session_plans', {
+          ...row,
+          // Planned FOR a booking when the planner was opened from one. This is
+          // what lets the session be moved later without the plan going missing.
+          booking_id: prefill?.id || null,
+          built_by: built ? 'lumio-coach' : 'coach',
+          designed_at: new Date().toISOString(),
+          source: 'planner',
+        })
+      }
       onSaved()
-    } catch (e) { setErr(e instanceof Error ? e.message : 'Save failed'); setSaving(false) }
+    } catch (e) {
+      const m = e instanceof Error ? e.message : ''
+      // One plan per booking (migration 198): another tab got there first.
+      setErr(/uniq_session_plans_booking|duplicate key/i.test(m)
+        ? 'This booking already has a plan. Close this and open the plan from the planner to change it.'
+        : m && !/[_{}]|violates|column|relation/i.test(m) ? m : 'The plan could not be saved. Check your connection and try again.')
+      setSaving(false)
+    }
   }
+  // One block of the run-sheet, changed in place.
+  const setPhase = (i: number, patch: Partial<{ phase: string; mins: number; detail: string }>) =>
+    setAiSheet(s => s.map((p, j) => (j === i ? { ...p, ...patch } : p)))
 
-  const input: React.CSSProperties = { width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none', marginTop: 5 }
+  const input: React.CSSProperties = { width: '100%', minWidth: 0, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none', marginTop: 5 }
   const lbl: React.CSSProperties = { display: 'block', color: T.text3, fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }
+  const locked: React.CSSProperties = tiedToBooking ? { opacity: 0.65, cursor: 'not-allowed' } : {}
 
 
   return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '4vh 16px', overflowY: 'auto' }}>
-      <div style={{ width: '100%', maxWidth: 760, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>
+    <div onClick={e => { if (e.target === e.currentTarget) closeOutside() }} style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '4vh 16px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 760, minWidth: 0, boxSizing: 'border-box', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
           <Icon name="flag" size={16} style={{ color: accent.hex }} />
-          <h3 style={{ color: T.text, fontSize: 18, fontWeight: 700, margin: 0 }}>New session</h3>
-          <button onClick={onClose} style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 17 }}>×</button>
+          <h3 style={{ color: T.text, fontSize: 18, fontWeight: 700, margin: 0 }}>{edit ? 'Edit session plan' : 'New session'}</h3>
+          <button onClick={onClose} aria-label="Close" style={{ marginLeft: 'auto', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 40, height: 40, fontSize: 17, flexShrink: 0 }}>×</button>
         </div>
 
-        <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 18 }}>
-          <div>
+        <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 1fr)', gap: 18 }}>
+          <div style={{ minWidth: 0 }}>
+            {tiedToBooking && (
+              <div style={{ fontSize: 11.5, color: T.text3, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '8px 11px', marginBottom: 12, lineHeight: 1.5 }}>
+                This plan belongs to a booking, so its player, date, time and court follow the booking. Change those in the Booking Calendar.
+              </div>
+            )}
             {/* Player */}
             <label style={lbl}>Player</label>
-            <div style={{ display: 'flex', gap: 6, margin: '6px 0' }}>
-              {(['roster', 'new'] as const).map(m => <button key={m} onClick={() => setMode(m)} style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${mode === m ? accent.hex : T.border}`, background: mode === m ? accent.dim : 'transparent', color: mode === m ? accent.hex : T.text2, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{m === 'roster' ? 'From roster' : 'New player'}</button>)}
+            <div style={{ display: 'flex', gap: 6, margin: '6px 0', flexWrap: 'wrap' }}>
+              {(['roster', 'new'] as const).map(m => <button key={m} disabled={tiedToBooking} onClick={() => setMode(m)} style={{ padding: '0 12px', minHeight: 36, borderRadius: 8, border: `1px solid ${mode === m ? accent.hex : T.border}`, background: mode === m ? accent.dim : 'transparent', color: mode === m ? accent.hex : T.text2, fontSize: 12, fontWeight: 600, cursor: 'pointer', ...locked }}>{m === 'roster' ? 'From roster' : 'A group, or someone else'}</button>)}
             </div>
             {mode === 'roster' ? (
-              <select value={player} onChange={e => onPickPlayer(e.target.value)} style={{ ...input, marginTop: 0 }}>
+              <select value={playerSel} disabled={tiedToBooking} onChange={e => onPickPlayer(e.target.value)} style={{ ...input, marginTop: 0, ...locked }}>
                 <option value="">Select a player…</option>
-                {players.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                {players.map(p => <option key={p.id} value={p.id}>{labelOf.get(p.id) || p.name}</option>)}
               </select>
             ) : (
-              <input value={player} onChange={e => setPlayer(e.target.value)} placeholder="Player or group name" style={{ ...input, marginTop: 0 }} />
+              <>
+                <input value={player} disabled={tiedToBooking} onChange={e => { typed.current = true; setPlayer(e.target.value) }} placeholder="Group or player name" style={{ ...input, marginTop: 0, ...locked }} />
+                {/* Said plainly, because the button used to read "New player" and
+                    nothing was added to the roster. */}
+                {!tiedToBooking && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 4 }}>This name goes on the plan only. To track a new player’s lessons and progress, add them on the Roster first.</div>}
+              </>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
-              <div><label style={lbl}>Type</label><select value={type} onChange={e => setType(e.target.value as SType)} style={input}>{TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
-              <div><label style={lbl}>Court</label><input value={court} onChange={e => setCourt(e.target.value)} placeholder="e.g. Court 1" style={input} /></div>
-              <div><label style={lbl}>Date</label><input type="date" value={date} onChange={e => setDate(e.target.value)} style={input} /></div>
-              <div><label style={lbl}>Start time</label><input value={time} onChange={e => setTime(e.target.value)} placeholder="e.g. 16:00" style={input} /></div>
-              <div><label style={lbl}>Duration (mins)</label><input type="number" value={duration} onChange={e => setDuration(Number(e.target.value))} style={input} /></div>
-              <div><label style={lbl}>Racket</label><select value={racket} onChange={e => setRacket(e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 12 }}>
+              <div style={{ minWidth: 0 }}><label style={lbl}>Type</label><select value={type} disabled={tiedToBooking} onChange={e => setType(e.target.value as SType)} style={{ ...input, ...locked }}>{TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+              <div style={{ minWidth: 0 }}><label style={lbl}>Court</label><input value={court} disabled={tiedToBooking} onChange={e => setCourt(e.target.value)} placeholder="e.g. Court 1" style={{ ...input, ...locked }} /></div>
+              <div style={{ minWidth: 0 }}><label style={lbl}>Date</label><input type="date" value={date} disabled={tiedToBooking} onChange={e => setDate(e.target.value)} style={{ ...input, ...locked }} /></div>
+              <div style={{ minWidth: 0 }}><label style={lbl}>Start time</label><input type="time" aria-label="Start time" value={time} disabled={tiedToBooking} onChange={e => setTime(e.target.value)} style={{ ...input, ...locked }} /></div>
+              <div style={{ minWidth: 0 }}><label style={lbl}>Duration (mins)</label><input type="number" inputMode="numeric" min={5} max={600} step={5} aria-label="Duration in minutes" value={duration} onChange={e => setDuration(e.target.value)} style={input} /></div>
+              <div style={{ minWidth: 0 }}><label style={lbl}>Racket</label><select value={racket} onChange={e => setRacket(e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
             </div>
+            {!minsOk && <div style={{ fontSize: 11, color: T.bad, marginTop: 5 }}>Enter the length in whole minutes, between 5 and 600.</div>}
             <div style={{ marginTop: 12 }}><label style={lbl}>Standard</label><input value={standard} onChange={e => setStandard(e.target.value)} placeholder="e.g. LTA Youth · Orange" style={input} /></div>
-            <div style={{ marginTop: 12 }}><label style={lbl}>Session focus *</label><input value={focus} onChange={e => setFocus(e.target.value)} placeholder="e.g. Forehand volley — punch & firm wrist" style={input} /></div>
+            <div style={{ marginTop: 12 }}><label style={lbl}>Session focus *</label><input value={focus} onChange={e => { typed.current = true; setFocus(e.target.value) }} onBlur={autoBuild} onKeyDown={e => { if (e.key === 'Enter') autoBuild() }} placeholder="e.g. Forehand volley — punch & firm wrist" style={input} /></div>
 
             {/* Lumio Coach builds the plan. */}
             <div style={{ marginTop: 14, background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 10, padding: 12 }}>
@@ -786,11 +1004,15 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
                 <button onClick={build} disabled={drafting} style={{ padding: '8px 14px', borderRadius: 9, border: 'none', background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', opacity: drafting ? 0.6 : 1 }}>
                   {drafting ? 'Building…' : built ? '↻ Rebuild' : '✦ Build the plan'}
                 </button>
-                {!built && !drafting && (
-                  <button onClick={() => setManual(true)} style={{ padding: '8px 12px', borderRadius: 9, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Write it myself</button>
+                {!built && !drafting && !manual && (
+                  // Pressing this must not count as "leaving the focus box": that
+                  // started the automatic build a moment before the click landed,
+                  // so choosing to write the plan yourself still asked Lumio Coach
+                  // for one. Holding the focus where it is stops the build.
+                  <button onMouseDown={e => e.preventDefault()} onClick={() => { autoRan.current = true; setManual(true) }} style={{ padding: '8px 12px', borderRadius: 9, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Write it myself</button>
                 )}
               </div>
-              {built && (
+              {built && rebuilt && (
                 <div style={{ fontSize: 11, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>
                   {onHistory
                     ? 'Built from this player’s last session and their record — edit anything below.'
@@ -805,24 +1027,39 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
             <div style={{ marginTop: 12 }}><label style={lbl}>Drills (one per line)</label><textarea value={drills} onChange={e => setDrills(e.target.value)} rows={3} style={{ ...input, resize: 'vertical' }} /></div>
           </div>
 
-          {/* Run-sheet preview */}
-          <div>
-            <label style={lbl}>Run-sheet ({duration || 60} mins)</label>
+          {/* Run-sheet — every block can be changed: minutes, name and what happens in it. */}
+          <div style={{ minWidth: 0 }}>
+            {/* The heading shows what the blocks ADD UP to, not the length box:
+                shortening the lesson after the plan was built left a 60-minute
+                run-sheet under "Run-sheet (30 mins)". */}
+            <label style={lbl}>Run-sheet{aiSheet.length ? ` (${sheetTotal} mins)` : ''}</label>
+            {aiSheet.length > 0 && minsOk && sheetTotal !== mins && (
+              <div style={{ fontSize: 11, color: T.warn, marginTop: 5, lineHeight: 1.5 }}>The blocks add up to {sheetTotal} minutes but the session is {mins}. Change the minutes below, or press Rebuild.</div>
+            )}
             <div style={{ marginTop: 6, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: 12 }}>
               {aiSheet.length === 0 ? (
                 <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.6, padding: '6px 0' }}>
-                  {drafting ? 'Lumio Coach is building the run-sheet…' : 'Pick a player and a focus and Lumio Coach will build the run-sheet — phase by phase, timed to the minute.'}
+                  {drafting ? 'Lumio Coach is building the run-sheet…' : manual ? 'No run-sheet yet. Add your own blocks below, or leave it and a standard outline for this type of session is shown.' : 'Pick a player and a focus and Lumio Coach will build the run-sheet — phase by phase, timed to the minute.'}
                 </div>
               ) : aiSheet.map((ph, i) => (
-                <div key={i} style={{ display: 'flex', gap: 8, padding: '6px 0', borderBottom: i < aiSheet.length - 1 ? `1px solid ${T.border}` : 'none' }}>
-                  <span style={{ fontSize: 11, color: accent.hex, fontWeight: 700, width: 34, flexShrink: 0 }}>{ph.mins}m</span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{ph.phase}</div>
-                    <div style={{ fontSize: 10.5, color: T.text3, lineHeight: 1.4 }}>{ph.detail}</div>
+                <div key={i} style={{ display: 'flex', gap: 8, padding: '8px 0', borderBottom: i < aiSheet.length - 1 ? `1px solid ${T.border}` : 'none' }}>
+                  <input type="number" inputMode="numeric" min={1} aria-label={`Minutes for block ${i + 1}`} value={ph.mins} onChange={e => setPhase(i, { mins: Math.max(0, Math.round(Number(e.target.value) || 0)) })}
+                    style={{ width: 52, flexShrink: 0, alignSelf: 'flex-start', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 7, padding: '7px 6px', color: accent.hex, fontSize: 12, fontWeight: 700, boxSizing: 'border-box', outline: 'none' }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <input aria-label={`Name of block ${i + 1}`} value={ph.phase} onChange={e => setPhase(i, { phase: e.target.value })}
+                      style={{ width: '100%', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 7, padding: '7px 8px', color: T.text, fontSize: 12, fontWeight: 600, boxSizing: 'border-box', outline: 'none' }} />
+                    <textarea aria-label={`What happens in block ${i + 1}`} value={ph.detail} rows={2} onChange={e => setPhase(i, { detail: e.target.value })}
+                      style={{ width: '100%', marginTop: 4, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 7, padding: '7px 8px', color: T.text2, fontSize: 11.5, lineHeight: 1.4, boxSizing: 'border-box', outline: 'none', resize: 'vertical', fontFamily: 'inherit' }} />
                     {ph.cue && <div style={{ fontSize: 10.5, color: accent.hex, lineHeight: 1.4, marginTop: 2 }}>Cue: {ph.cue}</div>}
                   </div>
+                  <button onClick={() => setAiSheet(s => s.filter((_, j) => j !== i))} aria-label={`Remove block ${i + 1}`} title="Remove this block"
+                    style={{ appearance: 'none', alignSelf: 'flex-start', width: 36, height: 36, flexShrink: 0, background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 7, color: T.text3, cursor: 'pointer', fontSize: 15 }}>×</button>
                 </div>
               ))}
+              {(built || manual) && (
+                <button onClick={() => setAiSheet(s => [...s, { phase: '', mins: 10, detail: '' }])}
+                  style={{ appearance: 'none', marginTop: aiSheet.length ? 8 : 0, minHeight: 36, padding: '0 12px', background: 'transparent', border: `1px dashed ${T.border}`, borderRadius: 8, color: T.text2, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>+ Add a block</button>
+              )}
             </div>
             <label style={{ ...lbl, marginTop: 14, display: 'block' }}>Kit list</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
@@ -834,14 +1071,14 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
           </div>
         </div>
 
-        {err && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 12 }}>{err}</p>}
+        {err && <p role="alert" style={{ color: '#EF4444', fontSize: 12, marginTop: 12 }}>{err}</p>}
         <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
           {(() => {
-            const ready = (built || manual) && !saving
+            const ready = (built || manual) && !saving && !drafting
             return (
-              <button onClick={save} disabled={!ready} title={ready ? '' : 'Lumio Coach is building this plan'}
+              <button onClick={save} disabled={!ready} title={ready ? '' : drafting ? 'Lumio Coach is building this plan' : 'Press “Build the plan”, or choose “Write it myself”'}
                 style={{ flex: 1, padding: '12px', borderRadius: 10, border: 'none', background: ready ? accent.hex : T.hover, color: ready ? T.btnText : T.text3, fontSize: 14, fontWeight: 700, cursor: ready ? 'pointer' : 'not-allowed' }}>
-                {saving ? 'Saving…' : drafting ? 'Lumio Coach is building the plan…' : built || manual ? '✓ Add session' : 'Waiting for Lumio Coach…'}
+                {saving ? 'Saving…' : drafting ? 'Lumio Coach is building the plan…' : built || manual ? (edit ? '✓ Save changes' : '✓ Add session') : 'Build the plan, or write it yourself'}
               </button>
             )
           })()}
@@ -853,7 +1090,7 @@ function NewSession({ T, accent, density, players, prefill, onClose, onSaved }: 
 }
 
 // ── Saved session run-sheet ──────────────────────────────────────────────────
-function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onCompleted, onClose, onDelete, inline }: Common & { plan: any; players: any[]; lessons?: any[]; onNavigate?: (s: string) => void; onCompleted: () => void; onClose: () => void; onDelete: () => void; inline?: boolean }) {
+function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onCompleted, onEdit, onClose, onDelete, inline }: Common & { plan: any; players: any[]; lessons?: any[]; onNavigate?: (s: string) => void; onCompleted: () => void; onEdit: () => void; onClose: () => void; onDelete: () => void; inline?: boolean }) {
   // Prefer the run-sheet Lumio Coach actually designed and we stored. The
   // template is kept only for plans created before he built them, so an old plan
   // still renders something rather than an empty box.
@@ -871,15 +1108,24 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
   const [doneOpen, setDoneOpen] = useState(false)
   const [msgOpen, setMsgOpen] = useState(false)
   const profile = useCoachProfile()
-  const act = (bg: string, color: string, border?: string): React.CSSProperties => ({ appearance: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 8, border: border || 'none', background: bg, color, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' })
+  const act = (bg: string, color: string, border?: string): React.CSSProperties => ({ appearance: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 12px', minHeight: 38, borderRadius: 8, border: border || 'none', background: bg, color, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' })
   // ── Who this session is with ──────────────────────────────────────────────
   // The plan stores a NAME; the roster holds the person. Matching them is what
   // puts a face, a colour and a history on the page instead of a text heading.
   const who = String(plan.group_name || '').trim()
-  const player = players.find((p: any) => String(p.name || '').trim().toLowerCase() === who.toLowerCase()) || null
+  // The booking the plan was written for knows the player by id; the plan's own
+  // name is the fallback, and only when it matches exactly one person.
+  const bookings = useCoachTable<any>('coach_bookings')
+  const booking = plan.booking_id ? bookings.rows.find((b: any) => String(b.id) === String(plan.booking_id)) : null
+  const named = who ? players.filter((p: any) => sameName(p.name, who)) : []
+  const player = (booking?.player_id && players.find((p: any) => String(p.id) === String(booking.player_id)))
+    || (named.length === 1 ? named[0] : null)
   const stage = player?.racket_stage ? RACKET_STAGES.find(s => s.id === player.racket_stage) : null
+  // Finished = the session has been written up (completed_at). It stays here to
+  // look back at, but it is not something to finish a second time.
+  const finished = !!plan.completed_at
   const last = [...(lessons || [])]
-    .filter((l: any) => String(l.player_name || '').trim().toLowerCase() === who.toLowerCase())
+    .filter((l: any) => player && l.player_id ? String(l.player_id) === String(player.id) : (!!who && sameName(l.player_name, who)))
     .sort((a: any, b: any) => String(b.session_date ?? '').localeCompare(String(a.session_date ?? '')))[0] || null
 
   const total = sheet.reduce((a, ph) => a + (ph.mins || 0), 0) || 1
@@ -901,7 +1147,7 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={avatarSrc(player.avatar_url)} alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
             : <span style={{ width: 44, height: 44, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>
-                {(who || plan.title || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join('')}
+                {initialsOf(who || plan.title || '?')}
               </span>}
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
@@ -911,26 +1157,40 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
                   <span style={{ width: 16, height: 10, borderRadius: 3, background: stage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />{stage.name}
                 </span>
               )}
+              {finished && (
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: T.good, background: `${T.good}1f`, border: `1px solid ${T.good}55`, borderRadius: 999, padding: '2px 9px' }}>
+                  ✓ Finished {new Date(plan.completed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                </span>
+              )}
             </div>
             <div style={{ fontSize: 12, color: T.text3, marginTop: 3 }}>
-              {[plan.start_time ? `${plan.start_time}${endTime ? `–${endTime}` : ''}` : '', plan.session_type, plan.court, `${plan.duration_min || 60} min`].filter(Boolean).join(' · ')}
+              {[plan.session_date ? ukDay(plan.session_date) : '', plan.start_time ? `${plan.start_time}${endTime ? `–${endTime}` : ''}` : '', plan.session_type, plan.court, `${plan.duration_min || 60} min`].filter(Boolean).join(' · ')}
             </div>
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7 }}>
             {/* What you do WITH the session, while you are on court. */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'flex-end' }}>
-              <button onClick={() => setDoneOpen(true)} style={act(`${T.good}22`, T.good, `1px solid ${T.good}55`)}>✓ Finish session</button>
-              <button onClick={() => setMedia({ kind: 'audio', upload: false })} style={act(accent.dim, accent.hex, `1px solid ${accent.border}`)}>🎙 Record the lesson</button>
-              <button onClick={() => setMedia({ kind: 'video', upload: false })} style={act('transparent', T.text2, `1px solid ${T.border}`)}>🎥 Record video</button>
-              <button onClick={() => setMedia({ kind: 'audio', upload: true })} style={act('transparent', T.text2, `1px solid ${T.border}`)}>⬆ Upload a recording</button>
-              {!inline && <button onClick={onClose} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 30, height: 30, fontSize: 17 }}>×</button>}
+              {/* A finished session is finished: it offers its summary, not a
+                  second go at finishing or recording it. */}
+              {finished ? (
+                <button onClick={() => { onNavigate?.('lessons'); onClose() }} style={act(`${T.good}22`, T.good, `1px solid ${T.good}55`)}>Open its lesson summary</button>
+              ) : (
+                <>
+                  <button onClick={() => setDoneOpen(true)} style={act(`${T.good}22`, T.good, `1px solid ${T.good}55`)}>✓ Finish session</button>
+                  <button onClick={() => setMedia({ kind: 'audio', upload: false })} style={act(accent.dim, accent.hex, `1px solid ${accent.border}`)}>🎙 Record the lesson</button>
+                  <button onClick={() => setMedia({ kind: 'video', upload: false })} style={act('transparent', T.text2, `1px solid ${T.border}`)}>🎥 Record video</button>
+                  <button onClick={() => setMedia({ kind: 'audio', upload: true })} style={act('transparent', T.text2, `1px solid ${T.border}`)}>⬆ Upload a recording</button>
+                </>
+              )}
+              {!inline && <button onClick={onClose} aria-label="Close" style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 40, height: 40, fontSize: 17 }}>×</button>}
             </div>
             {/* Everything else about this player or this plan. */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'flex-end' }}>
               <button onClick={() => { onNavigate?.('lessons'); onClose() }} style={act('transparent', T.text3, `1px solid ${T.border}`)}>Review last session</button>
               <button onClick={() => setMsgOpen(true)} style={act('transparent', T.text3, `1px solid ${T.border}`)}>✉ Message {who ? who.split(/\s+/)[0] : 'player'}</button>
               <button onClick={() => { if (player) { try { sessionStorage.setItem('lumio_open_player', player.id) } catch { /* ignore */ } } onNavigate?.(player ? 'roster' : 'development'); onClose() }} style={act('transparent', T.text3, `1px solid ${T.border}`)}>↗ View player profile</button>
-              <button onClick={() => printRunSheets([plan])} style={act('transparent', T.text3, `1px solid ${T.border}`)}>🖨 Print / share</button>
+              {!finished && <button onClick={onEdit} style={act('transparent', T.text2, `1px solid ${T.border}`)}>✎ Edit plan</button>}
+              <button onClick={() => printRunSheets([plan], `Run-sheet · ${[who || plan.title, plan.session_date ? ukDay(plan.session_date) : ''].filter(Boolean).join(' · ')}`)} style={act('transparent', T.text3, `1px solid ${T.border}`)}>🖨 Print</button>
               <button onClick={onDelete} style={act('transparent', T.bad, `1px solid ${T.border}`)}>✕ Delete</button>
             </div>
           </div>
@@ -972,7 +1232,7 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
         )}
 
         {/* ── The hour itself, and what it needs ───────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.9fr) minmax(0, 1fr)', gap: 16, marginTop: 18 }}>
+        <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.9fr) minmax(0, 1fr)', gap: 16, marginTop: 18 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 8 }}>
               <div style={label}>Run-sheet</div>
@@ -1043,7 +1303,7 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
         {msgOpen && (
           <LiveCoachSendMessage T={T} accent={accent} players={players as any}
             coachName={profile.display_name || 'Coach'} clubName={profile.brand_name || 'Your academy'}
-            init={{ recipient: who || undefined }}
+            init={{ recipient: who || undefined, playerId: player?.id || undefined }}
             onClose={() => setMsgOpen(false)} onSent={() => setMsgOpen(false)} />
         )}
 

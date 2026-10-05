@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
-import { campsMatch, tidyPersonName, isPersonName } from '@/lib/coach/import-records'
+import { campsMatch, tidyPersonName, isPersonName, personKey } from '@/lib/coach/import-records'
+import { coachSeat } from '@/lib/coach/membership'
 
 export const runtime = 'nodejs'
 
@@ -33,10 +34,12 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'You are signed out — sign in again and retry.' }, { status: 401 })
 
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
-  // Head coach only: camps and their attendee lists are the academy's.
-  const { data: own } = await admin.from('sports_profiles').select('id, sport').eq('id', user.id).maybeSingle()
-  if (own?.sport !== 'coach') return NextResponse.json({ error: 'Only the head coach can add camp attendees from an import.' }, { status: 403 })
-  const academyId = own.id as string
+  // Head coach only: camps and their attendee lists are the academy's. And the
+  // academy is the one whose portal the import was made in — a head coach who
+  // also helps at another academy must not fill their own camps from there.
+  const seat = await coachSeat(user.id, user.email)
+  if (!seat?.isHead) return NextResponse.json({ error: 'Only the head coach can add camp attendees from an import.' }, { status: 403 })
+  const academyId = seat.academyId
 
   const body = await req.json().catch(() => ({})) as { lists?: List[] }
   const lists = (Array.isArray(body.lists) ? body.lists : []).slice(0, 40)
@@ -47,7 +50,7 @@ export async function POST(req: NextRequest) {
       admin.from('coach_camps').select('id, name, start_date, emails_paused').eq('coach_id', academyId),
       admin.from('coach_players').select('id, name, age').eq('coach_id', academyId).limit(10000),
     ])
-    const key = (n: unknown) => tidyPersonName(String(n ?? '')).toLowerCase()
+    const key = personKey
     const byName = new Map<string, { id: string; age: number | null }>()
     const twice = new Set<string>()
     for (const p of players || []) {

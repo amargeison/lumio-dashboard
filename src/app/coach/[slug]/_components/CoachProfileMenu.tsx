@@ -40,7 +40,7 @@ function LogOutGlyph() {
 
 export function CoachProfileMenu({
   T, accent, avatar, coachName, roleLabel, variant, expanded = true, onLogout, logoutLabel = 'Log out',
-  roles, activeRole, onSelectRole,
+  roles, activeRole, onSelectRole, academies,
 }: {
   T: ThemeTokens
   accent: AccentTokens
@@ -62,6 +62,11 @@ export function CoachProfileMenu({
   roles?: ProfileMenuRole[]
   activeRole?: string
   onSelectRole?: (roleId: string) => void
+  /**
+   * Every academy this person coaches at, when there is more than one. Each is
+   * its own portal at its own address, so these are plain links.
+   */
+  academies?: { label: string; note?: string; href: string; current: boolean }[]
 }) {
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -113,7 +118,12 @@ export function CoachProfileMenu({
         ...(isSidebar
           ? { bottom: Math.max(8, window.innerHeight - anchor.top + 6), left: Math.max(8, anchor.left) }
           : { top: anchor.bottom + 8, right: Math.max(8, window.innerWidth - anchor.right) }),
-        minWidth: 196, zIndex: 120,
+        minWidth: isSidebar ? 196 : 232, zIndex: 120,
+        // The phone avatar's wrapper sets line-height 0 (so the round button has
+        // no stray gap under it), and the menu inherited it: each "switch view"
+        // row came out 14px tall with no space between them, directly above Log
+        // out. A mis-tap there switches the whole portal to another coach's view.
+        lineHeight: 1.35,
         background: T.panel, border: `1px solid ${T.border}`, borderRadius: 11,
         boxShadow: '0 12px 32px -12px rgba(0,0,0,0.65)', overflow: 'hidden',
       }}>
@@ -135,7 +145,9 @@ export function CoachProfileMenu({
                   width: '100%', display: 'flex', alignItems: 'center', gap: 8,
                   appearance: 'none', border: 0, cursor: 'pointer', borderRadius: 7,
                   background: on ? accent.dim : 'transparent',
-                  padding: '7px 8px', fontSize: 12, textAlign: 'left',
+                  // A thumb-sized row on the phone; the desktop menu keeps its density.
+                  padding: isSidebar ? '7px 8px' : '0 10px', minHeight: isSidebar ? undefined : 44,
+                  marginBottom: isSidebar ? 0 : 2, fontSize: isSidebar ? 12 : 13.5, textAlign: 'left',
                   color: on ? accent.hex : T.text2, fontWeight: on ? 600 : 500,
                 }}>
                 <span style={{ fontSize: 13, flexShrink: 0 }}>{r.icon}</span>
@@ -146,13 +158,38 @@ export function CoachProfileMenu({
           })}
         </div>
       )}
+      {academies && academies.length > 1 && (
+        <div style={{ padding: '6px 6px 4px', borderBottom: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '2px 6px 5px' }}>Switch academy</div>
+          {academies.map(a => (
+            <a
+              key={a.href}
+              role="menuitem"
+              href={a.href}
+              aria-current={a.current ? 'page' : undefined}
+              onClick={e => { setOpen(false); if (a.current) e.preventDefault() }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, borderRadius: 7, textDecoration: 'none',
+                background: a.current ? accent.dim : 'transparent',
+                padding: isSidebar ? '7px 8px' : '0 10px', minHeight: isSidebar ? undefined : 44,
+                marginBottom: isSidebar ? 0 : 2, fontSize: isSidebar ? 12 : 13.5,
+                color: a.current ? accent.hex : T.text2, fontWeight: a.current ? 600 : 500,
+              }}>
+              <span style={{ flex: 1, minWidth: 0, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.label}</span>
+              {a.note && <span style={{ fontSize: 10, color: T.text3, fontWeight: 500, flexShrink: 0 }}>{a.note}</span>}
+              {a.current && <span style={{ fontSize: 10, fontWeight: 700, color: accent.hex, flexShrink: 0 }}>✓</span>}
+            </a>
+          ))}
+        </div>
+      )}
       <button
         role="menuitem"
         onClick={() => { setOpen(false); onLogout() }}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: 8,
           appearance: 'none', border: 0, background: 'transparent', cursor: 'pointer',
-          padding: '10px 12px', fontSize: 12, fontWeight: 600, color: '#EF4444', textAlign: 'left',
+          padding: isSidebar ? '10px 12px' : '0 14px', minHeight: isSidebar ? undefined : 48,
+          fontSize: isSidebar ? 12 : 13.5, fontWeight: 600, color: '#EF4444', textAlign: 'left',
         }}>
         <LogOutGlyph />
         <span>{logoutLabel}</span>
@@ -167,13 +204,16 @@ export function CoachProfileMenu({
         onClick={() => { if (open) setOpen(false); else openMenu() }}
         aria-haspopup="menu"
         aria-expanded={open}
-        title={switchRoles ? `${coachName || 'Coach'} — switch view or ${logoutLabel.toLowerCase()}` : logoutLabel}
+        title={switchRoles ? `${coachName || 'Coach'} — switch view or ${logoutLabel.toLowerCase()}` : academies && academies.length > 1 ? `${coachName || 'Coach'} — switch academy or ${logoutLabel.toLowerCase()}` : logoutLabel}
         style={{
           appearance: 'none', border: 0, background: open ? accent.dim : 'transparent', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: isSidebar ? 9 : 0,
           width: isSidebar ? '100%' : 'auto',
           justifyContent: isSidebar && expanded ? 'flex-start' : 'center',
-          padding: isSidebar ? (expanded ? '4px 6px' : '4px 0') : 0,
+          // Phone: the avatar is 30px across. The padding (taken back by the
+          // margin, so the bar's layout does not move) makes the tap area 42px.
+          padding: isSidebar ? (expanded ? '4px 6px' : '4px 0') : 6,
+          margin: isSidebar ? 0 : -6,
           borderRadius: isSidebar ? 8 : '50%',
           textAlign: 'left', color: T.text,
         }}>

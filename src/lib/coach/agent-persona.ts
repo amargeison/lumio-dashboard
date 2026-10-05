@@ -275,7 +275,7 @@ export function playerTargetsTask(p: {
     p.standard ? `Standard: ${p.standard}` : '',
     p.goal ? `Their own goal: ${p.goal}` : '',
     p.notes ? `Coach's notes: ${p.notes}` : '',
-    p.weakest.length ? `Lowest-scoring skills (out of 5): ${p.weakest.join(', ')}` : '',
+    p.weakest.length ? `Lowest-graded skills (1 to 4, where 4 is mastered): ${p.weakest.join(', ')}` : '',
     p.strongest.length ? `Strongest skills: ${p.strongest.join(', ')}` : '',
   ].filter(Boolean).join('\n')
 

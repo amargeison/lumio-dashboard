@@ -6,10 +6,11 @@
 // from Racket Progression (coach-assessed against the LTA Youth pathway).
 // Honest by design: estimated effort only, no court position / heatmaps.
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable } from '../_lib/coach-db'
+import { playerLabels } from '../_lib/tell-apart'
 import { levelFor, bandLabel } from '../_lib/effort-rewards'
 import { getSettings } from '../_lib/settings-store'
 import { GpsLineChart } from './CoachHeatmaps'
@@ -17,7 +18,9 @@ import { avatarSrc } from '@/lib/avatar'
 import { stageWords } from '../_lib/stage-words'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
-const initials = (n: string) => (n || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+// First letters by whole character, letters and digits only — half an emoji
+// prints as a broken box.
+const initials = (n: string) => (n || '').trim().split(/\s+/).map(w => Array.from(w).find(ch => /[\p{L}\p{N}]/u.test(ch)) || '').filter(Boolean).slice(0, 2).join('').toUpperCase() || '?'
 
 export function LiveEffortRewards({ T, accent, density }: Common) {
   const players = useCoachTable<any>('coach_players')
@@ -34,7 +37,26 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
   const [logBusy, setLogBusy] = useState(false)
   const [logErr, setLogErr] = useState('')
   const [logXp, setLogXp] = useState<number | null>(null)
-  const openLog = (pid?: string) => { setLogErr(''); setLogXp(null); setLogPlayer(pid || players.rows[0]?.id || ''); setLogOpen(true) }
+  // The form opens blank every time. It used to keep the last distance,
+  // duration and effort, so the next player was quietly saved with somebody
+  // else's 3.2 km.
+  const blankLog = () => { setLogDur('45'); setLogRpe(6); setLogDist(''); setLogNote('') }
+  const openLog = (pid?: string) => { setLogErr(''); setLogXp(null); blankLog(); setLogPlayer(pid || players.rows[0]?.id || ''); setLogOpen(true) }
+  // Closing a form with something typed into it asks first.
+  const logDirty = logDist !== '' || logNote !== '' || logDur !== '45' || logRpe !== 6
+  const closeLog = () => {
+    if (logBusy) return
+    if (logXp == null && logDirty && !confirm('Close without saving? What you have typed will be lost.')) return
+    setLogOpen(false)
+  }
+  const closeLogRef = useRef(closeLog)
+  useEffect(() => { closeLogRef.current = closeLog })
+  useEffect(() => {
+    if (!logOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeLogRef.current() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [logOpen])
   const submitLog = async () => {
     if (!logPlayer) { setLogErr('Pick a player'); return }
     setLogErr(''); setLogBusy(true)
@@ -44,7 +66,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
         body: JSON.stringify({ player_id: logPlayer, duration_min: Number(logDur), perceived_effort: logRpe, distance_m: logDist ? Math.round(Number(logDist) * 1000) : undefined, note: logNote.trim() || undefined }),
       })
       const d = await r.json().catch(() => ({}))
-      if (r.ok && d.ok) { setLogXp(d.xp_awarded ?? null); setLogNote(''); sessions.reload(); players.reload(); setTimeout(() => { setLogOpen(false); setLogXp(null) }, 1400) }
+      if (r.ok && d.ok) { setLogXp(d.xp_awarded ?? null); blankLog(); sessions.reload(); players.reload(); setTimeout(() => { setLogOpen(false); setLogXp(null) }, 1400) }
       else setLogErr(d.error || 'Could not save')
     } catch { setLogErr('Could not save') } finally { setLogBusy(false) }
   }
@@ -54,12 +76,12 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
     <button onClick={() => openLog()} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>+ Log a session</button>
   )
   const logModal = logOpen ? (
-    <div onClick={e => { if (e.target === e.currentTarget && !logBusy) setLogOpen(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.74)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '8vh 16px', overflowY: 'auto' }}>
+    <div onMouseDown={e => { if (e.target === e.currentTarget) closeLog() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.74)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '8vh 16px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 440, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
           <span style={{ fontSize: 20 }}>🎾</span>
           <div style={{ fontSize: 16, fontWeight: 800, color: T.text, flex: 1 }}>Log a session</div>
-          <button onClick={() => !logBusy && setLogOpen(false)} style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15 }}>✕</button>
+          <button onClick={closeLog} aria-label="Close" style={{ width: 28, height: 28, borderRadius: 8, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15 }}>✕</button>
         </div>
         {logXp != null ? (
           <div style={{ textAlign: 'center', padding: '20px 0' }}>
@@ -73,7 +95,8 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
               <label style={lab}>Player</label>
               <select value={logPlayer} onChange={e => setLogPlayer(e.target.value)} style={{ ...field, cursor: 'pointer' }}>
                 {players.rows.length === 0 && <option value="">No players yet</option>}
-                {players.rows.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {/* Two players with the same name are told apart (age, parent…). */}
+                {players.rows.map((p: any) => <option key={p.id} value={p.id}>{playerLabels(players.rows).get(p.id) || p.name}</option>)}
               </select>
             </div>
             <div>
@@ -84,7 +107,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
               <label style={lab}>How hard did it feel?</label>
               <div style={{ display: 'flex', gap: 4 }}>
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                  <button key={n} onClick={() => setLogRpe(n)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', border: `1px solid ${logRpe === n ? accent.hex : T.border}`, background: logRpe === n ? accent.dim : 'transparent', color: logRpe === n ? T.text : T.text3, borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 700 }}>{n}</button>
+                  <button key={n} className="cm-tap" onClick={() => setLogRpe(n)} style={{ flex: 1, appearance: 'none', cursor: 'pointer', border: `1px solid ${logRpe === n ? accent.hex : T.border}`, background: logRpe === n ? accent.dim : 'transparent', color: logRpe === n ? T.text : T.text3, borderRadius: 8, padding: '8px 0', fontSize: 12, fontWeight: 700 }}>{n}</button>
                 ))}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: T.text3, marginTop: 5 }}><span>Easy</span><span>Flat out</span></div>
@@ -112,7 +135,8 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
 
   const ranked = players.rows
     .map(p => ({ p, xp: Number(p.xp_total) || 0, list: forPlayer(p.id) }))
-    .filter(r => r.list.length > 0 || r.xp > 0)
+    // A player whose only session was voided stays listed, so it can be put back.
+    .filter(r => r.list.length > 0 || r.xp > 0 || sessions.rows.some(s => s.player_id === r.p.id))
     .sort((a, b) => b.xp - a.xp)
 
   const sel = ranked.find(r => r.p.id === selId) ?? ranked[0]
@@ -277,6 +301,32 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
               ))}
             </div>
             <span className="tnum" style={{ fontSize: 14, fontWeight: 800, color: accent.hex, flexShrink: 0 }}>+{Number(s.xp_awarded) || 0} XP</span>
+            {/* The page has always said odd sessions can be voided; this is the
+                control. The session stops counting and its XP comes off the
+                player's total (the server does both in one step). */}
+            <button onClick={async () => {
+              if (!confirm(`Void this session? It stops counting and its ${Number(s.xp_awarded) || 0} XP is taken off ${sel.p.name}'s total.`)) return
+              const r = await fetch('/api/coach/watch/void', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, voided: true }) })
+              if (r.ok) { sessions.reload(); players.reload() }
+              else alert('That session could not be voided. Please try again.')
+            }} title="Void this session"
+              style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 8, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Void</button>
+          </div>
+        ))}
+        {/* Voided by mistake? It is still here, and can be put back — the XP
+            returns with it. There used to be no way back once Void was pressed. */}
+        {sessions.rows.filter(s => s.voided && s.player_id === sel.p.id).sort((a, b) => when(b).localeCompare(when(a))).map(s => (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: `1px solid ${T.border}` }}>
+            <div style={{ width: 96, flexShrink: 0, fontSize: 12, color: T.text3, textDecoration: 'line-through' }}>{when(s) ? new Date(when(s)).toLocaleDateString('en-GB') : '—'}</div>
+            <div style={{ flex: 1, minWidth: 0, fontSize: 11.5, color: T.text3 }}>Voided — not counted</div>
+            <span className="tnum" style={{ fontSize: 13, fontWeight: 700, color: T.text3, flexShrink: 0, textDecoration: 'line-through' }}>+{Number(s.xp_awarded) || 0} XP</span>
+            <button onClick={async () => {
+              if (!confirm(`Put this session back? It counts again and its ${Number(s.xp_awarded) || 0} XP returns to ${sel.p.name}'s total.`)) return
+              const r = await fetch('/api/coach/watch/void', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, voided: false }) })
+              if (r.ok) { sessions.reload(); players.reload() }
+              else alert('That session could not be put back. Please try again.')
+            }} title="Count this session again"
+              style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Put back</button>
           </div>
         ))}
       </div>
@@ -308,7 +358,8 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
           <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Smartwatch sync <span style={{ fontSize: 10, fontWeight: 800, color: accent.hex, background: accent.dim, border: `1px solid ${accent.hex}55`, borderRadius: 999, padding: '2px 8px', marginLeft: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Coming soon</span></div>
           <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5 }}>Players will connect a watch so sessions log heart rate, distance and duration automatically. For now, log sessions manually above — the XP works exactly the same.</div>
         </div>
-        <span style={{ fontSize: 12, fontWeight: 700, color: T.text3, border: `1px solid ${T.border}`, borderRadius: 9, padding: '8px 14px', whiteSpace: 'nowrap' }}>Notify me</span>
+        {/* "Notify me" used to sit here, drawn as a button and wired to nothing.
+            There is no list to join yet, so it is not offered. */}
       </div>
 
       <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.6, margin: '2px 4px' }}>

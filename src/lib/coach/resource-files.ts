@@ -15,7 +15,15 @@
 export const RESOURCE_FILE_PREFIX = 'file:'
 
 export const RESOURCE_FILE_ACCEPT = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg,.txt'
-export const RESOURCE_FILE_MAX_MB = 25
+// 10, because that is what actually gets through. The page said 25MB, but a
+// request is held in memory on its way to the route and that holding area stops
+// at 10MB (Next's proxy body limit): anything larger arrived cut short and was
+// refused — with a message saying the limit was 25MB. The number shown, the
+// check in the browser and the check on the server all read this one constant.
+// To allow more, raise experimental.proxyClientMaxBodySize in next.config.ts
+// (and whatever sits in front of the server) FIRST, then this.
+export const RESOURCE_FILE_MAX_MB = 10
+export const RESOURCE_FILE_TOO_BIG = `That file is too big to add. The limit is ${RESOURCE_FILE_MAX_MB}MB. For anything larger, put it online (Google Drive, YouTube) and paste the link instead.`
 
 export const isResourceFile = (url?: string | null) => !!url && url.startsWith(RESOURCE_FILE_PREFIX)
 

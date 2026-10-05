@@ -20,7 +20,10 @@ import { COACH_AGENT_PERSONA, COACH_DIAGNOSTIC_STANDARD } from './agent-persona'
 export type WriteUp = {
   focus?: string; assessment?: string; covered?: string[]; technique?: string[]
   takeaways?: string[]; drills?: string[]; homework?: string; nextFocus?: string
-  recap?: string; coachNote?: string; rating?: number
+  recap?: string; rating?: number
+  /** A short note TO the player. Shared with them — which is why it is not
+      called coachNote: that name is the coach's private note on a typed summary. */
+  playerNote?: string
 }
 
 export type WriteUpInput = {
@@ -68,7 +71,7 @@ Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:
   "homework": "what to practise before next time (or 'Not set')",
   "nextFocus": "what to work on next session — this is where anything planned but not covered belongs",
   "recap": "2-3 plain sentences for a parent reading in ten seconds: what we worked on, and what happens next.",
-  "coachNote": "2-3 sentence warm, specific note to the player",
+  "playerNote": "2-3 sentence warm, specific note to the player",
   "rating": 4
 }
 "rating" is an integer 1-5 — use the coach's own rating when given, otherwise 3.`
@@ -79,11 +82,45 @@ function textOf(res: { content: Array<{ type: string; text?: string }> }): strin
   return t
 }
 
+// What comes back is checked field by field before it is treated as a summary.
+// Valid JSON is not the same as a write-up: an answer of the wrong shape (an
+// object with other keys, numbers where sentences should be) used to be stored
+// as the lesson's review exactly as it arrived. Only the fields below are kept,
+// only as text, and an answer with none of the substance in it is refused.
+const str = (v: unknown, max: number): string | undefined => {
+  if (typeof v !== 'string') return undefined
+  const s = v.trim()
+  return s ? s.slice(0, max) : undefined
+}
+const strList = (v: unknown, n: number): string[] | undefined => {
+  if (!Array.isArray(v)) return undefined
+  const out = v.map(x => str(x, 600)).filter((x): x is string => !!x).slice(0, n)
+  return out.length ? out : undefined
+}
+
 function extractJson(txt: string): WriteUp | null {
   const cleaned = txt.replace(/```json\s*/gi, '').replace(/```/g, '').trim()
   const m = cleaned.match(/\{[\s\S]*\}/)
   if (!m) return null
-  try { return JSON.parse(m[0]) as WriteUp } catch { return null }
+  let raw: Record<string, unknown>
+  try { raw = JSON.parse(m[0]) as Record<string, unknown> } catch { return null }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const rating = typeof raw.rating === 'number' && raw.rating >= 1 && raw.rating <= 5 ? Math.round(raw.rating) : undefined
+  const out: WriteUp = {
+    focus: str(raw.focus, 300), assessment: str(raw.assessment, 1500),
+    covered: strList(raw.covered, 6), technique: strList(raw.technique, 6),
+    takeaways: strList(raw.takeaways, 4), drills: strList(raw.drills, 8),
+    homework: str(raw.homework, 600), nextFocus: str(raw.nextFocus, 400),
+    recap: str(raw.recap, 800),
+    // Older prompts called this field coachNote; accept either from the model.
+    playerNote: str(raw.playerNote, 800) ?? str(raw.coachNote, 800),
+    rating,
+  }
+  // Drop the empty keys so the stored review holds only what was written.
+  for (const k of Object.keys(out) as (keyof WriteUp)[]) if (out[k] === undefined) delete out[k]
+  // No assessment, nothing covered, no takeaways and no recap is not a summary.
+  if (!out.assessment && !out.covered && !out.takeaways && !out.recap) return null
+  return out
 }
 
 /** The coach's account of the session, as the model will read it. */
@@ -136,5 +173,6 @@ export function formatWriteUp(r: WriteUp): string {
   if (r.drills?.length) parts.push(`Drills:\n${r.drills.map(c => `• ${c}`).join('\n')}`)
   if (r.homework) parts.push(`Homework: ${r.homework}`)
   if (r.nextFocus) parts.push(`Next session: ${r.nextFocus}`)
+  if (r.playerNote) parts.push(r.playerNote)
   return parts.join('\n\n')
 }

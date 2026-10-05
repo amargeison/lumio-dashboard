@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { verifyInstallToken } from '@/lib/pwa-install-token'
+import { verifyInstallToken, installTokenPath } from '@/lib/pwa-install-token'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,18 +18,45 @@ export const dynamic = 'force-dynamic'
 // wrong jar and the user sees the OTP screen on cold launch.
 //
 // Flow:
-//   1. Verify the install token (HMAC + expiry + slug match)
+//   1. Verify the install token (HMAC + expiry + exact portal match)
 //   2. Short-circuit if the request already carries an sb-* auth cookie
-//   3. admin.auth.admin.generateLink({ type:'magiclink' })
-//   4. fetch(action_link, { redirect:'manual' }) — pull `code` from Location
-//   5. exchangeCodeForSession(code) with cookies wired to outgoing response
+//   3. Refuse a token that has been used before (see "Single use" below)
+//   4. admin.auth.admin.generateLink({ type:'magiclink' })
+//   5. verifyOtp({ token_hash }) with cookies wired to outgoing response —
+//      the same server-side session mint the sign-in route
+//      (/api/sports-demo/verify-otp) uses
 //   6. Single same-origin 307 with Set-Cookie attached
 //
 // Silent fall-through (clean redirect to `next`, OTP screen at worst):
-//   - token missing / expired / forged
-//   - generateLink failure
-//   - verify hop returns non-303 / no Location / no code
-//   - exchangeCodeForSession failure
+//   - token missing / expired / forged / already used / for another portal
+//   - the token's owner no longer exists
+//   - generateLink or verifyOtp failure
+
+// Single use, part one: the tokens THIS server process has redeemed. Checked
+// and recorded in one synchronous step, so two requests arriving together
+// cannot both pass. Entries are dropped once the token would have expired
+// anyway, so this never grows. (Part two, further down, covers a restart or a
+// second server process, which this memory does not.)
+const redeemed = new Map<string, number>()
+
+// How far the sign-in service's clock may run ahead of ours before a token
+// minted straight after sign-in would look "already used".
+const CLOCK_SKEW_SECONDS = 5
+
+// `next` must be a path on this site and nothing else. Browsers read a
+// backslash as a forward slash and silently drop tabs and newlines, so
+// "/\example.com" and "/<tab>/example.com" both mean "//example.com" — another
+// website. Anything that is not a plain single-slash path goes to the home page.
+function safeNextPath(raw: string, origin: string): string {
+  if (!raw.startsWith('/') || raw.includes('//')) return '/'
+  if (/[\\\u0000-\u001f\u007f]/.test(raw)) return '/'
+  try {
+    // Last word goes to the same parser the redirect itself uses.
+    if (new URL(raw, origin).origin !== new URL(origin).origin) return '/'
+  } catch { return '/' }
+  return raw
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   // Behind nginx + PM2 the raw request origin is 0.0.0.0:3000 — useless
@@ -42,7 +69,7 @@ export async function GET(request: NextRequest) {
   const token = searchParams.get('t') || ''
   const nextRaw = searchParams.get('next') || '/'
   // Only allow relative same-origin `next` to prevent open-redirect.
-  const nextPath = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/'
+  const nextPath = safeNextPath(nextRaw, publicOrigin)
   const cleanTarget = new URL(nextPath, publicOrigin)
 
   const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -59,11 +86,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(cleanTarget)
   }
 
-  // Belt-and-braces: the bound slug in the token should match the route
-  // we're about to hand off to. Stops a token minted for /tennis/demo
-  // being reused against /tennis/some-other-slug.
-  const expectedPrefix = `/${payload.sport}/${payload.slug}`
-  if (!nextPath.startsWith(expectedPrefix)) return NextResponse.redirect(cleanTarget)
+  // The token opens its own portal and nothing else: that exact page, or a
+  // page beneath it. (A plain "starts with" let a token for /tennis/demo
+  // through for /tennis/demo-anything.)
+  const portalPath = installTokenPath(payload)
+  if (cleanTarget.pathname !== portalPath && !cleanTarget.pathname.startsWith(portalPath + '/')) {
+    return NextResponse.redirect(cleanTarget)
+  }
 
   // Already-authed short-circuit: if the PWA already carries a Supabase
   // session cookie, don't burn a magic-link — just hand off to the page.
@@ -81,53 +110,52 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(cleanTarget)
   }
 
+  // Single use, part one (see `redeemed` above). No `await` between the check
+  // and the record.
+  const nowSec = Math.floor(Date.now() / 1000)
+  for (const [jti, exp] of redeemed) if (exp < nowSec) redeemed.delete(jti)
+  if (redeemed.has(payload.jti)) {
+    console.warn('[pwa/consume-token] token already used')
+    return NextResponse.redirect(cleanTarget)
+  }
+  redeemed.set(payload.jti, payload.exp)
+
   const admin = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
 
-  // redirectTo points the verify hop at our /auth/callback so the `code`
-  // lands on a same-origin URL in the Location header. We fetch this
-  // server-side and never let the browser see the supabase.co URL.
-  const callback = new URL('/auth/callback', publicOrigin)
-  callback.searchParams.set('redirectTo', cleanTarget.pathname + cleanTarget.search + cleanTarget.hash)
+  // The token names its owner by id only; fetch the account for the email the
+  // magic link needs. No account → nothing to sign in.
+  const { data: owner, error: ownerErr } = await admin.auth.admin.getUserById(payload.sub)
+  const email = owner?.user?.email
+  if (ownerErr || !owner?.user || !email) {
+    console.warn('[pwa/consume-token] token owner not found')
+    return NextResponse.redirect(cleanTarget)
+  }
 
-  const linkRes = await admin.auth.admin.generateLink({
-    type:  'magiclink',
-    email: payload.eml,
-    options: { redirectTo: callback.toString() },
-  })
-  console.log('[pwa-consume] generateLink ' + JSON.stringify({ ok: !linkRes.error && !!linkRes.data?.properties?.action_link }))
+  // Single use, part two — holds across restarts and server processes without
+  // a table. Redeeming a token signs its owner in, which moves the account's
+  // "last signed in" time past the moment the token was issued. So a token
+  // whose owner has signed in since it was issued has either been used
+  // already, or has been overtaken by a newer sign-in; refuse both.
+  const lastSignIn = owner.user.last_sign_in_at ? Date.parse(owner.user.last_sign_in_at) / 1000 : 0
+  if (lastSignIn > payload.iat + CLOCK_SKEW_SECONDS) {
+    console.warn('[pwa/consume-token] token already used (owner has signed in since it was issued)')
+    return NextResponse.redirect(cleanTarget)
+  }
 
-  if (linkRes.error || !linkRes.data?.properties?.action_link) {
+  const linkRes = await admin.auth.admin.generateLink({ type: 'magiclink', email })
+  const tokenHash = linkRes.data?.properties?.hashed_token
+  console.log('[pwa-consume] generateLink ' + JSON.stringify({ ok: !linkRes.error && !!tokenHash }))
+
+  // The link must be for the very account the token names.
+  if (linkRes.error || !tokenHash || linkRes.data?.user?.id !== payload.sub) {
     console.warn('[pwa/consume-token] generateLink failed')
     return NextResponse.redirect(cleanTarget)
   }
 
-  // Server-side verify hop. action_link is supabase.co/auth/v1/verify?...
-  // — Supabase responds with 303 and a Location pointing back to our
-  // callback URL with ?code=… appended. We pull the code out of Location
-  // and exchange it ourselves so the browser stays inside our origin.
-  let code: string | null = null
-  try {
-    const verifyRes = await fetch(linkRes.data.properties.action_link, { redirect: 'manual' })
-    const location = verifyRes.headers.get('location')
-    console.log('[pwa-consume] supabase verify fetch ' + JSON.stringify({ status: verifyRes.status, hasLocation: !!location }))
-    if (!location) {
-      console.warn('[pwa/consume-token] verify hop returned no location')
-      return NextResponse.redirect(cleanTarget)
-    }
-    code = new URL(location, publicOrigin).searchParams.get('code')
-  } catch {
-    console.warn('[pwa/consume-token] verify fetch threw')
-    return NextResponse.redirect(cleanTarget)
-  }
-
-  if (!code) {
-    console.warn('[pwa/consume-token] missing code in verify location')
-    return NextResponse.redirect(cleanTarget)
-  }
-
-  // Exchange the code for a session. Wire @supabase/ssr's cookie writer
-  // to the outgoing redirect response so Set-Cookie lands on the 307 we
-  // return — same-origin, same PWA cookie jar, no cross-origin hop.
+  // Mint the session here, on the server, by verifying the link's hashed
+  // token. Wire @supabase/ssr's cookie writer to the outgoing redirect
+  // response so Set-Cookie lands on the 307 we return — same-origin, same PWA
+  // cookie jar, no cross-origin hop, and the browser never sees supabase.co.
   const cookieStore = await cookies()
   const outResponse = NextResponse.redirect(cleanTarget)
 
@@ -145,10 +173,10 @@ export async function GET(request: NextRequest) {
     },
   )
 
-  const { error: exchErr } = await supabase.auth.exchangeCodeForSession(code)
-  console.log('[pwa-consume] exchangeCodeForSession ' + JSON.stringify({ ok: !exchErr }))
-  if (exchErr) {
-    console.warn('[pwa/consume-token] exchange failed')
+  const { error: verifyErr } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'magiclink' })
+  console.log('[pwa-consume] verifyOtp ' + JSON.stringify({ ok: !verifyErr }))
+  if (verifyErr) {
+    console.warn('[pwa/consume-token] session mint failed')
     return NextResponse.redirect(cleanTarget)
   }
 

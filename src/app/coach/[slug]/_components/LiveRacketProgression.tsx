@@ -18,10 +18,10 @@
 // .racket_stage) and prints a certificate — so marking a level complete really
 // does move the player up the ladder.
 
-import { useState, useMemo, type ReactNode } from 'react'
+import { useState, useMemo, useEffect, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE, RACKET_SKILLS } from '../_lib/coach-db'
+import { useCoachTable, useCoachProfile, sb, RACKET_STAGES, SKILLS_BY_STAGE, RACKET_SKILLS } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
 import { avatarSrc } from '@/lib/avatar'
 import { STAGE_META, LTA_MAP, ltaChip } from '@/lib/coach/colour-ladder'
@@ -31,7 +31,9 @@ type SkillRow = { player_id: string; skill: string; score: number }
 
 // Ladder data lives in @/lib/coach/colour-ladder — the same nine stages are
 // described on Player Development, and two copies would drift.
-const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
+// First letters by whole character, letters and digits only — half an emoji
+// prints as a broken box.
+const initials = (n: string) => (n || '').trim().split(/\s+/).map(w => Array.from(w).find(ch => /[\p{L}\p{N}]/u.test(ch)) || '').filter(Boolean).slice(0, 2).join('').toUpperCase() || '?'
 const LAST = RACKET_STAGES.length - 1
 const TOTAL_SKILLS = RACKET_STAGES.reduce((n, s) => n + (SKILLS_BY_STAGE[s.id]?.length || 0), 0)
 
@@ -49,6 +51,18 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
     return m
   }, [skillRows])
 
+  // The dated record of racket changes (migration 207). The database writes a
+  // line every time a player's racket changes, wherever it was changed; this
+  // only reads it. It is read again whenever a racket on this page changes.
+  const [history, setHistory] = useState<{ id: string; player_id: string; from_stage: string | null; to_stage: string | null; created_at: string }[]>([])
+  const stagesKey = players.map(p => `${p.id}:${p.racket_stage || ''}`).join('|')
+  useEffect(() => {
+    let on = true
+    sb().from('coach_racket_awards').select('id, player_id, from_stage, to_stage, created_at').order('created_at', { ascending: false }).limit(30)
+      .then(({ data }: { data: unknown }) => { if (on && data) setHistory(data as typeof history) })
+    return () => { on = false }
+  }, [stagesKey])
+
   const counts = RACKET_STAGES.map(s => players.filter(p => p.racket_stage === s.id).length)
   const rawIdxOf = (p: Player) => RACKET_STAGES.findIndex(s => s.id === p.racket_stage)
   const progressAt = (p: Player, idx: number) => {
@@ -58,12 +72,46 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
     return Math.round(skills.filter(sk => (sm[sk] || 0) >= 4).length / skills.length * 100)
   }
 
+  // The skills a player has actually mastered at a stage — what a certificate
+  // may claim. It used to list every skill of the stage whatever the grades.
+  const masteredAt = (p: Player, idx: number) => {
+    const sm = skillMap[p.id] || {}
+    return (SKILLS_BY_STAGE[RACKET_STAGES[idx].id] || []).filter(sk => (sm[sk] || 0) >= 4)
+  }
+
+  // Every move from this page is asked about first. One tap on a grid of small
+  // cells used to move a player up or down the ladder, and "Award reward" did
+  // it for a player who had mastered nothing — with a certificate saying they
+  // had. The last move can also be taken back.
+  const [moved, setMoved] = useState<{ id: string; name: string; from: string | null; to: string } | null>(null)
+  const move = (p: Player, to: string) => { setMoved({ id: p.id, name: p.name, from: p.racket_stage ?? null, to }); void edit(p.id, { racket_stage: to }) }
+  const nameOf = (id: string | null) => RACKET_STAGES.find(s => s.id === id)?.name ?? 'Not started'
+
   const award = (p: Player) => {
     const raw = rawIdxOf(p)
-    if (raw < 0) { edit(p.id, { racket_stage: 'white' }); return }   // start them on White
+    if (raw < 0) { if (confirm(`Start ${p.name} on the White racket?`)) move(p, 'white'); return }
     const completed = RACKET_STAGES[raw]
-    printRacketCertificate(p.name, completed, SKILLS_BY_STAGE[completed.id] || [], certOrg(profile))
-    if (raw < LAST) edit(p.id, { racket_stage: RACKET_STAGES[raw + 1].id })
+    const all = SKILLS_BY_STAGE[completed.id] || []
+    const done = masteredAt(p, raw)
+    const next = raw < LAST ? RACKET_STAGES[raw + 1] : null
+    const then = next ? ` and move them on to ${next.name}` : ''
+    const question = done.length >= all.length
+      ? `Award ${p.name} the ${completed.name} racket${then}?\n\nA certificate opens to print.`
+      : `${p.name} has mastered ${done.length} of the ${all.length} ${completed.name} skills.\n\nAward the ${completed.name} racket anyway${then}? The certificate will list only the skills that are mastered.`
+    if (!confirm(question)) return
+    printRacketCertificate(p.name, completed, done, certOrg(profile))
+    if (next) move(p, next.id)
+  }
+
+  const moveTo = (p: Player, to: number) => {
+    const from = rawIdxOf(p)
+    if (to === from) return
+    const target = RACKET_STAGES[to]
+    const question = from < 0 ? `Put ${p.name} on the ${target.name} racket?`
+      : to < from ? `Move ${p.name} back down from ${RACKET_STAGES[from].name} to ${target.name}?\n\nTheir skill grades are kept. The rackets above ${target.name} will no longer show as earned.`
+      : to > from + 1 ? `Move ${p.name} from ${RACKET_STAGES[from].name} straight to ${target.name}, skipping ${RACKET_STAGES.slice(from + 1, to).map(s => s.name).join(', ')}?`
+      : `Move ${p.name} from ${RACKET_STAGES[from].name} up to ${target.name}?\n\nNo certificate is printed — use “Award reward” for that.`
+    if (confirm(question)) move(p, target.id)
   }
 
   const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 14 }
@@ -104,7 +152,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
       <div style={{ ...card, display: showSec('rewards') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <span style={{ width: 34, height: 34, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0, fontSize: 17 }}>🏆</span>
-          <div style={{ flex: 1, minWidth: 240 }}>
+          <div style={{ flex: 1, minWidth: 'min(240px, 100%)' }}>
             <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>Racket Reward System — earn the racket, collect the reward</div>
             <div style={{ fontSize: 12.5, color: T.text2, marginTop: 3, lineHeight: 1.5, maxWidth: 640 }}>
               {ownRewards ? (
@@ -179,7 +227,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
             <span style={{ fontSize: 11.5, color: T.text2, flexBasis: '100%' }}>{LTA_MAP[openStage.id].focus}</span>
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, max(140px, 40%)), 1fr))', gap: 10 }}>
           {(RACKET_SKILLS[openStage.id] || []).map(sk => (
             <div key={sk.name} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{sk.name}</div>
@@ -235,8 +283,8 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
                         const isNow = hasStage && bi === curIdx
                         return (
                           <td key={st.id} style={{ textAlign: 'center', padding: '4px 2px' }}>
-                            <button
-                              onClick={() => edit(p.id, { racket_stage: st.id })}
+                            <button className="cm-tap"
+                              onClick={() => moveTo(p, bi)}
                               title={isNow ? `${p.name} is on ${st.name} — ${curProg}% of the skills mastered` : `Move ${p.name} to the ${st.name} racket`}
                               style={{
                                 appearance: 'none', cursor: 'pointer', fontFamily: FONT,
@@ -260,7 +308,7 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
                       </td>
                       <td style={{ padding: '8px 8px', textAlign: 'right' }}>
                         <button onClick={() => award(p)}
-                          title={!hasStage ? `Start ${p.name} on the White racket` : ready ? `Award the ${curStage.name} reward${ownRewards ? '' : ' (keyring + dampener)'} + certificate, and advance ${p.name} to the next racket` : `${p.name} is ${curProg}% through this racket — awarding gives the reward and moves them up`}
+                          title={!hasStage ? `Start ${p.name} on the White racket` : ready ? `Award the ${curStage.name} reward${ownRewards ? '' : ' (keyring + dampener)'} + certificate${curIdx === LAST ? '' : `, and advance ${p.name} to the next racket`}` : `${p.name} is ${curProg}% through this racket — you are asked before anything is awarded`}
                           style={{ appearance: 'none', border: `1px solid ${ready ? accent.hex : T.border}`, background: ready ? accent.hex : 'transparent', color: ready ? T.btnText : accent.hex, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', fontFamily: FONT }}>
                           {!hasStage ? '▶ Start on White' : curIdx === LAST ? '🏆 Award reward' : '🏆 Award reward'}
                         </button>
@@ -272,13 +320,37 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
             </table>
           </div>
         )}
+        {moved && (
+          <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '7px 10px', borderRadius: 8, background: T.panel2, border: `1px solid ${T.border}`, fontSize: 12, color: T.text2 }}>
+            <span style={{ flex: 1 }}>{moved.name} moved from {nameOf(moved.from)} to {nameOf(moved.to)}.</span>
+            <button onClick={() => { void edit(moved.id, { racket_stage: moved.from }); setMoved(null) }} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Undo</button>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', fontSize: 10.5, color: T.text3 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: T.good, fontWeight: 800 }}>✓</span> racket earned</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on current racket (skills graded Consistent in the Player Roster)</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on current racket (skills graded Consistent in Player Development)</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>🏆 award = {ownRewards ? 'your reward' : 'keyring + dampener'} + certificate, then advance to the next racket</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>Tap any colour in a player&rsquo;s row to move them onto it</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>Tap any colour in a player&rsquo;s row to move them onto it — you are asked first</span>
         </div>
       </div>
+
+      {/* Racket history — when each player moved, and from what. */}
+      {history.length > 0 && (
+        <div style={card}>
+          {sectionHead('Racket history', `last ${history.length}`)}
+          {history.map((h, i) => {
+            const who = players.find(p => p.id === h.player_id)?.name || 'A player'
+            const up = RACKET_STAGES.findIndex(s => s.id === h.to_stage) > RACKET_STAGES.findIndex(s => s.id === h.from_stage)
+            return (
+              <div key={h.id} style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '7px 0', borderTop: i ? `1px solid ${T.border}` : 'none', fontSize: 12 }}>
+                <span style={{ width: 92, flexShrink: 0, color: T.text3 }}>{new Date(h.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' })}</span>
+                <span style={{ flex: 1, minWidth: 0, color: T.text, overflowWrap: 'anywhere' }}><strong>{who}</strong> <span style={{ color: T.text2 }}>{h.from_stage ? `moved ${up ? 'up' : 'back'} from ${nameOf(h.from_stage)} to ${nameOf(h.to_stage)}` : `started on ${nameOf(h.to_stage)}`}</span></span>
+              </div>
+            )
+          })}
+          <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8 }}>Every change of racket is recorded here with its date, wherever it was made.</div>
+        </div>
+      )}
     </div>
   )
 }
@@ -305,6 +377,8 @@ export function certOrg(profile?: { display_name?: string | null; brand_name?: s
   }
 }
 
+// `skills` is the list the certificate says were mastered, so pass only the
+// ones that were. With none, the "Skills mastered" block is left off.
 export function printRacketCertificate(playerName: string, stage: { name: string; colour: string }, skills: string[], org: CertOrg) {
   if (typeof window === 'undefined') return
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -337,9 +411,9 @@ export function printRacketCertificate(playerName: string, stage: { name: string
         <span style="font-family:Georgia,serif;font-size:34px;font-weight:700">${esc(stage.name)} Racket</span>
       </div>
       ${getSettings().ownRewards ? '' : '<div style="font-size:11px;color:#6b7280;margin-top:8px">Awarded with the coloured racket keyring &amp; matching dampener</div>'}
-      <div style="margin:20px auto 0;max-width:150mm">
+      ${skills.length ? `<div style="margin:20px auto 0;max-width:150mm">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#9099ad;margin-bottom:8px">Skills mastered</div>${chips}
-      </div>
+      </div>` : ''}
       <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:34px;padding:0 6mm">
         <div style="text-align:center"><div style="font-family:Georgia,serif;font-style:italic;font-size:21px;min-height:26px">${esc(org.coach)}</div><div style="border-top:1px solid #cfd3df;margin-top:4px;padding-top:5px;font-size:10px;color:#6b7280">${esc(org.cert || 'Coach')}${org.academy ? ' · ' + esc(org.academy) : ''}</div></div>
         <div style="width:80px;height:80px;border-radius:50%;background:radial-gradient(circle at 32% 30%,#F4D77B,#C9A227);box-shadow:0 5px 16px rgba(201,162,39,.45);display:flex;align-items:center;justify-content:center;color:#5a4710;font-weight:800;font-size:11px;text-align:center;line-height:1.1;border:3px solid #fff;outline:2px solid #C9A227">RACKET<br/>EARNED</div>

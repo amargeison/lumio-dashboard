@@ -2,7 +2,10 @@
 
 // Coaching staff with a DBS / safeguarding register. Shows DBS status (valid /
 // expiring / expired / missing) per staff member, warns about anything lapsed
-// or due within 90 days, and captures DBS + safeguarding-training details.
+// or due within the window chosen in Settings → Staff & safeguarding (30, 60 or
+// 90 days), flags missing safeguarding training when that policy is switched on,
+// and captures DBS + safeguarding-training details. The warnings are on-screen
+// only: nothing here sends a reminder email.
 
 import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
@@ -11,16 +14,30 @@ import { useCoachTable, dbInsert, dbUpdate, dbRemove, useCoachProfile, sb, saveC
 import { getHeadProfile, setHeadProfile, subscribe, ACCREDITATIONS, getSettings } from '../_lib/settings-store'
 import { COACH_ORG } from '../_lib/coach-data'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
+import { useAskBeforeClose } from '../_lib/ask-before-close'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 const DAY = 86400000
 
-function dbsState(expiry?: string | null): { label: string; colour: string } {
+// `windowDays` is the "DBS renewal reminder" setting (30 / 60 / 90). It was
+// stored and shown in Settings but never read here: the window was a fixed 90.
+function dbsState(expiry: string | null | undefined, windowDays: number): { label: string; colour: string } {
   if (!expiry) return { label: 'No DBS on file', colour: '#EF4444' }
   const days = Math.floor((new Date(expiry).getTime() - Date.now()) / DAY)
   if (days < 0) return { label: 'Expired', colour: '#EF4444' }
-  if (days <= 90) return { label: `Expires in ${days}d`, colour: '#F59E0B' }
+  if (days <= windowDays) return { label: `Expires in ${days}d`, colour: '#F59E0B' }
   return { label: 'Valid', colour: '#22C55E' }
+}
+// Which of the role filters a coach belongs to. ONE each: the filter used to
+// test whether the role text contained the word, so "Coach" also matched Senior
+// Coach, Assistant Coach and Head Coach.
+function roleGroup(s: { role?: string | null; isHead?: boolean }): string {
+  const r = (s.role || '').toLowerCase()
+  if (s.isHead || /\bhead\b/.test(r)) return 'Head'
+  if (/senior|lead/.test(r)) return 'Senior'
+  if (/assistant/.test(r)) return 'Assistant'
+  if (/apprentice|trainee/.test(r)) return 'Apprentice'
+  return 'Coach'
 }
 
 // ── Date / calendar helpers ─────────────────────────────────────────────────
@@ -32,7 +49,18 @@ const toMins = (t?: string | null) => { if (!t) return null; const m = t.match(/
 const hhmm = (m: number) => `${pad2(Math.floor(m / 60))}:${pad2(m % 60)}`
 const WD3 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const HRS = Array.from({ length: 14 }, (_, i) => 7 + i)
-const initialsOf = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
+const initialsOf = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => Array.from(w)[0]?.toUpperCase()).join('') || '?'
+
+type Login = { id: string; email: string; status: string; signedIn: boolean }
+// The portal login(s) for one coach. null when they cannot be read (only the
+// head coach may see who has access).
+async function fetchLogins(staffId: string): Promise<Login[] | null> {
+  try {
+    const r = await fetch(`/api/portal/access?staffId=${encodeURIComponent(staffId)}`)
+    const d = await r.json().catch(() => ({}))
+    return r.ok && Array.isArray(d.members) ? d.members as Login[] : null
+  } catch { return null }
+}
 
 export function LiveStaff({ T, accent }: Common) {
   const staff = useCoachTable<any>('coach_staff')
@@ -49,10 +77,43 @@ export function LiveStaff({ T, accent }: Common) {
   const [headS, setHeadS] = useState(() => getHeadProfile())
   useEffect(() => subscribe(() => setHeadS(getHeadProfile())), [])
   // Invite a coach to their own scoped portal login.
-  const [inviteMsg, setInviteMsg] = useState('')
+  // Both the message and the logins below are kept WITH the coach they are
+  // about, so opening another coach never shows the last one's.
+  const [inviteNote, setInviteNote] = useState<{ id: string; text: string } | null>(null)
+  const [inviting, setInviting] = useState(false)
+  // The coach's portal login(s), from /api/portal/access: invited (emailed, not
+  // signed in yet), active, or revoked. null = not loaded / not ours to see.
+  const [loginsFor, setLoginsFor] = useState<{ id: string; list: Login[] } | null>(null)
+  const [removing, setRemoving] = useState('')
+  const loadLogins = (staffId: string) =>
+    fetchLogins(staffId).then(list => setLoginsFor(list ? { id: staffId, list } : null))
+  const selStaffId = sel && !sel.isHead && sel.id !== '__head__' ? String(sel.id) : ''
+  useEffect(() => {
+    if (!selStaffId) return
+    let alive = true
+    fetchLogins(selStaffId).then(list => { if (alive) setLoginsFor(list ? { id: selStaffId, list } : null) })
+    return () => { alive = false }
+  }, [selStaffId])
+  const logins = loginsFor && loginsFor.id === selStaffId ? loginsFor.list : null
+  const inviteMsg = inviteNote && inviteNote.id === selStaffId ? inviteNote.text : ''
+  const removeAccess = async (c: any, m: Login) => {
+    if (removing) return
+    if (!confirm(`Remove ${c.name}’s portal access?\n\nThey will no longer be able to sign in to your academy with ${m.email}. You can invite them again at any time.`)) return
+    const setInviteMsg = (text: string) => setInviteNote({ id: String(c.id), text })
+    setRemoving(m.id); setInviteMsg('')
+    try {
+      const r = await fetch('/api/portal/access', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memberId: m.id }) })
+      const d = await r.json().catch(() => ({}))
+      setInviteMsg(r.ok ? `✓ Portal access removed for ${m.email}` : (d.error || 'Access could not be removed. Please try again.'))
+    } catch { setInviteMsg('Access could not be removed. Please try again.') }
+    setRemoving('')
+    void loadLogins(String(c.id))
+  }
   const inviteToPortal = async (c: any) => {
+    if (inviting) return
+    const setInviteMsg = (text: string) => setInviteNote({ id: String(c.id), text })
     if (!c.email) { setInviteMsg('Add an email for this coach first.'); return }
-    setInviteMsg('Sending…')
+    setInviting(true); setInviteMsg('Sending…')
     try {
       // staffId is the real link; scopeCoachName is the legacy name string kept
       // in step by a trigger until every caller sends the id. Sending both means
@@ -61,8 +122,18 @@ export function LiveStaff({ T, accent }: Common) {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: c.email, role: 'coach', staffId: c.id, scopeCoachName: c.name, name: c.name }),
       })
-      setInviteMsg(r.ok ? `✓ Portal invite sent to ${c.email}` : 'Could not send invite.')
-    } catch { setInviteMsg('Could not send invite.') }
+      // The route says why when it refuses — show that, not a shrug.
+      const d = await r.json().catch(() => ({}))
+      // "Sent" only when an email really went. Inside the two-minute pause
+      // between invites the route sends nothing, and says so — the page used to
+      // say "sent" regardless, including when it had only restored access.
+      setInviteMsg(!r.ok ? (d.error || 'The invite could not be sent. Please try again.')
+        : d.emailed !== false ? `✓ Portal invite sent to ${c.email}`
+        : d.restored ? `✓ Access restored for ${c.email}. No new email was sent, because an invite went to this address a moment ago. They can sign in with the one they have.`
+        : `An invite went to ${c.email} a moment ago, so no new email was sent. Wait two minutes before sending it again.`)
+    } catch { setInviteMsg('The invite could not be sent. Please try again.') }
+    setInviting(false)
+    void loadLogins(String(c.id))
   }
   // The head coach's photo lives in TWO places and both have to move together:
   // sports_profiles.avatar_url is what the portal shell reads at sign-in (and what
@@ -127,16 +198,32 @@ export function LiveStaff({ T, accent }: Common) {
   const headRow = staff.rows.find((r: any) => r.is_head)
   const head = { id: headRow?.id || '__head__', name: headName, role: 'Head', email: headS.email || profile.contact_email, phone: headS.phone || profile.contact_phone, qualifications: headS.accreditation || 'Head Coach', home_venue: null, isHead: true, avatar_url: headS.avatarUrl || profile.avatar_url, contracted_hours: headS.contractedHours, dbs_number: headS.dbsNumber, dbs_issued: headS.dbsIssued, dbs_expiry: headS.dbsExpiry, safeguarding_trained: headS.safeguardingTrained, safeguarding_date: headS.safeguardingDate }
   const everyone = [head, ...staff.rows.filter((r: any) => !r.is_head)]
-  const flagged = everyone.filter(s => { const st = dbsState(s.dbs_expiry); return st.label === 'Expired' || st.label.startsWith('Expires') || st.label.startsWith('No DBS') })
+  // The two settings under Settings → Staff & safeguarding, read on every render
+  // (this component re-renders when settings change — see the subscribe above).
+  const staffCfg = getSettings().staff
+  const windowDays = [30, 60, 90].includes(Number(staffCfg?.reminderDays)) ? Number(staffCfg.reminderDays) : 90
+  const trainingRequired = !!staffCfg?.policyOn
+  const dbsOf = (s: any) => dbsState(s.dbs_expiry, windowDays)
+  // Everything about one coach that needs the head coach's attention: their DBS,
+  // and — when "Require safeguarding training for all staff" is on — training
+  // that has not been recorded. That toggle used to change nothing.
+  const concerns = (s: any): string[] => {
+    const st = dbsOf(s)
+    return [
+      st.label !== 'Valid' ? st.label : '',
+      trainingRequired && !s.safeguarding_trained ? 'No safeguarding training recorded' : '',
+    ].filter(Boolean)
+  }
+  const flagged = everyone.filter(s => concerns(s).length > 0)
   const ROLES = ['All', 'Head', 'Senior', 'Coach', 'Assistant', 'Apprentice']
-  const inRole = (s: any) => role === 'All' || (s.role || '').toLowerCase().includes(role.toLowerCase())
+  const inRole = (s: any) => role === 'All' || roleGroup(s) === role
   const shown = everyone.filter(inRole)
-  const dbsValid = everyone.filter(s => dbsState(s.dbs_expiry).label === 'Valid').length
-  const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w: string) => w[0]?.toUpperCase()).join('') || '?'
+  const dbsValid = everyone.filter(s => dbsOf(s).label === 'Valid').length
+  const initials = initialsOf
 
   // ── Coach detail ──────────────────────────────────────────────────────────
   if (sel) {
-    const st = dbsState(sel.dbs_expiry)
+    const st = dbsOf(sel)
     const s2 = statsFor(sel)
     const myBookings = coachBookings(sel)
     const myPlayers = coachPlayers(sel)
@@ -175,9 +262,32 @@ export function LiveStaff({ T, accent }: Common) {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               {sel.phone && <a href={`tel:${sel.phone}`} style={{ textDecoration: 'none', border: `1px solid ${accent.border}`, background: 'transparent', color: accent.hex, borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 600 }}>📞 Call</a>}
               {sel.email && <a href={`mailto:${sel.email}`} style={{ textDecoration: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 700 }}>✉️ Contact</a>}
-              {!sel.isHead && <button onClick={() => inviteToPortal(sel)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>🔑 Invite to portal</button>}
+              {!sel.isHead && <button onClick={() => inviteToPortal(sel)} disabled={inviting} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, cursor: inviting ? 'wait' : 'pointer', opacity: inviting ? 0.6 : 1, fontFamily: 'inherit' }}>{inviting ? 'Sending…' : (logins || []).some(m => m.status !== 'revoked') ? '🔑 Send the invite again' : '🔑 Invite to portal'}</button>}
             </div>
-            {inviteMsg && <div style={{ flexBasis: '100%', width: '100%', fontSize: 11.5, color: inviteMsg.startsWith('✓') ? T.good : T.text3, marginTop: 6 }}>{inviteMsg}</div>}
+            {/* Who can sign in as this coach, and the way to take that away. */}
+            {!sel.isHead && !!logins?.length && (
+              <div style={{ flexBasis: '100%', width: '100%', display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+                {logins.map(m => {
+                  const state = m.status === 'active' ? { text: 'Active — can sign in', colour: T.good }
+                    : m.status === 'revoked' ? { text: 'Access removed', colour: T.text3 }
+                    : { text: 'Invited — has not signed in yet', colour: T.warn }
+                  return (
+                    <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 12, color: T.text2 }}>
+                      <span style={{ color: T.text3 }}>Portal login</span>
+                      <span style={{ overflowWrap: 'anywhere' }}>{m.email}</span>
+                      <span style={{ fontWeight: 700, color: state.colour }}>{state.text}</span>
+                      {m.status !== 'revoked' && (
+                        <button onClick={() => removeAccess(sel, m)} disabled={removing === m.id}
+                          style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.bad, borderRadius: 8, padding: '0 12px', minHeight: 36, fontSize: 12, fontWeight: 600, cursor: removing === m.id ? 'wait' : 'pointer', opacity: removing === m.id ? 0.6 : 1, fontFamily: 'inherit' }}>
+                          {removing === m.id ? 'Removing…' : 'Remove access'}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+            {inviteMsg && <div role="status" style={{ flexBasis: '100%', width: '100%', fontSize: 11.5, color: inviteMsg.startsWith('✓') ? T.good : T.text3, marginTop: 6 }}>{inviteMsg}</div>}
           </div>
           <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', marginTop: 14 }}>
             {statTiles.map(([l, v]) => <div key={l}><div style={{ fontSize: 19, fontWeight: 700, color: T.text }}>{v}</div><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{l}</div></div>)}
@@ -196,13 +306,13 @@ export function LiveStaff({ T, accent }: Common) {
               <div style={box}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>DBS number</div><div style={{ fontSize: 12.5, color: T.text, marginTop: 3 }}>{sel.dbs_number || '—'}</div></div>
               <div style={box}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>Issued</div><div style={{ fontSize: 12.5, color: T.text, marginTop: 3 }}>{sel.dbs_issued ? new Date(sel.dbs_issued).toLocaleDateString('en-GB') : '—'}</div></div>
               <div style={box}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>Expiry</div><div style={{ fontSize: 12.5, color: T.text, marginTop: 3 }}>{sel.dbs_expiry ? new Date(sel.dbs_expiry).toLocaleDateString('en-GB') : '—'}</div></div>
-              <div style={box}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>Safeguarding</div><div style={{ fontSize: 12.5, color: sel.safeguarding_trained ? T.good : T.warn, marginTop: 3 }}>{sel.safeguarding_trained ? `✓ ${sel.safeguarding_date ? new Date(sel.safeguarding_date).toLocaleDateString('en-GB') : 'Trained'}` : 'Not recorded'}</div></div>
+              <div style={box}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase' }}>Safeguarding</div><div style={{ fontSize: 12.5, color: sel.safeguarding_trained ? T.good : T.warn, marginTop: 3 }}>{sel.safeguarding_trained ? `✓ ${sel.safeguarding_date ? new Date(sel.safeguarding_date).toLocaleDateString('en-GB') : 'Trained'}` : trainingRequired ? 'Not recorded — required' : 'Not recorded'}</div></div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
               <button onClick={() => setEditing(sel)} style={{ appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Record update</button>
               <a href="https://www.gov.uk/dbs-update-service" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, fontWeight: 600, color: T.text3, textDecoration: 'none' }}>Verify on the DBS Update Service ↗</a>
             </div>
-            <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>Lumio tracks DBS by expiry date and flags anything expired, due within 90 days or missing. A live status check is only possible via the official DBS Update Service (with the certificate number and the person’s consent).</div>
+            <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>Lumio tracks DBS by expiry date and flags anything expired, missing or due within {windowDays} days (change the window in Settings → Staff &amp; safeguarding). The flags show here on the Coaches page — Lumio does not send reminder emails, so check this page when renewals are due. A live status check is only possible via the official DBS Update Service (with the certificate number and the person’s consent).</div>
           </div>
         )}
 
@@ -238,7 +348,7 @@ export function LiveStaff({ T, accent }: Common) {
         <div style={{ display: showSec('assigned') ? undefined : 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Assigned players · {myPlayers.length}</div>
           {myPlayers.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No players assigned to this coach yet. Use “Move to coach…” on another coach, or set a player’s coach in the Roster.</div> : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))', gap: 12 }}>
               {myPlayers.map((p: any) => (
                 <div key={p.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: 12 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -273,6 +383,9 @@ export function LiveStaff({ T, accent }: Common) {
         <div>
           <h2 style={{ color: T.text, fontSize: 22, fontWeight: 700, margin: 0 }}>Coaches</h2>
           <p style={{ color: T.text3, fontSize: 13, margin: '4px 0 0' }}>Your coaching team at a glance — roles, accreditations, DBS and contact.</p>
+          {/* Who to go to with a concern, as named in Settings → Staff &
+              safeguarding. It was saved there and shown nowhere. */}
+          {String(staffCfg?.dsl || '').trim() && <p style={{ color: T.text2, fontSize: 12.5, margin: '6px 0 0', overflowWrap: 'anywhere' }}>Designated Safeguarding Lead: <strong style={{ color: T.text }}>{String(staffCfg.dsl).trim()}</strong></p>}
         </div>
         <button onClick={() => setEditing(null)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
           <Icon name="plus" size={14} /> Add coach
@@ -292,18 +405,23 @@ export function LiveStaff({ T, accent }: Common) {
       {flagged.length > 0 && (
         <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: '#F59E0B', marginBottom: 4 }}>⚠ DBS &amp; safeguarding attention needed</div>
-          <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.5 }}>{flagged.map(s => `${s.name} (${dbsState(s.dbs_expiry).label})`).join(', ')}</div>
+          <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{flagged.map(s => `${s.name} (${concerns(s).join('; ')})`).join(', ')}</div>
+          {/* Said plainly: these warnings are the reminder. Nothing is emailed. */}
+          <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>
+            A DBS is flagged when it is missing, expired or due within {windowDays} days{trainingRequired ? ', and a coach is flagged when no safeguarding training is recorded' : ''}. Both are set in Settings → Staff &amp; safeguarding. These warnings appear on this page only — no reminder emails are sent.
+          </div>
         </div>
       )}
 
       {/* Role filter */}
       <div style={{ display: 'flex', gap: 0, padding: 2, background: T.hover, borderRadius: 9, marginBottom: 16, width: 'fit-content', flexWrap: 'wrap' }}>
-        {ROLES.map(r => <button key={r} onClick={() => setRole(r)} style={{ appearance: 'none', border: 0, padding: '5px 13px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: role === r ? T.panel : 'transparent', color: role === r ? T.text : T.text2, fontWeight: role === r ? 600 : 400, boxShadow: role === r ? `0 0 0 1px ${T.border}` : 'none' }}>{r}</button>)}
+        {ROLES.map(r => <button key={r} onClick={() => setRole(r)} style={{ appearance: 'none', border: 0, padding: '9px 13px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: role === r ? T.panel : 'transparent', color: role === r ? T.text : T.text2, fontWeight: role === r ? 600 : 400, boxShadow: role === r ? `0 0 0 1px ${T.border}` : 'none' }}>{r}</button>)}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: 12 }}>
         {shown.map(s => {
-          const st = dbsState(s.dbs_expiry)
+          const st = dbsOf(s)
+          const untrained = trainingRequired && !s.safeguarding_trained
           const specialisms = (s.qualifications || '').split(',').map((x: string) => x.trim()).filter(Boolean)
           return (
             <div key={s.id} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 14 }}>
@@ -323,6 +441,7 @@ export function LiveStaff({ T, accent }: Common) {
                 {s.email && <a href={`mailto:${s.email}`} style={{ flex: 1, textAlign: 'center', textDecoration: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 8, padding: '6px', fontSize: 12, fontWeight: 700 }}>✉️ Contact</a>}
               </div>
               {specialisms.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 10 }}>{specialisms.map((sp: string) => <span key={sp} style={{ fontSize: 10.5, color: T.text2, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 999, padding: '2px 8px' }}>{sp}</span>)}</div>}
+              {untrained && <div style={{ fontSize: 10.5, fontWeight: 700, color: '#F59E0B', marginTop: 8 }}>⚠ No safeguarding training recorded</div>}
               {s.home_venue && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8 }}>📍 {s.home_venue}</div>}
               {(() => { const cs = statsFor(s); return (
                 <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
@@ -330,9 +449,9 @@ export function LiveStaff({ T, accent }: Common) {
                 </div>
               ) })()}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
-                <button onClick={() => setEditing(s)} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: T.text2, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{s.isHead ? 'Edit your details' : 'Edit'}</button>
-                {!s.isHead && <button onClick={() => { if (confirm(`Delete ${s.name}?`)) { dbRemove('coach_staff', s.id).then(() => staff.reload()) } }} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Delete</button>}
-                <button onClick={() => setSel(s)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>View →</button>
+                <button onClick={() => setEditing(s)} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '0 11px', minHeight: 36, color: T.text2, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{s.isHead ? 'Edit your details' : 'Edit'}</button>
+                {!s.isHead && <button onClick={() => { if (confirm(`Delete ${s.name}?`)) { dbRemove('coach_staff', s.id).then(() => staff.reload()) } }} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '0 11px', minHeight: 36, color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Delete</button>}
+                <button onClick={() => setSel(s)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 12, fontWeight: 700, cursor: 'pointer', minHeight: 36, padding: '0 6px' }}>View →</button>
               </div>
             </div>
           )
@@ -399,6 +518,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
   }
 
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
+  const closeOutside = useAskBeforeClose(JSON.stringify([d, venueIds, primaryVenue, touchedVenues]), onClose)
 
   // Profile photo, set by the head coach on anyone's behalf. Three cases, because
   // the destination differs: the head's own photo lives in local settings, an
@@ -443,9 +563,9 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
     setPendingPhoto(null); set('avatar_url', '')
     if (initial?.id) { try { await dbUpdate('coach_staff', initial.id, { avatar_url: null }) } catch { /* saved on Save anyway */ } }
   }
-  const input: React.CSSProperties = { width: '100%', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none', marginTop: 5 }
+  const input: React.CSSProperties = { width: '100%', minWidth: 0, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none', marginTop: 5 }
   const lbl: React.CSSProperties = { display: 'block', color: T.text3, fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }
-  const fld = (k: string, label: string, type = 'text', ph?: string) => <div><label style={lbl}>{label}</label><input type={type} value={d[k] ?? ''} onChange={e => set(k, e.target.value)} placeholder={ph} style={input} /></div>
+  const fld = (k: string, label: string, type = 'text', ph?: string) => <div style={{ minWidth: 0 }}><label style={lbl}>{label}</label><input type={type} value={d[k] ?? ''} onChange={e => set(k, e.target.value)} placeholder={ph} style={input} /></div>
 
   // Reconcile venue assignment: remove what was unticked, add what was ticked.
   // Done as a diff rather than delete-all-then-reinsert so an interrupted save
@@ -505,13 +625,27 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
   }
 
   const save = async () => {
-    if (!String(d.name ?? '').trim()) { setErr('Name is required'); return }
+    if (saving) return
+    // Checked before anything is written. Only the name used to be: an address
+    // that was not an email, minus five contracted hours and a DBS that expired
+    // before it was issued were all saved as typed.
+    const name = String(d.name ?? '').trim()
+    if (!name) { setErr('Enter the coach’s name.'); return }
+    if (name.length > 80) { setErr('That name is too long. Keep it to 80 characters.'); return }
+    if (String(d.role ?? '').trim().length > 40) { setErr('That role is too long. Keep it to 40 characters, for example “Assistant Coach”.'); return }
+    const email = String(d.email ?? '').trim()
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('That email address does not look right. Check it, or leave it empty.'); return }
+    const hoursRaw = String(d.contracted_hours ?? '').trim()
+    // Whole hours: that is what is stored. "12.5" used to pass this check and
+    // come back from the database as "invalid input syntax for type integer".
+    if (hoursRaw !== '' && (!Number.isInteger(Number(hoursRaw)) || Number(hoursRaw) < 0 || Number(hoursRaw) > 80)) { setErr('Contracted hours must be a whole number between 0 and 80 a week.'); return }
+    if (d.dbs_issued && d.dbs_expiry && String(d.dbs_expiry) <= String(d.dbs_issued)) { setErr('The DBS expiry date must be after the date it was issued.'); return }
     setSaving(true); setErr('')
     try {
       // The head coach (you) — write through the canonical head profile, the
       // same record Settings → Head coach profile edits.
       if (initial?.isHead) {
-        setHeadProfile({ phone: d.phone || '', email: d.email || '', contractedHours: Number(d.contracted_hours) || null, dbsNumber: d.dbs_number || '', dbsIssued: d.dbs_issued || '', dbsExpiry: d.dbs_expiry || '', safeguardingTrained: !!d.safeguarding_trained, safeguardingDate: d.safeguarding_date || '', avatarUrl: d.avatar_url || '', accreditation: d.qualifications || getHeadProfile().accreditation })
+        setHeadProfile({ phone: d.phone || '', email, contractedHours: Number(d.contracted_hours) || null, dbsNumber: d.dbs_number || '', dbsIssued: d.dbs_issued || '', dbsExpiry: d.dbs_expiry || '', safeguardingTrained: !!d.safeguarding_trained, safeguardingDate: d.safeguarding_date || '', avatarUrl: d.avatar_url || '', accreditation: d.qualifications || getHeadProfile().accreditation })
         // ...and then fall through to the venue reconcile below rather than
         // returning. Returning here is why ticking a venue on the head coach's
         // own card lit the chip up and saved nothing: the details were written,
@@ -523,7 +657,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
       // home_venue is no longer written here — a database trigger derives it from
       // the primary assignment below, so the name column and the join table can
       // never disagree.
-      const row = { name: d.name, role: d.role || null, email: d.email || null, phone: d.phone || null, qualifications: d.qualifications || null, contracted_hours: Number(d.contracted_hours) || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }
+      const row = { name, role: String(d.role ?? '').trim() || null, email: email || null, phone: d.phone || null, qualifications: d.qualifications || null, contracted_hours: Number(d.contracted_hours) || null, notes: d.notes || null, dbs_number: d.dbs_number || null, dbs_issued: d.dbs_issued || null, dbs_expiry: d.dbs_expiry || null, safeguarding_trained: !!d.safeguarding_trained, safeguarding_date: d.safeguarding_date || null }
 
       // dbInsert returns the created row, which is the only way to get the id the
       // venue assignment below has to hang off.
@@ -545,8 +679,8 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
   }
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 560, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>
+    <div onClick={e => { if (e.target === e.currentTarget) closeOutside() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
+      <div style={{ width: '100%', maxWidth: 560, boxSizing: 'border-box', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 24 }}>
         <h3 style={{ color: T.text, fontSize: 18, fontWeight: 700, margin: '0 0 16px' }}>{isHead ? 'Your details (head coach)' : initial?.id ? 'Edit staff member' : 'Add staff member'}</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18 }}>
           {d.avatar_url
@@ -569,7 +703,7 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
             {photoErr && <p style={{ color: '#EF4444', fontSize: 11.5, margin: '4px 0 0' }}>{photoErr}</p>}
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
           {isHead
             ? <div><label style={lbl}>Name</label><input value={d.name ?? ''} readOnly title="Set under Settings → Head coach profile" style={{ ...input, opacity: 0.65, cursor: 'not-allowed' }} /></div>
             : fld('name', 'Name')}
@@ -625,17 +759,19 @@ function StaffForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; a
         </div>
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 8 }}>DBS &amp; safeguarding</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          {/* auto-fit: three across on a desktop, stacked on a phone — where the
+              number box was 49px wide and the expiry date ran off the screen. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
             {fld('dbs_number', 'DBS number')}
             {fld('dbs_issued', 'Issued', 'date')}
             {fld('dbs_expiry', 'Expiry', 'date')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 12, flexWrap: 'wrap' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: T.text, cursor: 'pointer' }}><input type="checkbox" checked={!!d.safeguarding_trained} onChange={e => set('safeguarding_trained', e.target.checked)} /> Safeguarding trained</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, color: T.text, cursor: 'pointer', minHeight: 36 }}><input type="checkbox" checked={!!d.safeguarding_trained} onChange={e => set('safeguarding_trained', e.target.checked)} style={{ width: 18, height: 18 }} /> Safeguarding trained</label>
             <div style={{ flex: 1, minWidth: 160 }}>{fld('safeguarding_date', 'Training date', 'date')}</div>
           </div>
         </div>
-        {err && <p style={{ color: '#EF4444', fontSize: 12, marginTop: 10 }}>{err}</p>}
+        {err && <p role="alert" style={{ color: '#EF4444', fontSize: 12, marginTop: 10 }}>{err}</p>}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
           <button onClick={onClose} style={{ padding: '10px 16px', borderRadius: 10, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
           <button onClick={save} disabled={saving} style={{ padding: '10px 18px', borderRadius: 10, border: 'none', background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>{saving ? 'Saving…' : 'Save'}</button>

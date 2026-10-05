@@ -1,9 +1,16 @@
 'use client'
 
-// Admin / dev control surface for the coach product plan & feature flags.
-// Pick a tier preset (Essential / Pro Lite / Pro / Elite) or flip individual
+// The academy's modules: which optional parts of the product are switched on.
+// Pick a preset (Essential / Pro Lite / Pro / Elite) or flip individual
 // features. Turning a feature off removes its whole module and linked data
 // across the portal AND the student/parent app.
+//
+// This began as an admin/dev control surface and was labelled as one ("Admin",
+// "Demo — saved on this device"), but it is shown to every head coach and what
+// it changes is real: it is saved to the academy and followed by their coaches
+// and by the family app. The wording now says that. Whether a head coach
+// should be choosing a priced tier for themselves at all is a product decision
+// that has not been made — see NEW_ACCOUNT_TIER in feature-flags.ts.
 
 import { useEffect, useState } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
@@ -20,14 +27,22 @@ const FEATURE_ORDER: FeatureKey[] = ['effort', 'video', 'audio', 'racket']
 export function FeatureAdminPanel({ T, accent, density, demo = false }: Common & { demo?: boolean }) {
   const [flags, setFlags] = useState<FeatureFlags>({ effort: true, video: true, audio: true, racket: true })
   useEffect(() => { const r = () => setFlags(getFlags()); r(); return subscribe(r) }, [])
-  const activeTier = tierForFlags(flags)
+  // Pro and Elite switch on the same four modules, so the flags alone cannot
+  // say which was chosen — and picking Pro lit up Elite. The preset just
+  // clicked is the one highlighted for as long as the flags still match it.
+  const [picked, setPicked] = useState<string | null>(null)
+  const matches = (key: string) => {
+    const t = TIERS.find(x => x.key === key)
+    return !!t && FEATURE_ORDER.every(k => t.features[k] === flags[k])
+  }
+  const activeTier = picked && matches(picked) ? picked : tierForFlags(flags)
 
   return (
     <div style={{ background: T.panel, border: `1px solid ${accent.border}`, borderRadius: 14, padding: density.pad + 2, marginBottom: density.gap }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 4 }}>
         <div style={{ width: 30, height: 30, borderRadius: 8, display: 'grid', placeItems: 'center', background: accent.dim }}><Icon name="settings" size={15} stroke={1.7} style={{ color: accent.hex }} /></div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Plan &amp; features <span style={{ fontSize: 9.5, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 6px', borderRadius: 5, textTransform: 'uppercase', letterSpacing: '0.06em', marginLeft: 4 }}>Admin</span></div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Plan &amp; features</div>
           <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>Choose which features are live. Turning one off removes its module and linked data — including the player app.</div>
         </div>
       </div>
@@ -40,7 +55,7 @@ export function FeatureAdminPanel({ T, accent, density, demo = false }: Common &
         {TIERS.map(t => {
           const on = activeTier === t.key
           return (
-            <button key={t.key} onClick={() => applyTier(t.key)}
+            <button key={t.key} onClick={() => { setPicked(t.key); applyTier(t.key) }}
               style={{ appearance: 'none', textAlign: 'left', cursor: 'pointer', borderRadius: 11, padding: '11px 13px', border: `1.5px solid ${on ? accent.hex : T.border}`, background: on ? accent.dim : T.panel2 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: on ? accent.hex : T.text }}>{t.name}</span>
@@ -72,7 +87,8 @@ export function FeatureAdminPanel({ T, accent, density, demo = false }: Common &
       </div>
       </div>
       <div style={{ fontSize: 10.5, color: T.text3, marginTop: 10, lineHeight: 1.5 }}>
-        Off-features disappear from the sidebar, the dashboard and the player app, and their kit drops out of the restock and reward flows. Demo — saved on this device.
+        Off-features disappear from the sidebar, the dashboard and the player app, and their kit drops out of the restock and reward flows.{' '}
+        {demo ? 'Nothing here can be changed in the demo.' : 'Saved to your academy: it applies on every device, for your coaches and in the player app.'}
       </div>
     </div>
   )

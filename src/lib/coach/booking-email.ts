@@ -17,6 +17,7 @@
 
 import { serviceClient } from './oauth'
 import { matchVenue, type VenueRow } from './booking-venue'
+import { sharedLessonText } from './lesson-recap'
 
 export type BookingRow = {
   id: string; coach_id: string
@@ -26,6 +27,16 @@ export type BookingRow = {
   /** Set on bookings made from the calendar. The reliable way to find the
       family — the name match below is only for rows that predate it. */
   player_id?: string | null
+  /** Where it is, when the booking says (migration 197). */
+  venue_id?: string | null
+  /** What the family was last told, and at which address — see
+      api/coach/bookings/confirm. */
+  told_state?: string | null
+  told_to?: string | null
+  /** Whose session it is: the coach's record (the database keeps the name in
+      step with it). Empty means the head coach. */
+  staff_id?: string | null
+  assigned_coach?: string | null
 }
 
 type PlayerRow = {
@@ -34,7 +45,7 @@ type PlayerRow = {
   parent_name?: string | null
 }
 
-type Review = { focus?: string; covered?: string[]; takeaways?: string[]; homework?: string; nextFocus?: string; recap?: string; assessment?: string }
+type Review = { focus?: string; covered?: string[]; takeaways?: string[]; homework?: string; nextFocus?: string; recap?: string; assessment?: string; coachNote?: string }
 type SessionRow = { session_date?: string | null; focus?: string | null; summary?: string | null; ai_review?: string | null; review_json?: Review | null }
 
 const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -64,11 +75,17 @@ export function resolveRecipient(p: PlayerRow | null): Recipients {
 }
 
 // ── Formatting helpers ──────────────────────────────────────────────────────
-const TZ = 'Europe/London'
+// A booking's date and time are what the coach typed: a UK calendar day and a
+// UK clock time, not an instant. So the day is named from the date alone —
+// pinned to midday UTC and read back in UTC, which is the same calendar day on
+// any server in any season. It used to be built as a server-local instant and
+// then shown in London time, which in summer pushed a 23:30 lesson on to the
+// following day.
 function whenLine(date?: string | null, start?: string | null, mins?: number | null): { day: string; time: string } {
   if (!date) return { day: 'Date to be confirmed', time: '' }
-  const d = new Date(`${date}T${(start || '00:00')}:00`)
-  const day = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: TZ })
+  const d = new Date(`${String(date).slice(0, 10)}T12:00:00Z`)
+  if (Number.isNaN(d.getTime())) return { day: 'Date to be confirmed', time: '' }
+  const day = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
   if (!start) return { day, time: '' }
   const [h, m] = start.split(':').map(Number)
   const endTotal = h * 60 + m + (mins || 60)
@@ -80,6 +97,9 @@ const mapsLink = (q: string) => `https://www.google.com/maps/search/?api=1&query
 // ── The email ───────────────────────────────────────────────────────────────
 export function buildConfirmationHtml(o: {
   academy: string; coachName: string; logoUrl?: string | null; accent?: string
+  /** Who a reply to this email reaches, when that is not the coach taking the
+      session — replies go to the academy's mailbox, not to an assistant coach. */
+  replyName?: string
   playerName: string; greetingName: string; toParent: boolean
   booking: BookingRow
   venue?: { name?: string | null; address?: string | null; access_note?: string | null } | null
@@ -91,7 +111,15 @@ export function buildConfirmationHtml(o: {
       (or their parent) has app access, so we never point someone at a sign-in
       that will turn them away. */
   appUrl?: string | null
+  /** 'booked' (the default) is the confirmation. 'moved' and 'cancelled' are
+      the short notes sent when the coach changes a booking the family has
+      already been told about. */
+  kind?: 'booked' | 'moved' | 'cancelled'
+  /** A 'moved' note where the day and time are the same and only the venue or
+      court is different. */
+  placeOnly?: boolean
 }): string {
+  const kind = o.kind || 'booked'
   const accent = o.accent || '#3A8EE0'
   const { day, time } = whenLine(o.booking.booking_date, o.booking.start_time, o.booking.duration_min)
   const place = [o.venue?.name, o.booking.court].filter(Boolean).join(' · ') || o.booking.court || null
@@ -101,7 +129,10 @@ export function buildConfirmationHtml(o: {
   const covered = r?.covered?.length ? r.covered : null
   const homework = r?.homework || null
   const lastFocus = r?.focus || o.last?.focus || null
-  const lastRecap = r?.recap || r?.assessment || (o.last?.ai_review ? String(o.last.ai_review).split('\n\n')[0] : null) || o.last?.summary || null
+  // Never the coach's private note: older summaries hold it inside these two
+  // columns, so both are read through the one rule that takes it out.
+  const lastText = o.last ? sharedLessonText(o.last) : null
+  const lastRecap = r?.recap || r?.assessment || (lastText?.aiReview ? lastText.aiReview.split('\n\n')[0] : null) || lastText?.summary || null
   // The plan for THIS session is the coach's own "next focus" from the last
   // write-up — nothing else. It used to fall back to the booking's notes, which
   // on a booking made online are admin ("Phone: 0778… Booked online by …"), so
@@ -135,7 +166,7 @@ export function buildConfirmationHtml(o: {
     ? `<div style="margin-top:12px"><a href="${esc(o.appUrl)}" style="display:inline-block;background:${accent};color:#fff;text-decoration:none;font-size:13px;font-weight:700;padding:10px 16px;border-radius:9px">${esc(label)}</a></div>`
     : ''
   const who = o.coachName ? esc(o.coachName.split(' ')[0]) : 'Your coach'
-  const nextBlock = o.forCoach
+  const nextBlock = kind !== 'booked' ? '' : o.forCoach
     ? [
         next ? section('Planned focus', `<p style="margin:0">${esc(next)}</p>`) : '',
         o.booking.notes ? section('Booking notes', `<p style="margin:0;white-space:pre-line">${esc(o.booking.notes)}</p>`) : '',
@@ -155,8 +186,8 @@ export function buildConfirmationHtml(o: {
         <tr><td style="background:linear-gradient(120deg, ${accent}, ${accent}bb);padding:24px 26px">
           <table role="presentation" width="100%"><tr>
             <td style="vertical-align:middle">
-              <div style="font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.85)">${o.forCoach ? 'New booking' : 'Booking confirmed'}</div>
-              <div style="font-size:23px;font-weight:800;color:#fff;margin-top:5px;line-height:1.2">${o.forCoach ? esc(o.playerName) : `Thanks, ${esc(o.greetingName)}!`}</div>
+              <div style="font-size:10.5px;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.85)">${kind === 'moved' ? (o.placeOnly ? 'Venue changed' : 'Session moved') : kind === 'cancelled' ? 'Session cancelled' : o.forCoach ? 'New booking' : 'Booking confirmed'}</div>
+              <div style="font-size:23px;font-weight:800;color:#fff;margin-top:5px;line-height:1.2">${o.forCoach ? esc(o.playerName) : kind === 'booked' ? `Thanks, ${esc(o.greetingName)}!` : `Hi ${esc(o.greetingName)}`}</div>
               <div style="font-size:13px;color:rgba(255,255,255,.92);margin-top:4px">${esc(o.academy)}</div>
             </td>
             ${o.logoUrl ? `<td width="70" style="vertical-align:middle;text-align:right"><img src="${esc(o.logoUrl)}" alt="" width="58" style="max-width:58px;background:#fff;border-radius:9px;padding:6px"></td>` : ''}
@@ -164,7 +195,13 @@ export function buildConfirmationHtml(o: {
         </td></tr>
 
         ${o.forCoach ? '' : `<tr><td style="padding:20px 26px 0">
-          <p style="margin:0;font-size:14.5px;line-height:1.65;color:#374151">${o.toParent
+          <p style="margin:0;font-size:14.5px;line-height:1.65;color:#374151">${kind === 'moved'
+            ? o.placeOnly
+              ? `${o.toParent ? `${esc(o.playerName)}'s session` : 'Your session'} is now at a different venue or court. The day and time are the same — where to go is below.`
+              : `${o.toParent ? `${esc(o.playerName)}'s session` : 'Your session'} has moved. The new day and time are below — please update your diary.`
+            : kind === 'cancelled'
+            ? `${o.toParent ? `${esc(o.playerName)}'s session` : 'Your session'} below has been cancelled. Please take it out of your diary.`
+            : o.toParent
             ? `${esc(o.playerName)}'s next session is booked in. Everything you need is below${lastBlock ? ' — including what we worked on last time' : ''}.`
             : `Your next session is booked in. Everything you need is below${lastBlock ? ' — including what we worked on last time' : ''}.`}</p>
         </td></tr>`}
@@ -187,14 +224,16 @@ export function buildConfirmationHtml(o: {
           ${o.calendarHtml}
         </td></tr>` : ''}
 
-        ${lastBlock}
+        ${kind === 'booked' ? lastBlock : ''}
         ${nextBlock}
 
         <tr><td style="padding:22px 26px 26px">
           <div style="border-top:1px solid #eceef3;padding-top:14px;font-size:12.5px;color:#6b7280;line-height:1.6">
             ${o.forCoach
               ? `Sent to you so a new booking never goes unseen.`
-              : `Need to change or cancel? Just reply to this email and it comes straight to ${esc(o.coachName)}.`}
+              : kind === 'cancelled'
+              ? `Any questions? Just reply to this email and it comes straight to ${esc(o.replyName || o.coachName || 'your coach')}.`
+              : `Need to change or cancel? Just reply to this email and it comes straight to ${esc(o.replyName || o.coachName)}.`}
             <div style="margin-top:8px;color:#9aa1b1">${esc(o.academy)}${o.coachName ? ` · ${esc(o.coachName)}` : ''}</div>
           </div>
         </td></tr>
@@ -210,40 +249,65 @@ export function buildConfirmationHtml(o: {
 export async function gatherBookingContext(coachId: string, booking: BookingRow) {
   const db = serviceClient()
   const name = (booking.player_name || '').trim()
+  // A name can now arrive from a public booking form, and `ilike` reads % _ and
+  // * as "anything". A booking made in the name "%" would otherwise be matched
+  // to somebody else's player and be sent their last session's write-up. So the
+  // forgiving, any-capitals match is used only for a name with none of those in
+  // it; anything else has to match exactly.
+  const plain = !/[%_*\\]/.test(name)
 
   // WHO to write to. By id when the booking carries one — an exact answer —
   // and only then by name. Matching a typed name was the single reason a
   // confirmation could silently reach nobody: "Sven " with a trailing space,
   // or a nickname, matched no row, and resolveRecipient was handed null.
   const cols = 'id,name,age,email,contact_email,parent_email,parent_name'
-  const [{ data: players }, { data: venues }, { data: profile }] = await Promise.all([
+  const [{ data: byId }, { data: named }, { data: venues }, { data: profile }, { data: courts }] = await Promise.all([
     booking.player_id
       ? db.from('coach_players').select(cols).eq('coach_id', coachId).eq('id', booking.player_id)
-      : name
-        ? db.from('coach_players').select(cols).eq('coach_id', coachId).ilike('name', name)
-        : Promise.resolve({ data: [] as PlayerRow[] }),
-    db.from('coach_venues').select('name,address,access_note,is_home').eq('coach_id', coachId),
+      : Promise.resolve({ data: [] as PlayerRow[] }),
+    name
+      ? (plain
+          ? db.from('coach_players').select(cols).eq('coach_id', coachId).ilike('name', name)
+          : db.from('coach_players').select(cols).eq('coach_id', coachId).eq('name', name))
+      : Promise.resolve({ data: [] as PlayerRow[] }),
+    db.from('coach_venues').select('id,name,address,access_note,is_home').eq('coach_id', coachId),
     db.from('sports_profiles').select('brand_name,display_name,brand_logo_url,contact_email').eq('id', coachId).maybeSingle(),
+    db.from('coach_courts').select('name,venue_id').eq('coach_id', coachId),
   ]) as any
 
-  const player: PlayerRow | null = (players ?? [])[0] ?? null
+  // A name stands in for an id only when exactly one player at the academy has
+  // it. Two players of the same name and no id on the booking is nobody: better
+  // no email than the right words to the wrong family.
+  const namesakes = (named ?? []) as PlayerRow[]
+  const player: PlayerRow | null = booking.player_id
+    ? ((byId ?? [])[0] ?? null)
+    : (namesakes.length === 1 ? namesakes[0] : null)
 
-  // Most recent completed session for this player — the source of "what we
-  // covered last time" and the homework that was set.
+  // Most recent completed session for THIS player — the source of "what we
+  // covered last time" and the homework that was set. Found by the player's id.
+  // Older write-ups carry only a name, and those are used only when the name
+  // belongs to this player and nobody else — a new player who happens to share
+  // a name with somebody on the roster must not be sent that child's write-up.
   let last: SessionRow | null = null
-  if (name) {
-    const { data } = await db.from('coach_sessions')
-      .select('session_date,focus,summary,ai_review,review_json')
-      .eq('coach_id', coachId).ilike('player_name', name)
+  if (player?.id) {
+    const sel = 'session_date,focus,summary,ai_review,review_json'
+    const { data } = await db.from('coach_sessions').select(sel)
+      .eq('coach_id', coachId).eq('player_id', player.id)
       .order('session_date', { ascending: false }).limit(1)
     last = (data ?? [])[0] ?? null
+    if (!last && name && namesakes.length === 1 && namesakes[0].id === player.id) {
+      const q = db.from('coach_sessions').select(sel).eq('coach_id', coachId).is('player_id', null)
+      const { data: old } = await (plain ? q.ilike('player_name', name) : q.eq('player_name', name))
+        .order('session_date', { ascending: false }).limit(1)
+      last = (old ?? [])[0] ?? null
+    }
   }
 
-  // Venue: match the booking's court to a venue where we can, else the home
-  // venue. The rule lives in one place because the family's page infers the
-  // venue too, and the email and the page must not send them to different
-  // buildings — see src/lib/coach/booking-venue.ts.
-  const venue = matchVenue((venues ?? []) as VenueRow[], booking.court)
+  // Venue: the one the booking names, else the one its court belongs to — and
+  // nothing at all when that is not known. The rule lives in one place because
+  // the family's page works out the venue too, and the email and the page must
+  // not send them to different buildings — see src/lib/coach/booking-venue.ts.
+  const venue = matchVenue((venues ?? []) as VenueRow[], booking.court, { venueId: booking.venue_id, courts: courts ?? [] })
 
   // Does this player (or their parent) have the player app? Only then does the
   // email send them to sign in — a family never invited would just be told
@@ -255,5 +319,58 @@ export async function gatherBookingContext(coachId: string, booking: BookingRow)
     hasApp = !!(m && m.length)
   }
 
-  return { player, last, venue, profile: profile ?? null, hasApp }
+  // WHOSE session it is. Every notice used to name the head coach, so a family
+  // booked in with an assistant was told "Private with <head coach>" and the
+  // assistant heard nothing. The booking's own coach record decides; a booking
+  // with none (or with the head coach's own record) is the head coach's.
+  let coach = { name: String(profile?.display_name || ''), email: null as string | null, isHead: true }
+  if (booking.staff_id) {
+    const { data: st } = await db.from('coach_staff').select('id,name,email,is_head')
+      .eq('id', booking.staff_id).eq('coach_id', coachId).maybeSingle()
+    if (st && !st.is_head && String(st.name || '').trim()) {
+      // The address they sign in with, when they have joined; else the one on their record.
+      const { data: mem } = await db.from('coach_members').select('email')
+        .eq('academy_id', coachId).eq('role', 'coach').eq('staff_id', st.id).neq('status', 'revoked').limit(1)
+      coach = { name: String(st.name).trim(), email: String(mem?.[0]?.email || st.email || '').trim() || null, isHead: false }
+    }
+  }
+
+  return { player, last, venue, profile: profile ?? null, hasApp, coach }
+}
+
+// ── What the family has been told ───────────────────────────────────────────
+// A booking remembers the day, time, length and status it last told the family
+// about (coach_bookings.told_state). Comparing that with the row as it is now
+// is how the server knows whether an edit is a move, a cancellation, a booking
+// being confirmed for the first time — or nothing the family needs to hear.
+export type BookingStatusClass = 'booked' | 'pending' | 'cancelled'
+export function bookingStatusClass(status?: string | null): BookingStatusClass {
+  const s = String(status || '').toLowerCase()
+  return s === 'cancelled' ? 'cancelled' : s === 'pending' ? 'pending' : 'booked'
+}
+//
+// `place` (see bookingPlace) is a fifth part, added later: a booking moved to a
+// different venue or court at the same hour used to count as "nothing has
+// changed". States written before then have four parts and say nothing about
+// where — toldSame() compares those on the four parts alone, so an old booking
+// is not announced as moved the first time somebody edits its notes.
+export function bookingState(b: BookingRow, place?: string | null): string {
+  const parts = [
+    String(b.booking_date || '').slice(0, 10),
+    String(b.start_time || '').slice(0, 5),
+    String(b.duration_min ?? 60),
+    bookingStatusClass(b.status),
+  ]
+  if (place != null) parts.push(place.replace(/\|/g, ' '))
+  return parts.join('|')
+}
+/** Where a booking is, as one comparable string: the venue it resolves to (the
+    same rule the email uses) and the court as typed. */
+export function bookingPlace(b: BookingRow, venue?: { id?: string | null } | null): string {
+  return `${venue?.id || ''}~${String(b.court || '').trim().toLowerCase()}`
+}
+export function toldSame(told: string | null | undefined, now: string): boolean {
+  if (!told) return false
+  if (told === now) return true
+  return told.split('|').length === 4 && now.startsWith(`${told}|`)
 }

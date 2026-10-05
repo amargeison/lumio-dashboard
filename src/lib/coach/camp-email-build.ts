@@ -12,10 +12,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { campEmailTask } from '@/lib/coach/agent-persona'
-import { formEmailBlock, formEnabled, formUrl } from '@/lib/coach/camp-form'
+import { formDone, formEmailBlock, formEnabled, formUrl } from '@/lib/coach/camp-form'
 import { STAGES, type Stage, type StageId } from '@/lib/coach/camp-lifecycle'
 import { isAdult, usesGuardians, audienceBrief } from '@/lib/coach/camp-audience'
-import { balanceOwed } from '@/lib/coach/camp-money'
+import { balanceOwed, payDestination } from '@/lib/coach/camp-money'
 
 export type Camp = Record<string, any>
 export type Attendee = { id: string } & Record<string, any>
@@ -60,12 +60,24 @@ export const longDate = (d?: string | null) => {
 // the CAMP's audience first and the person's own age second. That order matters:
 // adults booking a tennis holiday do not fill in an age, and treating a blank as
 // "child" is what produced "Hi Sarah, we've got Sarah down for the camp".
+//
+// This is the ONE rule for every camp email — the confirmation a coach's own
+// booking sends, the countdown, the form email and the preview. They used to
+// disagree (18 for the confirmation, 16 for the rest), so a 17-year-old's
+// confirmation went to a parent and everything after it to the child.
 export function recipientFor(camp: Camp, a: Attendee, p?: Player | null): { to: string | null; toParent: boolean; greeting: string } {
-  const adult = isAdult(camp, a.player_age ?? p?.age)
+  const age = a.player_age ?? p?.age
+  // The roster's own "Adult" label counts where there is no age to go on: an
+  // adult who booked online is filed that way without a date of birth.
+  const adult = isAdult(camp, age) || (age == null && String(p?.category || '').toLowerCase() === 'adult')
 
+  // A child we KNOW is under 16 is only ever reached through a parent — never
+  // at their own address, the same rule as a lesson confirmation. With no age
+  // on file the roster's own address is still used, because that is usually an
+  // adult nobody typed an age for.
   const fromRoster = adult
     ? [p?.email, p?.contact_email, p?.parent_email]
-    : [p?.parent_email, p?.email, p?.contact_email]
+    : age != null ? [p?.parent_email] : [p?.parent_email, p?.email, p?.contact_email]
   const to = [a.parent_email, ...fromRoster]
     .map(v => String(v ?? '').trim())
     .find(v => v.includes('@')) || null
@@ -89,7 +101,8 @@ export { balanceOwed }
 export function chaseReasons(camp: Camp, a: Attendee): string[] {
   const out: string[] = []
   const owed = balanceOwed(camp, a)
-  if (owed > 0) out.push(`Balance still to pay: ${money(owed)}${camp.balance_link ? '' : ' — the coach will be in touch about how to pay it'}`)
+  const pay = payDestination(camp.balance_link)
+  if (owed > 0) out.push(`Balance still to pay: ${money(owed)}${pay.href ? '' : pay.text ? ` — how to pay: ${pay.text}` : ' — the coach will be in touch about how to pay it'}`)
   // Consent is needed either way — an adult's photo still cannot be used without
   // it — but who gives it, and how it is asked for, is not the same.
   const guardians = usesGuardians(camp)
@@ -99,7 +112,9 @@ export function chaseReasons(camp: Camp, a: Attendee): string[] {
   if (camp.overseas) out.push('This trip is abroad — passport in date, and travel insurance sorted')
   // The player-information form: worth a chase on its own, because the rooming
   // list and the groups are built from it.
-  if (a.form_token && !a.form_submitted_at && formEnabled(camp)) out.push('The player information form has not been filled in yet — the link is in this email')
+  if (a.form_token && formEnabled(camp) && !formDone(camp, a)) out.push(a.form_submitted_at
+    ? 'A few more questions have been added to the player information form since they filled it in — the link is in this email'
+    : 'The player information form has not been filled in yet — the link is in this email')
   return out
 }
 
@@ -199,6 +214,10 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;c
 export function renderCampEmail(opts: {
   camp: Camp; attendee: Attendee; profile: Profile
   stageId: StageId; draft: Draft; greeting: string
+  /** Who is reading: false = the player themself. Comes from recipientFor, so
+   *  the form block is worded for the same person the email is addressed to.
+   *  Left out, it falls back to the attendee's own age. */
+  toParent?: boolean
   /** Absolute origin, so the trip link works in an inbox. */
   origin?: string
   /** Appended after the draft's own bullets. Used when a saved draft replaces
@@ -211,6 +230,8 @@ export function renderCampEmail(opts: {
   const bullets = [...(draft.bullets || []), ...(opts.extraBullets || [])]
     .map(x => String(x || '').trim()).filter(Boolean)
   const owed = balanceOwed(camp, attendee)
+  const pay = payDestination(camp.balance_link)
+  const toParent = opts.toParent ?? !isAdult(camp, attendee.player_age)
 
   const body = [
     paras.map(x => `<p style="margin:0 0 14px;font-size:15.5px;line-height:1.65;color:#374151">${esc(x)}</p>`).join(''),
@@ -220,13 +241,17 @@ export function renderCampEmail(opts: {
     draft.cta ? `<p style="margin:0 0 14px;font-size:15.5px;line-height:1.6;color:#374151">${esc(draft.cta)}</p>` : '',
     // The balance link only appears where there is a balance AND the coach has
     // given somewhere to pay it.
-    stageId === 'two_weeks' && owed > 0 && camp.balance_link
-      ? `<div style="margin:18px 0"><a href="${esc(camp.balance_link)}" style="display:inline-block;background:#3A8EE0;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 20px;border-radius:10px">Pay the ${money(owed)} balance</a></div>`
-      : '',
+    // given somewhere to pay it. Only a real web address becomes the button;
+    // anything else the coach typed is printed as words (see payDestination).
+    stageId === 'two_weeks' && owed > 0 && pay.href
+      ? `<div style="margin:18px 0"><a href="${esc(pay.href)}" style="display:inline-block;background:#3A8EE0;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 20px;border-radius:10px">Pay the ${money(owed)} balance</a></div>`
+      : stageId === 'two_weeks' && owed > 0 && pay.text
+        ? `<p style="margin:0 0 14px;font-size:15.5px;line-height:1.6;color:#374151"><strong>How to pay the ${money(owed)} balance:</strong> ${esc(pay.text)}</p>`
+        : '',
     // Their player-information form, until they have filled it in. Not on the
     // night-before email (too late to act on) or the one after the camp.
-    attendee.form_token && !attendee.form_submitted_at && opts.origin && formEnabled(camp) && ['details', 'two_weeks', 'one_week'].includes(stageId)
-      ? formEmailBlock(formUrl(opts.origin, String(attendee.form_token)), { toParent: !isAdult(camp, attendee.player_age), playerName: attendee.player_name })
+    attendee.form_token && opts.origin && formEnabled(camp) && !formDone(camp, attendee) && ['details', 'two_weeks', 'one_week'].includes(stageId)
+      ? formEmailBlock(formUrl(opts.origin, String(attendee.form_token)), { toParent, playerName: attendee.player_name })
       : '',
     // The trip hub. Once a coach has published one it is the single most useful
     // link in any of these emails — the hotel, the transfers, who to ring — so

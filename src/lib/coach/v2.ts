@@ -17,7 +17,7 @@ export const V2_LABEL = 'Coming in V2'
 
 export const V2_NOTES = {
   /** Card payments — Stripe Connect, checkout links, camp deposits. */
-  payments: 'Card payments arrive in V2. For now, take payment however you do today and record it here — the balances, chasers and reports all work the same way.',
+  payments: 'Card payments arrive in V2. For now, take payment however you do today and record it here — what is owed and what has been paid are tracked the same way.',
   /** Text messages from Lumio's number. */
   sms: 'Texting arrives in V2. Email and the in-app message both send now, and the player sees them in their app.',
 } as const

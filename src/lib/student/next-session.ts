@@ -23,7 +23,8 @@ export type NextSessionPlan = {
   /** The timed run-sheet, if the coach has built one. */
   runSheet?: { phase: string; mins?: number | null; detail?: string | null }[]
   drills?: string[]
-  /** The coach's own note is NOT here — see the filter in planFor(). */
+  /** Always empty. The plan's note is what the coach asked Lumio Coach for when
+      building the plan — theirs, not the family's — and is never sent. */
   notes?: string | null
 }
 
@@ -50,6 +51,15 @@ type Db = {
 const todayUK = () => {
   try { return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' }) }
   catch { return new Date().toISOString().slice(0, 10) }
+}
+
+/** Minutes since midnight in the UK, now. */
+const ukNowHM = () => {
+  try {
+    const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date())
+    const n = (t: string) => Number(p.find(x => x.type === t)?.value || 0)
+    return (n('hour') % 24) * 60 + n('minute')
+  } catch { const d = new Date(); return d.getUTCHours() * 60 + d.getUTCMinutes() }
 }
 
 const dayKey = (v: unknown) => String(v ?? '').slice(0, 10)
@@ -83,7 +93,10 @@ function planFor(row: Record<string, unknown> | null | undefined): NextSessionPl
     focus: str('focus') ?? null,
     runSheet: runSheet.length ? runSheet : undefined,
     drills: drills.length ? drills : undefined,
-    notes: str('notes') ?? null,
+    // Not the plan's `notes`: that box is the coach's brief to Lumio Coach
+    // ("what do you want from this session?"), not something written for the
+    // family. It was being sent along with the plan.
+    notes: null,
   }
   // Nothing worth showing is still nothing. An empty "What we'll cover" heading
   // reads as a coach who has not bothered, which is worse than no heading.
@@ -95,7 +108,9 @@ function planFor(row: Record<string, unknown> | null | undefined): NextSessionPl
  *
  * Scoped the same way as the rest of the bundle: the academy, then the player by
  * id, falling back to the name ONLY for rows written before bookings carried a
- * player_id (migration 146). Returns null when there is nothing booked — the
+ * player_id (migration 146). A name is not an identity, so callers pass one
+ * only when it belongs to exactly one player in the academy (nameIsUnique) and
+ * an empty string otherwise. Returns null when there is nothing booked — the
  * section then does not render at all.
  */
 export async function buildNextSession(
@@ -112,16 +127,37 @@ export async function buildNextSession(
   ])
 
   const seen = new Set(byId.map(r => r.id))
+  // Today's sessions the coach has already finished (the plan is marked done).
+  const todays = [...byId, ...legacy].filter(b => dayKey(b.booking_date) === today).map(b => String(b.id))
+  const done = new Set((todays.length
+    ? await safe(db.from('coach_session_plans').select('booking_id').eq('coach_id', academyId).in('booking_id', todays).not('completed_at', 'is', null))
+    : []).map(r => String(r.booking_id)))
+  // A session that is over is not the NEXT one. It used to be judged on the
+  // date alone, so a lesson finished at 11:00 was still "Booked in · today" on
+  // the family's page that evening.
+  const nowHM = ukNowHM()
+  const over = (b: Record<string, unknown>) => {
+    if (dayKey(b.booking_date) !== today) return false
+    if (done.has(String(b.id))) return true
+    const m = /^(\d{1,2}):(\d{2})/.exec(String(b.start_time ?? ''))
+    if (!m) return false   // no time on it: still today's session
+    const end = Number(m[1]) * 60 + Number(m[2]) + (typeof b.duration_min === 'number' && b.duration_min > 0 ? b.duration_min : 60)
+    return end <= nowHM
+  }
   const upcoming = [...byId, ...legacy.filter(r => !seen.has(r.id))]
     .filter(b => String(b.status ?? '').toLowerCase() !== 'cancelled')
-    .filter(b => dayKey(b.booking_date) >= today)
+    .filter(b => dayKey(b.booking_date) >= today && !over(b))
     .sort((a, b) => (dayKey(a.booking_date) + timeKey(a.start_time)).localeCompare(dayKey(b.booking_date) + timeKey(b.start_time)))
 
   const next = upcoming[0]
   if (!next) return null
 
-  const [venues, plans] = await Promise.all([
-    safe(db.from('coach_venues').select('name, address, access_note, facilities, is_home').eq('coach_id', academyId)),
+  const [venues, courts, where, plans] = await Promise.all([
+    safe(db.from('coach_venues').select('id, name, address, access_note, facilities, is_home').eq('coach_id', academyId)),
+    safe(db.from('coach_courts').select('name, venue_id').eq('coach_id', academyId)),
+    // The venue the booking itself names (migration 197). Read on its own so a
+    // database without the column still shows the session.
+    safe(db.from('coach_bookings').select('venue_id').eq('coach_id', academyId).eq('id', next.id).limit(1)),
     // The plan for THIS booking (migration 179). Name-and-date is the fallback
     // for plans written before plans carried a booking id — and it is why a
     // moved session used to show a family no plan at all, because the plan was
@@ -131,7 +167,11 @@ export async function buildNextSession(
       .eq('coach_id', academyId).eq('booking_id', next.id).limit(1)),
   ])
 
-  const venue = matchVenue(venues as VenueRow[], String(next.court ?? ''))
+  // The same rule, with the same evidence, as the confirmation email.
+  const venue = matchVenue(venues as VenueRow[], String(next.court ?? ''), {
+    venueId: (where[0]?.venue_id as string) || null,
+    courts: courts as { name?: string | null; venue_id?: string | null }[],
+  })
 
   // Nothing tied to the booking itself — fall back to the old match.
   let plan = plans[0] || null
@@ -139,7 +179,9 @@ export async function buildNextSession(
     const legacyPlan = await safe(db.from('coach_session_plans')
       .select('title, focus, drills, notes, run_sheet, session_date, group_name, booking_id')
       .eq('coach_id', academyId).is('booking_id', null)
-      .eq('session_date', dayKey(next.booking_date)).ilike('group_name', playerName).limit(1))
+      .eq('session_date', dayKey(next.booking_date))
+      // The name exactly (any case) — % and _ in a name are not wildcards.
+      .ilike('group_name', playerName.replace(/[\\%_]/g, m => `\\${m}`)).limit(1))
     plan = legacyPlan[0] || null
   }
 

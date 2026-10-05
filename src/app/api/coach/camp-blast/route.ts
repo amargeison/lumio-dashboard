@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { isAdult } from '@/lib/coach/camp-audience'
 
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { serviceClient } from '@/lib/coach/oauth'
+import { coachGate } from '@/lib/coach/membership'
 import { sendAsCoach } from '@/lib/coach/mail'
 import { sendEmail } from '@/lib/emails/send'
 import { publicSiteOrigin } from '@/lib/public-origin'
@@ -26,6 +27,9 @@ const CONCURRENCY = 4
 
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string))
 const norm = (s: unknown) => String(s ?? '').trim().toLowerCase()
+// Shaped like an address somebody could actually receive mail at. "%@%.%",
+// captured from a bad sign-up, has an @ in it and is not one.
+const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(s)
 
 type Body = {
   campId?: string
@@ -70,8 +74,12 @@ function buildHtml(o: {
 }
 
 export async function POST(req: NextRequest) {
-  const coachId = await sessionCoachId()
-  if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // The academy in the portal's address, and only its head coach (see coachGate):
+  // a coach who also helps at another academy must not act on their own club
+  // from inside the other one's portal.
+  const seat = await coachGate({ headOnly: true })
+  if (!seat.ok) return NextResponse.json({ error: seat.error }, { status: seat.status })
+  const coachId = seat.seat.academyId
   // A demo account is signed in too. Only a real academy may use this.
   if (!await isAcademyUser(coachId)) return notAnAcademy()
 
@@ -110,7 +118,17 @@ export async function POST(req: NextRequest) {
 
     // ── The intersection. This is the security boundary. ──────────────────
     const { data: roster } = await db.from('coach_players')
-      .select('id, name, parent_name, parent_email, email, age').eq('coach_id', coachId)
+      .select('id, name, parent_name, parent_email, email, age, category, no_camp_emails').eq('coach_id', coachId)
+
+    // "Please stop emailing me about camps." The footer of every announcement
+    // promises it, so it is enforced here and not in the browser: an address
+    // that belongs to ANY player marked this way is left out, whoever else in
+    // the family shares it and whatever list the browser sends.
+    const optedOut = new Set<string>()
+    for (const p of roster ?? []) {
+      if (p.no_camp_emails) for (const a of [p.email, p.parent_email]) if (norm(a)) optedOut.add(norm(a))
+    }
+
     const allowed = new Map<string, { name: string; greetName: string }>()
     for (const p of roster ?? []) {
       // Under-16s are reached through the parent, same rule as booking
@@ -118,9 +136,11 @@ export async function POST(req: NextRequest) {
       // third private copy of `age < 16`. A blast goes to the whole roster
       // rather than one camp, so there is no camp audience to consult here —
       // age alone decides.
-      const adult = isAdult(null, p.age)
+      // age alone decides. (With no age, the roster's own "Adult" label does:
+      // an adult who booked online is filed that way without a date of birth.)
+      const adult = isAdult(null, p.age) || (p.age == null && norm(p.category) === 'adult')
       const addr = norm(adult ? (p.email || p.parent_email) : p.parent_email)
-      if (!addr || !addr.includes('@')) continue
+      if (!isEmail(addr) || optedOut.has(addr)) continue
       if (!allowed.has(addr)) {
         allowed.set(addr, {
           name: p.name,
@@ -133,7 +153,7 @@ export async function POST(req: NextRequest) {
     const targets = [...new Set(asked)].filter(a => allowed.has(a)).slice(0, MAX_RECIPIENTS)
     const dropped = new Set(asked).size - targets.length
     if (targets.length === 0) {
-      return NextResponse.json({ error: 'None of those addresses are on your roster.' }, { status: 400 })
+      return NextResponse.json({ error: 'Nobody on that list can be sent this — they are either not on your roster or have asked not to hear about camps.' }, { status: 400 })
     }
 
     let sent = 0, failed = 0

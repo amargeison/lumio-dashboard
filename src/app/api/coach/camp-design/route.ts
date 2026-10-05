@@ -134,9 +134,26 @@ export async function POST(req: NextRequest) {
           },
         })
 
+        // Anything that is not a plan is a failed design. A reply that parses
+        // but holds no days — an apology in JSON, an empty list — used to be
+        // offered for acceptance as "0 days", and accepting it wiped the saved
+        // itinerary and the parent brief.
+        const failed = 'Lumio Coach could not design this camp. Nothing has been changed — try again.'
         const m = txt.replace(/```json\s*/gi, '').replace(/```/g, '').trim().match(/\{[\s\S]*\}/)
-        if (!m) { send({ t: 'error', error: 'Lumio Coach could not design this camp. Try again.' }); controller.close(); return }
-        const plan = JSON.parse(m[0])
+        let plan: any = null
+        try { plan = m ? JSON.parse(m[0]) : null } catch { plan = null }
+        // A day counts only if it says something: a theme (or `focus`, its older
+        // name), a coach's focus, or at least
+        // one session with a title or a description. `[{}]` and `[{"day":1}]` are
+        // lists of days with nothing in them — they were offered as "1 days" and
+        // accepting them replaced the saved itinerary with blanks. (The same
+        // rule is applied in the designer: realDays in CampDesigner.tsx.)
+        const says = (v: unknown) => typeof v === 'string' && v.trim().length > 0
+        if (plan && Array.isArray(plan.itinerary)) plan.itinerary = plan.itinerary.filter((d: any) => d && typeof d === 'object' && !Array.isArray(d)
+          && (says(d.theme) || says(d.focus) || says(d.coachFocus) || (Array.isArray(d.sessions) && d.sessions.some((x: any) => x && (says(x.title) || says(x.detail))))))
+        if (!plan || typeof plan !== 'object' || !Array.isArray(plan.itinerary) || plan.itinerary.length === 0) {
+          send({ t: 'error', error: failed }); controller.close(); return
+        }
 
         // Trust but verify: a day camp with evening sessions is the failure mode
         // most likely to embarrass a coach in front of a parent, so strip them
@@ -152,7 +169,7 @@ export async function POST(req: NextRequest) {
         send({ t: 'done', plan })
       } catch (e) {
         console.error('[coach/camp-design]', e)
-        send({ t: 'error', error: e instanceof Error ? e.message : 'Design failed' })
+        send({ t: 'error', error: 'Lumio Coach could not design this camp. Nothing has been changed — try again.' })
       }
       controller.close()
     },

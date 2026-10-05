@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { serviceClient } from '@/lib/coach/oauth'
+import { coachGate } from '@/lib/coach/membership'
 import { runCoachAgent, extractJson } from '@/lib/coach/agent'
 import { rateLimit } from '@/lib/rate-limit'
 import { publicSiteOrigin } from '@/lib/public-origin'
 import { STAGE_BY_ID, type StageId } from '@/lib/coach/camp-lifecycle'
 import { parentHtml } from '@/lib/coach/camp-signup-email'
+import { formLinkFor } from '@/lib/coach/camp-form-server'
 import {
   recipientFor, buildTask, renderCampEmail,
   type Camp, type Attendee, type Player, type Draft,
@@ -31,8 +33,12 @@ export const maxDuration = 120
 type Body = { campId?: string; stage?: string; attendeeId?: string; draft?: Draft }
 
 export async function POST(req: NextRequest) {
-  const coachId = await sessionCoachId()
-  if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // The academy in the portal's address, and only its head coach (see coachGate):
+  // a coach who also helps at another academy must not act on their own club
+  // from inside the other one's portal.
+  const seat = await coachGate({ headOnly: true })
+  if (!seat.ok) return NextResponse.json({ error: seat.error }, { status: seat.status })
+  const coachId = seat.seat.academyId
   // A demo account is signed in too. Only a real academy may use this.
   if (!await isAcademyUser(coachId)) return notAnAcademy()
 
@@ -72,8 +78,9 @@ export async function POST(req: NextRequest) {
   let player: Player | null = null
   if (attendee.player_id) {
     const { data } = await db.from('coach_players')
-      .select('id, name, age, parent_name, email, contact_email, parent_email')
-      .eq('id', attendee.player_id).maybeSingle<Player>()
+      .select('id, name, age, category, parent_name, email, contact_email, parent_email')
+      // This academy's player only (an attendee row can point at any id).
+      .eq('id', attendee.player_id).eq('coach_id', coachId).maybeSingle<Player>()
     player = data ?? null
   }
 
@@ -102,6 +109,8 @@ export async function POST(req: NextRequest) {
       // So the preview flips to the direct, adult version exactly as the real
       // confirmation does.
       audience: camp.audience, toParent: rec.toParent,
+      // The real confirmation carries their form link; so does its preview.
+      formUrl: await formLinkFor(db, attendee.id, publicSiteOrigin(new URL(req.url).origin)),
     })
     return NextResponse.json({
       ok: true, fixed: true, html,
@@ -149,7 +158,7 @@ export async function POST(req: NextRequest) {
 
     const { subject, html } = renderCampEmail({
       camp, attendee, profile: profile ?? null,
-      stageId: stage.id, draft, greeting: rec.greeting,
+      stageId: stage.id, draft, greeting: rec.greeting, toParent: rec.toParent,
       origin: publicSiteOrigin(new URL(req.url).origin),
     })
 

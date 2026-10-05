@@ -16,7 +16,7 @@ import { useState, useEffect } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { ACCREDITATIONS } from '../_lib/settings-store'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
-import { forgetIdentity } from '../_lib/coach-db'
+import { forgetIdentity, getPreviewStaff } from '../_lib/coach-db'
 
 type Staff = {
   id: string; name: string; role?: string | null; email?: string | null; phone?: string | null
@@ -39,7 +39,13 @@ export function CoachMyProfile({ T, accent, mode, onDone }: {
   const [err, setErr] = useState('')
   const [saved, setSaved] = useState(false)
 
+  // The head coach looking through a coach's eyes ("View as"). These details
+  // are that coach's own and the server answers only for the person signed in,
+  // so there is nothing to load — say so, rather than "No coach access".
+  const [previewing] = useState(() => !!getPreviewStaff())
+
   useEffect(() => {
+    if (previewing) { setLoading(false); return }
     let alive = true
     ;(async () => {
       try {
@@ -54,7 +60,7 @@ export function CoachMyProfile({ T, accent, mode, onDone }: {
       finally { if (alive) setLoading(false) }
     })()
     return () => { alive = false }
-  }, [])
+  }, [previewing])
 
   const set = (k: string, v: unknown) => { setD(p => ({ ...p, [k]: v })); setSaved(false) }
 
@@ -79,6 +85,11 @@ export function CoachMyProfile({ T, accent, mode, onDone }: {
   }
 
   const save = async () => {
+    // The same checks the head coach's form makes: an address that is not an
+    // email, or a DBS that expires before it was issued, is not saved.
+    const email = String(d.email ?? '').trim()
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr('That email address does not look right. Check it, or leave it empty.'); return }
+    if (d.dbs_issued && d.dbs_expiry && String(d.dbs_expiry) <= String(d.dbs_issued)) { setErr('The DBS expiry date must be after the date it was issued.'); return }
     setSaving(true); setErr('')
     try {
       const r = await fetch('/api/coach/my-profile', {
@@ -89,7 +100,7 @@ export function CoachMyProfile({ T, accent, mode, onDone }: {
           // writing the image into the database row.
           avatar_url: photo && !photo.startsWith('data:') ? photo : null,
           phone: d.phone ?? null,
-          email: d.email ?? null,
+          email: email || null,
           qualifications: d.qualifications ?? null,
           dbs_number: d.dbs_number ?? null,
           dbs_issued: d.dbs_issued ?? null,
@@ -122,10 +133,11 @@ export function CoachMyProfile({ T, accent, mode, onDone }: {
     onDone?.()
   }
 
-  const input: React.CSSProperties = { width: '100%', marginTop: 5, padding: '9px 11px', borderRadius: 9, background: T.panel2, border: `1px solid ${T.border}`, color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none' }
+  const input: React.CSSProperties = { width: '100%', minWidth: 0, marginTop: 5, padding: '9px 11px', borderRadius: 9, background: T.panel2, border: `1px solid ${T.border}`, color: T.text, fontSize: 13, boxSizing: 'border-box', outline: 'none' }
   const lbl: React.CSSProperties = { display: 'block', color: T.text3, fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }
 
   if (loading) return <p style={{ color: T.text3, fontSize: 13, padding: '40px 0', textAlign: 'center' }}>Loading…</p>
+  if (previewing) return <p style={{ color: T.text3, fontSize: 13, padding: '24px 0', textAlign: 'center', lineHeight: 1.6 }}>A coach’s own details are not shown while you are viewing as them. You can see and change them on the Coaches page.</p>
   if (!staff) return <p style={{ color: T.text3, fontSize: 13, padding: '40px 0', textAlign: 'center' }}>{err || 'Could not load your details.'}</p>
 
   const initials = (staff.name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('')
@@ -168,7 +180,7 @@ export function CoachMyProfile({ T, accent, mode, onDone }: {
         Your name, role{venues.length ? ' and venues' : ''} are set by your head coach. Ask them if any of it needs changing.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
         <div style={{ gridColumn: '1 / -1' }}>
           <label style={lbl}>Accreditation</label>
           <select value={String(d.qualifications ?? '')} onChange={e => set('qualifications', e.target.value)} style={{ ...input, cursor: 'pointer' }}>
@@ -183,21 +195,21 @@ export function CoachMyProfile({ T, accent, mode, onDone }: {
       <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${T.border}` }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>DBS &amp; safeguarding</div>
         <p style={{ color: T.text3, fontSize: 11.5, margin: '0 0 12px', lineHeight: 1.5 }}>
-          Optional, and only your head coach sees it — it feeds the academy&rsquo;s register and the expiry reminders.
+Optional, and only your head coach sees it. It feeds the academy&rsquo;s register, where your head coach is shown a warning when a DBS is missing, expired or running out. Lumio does not send reminder emails, so keep an eye on your own expiry date.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
           <div style={{ gridColumn: '1 / -1' }}><label style={lbl}>DBS certificate number</label><input value={String(d.dbs_number ?? '')} onChange={e => set('dbs_number', e.target.value)} style={input} /></div>
           <div><label style={lbl}>Issued</label><input type="date" value={String(d.dbs_issued ?? '')} onChange={e => set('dbs_issued', e.target.value)} style={input} /></div>
           <div><label style={lbl}>Expires</label><input type="date" value={String(d.dbs_expiry ?? '')} onChange={e => set('dbs_expiry', e.target.value)} style={input} /></div>
           <div><label style={lbl}>Safeguarding training</label><input type="date" value={String(d.safeguarding_date ?? '')} onChange={e => set('safeguarding_date', e.target.value)} style={input} /></div>
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, color: T.text2, fontSize: 13, cursor: 'pointer' }}>
-          <input type="checkbox" checked={!!d.safeguarding_trained} onChange={e => set('safeguarding_trained', e.target.checked)} />
+          <input type="checkbox" checked={!!d.safeguarding_trained} onChange={e => set('safeguarding_trained', e.target.checked)} style={{ width: 18, height: 18 }} />
           Safeguarding training completed
         </label>
       </div>
 
-      {err && <div style={{ marginTop: 14, color: '#EF4444', fontSize: 12.5 }}>{err}</div>}
+      {err && <div role="alert" style={{ marginTop: 14, color: '#EF4444', fontSize: 12.5 }}>{err}</div>}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 22 }}>
         <button onClick={save} disabled={saving}

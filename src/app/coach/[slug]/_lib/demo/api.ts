@@ -872,7 +872,7 @@ const briefing: Handler = async ({ body }) => {
       it = { tag: s.tag, pri: soon ? 'high' : 'med', rank: soon ? 1 : 4, text: `${fact} ${soon ? 'Check the kit list and the attendee forms this morning, and make sure every family has the arrival details.' : 'Worth a look at who has not paid or filled in their form while there is still time to chase.'}` }
     } else if (s.tag === 'payments' && news) {
       const names = [...new Set(owing.map(p => firstName(p.player_name, '')).filter(Boolean))].slice(0, 3)
-      it = { tag: s.tag, pri: head ? 'high' : 'med', rank: 2, text: `${fact} ${names.length ? `Start with ${names.join(', ')} — ` : ''}${head ? 'send the chasers from Payments before your first lesson so it is done.' : 'mention it at their next session; the head coach handles the chasers.'}` }
+      it = { tag: s.tag, pri: head ? 'high' : 'med', rank: 2, text: `${fact} ${names.length ? `Start with ${names.join(', ')} — ` : ''}${head ? 'have a word before your first lesson and mark it paid in Payments when it lands.' : 'mention it at their next session; the head coach follows it up.'}` }
     } else if (s.tag === 'rackets' && news) {
       it = { tag: s.tag, pri: 'med', rank: 3, text: `${fact} Tell them at their next session — it is the best five minutes of the week for both of you.` }
     } else if (s.tag === 'schedule') {

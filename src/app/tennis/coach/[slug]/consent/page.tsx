@@ -23,9 +23,22 @@ export default function ParentConsentPage({ params }: { params: Promise<{ slug: 
   const [medical, setMedical] = useState('')
   const [status, setStatus] = useState<'form' | 'sending' | 'done'>('form')
   const [err, setErr] = useState('')
+  // Is there an academy at this address? Asked BEFORE the form is shown: a
+  // parent used to fill in the whole form — medical notes and all — at an old
+  // or mistyped address and only then be told "Academy not found".
+  // 'unsure' is "could not ask" (no signal): the form is shown as before, and
+  // sending it gives the real answer.
+  const [found, setFound] = useState<'checking' | 'yes' | 'no' | 'unsure'>('checking')
 
   useEffect(() => {
-    fetch(`/api/coach/consent/submit?slug=${encodeURIComponent(slug)}`).then(r => r.ok ? r.json() : null).then(d => { if (d?.academy) setAcademy(d.academy) }).catch(() => {})
+    fetch(`/api/coach/consent/submit?slug=${encodeURIComponent(slug)}`)
+      .then(async r => {
+        if (r.status === 404) { setFound('no'); return }
+        const d = r.ok ? await r.json().catch(() => null) : null
+        if (d?.academy) setAcademy(d.academy)
+        setFound(r.ok ? 'yes' : 'unsure')
+      })
+      .catch(() => setFound('unsure'))
   }, [slug])
 
   const submit = async () => {
@@ -53,7 +66,16 @@ export default function ParentConsentPage({ params }: { params: Promise<{ slug: 
     <div style={{ minHeight: '100vh', background: '#07080F', display: 'flex', justifyContent: 'center', padding: '6vh 16px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ width: '100%', maxWidth: 560 }}>
         <img src="/tennis_coach_logo.png" alt="" style={{ height: 44, display: 'block', margin: '0 auto 16px' }} />
-        {status === 'done' ? (
+        {found === 'checking' ? (
+          <div style={{ background: '#0d1117', border: '1px solid #1F2937', borderRadius: 16, padding: 36, textAlign: 'center' }}>
+            <p style={{ color: '#9CA3AF', fontSize: 14, margin: 0 }}>Loading…</p>
+          </div>
+        ) : found === 'no' ? (
+          <div role="alert" style={{ background: '#0d1117', border: '1px solid #1F2937', borderRadius: 16, padding: 36, textAlign: 'center' }}>
+            <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: '0 0 8px' }}>This consent form is no longer at this address</h1>
+            <p style={{ color: '#9CA3AF', fontSize: 14, lineHeight: 1.6, margin: 0 }}>The academy may have changed its web address, or the link may be mistyped. Please ask your coach to send you the consent link again.</p>
+          </div>
+        ) : status === 'done' ? (
           <div style={{ background: '#0d1117', border: '1px solid #1F2937', borderRadius: 16, padding: 36, textAlign: 'center' }}>
             <div style={{ fontSize: 40, marginBottom: 10 }}>✅</div>
             <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: '0 0 8px' }}>Thank you</h1>

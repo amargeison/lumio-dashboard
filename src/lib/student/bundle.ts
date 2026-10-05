@@ -32,7 +32,11 @@ export type StudentSkill = { skill: string; score: number }
 
 export type StudentReview = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
-  homework?: string; nextFocus?: string; coachNote?: string; rating?: number
+  // No coachNote: that is the coach's private note and never reaches this page
+  // (see family-lesson.ts). `playerNote` is the separate note written TO the
+  // player, which is shared.
+  playerNote?: string
+  homework?: string; nextFocus?: string; rating?: number
   skillsWorked?: string[]; type?: string; recap?: string
 }
 

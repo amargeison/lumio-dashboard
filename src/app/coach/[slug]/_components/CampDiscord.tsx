@@ -100,8 +100,8 @@ export function CampDiscord({ T, accent, campId, campName }: { T: ThemeTokens; a
 
   if (!s.configured) return (
     <div style={{ ...card, fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>
-      Discord isn’t set up on this server yet. It needs Lumio’s bot credentials in the environment —
-      once they’re there, this page lets you link {campName} to one or more channels.
+      Discord isn’t available on your Lumio account yet, so there is nothing to link {campName} to. Ask Lumio support to
+      switch it on — until then, the camp’s group chat in Lumio and the player app works as normal.
     </div>
   )
 

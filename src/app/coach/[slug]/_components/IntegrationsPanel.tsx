@@ -22,6 +22,7 @@
 import { useEffect, useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { readableOn } from '../_lib/theme'
 
 type Provider = 'google' | 'microsoft' | 'icloud'
 type Connection = { provider: Provider; email_address: string | null; capabilities: string[]; status: string }
@@ -114,14 +115,19 @@ export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: Accen
     setIcloudBusy(false)
   }
 
-  const bannerText = banner && ({
-    connected: `✓ ${banner.provider} connected.`,
+  // The address bar is not proof. "✓ connected" is only said when the account
+  // really holds that connection, and the provider is called by its name
+  // (anything else typed into the address is ignored).
+  const bannerName = ({ google: 'Google', microsoft: 'Outlook', icloud: 'iCloud' } as Record<string, string>)[banner?.provider || '']
+  const reallyConnected = !!data?.connections.some(c => c.provider === banner?.provider)
+  const bannerText = banner && bannerName && (banner.status !== 'connected' || reallyConnected) && ({
+    connected: `✓ ${bannerName} connected.`,
     partial_no_mail: 'Connected for calendar only — permission to send email wasn’t granted. Disconnect and connect again, leaving every box ticked.',
     partial_no_cal: 'Connected for email only — calendar permission wasn’t granted. Disconnect and connect again, leaving every box ticked.',
-    not_configured: `${banner.provider} isn't set up yet — add its OAuth credentials to the environment.`,
-    denied: `${banner.provider} connection was cancelled.`,
+    not_configured: `${bannerName} cannot be connected yet. It is coming soon.`,
+    denied: `The ${bannerName} connection was cancelled.`,
     state: 'Security check failed — please try connecting again.',
-    exchange: `Couldn't complete the ${banner.provider} connection. Try again.`,
+    exchange: `The ${bannerName} connection could not be completed. Try again.`,
     signin: 'Please sign in first, then reconnect.',
     store_error: 'Connected, but saving failed — try again.',
   } as Record<string, string>)[banner.status]
@@ -177,7 +183,7 @@ export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: Accen
               {isOn ? (
                 <div style={{ display: 'flex', gap: 6 }}>
                   {needsReauth && m.id !== 'icloud' && (
-                    <button onClick={() => connect(m.id)} style={btn(T.warn, T.btnText)}>Reconnect</button>
+                    <button onClick={() => connect(m.id)} style={btn(T.warn, readableOn(T.warn))}>Reconnect</button>
                   )}
                   <button onClick={() => disconnect(m.id)} style={{ ...btn('transparent', T.text2), border: `1px solid ${T.border}` }}>Disconnect</button>
                 </div>
@@ -228,7 +234,7 @@ export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: Accen
             {m.id === 'icloud' && !isOn && (
               <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <input value={appleId} onChange={e => setAppleId(e.target.value)} placeholder="Apple ID (email)" style={{ padding: '9px 11px', borderRadius: 9, fontSize: 12.5, color: T.text, background: T.panel, border: `1px solid ${T.borderHi}`, outline: 'none', fontFamily: FONT }} />
-                <input value={appPw} onChange={e => setAppPw(e.target.value)} placeholder="App-specific password (appleid.apple.com)" style={{ padding: '9px 11px', borderRadius: 9, fontSize: 12.5, color: T.text, background: T.panel, border: `1px solid ${T.borderHi}`, outline: 'none', fontFamily: FONT }} />
+                <input type="password" autoComplete="off" value={appPw} onChange={e => setAppPw(e.target.value)} placeholder="App-specific password (appleid.apple.com)" style={{ padding: '9px 11px', borderRadius: 9, fontSize: 12.5, color: T.text, background: T.panel, border: `1px solid ${T.borderHi}`, outline: 'none', fontFamily: FONT }} />
                 {icloudErr && <div style={{ fontSize: 11, color: T.bad }}>{icloudErr}</div>}
                 <button onClick={connectIcloud} disabled={icloudBusy || !appleId.trim() || !appPw.trim()} style={{ ...btn(accent.hex, T.btnText), alignSelf: 'flex-start', opacity: icloudBusy || !appleId.trim() || !appPw.trim() ? 0.5 : 1 }}>{icloudBusy ? 'Connecting…' : 'Connect iCloud'}</button>
               </div>

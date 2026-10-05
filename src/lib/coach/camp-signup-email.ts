@@ -9,6 +9,7 @@
 // confirmations, so a parent recognises the sender.
 
 import { sendAsCoach } from '@/lib/coach/mail'
+import { serviceClient } from '@/lib/coach/oauth'
 import { formEmailBlock } from '@/lib/coach/camp-form'
 import { sendEmail } from '@/lib/emails/send'
 
@@ -156,24 +157,55 @@ export function coachHtml(i: SignupMailInput) {
     <p style="margin:16px 0 0;font-size:13px;color:#6b7280">They&rsquo;re already on the attendee list in Lumio — Training Camps → ${esc(i.campName)} → Attendees.</p>`)
 }
 
+/**
+ * Put the confirmation on the camp's Emails tab. It is the first of the six
+ * emails and was the only one never recorded, so "You're in" read "Not yet"
+ * for a family who had it in their inbox. One row per attendee, like every
+ * other stage: a confirmation sent again updates the row rather than adding one.
+ * Never throws — a log that cannot be written must not undo a sign-up.
+ */
+export async function logCampConfirmation(
+  coachId: string, place: { campId: string; attendeeId: string },
+  outcome: { status: 'sent' | 'failed' | 'skipped'; subject?: string; error?: string },
+) {
+  try {
+    await serviceClient().from('coach_camp_emails').upsert({
+      coach_id: coachId, camp_id: place.campId, attendee_id: place.attendeeId, stage: 'signup',
+      status: outcome.status, subject: outcome.subject ?? null, error: outcome.error ?? null,
+      sent_at: new Date().toISOString(),
+    }, { onConflict: 'attendee_id,stage' })
+  } catch (e) { console.error('[camp-signup-email] log', e) }
+}
+
 // Fire-and-forget. A sign-up must never fail because an email did.
-export async function sendCampSignupEmails(coachId: string, i: SignupMailInput) {
+// `place` says whose confirmation this is, so it can be recorded on the camp's
+// Emails tab; leave it out when the email is a repeat of one already recorded.
+export async function sendCampSignupEmails(coachId: string, i: SignupMailInput, place?: { campId: string; attendeeId: string }) {
   const subjectParent = i.toParent === false
     ? `You're in — ${i.campName}`
     : `${i.playerName} is signed up — ${i.campName}`
   const subjectCoach = `New camp sign-up — ${i.playerName} · ${i.campName}`
   try {
     const sent = await sendAsCoach(coachId, { to: i.parentEmail, subject: subjectParent, html: parentHtml(i) })
+    let refused = ''
     if (!sent.ok) {
-      await sendEmail({
+      const fb = await sendEmail({
         context: 'coach/camp-signup parent-confirmation',
         from: 'Lumio Tennis <noreply@lumiosports.com>', to: [i.parentEmail],
         subject: subjectParent, html: parentHtml(i),
         // So a parent replying reaches the coach, not a noreply address.
         replyTo: i.coachEmail || undefined,
       })
+      // sendEmail resolves with { data, error } rather than throwing.
+      if (fb.error) refused = String(fb.error.message || 'refused').slice(0, 200)
     }
-  } catch (e) { console.error('[camp-signup-email] parent', e) }
+    if (place) await logCampConfirmation(coachId, place, refused
+      ? { status: 'failed', subject: subjectParent, error: `the email could not be delivered (${refused})` }
+      : { status: 'sent', subject: subjectParent })
+  } catch (e) {
+    console.error('[camp-signup-email] parent', e)
+    if (place) await logCampConfirmation(coachId, place, { status: 'failed', subject: subjectParent, error: 'the email could not be sent' })
+  }
 
   if (!i.coachEmail) return
   try {

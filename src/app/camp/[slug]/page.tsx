@@ -3,6 +3,7 @@ import { demoCampBySignupSlug } from '@/lib/coach/demo-public'
 import { campAudience } from '@/lib/coach/camp-audience'
 import { createClient } from '@supabase/supabase-js'
 import CampSignupView, { type CampPublic } from './CampSignupView'
+import { londonToday } from '@/lib/coach/booking-slots'
 
 // ─── PUBLIC CAMP SIGN-UP PAGE ───────────────────────────────────────────────
 // URL: /camp/[slug] — a link a coach shares with parents.
@@ -54,7 +55,12 @@ function toPublic(camp: any, profile: any, taken: number): CampPublic {
 async function load(slug: string) {
   try {
     const sb = db()
-    const { data: camp } = await sb.from('coach_camps').select('*').ilike('signup_slug', slug).maybeSingle()
+    // An exact match on the address. It used to be a pattern match, where "_"
+    // and "%" stand for anything — so /camp/____-____ opened somebody's page.
+    // Anything that is not an address the portal could have made is no camp.
+    const wanted = String(slug || '').toLowerCase()
+    const { data: camp } = await sb.from('coach_camps').select('*')
+      .eq('signup_slug', /^[a-z0-9-]{1,80}$/.test(wanted) ? wanted : '').maybeSingle()
     if (!camp || !camp.signup_open) {
       // One of the DEMO academy's camps, opened from the demo portal.
       const demo = camp ? null : demoCampBySignupSlug(slug)
@@ -64,7 +70,11 @@ async function load(slug: string) {
       sb.from('sports_profiles').select('brand_name, brand_logo_url').eq('id', camp.coach_id).maybeSingle(),
       sb.from('coach_camp_attendees').select('id', { count: 'exact', head: true }).eq('camp_id', camp.id).neq('status', 'cancelled'),
     ])
-    return toPublic(camp, profile, count ?? 0)
+    const pub = toPublic(camp, profile, count ?? 0)
+    // A camp whose last day has gone (on the UK calendar) takes no more
+    // sign-ups; the page says so instead of showing the form.
+    const last = String(camp.end_date || camp.start_date || '').slice(0, 10)
+    return { ...pub, finished: !!last && last < londonToday() }
   } catch { return null }
 }
 

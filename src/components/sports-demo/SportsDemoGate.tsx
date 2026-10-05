@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { SPORT_STATS } from '@/lib/sports/cardStats'
+import { clearPrivateCaches } from '@/components/PwaInstaller'
 import { clearDemoSession, wipeDemoSurvivors, touchDemoSessionTs, isDemoSignedOut, clearDemoSignedOut, DEMO_SESSION_TTL_MS } from '@/lib/demo-session/clear'
 
 // ── SPORT LOGOS ───────────────────────────────────────────────────────────
@@ -50,6 +51,8 @@ export interface SportsDemoSession {
   setupType?: string | null
   /** Real accounts: true once the Lumio team has finished loading the portal. */
   setupComplete?: boolean
+  /** Real accounts: the coach pressed "Skip for now" on the setup wizard. */
+  setupSkipped?: boolean
 }
 
 export type SportKey =
@@ -478,12 +481,22 @@ export default function SportsDemoGate({
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [inviteEmails, setInviteEmails] = useState(['', '', '', '', ''])
   const [restoredParamsEmail, setRestoredParamsEmail] = useState('')
+  // Live sign-in only: which kind of account the address has (decides which
+  // kind of code is sent), and a note after "Send the code again".
+  const [livePurpose, setLivePurpose] = useState<'founder' | 'member'>('member')
+  const [notice, setNotice] = useState('')
 
   // Mount-only: restore prior session, apply ?restore=... URL params, and pick
   // the starting step. Kept out of useState initializers so server-rendered HTML
   // (no window/localStorage) matches the first client render — reading either
   // at render time produces a hydration mismatch.
   useEffect(() => {
+    // In front of a REAL academy this gate only ever signs somebody in. It must
+    // not rebuild a session from whatever a demo visit (or the last person on
+    // this computer) left in the browser: that put a visitor with no account
+    // inside a real academy's portal frame. The portal page decides who is
+    // signed in, from the real session.
+    if (liveSignIn) return
     let restored: SportsDemoSession | null = null
     let restoredEmailFromParams = ''
 
@@ -632,6 +645,9 @@ export default function SportsDemoGate({
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     )
     let cancelled = false
+    // Never for a real academy — see the note on the effect above. A signed-in
+    // person is recognised by the portal page before this gate is ever shown.
+    if (liveSignIn) return
     ;(async () => {
       // Deliberate sign-out wins over the cookie. verify-otp mints a real
       // Supabase session for demo users, which clearDemoSession cannot end —
@@ -750,17 +766,34 @@ export default function SportsDemoGate({
     reader.readAsDataURL(file)
   }, [])
 
-  const requestOtp = async () => {
+  const requestOtp = async (again = false) => {
     if (!email || !email.includes('@')) { setError('Please enter a valid email.'); return }
-    setLoading(true); setError('')
+    setLoading(true); setError(''); setNotice('')
     try {
+      let purpose: 'founder' | 'member' | null = null
+      if (liveSignIn) {
+        // A real academy: only somebody with an account gets a code. Sending
+        // one to any address typed here created an account for a stranger and
+        // let them into the portal frame.
+        const who = await fetch('/api/sports-auth/identify-user', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim() }),
+        })
+        const info = await who.json().catch(() => ({}))
+        if (!who.ok) throw new Error(info.error || 'We could not check that address just now. Please try again.')
+        if (info.type === 'founder' || info.type === 'both') purpose = 'founder'
+        else if (info.type === 'member') purpose = 'member'
+        else throw new Error('We don’t recognise that email address. Check it for typos, or ask your academy to send you an invite.')
+        setLivePurpose(purpose)
+      }
       const res = await fetch('/api/sports-demo/send-otp', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, sport, clubName: defaultClubName, ...(liveSignIn ? { purpose: 'member' } : {}) }),
+        body: JSON.stringify({ email: email.trim(), sport, ...(purpose ? { purpose } : { clubName: defaultClubName }) }),
       })
       const data = await res.json()
       if (data.error) throw new Error(data.error)
       setStep('otp')
+      if (again) { setCode(''); setNotice('We’ve sent a new code. The earlier one no longer works.') }
     } catch (e: unknown) { setError(e instanceof Error ? e.message : 'Something went wrong.') }
     setLoading(false)
   }
@@ -784,10 +817,22 @@ export default function SportsDemoGate({
         // trying the demo. Without this they are logged as a demo lead, sent the
         // "your demo is ready" email, and stamped role:'demo' on their auth user,
         // which then mis-steers their NEXT sign-in.
-        body: JSON.stringify({ email, code, sport, slug: postSlug, ...(liveSignIn ? { purpose: 'member' } : {}) }),
+        body: JSON.stringify({ email: email.trim(), code, sport, slug: postSlug, ...(liveSignIn ? { purpose: livePurpose } : {}) }),
       })
       const data = await res.json()
       if (!data.verified && !data.success) throw new Error(data.error ?? 'Invalid code')
+      if (liveSignIn) {
+        // Signed in to a real academy. Load the page again so the portal reads
+        // the account from the server — its real name, whether setup is done,
+        // and whether this person belongs to this academy at all. Nothing is
+        // taken from the browser, and no demo record is written for them.
+        if (!data.sessionMinted) throw new Error('We could not sign you in just now. Please try again in a moment.')
+        // A new person on this device: nothing an older service worker kept
+        // for the last one may be shown to them (see clearPrivateCaches).
+        await clearPrivateCaches()
+        window.location.reload()
+        return
+      }
       // The user has deliberately come back in — lift the sign-out marker so the
       // survivor/Supabase rebuilds work normally again from here on. Done once,
       // before the branches below, so every route through this function (returning
@@ -1091,7 +1136,7 @@ export default function SportsDemoGate({
           onKeyDown={e => e.key === 'Enter' && requestOtp()} placeholder="your@email.com" autoFocus
           className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-gray-500 mb-3" />
         {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
-        <button onClick={requestOtp} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50"
+        <button onClick={() => requestOtp()} disabled={loading} className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50"
           style={{ background: loading ? '#374151' : accentColor }}>
           {loading ? 'Sending code...' : (liveSignIn ? 'Sign in →' : 'Get access →')}
         </button>
@@ -1114,9 +1159,12 @@ export default function SportsDemoGate({
           onKeyDown={e => e.key === 'Enter' && verifyOtp()} placeholder="000000" maxLength={6} autoFocus
           className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-4 text-2xl font-bold text-white text-center tracking-widest placeholder-gray-700 focus:outline-none focus:border-gray-500 mb-3" />
         {error && <p className="text-xs text-red-400 mb-3 text-center">{error}</p>}
+        {notice && !error && <p className="text-xs text-gray-400 mb-3 text-center">{notice}</p>}
         <button onClick={verifyOtp} disabled={loading || code.length < 6} className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
           style={{ background: accentColor }}>{loading ? 'Verifying...' : 'Verify →'}</button>
-        <button onClick={() => { setStep('email'); setCode(''); setError('') }} className="w-full mt-3 py-2 text-xs text-gray-600 hover:text-gray-400">← Use a different email</button>
+        {/* A code that never arrived used to mean going back and typing the address again. */}
+        <button onClick={() => requestOtp(true)} disabled={loading} className="w-full mt-3 py-2 text-xs text-gray-400 hover:text-gray-200 disabled:opacity-50">Didn&apos;t get it? Send the code again</button>
+        <button onClick={() => { setStep('email'); setCode(''); setError(''); setNotice('') }} className="w-full mt-1 py-2 text-xs text-gray-600 hover:text-gray-400">← Use a different email</button>
       </div>
     </GateOverlay>
   )

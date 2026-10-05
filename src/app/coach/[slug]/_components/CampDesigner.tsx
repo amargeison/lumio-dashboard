@@ -21,6 +21,18 @@ import { UPLOAD_ACCEPT } from '@/lib/coach/file-to-content'
 type Session = { slot?: string; time?: string; title?: string; type?: string; where?: string; detail?: string; cue?: string }
 type Day = { day: number; theme?: string; rest?: boolean; coachFocus?: string; sessions?: Session[] }
 type Brief = { intro?: string; whatTheyWorkOn?: string[]; whatToBring?: string[]; dailyShape?: string; whatTheyLeaveWith?: string[] }
+// The days of a plan that actually say something: a theme (or `focus`, its
+// older name), a coach's focus, or at least
+// one session with a title or a description. A list such as `[{}]` or
+// `[{"day":1}]` has days in it and nothing in them; it was shown as a plan and
+// accepting it replaced the saved itinerary with blanks. Everything that shows,
+// accepts or saves a plan goes through this first.
+export function realDays(itinerary: unknown): Day[] {
+  const says = (v: unknown) => typeof v === 'string' && v.trim().length > 0
+  return (Array.isArray(itinerary) ? itinerary : []).filter((d): d is Day => !!d && typeof d === 'object' && !Array.isArray(d)
+    && (says((d as Day).theme) || says((d as { focus?: unknown }).focus) || says((d as Day).coachFocus) || (Array.isArray((d as Day).sessions) && (d as Day).sessions!.some(x => !!x && (says(x.title) || says(x.detail))))))
+}
+
 export type CampPlan = { daily_rhythm?: string; objectives?: string[]; equipment?: string[]; itinerary?: Day[]; parent_brief?: Brief }
 
 const SESSION_COLOUR: Record<string, string> = {
@@ -86,7 +98,8 @@ export function CampDesigner({
       if (d.camp?.board) setBoard(String(d.camp.board))
       if (d.camp?.courts) setCourts(String(d.camp.courts))
 
-      if (d.found === 'plan' && Array.isArray(d.itinerary) && d.itinerary.length) {
+      d.itinerary = realDays(d.itinerary)
+      if (d.found === 'plan' && d.itinerary.length) {
         // Their plan, digitised. Straight to the preview — there is nothing for
         // Lumio Coach to design, and offering to redesign it would be insulting.
         setPlan({
@@ -155,7 +168,13 @@ export function CampDesigner({
           try { m = JSON.parse(line) } catch { continue }
           if (m.t === 'tick') setProg({ day: Math.min(m.day || 0, m.days || days), days: m.days || days })
           else if (m.t === 'error') throw new Error(m.error || 'Design failed')
-          else if (m.t === 'done' && m.plan) { setPlan(m.plan); setStage('preview'); finished = true }
+          else if (m.t === 'done') {
+            // Only a plan with days in it is a plan. Checked here as well as on
+            // the server, so nothing empty can ever reach the Accept button.
+            if (m.plan) m.plan.itinerary = realDays(m.plan.itinerary)
+            if (!m.plan || !Array.isArray(m.plan.itinerary) || m.plan.itinerary.length === 0) throw new Error('Lumio Coach could not design this camp. Nothing has been changed — try again.')
+            setPlan(m.plan); setStage('preview'); finished = true
+          }
         }
       }
       if (!finished) throw new Error('The connection dropped before the plan finished. Try again.')
@@ -170,6 +189,7 @@ export function CampDesigner({
 
   const accept = async () => {
     if (!plan || saving) return
+    if (realDays(plan.itinerary).length === 0) { setErr('There is no plan to accept. Nothing has been changed.'); setStage('form'); return }
     setSaving(true)
     try {
       await onAccept(plan, { ages, group_size: Number(groupSize) || null, intent, board })
@@ -189,7 +209,7 @@ export function CampDesigner({
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{stage === 'preview' ? 'Your camp plan' : 'Design this camp'}</div>
             <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>
-              {stage === 'preview' ? `${plan?.itinerary?.length || 0} days · nothing is saved until you accept` : `${days} days · answer six questions and Lumio Coach builds the rest`}
+              {stage === 'preview' ? `${plan?.itinerary?.length || 0} day${plan?.itinerary?.length === 1 ? '' : 's'} · nothing is saved until you accept` : `${days} day${days === 1 ? '' : 's'} · answer six questions and Lumio Coach builds the rest`}
             </div>
           </div>
           <button onClick={onClose} style={{ appearance: 'none', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, width: 30, height: 30, fontSize: 17, cursor: 'pointer' }}>×</button>
@@ -289,7 +309,7 @@ export function CampDesigner({
               </Block>
             )}
 
-            <Block T={T} title={`Itinerary · ${plan.itinerary?.length || 0} days`}>
+            <Block T={T} title={`Itinerary · ${plan.itinerary?.length || 0} day${plan.itinerary?.length === 1 ? '' : 's'}`}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {(plan.itinerary || []).map(d => (
                   <div key={d.day} style={{ border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px' }}>

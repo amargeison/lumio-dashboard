@@ -63,13 +63,16 @@ export async function middleware(request: NextRequest) {
       // (exactly /<sport>/<slug>) — never on sub-routes like
       // /<sport>/<slug>/manifest.webmanifest, which the manifest route
       // legitimately receives the token on for token verification.
+      // The Tennis Coach portal is one level deeper — exactly
+      // /tennis/coach/<slug> — and gets the same hand-off.
       const token = request.nextUrl.searchParams.get('install_token')
-      if (token && secondSegment && segments.length === 2) {
+      const isCoachPortal = firstSegment === 'tennis' && secondSegment === 'coach' && segments.length === 3
+      if (token && secondSegment && (segments.length === 2 || isCoachPortal)) {
         const consume = request.nextUrl.clone()
         consume.pathname = '/api/pwa/consume-token'
         consume.searchParams.delete('install_token')
         consume.searchParams.set('t', token)
-        consume.searchParams.set('next', `/${firstSegment}/${secondSegment}`)
+        consume.searchParams.set('next', '/' + segments.join('/'))
         return NextResponse.redirect(consume)
       }
       return NextResponse.next()
@@ -97,7 +100,10 @@ export async function middleware(request: NextRequest) {
       || pathname === '/oxed' || pathname.startsWith('/oxed/')
       || pathname.startsWith('/api/')
       || pathname.startsWith('/_next/')
-      || /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json|html|woff2?|ttf)$/i.test(pathname)
+      // .webmanifest: a browser fetches an app manifest without cookies, so it
+      // can never carry the PIN — gated, the coach app could not be installed
+      // from a preview host at all. A manifest holds a name, colours and icons.
+      || /\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|json|webmanifest|html|woff2?|ttf)$/i.test(pathname)
     if (!isExcluded) {
       const cookie = request.cookies.get('lumio_dev_access')?.value
       if (cookie !== devPin) {
