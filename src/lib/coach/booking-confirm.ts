@@ -42,7 +42,7 @@ export type ConfirmInput = {
 export async function sendBookingConfirmation(
   { coachId, booking: b, origin, db, override }: ConfirmInput,
 ): Promise<Record<string, unknown>> {
-  const { player, last, venue, profile, hasApp } = await gatherBookingContext(coachId, b)
+  const { player, last, venue, profile, hasApp, coach } = await gatherBookingContext(coachId, b)
   // The academy's own look: its accent colour (the email used to be Lumio blue
   // whatever the academy had chosen) and its logo at a real web address (the
   // stored one is a data URL, which Gmail and Outlook refuse to show).
@@ -53,8 +53,20 @@ export async function sendBookingConfirmation(
   const signIn = hasApp ? (brand?.signInUrl || STANDARD_SIGN_IN) : null
   const appUrl = signIn ? `${signIn}?redirectTo=${encodeURIComponent('/portal')}` : null
   const academy = profile?.brand_name || 'Your academy'
-  const coachName = profile?.display_name || ''
+  // The coach taking THIS session — an assistant's booking names the assistant.
+  // A reply still goes to the academy's mailbox, so that line names the academy.
+  const coachName = coach.name
+  const replyName = coach.isHead ? undefined : academy
   const playerName = player?.name || b.player_name || b.title || 'your player'
+
+  // The day as it goes in a subject line: "Mon 5 Oct 2026", not "2026-10-05".
+  // Named from the date alone (midday UTC, read back in UTC), so it is the same
+  // calendar day on any server in any season.
+  const dayRaw = String(b.booking_date || '').slice(0, 10)
+  const dayAt = dayRaw ? new Date(`${dayRaw}T12:00:00Z`) : null
+  const subjectDay = dayAt && !Number.isNaN(dayAt.getTime())
+    ? dayAt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+    : ''
 
   const rec = override && override.to ? override : resolveRecipient(player)
   const results: Record<string, unknown> = { to: rec.to, toParent: rec.toParent, reason: rec.reason }
@@ -76,6 +88,9 @@ export async function sendBookingConfirmation(
   // Promotions, and is still there next week.
   results.inApp = await notifyBooked(db, {
     academyId: coachId,
+    // Only the id the booking itself carries. Without one, notifyBooked works it
+    // out from the name and declines when two players share it.
+    playerId: b.player_id || null,
     playerName,
     kind: 'lesson',
     title: `${b.type || 'Lesson'} with ${coachName || academy}`,
@@ -83,7 +98,10 @@ export async function sendBookingConfirmation(
     time: b.start_time ? String(b.start_time).slice(0, 5) : null,
     durationMin: b.duration_min,
     location: [place, venue?.address].filter(Boolean).join(', ') || null,
-    detail: b.notes || null,
+    // No `detail`. It used to carry the booking's notes, which are the coach's
+    // own ("check on the shoulder", "owes for last month") and, on a booking made
+    // online, a phone number. The family reads this message; the email to them
+    // already leaves the notes out for the same reason.
     googleUrl: b.booking_date ? googleCalendarUrl(event) : null,
     icsUrl: b.booking_date ? icsUrl(origin, 'booking', b.id) : null,
     dedupeKey: b.id,
@@ -92,11 +110,11 @@ export async function sendBookingConfirmation(
   // ── 1. Player / parent ──────────────────────────────────────────────────
   if (rec.to) {
     const html = buildConfirmationHtml({
-      academy, coachName, logoUrl, accent, playerName,
+      academy, coachName, replyName, logoUrl, accent, playerName,
       greetingName: rec.toParent ? (player?.parent_name || 'there') : playerName.split(' ')[0],
       toParent: rec.toParent, booking: b, venue, last, calendarHtml, appUrl,
     })
-    const subject = `Session booked — ${playerName} · ${b.booking_date || ''}`.trim()
+    const subject = [`Session booked — ${playerName}`, subjectDay].filter(Boolean).join(' · ')
     const sent = await sendAsCoach(coachId, { to: rec.to, subject, html })
     if (!sent.ok) {
       // Lumio's own transport as a fallback, with reply-to set to the coach so a
@@ -115,30 +133,40 @@ export async function sendBookingConfirmation(
   }
 
   // ── 2. Coach copy ───────────────────────────────────────────────────────
-  const coachTo = profile?.contact_email || null
-  if (coachTo) {
+  // To the head coach, and to the coach whose session it is when that is
+  // somebody else — an online booking in an assistant's diary used to be
+  // announced to the head coach only.
+  const headTo = profile?.contact_email || null
+  const sessionTo = !coach.isHead && coach.email && coach.email.toLowerCase() !== String(headTo || '').toLowerCase() ? coach.email : null
+  const copies = [
+    ...(headTo ? [{ to: headTo, greet: profile?.display_name || 'Coach', head: true }] : []),
+    ...(sessionTo ? [{ to: sessionTo, greet: coach.name, head: false }] : []),
+  ]
+  for (const copy of copies) {
     const html = buildConfirmationHtml({
       academy, coachName, logoUrl, accent, playerName,
-      greetingName: coachName || 'Coach', toParent: false, booking: b, venue, last, forCoach: true, calendarHtml,
+      greetingName: copy.greet || 'Coach', toParent: false, booking: b, venue, last, forCoach: true, calendarHtml,
     })
     const note = rec.to ? `Confirmation sent to ${rec.to} (${rec.reason}).` : `NOT sent to the player — ${rec.reason}.`
-    const sent = await sendAsCoach(coachId, {
-      to: coachTo,
-      subject: `New booking — ${playerName} · ${b.booking_date || ''}`.trim(),
-      // The coach's copy states where the player's copy went and why, so the
-      // safeguarding decision is visible rather than buried in a log.
-      html: html.replace('</body>', `<div style="max-width:560px;margin:0 auto 22px;font-size:12px;color:#6b7280;text-align:center">${note}</div></body>`),
-    })
-    results.coachSent = sent.ok
+    // The coach's copy states where the player's copy went and why, so the
+    // safeguarding decision is visible rather than buried in a log. Built once
+    // and used for BOTH sends below — the fallback (no mailbox connected, which
+    // is how every new academy starts) used to send the copy without this line.
+    const coachHtml = html.replace('</body>', `<div style="max-width:560px;margin:0 auto 22px;font-size:12px;color:#6b7280;text-align:center">${note}</div></body>`)
+    const coachSubject = [`New booking — ${playerName}`, subjectDay].filter(Boolean).join(' · ')
+    const sent = await sendAsCoach(coachId, { to: copy.to, subject: coachSubject, html: coachHtml })
+    let ok = sent.ok
     if (!sent.ok) {
       const fb = await sendEmail({
-        from: 'Lumio Tennis <noreply@lumiosports.com>', to: [coachTo],
-        subject: `New booking — ${playerName} · ${b.booking_date || ''}`.trim(), html,
+        from: 'Lumio Tennis <noreply@lumiosports.com>', to: [copy.to],
+        subject: coachSubject, html: coachHtml,
         context: 'coach booking confirmation coach-fallback',
       }).catch(() => null)
-      results.coachSent = !!fb && !fb.error
+      ok = !!fb && !fb.error
     }
-  } else {
+    if (copy.head) results.coachSent = ok; else results.sessionCoachSent = ok
+  }
+  if (!headTo) {
     results.coachSent = false
     results.coachReason = 'no contact email on the coach profile (Settings → contact details)'
   }

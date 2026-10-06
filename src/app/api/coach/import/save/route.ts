@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { coachSeat } from '@/lib/coach/membership'
 import { normaliseWebLink } from '@/lib/coach/resource-files'
-import { cleanRecord, type ImportCategory } from '@/lib/coach/import-records'
+import { cleanRecord, samePerson, sameCamp, foldText, personKey, type ImportCategory } from '@/lib/coach/import-records'
 
 export const runtime = 'nodejs'
 
@@ -34,6 +35,20 @@ const TABLES: Record<string, { table: string; fields: string[]; headOnly?: boole
 // Per request. The browser sends big imports in batches of 500.
 const MAX_ROWS = 1000
 
+type Row = Record<string, unknown>
+// Every row of a list, a page at a time: one read stops at 1,000 rows, and an
+// academy with 1,200 players must still be checked against all of them.
+async function readAll(page: (from: number, to: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>): Promise<Row[]> {
+  const out: Row[] = []
+  for (let at = 0; ; at += 1000) {
+    const { data, error } = await page(at, at + 999)
+    if (error) throw new Error(error.message)
+    const rows = (data as Row[] | null) || []
+    out.push(...rows)
+    if (rows.length < 1000) return out
+  }
+}
+
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -54,17 +69,11 @@ export async function POST(req: NextRequest) {
 
   // Whose academy: the signed-in person's own (a head coach), or the one they
   // are an active coach in. Same rule as /api/coach/whoami.
-  let academyId: string | null = null
-  let staffId: string | null = null
-  const { data: own } = await admin.from('sports_profiles').select('id, sport').eq('id', user.id).maybeSingle()
-  if (own?.sport === 'coach') {
-    academyId = own.id
-  } else {
-    const { data: m } = await admin.from('coach_members')
-      .select('academy_id, staff_id, role').eq('member_user_id', user.id).eq('status', 'active')
-      .order('created_at', { ascending: false }).limit(1).maybeSingle()
-    if (m?.role === 'coach' && m.staff_id) { academyId = m.academy_id; staffId = m.staff_id }
-  }
+  // A coach at more than one academy imports into the one whose portal they
+  // are in (see coachSeat) — never into whichever they joined last.
+  const seat = await coachSeat(user.id, user.email)
+  const academyId: string | null = seat?.academyId ?? null
+  const staffId: string | null = seat?.staffId ?? null
   if (!academyId) return NextResponse.json({ error: 'We could not find an academy for your account to import into.' }, { status: 403 })
   if (staffId && spec.headOnly) return NextResponse.json({ error: 'Only the head coach can import these.' }, { status: 403 })
 
@@ -128,7 +137,85 @@ export async function POST(req: NextRequest) {
     } catch (e) { console.error('[coach/import/save] venues', e) }
   }
 
-  const { data: saved, error } = await admin.from(spec.table).insert(clean).select('id')
+  // ── What is already there ────────────────────────────────────────────────
+  // Importing the same file twice used to add everything twice: 5 players
+  // became 10, 6 payments 12, and a second camp of the same name. Each record
+  // is now checked against what the academy already holds and left out if it
+  // is there — counted, so the coach is told. If that check cannot be made,
+  // nothing is saved: adding a second copy of a roster is worse than asking
+  // the coach to try again.
+  // Compared with typing differences folded away (curly apostrophes, long
+  // dashes, capitals, extra spaces): O’Neill in the file is O'Neill on the roster.
+  const norm = foldText
+  const person = personKey
+  let already = 0
+  let toSave = clean as Row[]
+  try {
+    const all = (cols: string) => readAll((from, to) => admin.from(spec.table).select(cols).eq('coach_id', academyId).order('id').range(from, to))
+    // A list where only an identical line is a repeat, and the same line twice
+    // in the academy is allowed (two £30 lessons): each one already there
+    // answers for one in the file.
+    const lessThoseThere = (have: Row[], key: (r: Row) => string) => {
+      const there = new Map<string, number>()
+      for (const h of have) there.set(key(h), (there.get(key(h)) || 0) + 1)
+      toSave = toSave.filter(r => {
+        const n = there.get(key(r)) || 0
+        if (!n) return true
+        there.set(key(r), n - 1); already++
+        return false
+      })
+    }
+    if (spec.table === 'coach_players') {
+      // Same name and nothing to say they are different people (see samePerson):
+      // two children of one name with different parents stay two players.
+      const have = await all('id, name, age, email, parent_email, contact_email')
+      const byName = new Map<string, Row[]>()
+      for (const h of have) byName.set(person(h.name), [...(byName.get(person(h.name)) || []), h])
+      toSave = toSave.filter(r => {
+        const same = byName.get(person(r.name)) || []
+        if (same.some(h => samePerson(h, r))) { already++; return false }
+        byName.set(person(r.name), [...same, r])
+        return true
+      })
+    } else if (spec.table === 'coach_staff') {
+      const names = new Set((await all('id, name')).map(h => person(h.name)))
+      toSave = toSave.filter(r => { if (names.has(person(r.name))) { already++; return false } names.add(person(r.name)); return true })
+    } else if (spec.table === 'coach_camps') {
+      const have = await all('id, name, start_date')
+      toSave = toSave.filter(r => { if (have.some(h => sameCamp(h, r))) { already++; return false } return true })
+    } else if (spec.table === 'coach_payments') {
+      // The player, the item, the amount and the date.
+      const money = (v: unknown) => (v === null || v === undefined || v === '' ? '' : String(Math.round(Number(v) * 100)))
+      lessThoseThere(await all('id, player_name, item, amount, due_date'),
+        r => [person(r.player_name), norm(r.item), money(r.amount), String(r.due_date ?? '').slice(0, 10)].join('|'))
+    } else if (spec.table === 'coach_courts') {
+      // "Court 1" exists at every venue; the same name at the same venue is the same court.
+      const names = new Set((await all('id, name, venue_id')).map(h => `${norm(h.name)}|${h.venue_id ?? ''}`))
+      toSave = toSave.filter(r => { const k = `${norm(r.name)}|${r.venue_id ?? ''}`; if (names.has(k)) { already++; return false } names.add(k); return true })
+    } else if (spec.table === 'coach_equipment') {
+      lessThoseThere(await all('id, item, category, quantity'), r => [norm(r.item), norm(r.category), String(r.quantity ?? '')].join('|'))
+    } else if (spec.table === 'coach_resources') {
+      const titles = new Set((await all('id, title')).map(h => norm(h.title)))
+      toSave = toSave.filter(r => { if (titles.has(norm(r.title))) { already++; return false } titles.add(norm(r.title)); return true })
+    }
+
+    // A payment belongs to a player, not just to a name: the Payments page,
+    // the player's own page and an assistant coach's view all go by the link.
+    // Linked when exactly one player has that name; two of the same name is a
+    // guess, so that line keeps the name only.
+    if (spec.table === 'coach_payments' && toSave.length) {
+      const players = await readAll((from, to) => admin.from('coach_players').select('id, name').eq('coach_id', academyId).order('id').range(from, to))
+      const ids = new Map<string, string | null>()
+      for (const p of players) ids.set(person(p.name), ids.has(person(p.name)) ? null : String(p.id))
+      for (const r of toSave) { const id = ids.get(person(r.player_name)); if (id) r.player_id = id }
+    }
+  } catch (e) {
+    console.error('[coach/import/save] existing', spec.table, e)
+    return NextResponse.json({ error: `We could not check what is already in your academy, so no ${body.category} were added. Please try again.` }, { status: 500 })
+  }
+  if (!toSave.length) return NextResponse.json({ inserted: 0, already })
+
+  const { data: saved, error } = await admin.from(spec.table).insert(toSave).select('id')
   if (error) {
     console.error('[coach/import/save]', spec.table, error.message)
     return NextResponse.json({ error: `Could not save ${body.category}: ${error.message}` }, { status: 500 })
@@ -147,6 +234,6 @@ export async function POST(req: NextRequest) {
     } catch (e) { console.error('[coach/import/save] camp calendar', e) }
   }
   // Resources that arrived without a file, so the import can say so.
-  const needFiles = spec.table === 'coach_resources' ? clean.filter((r: Record<string, unknown>) => !r.url).length : 0
-  return NextResponse.json({ inserted: clean.length, ...(calendar ? { calendar } : {}), ...(needFiles ? { needFiles } : {}), ...(venuesAdded ? { venuesAdded } : {}) })
+  const needFiles = spec.table === 'coach_resources' ? toSave.filter(r => !r.url).length : 0
+  return NextResponse.json({ inserted: toSave.length, already, ...(calendar ? { calendar } : {}), ...(needFiles ? { needFiles } : {}), ...(venuesAdded ? { venuesAdded } : {}) })
 }

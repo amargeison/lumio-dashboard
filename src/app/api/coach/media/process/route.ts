@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import Anthropic from '@anthropic-ai/sdk'
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { serviceClient } from '@/lib/coach/oauth'
+import { coachGate } from '@/lib/coach/membership'
 import { transcribeMediaTimed, type TranscriptSegment } from '@/lib/coach/transcribe'
 import { COACH_AGENT_PERSONA, COACH_METHODOLOGY, COACH_DIAGNOSTIC_STANDARD } from '@/lib/coach/agent-persona'
 import { parseShotMentions, planClips, cutClips, fuseWithNarration, SHOT_LABEL, type Mention } from '@/lib/coach/highlights'
 import { getVisualShots, visualShotsConfigured } from '@/lib/coach/visual-shots'
+import { ukDate } from '@/lib/coach/uk-date'
+import { coachPlayerIds, mediaSwitchedOn, MEDIA_SWITCHED_OFF, type MediaKind } from '@/lib/coach/media-rules'
 
 export const maxDuration = 300
 
@@ -19,34 +22,64 @@ export const maxDuration = 300
 // is free text — no constraint to migrate); anything reading them should use the
 // isProcessingStatus/processStageLabel helpers in _lib/media-upload.ts.
 export async function POST(req: NextRequest) {
-  const coachId = await sessionCoachId()
-  if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // The academy whose portal the coach is in; an invited coach, their own
+  // players' recordings only (see media-rules.ts).
+  const who = await coachGate()
+  if (!who.ok) return NextResponse.json({ error: who.error }, { status: who.status })
   // A demo account is signed in too. Only a real academy may use this.
-  if (!await isAcademyUser(coachId)) return notAnAcademy()
+  if (!await isAcademyUser(who.userId)) return notAnAcademy()
+  const coachId = who.seat.academyId
+  const mine = who.seat.isHead ? null : who.seat.staffId   // an invited coach: their own coach record
 
   const body = (await req.json().catch(() => ({}))) as { id?: string; ids?: string[] }
   const idList = (Array.isArray(body.ids) && body.ids.length ? body.ids : (body.id ? [body.id] : [])).filter(Boolean)
   if (!idList.length) return NextResponse.json({ error: 'Missing media id(s)' }, { status: 400 })
 
   const sb = serviceClient()
-  const { data: rows } = await sb.from('coach_media').select('*').in('id', idList).eq('coach_id', coachId)
-  if (!rows?.length) return NextResponse.json({ error: 'Media not found' }, { status: 404 })
+  const { data: found } = await sb.from('coach_media').select('*').in('id', idList).eq('coach_id', coachId)
+  const theirs = mine ? await coachPlayerIds(sb, coachId, mine) : null
+  const rows = (found || []).filter(r => !theirs || (!!r.player_id && theirs.has(r.player_id as string)))
+  if (!rows.length) return NextResponse.json({ error: 'Media not found' }, { status: 404 })
 
   // Keep the coach's upload order (rows come back unordered).
   const ordered = idList.map(id => rows.find(r => r.id === id)).filter(Boolean) as any[]
 
-  await sb.from('coach_media').update({ status: 'processing', error: null, updated_at: new Date().toISOString() }).in('id', idList)
+  // Reviewing a recording is part of the Video / Audio feature. With that
+  // switched off for the academy (Settings → Plan & features) it is refused
+  // here too, not only hidden in the portal.
+  for (const kind of new Set(ordered.map(r => (r.kind === 'video' ? 'video' : 'audio') as MediaKind))) {
+    if (!await mediaSwitchedOn(sb, coachId, kind)) return NextResponse.json({ error: MEDIA_SWITCHED_OFF[kind] }, { status: 403 })
+  }
 
-  void processGroup(coachId, ordered).catch(async (err: unknown) => {
+  // Only the rows that were found — which are only this coach's own. The ids in
+  // the request are never used again from here on: another academy's media id
+  // mixed into the list used to be marked 'processing' along with the rest.
+  const ownIds = ordered.map(r => r.id as string)
+  await sb.from('coach_media').update({ status: 'processing', error: null, updated_at: new Date().toISOString() }).in('id', ownIds).eq('coach_id', coachId)
+
+  void processGroup(coachId, ordered, mine).catch(async (err: unknown) => {
+    // The detail goes to the log. What is stored is what the coach reads on
+    // their screen, so it says what happened and what to do — not "is ffmpeg
+    // installed/at FFMPEG_PATH on the server".
     console.error('[coach/media/process]', err)
     await serviceClient().from('coach_media').update({
       status: 'error',
-      error: (err instanceof Error ? err.message : String(err)).slice(0, 500),
+      error: plainFailure(err),
       updated_at: new Date().toISOString(),
-    }).in('id', idList)
+    }).in('id', ownIds).eq('coach_id', coachId)
   })
 
-  return NextResponse.json({ status: 'processing', firstId: idList[0] })
+  return NextResponse.json({ status: 'processing', firstId: ownIds[0] })
+}
+
+function plainFailure(err: unknown): string {
+  const m = err instanceof Error ? err.message : String(err)
+  if (/produced no speech/i.test(m)) return 'No speech could be heard in that recording, so there was nothing to write up.'
+  if (/Could not read an uploaded file/i.test(m)) return 'The upload did not finish, so there was nothing to review. Upload the recording again.'
+  if (/Audio processing failed|transcription error|ffmpeg/i.test(m)) return 'That file could not be read as a recording. Check it is an audio or video file, then upload it again.'
+  if (/not configured/i.test(m)) return 'The AI review is not available at the moment. Your recording is saved. Try the review again later.'
+  if (/could not summarise/i.test(m)) return 'Lumio Coach could not write a summary from that recording. Try the review again.'
+  return 'The review did not finish. Your recording is saved. Try the review again.'
 }
 
 // Storage acknowledges a signed-URL upload before the object is dependably
@@ -84,7 +117,9 @@ async function markStage(sb: ReturnType<typeof serviceClient>, ids: string[], st
   } catch (e) { console.warn('[coach/media/process] stage update', e) }
 }
 
-async function processGroup(coachId: string, rows: any[]) {
+// `staffId` is set when an invited coach asked for the review: the lesson and
+// the attendance mark it creates are theirs, so they show in their own portal.
+async function processGroup(coachId: string, rows: any[], staffId: string | null = null) {
   const sb = serviceClient()
   const multi = rows.length > 1
   const allIds = rows.map(r => r.id)
@@ -115,7 +150,10 @@ async function processGroup(coachId: string, rows: any[]) {
   // attach a real player_id (secure portal scope). If the coach didn't tag anyone
   // (a plain "Recorded session"), let the summary AI identify the player from the
   // roster — accepted ONLY on an exact, unique name match (never a loose AI guess).
-  const roster = (await sb.from('coach_players').select('id, name').eq('coach_id', coachId)).data ?? []
+  // For an invited coach the roster is their own players — a recording of
+  // theirs is never matched to somebody else's player by a name.
+  const rosterQ = sb.from('coach_players').select('id, name').eq('coach_id', coachId)
+  const roster = (await (staffId ? rosterQ.eq('staff_id', staffId) : rosterQ)).data ?? []
   const matchRoster = (name?: string | null) => {
     const n = (name || '').trim().toLowerCase()
     if (!n) return null
@@ -140,25 +178,38 @@ async function processGroup(coachId: string, rows: any[]) {
   }
 
   // 3. Create the Lesson Summary (a coach_sessions row) — nothing for the coach to type.
-  const { error: lessonErr } = await sb.from('coach_sessions').insert({
+  const { data: lesson, error: lessonErr } = await sb.from('coach_sessions').insert({
     coach_id: coachId,
+    ...(staffId ? { staff_id: staffId } : {}),
     player_id: playerId,
     player_name: playerName || 'Recorded session',
-    session_date: new Date().toISOString().slice(0, 10),
+    session_date: ukDate(),   // the UK date, not the UTC one (still yesterday at 00:30 in summer)
     focus: review.focus || 'Lesson summary',
     rating: typeof review.rating === 'number' ? review.rating : 3,
     summary: review.coachNote || '',
     ai_review: formatReview(review),
-    review_json: review,
-  })
+    // The model's "coachNote" is a note TO the player. It is stored as
+    // `playerNote`: on a summary typed into the lesson form `coachNote` is the
+    // coach's PRIVATE note, and the family's page is only ever given playerNote.
+    review_json: (({ coachNote, ...rest }: Record<string, unknown>) => ({ ...rest, ...(coachNote ? { playerNote: coachNote } : {}) }))(review),
+  }).select('id').single()
   if (lessonErr) console.error('[coach/media/process] lesson row insert', lessonErr)
+  // What this review created is written on the recording (migration 203), so
+  // that "Discard" can take exactly these back and nothing else.
+  const made: { session_id?: string; attendance_id?: string } = {}
+  if (lesson?.id) made.session_id = lesson.id as string
 
   // 3b. The session happened → auto-mark the player present today (idempotent).
   if (playerId) {
     try {
-      const today = new Date().toISOString().slice(0, 10)
+      const today = ukDate()
       const { data: ex } = await sb.from('coach_attendance').select('id').eq('coach_id', coachId).eq('player_id', playerId).eq('session_date', today).limit(1)
-      if (!(ex as any)?.length) await sb.from('coach_attendance').insert({ coach_id: coachId, player_id: playerId, session_date: today, present: true })
+      if (!(ex as any)?.length) {
+        const { data: mark } = await sb.from('coach_attendance').insert({ coach_id: coachId, ...(staffId ? { staff_id: staffId } : {}), player_id: playerId, session_date: today, present: true }).select('id').single()
+        // Only a mark this review made. A player already marked present today
+        // keeps that mark if the recording is discarded.
+        if (mark?.id) made.attendance_id = mark.id as string
+      }
     } catch (e) { console.warn('[coach/media/process] attendance', e) }
   }
 
@@ -171,7 +222,7 @@ async function processGroup(coachId: string, rows: any[]) {
   }
 
   // 4. Mark all done; the combined review lives on the first row (which the UI polls).
-  await sb.from('coach_media').update({ status: 'done', review, updated_at: new Date().toISOString() }).eq('id', rows[0].id)
+  await sb.from('coach_media').update({ status: 'done', review, ...made, updated_at: new Date().toISOString() }).eq('id', rows[0].id)
   if (rows.length > 1) {
     await sb.from('coach_media').update({ status: 'done', updated_at: new Date().toISOString() }).in('id', rows.slice(1).map(r => r.id))
   }

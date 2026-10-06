@@ -8,8 +8,11 @@
 import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { ensureRosterPlayer } from '../_lib/coach-db'
-import { uploadMedia, confirmAndProcess, pollMedia, processStageLabel, processStep, type UploadPhase } from '../_lib/media-upload'
+import { ensureRosterPlayer, invalidateCoachTable, useCoachTable } from '../_lib/coach-db'
+import { uploadMedia, confirmAndProcess, pollMedia, processStageLabel, processStep, checkRecordings, type UploadPhase } from '../_lib/media-upload'
+import { getFlags, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
+import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { playerLabels, type Nameable } from '../_lib/tell-apart'
 
 export type LessonReview = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
@@ -40,9 +43,12 @@ const DEMO_REVIEW: LessonReview = {
   rating: 5,
 }
 
-export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing, defaultKind = 'audio', autoUpload = false, playerName, demo = false, players = [] }: {
+export function MediaCaptureModal({ T, accent, onClose, onSummary, onDiscarded, onProcessing, defaultKind = 'audio', autoUpload = false, playerName, demo = false, players = [] }: {
   T: ThemeTokens; accent: AccentTokens; onClose: () => void
   onSummary?: (review: LessonReview, transcript: string) => void
+  /** The coach pressed Discard and the recording, its summary and its attendance
+      mark have been removed — the host page should read its lists again. */
+  onDiscarded?: () => void
   // Fired the moment the AI review starts, with the media id the pipeline writes
   // its result to. Lets the host page keep watching in the background so the new
   // summary lands in the list even if the coach closes this modal.
@@ -52,21 +58,45 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
       picker first, because a coach who has already chosen does not want to
       choose again. */
   autoUpload?: boolean
-  players?: { id: string; name: string }[]
+  players?: (Nameable & { id: string; name: string })[]
 }) {
-  const [kind, setKind] = useState<'audio' | 'video'>(defaultKind)
+  // Which media this academy has switched on (Settings → Plan & features). The
+  // Video & Audio page leaves the menu when both are off; this dialog is opened
+  // from other pages, so it has to respect the switches itself. The server
+  // refuses the upload either way.
+  const [allowed] = useState<('audio' | 'video')[]>(() => {
+    if (demo) return ['audio', 'video']
+    const f = getFlags(NEW_ACCOUNT_TIER)
+    return (['audio', 'video'] as const).filter(k => f[k])
+  })
+  const [kind, setKind] = useState<'audio' | 'video'>(allowed.includes(defaultKind) ? defaultKind : (allowed[0] ?? defaultKind))
   // Which player this recording belongs to. '__new__' reveals a free-text field;
   // a brand-new name is added to the roster (coach_players) before processing so
   // the summary lands on that player's profile.
-  const [playerSel, setPlayerSel] = useState(playerName ?? '')
+  //
+  // The choice is held as the player's ID. It used to be their name, which
+  // cannot say which of two players called "Sam Twin" was meant: the summary
+  // was then filed on neither, with no attendance mark and nothing said.
+  const sameName = (n?: string | null) => players.filter(p => p.name.trim().toLowerCase() === String(n || '').trim().toLowerCase())
+  const [playerSel, setPlayerSel] = useState(() => (playerName && sameName(playerName).length === 1 ? sameName(playerName)[0].id : ''))
   const [newPlayer, setNewPlayer] = useState('')
-  const resolvePlayer = () => (playerSel === '__new__' ? newPlayer : playerSel).trim()
+  const chosen = players.find(p => p.id === playerSel) || null
+  const resolvePlayer = () => (playerSel === '__new__' ? newPlayer : chosen?.name || '').trim()
+  // Labels come from the roster itself rather than the list handed in: the
+  // pages that open this dialog pass only id and name, and what tells two
+  // namesakes apart (age, parent, the day they were added) has to be the same
+  // here as on every other screen.
+  const { rows: roster } = useCoachTable<Nameable & { id: string; name: string }>('coach_players')
+  const labelOf = playerLabels(roster.length ? roster : players)
   const [phase, setPhase] = useState<Phase>('choose')
   const [err, setErr] = useState('')
   const [secs, setSecs] = useState(0)
   const [review, setReview] = useState<LessonReview | null>(null)
   const [transcript, setTranscript] = useState('')
   const [uploadInfo, setUploadInfo] = useState('')
+  // Every recording this run uploaded, so Discard can remove all of them.
+  const idsRef = useRef<string[]>([])
+  const [discarding, setDiscarding] = useState(false)
   // Live progress through the pipeline, so the coach never sees a static screen:
   // `pct` is real bytes-uploaded (null = indeterminate), `procStatus` is the
   // server's own breadcrumb (transcribing / summarising) and `elapsed` ticks
@@ -83,7 +113,10 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
   // Closing the modal must not leave the poll loop writing into a dead component.
   const aliveRef = useRef(true)
 
-  useEffect(() => () => { aliveRef.current = false; stopTracks(); if (timerRef.current) clearInterval(timerRef.current) }, [])
+  // Set back to true on every mount: React mounts, unmounts and re-mounts a
+  // component once in development, and a flag only ever set to false there left
+  // the dialog believing it was closed — it never noticed the review finishing.
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; stopTracks(); if (timerRef.current) clearInterval(timerRef.current) } }, [])
   const stopTracks = () => { streamRef.current?.getTracks().forEach(t => t.stop()); streamRef.current = null }
 
   // Elapsed clock for the whole upload → summary run.
@@ -116,9 +149,15 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
   // A coach can pick several files for one lesson (recorded in sections); they're
   // uploaded, then transcribed + summarised together into a single summary.
   const onPickFiles = (files: File[]) => {
+    if (fileRef.current) fileRef.current.value = ''   // so choosing the same file again is noticed
     if (!files.length) return
-    setKind(files.some(f => f.type.startsWith('video')) ? 'video' : 'audio')
-    uploadAll(files.map(f => ({ blob: f as Blob, name: f.name })))
+    // Recordings only. One lesson is one summary, so if any chosen file is not
+    // a recording nothing is sent and the coach is told which — rather than a
+    // summary quietly built from half of what they picked.
+    const { ok, problem } = checkRecordings(files, allowed)
+    if (problem) { setErr(problem); return }
+    setKind(ok.some(f => f.type.startsWith('video')) ? 'video' : 'audio')
+    uploadAll(ok.map(f => ({ blob: f as Blob, name: f.name })))
   }
 
   // Upload → confirm the object is readable → process → poll. The confirm step is
@@ -135,15 +174,19 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
       // loading and is matched without trimming — so a recording made a second
       // early, or a name with a trailing space, silently created a second
       // profile for somebody who was already on the roster.
-      if (!demo && who) await ensureRosterPlayer(who)
+      const newId = !demo && who && !chosen ? await ensureRosterPlayer(who) : null
       const uploaded = await uploadMedia(items, {
         kind, playerName: who || playerName || null,
+        // A typed name that more than one player already has is left as a name
+        // (the server will not guess between them).
+        playerId: chosen?.id ?? (newId && sameName(who).length <= 1 ? newId : null),
         onProgress: p => {
           setPct(p.phase === 'uploading' ? p.pct : null)
           setUploadInfo(p.total > 1 ? `File ${p.index + 1} of ${p.total}` : '')
         },
       })
       const ids = uploaded.map(u => u.id)
+      idsRef.current = ids
       setPct(100)
       await confirmAndProcess(ids, ph => setNote(phaseNote(ph, items.length)))
       setPhase('processing'); setProcStatus('processing'); setUploadInfo(''); setNote('')
@@ -167,6 +210,33 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
 
   const save = () => { if (review) onSummary?.(review, transcript); onClose() }
 
+  // Discard. By the time the coach reads the summary it has already been saved:
+  // the review runs on the server and keeps going if this window is closed, so
+  // it cannot wait for a button. Discard therefore takes it all back — the
+  // recording and its file, the lesson summary and the attendance mark the
+  // review added. (It used to do nothing but close the window.)
+  const discard = async () => {
+    if (demo || !idsRef.current.length) { onClose(); return }
+    if (!confirm('Discard this recording? The recording, its lesson summary and the attendance mark it added will be deleted.')) return
+    setDiscarding(true); setErr('')
+    try {
+      for (const id of idsRef.current) {
+        const r = await fetch(`/api/coach/media/${id}?discard=1`, { method: 'DELETE' })
+        // 404 = already gone, which is what was asked for.
+        if (!r.ok && r.status !== 404) { const j = await r.json().catch(() => ({})); throw new Error(j.error || 'That could not be discarded. Try again.') }
+      }
+      for (const t of ['coach_sessions', 'coach_attendance', 'coach_media'] as const) invalidateCoachTable(t)
+      if (onDiscarded) onDiscarded(); else onClose()
+    } catch (e) {
+      if (!aliveRef.current) return
+      setErr(e instanceof Error ? e.message : 'That could not be discarded. Try again.'); setDiscarding(false)
+    }
+  }
+
+  // Tapping beside the dialog closes it — but not, without asking, over a
+  // recording in progress or a player already chosen.
+  const closeOutside = useAskBeforeClose(JSON.stringify([playerSel, newPlayer, phase === 'recording']), onClose)
+
   // Demo simulation: no real upload — show the flow then a canned summary.
   // Walks the same stages as the live flow so the demo shows the real experience.
   const runDemo = () => {
@@ -180,13 +250,13 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
   const mm = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`
 
   return (
-    <div onClick={e => { if (e.target === e.currentTarget && phase !== 'uploading') onClose() }}
+    <div onClick={e => { if (e.target === e.currentTarget && phase !== 'uploading' && !discarding) closeOutside() }}
       style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(0,0,0,0.84)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '7vh 16px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 540, background: T.panel, border: `1px solid ${T.borderHi}`, borderRadius: 16, boxShadow: '0 30px 80px -20px rgba(0,0,0,0.7)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 20px', borderBottom: `1px solid ${T.border}` }}>
           <span style={{ fontSize: 20 }}>{kind === 'video' ? '🎬' : '🎙️'}</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Add {kind} → AI lesson summary</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Add {allowed.length === 0 ? 'a recording' : kind} → AI lesson summary</div>
             <div style={{ fontSize: 11.5, color: T.text3 }}>Record now or upload a recording — we transcribe it and write the summary.</div>
           </div>
           <button onClick={onClose} disabled={phase === 'uploading'} title={phase === 'processing' ? 'Close — the summary keeps building in the background' : 'Close'} style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, cursor: phase === 'uploading' ? 'default' : 'pointer', fontSize: 16, opacity: phase === 'uploading' ? 0.4 : 1 }}>✕</button>
@@ -202,7 +272,12 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
               <p style={{ fontSize: 11, color: T.text3, margin: 0 }}>Want to summarise your own lessons? Sign up for founder access.</p>
             </div>
           )}
-          {phase === 'choose' && !demo && (() => {
+          {phase === 'choose' && !demo && allowed.length === 0 && (
+            <div style={{ fontSize: 13, color: T.text2, lineHeight: 1.6 }}>
+              Audio and video are switched off for this academy, so a recording can&rsquo;t be added. The head coach can switch them on in Settings, under Plan &amp; features.
+            </div>
+          )}
+          {phase === 'choose' && !demo && allowed.length > 0 && (() => {
             const who = resolvePlayer()
             const fieldStyle: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box' }
             return (
@@ -211,15 +286,15 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, marginBottom: 6 }}>Player</label>
                 <select value={playerSel} onChange={e => setPlayerSel(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
                   <option value="">Choose a player…</option>
-                  {players.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                  {players.map(p => <option key={p.id} value={p.id}>{labelOf.get(p.id) || p.name}</option>)}
                   <option value="__new__">+ New player…</option>
                 </select>
                 {playerSel === '__new__' && (
                   <input value={newPlayer} onChange={e => setNewPlayer(e.target.value)} placeholder="New player's name" autoFocus style={{ ...fieldStyle, marginTop: 8 }} />
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 8, background: T.hover, borderRadius: 9, padding: 3, width: 'fit-content' }}>
-                {(['audio', 'video'] as const).map(k => (
+              <div style={{ display: allowed.length > 1 ? 'flex' : 'none', gap: 8, background: T.hover, borderRadius: 9, padding: 3, width: 'fit-content' }}>
+                {allowed.map(k => (
                   <button key={k} onClick={() => setKind(k)} style={{ ...btn(kind === k ? T.panel : 'transparent', kind === k ? T.text : T.text2), padding: '6px 14px', boxShadow: kind === k ? `0 0 0 1px ${T.border}` : 'none' }}>{k === 'audio' ? '🎙️ Audio' : '🎬 Video'}</button>
                 ))}
               </div>
@@ -236,7 +311,8 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
                   <span style={{ fontSize: 26 }}>{autoUpload ? '⏺' : '⬆'}</span> {autoUpload ? 'Record now instead' : 'Upload file(s)'}
                 </button>
               </div>
-              <input ref={fileRef} type="file" accept="audio/*,video/*" multiple style={{ display: 'none' }} onChange={e => onPickFiles(Array.from(e.target.files || []))} />
+              <input ref={fileRef} type="file" accept={allowed.map(k => `${k}/*`).join(',')} multiple style={{ display: 'none' }} onChange={e => onPickFiles(Array.from(e.target.files || []))} />
+              {err && <div role="alert" style={{ fontSize: 12, color: T.bad }}>{err}</div>}
               <p style={{ fontSize: 11, color: T.text3, margin: 0 }}>{who ? <>Recorded the lesson in sections, or on a clip-on mic? Select <b>multiple files</b> — they’re combined into one summary. Long files are compressed automatically.</> : <>Choose a player first — the AI summary is saved to their profile.</>}</p>
             </div>
             )
@@ -321,9 +397,13 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onProcessing,
               {!!review.takeaways?.length && <Section T={T} title="Key takeaways" items={review.takeaways} />}
               {review.homework && <div style={{ fontSize: 12.5, color: T.text2 }}><b style={{ color: T.text }}>Homework:</b> {review.homework}</div>}
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                <button onClick={save} style={{ ...btn(accent.hex, T.btnText), flex: 1 }}>Save as lesson summary</button>
-                <button onClick={onClose} style={{ ...btn('transparent', T.text2), border: `1px solid ${T.border}` }}>Discard</button>
+                <button onClick={save} disabled={discarding} style={{ ...btn(accent.hex, T.btnText), flex: 1, opacity: discarding ? 0.5 : 1 }}>Save as lesson summary</button>
+                <button onClick={() => { void discard() }} disabled={discarding} style={{ ...btn('transparent', T.text2), border: `1px solid ${T.border}`, opacity: discarding ? 0.6 : 1 }}>{discarding ? 'Discarding…' : 'Discard'}</button>
               </div>
+              {/* Said outright, because the summary is written while the coach waits:
+                  "Save" keeps what is already there, "Discard" takes it away. */}
+              {!demo && <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5 }}>The summary is already in Lesson Summaries. Discard deletes it, along with the recording.</div>}
+              {err && <div role="alert" style={{ fontSize: 12, color: T.bad }}>{err}</div>}
             </div>
           )}
 

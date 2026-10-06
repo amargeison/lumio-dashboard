@@ -1,13 +1,15 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { signInstallToken } from '@/lib/pwa-install-token'
+import { signInstallToken, installTokenPath, type InstallTokenPayload } from '@/lib/pwa-install-token'
 
 export const dynamic = 'force-dynamic'
 
-const SPORTS = new Set(['tennis', 'golf', 'darts', 'boxing'])
+// 'coach' is the Tennis Coach portal (/tennis/coach/<slug>). The public demo has
+// no account behind it, so there is nothing to hand over for coach + demo.
+const SPORTS = new Set(['tennis', 'golf', 'darts', 'boxing', 'coach'])
 
-// POST body: { sport: 'tennis'|'golf'|'darts'|'boxing', slug: string }
+// POST body: { sport: 'tennis'|'golf'|'darts'|'boxing'|'coach', slug: string }
 // Requires an authenticated Supabase session. Returns a short-lived
 // install token + the portal start_url embedding it. Intended to be
 // called by an "Install App" CTA inside the already-authenticated
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}))
     const sport = String(body?.sport || '').toLowerCase()
     const slug  = String(body?.slug  || '').trim()
-    if (!SPORTS.has(sport) || !slug || !/^[a-z0-9-]{1,64}$/i.test(slug)) {
+    if (!SPORTS.has(sport) || !slug || !/^[a-z0-9-]{1,64}$/i.test(slug) || (sport === 'coach' && slug === 'demo')) {
       return NextResponse.json({ error: 'invalid sport or slug' }, { status: 400 })
     }
 
@@ -42,15 +44,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'not authenticated' }, { status: 401 })
     }
 
-    const token = signInstallToken({
-      sub:   user.id,
-      eml:   user.email,
-      sport: sport as 'tennis' | 'golf' | 'darts' | 'boxing',
-      slug,
-    })
+    const target = { sport: sport as InstallTokenPayload['sport'], slug }
+    const token = signInstallToken({ sub: user.id, ...target })
     return NextResponse.json({
       token,
-      start_url: `/${sport}/${slug}?install_token=${encodeURIComponent(token)}`,
+      start_url: `${installTokenPath(target)}?install_token=${encodeURIComponent(token)}`,
     })
   } catch (e) {
     return NextResponse.json({ error: 'internal' }, { status: 500 })

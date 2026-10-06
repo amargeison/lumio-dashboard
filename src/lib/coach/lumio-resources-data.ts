@@ -134,9 +134,25 @@ export const LUMIO_RESOURCES: Record<string, string | null>[] = [
   { title: 'Coaching yourself in practice', category: 'Guides', level: 'Advanced', format: 'PDF', duration: null, racket: 'black', tags: 'self-coaching, practice', notes: 'Independent players improve between lessons; dependent ones only improve during them. How to run your own session.', url: p('black-self-coaching') },
 ]
 
-const LUMIO_TITLES = new Set(LUMIO_RESOURCES.map(r => String(r.title).trim().toLowerCase()))
+// Title → the address Lumio's own copy of it opens.
+const LUMIO_URL_BY_TITLE = new Map(LUMIO_RESOURCES.map(r => [String(r.title).trim().toLowerCase(), String(r.url || '')]))
 
-/** True for a resource that came from Lumio's starter library (matched by title). */
-export function isLumioResource(r: { title?: string | null }): boolean {
-  return LUMIO_TITLES.has(String(r.title || '').trim().toLowerCase())
+/**
+ * True for a resource that came from Lumio's starter library.
+ *
+ * It used to go by title alone, so a coach's OWN resource that happened to
+ * share a title with one of Lumio's ("Ten-in-a-row rally ladder", with their
+ * own link) was treated as Lumio's — and vanished from the Resource Centre and
+ * the player app whenever the library was switched off.
+ *
+ * Lumio's copy of a title always opens Lumio's own content. So a row with that
+ * title is Lumio's only if it still points there (or at nothing, for rows
+ * seeded before the library had content). One carrying the coach's own link or
+ * uploaded file is the coach's, whatever it is called.
+ */
+export function isLumioResource(r: { title?: string | null; url?: string | null }): boolean {
+  const lumioUrl = LUMIO_URL_BY_TITLE.get(String(r.title || '').trim().toLowerCase())
+  if (lumioUrl === undefined) return false
+  const url = String(r.url || '').trim()
+  return !url || url === lumioUrl || url.startsWith('lumio:')
 }

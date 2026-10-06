@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       // for a column that is not there makes PostgREST return an error and no
       // rows, so every single request answered "Player not found" for a player
       // sitting right there on the roster. The targets button has never worked.
-      .select('id, name, age, racket_stage, level, category, goal, notes')
+      .select('id, name, age, racket_stage, level, category, goal')
       .eq('id', playerId).maybeSingle()
     if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
 
@@ -65,11 +65,17 @@ export async function POST(req: NextRequest) {
       .from('coach_player_skills')
       .select('skill, score')
       .eq('player_id', playerId)
+    // Grades run 1 to 4 and 4 means mastered. Only graded skills count as
+    // evidence, a mastered skill is not a weakness, and a skill is never listed
+    // as both weakest and strongest (with four skills graded, it used to be).
     const scored = (skills ?? [])
-      .filter(s => s.skill)
+      .filter(s => s.skill && (Number(s.score) || 0) > 0)
       .sort((a, b) => (Number(a.score) || 0) - (Number(b.score) || 0))
+    const weakest = scored.filter(s => Number(s.score) < 4).slice(0, 6)
+    const strongest = scored.filter(s => Number(s.score) >= 3 && !weakest.includes(s)).slice(-3).reverse()
+    const grade = (s: { skill: string; score: number | null }) => `${s.skill}: ${s.score}/4`
 
-    const context = await buildPlayerContext(supabase, player.name)
+    const context = await buildPlayerContext(supabase, player.name, playerId)
 
     const task = playerTargetsTask({
       playerName: player.name,
@@ -77,27 +83,34 @@ export async function POST(req: NextRequest) {
       stage: player.racket_stage ?? null,
       standard: player.level ?? player.category ?? null,
       goal: player.goal ?? null,
-      notes: player.notes ?? null,
-      weakest: scored.slice(0, 6).map(s => `${s.skill}: ${s.score ?? 0}/5`),
-      strongest: scored.slice(-3).reverse().map(s => `${s.skill}: ${s.score ?? 0}/5`),
+      // The coach's private roster note is never sent: the family reads these targets.
+      notes: null,
+      weakest: weakest.map(grade),
+      strongest: strongest.map(grade),
       context,
     })
 
     const { text } = await runCoachAgent({ apiKey, task, maxTokens: 1200 })
     const out = extractJson<Out>(text, {})
 
-    const targets = (out.targets || [])
-      .filter(t => t && t.target)
-      .slice(0, 4)
+    // Three is what is asked for, so three is the most that is kept. Only plain
+    // text counts: a reply with a list or an object where a sentence should be
+    // used to be saved as "[object Object]", replacing three good targets. Such
+    // a target is dropped; if none are usable the request fails below and the
+    // targets the player already has are left alone.
+    const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+    const targets = (Array.isArray(out.targets) ? out.targets : [])
+      .filter(t => t && str(t.target, 200))
+      .slice(0, 3)
       .map(t => ({
-        target: String(t.target).slice(0, 200),
-        why: String(t.why || '').slice(0, 300),
-        measure: String(t.measure || '').slice(0, 200),
-        by: String(t.by || '').slice(0, 60),
+        target: str(t.target, 200),
+        why: str(t.why, 300),
+        measure: str(t.measure, 200),
+        by: str(t.by, 60),
       }))
     if (targets.length === 0) throw new Error('no targets returned')
 
-    const note = String(out.note || '').slice(0, 400)
+    const note = str(out.note, 400)
 
     // Saved straight away. A target the coach has to remember to save is a target
     // that does not exist by Thursday. They can edit or clear them in the UI.

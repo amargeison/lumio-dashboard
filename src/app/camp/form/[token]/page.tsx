@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { demoAttendeeByFormToken } from '@/lib/coach/demo-public'
 import { createClient } from '@supabase/supabase-js'
-import { askedForm, formEnabled, type Answers } from '@/lib/coach/camp-form'
+import { askedForm, formEnabled, formOutstanding, type Answers } from '@/lib/coach/camp-form'
 import CampFormView, { type FormPublic } from './CampFormView'
 
 // ─── PUBLIC PLAYER-INFORMATION FORM ─────────────────────────────────────────
@@ -26,12 +26,12 @@ async function load(token: string): Promise<FormPublic | 'closed' | null> {
   try {
     const sb = db()
     const { data: a } = await sb.from('coach_camp_attendees')
-      .select('id, camp_id, coach_id, player_name, status, form_answers, form_submitted_at').eq('form_token', token).maybeSingle()
+      .select('id, camp_id, coach_id, player_name, parent_phone, status, form_answers, form_submitted_at').eq('form_token', token).maybeSingle()
     if (a?.status === 'cancelled') return null
     // Not in the database: it may be one of the DEMO academy's links.
     const demo = a ? null : demoAttendeeByFormToken(token)
     if (!a && !demo) return null
-    const who = (a || demo!.attendee) as { player_name: string; form_answers?: unknown; form_submitted_at?: string | null }
+    const who = (a || demo!.attendee) as { player_name: string; parent_phone?: string | null; form_answers?: unknown; form_submitted_at?: string | null }
     const [{ data: camp }, { data: profile }] = a
       ? await Promise.all([
           sb.from('coach_camps').select('name, start_date, end_date, location, region, audience, overseas, info_form').eq('id', a.camp_id).maybeSingle(),
@@ -43,6 +43,16 @@ async function load(token: string): Promise<FormPublic | 'closed' | null> {
     const ended = camp.end_date || camp.start_date
     if (!formEnabled(camp) || (ended && Date.now() > new Date(`${ended}T23:59:59`).getTime() + 14 * 86400000)) return 'closed'
     const form = askedForm(camp)
+    // A form not yet sent starts with what the family already gave at sign-up —
+    // the player's name and their mobile number — rather than asking them to
+    // type both again. Only into empty boxes, and they can still change them.
+    const answers = { ...((who.form_answers || {}) as Answers) }
+    if (!who.form_submitted_at) {
+      const given: Record<string, string> = { full_name: String(who.player_name || '').trim(), phone: String(who.parent_phone || '').trim() }
+      for (const sec of form.sections) for (const q of sec.questions) {
+        if (q.key && given[q.key] && answers[q.id] == null) answers[q.id] = given[q.key]
+      }
+    }
     return {
       token, playerName: who.player_name,
       academy: profile?.brand_name || 'Tennis camp', logoUrl: profile?.brand_logo_url || null, coachName: profile?.display_name || null,
@@ -50,7 +60,9 @@ async function load(token: string): Promise<FormPublic | 'closed' | null> {
       location: [camp.location, camp.region].filter(Boolean).join(', ') || null,
       adult: camp.audience === 'adult',
       intro: form.intro || null, sections: form.sections,
-      answers: (who.form_answers || {}) as Answers, submittedAt: who.form_submitted_at || null,
+      answers, submittedAt: who.form_submitted_at || null,
+      // Questions the coach has added (or made required) since they sent it.
+      stillNeeded: who.form_submitted_at ? formOutstanding(camp, who) : [],
     }
   } catch { return null }
 }

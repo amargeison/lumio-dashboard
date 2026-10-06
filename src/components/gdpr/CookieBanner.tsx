@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
 type ConsentLevel = 'all' | 'essential' | null
@@ -10,6 +10,30 @@ export default function CookieBanner() {
   const [showDetails, setShowDetails] = useState(false)
   const [analytics, setAnalytics] = useState(true)
   const [marketing, setMarketing] = useState(false)
+  // How tall the notice is on screen, so the page can be given that much extra
+  // room at the bottom (see the spacer below).
+  const strip = useRef<HTMLDivElement>(null)
+  const [height, setHeight] = useState(0)
+
+  useEffect(() => {
+    if (!show) return
+    const el = strip.current
+    if (!el) return
+    const root = document.documentElement
+    const measure = () => {
+      const box = el.getBoundingClientRect()
+      setHeight(Math.ceil(box.height))
+      // For full-screen layers that scroll by themselves (the first-run wizard):
+      // they add this to their own bottom padding. Measured from the bottom of
+      // the window, so it includes a tab bar the notice is sitting above.
+      root.style.setProperty('--lumio-cookie-h', `${Math.max(0, Math.ceil(window.innerHeight - box.top))}px`)
+    }
+    measure()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    ro?.observe(el)
+    window.addEventListener('resize', measure)
+    return () => { ro?.disconnect(); window.removeEventListener('resize', measure); root.style.removeProperty('--lumio-cookie-h') }
+  }, [show, showDetails])
 
   useEffect(() => {
     // Client website previews (e.g. /oxed) carry their own branding — the Lumio banner must not appear there.
@@ -33,35 +57,63 @@ export default function CookieBanner() {
       body: JSON.stringify(prefs),
     }).catch(() => {})
     setShow(false)
+    // Lets anything that was waiting for this notice to go (the coach app's
+    // install card) appear now rather than on the next visit.
+    window.dispatchEvent(new Event('lumio:cookie-consent'))
   }
 
   if (!show) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
-      <div className="max-w-4xl mx-auto bg-gray-900 border border-white/15 rounded-2xl p-5 shadow-2xl">
+    // --lumio-bottom-bar is set by an app shell that has a fixed bottom tab bar
+    // (the coach phone app): the notice then sits above the bar, so the tabs
+    // stay usable while it is showing. Everywhere else it is 0.
+    //
+    // The strip is as wide as the window but the card is centred in it, so the
+    // strip itself must not take clicks: its empty ends sat over whatever was in
+    // the page's bottom corners (the coach portal's profile menu, for one) and
+    // swallowed every click there until the notice was answered.
+    //
+    // THE NOTICE MUST NEVER COVER A PAGE'S MAIN BUTTON. On a phone it sat over
+    // "Book" on the booking page and "Send" on the camp sign-up, and under the
+    // first-run wizard where it could not be answered at all. So:
+    //   · it is a short bar on a phone (two lines and two buttons);
+    //   · an empty block of the same height is added to the end of the page
+    //     while it shows, so whatever is at the bottom can be scrolled clear;
+    //   · it is drawn above everything else, wizard and dialogs included, so it
+    //     can always be answered — and its height is published as
+    //     --lumio-cookie-h for full-screen layers that scroll by themselves.
+    <>
+    <div aria-hidden style={{ height }} />
+    <div ref={strip} className="fixed left-0 right-0 z-[10050] p-2 md:p-4 pointer-events-none" style={{ bottom: 'var(--lumio-bottom-bar, 0px)' }}>
+      <div className="max-w-4xl mx-auto bg-gray-900 border border-white/15 rounded-xl md:rounded-2xl p-3 md:p-5 shadow-2xl pointer-events-auto">
         {!showDetails ? (
-          <div className="flex items-start gap-4 flex-wrap md:flex-nowrap">
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white mb-1">🍪 Cookie preferences</p>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                We use essential cookies to make Lumio work, and optional analytics cookies to improve the product.
-                We never use advertising cookies or sell your data.{' '}
+          <div className="flex items-start gap-2 md:gap-4 flex-wrap md:flex-nowrap">
+            {/* Full width on a phone, so the buttons drop underneath. Side by
+                side, the text was squeezed into a ~110px column and the notice
+                grew to half the screen. */}
+            <div className="w-full md:w-auto md:flex-1 min-w-0">
+              <p className="hidden md:block text-sm font-semibold text-white mb-1">🍪 Cookie preferences</p>
+              <p className="text-xs text-gray-400 leading-snug md:leading-relaxed">
+                {/* The short wording is the phone's: every line here is a line of
+                    somebody's page that cannot be seen. */}
+                <span className="md:hidden">We use essential cookies, and optional analytics cookies to improve Lumio.</span>
+                <span className="hidden md:inline">We use essential cookies to make Lumio work, and optional analytics cookies to improve the product. We never use advertising cookies or sell your data.</span>{' '}
                 <button onClick={() => setShowDetails(true)} className="text-purple-400 underline">Manage preferences</button>
                 {' '}·{' '}
                 <Link href="/cookies" className="text-purple-400 underline">Cookie policy</Link>
               </p>
             </div>
-            <div className="flex gap-2 flex-shrink-0 mt-1">
+            <div className="flex gap-2 flex-shrink-0 w-full md:w-auto md:mt-1">
               <button
                 onClick={() => accept('essential')}
-                className="px-4 py-2 border border-white/20 text-gray-300 text-xs rounded-lg font-medium hover:border-white/30 hover:text-white transition-colors"
+                className="flex-1 md:flex-none px-4 py-2 border border-white/20 text-gray-300 text-xs rounded-lg font-medium hover:border-white/30 hover:text-white transition-colors"
               >
                 Essential only
               </button>
               <button
                 onClick={() => accept('all')}
-                className="px-4 py-2 bg-purple-600 text-white text-xs rounded-lg font-semibold hover:bg-purple-500 transition-colors"
+                className="flex-1 md:flex-none px-4 py-2 bg-purple-600 text-white text-xs rounded-lg font-semibold hover:bg-purple-500 transition-colors"
               >
                 Accept all
               </button>
@@ -121,5 +173,6 @@ export default function CookieBanner() {
         )}
       </div>
     </div>
+    </>
   )
 }

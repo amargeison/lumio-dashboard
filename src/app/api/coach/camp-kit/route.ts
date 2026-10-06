@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { serviceClient } from '@/lib/coach/oauth'
+import { coachGate } from '@/lib/coach/membership'
 import { runCoachAgent, extractJson } from '@/lib/coach/agent'
 import { campKitTask } from '@/lib/coach/agent-persona'
 import { campAudience, audienceBrief } from '@/lib/coach/camp-audience'
@@ -20,8 +21,12 @@ export const maxDuration = 60
 // Short output, so no streaming: this comes back in a few seconds.
 
 export async function POST(req: NextRequest) {
-  const coachId = await sessionCoachId()
-  if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // The academy in the portal's address, and only its head coach (see coachGate):
+  // a coach who also helps at another academy must not act on their own club
+  // from inside the other one's portal.
+  const seat = await coachGate({ headOnly: true })
+  if (!seat.ok) return NextResponse.json({ error: seat.error }, { status: seat.status })
+  const coachId = seat.seat.academyId
   // A demo account is signed in too. Only a real academy may use this.
   if (!await isAcademyUser(coachId)) return notAnAcademy()
 

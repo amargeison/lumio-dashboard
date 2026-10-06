@@ -19,12 +19,15 @@
 
 import { useState, useEffect } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import { StudentPortal } from './_components/StudentPortal'
+import { StudentPortal, type PortalPlayer } from './_components/StudentPortal'
 import { CoachPortal } from './_components/CoachPortal'
+import { clearPrivateCaches } from '@/components/PwaInstaller'
 
 const supa = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const BG = '#0B0F17', CARD = '#0F1623', BORDER = '#1E293B', TEXT = '#F4F7FB', MUTED = '#93A1B5', ACCENT = '#3A8EE0'
+// Where this device remembers which player's page was last open.
+const PICK_KEY = 'lumio_portal_player'
 const primary: React.CSSProperties = { width: '100%', appearance: 'none', border: 0, borderRadius: 10, padding: '11px', background: ACCENT, color: '#06223f', fontSize: 14, fontWeight: 700, cursor: 'pointer' }
 
 // The academy's badge in the tab (and on the home screen, if a family adds the
@@ -51,14 +54,32 @@ function useAcademyIcon(brand: { name: string; iconUrl: string } | null | undefi
 export default function PortalSignIn() {
   const [stage, setStage] = useState<'loading' | 'in' | 'noaccess'>('loading')
   const [email, setEmail] = useState('')
-  const [member, setMember] = useState<{ role: string; brand?: { name: string; iconUrl: string } | null } | null>(null)
+  type Brand = { name: string; iconUrl: string } | null
+  const [member, setMember] = useState<{ role: string; brand?: Brand; players?: (PortalPlayer & { brand?: Brand })[] } | null>(null)
+  // Why there is nothing to show, when there is nothing to show.
+  const [why, setWhy] = useState<{ code?: string; academyName?: string }>({})
   const [err, setErr] = useState('')
-  useAcademyIcon(member?.brand)
+  // Which player's page is open. A parent can have several (siblings, or
+  // children at two academies); the choice is remembered on this device only.
+  // It is a convenience, not a permission — the server checks every request.
+  const [picked, setPicked] = useState('')
+  const players = member?.players || []
+  const current = players.find(p => p.playerId === picked) || players[0] || null
+  useAcademyIcon(current?.brand ?? member?.brand)
+  const choose = (id: string) => { setPicked(id); try { localStorage.setItem(PICK_KEY, id) } catch { /* private mode */ } }
 
   const loadMe = async () => {
-    const r = await fetch('/api/portal/me')
-    if (r.ok) { setMember(await r.json()); setStage('in') }
-    else setStage('noaccess')
+    // A phone can still be running an older service worker that kept the last
+    // family's answers and replays them to whoever signs in next. Empty its
+    // store before the first request, and ask in a way it cannot have a copy of.
+    await clearPrivateCaches()
+    const r = await fetch(`/api/portal/me?t=${Date.now()}`, { cache: 'no-store' })
+    const d = await r.json().catch(() => ({}))
+    if (r.ok) {
+      setMember(d)
+      try { setPicked(localStorage.getItem(PICK_KEY) || '') } catch { /* private mode */ }
+      setStage('in')
+    } else { setWhy({ code: d.code, academyName: d.academyName }); setStage('noaccess') }
   }
   // Signed out → the one sign-in page, which comes back here afterwards.
   const toSignIn = () => { window.location.href = '/sports-login?redirectTo=/portal' }
@@ -70,7 +91,8 @@ export default function PortalSignIn() {
     })
   }, [])
 
-  const signOut = async () => { await supa.auth.signOut(); setMember(null); toSignIn() }
+  // clearPrivateCaches: a shared phone must hold nothing of this family's once they sign out.
+  const signOut = async () => { await supa.auth.signOut().finally(clearPrivateCaches); setMember(null); toSignIn() }
 
   const wrap = (children: React.ReactNode) => (
     <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'system-ui, -apple-system, Segoe UI, Arial, sans-serif' }}>
@@ -85,17 +107,29 @@ export default function PortalSignIn() {
   // Also what a signed-out visitor sees for the instant before the bounce.
   if (stage === 'loading') return wrap(<div style={{ fontSize: 13, color: MUTED }}>Loading…</div>)
 
-  if (stage === 'noaccess') return wrap(<>
-    <h1 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 700, color: TEXT }}>No access yet</h1>
-    <p style={{ margin: '0 0 16px', fontSize: 13, color: MUTED, lineHeight: 1.5 }}>You’re signed in, but this email hasn’t been given access yet. Ask your coach to add <strong style={{ color: TEXT }}>{email || 'your email'}</strong>.</p>
-    <button onClick={signOut} style={primary}>Sign in with a different email</button>
-  </>)
+  // Three different reasons, three different things to do about it. One message
+  // for all of them ("No access yet") told a family whose access had been
+  // removed, or whose child had left the roster, that they had never had any.
+  if (stage === 'noaccess') {
+    const who = <strong style={{ color: TEXT }}>{email || 'this email address'}</strong>
+    const academy = why.academyName || 'your academy'
+    const [title, text] = why.code === 'revoked'
+      ? ['Your access has ended', <>{academy} has removed access for {who}. If you think this is a mistake, please speak to your coach.</>]
+      : why.code === 'app_off'
+        ? ['Not available at the moment', <>{academy} has switched its player app off for now. Your coach can tell you more.</>]
+        : ['Nothing to show for this email', <>You’re signed in as {who}, but it does not have access to a player’s page at the moment. If you were expecting to see one, ask your coach to send a new invite to this address.</>]
+    return wrap(<>
+      <h1 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 700, color: TEXT }}>{title}</h1>
+      <p style={{ margin: '0 0 16px', fontSize: 13, color: MUTED, lineHeight: 1.5 }}>{text}</p>
+      <button onClick={signOut} style={primary}>Sign in with a different email</button>
+    </>)
+  }
 
   // Signed in + a member — render the scoped portal for their role.
   // 'student' and 'parent' are the stored role values from migration 141. They
   // are database strings, not a claim about anyone's age — an adult club player
   // booking their own lessons is a 'student' here.
-  if (member?.role === 'parent' || member?.role === 'student') return <StudentPortal onSignOut={signOut} />
+  if (current) return <StudentPortal onSignOut={signOut} players={players} playerId={current.playerId} onSelect={choose} />
   if (member?.role === 'coach') return <CoachPortal onSignOut={signOut} />
   return wrap(<>
     <h1 style={{ margin: '0 0 6px', fontSize: 20, fontWeight: 700, color: TEXT }}>You’re signed in</h1>

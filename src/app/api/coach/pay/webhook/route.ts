@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   const db = admin()
   try {
     if (event.type === 'checkout.session.completed') {
-      const s = event.data.object as { id: string; payment_intent?: string | null; metadata?: Record<string, string> | null }
+      const s = event.data.object as { id: string; payment_intent?: string | null; amount_total?: number | null; metadata?: Record<string, string> | null }
       await db.from('coach_charges').update({
         status: 'paid', paid_at: new Date().toISOString(),
         stripe_payment_intent_id: (s.payment_intent as string) || null, updated_at: new Date().toISOString(),
@@ -35,8 +35,17 @@ export async function POST(req: NextRequest) {
       const paymentId = s.metadata?.payment_id
       const coachId = s.metadata?.coach_id
       if (paymentId && coachId) {
-        await db.from('coach_payments').update({ paid: true, paid_at: new Date().toISOString() })
-          .eq('id', paymentId).eq('coach_id', coachId)
+        // Checkout only creates a session for the full amount owed on the
+        // invoice. Checked again here, against what Stripe actually took, so an
+        // invoice is never ticked off by a payment of some other size.
+        const { data: inv } = await db.from('coach_payments').select('amount, status')
+          .eq('id', paymentId).eq('coach_id', coachId).maybeSingle()
+        if (inv && typeof s.amount_total === 'number' && Math.round(Number(inv.amount) * 100) === s.amount_total) {
+          await db.from('coach_payments').update({ paid: true, paid_at: new Date().toISOString(), ...(inv.status === 'overdue' ? { status: 'active' } : {}) })
+            .eq('id', paymentId).eq('coach_id', coachId)
+        } else {
+          console.error('[pay/webhook] payment not reconciled: invoice missing or amount differs', paymentId)
+        }
       }
       // Public camp sign-up: the place is only HELD once the money is in, so the
       // attendee sits at 'pending' until this fires. Keyed off the session id as
@@ -44,8 +53,18 @@ export async function POST(req: NextRequest) {
       // never the browser redirect, which a parent can simply not follow.
       const attendeeId = s.metadata?.camp_attendee_id
       if (attendeeId) {
+        // "Paid" means paid in full. A deposit confirms the place and is
+        // recorded as money received, but the balance is still owed — ticking
+        // paid here showed a deposit-only family as settled and stopped the
+        // balance reminder.
+        const { data: was } = await db.from('coach_camp_attendees').select('camp_id, paid_pennies').eq('id', attendeeId).maybeSingle()
+        const { data: itsCamp } = was?.camp_id
+          ? await db.from('coach_camps').select('payment_mode').eq('id', was.camp_id).maybeSingle()
+          : { data: null }
+        const inFull = (itsCamp?.payment_mode || 'full') !== 'deposit'
+        const taken = typeof s.amount_total === 'number' ? s.amount_total : null
         const { data: att } = await db.from('coach_camp_attendees')
-          .update({ status: 'confirmed', paid: true })
+          .update({ status: 'confirmed', paid: inFull, ...(taken != null ? { paid_pennies: (was?.paid_pennies || 0) + taken } : {}) })
           // The status filter is what makes this idempotent — see the note below.
           .eq('id', attendeeId).eq('stripe_session_id', s.id).eq('status', 'pending')
           .select('*').maybeSingle()
@@ -93,6 +112,7 @@ async function notifyCampSignup(db: ReturnType<typeof admin>, att: Record<string
       // parent.
       audience: camp.audience, toParent: !isAdult(camp, att.player_age),
       formUrl: await formLinkFor(db, att.id, publicSiteOrigin('https://www.lumiosports.com')),
-    })
+    // Recorded on the camp's Emails tab, like every other email in the countdown.
+    }, { campId: att.camp_id, attendeeId: att.id })
   } catch (e) { console.error('[pay/webhook] camp signup email', e) }
 }

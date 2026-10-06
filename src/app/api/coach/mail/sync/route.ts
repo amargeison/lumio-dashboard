@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { fetchInboundGmail } from '@/lib/coach/mail'
+import { coachSeat } from '@/lib/coach/membership'
 
 export const runtime = 'nodejs'
 
@@ -25,23 +26,40 @@ export async function GET() {
 
   const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
 
+  // The inbox belongs to the academy, so that is where the rows are filed — also
+  // when it is an assistant coach's own mailbox being read. The head coach IS
+  // the academy; an assistant is an active, linked coach in somebody else's.
+  // A coach at more than one academy: the one whose portal asked (see coachSeat).
+  const seat = await coachSeat(user.id, user.email)
+  const academyId: string | null = seat?.academyId ?? null
+  const staffId: string | null = seat?.staffId ?? null
+  if (!academyId) return NextResponse.json({ added: 0 })
+
   // Existing external ids (dedupe) + players (to thread inbound under the right conversation).
+  let roster = admin.from('coach_players').select('id, name, email, contact_email, parent_email').eq('coach_id', academyId)
+  if (staffId) roster = roster.eq('staff_id', staffId)
   const [{ data: existing }, { data: players }] = await Promise.all([
-    admin.from('coach_messages').select('external_id').eq('coach_id', user.id).not('external_id', 'is', null),
-    admin.from('coach_players').select('name, email, contact_email, parent_email').eq('coach_id', user.id),
+    admin.from('coach_messages').select('external_id').eq('coach_id', academyId).not('external_id', 'is', null),
+    roster,
   ])
   const seen = new Set((existing ?? []).map((r: any) => r.external_id))
-  const matchName = (email: string): string | null => {
+  // The player this address belongs to — only when it belongs to exactly one.
+  // A parent with two children at the academy has one address on two players,
+  // and there is no telling from an email which child it is about.
+  const matchPlayer = (email: string): { id: string; name: string } | null => {
     const e = email.toLowerCase()
-    const p = (players ?? []).find((p: any) => [p.email, p.contact_email, p.parent_email].filter(Boolean).some((x: string) => x.toLowerCase() === e))
-    return p?.name || null
+    const hits = (players ?? []).filter((p: any) => [p.email, p.contact_email, p.parent_email].filter(Boolean).some((x: string) => x.toLowerCase() === e))
+    return hits.length === 1 ? { id: hits[0].id, name: hits[0].name } : null
   }
 
   const rows = inbound.filter(m => m.externalId && !seen.has(m.externalId)).map(m => {
-    const conv = matchName(m.fromEmail) || m.fromName || m.fromEmail
+    const p = matchPlayer(m.fromEmail)
+    const conv = p?.name || m.fromName || m.fromEmail
     return {
-      coach_id: user.id, direction: 'in', from_name: m.fromName || m.fromEmail,
-      recipients: conv, thread_key: conv, subject: m.subject || null, body: m.body,
+      coach_id: academyId, player_id: p?.id ?? null, direction: 'in', from_name: m.fromName || m.fromEmail,
+      // A player's thread is named after them. Anybody else gets a key that can
+      // never equal a player's name, so it cannot surface in a family's app.
+      recipients: conv, thread_key: p ? conv : `contact:${m.fromEmail.toLowerCase()}`, subject: m.subject || null, body: m.body,
       channels: 'email', status: 'received', external_id: m.externalId, read: false,
       created_at: m.date,
     }

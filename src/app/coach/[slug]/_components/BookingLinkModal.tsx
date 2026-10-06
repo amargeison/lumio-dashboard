@@ -22,10 +22,11 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { useAskBeforeClose } from '../_lib/ask-before-close'
 
 type Player = { id: string; name: string; email?: string | null; parent_email?: string | null; contact_email?: string | null }
 type Venue = { id: string; name: string }
-type SentLink = { id: string; url: string; name: string | null; email: string | null; reusable: boolean; uses: number; used_at: string | null; revoked_at: string | null; session_type: string | null; duration_min: number }
+type SentLink = { id: string; url: string; name: string | null; email: string | null; reusable: boolean; uses: number; used_at: string | null; revoked_at: string | null; expires_at?: string | null; session_type: string | null; duration_min: number }
 
 const TYPES = ['Private', 'Group', 'Cardio', 'Match play'] as const
 const DURATIONS = [30, 45, 60, 90]
@@ -66,8 +67,16 @@ export function BookingLinkModal({ T, accent, players, venues, onClose }: {
     }
   }
 
+  // Once a link has been made there is nothing left to lose, so only the form
+  // itself counts as "part-filled".
+  const closeOutside = useAskBeforeClose(result ? '' : JSON.stringify([mode, playerId, email, name, sessionType, durationMin, venueId, note]), onClose)
+  const askedOnce = result ? onClose : closeOutside
+
   const create = async (reusable: boolean) => {
     if (busy) return
+    // Sending needs somewhere to send it. Said here, before the request, rather
+    // than leaving the button to do nothing useful.
+    if (!reusable && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setErr('Enter the email address to send the link to.'); return }
     setBusy(true); setErr(''); setCopied(false)
     try {
       const res = await fetch('/api/coach/booking-link', {
@@ -94,17 +103,17 @@ export function BookingLinkModal({ T, accent, players, venues, onClose }: {
     setSent(s => s.map(l => (l.id === id ? { ...l, revoked_at: new Date().toISOString() } : l)))
   }
 
-  const field: CSSProperties = { width: '100%', boxSizing: 'border-box', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, fontFamily: FONT, outline: 'none' }
+  const field: CSSProperties = { width: '100%', minWidth: 0, boxSizing: 'border-box', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', color: T.text, fontSize: 13, fontFamily: FONT, outline: 'none' }
   const lbl: CSSProperties = { display: 'block', color: T.text3, fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }
-  const chip = (on: boolean): CSSProperties => ({ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 12.5, fontWeight: on ? 700 : 500, padding: '7px 13px', borderRadius: 999, border: `1px solid ${on ? accent.hex : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text2 })
+  const chip = (on: boolean): CSSProperties => ({ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 12.5, fontWeight: on ? 700 : 500, padding: '0 13px', minHeight: 38, borderRadius: 999, border: `1px solid ${on ? accent.hex : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text2 })
 
   return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    <div onClick={e => { if (e.target === e.currentTarget) askedOnce() }}
       style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto', fontFamily: FONT }}>
-      <div style={{ width: '100%', maxWidth: 560, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 22 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4 }}>
+      <div style={{ width: '100%', maxWidth: 560, boxSizing: 'border-box', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16, padding: 22 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>Send a booking link</div>
-          <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 28, height: 28, fontSize: 16 }}>×</button>
+          <button onClick={onClose} aria-label="Close" style={{ marginLeft: 'auto', appearance: 'none', background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 40, height: 40, fontSize: 16, flexShrink: 0 }}>×</button>
         </div>
         <p style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.55, margin: '0 0 16px' }}>
           They see the times you are genuinely free — your diary, your calendar and your camps — pick one, and it books
@@ -147,7 +156,7 @@ export function BookingLinkModal({ T, accent, players, venues, onClose }: {
                     {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10 }}>
                   <div>
                     <span style={lbl}>Their name</span>
                     <input value={name} onChange={e => setName(e.target.value)} placeholder="Name" style={field} />
@@ -188,7 +197,7 @@ export function BookingLinkModal({ T, accent, players, venues, onClose }: {
               </div>
             </div>
 
-            {!!err && <div style={{ fontSize: 12.5, color: T.bad, marginBottom: 10 }}>{err}</div>}
+            {!!err && <div role="alert" style={{ fontSize: 12.5, color: T.bad, marginBottom: 10 }}>{err}</div>}
 
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={onClose} style={{ appearance: 'none', border: 0, borderRadius: 10, padding: '11px 16px', background: T.hover, color: T.text2, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
@@ -207,6 +216,9 @@ export function BookingLinkModal({ T, accent, players, venues, onClose }: {
               {sent.map(l => {
                 const dead = !!l.revoked_at
                 const used = !!l.used_at && !l.reusable
+                // Past its date: the link no longer books anything, so it says
+                // so rather than reading as live with a "Turn off" button.
+                const expired = !dead && !used && !!l.expires_at && new Date(l.expires_at).getTime() < Date.now()
                 return (
                   <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 9, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '8px 11px' }}>
                     <span style={{ flex: 1, minWidth: 0 }}>
@@ -215,12 +227,12 @@ export function BookingLinkModal({ T, accent, players, venues, onClose }: {
                       </span>
                       <span style={{ display: 'block', fontSize: 10.5, color: T.text3 }}>
                         {[l.session_type, `${l.duration_min} min`,
-                          dead ? 'turned off' : used ? 'booked ✓' : l.reusable ? `${l.uses} booking${l.uses === 1 ? '' : 's'}` : 'waiting'].filter(Boolean).join(' · ')}
+                          dead ? 'turned off' : used ? 'booked ✓' : expired ? (l.reusable && l.uses ? `expired · ${l.uses} booking${l.uses === 1 ? '' : 's'}` : 'expired') : l.reusable ? `${l.uses} booking${l.uses === 1 ? '' : 's'}` : 'waiting'].filter(Boolean).join(' · ')}
                       </span>
                     </span>
-                    <button onClick={() => copy(l.url)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 7, padding: '5px 10px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>Copy</button>
-                    {!dead && !used && (
-                      <button onClick={() => revoke(l.id)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.bad, borderRadius: 7, padding: '5px 10px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>Turn off</button>
+                    <button onClick={() => copy(l.url)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 7, padding: '0 10px', minHeight: 36, fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>Copy</button>
+                    {!dead && !used && !expired && (
+                      <button onClick={() => revoke(l.id)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.bad, borderRadius: 7, padding: '0 10px', minHeight: 36, fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>Turn off</button>
                     )}
                   </div>
                 )

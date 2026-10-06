@@ -60,8 +60,13 @@ function toPublic(camp: any, profile: any): TripPublic {
 async function load(slug: string): Promise<TripPublic | null> {
   try {
     const sb = db()
+    // An exact match on the address — the whole of it, random ending included.
+    // It used to be a pattern match, where "_" and "%" stand for anything, so a
+    // row of underscores opened somebody's hotel address and phone numbers.
+    // Anything that is not an address the portal could have made is no trip.
+    const wanted = String(slug || '').toLowerCase()
     const { data: camp } = await sb.from('coach_camps')
-      .select('*').ilike('trip_slug', slug).maybeSingle()
+      .select('*').eq('trip_slug', /^[a-z0-9-]{1,80}$/.test(wanted) ? wanted : '').maybeSingle()
 
     // Same answer whether the trip is missing or closed — a closed trip should
     // not be distinguishable from one that never existed.

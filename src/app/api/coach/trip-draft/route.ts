@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { serviceClient } from '@/lib/coach/oauth'
+import { coachGate } from '@/lib/coach/membership'
 import { runCoachAgent, extractJson } from '@/lib/coach/agent'
 import { fileToContent, UnreadableFile } from '@/lib/coach/file-to-content'
 import { campAudience, audienceBrief } from '@/lib/coach/camp-audience'
@@ -56,8 +57,12 @@ const RULES = `How you write a trip hub.
 9. BRITISH ENGLISH. Plain and calm. Nobody wants marketing copy on the page they open at the airport.`
 
 export async function POST(req: NextRequest) {
-  const coachId = await sessionCoachId()
-  if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // The academy in the portal's address, and only its head coach (see coachGate):
+  // a coach who also helps at another academy must not act on their own club
+  // from inside the other one's portal.
+  const seat = await coachGate({ headOnly: true })
+  if (!seat.ok) return NextResponse.json({ error: seat.error }, { status: seat.status })
+  const coachId = seat.seat.academyId
   // A demo account is signed in too. Only a real academy may use this.
   if (!await isAcademyUser(coachId)) return notAnAcademy()
 
@@ -147,6 +152,18 @@ export async function POST(req: NextRequest) {
 
     const raw = extractJson<Trip>(text, {})
     const trip = cleanTrip(raw || {})
+
+    // A reply with nothing usable in it is a failed draft, and has to be
+    // reported as one — the page used to say "Started from the camp details"
+    // over a form that was still empty.
+    const drafted = Object.values(trip).some((v: unknown) => Array.isArray(v) ? v.length > 0 : v && typeof v === 'object' ? Object.keys(v).length > 0 : !!String(v ?? '').trim())
+    if (!drafted) {
+      return NextResponse.json({
+        error: file
+          ? 'Lumio Coach could not find any trip details in that document. Nothing has been changed — try a PDF, or fill the page in by hand.'
+          : 'Lumio Coach could not draft the trip. Nothing has been changed — try again, or fill the page in by hand.',
+      }, { status: 502 })
+    }
 
     return NextResponse.json({
       ok: true,

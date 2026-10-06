@@ -24,7 +24,18 @@ import { sendMessage } from '../_lib/messages-store'
 import { getSettings } from '../_lib/settings-store'
 import { COACH_AGENT_PERSONA } from '@/lib/coach/agent-persona'
 
-const clean = (s: string) => s.replace(/[*_#`>]/g, '').replace(/^\s*[-•]\s*/gm, '').replace(/\n{3,}/g, '\n\n').trim()
+// Markdown DECORATION only — see LiveCoachSendMessage. Deleting every * _ # ` >
+// wherever it stood broke email addresses, links, "Court #3" and ">£10".
+const clean = (s: string) => s
+  .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+  .replace(/(^|[\s(])\*([^*\s][^*\n]*)\*(?=[\s).,;:!?]|$)/gm, '$1$2')
+  .replace(/(^|[\s(])__([^_\n]+)__(?=[\s).,;:!?]|$)/gm, '$1$2')
+  .replace(/(^|[\s(])_([^_\s][^_\n]*)_(?=[\s).,;:!?]|$)/gm, '$1$2')
+  .replace(/`([^`\n]+)`/g, '$1')
+  .replace(/^[ \t]{0,3}#{1,6}[ \t]+/gm, '')
+  .replace(/^[ \t]{0,3}>[ \t]+/gm, '')
+  .replace(/^[ \t]*[-•*][ \t]+/gm, '')
+  .replace(/\n{3,}/g, '\n\n').trim()
 
 // A pre-targeted recipient (e.g. the head coach hitting "Contact" on a coach card).
 export type PresetRecipient = { name: string; role?: string; email?: string; phone?: string }

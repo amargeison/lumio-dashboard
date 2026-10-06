@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getMembership, scopedDb } from '@/lib/coach/membership'
-import { scoreManualSession, MANUAL_MIN_DURATION_MIN } from '@/lib/coach/effort-score'
+import { familyAccess, scopedDb } from '@/lib/coach/membership'
+import { scoreManualSession, checkEffortInput, EFFORT_LIMITS, MANUAL_MIN_DURATION_MIN } from '@/lib/coach/effort-score'
 
 export const runtime = 'nodejs'
 
@@ -12,74 +12,74 @@ export const runtime = 'nodejs'
 // the coach and student dashboards render it identically. Always flagged
 // `estimated` and source `manual`.
 //
-// SECURITY: bound to the caller's membership and its ONE scoped player. A parent
-// can only ever log for their own child, within their own academy.
+// SECURITY: bound to the caller's membership for the player named in the
+// request. A parent can only ever log for their own child, within their own
+// academy.
 //
 // NOTE: this collects NO biometric data (no heart rate) — it's self-reported
 // effort — so it is deliberately NOT gated on `consent_wearable` (which governs
 // processing watch HR data). That keeps the reward loop open for every family.
 
+// The whole value has to be a number: "8abc" used to be read as 8.
 const num = (v: unknown): number | null => {
-  const n = typeof v === 'string' ? parseFloat(v) : typeof v === 'number' ? v : NaN
+  const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : typeof v === 'number' ? v : NaN
   return Number.isFinite(n) ? n : null
 }
 
 export async function POST(req: NextRequest) {
-  const m = await getMembership()
-  if (!m) return NextResponse.json({ error: 'No access' }, { status: 403 })
-  if (m.role !== 'parent' && m.role !== 'student') return NextResponse.json({ error: 'Wrong portal' }, { status: 403 })
-  if (!m.scopePlayerId) return NextResponse.json({ error: 'No player assigned' }, { status: 403 })
-
   const body = (await req.json().catch(() => ({}))) as {
-    duration_min?: number; perceived_effort?: number; distance_m?: number; note?: string; started_at?: string
+    duration_min?: number; perceived_effort?: number; distance_m?: number; note?: string; started_at?: string; playerId?: string
   }
+  // Which child: the one picked at the top of the page, checked against the
+  // caller's own memberships.
+  const access = await familyAccess(body.playerId)
+  if (!access.ok) return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
+  const m = access.m
 
-  const duration = num(body.duration_min) ?? 0
-  if (duration < MANUAL_MIN_DURATION_MIN) {
-    return NextResponse.json({ error: `Session too short (min ${MANUAL_MIN_DURATION_MIN} min)` }, { status: 422 })
-  }
+  // A family may date a session up to a week back — enough for "I forgot to
+  // log Saturday", not enough to fill a month in one go.
+  const input = checkEffortInput(body, MANUAL_MIN_DURATION_MIN, EFFORT_LIMITS.familyMaxAgeDays)
+  if (!input.ok) return NextResponse.json({ error: input.error }, { status: 422 })
   const rpe = num(body.perceived_effort)
   if (rpe == null || rpe < 1 || rpe > 10) {
     return NextResponse.json({ error: 'Tell us how hard it felt (1–10)' }, { status: 422 })
   }
-  const distance = num(body.distance_m)
 
+  const s = scoreManualSession({ duration: input.duration, rpe, distance: input.distance })
+
+  // Saved and counted in one step in the database (migration 195): the session
+  // row, the daily limit, the "same session sent twice" check and the XP total
+  // all happen under one lock, so two logs landing together cannot lose XP or
+  // both squeeze under the limit. It also checks the player belongs to this
+  // academy. The family's weekly limit is counted under the same lock
+  // (lumio_log_family_effort, migration 207): the daily limit alone let
+  // somebody back-date three sessions a day, every day.
   const db = scopedDb()
-  // The one player — must belong to this academy AND be the scoped player.
-  const { data: player } = await db.from('coach_players')
-    .select('id, coach_id, xp_total')
-    .eq('id', m.scopePlayerId).eq('coach_id', m.academyId).maybeSingle()
-  if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
-
-  const s = scoreManualSession({ duration, rpe, distance })
-
-  const { error: insErr } = await db.from('coach_watch_sessions').insert({
-    coach_id: m.academyId,
-    player_id: m.scopePlayerId,
-    source: 'manual',
-    started_at: body.started_at || new Date().toISOString(),
-    duration_min: duration,
-    avg_hr: null,
-    max_hr: null,
-    distance_m: distance,
-    effort_score: s.effort,
-    movement_score: s.movement,
-    consistency_score: s.consistency,
-    xp_awarded: s.xp,
-    estimated: true,
-    raw: { manual: true, perceived_effort: rpe, note: (body.note || '').slice(0, 280) || null },
+  const { data, error } = await db.rpc('lumio_log_family_effort', {
+    p_coach: m.academyId, p_player: m.scopePlayerId, p_source: 'manual', p_started: input.startedAt,
+    p_duration: input.duration, p_avg_hr: null, p_max_hr: null, p_kcal: null, p_distance: input.distance,
+    p_effort: s.effort, p_movement: s.movement, p_consistency: s.consistency, p_xp: s.xp, p_estimated: true,
+    p_raw: { manual: true, perceived_effort: rpe, note: String(body.note || '').slice(0, 280) || null },
+    p_daily_cap: EFFORT_LIMITS.manualPerDay, p_weekly_cap: EFFORT_LIMITS.familyPerWeek,
   })
-  if (insErr) { console.error('[portal/watch/log]', insErr.message); return NextResponse.json({ error: 'Could not save session' }, { status: 500 }) }
-
-  // Bump the player's running XP total (scoped to the academy for defense-in-depth,
-  // matching every other portal write on this service-role client).
-  const newTotal = (Number((player as any).xp_total) || 0) + s.xp
-  await db.from('coach_players').update({ xp_total: newTotal }).eq('id', m.scopePlayerId).eq('coach_id', m.academyId)
+  const out = (data || {}) as { status?: string; xp_total?: number }
+  if (error || !out.status) { console.error('[portal/watch/log]', error?.message); return NextResponse.json({ error: 'The session could not be saved. Please try again.' }, { status: 500 }) }
+  if (out.status === 'no_player') return NextResponse.json({ error: 'This player is no longer on the academy\u2019s roster.' }, { status: 404 })
+  if (out.status === 'cap') {
+    return NextResponse.json({ error: `${EFFORT_LIMITS.manualPerDay} sessions are already logged for that day, which is the most that count. If one is wrong, ask your coach to remove it.` }, { status: 429 })
+  }
+  if (out.status === 'week_cap') {
+    return NextResponse.json({ error: `${EFFORT_LIMITS.familyPerWeek} sessions have been logged in the last 7 days, which is the most that count. If there were more, ask your coach to add them.` }, { status: 429 })
+  }
+  // The same session sent twice (a double tap): it is already saved, so say so
+  // rather than count it again.
+  const duplicate = out.status === 'duplicate'
 
   return NextResponse.json({
     ok: true,
+    duplicate,
     scores: { effort: s.effort, movement: s.movement, consistency: s.consistency },
-    xp_awarded: s.xp,
-    xp_total: newTotal,
+    xp_awarded: duplicate ? 0 : s.xp,
+    xp_total: out.xp_total ?? null,
   })
 }

@@ -45,7 +45,7 @@ function headerHtml(partner?: { name: string; logoUrl: string | null } | null) {
 }
 
 function esc(s: string) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
 const feature = (icon: string, title: string, body: string) => `
@@ -73,6 +73,14 @@ const FAMILY_FEATURES = [
   feature('💬', 'A direct line', 'messages from the coaching team, in one place instead of scattered across texts.'),
 ].join('')
 
+// The same four, said to the player themselves.
+const PLAYER_FEATURES = [
+  feature('📈', 'Progress you can actually see', 'skills, goals and session-by-session notes from your coach &mdash; not just &ldquo;it went well&rdquo;.'),
+  feature('🏆', 'Racket Progression', 'the pathway you are working through, and what comes next.'),
+  feature('📅', 'What&rsquo;s coming up', 'lessons, camps and events, with everything you need to know before you turn up.'),
+  feature('💬', 'A direct line', 'messages from the coaching team, in one place instead of scattered across texts.'),
+].join('')
+
 export function portalInviteEmail({ role, inviteeName, headCoachName, academyName, playerName, signInUrl, partner }: {
   role: 'coach' | 'parent' | 'student'
   inviteeName?: string | null
@@ -88,13 +96,20 @@ export function portalInviteEmail({ role, inviteeName, headCoachName, academyNam
 }): { subject: string; html: string } {
   const logoHtml = headerHtml(partner)
   const SIGN_IN = signInUrl || LOGIN_URL
-  const hi = inviteeName?.trim() ? `Hi ${inviteeName.trim().split(/\s+/)[0]},` : 'Hi,'
-  const club = academyName?.trim() || 'their coaching academy'
-  const head = headCoachName?.trim() || 'Your head coach'
+  // Every name below is typed by somebody — a coach, or a parent filling in a
+  // public sign-up form — and goes into HTML sent from Lumio's own address. So
+  // each is escaped before it gets there: a name is text, never markup. The
+  // plain versions (clubText, headText) are for the subject line only, which is
+  // not HTML.
+  const hi = inviteeName?.trim() ? `Hi ${esc(inviteeName.trim().split(/\s+/)[0])},` : 'Hi,'
+  const clubText = academyName?.trim() || 'their coaching academy'
+  const headText = headCoachName?.trim() || 'Your head coach'
+  const club = esc(clubText)
+  const head = esc(headText)
 
   if (role === 'coach') {
     return {
-      subject: `${head} has added you to ${club} on Lumio`,
+      subject: `${headText} has added you to ${clubText} on Lumio`,
       html: emailLayout({
         preheader: `${head} has given you your own coaching portal at ${club}.`,
         body: `
@@ -140,15 +155,20 @@ ${followLumioHtml()}`,
     }
   }
 
-  const who = playerName?.trim()
-  const about = role === 'parent'
-    ? (who ? `follow <strong style="color:#ffffff;">${who}</strong>&rsquo;s coaching` : 'follow your player&rsquo;s coaching')
-    : 'see your own coaching'
+  // A 'student' is the player themselves — usually an adult. They are "you",
+  // not somebody whose coaching they follow.
+  const own = role === 'student'
+  const who = playerName?.trim() ? esc(playerName.trim()) : ''
+  const about = own
+    ? 'see your own coaching'
+    : (who ? `follow <strong style="color:#ffffff;">${who}</strong>&rsquo;s coaching` : 'follow your player&rsquo;s coaching')
 
   return {
-    subject: `${head} has invited you to follow the coaching at ${club}`,
+    subject: own
+      ? `${headText} has invited you to your coaching page at ${clubText}`
+      : `${headText} has invited you to follow the coaching at ${clubText}`,
     html: emailLayout({
-      preheader: `${head} has given you access to ${who ? who + '&rsquo;s' : 'your'} progress at ${club}.`,
+      preheader: `${head} has given you access to ${own || !who ? 'your' : who + '&rsquo;s'} progress at ${club}.`,
       body: `
 ${logoHtml}
 <h1 style="margin:0 0 8px;font-size:24px;font-weight:800;color:#ffffff;">You&rsquo;re in.</h1>
@@ -167,7 +187,7 @@ ${ctaButton('Open your portal &rarr;', SIGN_IN)}
 
 <h2 style="margin:28px 0 12px;font-size:16px;font-weight:700;color:#a855f7;">What you&rsquo;ll see:</h2>
 <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:24px;">
-  ${FAMILY_FEATURES}
+  ${own ? PLAYER_FEATURES : FAMILY_FEATURES}
 </table>
 
 <p style="margin:0 0 4px;font-size:14px;color:rgba(255,255,255,0.55);line-height:1.7;">

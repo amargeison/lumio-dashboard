@@ -1073,7 +1073,7 @@ export function RosterView({ T, accent, density, onNavigate }: Common & { onNavi
             <button onClick={() => setAddOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> Add player</button>
           </div>
         } />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: density.gap }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: density.gap }}>
         {list.map(p => (
           <Card key={p.id} T={T} density={density} hover onClick={() => setSel(p)}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1300,7 +1300,7 @@ export function ResourcesView({ T, accent, density }: Common) {
           <div style={{ fontSize: 12, color: T.text3, marginTop: 4 }}>{preloaded ? 'Try another category.' : 'Add your own with “Add resource”, top right.'}</div>
         </Card>
       ) : (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: density.gap }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: density.gap }}>
         {list.map(r => {
           const isVideo = r.format === 'Video'
           const onClick = isVideo ? (r.video ? () => setVideo(r) : undefined) : () => openResource(r)
@@ -1446,7 +1446,7 @@ export function CampsView({ T, accent, density }: Common) {
         action={<button onClick={() => setNewOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><Icon name="plus" size={14} stroke={2} /> New camp</button>} />
 
       {/* Camp selector cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: density.gap, marginBottom: density.gap }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: density.gap, marginBottom: density.gap }}>
         {camps.map(c => (
             <Card key={c.id} T={T} density={density} hover onClick={() => selectCamp(c.id)} style={{ borderColor: c.id === selId ? accent.border : undefined, background: c.id === selId ? accent.dim : T.panel }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

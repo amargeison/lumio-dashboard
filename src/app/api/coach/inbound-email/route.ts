@@ -104,9 +104,44 @@ export async function POST(req: NextRequest) {
     const { data: dupe } = await admin.from('coach_messages').select('id').eq('coach_id', parsed.coachId).eq('external_id', externalId).maybeSingle()
     if (dupe) return NextResponse.json({ ok: true, dedup: true })
   }
-  const conv = parsed.recipientName || fromName
+  // ── Which conversation ──────────────────────────────────────────────────────
+  // The token says who the coach's email was to. Since messages moved to player
+  // ids it carries `player:<id>`; an email sent before that carries the name.
+  //
+  // A name is only trusted when exactly one player in the academy has it. Two
+  // players called "Sam Twin" → the reply is kept for the coach but linked to
+  // neither child, so it cannot appear in the wrong family's app.
+  const key = parsed.recipientName || ''
+  let playerId: string | null = null
+  let conv = fromName
+  let threadKey = `contact:${(str(fromRaw).match(/[^\s<>"]+@[^\s<>"]+/)?.[0] || fromName).toLowerCase()}`
+  if (key.startsWith('player:')) {
+    const { data: p } = await admin.from('coach_players')
+      .select('id, name').eq('id', key.slice(7)).eq('coach_id', parsed.coachId).maybeSingle()
+    if (p) { playerId = p.id as string; conv = (p.name || '').trim() || fromName; threadKey = conv }
+  } else if (/^(contact|staff|attendee):/.test(key)) {
+    // Somebody who is not a player. Their conversation keeps the name the coach
+    // wrote to them under.
+    const { data: prior } = await admin.from('coach_messages')
+      .select('recipients').eq('coach_id', parsed.coachId).eq('thread_key', key)
+      .order('created_at', { ascending: false }).limit(1)
+    conv = (prior?.[0]?.recipients as string | undefined) || fromName
+    threadKey = key
+  } else if (key) {
+    const { data: named } = await admin.from('coach_players')
+      .select('id, name').eq('coach_id', parsed.coachId).ilike('name', key.replace(/[\\%_]/g, m => `\\${m}`)).limit(20)
+    const hits = (named ?? []).filter(p => String(p.name || '').trim().toLowerCase() === key.trim().toLowerCase())
+    conv = key
+    if (hits.length === 1) { playerId = hits[0].id as string; threadKey = key }
+    // Shared by two players: kept under the name, linked to nobody.
+    else if (hits.length > 1) threadKey = key
+    // Nobody on the roster has it — a contact. Keyed so that it can never be
+    // mistaken for a player who joins later with the same name.
+    else threadKey = `contact:${key.trim().toLowerCase()}`
+  }
+
   const { error } = await admin.from('coach_messages').insert({
-    coach_id: parsed.coachId, direction: 'in', from_name: fromName, recipients: conv, thread_key: conv,
+    coach_id: parsed.coachId, player_id: playerId, direction: 'in', from_name: fromName, recipients: conv, thread_key: threadKey,
     subject, body, channels: 'email', status: 'received', external_id: externalId, read: false, created_at: new Date().toISOString(),
   })
   if (error) return NextResponse.json({ ok: true, error: error.message })

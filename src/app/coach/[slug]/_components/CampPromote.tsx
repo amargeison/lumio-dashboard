@@ -13,6 +13,7 @@ import { useState, useMemo, type CSSProperties } from 'react'
 import { isAdult } from '@/lib/coach/camp-audience'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { dbUpdate } from '../_lib/coach-db'
 
 type Promo = {
   email?: { subject?: string; preheader?: string; paragraphs?: string[]; cta?: string }
@@ -23,20 +24,43 @@ type Promo = {
 export type PromoPlayer = {
   id: string; name: string; age?: number | null
   email?: string | null; parent_email?: string | null; parent_name?: string | null
+  category?: string | null
+  /** The family asked not to be sent camp announcements (migration 201). */
+  no_camp_emails?: boolean | null
 }
 type Contact = { email: string; label: string; via: string }
+const norm = (s?: string | null) => String(s ?? '').trim().toLowerCase()
+// The same test the send route uses, so the list never offers an address the
+// server will then drop.
+const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(s)
+/** Every address that belongs to a player who has asked not to hear about camps. */
+function optedOutAddresses(players: PromoPlayer[]): Set<string> {
+  const out = new Set<string>()
+  for (const p of players) if (p.no_camp_emails) for (const a of [p.email, p.parent_email]) if (norm(a)) out.add(norm(a))
+  return out
+}
 
 // Same safeguarding rule as booking confirmations: an under-16 is reached
 // through the parent, and an unknown age is treated as a minor.
-function contactsFrom(players: PromoPlayer[]): Contact[] {
+// `booked` — players already on this camp. They are left out: "places are open"
+// is not news to a family whose child is on the list. (A brother or sister who
+// is not booked still puts the family on the list, under their name.)
+function contactsFrom(players: PromoPlayer[], which: 'on' | 'off' = 'on', booked?: { ids: Set<string>; emails: Set<string> }): Contact[] {
   const seen = new Map<string, Contact>()
+  const off = optedOutAddresses(players)
   for (const p of players) {
+    if (which === 'on' && booked?.ids.has(p.id)) continue
     // One shared rule, from camp-audience.ts. This used to be a third private
     // copy of `age < 16`, so a fix in the cron left the Promote tab wrong.
-    const adult = isAdult(null, p.age)
-    const raw = (adult ? (p.email || p.parent_email) : p.parent_email) || ''
-    const email = raw.trim().toLowerCase()
-    if (!email.includes('@')) continue
+    // With no age on file, the roster's own "Adult" label decides — an adult
+    // who booked online is filed that way, and was being listed as a parent
+    // (or not at all).
+    const adult = isAdult(null, p.age) || (p.age == null && norm(p.category) === 'adult')
+    const email = norm(adult ? (p.email || p.parent_email) : p.parent_email)
+    if (!isEmail(email)) continue
+    if (off.has(email) !== (which === 'off')) continue
+    // A place held under this address with no roster record (an online sign-up not yet matched).
+    if (which === 'on' && booked?.emails.has(email)) continue
     if (!seen.has(email)) {
       seen.set(email, { email, label: p.name, via: adult ? 'player' : (p.parent_name || 'parent') })
     }
@@ -44,8 +68,12 @@ function contactsFrom(players: PromoPlayer[]): Contact[] {
   return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label))
 }
 
-export function CampPromote({ T, accent, campId, campName, players }: {
+export function CampPromote({ T, accent, campId, campName, players, attendees = [], onPlayersChanged }: {
   T: ThemeTokens; accent: AccentTokens; campId: string; campName: string; players: PromoPlayer[]
+  /** Who is on this camp already (cancelled places do not count). */
+  attendees?: { player_id?: string | null; parent_email?: string | null; status?: string | null }[]
+  /** Re-read the roster after somebody is taken off (or put back on) the list. */
+  onPlayersChanged?: () => Promise<void> | void
 }) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -59,7 +87,34 @@ export function CampPromote({ T, accent, campId, campName, players }: {
   const [copied, setCopied] = useState('')
   const [sending, setSending] = useState(false)
 
-  const contacts = useMemo(() => contactsFrom(players), [players])
+  const booked = useMemo(() => {
+    const live = attendees.filter(a => (a.status || '') !== 'cancelled')
+    return {
+      ids: new Set(live.map(a => a.player_id).filter(Boolean) as string[]),
+      emails: new Set(live.filter(a => !a.player_id).map(a => norm(a.parent_email)).filter(Boolean)),
+    }
+  }, [attendees])
+  const contacts = useMemo(() => contactsFrom(players, 'on', booked), [players, booked])
+  const leftOut = useMemo(() => contactsFrom(players).length - contacts.length, [players, contacts])
+  const stopped = useMemo(() => contactsFrom(players, 'off'), [players])
+  const [listBusy, setListBusy] = useState('')
+
+  // "Reply and you'll be taken off the list" is in the footer of every
+  // announcement. This is the list: one tick per family, kept on the player,
+  // and the send route leaves them out from then on whatever is ticked here.
+  const setStopped = async (email: string, stop: boolean) => {
+    if (listBusy) return
+    const who = players.filter(p => [norm(p.email), norm(p.parent_email)].includes(email) && !!p.no_camp_emails !== stop)
+    if (stop && !confirm(`Stop sending camp announcements to ${email}?\n\nThey will be left out of every announcement from now on. Emails about a camp they are booked on still go.`)) return
+    setListBusy(email); setErr(''); setMsg('')
+    try {
+      for (const p of who) await dbUpdate('coach_players', p.id, { no_camp_emails: stop })
+      setPicked(prev => { const n = new Set(prev); n.delete(email); return n })
+      await onPlayersChanged?.()
+      setMsg(stop ? `${email} will not be sent camp announcements.` : `${email} is back on the list.`)
+    } catch (e) { setErr(e instanceof Error ? e.message : 'That was not saved. Try again.') }
+    finally { setListBusy('') }
+  }
 
   const copy = (key: string, text: string) => {
     navigator.clipboard?.writeText(text)
@@ -80,9 +135,10 @@ export function CampPromote({ T, accent, campId, campName, players }: {
       setSubject(p.email?.subject || `${campName} — places open`)
       setBodyText((p.email?.paragraphs || []).join('\n\n'))
       setCta(p.email?.cta || '')
-      // Everybody is selected by default: a coach announcing a camp means the
-      // whole roster, and unticking a family is easier than ticking forty.
-      setPicked(new Set(contacts.map(c => c.email)))
+      // Nobody is ticked until the coach ticks them. Pre-selecting the whole
+      // roster meant one press of Send mailed everybody, every time — including
+      // the families nobody had stopped to think about. "All" is one click.
+      setPicked(new Set())
     } catch (e) { setErr(e instanceof Error ? e.message : 'Could not write the copy') }
     finally { setBusy(false) }
   }
@@ -142,7 +198,7 @@ export function CampPromote({ T, accent, campId, campName, players }: {
       {!signupUrl && (
         <div style={{ ...card, borderColor: `${T.warn}66`, background: `${T.warn}12`, fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>
           Your sign-up page is closed, so the copy asks parents to reply to you rather than pointing at a link.
-          Open it on the Overview tab and re-write the copy to include the link.
+          Open it in the &ldquo;Public sign-up page&rdquo; box above, then re-write the copy to include the link.
         </div>
       )}
 
@@ -150,7 +206,7 @@ export function CampPromote({ T, accent, campId, campName, players }: {
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Email your roster</div>
-          <span style={{ fontSize: 11, color: T.text3 }}>{contacts.length} contactable · {picked.size} selected</span>
+          <span style={{ fontSize: 11, color: T.text3 }}>{contacts.length} contactable · {picked.size} selected{leftOut > 0 ? ` · ${leftOut} already booked on this camp, left out` : ''}</span>
           <button onClick={generate} disabled={busy} style={{ ...ghost, marginLeft: 'auto' }}>{busy ? 'Writing…' : '✦ Re-write'}</button>
         </div>
 
@@ -188,10 +244,28 @@ export function CampPromote({ T, accent, campId, campName, players }: {
                   <span style={{ fontSize: 12.5, color: T.text, flex: 1, minWidth: 0 }}>{c.label}</span>
                   <span style={{ fontSize: 11, color: T.text3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>{c.email}</span>
                   <span style={{ fontSize: 9, color: T.text3, textTransform: 'uppercase', letterSpacing: 0.4 }}>{c.via === 'player' ? 'player' : 'parent'}</span>
+                  <button onClick={e => { e.preventDefault(); void setStopped(c.email, true) }} disabled={!!listBusy} title="They asked not to hear about camps"
+                    style={{ ...ghost, padding: '2px 8px', fontSize: 10.5, whiteSpace: 'nowrap' }}>{listBusy === c.email ? 'Saving…' : 'Stop camp emails'}</button>
                 </label>
               ))}
             </div>
+            <div style={{ fontSize: 11, color: T.text3, marginTop: 6, lineHeight: 1.55 }}>
+              Nobody is ticked until you tick them. Every announcement tells people they can reply to be taken off the list — when somebody does,
+              press &ldquo;Stop camp emails&rdquo; beside their name and they are left out from then on.
+            </div>
           </>
+        )}
+        {stopped.length > 0 && (
+          <div style={{ marginTop: 10, border: `1px solid ${T.border}`, borderRadius: 9, padding: '8px 10px' }}>
+            <div style={lbl}>Asked not to hear about camps · {stopped.length}</div>
+            {stopped.map(c => (
+              <div key={c.email} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '5px 0', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12.5, color: T.text2, flex: 1, minWidth: 0 }}>{c.label}</span>
+                <span style={{ fontSize: 11, color: T.text3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>{c.email}</span>
+                <button onClick={() => void setStopped(c.email, false)} disabled={!!listBusy} style={{ ...ghost, padding: '2px 8px', fontSize: 10.5 }}>{listBusy === c.email ? 'Saving…' : 'Put back on the list'}</button>
+              </div>
+            ))}
+          </div>
         )}
 
         {err && <div style={{ fontSize: 12, color: T.bad, marginTop: 10 }}>{err}</div>}

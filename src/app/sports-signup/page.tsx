@@ -1,7 +1,9 @@
 'use client'
 
 // Streamlined founding-member signup for Lumio Sports.
-// Flow: Name + Email + Sport → OTP verify → /{sport}/app (wizard handles rest)
+// Flow: Name + Email + Sport → OTP verify → account created → portal (wizard
+// handles the rest). The code is checked BEFORE the account is created, so a
+// mistyped or borrowed address never ends up owning an academy.
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
@@ -42,9 +44,14 @@ export default function SportsSignupPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const accent = sport ? SPORTS.find(s => s.id === sport)?.color || '#8B5CF6' : '#8B5CF6'
-  const typedSlug = club.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'my-club'
-  const [savedSlug, setSavedSlug] = useState<string | null>(null)
-  const clubSlug = savedSlug || typedSlug
+  // What the address will probably be — the server has the final say (another
+  // academy may already have it, and a name with no letters or numbers gets a
+  // generated one), so this is only shown when there is something to show.
+  const typedSlug = club.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60)
+  // The code has been accepted. Kept so that if creating the account then
+  // fails, pressing the button again retries that step rather than asking for
+  // a code that has already been used.
+  const [verified, setVerified] = useState(false)
 
   // The ?sport= preselect is read AFTER mount, not during render.
   //
@@ -85,23 +92,15 @@ export default function SportsSignupPage() {
 
   const handleSubmit = async () => {
     if (!name.trim()) { setError('Enter your full name.'); return }
-    if (!email.includes('@')) { setError('Enter a valid email.'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Enter a valid email address.'); return }
     if (!club.trim()) { setError('Enter your club name.'); return }
     if (!sport) { setError('Select your sport.'); return }
     setLoading(true); setError('')
     try {
-      const res = await fetch('/api/sports-auth/create-profile', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), displayName: name.trim(), sport: apiSport(), clubName: club.trim() }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Signup failed')
-      // Another academy may already have the address the club name suggests —
-      // the server hands back the one it actually saved (e.g. …-2).
-      if (typeof data.portalSlug === 'string' && data.portalSlug) setSavedSlug(data.portalSlug)
-
-      // Send the branded founder OTP (replaces Supabase's default code email).
+      // Nothing is created yet. The code proves the address is theirs; the
+      // account and the academy are made once it has been entered.
       await sendFounderOtp()
+      setVerified(false)
 
       setStep('otp')
       setResendCountdown(30)
@@ -112,23 +111,54 @@ export default function SportsSignupPage() {
     setLoading(false)
   }
 
-  const verifyOtp = async () => {
-    const code = digits.join('')
-    if (code.length < 6) { setError('Enter the 6-digit code.'); return }
+  // `typed` is the code as just typed or pasted — state has not caught up when
+  // the sixth digit goes in, which is why submitting on the last digit used to
+  // complain that the code was incomplete.
+  const verifyOtp = async (typed?: string) => {
+    const code = typed ?? digits.join('')
+    if (!verified && code.length < 6) { setError('Enter the 6-digit code.'); return }
     setLoading(true); setError('')
     try {
-      // Verify via the branded OTP route, which also mints the Supabase session
-      // cookie (Path C) and — for purpose='founder' — preserves the founder role
-      // and skips the demo welcome/lead.
-      const res = await fetch('/api/sports-demo/verify-otp', {
+      if (!verified) {
+        // Verify via the branded OTP route, which also mints the Supabase session
+        // cookie (Path C) and — for purpose='founder' — preserves the founder role
+        // and skips the demo welcome/lead.
+        const res = await fetch('/api/sports-demo/verify-otp', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), code, sport: apiSport(), slug: typedSlug || undefined, userName: name.trim(), clubName: club.trim(), purpose: 'founder' }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
+        if (!data.sessionMinted) throw new Error('We could not sign you in just now. Please try again in a moment.')
+        setVerified(true)
+      }
+
+      // Now the address is proven, create the account's academy. We are signed
+      // in as that address, which is how the server knows whose it is.
+      const made = await fetch('/api/sports-auth/create-profile', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), code, sport: apiSport(), slug: clubSlug, userName: name.trim(), clubName: club.trim(), purpose: 'founder' }),
+        body: JSON.stringify({ email: email.trim(), displayName: name.trim(), sport: apiSport(), clubName: club.trim() }),
       })
-      const data = await res.json().catch(() => ({}))
-      if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
+      const profile = await made.json().catch(() => ({}))
+      let slug: string = typeof profile.portalSlug === 'string' ? profile.portalSlug : ''
+      if (made.status === 409) {
+        // They already have an academy and have just signed in to it — take
+        // them there rather than leaving them at a dead end.
+        const who = await fetch('/api/sports-auth/identify-user', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim() }),
+        }).then(r => r.json()).catch(() => ({}))
+        if ((who.founderSport || who.sport) === 'coach' && who.founderSlug) { window.location.href = `/tennis/coach/${who.founderSlug}`; return }
+        throw new Error(profile.error || 'You already have a Lumio account with this email. Please sign in instead.')
+      }
+      if (!made.ok) throw new Error(profile.error || 'We could not finish creating your account. Please try again.')
+      // The address actually saved — not necessarily the one the club name
+      // suggests, if another academy already had that.
+      slug = slug || typedSlug
       // Hard navigation so the portal reads the freshly-minted session cookie.
-      const dest = sport === 'womens' ? `/womens/${clubSlug}` : sport === 'tenniscoach' ? `/tennis/coach/${clubSlug}` : `/${sport}/app`
+      const dest = sport === 'womens' ? `/womens/${slug}` : sport === 'tenniscoach' ? `/tennis/coach/${slug}` : `/${sport}/app`
       window.location.href = dest
+      return
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Invalid or expired code.')
     }
@@ -139,7 +169,7 @@ export default function SportsSignupPage() {
     const char = value.replace(/\D/g, '').slice(-1)
     const next = [...digits]; next[index] = char; setDigits(next)
     if (char && index < 5) inputRefs.current[index + 1]?.focus()
-    if (next.every(d => d) && next.join('').length === 6) setTimeout(verifyOtp, 50)
+    if (next.every(d => d) && next.join('').length === 6) void verifyOtp(next.join(''))
   }
 
   const handleDigitKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -167,23 +197,27 @@ export default function SportsSignupPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Full name</label>
-                <input value={name} onChange={e => setName(e.target.value)} placeholder="Your full name"
+                <input value={name} onChange={e => setName(e.target.value)} placeholder="Your full name" maxLength={80}
                   style={{ width: '100%', padding: '11px 14px', borderRadius: 10, background: '#111318', border: '1px solid #374151', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com"
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" maxLength={254}
                   style={{ width: '100%', padding: '11px 14px', borderRadius: 10, background: '#111318', border: '1px solid #374151', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
               </div>
               <div>
                 <label style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Club name</label>
-                <input value={club} onChange={e => setClub(e.target.value)} placeholder="e.g. Riverside Rovers Women"
+                <input value={club} onChange={e => setClub(e.target.value)} placeholder="e.g. Riverside Tennis Academy" maxLength={80}
                   style={{ width: '100%', padding: '11px 14px', borderRadius: 10, background: '#111318', border: '1px solid #374151', color: '#fff', fontSize: 14, boxSizing: 'border-box' }} />
-                {club.trim() && <p style={{ color: '#4B5563', fontSize: 11, marginTop: 5 }}>Your portal: lumiosports.com{sport === 'tenniscoach' ? `/tennis/coach/${clubSlug}` : sport === 'womens' ? `/womens/${clubSlug}` : `/${sport}/${clubSlug}`}</p>}
+                {club.trim() && (typedSlug.length >= 2
+                  ? <p style={{ color: '#4B5563', fontSize: 11, marginTop: 5, overflowWrap: 'anywhere' }}>Your portal: lumiosports.com{sport === 'tenniscoach' ? `/tennis/coach/${typedSlug}` : sport === 'womens' ? `/womens/${typedSlug}` : `/${sport}/${typedSlug}`} — you can change this during setup.</p>
+                  : <p style={{ color: '#4B5563', fontSize: 11, marginTop: 5 }}>We&apos;ll give your portal a web address, which you can change during setup.</p>)}
               </div>
               <div>
                 <label style={{ color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Your sport</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                {/* As many columns as fit. Five fixed columns pushed the last tile off
+                    the edge of the card on a phone and made the page scroll sideways. */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(84px, 1fr))', gap: 8 }}>
                   {SPORTS.map(s => {
                     const isLive = LIVE_SPORTS.has(s.id)
                     const selected = sport === s.id
@@ -212,7 +246,7 @@ export default function SportsSignupPage() {
 
             <button onClick={handleSubmit} disabled={loading}
               style={{ width: '100%', marginTop: 20, padding: 14, borderRadius: 12, border: 'none', background: accent, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>
-              {loading ? 'Creating account...' : 'Create my account →'}
+              {loading ? 'Sending your code...' : 'Create my account →'}
             </button>
           </>
         )}
@@ -228,16 +262,16 @@ export default function SportsSignupPage() {
                   type="text" inputMode="numeric" maxLength={1} value={d}
                   onChange={e => handleDigitChange(i, e.target.value)}
                   onKeyDown={e => handleDigitKeyDown(i, e)}
-                  onPaste={i === 0 ? e => { e.preventDefault(); const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6); if (pasted.length > 0) { const next = ['','','','','','']; pasted.split('').forEach((c, j) => { next[j] = c }); setDigits(next); setTimeout(() => inputRefs.current[Math.min(pasted.length, 5)]?.focus(), 50) } } : undefined}
+                  onPaste={i === 0 ? e => { e.preventDefault(); const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6); if (pasted.length > 0) { const next = ['','','','','','']; pasted.split('').forEach((c, j) => { next[j] = c }); setDigits(next); setTimeout(() => inputRefs.current[Math.min(pasted.length, 5)]?.focus(), 50); if (pasted.length === 6) void verifyOtp(pasted) } } : undefined}
                   style={{ width: 48, height: 56, textAlign: 'center', fontSize: 22, fontWeight: 800, background: '#111318', border: d ? `1px solid ${accent}` : '1px solid #374151', borderRadius: 12, color: '#fff', outline: 'none' }} />
               ))}
             </div>
 
             {error && <p style={{ color: '#ef4444', fontSize: 12, textAlign: 'center', marginBottom: 12 }}>{error}</p>}
 
-            <button onClick={verifyOtp} disabled={loading}
+            <button onClick={() => verifyOtp()} disabled={loading}
               style={{ width: '100%', padding: 14, borderRadius: 12, border: 'none', background: accent, color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.6 : 1, marginBottom: 12 }}>
-              {loading ? 'Verifying...' : 'Verify & continue →'}
+              {loading ? (verified ? 'Creating your account...' : 'Verifying...') : (verified ? 'Try again →' : 'Verify & continue →')}
             </button>
 
             <div style={{ textAlign: 'center' }}>

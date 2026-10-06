@@ -19,17 +19,20 @@
 import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, dbUpdate, invalidateCoachTable } from '../_lib/coach-db'
-import { uploadMedia, confirmAndProcess, pollMedia, isProcessingStatus, processStageShort } from '../_lib/media-upload'
+import { useCoachTable, dbUpdate, invalidateCoachTable, sb } from '../_lib/coach-db'
+import { playerLabels, type Nameable } from '../_lib/tell-apart'
+import { uploadMedia, confirmAndProcess, pollMedia, isProcessingStatus, processStageShort, checkRecordings } from '../_lib/media-upload'
 
-type Media = { id: string; kind?: string | null; title?: string | null; player_name?: string | null; duration_seconds?: number | null; created_at?: string; clip_of?: string | null; shot_type?: string | null; shot_confirmed?: boolean | null; status?: string | null; review?: unknown }
+type Media = { id: string; kind?: string | null; title?: string | null; player_id?: string | null; player_name?: string | null; duration_seconds?: number | null; created_at?: string; clip_of?: string | null; shot_type?: string | null; shot_confirmed?: boolean | null; status?: string | null; review?: unknown }
 const SHOT_OPTIONS = ['serve', 'forehand', 'backhand', 'volley', 'smash'] as const
 const mmss = (s?: number | null) => { if (!s && s !== 0) return ''; const m = Math.floor((s || 0) / 60); return `${m}:${String(Math.round((s || 0) % 60)).padStart(2, '0')}` }
 const fmtDate = (d?: string) => { const t = d ? new Date(d) : null; return t && !isNaN(t.getTime()) ? t.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '' }
 
 export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { T: ThemeTokens; accent: AccentTokens; videoOn?: boolean; audioOn?: boolean }) {
   const media = useCoachTable<Media>('coach_media')
-  const { rows: players } = useCoachTable<{ id: string; name: string }>('coach_players')
+  const { rows: players } = useCoachTable<Nameable & { id: string; name: string }>('coach_players')
+  // Two players can share a name; the lists below say which is which.
+  const labelOf = playerLabels(players)
   const [tab, setTab] = useState<'video' | 'audio'>(videoOn ? 'video' : 'audio')
   const [playerFilter, setPlayerFilter] = useState('')
   const [recKind, setRecKind] = useState<'audio' | 'video'>(videoOn ? 'video' : 'audio')
@@ -43,6 +46,9 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
   const [phase, setPhase] = useState<'idle' | 'recording' | 'uploading'>('idle')
   const [secs, setSecs] = useState(0)
   const [err, setErr] = useState('')
+  // Something went wrong with a clip already in the library (delete, change of
+  // player). Shown above the clips, where the coach is looking.
+  const [clipErr, setClipErr] = useState('')
   const [play, setPlay] = useState<{ url: string; kind: string; title: string } | null>(null)
   // Media ids currently going through the AI pipeline (auto for audio, opt-in for
   // video), each mapped to the stage the server last reported — so a clip's card
@@ -55,19 +61,39 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
   const chunksRef = useRef<BlobPart[]>([])
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // When the current recording started — see rec.onstop.
+  const startedRef = useRef(0)
   // Guards the review poll loop against setting state after unmount.
   const aliveRef = useRef(true)
 
-  useEffect(() => () => { aliveRef.current = false; stopTracks(); if (timerRef.current) clearInterval(timerRef.current) }, [])
+  // Set back to true on every mount (React re-mounts once in development; a
+  // flag only ever set to false there stopped the page following a review).
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; stopTracks(); if (timerRef.current) clearInterval(timerRef.current) } }, [])
   const stopTracks = () => { streamRef.current?.getTracks().forEach(t => t.stop()); streamRef.current = null }
 
-  const inFilter = (m: Media) => (!playerFilter || (m.player_name || '') === playerFilter)
+  // The filter holds a player's ID. A clip belongs to them when it carries that
+  // id — or, for an old clip with a name and no id, when nobody else has the name.
+  const filterPlayer = players.find(p => p.id === playerFilter)
+  const lc = (v?: string | null) => String(v || '').trim().toLowerCase()
+  const filterNameIsTheirs = !!filterPlayer && players.filter(p => lc(p.name) === lc(filterPlayer.name)).length === 1
+  const inFilter = (m: Media) => !filterPlayer || (m.player_id ? m.player_id === filterPlayer.id : filterNameIsTheirs && lc(m.player_name) === lc(filterPlayer.name))
   // AI highlight clips (clip_of set, shot_type tag) live in the SAME library,
   // tagged — newest first so a session's clips sit near its recording.
   const clips = media.rows.filter(m => (m.kind || 'video') === tab && inFilter(m))
   const videoCount = media.rows.filter(m => (m.kind || 'video') === 'video').length
   const audioCount = media.rows.filter(m => m.kind === 'audio').length
   const bothOn = videoOn && audioOn
+  // Only the media this academy has switched on: with video off, video clips
+  // are not on this page, so they are not in its total either.
+  const libraryCount = (videoOn ? videoCount : 0) + (audioOn ? audioCount : 0)
+
+  // Escape closes the player, like every other pop-up in the portal.
+  useEffect(() => {
+    if (!play) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPlay(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [play])
 
   // Upload clips to coach_media through the SHARED flow (_lib/media-upload.ts) —
   // the same sign → upload → confirm-readable → process sequence the capture modal
@@ -75,14 +101,16 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
   // against processing a file storage can't hand back yet. Video is left at 'done'
   // (stored only, review is opt-in); audio is left as the sign route created it so
   // the AI pipeline below can take it straight through.
-  const runUploads = async (items: { blob: Blob; name: string; title: string; duration?: number }[]) => {
-    setPhase('uploading'); setErr('')
+  // `note` is anything the coach must still be told once the upload is under
+  // way — the files in their selection that were refused.
+  const runUploads = async (items: { blob: Blob; name: string; title: string; duration?: number }[], note = '') => {
+    setPhase('uploading'); setErr(note)
     setUp({ index: 0, total: items.length, pct: 0, note: '' })
     const audioIds: string[] = []
     try {
       const uploaded = await uploadMedia(items, {
         kind: recKind,
-        playerName: playerFilter || null,
+        playerId: filterPlayer?.id ?? null, playerName: filterPlayer?.name ?? null,
         onProgress: p => setUp({ index: p.index, total: p.total, pct: p.phase === 'uploading' ? p.pct : null, note: '' }),
         // Write the title/duration as each file lands, then show it straight away.
         afterEach: async m => {
@@ -95,7 +123,7 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
       })
       for (const u of uploaded) if (!u.isVideo) audioIds.push(u.id)
     }
-    catch (e) { setErr(e instanceof Error ? e.message : 'Upload failed') }
+    catch (e) { setErr([note, e instanceof Error ? e.message : 'The upload did not finish. Try again.'].filter(Boolean).join(' ')) }
     setUp(null)
     setPhase('idle')
     // Audio is always a session → run the AI review automatically. Each file is
@@ -143,18 +171,59 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
       rec.onstop = () => {
         const mime = rec.mimeType || (recKind === 'video' ? 'video/webm' : 'audio/webm')
         const blob = new Blob(chunksRef.current, { type: mime })
-        const dur = secs
+        // Measured from the clock. This used to read the on-screen counter,
+        // which this function had captured when recording STARTED — so every
+        // clip recorded in the browser was saved as 0:00.
+        const dur = Math.max(1, Math.round((Date.now() - startedRef.current) / 1000))
         stopTracks()
         const ext = mime.includes('mp4') ? (recKind === 'video' ? 'mp4' : 'm4a') : 'webm'
         runUploads([{ blob, name: `recording.${ext}`, title: `Court recording · ${new Date().toLocaleDateString('en-GB')}`, duration: dur }])
       }
-      recRef.current = rec; rec.start(); setPhase('recording'); setSecs(0)
+      recRef.current = rec; rec.start(); startedRef.current = Date.now(); setPhase('recording'); setSecs(0)
       timerRef.current = setInterval(() => setSecs(s => s + 1), 1000)
     } catch { setErr('Could not access the camera/microphone — check permissions.') }
   }
   const stopRecording = () => { if (timerRef.current) clearInterval(timerRef.current); if (recRef.current?.state !== 'inactive') recRef.current?.stop() }
 
-  const onPick = (files: File[]) => { if (files.length) runUploads(files.map(f => ({ blob: f as Blob, name: f.name, title: f.name.replace(/\.[a-z0-9]+$/i, '') }))) }
+  // The picker only suggests the right kind of file, so each one is checked:
+  // a video stays on the Video tab, audio on the Audio tab, and anything that is
+  // not a recording is refused by name before it is sent anywhere.
+  const onPick = (files: File[]) => {
+    if (fileRef.current) fileRef.current.value = ''   // so choosing the same file again is noticed
+    if (!files.length) return
+    const { ok, problem } = checkRecordings(files, [tab])
+    if (!ok.length) { setErr(problem); return }
+    void runUploads(ok.map(f => ({ blob: f as Blob, name: f.name, title: f.name.replace(/\.[a-z0-9]+$/i, '') })), problem)
+  }
+
+  // Put a clip against a player after the event. Until now the only way was to
+  // set the Player filter BEFORE uploading; a clip uploaded without one could
+  // never be given to anybody, so it could never reach a player's app.
+  const assignPlayer = async (m: Media, playerId: string) => {
+    const p = players.find(x => x.id === playerId)
+    const patch = { player_id: p?.id ?? null, player_name: p?.name ?? null }
+    setClipErr('')
+    try {
+      await dbUpdate('coach_media', m.id, patch)
+      // A recording's highlight clips are of the same player.
+      if (!m.clip_of) {
+        const { error } = await sb().from('coach_media').update(patch).eq('clip_of', m.id)
+        if (error) throw new Error(error.message)
+      }
+    } catch { setClipErr('The player could not be changed. Try again.') }
+    media.reload()
+  }
+
+  const removeClip = async (m: Media) => {
+    const cuts = media.rows.filter(x => x.clip_of === m.id).length
+    if (!confirm(cuts ? `Delete this recording and the ${cuts} highlight clip${cuts === 1 ? '' : 's'} cut from it?` : 'Delete this clip?')) return
+    setClipErr('')
+    try {
+      const r = await fetch(`/api/coach/media/${m.id}`, { method: 'DELETE' })
+      if (!r.ok) { const j = await r.json().catch(() => ({})); setClipErr(j.error || 'That clip could not be deleted. Try again.') }
+    } catch { setClipErr('That clip could not be deleted. Check your connection and try again.') }
+    media.reload()
+  }
 
   const openPlay = async (m: Media) => {
     try { const r = await fetch(`/api/coach/media/${m.id}`); const j = await r.json(); if (j.url) setPlay({ url: j.url, kind: m.kind || 'video', title: m.title || 'Clip' }) } catch { /* ignore */ }
@@ -195,15 +264,15 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
         <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: T.text3, marginBottom: 5 }}>Player</label>
         <select value={playerFilter} onChange={e => setPlayerFilter(e.target.value)} style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, minWidth: 220, cursor: 'pointer' }}>
           <option value="">All players</option>
-          {players.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+          {players.map(p => <option key={p.id} value={p.id}>{labelOf.get(p.id) || p.name}</option>)}
         </select>
       </div>
 
-      {/* Lumio Vision status */}
+      {/* What is in the library. This strip used to read "Lumio Vision ● Connected"
+          on every academy, including ones with no camera and nothing connected. */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>👁 Lumio Vision</span>
-        <span style={{ fontSize: 11.5, color: T.good }}>● Connected</span>
-        <span style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{media.rows.length} clip{media.rows.length === 1 ? '' : 's'} logged</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Your library</span>
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: T.text3 }}>{libraryCount} clip{libraryCount === 1 ? '' : 's'}</span>
       </div>
 
       {/* AI review notice — audio auto-runs, video is opt-in per clip */}
@@ -270,16 +339,17 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
                 </div>
               </div>
             )}
-            {err && <div style={{ fontSize: 12, color: T.bad, marginTop: 8 }}>{err}</div>}
+            {err && <div role="alert" style={{ fontSize: 12, color: T.bad, marginTop: 8 }}>{err}</div>}
           </>
         )}
       </div>
 
+      {clipErr && <div role="alert" style={{ fontSize: 12, color: T.bad, marginBottom: 10 }}>{clipErr}</div>}
       {/* Clips grid — recordings + tagged AI highlight clips together */}
       {clips.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px 20px', background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 12, fontSize: 12.5, color: T.text3 }}>No {tab} clips yet — record or upload one above.</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(220px, 100%), 1fr))', gap: 12 }}>
           {clips.map(m => (
             <div key={m.id} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, overflow: 'hidden' }}>
               <div onClick={() => openPlay(m)} style={{ position: 'relative', height: 124, background: `linear-gradient(135deg, ${accent.dim}, ${T.panel2})`, display: 'grid', placeItems: 'center', cursor: 'pointer' }}>
@@ -296,9 +366,14 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
                       {!m.shot_type && <option value="">—</option>}
                       {SHOT_OPTIONS.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                     </select>
+                    {/* "Shared" only when there is somebody it is shared WITH. A clip
+                        that belongs to no player reaches no player's app, however
+                        confirmed it is — so it says that instead. */}
                     {m.shot_confirmed
-                      ? <span style={{ fontSize: 10.5, color: T.good, fontWeight: 700, whiteSpace: 'nowrap' }} title="Shared with the player/parent">✓ Shared</span>
-                      : <button onClick={() => m.shot_type && confirmShot(m, m.shot_type)} disabled={!m.shot_type} title="Publish this clip to the player/parent app" style={{ appearance: 'none', border: 0, cursor: m.shot_type ? 'pointer' : 'not-allowed', background: accent.hex, color: T.btnText, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 700, fontFamily: FONT, opacity: m.shot_type ? 1 : 0.5, whiteSpace: 'nowrap' }}>Publish ✓</button>}
+                      ? (m.player_id
+                          ? <span style={{ fontSize: 10.5, color: T.good, fontWeight: 700, whiteSpace: 'nowrap' }} title="Shared with the player/parent">✓ Shared</span>
+                          : <span style={{ fontSize: 10.5, color: T.warn, fontWeight: 700, whiteSpace: 'nowrap' }} title="Nobody can see this clip yet. Choose a player below to share it.">Not shared</span>)
+                      : <button onClick={() => m.shot_type && confirmShot(m, m.shot_type)} disabled={!m.shot_type || !m.player_id} title={m.player_id ? 'Publish this clip to the player/parent app' : 'Choose a player below first — a clip with no player is shared with nobody'} style={{ appearance: 'none', border: 0, cursor: m.shot_type && m.player_id ? 'pointer' : 'not-allowed', background: accent.hex, color: T.btnText, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 700, fontFamily: FONT, opacity: m.shot_type && m.player_id ? 1 : 0.5, whiteSpace: 'nowrap' }}>Publish ✓</button>}
                   </div>
                 )}
                 {/* AI review — the same /api/coach/media/process pipeline as the
@@ -321,8 +396,14 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
                   )
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                  <span style={{ fontSize: 10, color: T.text3, flex: 1 }}>{[m.player_name, fmtDate(m.created_at)].filter(Boolean).join(' · ')}</span>
-                  <button onClick={() => { if (confirm('Delete this clip?')) fetch(`/api/coach/media/${m.id}`, { method: 'DELETE' }).then(() => media.reload()) }} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 13 }}>🗑</button>
+                  {/* Whose clip it is — and the place to change that. */}
+                  <select value={m.player_id || ''} onChange={e => { void assignPlayer(m, e.target.value) }} aria-label={`Player for ${m.title || 'this clip'}`}
+                    style={{ flex: 1, minWidth: 0, appearance: 'none', WebkitAppearance: 'none', cursor: 'pointer', background: 'transparent', color: m.player_id ? T.text2 : T.text3, border: `1px solid ${T.border}`, borderRadius: 6, padding: '3px 6px', fontSize: 10.5, fontFamily: FONT, outline: 'none', textOverflow: 'ellipsis' }}>
+                    <option value="">{m.player_id ? 'No player' : m.player_name ? `${m.player_name} (not on the roster)` : 'No player — choose one'}</option>
+                    {players.map(p => <option key={p.id} value={p.id}>{labelOf.get(p.id) || p.name}</option>)}
+                  </select>
+                  <span style={{ fontSize: 10, color: T.text3, flexShrink: 0 }}>{fmtDate(m.created_at)}</span>
+                  <button onClick={() => { void removeClip(m) }} aria-label={`Delete ${m.title || 'this clip'}`} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 13 }}>🗑</button>
                 </div>
               </div>
             </div>

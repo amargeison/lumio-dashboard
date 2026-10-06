@@ -3,11 +3,14 @@ import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { formLinkFor } from '@/lib/coach/camp-form-server'
 import { formEmailBlock } from '@/lib/coach/camp-form'
 import { publicSiteOrigin } from '@/lib/public-origin'
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { serviceClient } from '@/lib/coach/oauth'
+import { coachGate } from '@/lib/coach/membership'
 import { sendAsCoach } from '@/lib/coach/mail'
 import { sendEmail } from '@/lib/emails/send'
 import { calendarButtonsHtml, googleCalendarUrl, icsUrl, type CalendarEvent } from '@/lib/coach/calendar-links'
 import { notifyBooked } from '@/lib/coach/booking-notify'
+import { recipientFor } from '@/lib/coach/camp-email-build'
+import { logCampConfirmation } from '@/lib/coach/camp-signup-email'
 
 export const runtime = 'nodejs'
 
@@ -29,8 +32,12 @@ const prettyDate = (iso?: string | null) => {
 }
 
 export async function POST(req: NextRequest) {
-  const coachId = await sessionCoachId()
-  if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // The academy in the portal's address, and only its head coach (see coachGate):
+  // a coach who also helps at another academy must not act on their own club
+  // from inside the other one's portal.
+  const seat = await coachGate({ headOnly: true })
+  if (!seat.ok) return NextResponse.json({ error: seat.error }, { status: seat.status })
+  const coachId = seat.seat.academyId
   // A demo account is signed in too. Only a real academy may use this.
   if (!await isAcademyUser(coachId)) return notAnAcademy()
 
@@ -40,17 +47,20 @@ export async function POST(req: NextRequest) {
   try {
     const db = serviceClient()
     const { data: a } = await db.from('coach_camp_attendees')
-      .select('id, camp_id, player_id, player_name, parent_email, parent_name, status')
+      .select('id, camp_id, player_id, player_name, player_age, parent_email, parent_name, status')
       .eq('id', attendeeId).eq('coach_id', coachId).maybeSingle()
     if (!a) return NextResponse.json({ error: 'Attendee not found' }, { status: 404 })
     if ((a.status || '') === 'cancelled') return NextResponse.json({ sent: false, reason: 'cancelled' })
 
     const [{ data: camp }, { data: profile }, { data: player }] = await Promise.all([
-      db.from('coach_camps').select('id, name, start_date, end_date, location, region, board, price')
+      db.from('coach_camps').select('id, name, start_date, end_date, location, region, board, price, audience')
         .eq('id', a.camp_id).eq('coach_id', coachId).maybeSingle(),
       db.from('sports_profiles').select('brand_name, display_name, contact_email, brand_logo_url').eq('id', coachId).maybeSingle(),
       a.player_id
-        ? db.from('coach_players').select('name, age, email, contact_email, parent_email, parent_name, category').eq('id', a.player_id).maybeSingle()
+        // The player must be on THIS academy's roster. An attendee row can be
+        // made to point at any player id, and without this check the route
+        // read — and emailed — another academy's parent.
+        ? db.from('coach_players').select('name, age, email, contact_email, parent_email, parent_name, category').eq('id', a.player_id).eq('coach_id', coachId).maybeSingle()
         : Promise.resolve({ data: null }),
     ])
     if (!camp) return NextResponse.json({ error: 'Camp not found' }, { status: 404 })
@@ -76,6 +86,9 @@ export async function POST(req: NextRequest) {
       .filter(Boolean).join(' ')
     const inApp = await notifyBooked(db, {
       academyId: coachId,
+      // The player the place belongs to (only once checked above to be on this
+      // academy's roster) — a conversation belongs to a player, not to a name.
+      playerId: player ? a.player_id : null,
       playerName,
       kind: 'camp',
       title: camp.name,
@@ -90,12 +103,13 @@ export async function POST(req: NextRequest) {
 
     // ── By email ─────────────────────────────────────────────────────────
     // Under-16s: the parent. This mirrors resolveRecipient in the booking path.
-    const age = Number(player?.age) || 0
-    const isAdult = (player?.category || '').toLowerCase() === 'adult' || age >= 18
-    const parentTo = (a.parent_email || player?.parent_email || '').trim()
-    const playerTo = (player?.email || player?.contact_email || '').trim()
-    const to = isAdult ? (playerTo || parentTo) : (parentTo || (age === 0 ? playerTo : ''))
-    const greeting = isAdult ? (playerName.split(' ')[0] || 'there') : (a.parent_name || player?.parent_name || 'there')
+    // The rule itself is recipientFor — the same one every later camp email
+    // uses. This route had its own (18, not 16), so a 17-year-old's
+    // confirmation went to a parent and the rest of the countdown to the child.
+    const rec = recipientFor(camp, a, player)
+    const isAdult = !rec.toParent
+    const to = rec.to || ''
+    const greeting = rec.greeting
 
     let sentTo: string | null = null
     if (to) {
@@ -147,6 +161,14 @@ export async function POST(req: NextRequest) {
         }).catch(() => null)
         if (fb && !fb.error) sentTo = to
       } else sentTo = to
+      // On the camp's Emails tab, so "You're in" does not read "Not yet" for a
+      // family who has it — and so a confirmation that did not go is visible.
+      await logCampConfirmation(coachId, { campId: camp.id, attendeeId: a.id }, sentTo
+        ? { status: 'sent', subject }
+        : { status: 'failed', subject, error: 'the email could not be delivered' })
+    } else {
+      await logCampConfirmation(coachId, { campId: camp.id, attendeeId: a.id },
+        { status: 'skipped', error: 'no email address on file' })
     }
 
     return NextResponse.json({ ok: true, inApp, emailedTo: sentTo })

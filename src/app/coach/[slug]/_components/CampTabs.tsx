@@ -12,13 +12,15 @@
 // data: an empty camp looks empty, and the one thing that fills itself in is the
 // kit list, which is derived from the camp's own size rather than invented.
 
-import { useState, useEffect, useRef, type CSSProperties } from 'react'
+import { Fragment, useState, useEffect, useRef, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { RACKET_STAGES } from '../_lib/coach-db'
+import { RACKET_STAGES, dbInsert } from '../_lib/coach-db'
+import { playerLabels } from '../_lib/tell-apart'
 import { stageWords } from '../_lib/stage-words'
 import { avatarSrc } from '@/lib/avatar'
-import { campMoney, paidSoFar, balanceOwed } from '@/lib/coach/camp-money'
+import { campMoney, paidSoFar, balanceOwed, payState, isCancelled, PAY_STATE_LABEL } from '@/lib/coach/camp-money'
+import { formatPounds, parseAmount } from '@/lib/coach/money'
 import {
   buildCampKit, foldLooseItems, kitReadyCount, nextKitStatus, KIT_STATUS_LABEL,
   type KitCategory, type KitStatus,
@@ -31,7 +33,9 @@ export type TabCamp = {
   board?: string | null; overseas?: boolean | null; audience?: string | null
   equipment?: unknown; kit?: KitCategory[] | null
   objectives?: string[] | null; outcomes?: string[] | null
-  player_targets?: { player_name: string; stage?: string; goals?: string[]; measure?: string }[] | null
+  // attendee_id / player_id say WHOSE targets these are; rows written before
+  // those were stored carry only the name.
+  player_targets?: { player_name: string; attendee_id?: string | null; player_id?: string | null; stage?: string; goals?: string[]; measure?: string }[] | null
   costs?: { label: string; amount: number }[] | null
   payment_plan?: PaymentPlan | null
   itinerary?: unknown[] | null
@@ -58,8 +62,11 @@ type SaveAtt = (id: string, v: Record<string, unknown>) => Promise<void>
 const card = (T: ThemeTokens): CSSProperties => ({ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 })
 const box = (T: ThemeTokens): CSSProperties => ({ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' })
 const lbl = (T: ThemeTokens): CSSProperties => ({ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 })
-const money = (n: number) => `£${Math.round(n || 0).toLocaleString('en-GB')}`
-const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
+// Pounds and pence, the same as the Overview and the emails. This used to round
+// to whole pounds, so the Finance tab and the chase email disagreed by pennies.
+const money = (n: number) => formatPounds(n)
+// Array.from takes whole characters, so a name that starts with an emoji is not cut in half.
+const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => Array.from(w)[0]?.toUpperCase()).join('') || '?'
 const fmtD = (d?: string | null) => { const t = d ? new Date(d) : null; return t && !isNaN(t.getTime()) ? t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—' }
 const campDays = (c: TabCamp) => {
   if (c.start_date && c.end_date) {
@@ -311,9 +318,59 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
   const [allGoal, setAllGoal] = useState('')
   const [keepOwn, setKeepOwn] = useState(true)
   const [applying, setApplying] = useState('')
-  const taken = new Set(attendees.map(a => a.player_name.toLowerCase()))
+  const [adding, setAdding] = useState(false)
+  // A cancelled place is listed but does not take a spot.
+  const live = attendees.filter(a => (a.status || '') !== 'cancelled')
+  // Who is already on the camp, by roster record — two players can share a
+  // name. A place held by name only (no roster record) blocks that name.
+  const takenIds = new Set(live.map(a => a.player_id).filter(Boolean) as string[])
+  // (Not a public sign-up waiting to be matched: that is somebody who shares a
+  // name with a roster player, and must not stop the roster player being added.)
+  const takenNames = new Set(live.filter(a => !a.player_id && a.source !== 'signup').map(a => a.player_name.toLowerCase()))
+  // ── Matching a public sign-up to the roster ────────────────────────────────
+  // A sign-up whose name is already on the roster under a different email is
+  // saved with no player attached: it may be that child with a new address, or
+  // another child of the same name, and only the coach can say. Until they do,
+  // nothing of the roster player's is shown to (or taken from) this place.
+  const [linking, setLinking] = useState('')
+  const link = async (a: TabAttendee, playerId: string) => {
+    if (linking) return
+    setLinking(a.id); setErr('')
+    try { await editAtt(a.id, { player_id: playerId }) }
+    catch (e) { setErr(e instanceof Error ? e.message : 'Could not match them. Try again.') }
+    finally { setLinking('') }
+  }
+  const addToRoster = async (a: TabAttendee) => {
+    if (linking) return
+    setLinking(a.id); setErr('')
+    try {
+      // With a parent's name it is a child's place; without, an adult's own.
+      const made = await dbInsert('coach_players', {
+        name: a.player_name, age: a.player_age ?? null, phone: a.parent_phone || null,
+        medical_notes: a.medical_notes || null, consent_photo: !!a.consent_photo, consent_medical: !!a.consent_medical,
+        ...(a.parent_name ? { parent_name: a.parent_name, parent_email: a.parent_email || null } : { email: a.parent_email || null }),
+      }) as { id?: string } | null
+      if (!made?.id) throw new Error('They could not be added to the roster. Try again.')
+      await editAtt(a.id, { player_id: made.id })
+    } catch (e) { setErr(e instanceof Error ? e.message : 'They could not be added to the roster. Try again.') }
+    finally { setLinking('') }
+  }
   const cap = Number(camp.capacity) || 0
-  const left = cap ? Math.max(0, cap - attendees.length) : null
+  const left = cap ? Math.max(0, cap - live.length) : null
+
+  // One click, one place. The button is locked while the place is being saved
+  // (a double-click used to add the same player twice), and the database
+  // refuses a second place for the same player whatever the browser does.
+  const add = async () => {
+    const p = players.find(x => x.id === pick)
+    if (!p || adding) return
+    if (cap && live.length >= cap
+      && !confirm(`This camp is full — ${live.length} of ${cap} places are taken.\n\nAdd ${p.name} anyway? They will be place ${live.length + 1}, over the limit you set.`)) return
+    setAdding(true); setErr('')
+    try { await addPlayer(p.name, p.id); setPick('') }
+    catch (e) { setErr(e instanceof Error ? e.message : 'They could not be added. Try again.') }
+    finally { setAdding(false) }
+  }
 
   const save = async (id: string, v: Record<string, unknown>) => {
     setErr('')
@@ -342,9 +399,9 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
     <div style={card(T)}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap', alignItems: 'center' }}>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>
-          Attendees · {attendees.length}{cap ? ` of ${cap}` : ''}
+          Attendees · {live.length}{cap ? ` of ${cap}` : ''}
         </div>
-        {left !== null && <div style={{ marginLeft: 'auto', fontSize: 11.5, color: left === 0 ? T.warn : T.text3 }}>{left === 0 ? 'Full' : `${left} spot${left === 1 ? '' : 's'} left`}</div>}
+        {left !== null && <div style={{ marginLeft: 'auto', fontSize: 11.5, color: left === 0 ? T.warn : T.text3 }}>{live.length > cap ? `${live.length - cap} over the limit` : left === 0 ? 'Full' : `${left} spot${left === 1 ? '' : 's'} left`}</div>}
       </div>
 
       {/* ── Who is taking them ───────────────────────────────────────────────
@@ -370,8 +427,8 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
                 <span style={{ fontSize: 11.5, fontWeight: 600, color: T.text }}>{c.name}</span>
               </span>
             ))}
-            <span style={{ marginLeft: 'auto', fontSize: 11, color: attendees.length / coaches.length > 8 ? T.warn : T.text3 }}>
-              1 : {Math.ceil(attendees.length / coaches.length) || 0} players
+            <span style={{ marginLeft: 'auto', fontSize: 11, color: live.length / coaches.length > 8 ? T.warn : T.text3 }}>
+              1 : {Math.ceil(live.length / coaches.length) || 0} players
             </span>
           </>
         )}
@@ -380,10 +437,11 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         <select value={pick} onChange={e => setPick(e.target.value)} style={{ flex: 1, minWidth: 160, ...input(T), padding: '9px 11px', fontSize: 13 }}>
           <option value="">Add player from roster…</option>
-          {players.filter(p => !taken.has(p.name.toLowerCase())).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {/* Two players with the same name are told apart (age, parent…). */}
+          {players.filter(p => !takenIds.has(p.id) && !takenNames.has(p.name.toLowerCase())).map(p => <option key={p.id} value={p.id}>{playerLabels(players as Parameters<typeof playerLabels>[0]).get(p.id) || p.name}</option>)}
         </select>
-        <button onClick={async () => { const p = players.find(x => x.id === pick); if (p) { await addPlayer(p.name, p.id); setPick('') } }}
-          disabled={!pick} style={{ ...btn(T, accent, true), opacity: pick ? 1 : 0.5, cursor: pick ? 'pointer' : 'not-allowed' }}>+ Add</button>
+        <button onClick={() => void add()}
+          disabled={!pick || adding} style={{ ...btn(T, accent, true), opacity: pick && !adding ? 1 : 0.5, cursor: pick && !adding ? 'pointer' : 'not-allowed' }}>{adding ? 'Adding…' : '+ Add'}</button>
       </div>
 
       {/* One goal for everyone. Most camps have a theme, and typing it into
@@ -422,19 +480,24 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
               {attendees.map(a => {
                 const p = players.find(x => x.id === a.player_id)
                 const st = p ? RACKET_STAGES.find(s => s.id === p.racket_stage) : null
-                const took = paidSoFar(camp, a)
-                const owed = balanceOwed(camp, a)
-                const state: 'paid' | 'deposit' | 'unpaid' = a.paid || owed === 0 ? 'paid' : took > 0 ? 'deposit' : 'unpaid'
-                const tone = state === 'paid' ? T.good : state === 'deposit' ? T.warn : T.bad
+                // A cancelled place owes nothing: no balance, and no payment label
+                // that reads like a debt.
+                const gone = isCancelled(a)
+                const owed = gone ? 0 : balanceOwed(camp, a)
+                const state = payState(camp, a)
+                const tone = gone ? T.text3 : state === 'paid' ? T.good : state === 'deposit' ? T.warn : T.bad
                 const age = a.player_age || p?.age
                 const details = ([
                   ['Parent', a.parent_name || ''], ['Email', a.parent_email || ''], ['Phone', a.parent_phone || ''],
                   ['Emergency contact', a.emergency_contact || ''], ['Medical / allergies', a.medical_notes || ''],
                 ] as [string, string][]).filter(d => !!d[1])
                 const showing = openId === a.id
+                // A public sign-up not yet matched to anybody on the roster.
+                const unmatched = !a.player_id && a.source === 'signup'
+                const namesakes = unmatched ? players.filter(x => x.name.trim().toLowerCase() === a.player_name.trim().toLowerCase()) : []
                 return (
-                  <>
-                    <tr key={a.id}>
+                  <Fragment key={a.id}>
+                    <tr>
                       <td style={td}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           {p?.avatar_url
@@ -444,7 +507,9 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
                           <div style={{ minWidth: 0 }}>
                             <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap' }}>{a.player_name}</div>
                             <div style={{ display: 'flex', gap: 5, marginTop: 1 }}>
+                              {(a.status || '') === 'cancelled' && <span style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', color: T.text3, background: T.hover, borderRadius: 3, padding: '1px 4px' }}>Cancelled</span>}
                               {a.source === 'signup' && <span style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', color: accent.hex, background: accent.dim, borderRadius: 3, padding: '1px 4px' }}>Online</span>}
+                              {unmatched && <span style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', color: T.warn, background: `${T.warn}22`, borderRadius: 3, padding: '1px 4px', whiteSpace: 'nowrap' }}>Not on roster</span>}
                               {/* A medical note has to be visible without anyone opening anything. */}
                               {!!a.medical_notes && <span style={{ fontSize: 8, fontWeight: 700, textTransform: 'uppercase', color: T.bad, background: `${T.bad}22`, borderRadius: 3, padding: '1px 4px' }}>Medical</span>}
                             </div>
@@ -460,8 +525,8 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
                           : <span style={{ fontSize: 12, color: T.text3 }}>—</span>}
                       </td>
                       <td style={td}>
-                        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.06em', fontFamily: FONT_MONO, textTransform: 'uppercase', color: tone, background: `${tone}1F`, borderRadius: 4, padding: '2px 6px' }}>
-                          {state === 'paid' ? 'Paid' : state === 'deposit' ? 'Deposit' : 'Unpaid'}
+                        <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.06em', fontFamily: FONT_MONO, textTransform: 'uppercase', color: tone, background: `${tone}1F`, borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>
+                          {gone ? 'Cancelled' : PAY_STATE_LABEL[state]}
                         </span>
                       </td>
                       <td style={{ ...td, fontSize: 12, fontFamily: FONT_MONO, color: owed > 0 ? T.warn : T.text3 }}>{owed > 0 ? money(owed) : '—'}</td>
@@ -475,6 +540,29 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
                         <button onClick={() => { if (confirm(`Remove ${a.player_name} from this camp?`)) void remove(a.id) }} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15, marginLeft: 4 }}>×</button>
                       </td>
                     </tr>
+                    {unmatched && (
+                      <tr key={`${a.id}-m`}>
+                        <td colSpan={9} style={{ ...td, background: `${T.warn}10` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12, color: T.text2, lineHeight: 1.5 }}>
+                            <span style={{ flex: 1, minWidth: 220 }}>
+                              {namesakes.length
+                                ? <>{a.player_name} signed up online with an email address ({a.parent_email || 'none given'}) that is not on the record of the {namesakes[0].name} on your roster. Check whether this is the same person.</>
+                                : <>{a.player_name} signed up online and is not on your roster yet.</>}
+                            </span>
+                            {namesakes.map(n => (
+                              <button key={n.id} onClick={() => void link(a, n.id)} disabled={!!linking || takenIds.has(n.id)} title={takenIds.has(n.id) ? 'That player already has a place on this camp' : undefined}
+                                style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text, borderRadius: 7, padding: '5px 10px', fontSize: 11.5, cursor: linking ? 'wait' : 'pointer', fontFamily: FONT, opacity: takenIds.has(n.id) ? 0.5 : 1 }}>
+                                Same person — match to {n.name}{n.age ? ` (${n.age})` : ''}
+                              </button>
+                            ))}
+                            <button onClick={() => void addToRoster(a)} disabled={!!linking}
+                              style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text, borderRadius: 7, padding: '5px 10px', fontSize: 11.5, cursor: linking ? 'wait' : 'pointer', fontFamily: FONT }}>
+                              {linking === a.id ? 'Saving…' : namesakes.length ? 'Different person — add to roster' : 'Add to roster'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                     {showing && (
                       <tr key={`${a.id}-d`}>
                         <td colSpan={9} style={{ ...td, background: T.panel2 }}>
@@ -485,7 +573,7 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 )
               })}
             </tbody>
@@ -494,7 +582,7 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
       )}
 
       <div style={{ display: 'flex', gap: 14, marginTop: 12, flexWrap: 'wrap' }}>
-        {([['paid in full', T.good], ['deposit only', T.warn], ['unpaid', T.bad]] as [string, string][]).map(([l, c]) => (
+        {([['paid in full', T.good], ['part paid', T.warn], ['unpaid or awaiting payment', T.bad]] as [string, string][]).map(([l, c]) => (
           <span key={l} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, color: T.text3 }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: c }} />{l}
           </span>
@@ -521,7 +609,7 @@ export function TargetsBoard({ T, accent, camp, attendees, players, onSave, onRe
   const [draftText, setDraftText] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const [openName, setOpenName] = useState<string | null>(null)
+  const [openId, setOpenId] = useState<string | null>(null)
 
   const aiRewrite = async () => {
     setBusy(true); setErr('')
@@ -529,7 +617,11 @@ export function TargetsBoard({ T, accent, camp, attendees, players, onSave, onRe
       const r = await fetch('/api/coach/camp-targets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campId: camp.id }) })
       const d = await r.json()
       if (!r.ok) throw new Error(d.error || 'Could not work out the targets.')
-      await onSave({ objectives: d.targets || [], outcomes: d.outcomes || [] })
+      // Only a real list replaces what is saved. An empty answer is a failed
+      // attempt, and the targets the coach already has stay as they are.
+      const targetsNew = Array.isArray(d.targets) ? d.targets.filter((x: unknown) => String(x ?? '').trim()) : []
+      if (!targetsNew.length) throw new Error('Lumio Coach could not work out the targets. Nothing has been changed — try again.')
+      await onSave({ objectives: targetsNew, ...(Array.isArray(d.outcomes) && d.outcomes.length ? { outcomes: d.outcomes } : {}) })
     } catch (e) { setErr(e instanceof Error ? e.message : 'Could not work out the targets.') }
     finally { setBusy(false) }
   }
@@ -555,9 +647,19 @@ export function TargetsBoard({ T, accent, camp, attendees, players, onSave, onRe
     setEditing(null)
   }
 
-  const detailFor = (name: string) => perPlayer.find(t => (t.player_name || '').toLowerCase() === name.toLowerCase()) || null
-  const open = openName ? detailFor(openName) : null
-  const openAtt = openName ? attendees.find(a => a.player_name === openName) : null
+  // Targets belong to an attendee, not to a name: two children on one camp can
+  // share a name. Rows saved before the ids were stored are matched by name,
+  // and only when exactly one attendee has it.
+  const detailFor = (a: TabAttendee) =>
+    perPlayer.find(t => t.attendee_id && t.attendee_id === a.id)
+    || perPlayer.find(t => !t.attendee_id && t.player_id && t.player_id === a.player_id)
+    || (attendees.filter(x => x.player_name.toLowerCase() === a.player_name.toLowerCase()).length === 1
+      ? perPlayer.find(t => !t.attendee_id && !t.player_id && (t.player_name || '').toLowerCase() === a.player_name.toLowerCase())
+      : undefined)
+    || null
+  const openAtt = openId ? attendees.find(a => a.id === openId) || null : null
+  const open = openAtt ? detailFor(openAtt) : null
+  const openName = openAtt?.player_name || ''
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(330px, 1fr))', gap: 14, alignItems: 'start' }}>
@@ -633,12 +735,12 @@ export function TargetsBoard({ T, accent, camp, attendees, players, onSave, onRe
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {attendees.map(a => {
               const p = players.find(x => x.id === a.player_id)
-              const detail = detailFor(a.player_name)
+              const detail = detailFor(a)
               // The short goal on the attendee row is the coach's own and wins;
               // the AI's first target stands in until they write one.
               const line = (a.camp_goal || '').trim() || detail?.goals?.[0] || ''
               return (
-                <button key={a.id} onClick={() => setOpenName(a.player_name)}
+                <button key={a.id} onClick={() => setOpenId(a.id)}
                   style={{ appearance: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10 }}>
                   {p?.avatar_url
                     // eslint-disable-next-line @next/next/no-img-element
@@ -666,13 +768,13 @@ export function TargetsBoard({ T, accent, camp, attendees, players, onSave, onRe
       </div>
 
       {/* ── One player, in full ─────────────────────────────────────────── */}
-      {openName && (
-        <div onClick={e => { if (e.target === e.currentTarget) setOpenName(null) }}
+      {openAtt && (
+        <div onClick={e => { if (e.target === e.currentTarget) setOpenId(null) }}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '6vh 16px', overflowY: 'auto' }}>
           <div style={{ width: '100%', maxWidth: 620, ...card(T), padding: 22 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
               <div style={{ fontSize: 17, fontWeight: 700, color: T.text, flex: 1 }}>{openName}</div>
-              <button onClick={() => setOpenName(null)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 8, width: 30, height: 30, fontSize: 16, cursor: 'pointer' }}>×</button>
+              <button onClick={() => setOpenId(null)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 8, width: 30, height: 30, fontSize: 16, cursor: 'pointer' }}>×</button>
             </div>
             <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 14 }}>
               {camp.name} · {fmtD(camp.start_date)} – {fmtD(camp.end_date)}{open?.stage ? ` · ${open.stage}` : ''}
@@ -770,22 +872,44 @@ export function FinanceBoard({ T, accent, camp, attendees, editAtt, editCamp }: 
           <div style={{ fontSize: 11, color: T.text3, marginBottom: 12 }}>Type what you have actually received. Ticking somebody off marks them settled and stops the reminders.</div>
           {attendees.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No attendees yet.</div> : attendees.map(a => {
             const took = paidSoFar(camp, a)
-            const owed = balanceOwed(camp, a)
-            const state = a.paid || owed === 0 ? 'paid' : took > 0 ? 'deposit' : 'unpaid'
-            const tone = state === 'paid' ? T.good : state === 'deposit' ? T.warn : T.bad
+            const state = payState(camp, a)
+            const gone = isCancelled(a)
+            const tone = gone ? T.text3 : state === 'paid' ? T.good : state === 'deposit' ? T.warn : T.bad
+            // Money the coach records against a place that was waiting for an
+            // online payment settles that wait: the place is theirs, and the
+            // countdown emails stop treating it as unpaid.
+            const settle = (a.status || '') === 'pending' ? { status: 'confirmed' } : {}
+            // Ticking a waiting place also writes "nothing received" into the
+            // ledger, so that UNTICKING it can be told apart from a real deposit.
+            // Without that the amount the sign-up page asked for (never paid) was
+            // counted as collected the moment the tick came off.
+            const tick = (a.status || '') === 'pending' ? { status: 'confirmed', paid_pennies: a.paid_pennies ?? 0 } : {}
+            // An online sign-up that was asked to pay, and whose ledger says
+            // nothing has come in, is waiting for its payment again once the
+            // tick is removed.
+            const untick = (a.status || '') === 'confirmed' && a.source === 'signup' && (Number(a.amount_pennies) || 0) > 0 && a.paid_pennies === 0
+              ? { status: 'pending' } : {}
             return (
-              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderTop: `1px solid ${T.border}`, flexWrap: 'wrap' }}>
-                <input type="checkbox" checked={!!a.paid} onChange={e => void saveAtt(a.id, { paid: e.target.checked })} title="Fully paid" />
+              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderTop: `1px solid ${T.border}`, flexWrap: 'wrap', opacity: gone ? 0.6 : 1 }}>
+                <input type="checkbox" checked={!!a.paid} onChange={e => void saveAtt(a.id, { paid: e.target.checked, ...(e.target.checked ? tick : untick) })} title="Fully paid" />
                 <span style={{ flex: 1, minWidth: 110, fontSize: 12.5, color: T.text }}>{a.player_name}</span>
                 <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 3, fontSize: 12, fontFamily: FONT_MONO, color: T.text3 }}>
                   <span style={{ width: 74 }}>
-                    <CellInput T={T} value={took ? String(Math.round(took)) : ''} placeholder="0"
-                      onSave={v => { const n = Number(v.replace(/[^\d.]/g, '')) || 0; void saveAtt(a.id, { paid_pennies: Math.round(n * 100), paid: n >= (m.per || 0) && m.per > 0 }) }} width={74} />
+                    <CellInput T={T} value={took ? (took % 1 ? took.toFixed(2) : String(took)) : ''} placeholder="0"
+                      onSave={v => {
+                        // Read the way every other amount in the portal is: "20,50"
+                        // is £20.50 (it used to be read as £2,050 and tick the place
+                        // as paid), and anything that is not an amount is refused
+                        // with a message rather than guessed at. An empty box is £0.
+                        const got = v.trim() ? parseAmount(v, { allowZero: true }) : { ok: true as const, pounds: 0, pennies: 0 }
+                        if (!got.ok) { setErr(`${a.player_name}: ${got.error}`); return }
+                        void saveAtt(a.id, { paid_pennies: got.pennies, paid: m.per > 0 && got.pennies >= Math.round(m.per * 100), ...(got.pennies > 0 ? settle : {}) })
+                      }} width={74} />
                   </span>
                   <span>/ {money(m.per)}</span>
                 </span>
-                <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.06em', fontFamily: FONT_MONO, textTransform: 'uppercase', color: tone, background: `${tone}1F`, borderRadius: 4, padding: '2px 6px' }}>
-                  {state === 'paid' ? 'Paid' : state === 'deposit' ? 'Deposit' : 'Unpaid'}
+                <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.06em', fontFamily: FONT_MONO, textTransform: 'uppercase', color: tone, background: `${tone}1F`, borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>
+                  {gone ? 'Cancelled' : PAY_STATE_LABEL[state]}
                 </span>
               </div>
             )
@@ -925,7 +1049,15 @@ function nextMonthISO(start: string | null | undefined, index: number): string {
   // Count backwards from the camp so the last installment lands a month before it.
   d.setMonth(d.getMonth() - (3 - Math.min(2, index)))
   const today = new Date()
-  if (d.getTime() < today.getTime()) { d.setTime(today.getTime()); d.setMonth(d.getMonth() + index + 1) }
+  if (d.getTime() < today.getTime()) {
+    d.setTime(today.getTime()); d.setMonth(d.getMonth() + index + 1)
+    // Too close to the camp for monthly steps: the money is due before the
+    // first morning, not after it. The day before the camp is the latest.
+    if (start) {
+      const latest = new Date(base); latest.setDate(latest.getDate() - 1)
+      if (d.getTime() > latest.getTime()) d.setTime(Math.max(latest.getTime(), today.getTime()))
+    }
+  }
   return d.toISOString().slice(0, 10)
 }
 

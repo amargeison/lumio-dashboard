@@ -40,14 +40,18 @@ export const BLOCKED_MESSAGE = 'This email address cannot be used to sign in.'
 //
 // A membership is a fact about the person, so it holds whichever door they use.
 export async function isAcademyMember(email?: string | null): Promise<boolean> {
-  if (!email) return false
+  if (!email || email.includes('*')) return false
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) return false
   try {
     const admin = createClient(url, key, { auth: { persistSession: false } })
     const { data } = await admin.from('coach_members')
-      .select('id').ilike('email', email.trim().toLowerCase())
+      // The whole address, whatever its case — and nothing else. ilike is a
+      // pattern match, in which "_" and "%" are wildcards: a_b@x.com counted as
+      // invited because axb@x.com was. They are escaped here; "*" (the database
+      // API's own spelling of "%") cannot be, and is ruled out above.
+      .select('id').ilike('email', email.trim().toLowerCase().replace(/[\\%_]/g, m => `\\${m}`))
       .neq('status', 'revoked').limit(1)
     return !!data?.length
   } catch { return false }

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { randomInt } from 'crypto'
 import { isReservedEmail } from '@/lib/demo-visitor'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
+import { isValidEmail } from '@/app/api/sports-auth/_lib/account'
 
 function getSupabase() {
   return createClient(
@@ -25,7 +26,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || isReservedEmail(email)) {
+    // The same check sign-up uses, so the two cannot disagree about an address.
+    if (!isValidEmail(email) || isReservedEmail(email)) {
       return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 })
     }
     // One connection may ask for ten codes in ten minutes, whichever addresses
@@ -41,7 +43,14 @@ export async function POST(req: NextRequest) {
     if (await isEmailBlocked(email)) {
       return NextResponse.json({ error: BLOCKED_MESSAGE }, { status: 403 })
     }
-    if (!isMember && !isFounder && await isAcademyMember(email)) isMember = true
+    const invited = await isAcademyMember(email)
+    if (!isMember && !isFounder && invited) isMember = true
+    // A "member" is somebody a head coach has invited. Asking for a member's
+    // code for an address nobody invited used to store a code, and entering it
+    // then created a sign-in account for that address — for any address at all.
+    // No code is stored or sent. The answer is the same either way, so this
+    // route says nothing about who is and is not a member.
+    if (purpose === 'member' && !invited) return NextResponse.json({ success: true })
 
     // Generate 6-digit OTP (dev always returns 000000 for bypass)
     const code = process.env.NODE_ENV !== 'production'

@@ -20,6 +20,7 @@
 //      a free slot and a double booking.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { readHours } from './bookable-hours'
 import { getBusyTimes } from './calendar'
 import { campSpans, campsOn, type CampRow } from './camp-dates'
 
@@ -64,19 +65,7 @@ const addDays = (iso: string, n: number) => {
 /** "08:00 – 20:00", "8am-8pm", "07:30 to 21:00" → minutes. Falls back rather
     than refusing: a coach who typed something odd should still get a diary. */
 export function parseHours(v: unknown): { start: number; end: number } {
-  const s = String(v ?? '')
-  const nums = [...s.matchAll(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/gi)]
-  if (nums.length < 2) return DEFAULT_DAY
-  const at = (m: RegExpMatchArray) => {
-    let h = Number(m[1]) % 24
-    const mm = Number(m[2] || 0)
-    const ap = (m[3] || '').toLowerCase()
-    if (ap === 'pm' && h < 12) h += 12
-    if (ap === 'am' && h === 12) h = 0
-    return h * 60 + Math.min(59, mm)
-  }
-  const start = at(nums[0]), end = at(nums[nums.length - 1])
-  return end > start ? { start, end } : DEFAULT_DAY
+  return readHours(v) ?? DEFAULT_DAY
 }
 
 const overlaps = (aS: number, aE: number, bS: number, bE: number) => aS < bE && bS < aE

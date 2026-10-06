@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   }
 
   const b = (await req.json().catch(() => ({}))) as {
-    player?: string; focus?: string; note?: string; rating?: number | string; date?: string
+    player?: string; playerId?: string; focus?: string; note?: string; rating?: number | string; date?: string
   }
   const focus = String(b.focus ?? '').trim().slice(0, 300)
   const note = String(b.note ?? '').trim().slice(0, 4000)
@@ -63,7 +63,8 @@ export async function POST(req: NextRequest) {
   try {
     // The player's record, so the summary can say "still the same thing we
     // talked about in March" rather than treating every lesson as the first.
-    const context = await buildPlayerContext(supabase, b.player)
+    // By the player's id when the form knows it — two players can share a name.
+    const context = await buildPlayerContext(supabase, b.player, typeof b.playerId === 'string' && /^[0-9a-f-]{36}$/i.test(b.playerId) ? b.playerId : null)
 
     const task = lessonSummaryTask({
       player: String(b.player ?? '').slice(0, 80),

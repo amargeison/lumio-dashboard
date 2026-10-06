@@ -2,13 +2,31 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 import { generateSportsWelcomeEmail } from '@/lib/emails/welcome-sports'
-import { slugify } from '@/lib/sports-admin/portal-url'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { isReservedEmail } from '@/lib/demo-visitor'
+import { rateLimit, clientIp } from '@/lib/rate-limit'
+import { findAuthUserByEmail, isValidEmail, slugForName, cleanSlug, RESERVED_SLUGS, MAX_NAME, MAX_SLUG } from '../_lib/account'
 
 // All sport IDs the picker exposes
 const ALLOWED_SPORTS = new Set([
   'tennis','golf','darts','boxing','cricket','rugby','football','nonleague','grassroots','womens','junior','coach',
 ])
+
+// The address the caller is signed in as, if they are.
+async function signedInAs(): Promise<{ id: string; email: string } | null> {
+  try {
+    const cookieStore = await cookies()
+    if (!cookieStore.getAll().some(c => c.name.startsWith('sb-'))) return null
+    const ssr = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
+    )
+    const { data: { user } } = await ssr.auth.getUser()
+    return user?.email ? { id: user.id, email: user.email.toLowerCase() } : null
+  } catch { return null }
+}
 
 function getServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -24,26 +42,43 @@ function getServiceClient() {
 export async function POST(req: NextRequest) {
   let createdUserId: string | null = null
   try {
-    const body = await req.json()
-    const {
-      email,
-      displayName,
-      nickname,
-      sport,
-      brandName,
-      clubName,
-      avatarUrl,
-      brandLogoUrl,
-    } = body as Record<string, string | null | undefined>
+    const body = await req.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
+    }
+    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
+    const raw = body as Record<string, unknown>
+    const email = str(raw.email).toLowerCase()
+    const displayName = str(raw.displayName)
+    const nickname = str(raw.nickname) || null
+    const sport = str(raw.sport)
+    const avatarUrl = str(raw.avatarUrl) || null
+    const brandLogoUrl = str(raw.brandLogoUrl) || null
 
     // The signup form sends `clubName`; older callers send `brandName`. Accept
     // either and derive the portal slug from it so impersonation works.
-    const brand = brandName || clubName || null
-    const portalSlug = brand ? slugify(brand) : null
+    const brand = str(raw.brandName) || str(raw.clubName)
 
     if (!email || !displayName || !sport) {
       return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 })
     }
+    // Everything is checked BEFORE anything is created. A mistyped address used
+    // to be refused only when the code was sent — by which time the account and
+    // the academy already existed, holding the portal address for ever.
+    if (!isValidEmail(email)) {
+      return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 })
+    }
+    if (!brand) {
+      return NextResponse.json({ error: 'Enter your club or academy name.' }, { status: 400 })
+    }
+    if (displayName.length > MAX_NAME) {
+      return NextResponse.json({ error: `Your name is too long — please keep it under ${MAX_NAME} characters.` }, { status: 400 })
+    }
+    if (brand.length > MAX_NAME) {
+      return NextResponse.json({ error: `That club name is too long — please keep it under ${MAX_NAME} characters.` }, { status: 400 })
+    }
+    // Never blank: a name with no letters or numbers gets a generated address.
+    const portalSlug = slugForName(brand)
     // The stand-in accounts behind the shared demo code can never become real.
     if (isReservedEmail(email)) {
       return NextResponse.json({ error: 'That email address cannot be used to sign up.' }, { status: 400 })
@@ -54,15 +89,39 @@ export async function POST(req: NextRequest) {
 
     const supabase = getServiceClient()
 
-    // 1. Create the auth user (passwordless — login via OTP)
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      email_confirm: true,
-      user_metadata: { display_name: displayName, sport, plan: 'founding' },
-      // Mark as a founder up-front so the shared OTP verify route preserves the
-      // role (never downgrades them to a demo user) and skips the demo welcome.
-      app_metadata: { role: 'founder', sport },
-    })
+    // Who is asking. The sign-up page now checks the emailed code FIRST and
+    // creates the academy afterwards, so it arrives here signed in as the
+    // address it is signing up. A session for a different address is refused:
+    // nobody creates an academy in somebody else's name from their own login.
+    const session = await signedInAs()
+    if (session && session.email !== email) {
+      return NextResponse.json({ error: 'You are signed in with a different email address. Sign out first, then sign up again.' }, { status: 403 })
+    }
+    // …and with no session at all there is no proof the address is theirs.
+    // This used to carry on and create the account and the academy anyway, so
+    // anybody calling the route directly could set one up in a stranger's name
+    // and take the portal address with it. The emailed code is the proof, and
+    // entering it is what signs them in — so: no session, no academy.
+    if (!session) {
+      // Still counted, so the route cannot be used to hammer the server.
+      if (!rateLimit(`create-profile-ip:${clientIp(req.headers)}`, 10, 10 * 60_000).ok) {
+        return NextResponse.json({ error: 'Too many attempts. Try again in a few minutes.' }, { status: 429 })
+      }
+      return NextResponse.json({ error: 'Please confirm your email address first. Enter the code we emailed you, then try again.' }, { status: 401 })
+    }
+
+    // 1. Create the auth user (passwordless — login via OTP). Skipped when the
+    // caller is already signed in as this address: the account exists.
+    const { data: authData, error: authError } = session
+      ? { data: null, error: null }
+      : await supabase.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: { display_name: displayName, sport, plan: 'founding' },
+        // Mark as a founder up-front so the shared OTP verify route preserves the
+        // role (never downgrades them to a demo user) and skips the demo welcome.
+        app_metadata: { role: 'founder', sport },
+      })
 
     // An existing address is not necessarily a mistake.
     //
@@ -74,7 +133,7 @@ export async function POST(req: NextRequest) {
     //     address, which then splits one person across two accounts for ever.
     let userId: string
     if (authError || !authData?.user) {
-      const already = /already been registered|already exists|duplicate/i.test(authError?.message || '')
+      const already = !!session || /already been registered|already exists|duplicate/i.test(authError?.message || '')
       if (!already) {
         // Not a conflict — a real failure. "fetch failed" here means this server
         // could not reach Supabase at all, which is worth saying plainly rather
@@ -89,8 +148,10 @@ export async function POST(req: NextRequest) {
         }, { status: network ? 503 : 400 })
       }
 
-      const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 200 })
-      const existing = list?.users?.find(u => (u.email || '').toLowerCase() === email.toLowerCase())
+      // Every page, not just the first 200 — see findAuthUserByEmail.
+      const existing = session
+        ? (await supabase.auth.admin.getUserById(session.id)).data?.user ?? null
+        : await findAuthUserByEmail(supabase, email)
       if (!existing) {
         return NextResponse.json({ error: 'That email is already registered. Please sign in instead.' }, { status: 409 })
       }
@@ -124,34 +185,35 @@ export async function POST(req: NextRequest) {
     // "duplicate key value violates unique constraint" on the last step of
     // sign-up. Take the nearest free address instead (penrith-tennis-club-2);
     // they can change it during setup.
-    const RESERVED_SLUGS = new Set(['demo', 'admin', 'new', 'settings', 'login', 'signup', 'api', 'portal', 'lumio', 'test', 'sso', 'guides'])
     const slugTaken = async (s: string) => {
       if (RESERVED_SLUGS.has(s)) return true
       const { data } = await supabase.from('sports_profiles')
         .select('id').eq('sport', sport).ilike('portal_slug', s).neq('id', userId).limit(1)
       return !!(data as { id: string }[] | null)?.length
     }
+    // Room is left for the "-2" so a numbered address stays inside the limit.
+    const stem = cleanSlug(portalSlug.slice(0, MAX_SLUG - 5))
     let finalSlug = portalSlug
-    if (finalSlug && await slugTaken(finalSlug)) {
+    if (await slugTaken(finalSlug)) {
       let next: string | null = null
-      for (let i = 2; i <= 50 && !next; i++) if (!(await slugTaken(`${portalSlug}-${i}`))) next = `${portalSlug}-${i}`
-      finalSlug = next || `${portalSlug}-${Date.now().toString(36).slice(-4)}`
+      for (let i = 2; i <= 50 && !next; i++) if (!(await slugTaken(`${stem}-${i}`))) next = `${stem}-${i}`
+      finalSlug = next || `${stem}-${Date.now().toString(36).slice(-4)}`
     }
     const row = {
       id: userId,
       sport,
       display_name: displayName,
-      nickname: nickname ?? null,
-      avatar_url: avatarUrl ?? null,
+      nickname,
+      avatar_url: avatarUrl,
       brand_name: brand,
       portal_slug: finalSlug,
-      brand_logo_url: brandLogoUrl ?? null,
+      brand_logo_url: brandLogoUrl,
       plan: 'founding',
     }
     let { error: profileError } = await supabase.from('sports_profiles').insert(row)
-    if (profileError && finalSlug && (profileError.code === '23505' && /portal_slug/.test(profileError.message))) {
+    if (profileError && (profileError.code === '23505' && /portal_slug/.test(profileError.message))) {
       // Lost a race for the address between the check and the insert.
-      finalSlug = `${portalSlug}-${Date.now().toString(36).slice(-4)}`
+      finalSlug = `${stem}-${Date.now().toString(36).slice(-4)}`
       ;({ error: profileError } = await supabase.from('sports_profiles').insert({ ...row, portal_slug: finalSlug }))
     }
 
@@ -175,6 +237,25 @@ export async function POST(req: NextRequest) {
         },
         { status: 500 },
       )
+    }
+
+    // The head coach is a coach. Their own staff record used to be created only
+    // by finishing the setup wizard, so an academy that skipped it had a head
+    // coach on the Coaches page and "Coaches 0" in the Court Planner, and nobody
+    // to assign a booking or a home court to. Not fatal if it fails: the wizard
+    // still creates the record when it finds none.
+    if (sport === 'coach') {
+      try {
+        const { data: head } = await supabase.from('coach_staff')
+          .select('id').eq('coach_id', userId).eq('is_head', true).limit(1)
+        if (!(head as { id: string }[] | null)?.length) {
+          const { error: headErr } = await supabase.from('coach_staff')
+            .insert({ coach_id: userId, name: displayName, role: 'Head Coach', email, is_head: true })
+          if (headErr) console.error('[sports-auth] head coach record failed (non-fatal):', headErr.message)
+        }
+      } catch (e) {
+        console.error('[sports-auth] head coach record failed (non-fatal):', e)
+      }
     }
 
     // Send welcome email (non-blocking — don't fail signup if email fails)

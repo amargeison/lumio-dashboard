@@ -60,7 +60,9 @@ type Group = {
   /** A camp's own tab: the players in `records` are booked on this camp. */
   attendeesOf?: Rec
 }
-type FileState = { name: string; state: 'waiting' | 'reading' | 'done' | 'failed'; found?: number; error?: string; detail?: string; note?: string }
+type FileState = { name: string; state: 'waiting' | 'reading' | 'done' | 'failed'; found?: number; error?: string; detail?: string; note?: string
+  /** Rows that held something but were left out, each with its reason. */
+  skipped?: string[] }
 
 /** Handed to a parent (the onboarding wizard, the Settings modal) while records are found but not imported. */
 export type PendingImport = { count: number; run: () => Promise<boolean> }
@@ -147,12 +149,14 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
   // Spreadsheets: opened here, every tab. The AI sees a sample of each tab and
   // says what the columns mean; the rows are turned into records in the
   // browser, so a workbook of any size costs one short AI call per few tabs.
-  const readSpreadsheet = async (f: File, say: (d: string) => void): Promise<{ groups: Group[]; note?: string }> => {
+  const readSpreadsheet = async (f: File, say: (d: string) => void): Promise<{ groups: Group[]; note?: string; skipped?: string[] }> => {
     say('Opening…')
     let sheets: SheetData[]
     try { sheets = await readWorkbook(f) }
     catch { throw new Error('Could not open this spreadsheet. If it is password-protected, remove the password and try again.') }
     if (!sheets.length) throw new Error('This spreadsheet has no data in it.')
+    // Headings and nothing under them — a template nobody has filled in yet.
+    if (sheets.every(sh => sh.rows.length < 2)) throw new Error('This spreadsheet has column headings but no rows under them.')
 
     // Group the tab samples so each AI call stays small.
     const samples = sheets.map(sh => ({ name: sh.name, sample: sheetSample(sh) }))
@@ -186,6 +190,7 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
 
     const out: Group[] = []
     const toRead: SheetData[] = []
+    const leftOut: string[] = []
     let used = 0, skipped = 0
     for (const sh of sheets) {
       const mine = plans.filter(p => p.sheet === sh.name)
@@ -202,7 +207,7 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
           if (rec) { out.push(newGroup({ file: f.name, tab: sh.name, category, records: [rec], confidence: conf, reason: p.reason })); n++ }
         }
         if (p.category === 'skip') continue
-        const recs = applyPlan(p, sh.rows, sh.banners)
+        const recs = applyPlan(p, sh.rows, sh.banners, leftOut)
         // A tab that is one camp, with its children listed underneath: those
         // children are that camp's attendees, not just more players.
         const campRec = p.category === 'players' && p.tab_record?.category === 'camps' ? cleanRecord('camps', p.tab_record) : null
@@ -240,7 +245,9 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
     if (pieces.length > MAX_CHUNKS) notes.push('some very long tabs were only partly read')
     if (failed) notes.push(`${failed} part${failed === 1 ? '' : 's'} could not be read`)
     if (mapFailed) notes.push(`${mapFailed} tab${mapFailed === 1 ? '' : 's'} read the slow way`)
-    return { groups: out, note: notes.join(' · ') || undefined }
+    // Read, and nothing in it was a record: say that about this file, by name.
+    if (!out.some(g => g.records.length) && !leftOut.length) throw new Error('We could not find any players, coaches, camps, courts, equipment, payments or resources in this file.')
+    return { groups: out, note: notes.join(' · ') || undefined, skipped: leftOut }
   }
 
   const onFiles = async (list: FileList | File[]) => {
@@ -258,10 +265,14 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
       const say = (detail: string) => setFiles(fs => fs.map((x, j) => j === i ? { ...x, detail } : x))
       setFiles(fs => fs.map((x, j) => j === i ? { ...x, state: 'reading' } : x))
       try {
-        const { groups: g, note } = SPREADSHEET_RE.test(f.name) ? await readSpreadsheet(f, say) : await readDocument(f)
+        // A type the importer cannot open is refused here, by name, before
+        // anything is uploaded.
+        if (!ACCEPT.split(',').some(ext => f.name.toLowerCase().endsWith(ext))) throw new Error('This type of file cannot be imported. Use a spreadsheet (CSV or Excel), a PDF, a Word document or a photo.')
+        if (!f.size) throw new Error('This file is empty.')
+        const { groups: g, note, skipped } = SPREADSHEET_RE.test(f.name) ? await readSpreadsheet(f, say) : { ...(await readDocument(f)), skipped: undefined }
         found.push(...g)
         const n = g.reduce((s, x) => s + x.records.length, 0)
-        setFiles(fs => fs.map((x, j) => j === i ? { ...x, state: 'done', found: n, note, detail: undefined } : x))
+        setFiles(fs => fs.map((x, j) => j === i ? { ...x, state: 'done', found: n, note, skipped, detail: undefined } : x))
       } catch (e) {
         setFiles(fs => fs.map((x, j) => j === i ? { ...x, state: 'failed', error: e instanceof Error ? e.message : 'Could not read this file', detail: undefined } : x))
       }
@@ -270,7 +281,8 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
     setGroups(checked)
     setPicked(Object.fromEntries(IMPORT_CATEGORIES.map(c => [c, true])))
     const any = checked.some(g => g.records.length)
-    if (!any) setErr(e => e || 'We could not find any records in those files.')
+    // Each file says for itself why nothing came out of it (see fileList).
+    if (!any) setErr(e => e || 'Nothing was found to import. The reason is shown beside each file.')
     setStatus(any ? 'preview' : 'idle')
     if (fileRef.current) fileRef.current.value = ''
   }
@@ -300,6 +312,8 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
     setStatus('importing'); setErr('')
     let inserted = 0
     let needFiles = 0
+    // Records the academy already had, by category — left out by the server.
+    const already: Partial<Record<ImportCategory, number>> = {}
     const failures: string[] = []
     const rowsByCat = finalRecords(groups)
     for (const c of IMPORT_CATEGORIES) {
@@ -317,6 +331,7 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
           if (!res.ok) throw new Error(data.error || `Could not save ${CATEGORY_LABEL[c].toLowerCase()}`)
           inserted += Number(data.inserted) || 0
           needFiles += Number(data.needFiles) || 0
+          if (Number(data.already)) already[c] = (already[c] || 0) + Number(data.already)
         }
         invalidateCoachTable(TABLE[c])
         if (c === 'courts') invalidateCoachTable('coach_venues')   // importing courts creates their venues
@@ -334,13 +349,15 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ lists: campLists.map(l => ({ camp: { name: l.camp.name, start_date: l.camp.start_date }, attendees: l.attendees })) }),
         })
-        const data = await res.json().catch(() => ({})) as { error?: string; added?: number; camps?: { camp: string; added: number }[]; unmatched?: string[] }
+        const data = await res.json().catch(() => ({})) as { error?: string; added?: number; camps?: { camp: string; added: number; already?: number }[]; unmatched?: string[] }
         if (!res.ok) throw new Error(data.error || 'Could not add the camp attendees')
         const done = (data.camps || []).filter(c => c.added)
+        const there = (data.camps || []).filter(c => !c.added && c.already)
         if (done.length) {
           places = `${done.map(c => `${c.added} booked onto ${c.camp}`).join(', ')}. Automatic camp emails are paused for ${done.length === 1 ? 'that camp' : 'those camps'} — switch them on from the camp’s Emails tab when you are ready.`
           invalidateCoachTable('coach_camp_attendees'); invalidateCoachTable('coach_camps')
         }
+        if (there.length) places += `${places ? ' ' : ''}${there.map(c => `Everyone on the list for ${c.camp} was already booked onto it`).join('. ')}.`
         if (data.unmatched?.length) places += ` Could not find a camp called ${data.unmatched.map(n => `“${n}”`).join(', ')} to book onto.`
       } catch (e) {
         failures.push(e instanceof Error ? e.message : 'Could not add the camp attendees')
@@ -352,9 +369,17 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
       if (inserted) onImported?.()
       return false
     }
-    setResult(`Imported ${inserted} record${inserted === 1 ? '' : 's'} ✓`)
+    const thereCount = Object.values(already).reduce((a, b) => a + (b || 0), 0)
+    setResult(inserted || !thereCount ? `Imported ${inserted} record${inserted === 1 ? '' : 's'} ✓` : 'Nothing new to import ✓')
+    // What was left out because the academy already has it, so importing a
+    // file a second time is plainly seen to have added nothing twice.
+    const thereNote = thereCount
+      ? `${thereCount} ${thereCount === 1 ? 'was' : 'were'} already there and ${thereCount === 1 ? 'was' : 'were'} not added again: ${IMPORT_CATEGORIES.filter(c => already[c]).map(c => `${already[c]} in ${CATEGORY_LABEL[c].toLowerCase()}`).join(', ')}.`
+      : ''
+    const leftOutCount = files.reduce((n, f) => n + (f.skipped?.length || 0), 0)
+    const leftOutNote = leftOutCount ? `${leftOutCount} row${leftOutCount === 1 ? ' was' : 's were'} left out: ${files.flatMap(f => f.skipped || []).slice(0, 3).join('; ')}${leftOutCount > 3 ? `; and ${leftOutCount - 3} more` : ''}.` : ''
     // A spreadsheet carries the list of resources, not the files themselves.
-    setFileNote([places, needFiles ? `${needFiles} resource${needFiles === 1 ? '' : 's'} came in without a working link. Open the Resource Centre and press “+ Add link” or “Upload file” on each card.` : ''].filter(Boolean).join(' '))
+    setFileNote([thereNote, leftOutNote, places, needFiles ? `${needFiles} resource${needFiles === 1 ? '' : 's'} came in without a working link. Open the Resource Centre and press “+ Add link” or “Upload file” on each card.` : ''].filter(Boolean).join(' '))
     setStatus('done')
     onImported?.()
     return true
@@ -385,7 +410,13 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12, color: T.text2 }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📄 {f.name}</span>
           <span style={{ flex: 'none', maxWidth: '60%', textAlign: 'right', color: f.state === 'failed' ? '#EF4444' : f.state === 'done' ? '#22C55E' : T.text3 }} title={f.error || f.note}>
-            {f.state === 'waiting' ? 'Waiting…' : f.state === 'reading' ? (f.detail || 'Reading…') : f.state === 'done' ? `${f.found} found${f.note ? ` · ${f.note}` : ''}` : (f.error || 'Could not read')}
+            {f.state === 'waiting' ? 'Waiting…' : f.state === 'reading' ? (f.detail || 'Reading…') : f.state === 'done' ? `${f.found} found${f.note ? ` · ${f.note}` : ''}` : `Not imported: ${f.error || 'this file could not be read.'}`}
+            {/* Rows that held something and were left out, with why. */}
+            {!!f.skipped?.length && (
+              <span style={{ display: 'block', color: '#B45309', marginTop: 2 }}>
+                {f.skipped.length} row{f.skipped.length === 1 ? '' : 's'} left out: {f.skipped.slice(0, 3).join('; ')}{f.skipped.length > 3 ? `; and ${f.skipped.length - 3} more` : ''}
+              </span>
+            )}
           </span>
         </div>
       ))}
@@ -402,7 +433,9 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
 
       {(status === 'idle' || status === 'reading') && (
         <div>
-          {status === 'reading' && fileList}
+          {/* Shown after a read that found nothing as well, so each file's own
+              reason stays on screen instead of one line for all of them. */}
+          {fileList}
           <button onClick={() => fileRef.current?.click()} disabled={status === 'reading'}
             onDragOver={e => { e.preventDefault(); if (status === 'idle') setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}
@@ -462,7 +495,7 @@ export function CoachImport({ T, accent, onImported, onPendingChange }: {
           )}
 
           {/* ── What will be imported ───────────────────────────────────────── */}
-          <p style={{ fontSize: 12.5, color: T.text2, margin: '0 0 12px' }}>Ready to import <b style={{ color: T.text }}>{totalSelected}</b> record{totalSelected === 1 ? '' : 's'}. Duplicates have been merged. Untick anything you don&apos;t want:</p>
+          <p style={{ fontSize: 12.5, color: T.text2, margin: '0 0 12px' }}>Ready to import <b style={{ color: T.text }}>{totalSelected}</b> record{totalSelected === 1 ? '' : 's'}. Anything listed twice in these files has been merged, and anything your academy already has will be left out when you import. Untick anything you don&apos;t want:</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
             {IMPORT_CATEGORIES.filter(c => (final[c]?.length ?? 0) > 0).map(c => {
               const rows = final[c] || []

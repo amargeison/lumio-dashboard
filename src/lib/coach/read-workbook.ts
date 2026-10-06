@@ -26,6 +26,28 @@ export const SPREADSHEET_RE = /\.(xlsx|xlsm|xlsb|xls|ods|csv|tsv)$/i
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
+/**
+ * The text of a CSV, whatever it was saved as.
+ *
+ * Excel's plain "CSV (Comma delimited)" is written in Windows-1252, not UTF-8.
+ * Read as UTF-8, every £ and every accented letter in it becomes "�": Zoë
+ * arrived as "Zo�", and "£120.00" could not be read as an amount at all, so
+ * the payment came in with no value. So: UTF-8 when the bytes are valid UTF-8
+ * (which also covers plain English text), Excel's "Unicode Text" when the file
+ * says so with its first two bytes, and Windows-1252 otherwise.
+ */
+export function decodeText(bytes: Uint8Array): string {
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder('utf-16le').decode(bytes.subarray(2))
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) return new TextDecoder('utf-16be').decode(bytes.subarray(2))
+  try {
+    // fatal: throws on any byte sequence that is not UTF-8. A leading byte-order
+    // mark is dropped by the decoder.
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    return new TextDecoder('windows-1252').decode(bytes)
+  }
+}
+
 /** Every non-empty tab as rows of trimmed text. Dates come out as YYYY-MM-DD. */
 export async function readWorkbook(file: File): Promise<SheetData[]> {
   const mod = await import('xlsx')
@@ -36,7 +58,7 @@ export async function readWorkbook(file: File): Promise<SheetData[]> {
   const wb = isText
     // raw: keep "12/03/2026" as typed, rather than letting the parser guess it
     // is an American date.
-    ? XLSX.read(await file.text(), { type: 'string', raw: true, FS: name.endsWith('.tsv') ? '\t' : undefined })
+    ? XLSX.read(decodeText(new Uint8Array(await file.arrayBuffer())), { type: 'string', raw: true, FS: name.endsWith('.tsv') ? '\t' : undefined })
     : XLSX.read(await file.arrayBuffer(), { type: 'array', cellNF: true, cellHTML: false, cellFormula: false, cellStyles: false, sheetStubs: false })
 
   const out: SheetData[] = []

@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 import { portalUrlFor } from '@/lib/sports-admin/portal-url'
+import { clearPrivateCaches } from '@/components/PwaInstaller'
 
 function getSupabase() {
   return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
@@ -45,6 +46,18 @@ function founderDest(info: IdentifyResult): string {
   return `/${sport}/app`
 }
 
+// Where somebody asked to go after signing in (?redirectTo=…). It comes from the
+// address bar, so only a path on this site is honoured — never another site.
+function safePath(v: string): string {
+  return /^\/(?![\/\\])/.test(v) && !/[\\\u0000-\u001f]/.test(v) ? v : ''
+}
+
+// The academy in a coach-portal address (/tennis/coach/<academy>), if it is one.
+function coachSlugOf(path: string): string | null {
+  const m = /^\/(?:tennis\/)?coach\/([^/?#]+)/.exec(path)
+  return m ? m[1].toLowerCase() : null
+}
+
 // A partner academy's colours and name, for /login/<their-slug>. Absent on the
 // plain Lumio sign-in, which keeps its own look.
 export type PartnerBrand = {
@@ -76,7 +89,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
   const P = brand ? paletteFor(brand) : LUMIO
   const router = useRouter()
   const params = useSearchParams()
-  const intendedRedirect = params.get('redirectTo') || ''
+  const intendedRedirect = safePath(params.get('redirectTo') || '')
   const prefillEmail = params.get('email') || ''
 
   const [step, setStep] = useState<'email' | 'otp' | 'choose' | 'unknown'>('email')
@@ -97,7 +110,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
 
   // Step 1: Identify user type
   const handleEmailSubmit = async () => {
-    if (!email || !email.includes('@')) { setError('Enter a valid email.'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Enter a valid email address.'); return }
     setLoading(true); setError('')
     try {
       const res = await fetch('/api/sports-auth/identify-user', {
@@ -105,7 +118,8 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
       })
-      const data: IdentifyResult = await res.json()
+      const data: IdentifyResult & { error?: string } = await res.json().catch(() => ({ type: null }))
+      if (!res.ok || !data.type) throw new Error(data.error || 'We could not check that address just now. Please try again.')
       setUserInfo(data)
 
       if (data.type === 'founder') {
@@ -113,7 +127,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         const otpRes = await fetch('/api/sports-demo/send-otp', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), sport: data.founderSport || data.sport, clubName: data.founderBrand || undefined, purpose: 'founder' }),
+          body: JSON.stringify({ email: email.trim(), sport: data.founderSport || data.sport, purpose: 'founder' }),
         })
         const otpData = await otpRes.json().catch(() => ({}))
         if (!otpRes.ok || otpData.error) throw new Error(otpData.error || 'Failed to send code')
@@ -129,7 +143,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         // Supabase's own email was sending a link while the page asked for a code.
         const otpRes = await fetch('/api/sports-demo/send-otp', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), sport: 'coach', clubName: data.clubName || undefined, purpose: 'member' }),
+          body: JSON.stringify({ email: email.trim(), sport: 'coach', purpose: 'member' }),
         })
         const otpData = await otpRes.json().catch(() => ({}))
         if (!otpRes.ok || otpData.error) throw new Error(otpData.error || 'Failed to send code')
@@ -165,7 +179,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
       if (path === 'founder') {
         const otpRes = await fetch('/api/sports-demo/send-otp', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), sport: userInfo.founderSport || userInfo.sport, clubName: userInfo.founderBrand || undefined, purpose: 'founder' }),
+          body: JSON.stringify({ email: email.trim(), sport: userInfo.founderSport || userInfo.sport, purpose: 'founder' }),
         })
         const otpData = await otpRes.json().catch(() => ({}))
         if (!otpRes.ok || otpData.error) throw new Error(otpData.error || 'Failed to send code')
@@ -181,9 +195,37 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
     setLoading(false)
   }
 
-  // Step 2: Verify OTP
-  const verifyOtp = async () => {
-    const code = digits.join('')
+  // Before the code is entered the server says only WHICH KIND of account an
+  // address has — it will not tell a stranger whose academy it is. Once the
+  // code has passed we are signed in as that address, and asking again returns
+  // where this person's own portal is.
+  const whereAmIGoing = async (): Promise<IdentifyResult> => {
+    try {
+      const res = await fetch('/api/sports-auth/identify-user', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+      const mine = await res.json()
+      return res.ok && mine?.type ? { ...userInfo, ...mine } : userInfo
+    } catch { return userInfo }
+  }
+
+  // A link back to one academy's portal is only followed by somebody who
+  // belongs there. On a shared computer the last coach's sign-out leaves their
+  // portal address in ?redirectTo, and the next coach to sign in was sent to
+  // it; they now land in their own.
+  const destination = (own: string) => {
+    if (!intendedRedirect) return own
+    const wanted = coachSlugOf(intendedRedirect)
+    if (wanted && wanted !== coachSlugOf(own)) return own
+    return intendedRedirect
+  }
+
+  // Step 2: Verify OTP. `typed` is the code as just typed or pasted — state has
+  // not caught up yet when the sixth digit goes in, which is why submitting on
+  // the last digit used to complain that the code was incomplete.
+  const verifyOtp = async (typed?: string) => {
+    const code = typed ?? digits.join('')
     if (code.length < 6) { setError('Enter the 6-digit code.'); return }
     setLoading(true); setError('')
     try {
@@ -196,8 +238,11 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         })
         const data = await res.json().catch(() => ({}))
         if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
+        // A new person on this device: nothing an older service worker kept
+        // for the last one may be shown to them (see clearPrivateCaches).
+        await clearPrivateCaches()
         // Hard navigation so the portal reads the freshly-minted session cookie.
-        window.location.href = intendedRedirect || founderDest(userInfo)
+        window.location.href = destination(founderDest(await whereAmIGoing()))
         return
       } else if (effectiveType === 'member') {
         // purpose:'member' mints the Supabase session WITHOUT writing a demo lead
@@ -211,9 +256,10 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
         // A coach uses the REAL portal, scoped by row level security. Customers
         // keep /portal, which is built for them.
-        const dest = userInfo.memberDest || '/portal'
+        await clearPrivateCaches()   // as above: nothing kept for the last person on this device
+        const dest = (await whereAmIGoing()).memberDest || '/portal'
         // Hard navigation so the portal reads the freshly-minted session cookie.
-        window.location.href = intendedRedirect || dest
+        window.location.href = destination(dest)
         return
       } else if (effectiveType === 'demo') {
         const res = await fetch('/api/sports-demo/verify-otp', {
@@ -230,6 +276,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         })
         const data = await res.json()
         if (!data.success && !data.verified) throw new Error(data.error || 'Invalid code')
+        const known = await whereAmIGoing()
 
         const sport = userInfo.demoSport || userInfo.sport || 'darts'
         // Coach demo lives at /tennis/coach/demo; other sports at /{sport}/{sport}-demo.
@@ -260,9 +307,9 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         // New user — fall through to normal restore with whatever we know from identify
         const restoreParams = new URLSearchParams({
           restore: 'true',
-          ...(userInfo.userName ? { name: userInfo.userName } : {}),
-          ...(userInfo.clubName ? { club: userInfo.clubName } : {}),
-          ...(userInfo.role ? { role: userInfo.role } : {}),
+          ...(known.userName ? { name: known.userName } : {}),
+          ...(known.clubName ? { club: known.clubName } : {}),
+          ...(known.role ? { role: known.role } : {}),
         })
         router.push(`${demoBase}?${restoreParams}`)
       }
@@ -286,7 +333,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
     setDigits(next)
     if (char && index < 5) inputRefs.current[index + 1]?.focus()
     if (next.every(d => d) && next.join('').length === 6) {
-      setTimeout(() => verifyOtp(), 50)
+      void verifyOtp(next.join(''))
     }
   }
 
@@ -304,6 +351,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
       pasted.split('').forEach((char, j) => { next[j] = char })
       setDigits(next)
       setTimeout(() => inputRefs.current[Math.min(pasted.length, 5)]?.focus(), 50)
+      if (pasted.length === 6) void verifyOtp(pasted)
     }
   }
 
@@ -390,7 +438,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
               ))}
             </div>
             {error && <p style={{ color: '#ef4444', fontSize: 12, textAlign: 'center', marginBottom: 12 }}>{error}</p>}
-            <button onClick={verifyOtp} disabled={loading}
+            <button onClick={() => verifyOtp()} disabled={loading}
               style={{ width: '100%', background: P.accent, color: P.onAccent, border: 'none', borderRadius: 12, padding: 14, fontSize: 15, fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.6 : 1, marginBottom: 12 }}>
               {loading ? 'Verifying...' : 'Verify code'}
             </button>

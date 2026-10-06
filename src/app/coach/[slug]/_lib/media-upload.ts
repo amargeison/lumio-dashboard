@@ -24,6 +24,7 @@
 //    supabase-js and simply report indeterminate progress.
 
 import { sb } from './coach-db'
+import { mediaKindOf, type MediaKind } from '@/lib/coach/media-rules'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
@@ -46,15 +47,36 @@ export type UploadedMedia = { id: string; isVideo: boolean; index: number; item:
 
 type SignResponse = { id: string; path: string; token: string; signedUrl?: string }
 
+// ── Step 0 — is each chosen file a recording at all? ─────────────────────────
+// A file picker's "video files only" is a suggestion: "All files" or a drag and
+// drop gets anything through. So every picked file is checked here, before a
+// byte is sent, and the ones that are not recordings of the kind this screen
+// takes are named back to the coach. (The server checks again — see
+// /api/coach/media/sign.)
+export function checkRecordings(files: File[], allowed: MediaKind[]): { ok: File[]; problem: string } {
+  const ok: File[] = []
+  const refused: string[] = []
+  for (const f of files) {
+    const kind = mediaKindOf(f.name, f.type)
+    if (kind && allowed.includes(kind)) ok.push(f); else refused.push(`“${f.name}”`)
+  }
+  if (!refused.length) return { ok, problem: '' }
+  const only = allowed.length > 1 ? 'Only audio and video recordings can be added here.'
+    : allowed[0] === 'video' ? 'Only video files can be added on the Video tab.'
+    : 'Only audio files can be added on the Audio tab.'
+  return { ok, problem: `${refused.join(', ')} ${refused.length === 1 ? 'was' : 'were'} not uploaded. ${only}` }
+}
+
 // ── Step 1 — mint the signed upload URL (server also creates the coach_media row)
-async function signUpload(kind: 'audio' | 'video', playerName: string | null | undefined, fileName: string): Promise<SignResponse> {
+async function signUpload(kind: 'audio' | 'video', playerName: string | null | undefined, fileName: string, playerId?: string | null): Promise<SignResponse> {
   const res = await fetch('/api/coach/media/sign', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ kind, playerName: playerName || null, fileName }),
+    // The player's id goes too: a name cannot say which of two namesakes is meant.
+    body: JSON.stringify({ kind, playerName: playerName || null, playerId: playerId || null, fileName }),
   })
   if (res.status === 401) throw new Error(SIGNED_OUT_MESSAGE)
   const j = await res.json().catch(() => ({} as Record<string, string>))
-  if (!res.ok) throw new Error(j.error || `Could not start upload (${res.status})`)
+  if (!res.ok) throw new Error(j.error || 'The upload could not be started. Try again in a moment.')
   return j as SignResponse
 }
 
@@ -159,6 +181,7 @@ export async function uploadMedia(
   opts: {
     kind: 'audio' | 'video'
     playerName?: string | null
+    playerId?: string | null
     onProgress?: (p: UploadProgress) => void
     // Runs after each file lands — used to write title/duration onto the row.
     afterEach?: (m: UploadedMedia) => void | Promise<void>
@@ -171,8 +194,11 @@ export async function uploadMedia(
     const report = (phase: UploadPhase, pct: number | null) =>
       opts.onProgress?.({ phase, index: i, total, pct, fileName: item.name })
     report('signing', null)
-    const isVideo = item.blob.type.startsWith('video') || (!item.blob.type && opts.kind === 'video')
-    const sign = await signUpload(isVideo ? 'video' : 'audio', opts.playerName, item.name)
+    // What the file IS, not merely which tab it was picked on: the callers have
+    // already refused anything that is not a recording (checkRecordings), and
+    // a clip recorded in the browser carries its own type.
+    const isVideo = (mediaKindOf(item.name, item.blob.type) ?? opts.kind) === 'video'
+    const sign = await signUpload(isVideo ? 'video' : 'audio', opts.playerName, item.name, opts.playerId)
     report('uploading', 0)
     await uploadBlob(sign, item.blob, pct => report('uploading', pct))
     report('uploading', 100)

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { providerConfig, providerConfigured, redirectUri, publicOrigin, sessionCoachId, OAUTH_PROVIDERS, type Provider } from '@/lib/coach/oauth'
+import { safeReturnPath } from '../../safe-return'
 
 // Kicks off the OAuth consent flow for Google / Microsoft. The coach hits this
 // from Settings → Connected accounts; we stash a CSRF state + return path in
@@ -8,7 +9,8 @@ import { providerConfig, providerConfigured, redirectUri, publicOrigin, sessionC
 export async function GET(req: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
   const { provider: raw } = await params
   const provider = raw as Provider
-  const ret = req.nextUrl.searchParams.get('return') || '/'
+  // A path on this site only — see safeReturnPath.
+  const ret = safeReturnPath(req.nextUrl.searchParams.get('return'))
   const back = (status: string) => {
     const sep = ret.includes('?') ? '&' : '?'
     // publicOrigin, not req.nextUrl.origin — behind nginx the latter is the

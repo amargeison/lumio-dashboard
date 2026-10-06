@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { safeReturnPath } from '../../safe-return'
 import { exchangeCode, emailFromIdToken, redirectUri, publicOrigin, upsertConnection, capabilitiesFromScopes, sessionCoachId, OAUTH_PROVIDERS, type Provider } from '@/lib/coach/oauth'
 
 // OAuth redirect target. Verifies CSRF state, swaps the code for tokens, stores
@@ -9,7 +10,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ prov
   const provider = raw as Provider
   const cookieStore = await cookies()
   const savedState = cookieStore.get(`lumio_oauth_state_${provider}`)?.value
-  const ret = cookieStore.get(`lumio_oauth_return_${provider}`)?.value || '/'
+  // Checked again on the way back: a cookie is no more trustworthy than the
+  // address it was copied from.
+  const ret = safeReturnPath(cookieStore.get(`lumio_oauth_return_${provider}`)?.value)
 
   const done = (status: string) => {
     const sep = ret.includes('?') ? '&' : '?'

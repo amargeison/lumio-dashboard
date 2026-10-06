@@ -13,11 +13,28 @@ export const runtime = 'nodejs'
 // Public on purpose: a club badge is already on the club's own website, and it
 // is the whole point of a branded sign-in page. Nothing else about the academy
 // is returned.
+function trustedLogoHost(src: string): boolean {
+  try {
+    const u = new URL(src)
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false
+    const ours = [process.env.NEXT_PUBLIC_SUPABASE_URL, 'https://www.lumiosports.com', 'https://lumiosports.com']
+      .map(o => { try { return o ? new URL(o).host : '' } catch { return '' } })
+      .filter(Boolean)
+    return ours.includes(u.host)
+  } catch { return false }
+}
+
 export async function GET(req: NextRequest) {
   const slug = req.nextUrl.searchParams.get('slug') || ''
   const brand = await partnerBrandBySlug(slug)
   const src = brand?.logoUrl || ''
-  if (/^https?:\/\//.test(src)) return NextResponse.redirect(src, 302)
+  // A logo stored as a web address is only forwarded to when it is on storage
+  // we run. The address is whatever was saved against the academy, so forwarding
+  // to it blindly made this public link a way to send anyone to any site.
+  // Anything else is not served at all.
+  if (/^https?:\/\//i.test(src)) {
+    return trustedLogoHost(src) ? NextResponse.redirect(src, 302) : new NextResponse('Not found', { status: 404 })
+  }
   const m = /^data:(image\/(?:png|jpe?g|gif|webp|svg\+xml));base64,(.+)$/i.exec(src)
   if (!m) return new NextResponse('Not found', { status: 404 })
   const body = Buffer.from(m[2], 'base64')

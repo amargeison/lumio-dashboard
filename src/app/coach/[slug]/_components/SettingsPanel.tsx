@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { useParams } from 'next/navigation'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachSettings } from '../_lib/use-settings'
-import { useCoachProfile, saveCoachProfile, sb, currentCoachId, invalidateCoachTable } from '../_lib/coach-db'
-import { setSettings, resetSettings, getHeadProfile, setHeadProfile, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, LIVE_DEFAULT_SETTINGS, MODULE_SECTIONS, setSectionOff, type AccentKey } from '../_lib/settings-store'
+import { useCoachProfile, saveCoachProfile, sb, currentCoachId, invalidateCoachTable, useCoachTable } from '../_lib/coach-db'
+import { setSettings, getSettings, resetSettings, getHeadProfile, setHeadProfile, ACCENT_PRESETS, ACCREDITATIONS, DEFAULT_SETTINGS, LIVE_DEFAULT_SETTINGS, MODULE_SECTIONS, setSectionOff, type AccentKey } from '../_lib/settings-store'
 import { STUDENT_TOGGLEABLE } from '@/lib/student/sections'
 import { COACH_SIDEBAR, COACH_GROUPS, VENUES, COACH_ORG } from '../_lib/coach-data'
 import { getAddedVenues } from '../_lib/venues-store'
@@ -15,16 +15,18 @@ import { AddVenueModal } from './AddVenueModal'
 import { getHidden, setHidden as setMenuHidden, ALWAYS_VISIBLE, subscribe as subscribeMenu } from '../_lib/menu-visibility'
 import { getFlags, setFlag, subscribe as subscribeFeatures, DEMO_FLAGS, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
 import { IntegrationsPanel } from './IntegrationsPanel'
-import { CoachContactSettings } from './CoachContactSettings'
+import { CoachContactSettings, EMAIL_OK, phoneOk } from './CoachContactSettings'
+import { readHours } from '@/lib/coach/bookable-hours'
 import { CoachVenuesSettings } from './CoachVenuesSettings'
 import { CoachDevelopmentSettings } from './CoachDevelopmentSettings'
 import { TakePayments } from './TakePayments'
 import { CoachCompliance } from './CoachCompliance'
 import { CoachImport, ImportPendingDialog, type PendingImport } from './CoachImport'
-import { seedLumioResources, LUMIO_RESOURCES } from '../_lib/lumio-resources'
+import { seedLumioResources, LUMIO_RESOURCES, isLumioResource } from '../_lib/lumio-resources'
 import { seedLumioEquipment, EQUIPMENT_KIT_CHOICES, EQUIPMENT_CATEGORY_CHOICES } from '../_lib/lumio-equipment'
 import { seedLumioPackages, LUMIO_PACKAGES } from '../_lib/lumio-packages'
 import { V2_LABEL, V2_NOTES } from '@/lib/coach/v2'
+import { parseAmount, formatPounds } from '@/lib/coach/money'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -41,6 +43,9 @@ function Field({ T, label, children, hint }: { T: ThemeTokens; label: string; ch
 function input(T: ThemeTokens): CSSProperties {
   return { width: '100%', appearance: 'none', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, color: T.text, fontSize: 13, padding: '9px 11px', fontFamily: FONT, outline: 'none' }
 }
+// Said when a chosen logo cannot be read as a picture (a PDF, or a text file
+// renamed .png). The upload used to do nothing at all.
+const LOGO_NOT_IMAGE = 'That file is not a picture we can use. Choose a PNG, JPG or SVG image.'
 // Resize a logo to a <=max px data URL (keeps aspect ratio — no square crop).
 function fileToLogoDataUrl(file: File, max = 320): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -64,7 +69,9 @@ function fileToLogoDataUrl(file: File, max = 320): Promise<string> {
 }
 // Persist the club logo to the coach's profile so it survives across devices.
 async function saveBrandLogo(dataUrl: string | null) {
-  setSettings({ brandLogo: dataUrl || '' })
+  // The partner sign-in page is the academy's logo on a page of its own, and
+  // cannot be switched on without one — so it goes off when the logo goes.
+  setSettings({ brandLogo: dataUrl || '', ...(dataUrl ? {} : { partnerLogin: false }) })
   try { const uid = await currentCoachId(); if (uid) await sb().from('sports_profiles').update({ brand_logo_url: dataUrl }).eq('id', uid) } catch { /* local still applied */ }
 }
 function Seg<V extends string | number>({ T, accent, options, value, onChange }: { T: ThemeTokens; accent: AccentTokens; options: { v: V; label: string }[]; value: V; onChange: (v: V) => void }) {
@@ -91,6 +98,12 @@ function Toggle({ T, accent, on, onChange, label, desc }: { T: ThemeTokens; acce
   )
 }
 function Modal({ T, accent, title, sub, onClose, children, readOnly = false, wide = false }: { T: ThemeTokens; accent: AccentTokens; title: string; sub?: string; onClose: () => void; children: ReactNode; readOnly?: boolean; wide?: boolean }) {
+  // Escape closes the card, the same as the × and Done.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose() }}
       style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.82)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '7vh 16px', overflowY: 'auto' }}>
@@ -128,34 +141,48 @@ function Modal({ T, accent, title, sub, onClose, children, readOnly = false, wid
 // those one by one in Coaches & Staff). It takes ticking the list AND typing
 // DELETE. Only the head coach ever sees Settings → Import, and it is hidden in
 // the demo.
+//
+// Each list is emptied on its own and reports on its own. One list failing used
+// to stop every list after it, so "Tick everything" removed the players and
+// left the rest, with one error to explain it all.
 type StartAgainTable = 'coach_players' | 'coach_staff' | 'coach_courts' | 'coach_venues' | 'coach_camps' | 'coach_equipment' | 'coach_payments' | 'coach_resources'
-const START_AGAIN: { key: string; table: StartAgainTable; label: string; note: string }[] = [
-  { key: 'players', table: 'coach_players', label: 'Players', note: 'with their skills, attendance, racket progress and app access' },
-  { key: 'staff', table: 'coach_staff', label: 'Coaches & staff', note: 'not you, and not anyone with a portal login' },
-  { key: 'camps', table: 'coach_camps', label: 'Camps', note: 'with their attendee lists and camp messages' },
-  { key: 'courts', table: 'coach_courts', label: 'Courts', note: 'every court at every venue' },
-  { key: 'venues', table: 'coach_venues', label: 'Venues', note: 'including your home venue — add it again in Court Planner' },
-  { key: 'equipment', table: 'coach_equipment', label: 'Equipment', note: 'individual items; kit bags stay' },
-  { key: 'payments', table: 'coach_payments', label: 'Payments', note: 'every invoice and assigned package, paid or not' },
-  { key: 'resources', table: 'coach_resources', label: 'Resources', note: 'including the Lumio library — switch it back on in Resource settings' },
+const START_AGAIN: { key: string; table: StartAgainTable; label: string; one: string; many: string; note: string }[] = [
+  // Players go the same way as Delete on the roster (see run below), so what is
+  // said here is what that does.
+  { key: 'players', table: 'coach_players', label: 'Players', one: 'player', many: 'players', note: 'with their skills, attendance, bookings, lesson summaries, messages, recordings and family logins. Their payments and paid camp places are kept, with the name removed' },
+  { key: 'staff', table: 'coach_staff', label: 'Coaches & staff', one: 'coach', many: 'coaches', note: 'not you, and not anyone with a portal login' },
+  { key: 'camps', table: 'coach_camps', label: 'Camps', one: 'camp', many: 'camps', note: 'with their attendee lists and camp messages' },
+  { key: 'courts', table: 'coach_courts', label: 'Courts', one: 'court', many: 'courts', note: 'every court at every venue' },
+  { key: 'venues', table: 'coach_venues', label: 'Venues', one: 'venue', many: 'venues', note: 'with the courts at them, including your home venue — add it again in Court Planner' },
+  { key: 'equipment', table: 'coach_equipment', label: 'Equipment', one: 'equipment item', many: 'equipment items', note: 'the club’s list only; each coach’s own list and kit bags stay' },
+  { key: 'payments', table: 'coach_payments', label: 'Payments', one: 'payment', many: 'payments', note: 'every invoice and assigned package, paid or not' },
+  { key: 'resources', table: 'coach_resources', label: 'Resources', one: 'resource', many: 'resources', note: 'including the Lumio library — switch it back on in Resource settings' },
 ]
+type StartAgainResult = { key: string; label: string; ok: boolean; text: string }
 function ImportStartAgain({ T }: { T: ThemeTokens }) {
   const [shown, setShown] = useState(false)
   const [counts, setCounts] = useState<Record<string, number> | null>(null)
   const [picked, setPicked] = useState<string[]>([])
   const [word, setWord] = useState('')
-  const [state, setState] = useState<'idle' | 'busy' | 'error' | { removed: Record<string, number> }>('idle')
-  const [errMsg, setErrMsg] = useState('')
+  const [state, setState] = useState<'idle' | 'busy' | { results: StartAgainResult[] }>('idle')
+  const [progress, setProgress] = useState('')
 
   const loadCounts = async () => {
     const uid = await currentCoachId()
     if (!uid) return
     const out: Record<string, number> = {}
-    const keep = await staffToKeep(uid)
     for (const t of START_AGAIN) {
-      const q = sb().from(t.table).select('id', { count: 'exact', head: true }).eq('coach_id', uid)
-      const { count } = await (t.table === 'coach_staff' ? onlyRemovableStaff(q, keep) : q)
-      out[t.key] = count ?? 0
+      // A count that cannot be read leaves that one line at "…"; the others
+      // still show.
+      try {
+        if (t.table === 'coach_staff') { out[t.key] = (await removableStaff(uid)).length; continue }
+        let q = sb().from(t.table).select('id', { count: 'exact', head: true }).eq('coach_id', uid)
+        // Equipment: the club's list only. A coach's own kit list sits in the
+        // same table under their staff_id and is not the head coach's to empty.
+        if (t.table === 'coach_equipment') q = q.is('staff_id', null)
+        const { count, error } = await q
+        if (!error) out[t.key] = count ?? 0
+      } catch { /* left at "…" */ }
     }
     setCounts(out)
   }
@@ -165,27 +192,79 @@ function ImportStartAgain({ T }: { T: ThemeTokens }) {
     const { data } = await sb().from('coach_members').select('staff_id').eq('academy_id', uid).not('staff_id', 'is', null)
     return [...new Set(((data ?? []) as { staff_id: string | null }[]).map(r => r.staff_id).filter((x): x is string => !!x))]
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onlyRemovableStaff = (q: any, keep: string[]) => {
-    const notHead = q.or('is_head.is.null,is_head.eq.false')
-    return keep.length ? notHead.not('id', 'in', `(${keep.join(',')})`) : notHead
+  // The staff rows that may go: read first, then deleted by id. Asking the
+  // database to "delete everyone who is not the head coach" in one request was
+  // refused outright (it will not filter a delete on a column it is not also
+  // returning), so this list was never emptied.
+  const removableStaff = async (uid: string): Promise<string[]> => {
+    const keep = new Set(await staffToKeep(uid))
+    const { data, error } = await sb().from('coach_staff').select('id, is_head').eq('coach_id', uid)
+    if (error) throw new Error(error.message)
+    return ((data ?? []) as { id: string; is_head: boolean | null }[]).filter(r => !r.is_head && !keep.has(r.id)).map(r => r.id)
   }
   const openUp = () => { setShown(true); setState('idle'); setWord(''); setPicked([]); void loadCounts() }
 
+  // Players are removed the way Delete on the roster removes them — through the
+  // server, one at a time — so their family logins, photos, recordings and
+  // calendar entries go too, and their payments are kept without the name. A
+  // plain delete of the rows left all of that behind.
+  const erasePlayers = async (uid: string, say: (done: number, of: number) => void): Promise<{ done: number; failed: number }> => {
+    const { data, error } = await sb().from('coach_players').select('id').eq('coach_id', uid)
+    if (error) throw new Error(error.message)
+    const ids = ((data ?? []) as { id: string }[]).map(r => r.id)
+    let done = 0, failed = 0
+    const todo = [...ids]
+    const worker = async () => {
+      while (todo.length) {
+        const id = todo.shift()!
+        try {
+          const res = await fetch('/api/coach/players/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+          if (res.ok) done++; else failed++
+        } catch { failed++ }
+        say(done + failed, ids.length)
+      }
+    }
+    await Promise.all(Array.from({ length: 4 }, worker))
+    return { done, failed }
+  }
+
   const run = async () => {
     if (state === 'busy' || !picked.length || word.trim().toUpperCase() !== 'DELETE') return
-    setState('busy'); setErrMsg('')
-    const removed: Record<string, number> = {}
-    try {
-      const uid = await currentCoachId()
-      if (!uid) throw new Error('You are not signed in.')
-      for (const t of START_AGAIN.filter(x => picked.includes(x.key))) {
+    setState('busy'); setProgress('')
+    const results: StartAgainResult[] = []
+    const n = (count: number, t: { one: string; many: string }) => `${count} ${count === 1 ? t.one : t.many}`
+    const uid = await currentCoachId().catch(() => null)
+    if (!uid) {
+      setState({ results: [{ key: 'signin', label: 'Nothing was deleted', ok: false, text: 'you are signed out. Sign in again and retry.' }] })
+      return
+    }
+    for (const t of START_AGAIN.filter(x => picked.includes(x.key))) {
+      setProgress(`Deleting ${t.label.toLowerCase()}…`)
+      // Each list is its own attempt: a failure is recorded against that list
+      // and the next one still runs.
+      try {
+        if (t.table === 'coach_players') {
+          const { done, failed } = await erasePlayers(uid, (d, of) => setProgress(`Deleting players… ${d} of ${of}`))
+          results.push(failed
+            ? { key: t.key, label: t.label, ok: false, text: `${n(done, t)} deleted, ${failed} could not be deleted. Press Delete again to retry those.` }
+            : { key: t.key, label: t.label, ok: true, text: `${n(done, t)} deleted.` })
+          continue
+        }
         // Scoped to this academy to match RLS; .select() returns what was
         // deleted so the coach gets a real number back.
-        const del = sb().from(t.table).delete().eq('coach_id', uid)
-        const { data, error } = await (t.table === 'coach_staff' ? onlyRemovableStaff(del, await staffToKeep(uid)) : del).select('id')
-        if (error) throw new Error(`${t.label}: ${error.message}`)
-        removed[t.label] = (data ?? []).length
+        let del = sb().from(t.table).delete().eq('coach_id', uid)
+        // Same rule as the count above: only the club's own list, never a
+        // coach's own kit (the head coach's sign-in is allowed to delete those,
+        // so it has to be said here).
+        if (t.table === 'coach_equipment') del = del.is('staff_id', null)
+        if (t.table === 'coach_staff') {
+          const ids = await removableStaff(uid)
+          if (!ids.length) { results.push({ key: t.key, label: t.label, ok: true, text: 'nobody to delete. You and coaches with a portal login are kept.' }); continue }
+          del = del.in('id', ids)
+        }
+        const { data, error } = await del.select('id')
+        if (error) throw new Error(error.message)
+        results.push({ key: t.key, label: t.label, ok: true, text: `${n((data ?? []).length, t)} deleted.` })
         // The Lumio library went with the rest, so its toggle must stop reading "on".
         if (t.table === 'coach_resources') setSettings({ resourcesPreloaded: false })
         if (t.table === 'coach_camps') {
@@ -194,15 +273,16 @@ function ImportStartAgain({ T }: { T: ThemeTokens }) {
             fetch(`/api/coach/camps/sync?campId=${encodeURIComponent(row.id)}`, { method: 'DELETE' }).catch(() => { /* the camp is gone either way */ })
           }
         }
+      } catch (e) {
+        console.error('[start again]', t.table, e)
+        results.push({ key: t.key, label: t.label, ok: false, text: 'could not be deleted, so this list was left as it is. Try again, and if it keeps happening contact Lumio support.' })
       }
-      invalidateCoachTable()   // every cached list — rosters, attendance, skills all hang off these
-      setState({ removed }); setWord(''); setPicked([])
-      void loadCounts()
-    } catch (e) {
-      invalidateCoachTable()
-      setErrMsg(e instanceof Error ? e.message : 'Something went wrong.')
-      setState('error'); void loadCounts()
     }
+    invalidateCoachTable()   // every cached list — rosters, attendance, skills all hang off these
+    setProgress('')
+    // Anything that failed stays ticked so it can be retried; the rest is done.
+    setState({ results }); setWord(''); setPicked(results.filter(r => !r.ok && r.key !== 'signin').map(r => r.key))
+    void loadCounts()
   }
 
   const ready = picked.length > 0 && word.trim().toUpperCase() === 'DELETE' && state !== 'busy'
@@ -243,14 +323,14 @@ function ImportStartAgain({ T }: { T: ThemeTokens }) {
               })}
             </div>
             <div style={{ fontSize: 10.5, color: T.text3, margin: '9px 0', lineHeight: 1.5 }}>
-              Not touched: you and any coach with a portal login, bookings and lesson notes already written (they keep the player’s name), kit bags, your package price list, and card payments already taken through your payment provider.
+              Not touched: you and any coach with a portal login, kit bags, your package price list, and card payments already taken through your payment provider. Deleting players also removes their bookings, lesson summaries, messages and family logins, the same as Delete on the roster.
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <input value={word} onChange={e => setWord(e.target.value)} placeholder="Type DELETE to confirm" disabled={state === 'busy'}
                 style={{ flex: '1 1 180px', minWidth: 0, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 9, padding: '8px 10px', color: T.text, fontSize: 12.5, fontFamily: FONT }} />
               <button onClick={() => { void run() }} disabled={!ready}
                 style={{ appearance: 'none', background: ready ? T.bad : 'transparent', color: ready ? '#fff' : T.bad, border: `1px solid ${T.bad}`, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontWeight: 600, fontFamily: FONT, cursor: ready ? 'pointer' : 'default', opacity: ready ? 1 : 0.5 }}>
-                {state === 'busy' ? 'Deleting…' : picked.length ? `Delete ${total} record${total === 1 ? '' : 's'}` : 'Delete'}
+                {state === 'busy' ? (progress || 'Deleting…') : picked.length ? `Delete ${total} record${total === 1 ? '' : 's'}` : 'Delete'}
               </button>
               <button onClick={() => setShown(false)} disabled={state === 'busy'}
                 style={{ appearance: 'none', background: 'transparent', color: T.text3, border: `1px solid ${T.border}`, borderRadius: 9, padding: '8px 13px', fontSize: 12.5, fontFamily: FONT, cursor: 'pointer' }}>
@@ -260,11 +340,13 @@ function ImportStartAgain({ T }: { T: ThemeTokens }) {
           </div>
         )}
         {typeof state === 'object' && (
-          <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8 }}>
-            Deleted {Object.entries(state.removed).map(([k, v]) => `${v} ${k.toLowerCase()}`).join(', ')}. You can import again above.
+          <div style={{ fontSize: 11.5, marginTop: 8, lineHeight: 1.6 }}>
+            {state.results.map(r => (
+              <div key={r.key} style={{ color: r.ok ? T.text2 : T.bad }}>{r.ok ? '✓' : '✕'} {r.label}: {r.text}</div>
+            ))}
+            {state.results.every(r => r.ok) && <div style={{ color: T.text3 }}>You can import again above.</div>}
           </div>
         )}
-        {state === 'error' && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 8 }}>Couldn’t finish — {errMsg} Anything listed as 0 above has already gone.</div>}
       </div>
     </div>
   )
@@ -335,7 +417,16 @@ function ConnectedAccountsLine({ T, accent, onOpen, demo }: { T: ThemeTokens; ac
 
 function ResourceCentreSettings({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const s = useCoachSettings()
-  const on = s.resourcesPreloaded !== false
+  // The switch shows what is TRUE, not only what was chosen. The setting starts
+  // as "on" for every academy, but the library is only in the Resource Centre
+  // once it has been loaded — so a new academy that skipped the setup wizard saw
+  // this switch on, over a count of 89 resources, with none there. It is on when
+  // the setting is on AND Lumio's resources are really in the academy's library;
+  // otherwise it is off, and switching it on loads them.
+  const library = useCoachTable<{ id: string; title: string; url?: string | null }>('coach_resources')
+  const loaded = library.rows.filter(isLumioResource).length
+  const wanted = s.resourcesPreloaded !== false
+  const on = wanted && (library.loading || loaded > 0)
   const [seed, setSeed] = useState<'idle' | 'busy' | 'error' | { added: number }>('idle')
   const [wipe, setWipe] = useState<'idle' | 'busy' | 'error' | { removed: number }>('idle')
 
@@ -349,6 +440,7 @@ function ResourceCentreSettings({ T, accent }: { T: ThemeTokens; accent: AccentT
       // already in their library, so switching this back on never duplicates.
       const added = await seedLumioResources()
       invalidateCoachTable('coach_resources')  // Resource Centre reads a cached table — force a fresh read
+      await library.reload()                   // …and so does the switch above
       setSeed({ added })
     } catch { setSeed('error') }
   }
@@ -363,9 +455,14 @@ function ResourceCentreSettings({ T, accent }: { T: ThemeTokens; accent: AccentT
       // Scoped to the signed-in coach to match RLS (coach_id = auth.uid()); the
       // .select() hands back the deleted rows, so the coach gets a real count
       // rather than a button that appears to do nothing.
-      const { data, error } = await sb().from('coach_resources').delete().eq('coach_id', uid).select('id')
+      const { data, error } = await sb().from('coach_resources').delete().eq('coach_id', uid).select('id, url')
       if (error) throw new Error(error.message)
       invalidateCoachTable('coach_resources')
+      await library.reload()
+      // The files those resources carried go too (the server removes only files
+      // that no resource uses any more). They used to stay in storage for good.
+      const paths = ((data ?? []) as { url?: string | null }[]).map(r => String(r.url || '')).filter(u => u.startsWith('file:')).map(u => u.slice(5))
+      if (paths.length) void fetch('/api/coach/resources/file', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paths }) }).catch(() => { /* left for the next tidy */ })
       // The library has just been deleted, so the toggle must stop claiming it
       // is loaded — otherwise it reads “on” over an empty Centre.
       setSettings({ resourcesPreloaded: false })
@@ -379,7 +476,9 @@ function ResourceCentreSettings({ T, accent }: { T: ThemeTokens; accent: AccentT
     <>
       <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 8px' }}>Library</div>
       <Toggle T={T} accent={accent} on={on} onChange={v => { void toggleLibrary(v) }} label="Lumio starter library"
-        desc={on ? `${LUMIO_RESOURCES.length} drills, plans and worksheets in your live Resource Centre, tagged to the racket system.` : 'Off — Lumio’s library, drill library and book shelf are hidden. Your Resource Centre and the player app show only what you add yourself.'} />
+        desc={on ? `${library.loading ? LUMIO_RESOURCES.length : loaded} drills, plans and worksheets in your live Resource Centre, tagged to the racket system.`
+          : wanted ? `Not loaded yet. Switch this on to add Lumio’s ${LUMIO_RESOURCES.length} drills, plans and worksheets to your Resource Centre.`
+          : 'Off — Lumio’s library, drill library and book shelf are hidden. Your Resource Centre and the player app show only what you add yourself.'} />
       {seed === 'busy' && <div style={{ ...note, color: T.text3 }}>Loading the library into your Resource Centre…</div>}
       {typeof seed === 'object' && <div style={{ ...note, color: T.good }}>✓ Added {seed.added} resource{seed.added === 1 ? '' : 's'}{seed.added === 0 ? ' — you already had the full library' : ''}.</div>}
       {seed === 'error' && <div style={{ ...note, color: T.bad }}>Couldn’t load the library — try again.</div>}
@@ -469,6 +568,10 @@ function EquipmentKitSettings({ T, accent }: { T: ThemeTokens; accent: AccentTok
   // (it used to mean “we auto-seeded”). It is what LiveEquipment reads to decide
   // whether to show SetupWizard, so this toggle and that wizard stay in step.
   const on = s.equipmentSeeded === true
+  // What is actually in the module. The line under the toggle used to print the
+  // size of Lumio's full kit, which is wrong for a coach who chose to start empty.
+  const { rows: kitRows } = useCoachTable<{ id: string }>('coach_kit_items')
+  const { rows: invRows } = useCoachTable<{ id: string }>('coach_equipment')
   const [seed, setSeed] = useState<'idle' | 'busy' | 'error' | { kits: number; items: number }>('idle')
   const [wipe, setWipe] = useState<'idle' | 'busy' | 'error' | { kits: number; items: number }>('idle')
 
@@ -499,9 +602,13 @@ function EquipmentKitSettings({ T, accent }: { T: ThemeTokens; accent: AccentTok
       // .select() hands back the deleted rows, so the coach gets a real count
       // rather than a button that appears to do nothing. Two deletes, because the
       // module is two tables — clearing only one would leave it half-populated.
-      const kitDel = await sb().from('coach_kit_items').delete().eq('coach_id', uid).select('id')
+      // The ACADEMY's list only (staff_id null). A coach who has set up their own
+      // kit list keeps it in these same tables (migration 168), and the head
+      // coach's sign-in is allowed to delete those rows too — clearing the club's
+      // store cupboard must not empty a coach's car boot.
+      const kitDel = await sb().from('coach_kit_items').delete().eq('coach_id', uid).is('staff_id', null).select('id')
       if (kitDel.error) throw new Error(kitDel.error.message)
-      const invDel = await sb().from('coach_equipment').delete().eq('coach_id', uid).select('id')
+      const invDel = await sb().from('coach_equipment').delete().eq('coach_id', uid).is('staff_id', null).select('id')
       if (invDel.error) throw new Error(invDel.error.message)
       invalidateCoachTable('coach_kit_items')
       invalidateCoachTable('coach_equipment')
@@ -520,7 +627,7 @@ function EquipmentKitSettings({ T, accent }: { T: ThemeTokens; accent: AccentTok
     <>
       <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 8px' }}>Starter kit</div>
       <Toggle T={T} accent={accent} on={on} onChange={v => { void toggleKit(v) }} label="Lumio starter kit"
-        desc={on ? `${LUMIO_KIT_COUNT} checklist items across ${EQUIPMENT_KIT_CHOICES.length} session types and ${LUMIO_INVENTORY_COUNT} inventory items in your live module — edit quantities and remove what you don’t carry.` : 'Off — your kit checklists and inventory show only what you add yourself.'} />
+        desc={on ? `${kitRows.length} checklist item${kitRows.length === 1 ? '' : 's'} and ${invRows.length} inventory item${invRows.length === 1 ? '' : 's'} in your live module — edit quantities and remove what you don’t carry. The full starter kit is ${LUMIO_KIT_COUNT} checklist items and ${LUMIO_INVENTORY_COUNT} inventory items.` : 'Off — your kit checklists and inventory show only what you add yourself.'} />
       {seed === 'busy' && <div style={{ ...note, color: T.text3 }}>Loading the starter kit into your Equipment &amp; Kit module…</div>}
       {typeof seed === 'object' && <div style={{ ...note, color: T.good }}>✓ Added {seed.kits} kit item{seed.kits === 1 ? '' : 's'} and {seed.items} inventory item{seed.items === 1 ? '' : 's'}{seed.kits + seed.items === 0 ? ' — you already had the full starter kit' : ''}.</div>}
       {seed === 'error' && <div style={{ ...note, color: T.bad }}>Couldn’t load the starter kit — try again.</div>}
@@ -553,7 +660,12 @@ function PaymentsPackagesSettings({ T, accent }: { T: ThemeTokens; accent: Accen
   // `packagesSeeded` now means “the coach has answered the starter-packages
   // question” (it used to mean “we auto-seeded”), and LivePayments reads it to
   // decide whether to show SetupWizard.
-  const on = s.packagesSeeded === true
+  //
+  // It also reads On when the starter packages are plainly there: academies
+  // set up before the question existed have all six and no answer recorded,
+  // and the switch said Off above a price list full of them.
+  const priceList = useCoachTable<{ name: string | null }>('coach_packages')
+  const on = s.packagesSeeded === true || priceList.rows.some(r => LUMIO_PACKAGES.some(l => l.name === r.name))
   const [seed, setSeed] = useState<'idle' | 'busy' | 'error' | { added: number }>('idle')
   const [wipe, setWipe] = useState<'idle' | 'busy' | 'error' | { removed: number }>('idle')
 
@@ -623,6 +735,10 @@ function PaymentsPackagesSettings({ T, accent }: { T: ThemeTokens; accent: Accen
   )
 }
 
+// The lesson types a booking can be given (the Add booking form's list, less
+// "Block", which is not a lesson). A real academy chooses among these.
+const BOOKABLE_TYPES = ['Private', 'Group', 'Cardio', 'Match play']
+
 // Lumio Coach Kit & Racket Progression rewards the coach can order (demo only —
 // no real checkout/fulfilment). Effort tracking uses the player's own watch, so
 // there's no GPS tracker — the kit is the capture stand, mic and rewards. £85.
@@ -631,10 +747,176 @@ const KIT_OFFERS = [
   { id: 'rackets', name: 'Reward set (×9)',     price: '£50 / set', desc: 'The Racket Progression rewards — a coloured keyring + matching dampener per level. Reorder as you award them.', cta: 'Reorder set' },
 ]
 
+// A box whose value is checked before it is kept.
+//
+// What is typed is checked as it is typed, and a line under the box says what
+// is wrong. It is SAVED when the coach leaves the box (or closes the card), and
+// only if it passes — otherwise what was saved before stays. Saving on every
+// keystroke kept the last readable part of something unreadable: "999999" in
+// the rate box left 999 saved, and clearing the box to type "-5" left no rate
+// at all, both without a word. The head coach's email and phone took any text
+// (and copied it to their record on the Coaches page), and the bookable hours
+// took "whenever" and quietly became 08:00–20:00.
+function CheckedInput({ T, start, check, onGood, placeholder, kept, inputMode }: {
+  T: ThemeTokens; start: string; check: (v: string) => string; onGood: (v: string) => void
+  placeholder?: string; inputMode?: 'decimal' | 'text'
+  /** The words after the problem, saying what is still saved. */
+  kept: (saved: string) => string
+}) {
+  const [text, setText] = useState(start)
+  const [err, setErr] = useState('')
+  const latest = useRef(start)
+  const saved = useRef(start)
+  const [savedText, setSavedText] = useState(start)
+  const good = useRef(onGood); const rule = useRef(check)
+  useEffect(() => { good.current = onGood; rule.current = check })
+  const commit = () => {
+    const v = latest.current.trim()
+    if (v === saved.current || rule.current(v)) return
+    saved.current = v
+    setSavedText(v)
+    good.current(v)
+  }
+  // Closing the card with Escape never leaves the box, so save then too.
+  useEffect(() => () => commit(), [])
+  return (
+    <>
+      <input style={input(T)} value={text} placeholder={placeholder} inputMode={inputMode} aria-invalid={!!err}
+        onChange={e => { latest.current = e.target.value; setText(e.target.value); setErr(check(e.target.value.trim())) }}
+        onBlur={commit} />
+      {err && <div role="alert" style={{ fontSize: 11, color: T.bad, marginTop: 5 }}>{err} {kept(savedText)}</div>}
+    </>
+  )
+}
+
+// The hourly rate, typed as money. The box used to strip everything that was
+// not a digit, so 38.50 became 3850. It reads what was typed with the same
+// rule as the Payments page and says what is wrong otherwise. An empty box
+// means no hourly rate is shown.
+function RateField({ T }: { T: ThemeTokens }) {
+  const [start] = useState(() => { const r = getSettings().privateRate; return r ? String(r) : '' })
+  return (
+    <Field T={T} label="Private lesson rate (£ / hour)" hint="Leave it empty to show no hourly rate.">
+      <CheckedInput T={T} start={start} inputMode="decimal" placeholder="e.g. 38 or 38.50"
+        check={v => { if (!v) return ''; const a = parseAmount(v, { max: 1000 }); return a.ok ? '' : a.error }}
+        onGood={v => { const a = v ? parseAmount(v, { max: 1000 }) : null; setSettings({ privateRate: a && a.ok ? a.pounds : 0 }) }}
+        kept={saved => saved ? `The rate is still ${formatPounds(parseFloat(saved.replace(/[£,\s]/g, '')) || 0)} an hour.` : 'No rate is saved.'} />
+    </Field>
+  )
+}
+
+// A real academy's venues live in Venues & courts (the database), not in this
+// browser. This card used to list the demo academy's four venues instead, with
+// a "home site" picker and "calendar connected" switches that changed nothing.
+function HomeVenueLine({ T, accent, onManage }: { T: ThemeTokens; accent: AccentTokens; onManage: () => void }) {
+  const venues = useCoachTable<{ id: string; name: string; is_home: boolean | null }>('coach_venues')
+  const home = venues.rows.find(v => v.is_home)
+  const line = venues.loading ? 'Checking…'
+    : !venues.rows.length ? 'No venues yet. Add the place you coach and its courts.'
+    : home ? `${home.name} is your home venue${venues.rows.length > 1 ? `, with ${venues.rows.length - 1} other${venues.rows.length === 2 ? '' : 's'}` : ''}.`
+    : `${venues.rows.length} venue${venues.rows.length === 1 ? '' : 's'}, none set as home yet.`
+  return (
+    <Field T={T} label="Venues & home base" hint="Venues, their courts and which one is home are all set in Venues & courts.">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, border: `1px solid ${T.border}`, background: T.panel2, borderRadius: 10, padding: '11px 12px' }}>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: T.text2, lineHeight: 1.5, overflowWrap: 'anywhere' }}>{line}</div>
+        <button onClick={onManage} style={{ appearance: 'none', border: 0, borderRadius: 9, padding: '7px 12px', fontSize: 11.5, fontWeight: 700, fontFamily: FONT, cursor: 'pointer', background: accent.hex, color: T.btnText, flexShrink: 0 }}>Manage venues</button>
+      </div>
+    </Field>
+  )
+}
+
+// Changing the portal's address after setup. The setup wizard says it can be
+// changed later in Settings; there was nowhere to do it.
+//
+// The address is checked as it is typed by the same route the wizard uses, and
+// the database has the last word (migration 193 refuses a reserved or malformed
+// one; a unique index refuses one already taken). The old address stops working
+// the moment this saves, so the coach is told exactly what that breaks first.
+function PortalAddress({ T, accent, current }: { T: ThemeTokens; accent: AccentTokens; current: string }) {
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(current)
+  // The last answer from the address checker. It is only used while it is
+  // about the address now in the box (see `check` below).
+  const [answer, setAnswer] = useState<{ slug: string; available: boolean; reason?: string; suggestion?: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const want = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  const check = answer && answer.slug === want ? answer : null
+  useEffect(() => {
+    if (!editing || !want || want === current) return
+    let off = false
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/coach/slug-check?slug=${encodeURIComponent(want)}`)
+        const j = await r.json()
+        if (!off && r.ok) setAnswer(j)
+      } catch { /* the database still checks on save */ }
+    }, 350)
+    return () => { off = true; clearTimeout(t) }
+  }, [want, editing, current])
+  const verdict = !want ? 'Type the address you would like: letters, numbers and hyphens.'
+    : want === current ? 'This is your address now.'
+    : !check ? 'Checking…'
+    : check.available ? `lumiosports.com/tennis/coach/${check.slug} is free.`
+    : check.reason === 'reserved' ? 'That word is used by Lumio itself. Choose a different address.'
+    : check.reason === 'long' ? 'That is too long. Keep it to 60 characters.'
+    : check.reason === 'short' || check.reason === 'empty' ? 'An address needs at least 2 letters or numbers.'
+    : check.suggestion ? `That address is taken. ${check.suggestion} is free.`
+    : 'That address is taken. Try a different one.'
+  const canSave = !!check?.available && check.slug === want && !busy
+  const save = async () => {
+    if (!canSave) return
+    if (!confirm(`Change your portal address to lumiosports.com/tennis/coach/${want}?\n\nYour old address (${current}) stops working straight away. You will need to update anything that uses it: bookmarks, the link on your website, your sign-in page link, the parent consent form link, and the Lumio app if you have added it to a phone's home screen (remove it and add it again from the new address).\n\nBooking links and camp sign-up links you have already sent keep working.`)) return
+    setBusy(true); setErr('')
+    try {
+      await saveCoachProfile({ portal_slug: want })
+      // The portal lives at the new address now; this page no longer exists.
+      window.location.assign(`/tennis/coach/${want}`)
+    } catch (e) {
+      const m = e instanceof Error ? e.message : ''
+      setErr(/duplicate|unique/i.test(m) ? 'Another academy took that address a moment ago. Choose a different one.' : (m || 'The address could not be changed. Nothing was changed. Try again.'))
+      setBusy(false)
+    }
+  }
+  return (
+    <Field T={T} label="Portal address" hint={editing ? undefined : 'Where you and your coaches open the portal.'}>
+      {!editing ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <code style={{ fontSize: 12.5, color: T.text, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 10px', overflowWrap: 'anywhere' }}>lumiosports.com/tennis/coach/{current}</code>
+          <button onClick={() => { setValue(current); setEditing(true) }} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '7px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Change…</button>
+        </div>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, color: T.text3, whiteSpace: 'nowrap' }}>…/tennis/coach/</span>
+            <input style={input(T)} value={value} onChange={e => { setValue(e.target.value); setErr('') }} maxLength={80} aria-label="New portal address" autoFocus />
+          </div>
+          <div style={{ fontSize: 11, color: check && !check.available ? T.bad : T.text3, marginTop: 5 }}>{verdict}</div>
+          <div style={{ fontSize: 11, color: T.text3, marginTop: 5, lineHeight: 1.5 }}>Your old address stops working as soon as you change it, so links and bookmarks that use it will need updating.</div>
+          {err && <div style={{ fontSize: 11.5, color: T.bad, marginTop: 5 }}>{err}</div>}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button onClick={() => { void save() }} disabled={!canSave} style={{ appearance: 'none', border: 0, borderRadius: 9, padding: '8px 13px', fontSize: 12, fontWeight: 700, fontFamily: FONT, cursor: canSave ? 'pointer' : 'default', background: accent.hex, color: T.btnText, opacity: canSave ? 1 : 0.5 }}>{busy ? 'Changing…' : 'Change address'}</button>
+            <button onClick={() => setEditing(false)} disabled={busy} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 9, padding: '8px 13px', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+          </div>
+        </>
+      )}
+    </Field>
+  )
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 export function SettingsPanel({ T, accent, density, demo = false }: Common & { demo?: boolean }) {
   const s = useCoachSettings()
-  const [open, setOpen] = useState<string | null>(null)
+  // A link from elsewhere in the portal ("Connect", "Add it", "Settings →
+  // Venues") can name the panel it wants, so the coach lands on it rather than
+  // at the top of this page. Same one-shot pattern as lumio_open_player.
+  const [open, setOpen] = useState<string | null>(() => {
+    try { return sessionStorage.getItem('lumio_open_settings') || null } catch { /* ignore */ }
+    return null
+  })
+  // Used once: cleared after the page has mounted (not while reading it above,
+  // because a first render can be thrown away and run again).
+  useEffect(() => { try { sessionStorage.removeItem('lumio_open_settings') } catch { /* ignore */ } }, [])
   // Records found by Import data but not yet imported — closing the modal asks first.
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null)
   const [askImport, setAskImport] = useState(false)
@@ -673,6 +955,13 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
   // The academy's web address — the same slug as the portal it is looking at.
   const portalSlug = String((useParams() as { slug?: string } | null)?.slug || 'your-academy')
   const [linkCopied, setLinkCopied] = useState(false)
+  const [logoErr, setLogoErr] = useState('')
+  // One upload handler for both places a logo can be chosen.
+  const pickLogo = async (f: File | undefined) => {
+    if (!f) return
+    setLogoErr('')
+    try { await saveBrandLogo(await fileToLogoDataUrl(f)); realProfile.reload() } catch { setLogoErr(LOGO_NOT_IMAGE) }
+  }
   useEffect(() => {
     if (realProfile.loading || !realProfile.display_name) return
     const patch: Record<string, any> = {}
@@ -707,6 +996,13 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
   const rewards = { ...D.rewards, ...(s.rewards || {}) }
   const setRewards = (n: typeof rewards) => setSettings({ rewards: n })
 
+  // Two switches on the Effort & Rewards card are the same thing as a section
+  // switch that already works, so on a real academy they read and write that:
+  // the leaderboard on the Effort & Rewards page, and the "Effort & rewards"
+  // section of the player app. They used to save a value nothing read.
+  const leaderboardOn = !(s.sectionsOff?.gpsheatmaps || []).includes('leaderboard')
+  const effortToPlayers = !(s.sectionsOff?.student || []).includes('rewards')
+
   const [hiddenMenu, setHiddenMenu] = useState<string[]>([])
   useEffect(() => { setHiddenMenu(getHidden()); return subscribeMenu(() => setHiddenMenu(getHidden())) }, [])
   const shownCount = COACH_SIDEBAR.filter(i => !hiddenMenu.includes(i.id)).length
@@ -717,31 +1013,39 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
   const cards = [
     { id: 'profile',     g: 'You',        icon: 'people',    t: 'Head coach profile',  d: `${[hp.name, hp.role, hp.accreditation].filter(Boolean).join(' · ') || 'Your details, calendar and safeguarding'}` },
     { id: 'integrations',g: 'You',        icon: 'calendar',  t: 'Connected accounts',  d: 'Email & calendar sync — Google, Outlook, iCloud' },
-    { id: 'academy',     g: 'Academy',    icon: 'home',      t: 'Academy profile',     d: [s.academy, s.cert].filter(Boolean).join(' · ') || 'Add your academy name & accreditation' },
+    { id: 'academy',     g: 'Academy',    icon: 'home',      t: 'Academy profile',     d: demo ? [s.academy, s.cert].filter(Boolean).join(' · ') : (s.academy ? `${s.academy} · logo & portal address` : 'Add your academy name & logo') },
     // The old summary read "Google + Outlook sync" off two local switches that
     // connected nothing. Booking defaults are real settings, so that is what it
     // now reports; what is actually connected lives in Connected accounts.
-    { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${booking.defaultDuration}m default · ${booking.buffer}m buffer · ${booking.autoConfirm ? 'auto-confirm' : 'you approve each one'}` },
-    { id: 'availability',g: 'Academy',    icon: 'grid',      t: 'Availability & courts', d: `${s.bookableHours} · ${s.lessonTypes.length} lesson types` },
+    { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${booking.defaultDuration}m default · ${booking.buffer}m buffer${demo ? ` · ${booking.autoConfirm ? 'auto-confirm' : 'you approve each one'}` : ''}` },
+    { id: 'availability',g: 'Academy',    icon: 'grid',      t: 'Availability & courts', d: `${s.bookableHours} · ${demo ? s.lessonTypes.length : (s.lessonTypes.filter(t => BOOKABLE_TYPES.includes(t)).length || BOOKABLE_TYPES.length)} lesson types` },
     { id: 'partnerlogin',g: 'Academy',    icon: 'shield',    t: 'Partner sign-in page', d: s.partnerLogin ? `On · lumiosports.com/login/${portalSlug}` : 'Off · families use the standard Lumio sign-in' },
-    { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: s.privateRate ? `Private £${s.privateRate}/hr · take payments` : 'Set your hourly rate · take payments' },
-    { id: 'belts',       g: 'Coaching',   icon: 'trophy',    t: 'Racket criteria',     d: `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` },
-    { id: 'rewards',     g: 'Coaching',   icon: 'flag',      t: 'Effort & Rewards',    d: `Leaderboard ${rewards.leaderboard ? 'on' : 'off'} · watch consent default ${rewards.watchConsentDefault ? 'on' : 'off'}` },
+    { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: s.privateRate ? `Private ${formatPounds(s.privateRate)}/hr · take payments` : 'Set your hourly rate · take payments' },
+    { id: 'belts',       g: 'Coaching',   icon: 'trophy',    t: 'Racket criteria',     d: demo ? `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` : `A skill shows as done to players at ${s.awardThreshold === 4 ? 'four bars (Consistent)' : 'three bars (Consolidating)'}` },
+    { id: 'rewards',     g: 'Coaching',   icon: 'flag',      t: 'Effort & Rewards',    d: demo ? `Leaderboard ${rewards.leaderboard ? 'on' : 'off'} · watch consent default ${rewards.watchConsentDefault ? 'on' : 'off'}` : `Leaderboard ${leaderboardOn ? 'on' : 'off'} · ${effortToPlayers ? 'shown to players' : 'hidden from players'}` },
     { id: 'sharing',     g: 'Coaching',   icon: 'megaphone', t: 'Sharing a summary',      d: `Shares include: ${sharingList}` },
     { id: 'gdpr',        g: 'People & compliance', icon: 'shield', t: 'Players & data (GDPR)', d: `Retention ${gdpr.retentionYears}y · DPA ${gdpr.dpaAccepted ? 'accepted' : 'pending'}` },
     { id: 'staff',       g: 'People & compliance', icon: 'people', t: 'Staff & safeguarding',  d: `DSL ${staffCfg.dsl || 'not set'} · DBS reminders ${staffCfg.reminderDays}d` },
-    { id: 'messaging',   g: 'People & compliance', icon: 'note',   t: 'Messaging',             d: `${[msg.email && 'Email', msg.text && 'Text', msg.inapp && 'In-app'].filter(Boolean).join(' · ') || 'No channels'}` },
-    { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: 'Your plan: Coach £39/mo · order kit & rewards' },
+    { id: 'messaging',   g: 'People & compliance', icon: 'note',   t: 'Messaging',             d: `${[msg.email && 'Email', demo && msg.text && 'Text', msg.inapp && 'In-app'].filter(Boolean).join(' · ') || 'No channels'}` },
+    { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: demo ? 'Your plan: Coach £39/mo · order kit & rewards' : (s.ownRewards ? 'You supply your own rewards' : 'Lumio keyrings & dampeners · not on sale yet') },
     { id: 'appearance',  g: 'Rewards & system', icon: 'settings', t: 'Appearance',          d: `${s.theme === 'white' ? 'White' : s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey]?.label ?? ''} · ${s.density}` },
     { id: 'menu',        g: 'Rewards & system', icon: 'eye',      t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
     { id: 'help',        g: 'Rewards & system', icon: 'note',     t: 'Help & guidance',     d: `${[s.helpHints !== false && 'Page guides', s.gettingStarted !== false && 'Getting started'].filter(Boolean).join(' · ') || 'Both off'}` },
-    { id: 'studentapp',  g: 'Rewards & system', icon: 'people',   t: 'Parent & player app', d: s.studentApp ? 'On · Player view available in your profile menu' : 'Off · your switcher shows coach views only' },
-    { id: 'contact',     g: 'You',        icon: 'note',     t: 'Contact & calendar',  d: 'Sender email, phone & calendar sync' },
+    { id: 'studentapp',  g: 'Rewards & system', icon: 'people',   t: 'Parent & player app', d: s.studentApp ? 'On · families can be invited; Player view in your profile menu' : 'Off · players and parents cannot open their page' },
+    { id: 'contact',     g: 'You',        icon: 'note',     t: 'Contact & calendar',  d: 'Your contact email & phone · what is connected' },
     { id: 'venuescfg',   g: 'Academy',    icon: 'home',     t: 'Venues & courts',     d: 'Venues, courts & calendar links' },
     { id: 'devcfg',      g: 'Coaching',   icon: 'trophy',   t: 'Coaching, rewards & modules', d: 'Racket criteria, effort & module setup' },
     { id: 'privacy',     g: 'People & compliance', icon: 'shield', t: 'Privacy & compliance', d: 'GDPR, consents & data retention' },
     { id: 'import',      g: 'Rewards & system', icon: 'note',  t: 'Import data',          d: 'Bulk import from a spreadsheet or photo' },
-  ]
+  // "Players & data (GDPR)" is a demo-only card. On a real academy every
+  // control on it either did nothing (default consents, retention period, the
+  // export button) or disagreed with Privacy & compliance about whether the
+  // data agreement was accepted. Privacy & compliance is the one place for it.
+  //
+  // "Sharing a summary" is the demo's too. On a real academy the three switches
+  // saved and changed nothing: a shared lesson summary always carries the
+  // homework and the next focus, and never the private coach note.
+  ].filter(c => demo || (c.id !== 'gdpr' && c.id !== 'sharing'))
 
   return (
     <div>
@@ -750,7 +1054,13 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           <h1 style={{ margin: 0, fontFamily: FONT, fontSize: 24, fontWeight: 600, color: T.text, letterSpacing: '-0.02em' }}>Settings</h1>
           <p style={{ margin: '4px 0 0', fontSize: 12.5, color: T.text3 }}>Tap any card to customise it — changes apply across the portal instantly.</p>
         </div>
-        {!demo && <button onClick={() => resetSettings()} style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 9, padding: '7px 12px', fontSize: 11.5, cursor: 'pointer' }}>Reset to defaults</button>}
+        {/* Asks first, and only ever touches how the portal looks — see
+            resetSettings. It used to wipe every setting on one click. */}
+        {!demo && <button onClick={() => {
+          if (!confirm('Reset how your portal looks?\n\nThis puts back the theme, accent colour, density, help hints, hidden menu items and hidden page sections as they were when you started.\n\nNothing else changes. Your academy and head coach details, DBS and safeguarding records, prices, booking and messaging settings and the player app all stay as they are.')) return
+          resetSettings()
+          for (const id of getHidden()) setMenuHidden(id, false)
+        }} style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 9, padding: '7px 12px', fontSize: 11.5, cursor: 'pointer' }}>Reset appearance</button>}
       </div>
 
       {GROUPS.map(group => {
@@ -759,7 +1069,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
         return (
           <div key={group} style={{ marginBottom: density.gap + 8 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>{group}</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: density.gap }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: density.gap }}>
               {gc.map(c => (
                 <div key={c.id} onClick={() => setOpen(c.id)}
                   style={{ position: 'relative', background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad, boxShadow: T.cardShadow, cursor: 'pointer' }}>
@@ -781,7 +1091,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           toggles, colour, setup) rolls out into these modals next. */}
       <div style={{ marginBottom: density.gap + 8 }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Modules</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: density.gap }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))', gap: density.gap }}>
           {COACH_SIDEBAR.filter(i => i.id !== 'settings').map(item => {
             const hidden = hiddenMenu.includes(item.id)
             return (
@@ -827,8 +1137,12 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           </Modal>
         )
       })()}
-      {open === 'contact' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Contact & calendar" onClose={() => setOpen(null)}><CoachContactSettings T={T} accent={accent} /></Modal>)}
-      {open === 'venuescfg' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Venues & courts" onClose={() => setOpen(null)}><CoachVenuesSettings T={T} accent={accent} /></Modal>)}
+      {open === 'contact' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Contact & calendar" onClose={() => setOpen(null)}><CoachContactSettings T={T} accent={accent} />
+        {/* What is really connected, read from the account — in place of a
+            picker that showed "Bookings → calendar" with nothing connected. */}
+        <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>Email &amp; calendar sync</div>
+        <ConnectedAccountsLine T={T} accent={accent} demo={demo} onOpen={() => setOpen('integrations')} /></Modal>)}
+      {(open === 'venuescfg' || open === 'venuescfg:new') && (<Modal wide readOnly={demo} T={T} accent={accent} title="Venues & courts" onClose={() => setOpen(null)}><CoachVenuesSettings T={T} accent={accent} addNew={open === 'venuescfg:new'} /></Modal>)}
       {open === 'devcfg' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Coaching, rewards & modules" onClose={() => setOpen(null)}><CoachDevelopmentSettings T={T} accent={accent} /></Modal>)}
       {open === 'privacy' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Privacy & compliance" onClose={() => setOpen(null)}><CoachCompliance T={T} accent={accent} demo={demo} /></Modal>)}
       {open === 'import' && (<Modal wide readOnly={demo} T={T} accent={accent} title="Import data" onClose={() => { if (pendingImport) setAskImport(true); else setOpen(null) }}><CoachImport T={T} accent={accent} onPendingChange={setPendingImport} />{!demo && <ImportStartAgain T={T} />}</Modal>)}
@@ -847,7 +1161,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
         const hasLogo = !!(s.brandLogo || realProfile.brand_logo_url)
         return (
         <Modal readOnly={demo} T={T} accent={accent} title="Partner sign-in page" sub="Your academy's own sign-in page — your logo, name and colours, running on Lumio Tennis Coach" onClose={() => setOpen(null)}>
-          <Toggle T={T} accent={accent} on={!!s.partnerLogin} onChange={v => { if (v && !hasLogo) return; setSettings({ partnerLogin: v }) }}
+          <Toggle T={T} accent={accent} on={!!s.partnerLogin && hasLogo} onChange={v => { if (v && !hasLogo) return; setSettings({ partnerLogin: v }) }}
             label="Use my own sign-in page"
             desc={hasLogo
               ? 'On: players, parents and your coaches sign in on your page, and welcome emails link there. Off: everyone uses the standard Lumio sign-in.'
@@ -860,9 +1174,10 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
                 : <div style={{ width: 44, height: 44, borderRadius: 8, background: T.panel2, border: `1px dashed ${T.border}`, display: 'grid', placeItems: 'center', fontSize: 10, color: T.text3 }}>none</div>}
               <label style={{ appearance: 'none', border: `1px solid ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '8px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                 ⬆ {hasLogo ? 'Change logo' : 'Upload logo'}
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => { const f = e.target.files?.[0]; if (!f) return; try { await saveBrandLogo(await fileToLogoDataUrl(f)); realProfile.reload() } catch { /* ignore */ } }} />
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; void pickLogo(f) }} />
               </label>
             </div>
+            {logoErr && <div role="alert" style={{ fontSize: 11.5, color: T.bad, marginTop: 6 }}>{logoErr}</div>}
           </Field>
           {s.partnerLogin && (
             <Field T={T} label="Your sign-in link" hint="Put it behind the “Log in” button on your website. Signing in at lumiosports.com works too — it's the same account.">
@@ -892,8 +1207,12 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
             onBlur={e => { const v = e.target.value.trim(); if (!demo && v && v !== realProfile.brand_name) saveCoachProfile({ brand_name: v }).then(() => realProfile.reload()).catch(() => {}) }} /></Field>
           <Field T={T} label="Head coach name"><input style={input(T)} placeholder="Your name" value={s.coach}
             onChange={e => setSettings({ coach: e.target.value })}
-            onBlur={e => { const v = e.target.value.trim(); if (!demo && v && v !== realProfile.display_name) saveCoachProfile({ display_name: v }).then(() => realProfile.reload()).catch(() => {}) }} /></Field>
-          <Field T={T} label="Certification / tagline"><input style={input(T)} placeholder="e.g. LTA Accredited Coach" value={s.cert} onChange={e => setSettings({ cert: e.target.value })} /></Field>
+            onBlur={e => { const v = e.target.value.trim(); if (demo) return; if (v !== e.target.value || !v) setSettings({ coach: v || realProfile.display_name || '' }); if (v && v !== realProfile.display_name) saveCoachProfile({ display_name: v }).then(() => realProfile.reload()).catch(() => {}) }} /></Field>
+          {/* This box and Head coach profile → Accreditation were one stored
+              value under two labels, so each overwrote the other. It is the
+              coach's accreditation everywhere it is shown, so a real academy
+              edits it in one place: Head coach profile. */}
+          {demo && <Field T={T} label="Certification / tagline"><input style={input(T)} placeholder="e.g. LTA Accredited Coach" value={s.cert} onChange={e => setSettings({ cert: e.target.value })} /></Field>}
           <Field T={T} label="Club logo" hint="Top-left of your portal, and on packs, certificates and the player app.">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               {(s.brandLogo || realProfile.brand_logo_url)
@@ -902,39 +1221,65 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
                 : <div style={{ width: 44, height: 44, borderRadius: 8, background: T.panel2, border: `1px dashed ${T.border}`, display: 'grid', placeItems: 'center', fontSize: 10, color: T.text3 }}>none</div>}
               <label style={{ appearance: 'none', border: `1px solid ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '8px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                 ⬆ Upload logo
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async e => { const f = e.target.files?.[0]; if (!f) return; try { await saveBrandLogo(await fileToLogoDataUrl(f)); realProfile.reload() } catch { /* ignore */ } }} />
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; void pickLogo(f) }} />
               </label>
-              {(s.brandLogo || realProfile.brand_logo_url) && <button onClick={() => saveBrandLogo(null).then(() => realProfile.reload())} style={{ appearance: 'none', background: 'transparent', border: 0, color: T.bad, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Remove</button>}
+              {(s.brandLogo || realProfile.brand_logo_url) && <button onClick={() => { setLogoErr(''); void saveBrandLogo(null).then(() => realProfile.reload()) }} style={{ appearance: 'none', background: 'transparent', border: 0, color: T.bad, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Remove</button>}
             </div>
+            {logoErr && <div role="alert" style={{ fontSize: 11.5, color: T.bad, marginTop: 6 }}>{logoErr}</div>}
           </Field>
-
+          {!demo && <PortalAddress T={T} accent={accent} current={portalSlug} />}
         </Modal>
       )}
 
       {open === 'belts' && (
-        <Modal readOnly={demo} T={T} accent={accent} title="Racket criteria" sub="When does a racket count as earned?" onClose={() => setOpen(null)}>
-          <Field T={T} label="Award a racket when every skill reaches" hint="Affects racket progress % everywhere — try it, then open Player Development.">
-            <Seg T={T} accent={accent} value={s.awardThreshold}
-              options={[{ v: 3, label: 'Consistent' }, { v: 4, label: 'Mastered' }]}
-              onChange={v => setSettings({ awardThreshold: v as 3 | 4 })} />
-          </Field>
-          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>The skill-to-racket mapping itself is editable in <code>coach-data.ts</code>; a drag-and-drop editor is on the roadmap.</div>
+        <Modal readOnly={demo} T={T} accent={accent} title="Racket criteria" sub={demo ? 'When does a racket count as earned?' : 'When does a skill count as done?'} onClose={() => setOpen(null)}>
+          {/* A real academy grades on four bars, the fourth being Consistent,
+              and its Racket Progression page always awards a racket at four
+              bars on every skill. What this choice changes is the player's own
+              page and camp targets — so it is named in the academy's own
+              words and says so. (The demo keeps its sample scale.) */}
+          {demo ? (
+            <Field T={T} label="Award a racket when every skill reaches" hint="Affects racket progress % everywhere — try it, then open Player Development.">
+              <Seg T={T} accent={accent} value={s.awardThreshold}
+                options={[{ v: 3, label: 'Consistent' }, { v: 4, label: 'Mastered' }]}
+                onChange={v => setSettings({ awardThreshold: v as 3 | 4 })} />
+            </Field>
+          ) : (
+            <Field T={T} label="Show a skill as done to players at" hint="Used on a player’s own page and for camp targets. On your Racket Progression page a racket is always earned at four bars (Consistent) on every skill.">
+              <Seg T={T} accent={accent} value={s.awardThreshold}
+                options={[{ v: 3, label: 'Three bars (Consolidating)' }, { v: 4, label: 'Four bars (Consistent)' }]}
+                onChange={v => setSettings({ awardThreshold: v as 3 | 4 })} />
+            </Field>
+          )}
+          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>The skills under each racket are Lumio’s standard set, the same for every academy. See them in Coaching, rewards &amp; modules.</div>
         </Modal>
       )}
 
       {open === 'availability' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Availability & courts" onClose={() => setOpen(null)}>
-          <Field T={T} label="Bookable hours"><input style={input(T)} value={s.bookableHours} onChange={e => setSettings({ bookableHours: e.target.value })} /></Field>
-          <Field T={T} label="Lesson types offered" hint="Tap to toggle.">
+          <Field T={T} label="Bookable hours" hint={demo ? undefined : 'The start times families are offered when they book through one of your booking links. Your own calendar is not limited by them.'}>
+            {demo
+              ? <input style={input(T)} value={s.bookableHours} onChange={e => setSettings({ bookableHours: e.target.value })} />
+              : <CheckedInput T={T} start={s.bookableHours} placeholder="e.g. 08:00 – 20:00" kept={() => 'The hours have not been changed.'}
+                  check={v => !v ? 'Enter the hours you can be booked, for example 08:00 – 20:00.' : readHours(v) ? '' : 'Those hours could not be read. Type a start time and a later end time, for example 08:00 – 20:00.'}
+                  onGood={v => setSettings({ bookableHours: v })} />}
+          </Field>
+          <Field T={T} label="Lesson types offered" hint={demo ? 'Tap to toggle.' : 'The types you can choose when you add a booking. Tap to toggle; at least one stays on.'}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {['Private', 'Group', 'Cardio', 'Match play', 'Cardio Tennis', 'Squad', 'Camp'].map(lt => {
+              {(demo ? ['Private', 'Group', 'Cardio', 'Match play', 'Cardio Tennis', 'Squad', 'Camp'] : BOOKABLE_TYPES).map(lt => {
                 const on = s.lessonTypes.includes(lt)
-                return <button key={lt} onClick={() => setSettings({ lessonTypes: on ? s.lessonTypes.filter(x => x !== lt) : [...s.lessonTypes, lt] })}
+                // The last lesson type cannot be switched off: with none ticked
+                // the booking form would have nothing to offer.
+                const last = !demo && on && s.lessonTypes.filter(x => BOOKABLE_TYPES.includes(x)).length <= 1
+                return <button key={lt} disabled={last} onClick={() => setSettings({ lessonTypes: on ? s.lessonTypes.filter(x => x !== lt) : [...s.lessonTypes, lt] })}
                   style={{ appearance: 'none', border: `1px solid ${on ? accent.border : T.border}`, background: on ? accent.dim : 'transparent', color: on ? accent.hex : T.text2, borderRadius: 8, padding: '5px 11px', fontSize: 11.5, cursor: 'pointer', fontWeight: on ? 600 : 400 }}>{on ? '✓ ' : ''}{lt}</button>
               })}
             </div>
           </Field>
-          {(() => {
+          {/* The demo keeps its sample venues. A real academy is shown its own,
+              from Venues & courts. */}
+          {!demo && <HomeVenueLine T={T} accent={accent} onManage={() => setOpen('venuescfg')} />}
+          {demo && (() => {
             const venues = [...VENUES, ...getAddedVenues()]
             const homeId = s.primaryVenueId || (venues.find(v => v.primary)?.id ?? venues[0]?.id ?? '')
             return (
@@ -962,16 +1307,14 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
 
       {open === 'pricing' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Pricing & packages" sub="Reflected on the Payments page" onClose={() => setOpen(null)}>
-          <Field T={T} label="Private lesson rate (£ / hour)">
-            <input style={input(T)} inputMode="numeric" placeholder="e.g. 38" value={s.privateRate ? String(s.privateRate) : ''} onChange={e => setSettings({ privateRate: Number(e.target.value.replace(/\D/g, '')) || 0 })} />
-          </Field>
+          <RateField T={T} />
           <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>Packages and renewal rules are managed on the Payments page; this rate feeds new quotes and the Payments header.</div>
           <TakePayments T={T} accent={accent} />
         </Modal>
       )}
 
       {open === 'kit' && (
-        <Modal readOnly={demo} T={T} accent={accent} title="Lumio Coach Kit & rewards" sub="Order your capture kit and Racket Progression rewards" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Lumio Coach Kit & rewards" sub={demo ? 'Order your capture kit and Racket Progression rewards' : 'Whose rewards your players earn'} onClose={() => setOpen(null)}>
           {/* Not every academy wants Lumio's merchandise, and the ladder works
               perfectly well without it. Switching this on changes what the
               Racket Progression screen says a reward IS — nothing else. */}
@@ -981,15 +1324,19 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
               ? 'Racket Progression talks about your reward, not Lumio keyrings. Certificates still print from here.'
               : 'On: use your own badges, wristbands or club trophies instead of the Lumio keyring and dampener sets.'} />
           <div style={{ height: 14 }} />
-          {/* Read-only plan line */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
+          {/* Read-only plan line. Demo only: it is a sample, and on a real
+              academy it contradicted Plan & features. */}
+          {demo && <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
             <Icon name="shield" size={15} stroke={1.7} style={{ color: accent.hex }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 10.5, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Your Lumio plan</div>
               <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>Coach · £39 / month</div>
             </div>
             <span style={{ fontSize: 9, fontWeight: 700, color: T.text3, background: T.hover, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Demo</span>
-          </div>
+          </div>}
+          {/* The kit cannot be bought yet. A real academy is shown what it will
+              be, with no order buttons and no basket that goes nowhere. */}
+          {!demo && <div style={{ fontSize: 11.5, color: T.text2, lineHeight: 1.5, margin: '0 0 10px' }}><strong style={{ color: T.text }}>Not on sale yet.</strong> The Lumio kit is still being tested, so it cannot be ordered here. To be told when it is ready, email <a href="mailto:hello@lumiosports.com?subject=Lumio%20Coach%20Kit" style={{ color: accent.hex, fontWeight: 600 }}>hello@lumiosports.com</a>.</div>}
 
           {/* Orderable kit / rackets */}
           {KIT_OFFERS.map(item => {
@@ -1003,10 +1350,10 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
                   </div>
                   <div style={{ fontSize: 10.5, color: T.text3, marginTop: 2, lineHeight: 1.4 }}>{item.desc}</div>
                 </div>
-                <button onClick={() => setOrdered(prev => on ? prev.filter(x => x !== item.id) : [...prev, item.id])}
+                {demo && <button onClick={() => setOrdered(prev => on ? prev.filter(x => x !== item.id) : [...prev, item.id])}
                   style={{ appearance: 'none', flexShrink: 0, border: on ? `1px solid ${accent.border}` : 0, borderRadius: 8, padding: '8px 12px', fontSize: 11.5, fontWeight: 600, fontFamily: FONT, cursor: 'pointer', background: on ? 'transparent' : accent.hex, color: on ? accent.hex : T.btnText, display: 'flex', alignItems: 'center', gap: 5 }}>
                   {on ? <><Icon name="check" size={12} stroke={2.2} /> Added to order</> : item.cta}
-                </button>
+                </button>}
               </div>
             )
           })}
@@ -1014,10 +1361,10 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>
             Racket certificates are included — print them per player from <strong style={{ color: T.text2 }}>Player Development</strong>. Kit &amp; mic pricing is indicative while the hardware is field-tested.
           </div>
-          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, background: T.panel2, border: `1px dashed ${T.border}`, borderRadius: 9, padding: '9px 12px' }}>
+          {demo && <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, background: T.panel2, border: `1px dashed ${T.border}`, borderRadius: 9, padding: '9px 12px' }}>
             <span style={{ fontSize: 15 }}>🛒</span>
             <span style={{ fontSize: 11.5, color: T.text2 }}>{ordered.length ? `${ordered.length} item${ordered.length > 1 ? 's' : ''} in your order` : 'Your order is empty'} · <span style={{ color: T.text3 }}>demo only — no real checkout or fulfilment yet</span></span>
-          </div>
+          </div>}
         </Modal>
       )}
 
@@ -1055,7 +1402,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       )}
 
       {open === 'menu' && (
-        <Modal readOnly={demo} T={T} accent={accent} title="Menu visibility" sub="Hide nav items you don't use — they leave the sidebar instantly. Dashboard and Settings always stay." onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Menu visibility" sub="Hide nav items you don't use — they leave the sidebar instantly. Dashboard, Coaches and Settings always stay." onClose={() => setOpen(null)}>
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 9.5, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>Video &amp; Audio</div>
             <Toggle T={T} accent={accent} on={feat.video} onChange={v => setFlag('video', v)} label="Video" desc="Court clips and AI highlights. Turn off to hide the Video tab — the menu becomes “Audio”." />
@@ -1092,7 +1439,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {open === 'studentapp' && (
         <Modal T={T} accent={accent} title="Parent & player app" sub="The player & parent view of your academy" onClose={() => setOpen(null)}>
           <Toggle T={T} accent={accent} on={!!s.studentApp} onChange={v => setSettings({ studentApp: v })}
-            label="Player app" desc="On: your profile menu gains a Player view so you can see the academy as a player or parent does. Off: coach views only." />
+            label="Player app" desc="On: you can invite players and parents to their own page, and your profile menu gains a Player view so you can see it as they do. Off: nobody can be invited, and families who already have a login cannot open their page until you switch it back on." />
           {!!s.studentApp && (
             <>
               <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '18px 0 4px' }}>Sections</div>
@@ -1113,26 +1460,43 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
             </>
           )}
           <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5, marginTop: 14 }}>
-            The parent &amp; player app is a <strong style={{ color: T.text2 }}>Pro / Academy</strong> feature. It&rsquo;s yours to switch on or off here for now — no billing attached yet.
+            The parent &amp; player app is a <strong style={{ color: T.text2 }}>Pro / Academy</strong>{' '}feature. It&rsquo;s yours to switch on or off here for now — no billing attached yet.
           </div>
         </Modal>
       )}
 
       {open === 'profile' && (
-        <Modal readOnly={demo} T={T} accent={accent} title="Head coach profile" sub="Your details, calendar sync and safeguarding documents" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Head coach profile" sub="Your details, calendar sync and safeguarding record" onClose={() => setOpen(null)}>
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>Contact details</div>
           <Field T={T} label="Name">
             <input style={input(T)} value={hp.name} onChange={e => setHeadProfile({ name: e.target.value })}
-              onBlur={e => { const v = e.target.value.trim(); if (v && v !== realProfile.display_name) saveCoachProfile({ display_name: v }).then(() => realProfile.reload()).catch(() => {}) }} />
+              onBlur={e => { const v = e.target.value.trim(); if (v !== e.target.value || !v) setHeadProfile({ name: v || realProfile.display_name || '' }); if (v && v !== realProfile.display_name) saveCoachProfile({ display_name: v }).then(() => realProfile.reload()).catch(() => {}) }} />
           </Field>
-          <Field T={T} label="Role"><input style={input(T)} value={hp.role} onChange={e => setHeadProfile({ role: e.target.value })} /></Field>
+          {/* The demo's only: on a real academy the head coach's role is "Head
+              Coach" on every screen that shows one (the Coaches page holds it
+              read-only), so a box here changed nothing anyone could see. */}
+          {demo && <Field T={T} label="Role"><input style={input(T)} value={hp.role} onChange={e => setHeadProfile({ role: e.target.value })} /></Field>}
           <Field T={T} label="Accreditation" hint="Shown on your profile card and to your players.">
             <select style={{ ...input(T), cursor: 'pointer' }} value={hp.accreditation} onChange={e => setHeadProfile({ accreditation: e.target.value })}>
               {Array.from(new Set([hp.accreditation, ...ACCREDITATIONS].filter(Boolean))).map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </Field>
-          <Field T={T} label="Email"><input style={input(T)} value={hp.email} onChange={e => setHeadProfile({ email: e.target.value })} /></Field>
-          <Field T={T} label="Phone"><input style={input(T)} value={hp.phone} onChange={e => setHeadProfile({ phone: e.target.value })} /></Field>
+          {/* Checked by the same rule as Contact & calendar: these are copied
+              to the head coach's record on the Coaches page. */}
+          <Field T={T} label="Email">
+            {demo
+              ? <input style={input(T)} value={hp.email} onChange={e => setHeadProfile({ email: e.target.value })} />
+              : <CheckedInput T={T} start={hp.email || ''} kept={() => 'The saved address has not been changed.'}
+                  check={v => v && (v.length > 254 || !EMAIL_OK.test(v)) ? 'That email address does not look right. Check it, or leave it empty.' : ''}
+                  onGood={v => setHeadProfile({ email: v })} />}
+          </Field>
+          <Field T={T} label="Phone">
+            {demo
+              ? <input style={input(T)} value={hp.phone} onChange={e => setHeadProfile({ phone: e.target.value })} />
+              : <CheckedInput T={T} start={hp.phone || ''} kept={() => 'The saved number has not been changed.'}
+                  check={v => v && !phoneOk(v) ? 'That phone number does not look right. Use digits, with + for a country code, for example +44 7700 900123.' : ''}
+                  onGood={v => setHeadProfile({ phone: v })} />}
+          </Field>
 
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Email &amp; calendar sync</div>
           <ConnectedAccountsLine T={T} accent={accent} demo={demo} onOpen={() => setOpen('integrations')} />
@@ -1143,13 +1507,17 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
             <Field T={T} label="DBS expiry"><input type="date" style={input(T)} value={hp.dbsExpiry} onChange={e => setHeadProfile({ dbsExpiry: e.target.value })} /></Field>
             <Field T={T} label="Safeguarding training"><input type="date" style={input(T)} value={hp.safeguardingDate} onChange={e => setHeadProfile({ safeguardingDate: e.target.value, safeguardingTrained: !!e.target.value })} /></Field>
           </div>
-          <button style={{ width: '100%', appearance: 'none', border: `1px dashed ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '10px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>⬆ Upload DBS certificate (PDF)</button>
-          <div style={{ fontSize: 11, color: T.good, marginTop: 6 }}>✓ riverside-dbs-2024.pdf · uploaded · demo only</div>
+          {/* The sample upload is the demo's. Lumio does not store certificate
+              files, so a real academy is not shown a button that opens nothing
+              or told that a file it never chose has been uploaded. */}
+          {demo && <button style={{ width: '100%', appearance: 'none', border: `1px dashed ${T.border}`, background: T.panel2, color: T.text2, borderRadius: 9, padding: '10px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>⬆ Upload DBS certificate (PDF)</button>}
+          {demo && <div style={{ fontSize: 11, color: T.good, marginTop: 6 }}>✓ riverside-dbs-2024.pdf · uploaded · demo only</div>}
+          {!demo && <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5 }}>These details are your record on the Coaches page too. Lumio keeps the number and dates, not the certificate itself.</div>}
         </Modal>
       )}
 
       {open === 'booking' && (
-        <Modal readOnly={demo} T={T} accent={accent} title="Booking calendar" sub="Sync external calendars and set booking defaults" onClose={() => setOpen(null)}>
+        <Modal readOnly={demo} T={T} accent={accent} title="Booking calendar" sub="Calendar sync and booking defaults" onClose={() => setOpen(null)}>
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '2px 0 10px' }}>External calendar sync</div>
           <ConnectedAccountsLine T={T} accent={accent} demo={demo} onOpen={() => setOpen('integrations')} />
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Booking defaults</div>
@@ -1157,15 +1525,33 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
             <Seg T={T} accent={accent} value={booking.defaultDuration} options={[{ v: 30, label: '30 min' }, { v: 45, label: '45 min' }, { v: 60, label: '60 min' }]} onChange={v => setBooking({ ...booking, defaultDuration: v })} />
           </Field>
           <Field T={T} label="Buffer between bookings (min)"><input style={input(T)} inputMode="numeric" value={String(booking.buffer)} onChange={e => setBooking({ ...booking, buffer: Number(e.target.value.replace(/\D/g, '')) || 0 })} /></Field>
-          <Toggle T={T} accent={accent} on={booking.autoConfirm} onChange={v => setBooking({ ...booking, autoConfirm: v })} label="Auto-confirm bookings" desc="Off = you approve each request before it's booked." />
+          {/* Holding a booking for approval is not built: a booking made through
+              a booking link is confirmed there and then. So a real academy is
+              told that, not offered a switch that changed nothing. */}
+          {demo
+            ? <Toggle T={T} accent={accent} on={booking.autoConfirm} onChange={v => setBooking({ ...booking, autoConfirm: v })} label="Auto-confirm bookings" desc="Off = you approve each request before it's booked." />
+            : <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>The default length is what the Add booking form starts on. The buffer is the gap kept between lessons when a family books through a booking link. Bookings made through a link are confirmed straight away; to hold one, open it in the calendar and set it to Pending.</div>}
         </Modal>
       )}
 
       {open === 'rewards' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Effort & Rewards" sub="The smartwatch reward system — separate from Racket Progression" onClose={() => setOpen(null)}>
-          <Toggle T={T} accent={accent} on={rewards.leaderboard} onChange={v => setRewards({ ...rewards, leaderboard: v })} label="Show squad leaderboard" desc="Rank players by XP across the academy." />
-          <Toggle T={T} accent={accent} on={rewards.levelsVisible} onChange={v => setRewards({ ...rewards, levelsVisible: v })} label="Show effort levels to players" desc="Rookie → Elite progression in the player view." />
-          <Toggle T={T} accent={accent} on={rewards.watchConsentDefault} onChange={v => setRewards({ ...rewards, watchConsentDefault: v })} label="Default new players to wearable consent" desc="Off is safer — capture effort only with explicit parent consent." />
+          {demo ? (
+            <>
+              <Toggle T={T} accent={accent} on={rewards.leaderboard} onChange={v => setRewards({ ...rewards, leaderboard: v })} label="Show squad leaderboard" desc="Rank players by XP across the academy." />
+              <Toggle T={T} accent={accent} on={rewards.levelsVisible} onChange={v => setRewards({ ...rewards, levelsVisible: v })} label="Show effort levels to players" desc="Rookie → Elite progression in the player view." />
+              <Toggle T={T} accent={accent} on={rewards.watchConsentDefault} onChange={v => setRewards({ ...rewards, watchConsentDefault: v })} label="Default new players to wearable consent" desc="Off is safer — capture effort only with explicit parent consent." />
+            </>
+          ) : (
+            <>
+              {/* Each of these is an existing, working switch under another
+                  name (see leaderboardOn above). Wearable consent has no
+                  default: it is recorded for each player, by their parent. */}
+              <Toggle T={T} accent={accent} on={leaderboardOn} onChange={v => setSectionOff('gpsheatmaps', 'leaderboard', !v)} label="Show squad leaderboard" desc="The XP ranking on your Effort & Rewards page." />
+              <Toggle T={T} accent={accent} on={effortToPlayers} onChange={v => setSectionOff('student', 'rewards', !v)} label="Show effort & rewards to players" desc="XP, effort level and session scores on a player’s own page. The same switch as Parent & player app → Effort & rewards." />
+              <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, margin: '2px 0 8px' }}>Wearable consent is recorded for each player on the Player Roster (Edit → Consent). Effort is only captured for players who have it.</div>
+            </>
+          )}
           <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>Effort &amp; Rewards uses the player&apos;s own smartwatch and never advances a racket — <strong style={{ color: T.text2 }}>Racket Progression stays coach-assessed</strong> against the LTA Youth pathway.</div>
         </Modal>
       )}
@@ -1194,7 +1580,9 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
             <Seg T={T} accent={accent} value={staffCfg.reminderDays} options={[{ v: 30, label: '30 days' }, { v: 60, label: '60 days' }, { v: 90, label: '90 days' }]} onChange={v => setStaffCfg({ ...staffCfg, reminderDays: v })} />
           </Field>
           <Toggle T={T} accent={accent} on={staffCfg.policyOn} onChange={v => setStaffCfg({ ...staffCfg, policyOn: v })} label="Require safeguarding training for all staff" desc="Flags any coach without recorded training." />
-          <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>Manage individual DBS certificates and dates on the <strong style={{ color: T.text2 }}>Staff</strong> page.</div>
+          {/* What these two settings actually do, said plainly: they drive the
+              warnings on the Coaches page. Nothing is emailed. */}
+          <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, marginTop: 6 }}>The reminder is a warning on the <strong style={{ color: T.text2 }}>Coaches</strong> page: a DBS is flagged once it is within this many days of expiring, and (when the switch is on) so is any coach with no safeguarding training recorded. Lumio does not send reminder emails. Manage individual DBS certificates and dates on the Coaches page.</div>
         </Modal>
       )}
 
@@ -1221,7 +1609,14 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
 
       {open === 'messaging' && (
         <Modal readOnly={demo} T={T} accent={accent} title="Messaging" sub="How you reach parents and players" onClose={() => setOpen(null)}>
-          <Field T={T} label="Sender email"><input style={input(T)} value={msg.senderEmail} onChange={e => setMsg({ ...msg, senderEmail: e.target.value })} /></Field>
+          {/* A real academy's email goes out from its connected mailbox, or
+              from the Lumio address with replies sent to its contact email —
+              never from an address typed here, so the box is the demo's only. */}
+          {demo
+            ? <Field T={T} label="Sender email"><input style={input(T)} value={msg.senderEmail} onChange={e => setMsg({ ...msg, senderEmail: e.target.value })} /></Field>
+            : <Field T={T} label="Email sender">
+                <div style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.55 }}>Email goes out from your own mailbox once one is connected (Connected accounts). Until then it goes from the Lumio address, and replies come to your contact email (Contact &amp; calendar).</div>
+              </Field>}
           {/* Texts go out over Lumio's own messaging number, server-side — there is
               no per-coach sending number, so the live portal states that instead of
               offering a field that wouldn't change where texts come from. */}
@@ -1234,14 +1629,14 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
                 </div>
               </Field>}
           <div style={{ fontSize: 10, fontWeight: 700, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', margin: '14px 0 10px' }}>Channels</div>
-          <Toggle T={T} accent={accent} on={msg.email} onChange={v => setMsg({ ...msg, email: v })} label="Email" desc="Uses the sender email above." />
+          <Toggle T={T} accent={accent} on={msg.email} onChange={v => setMsg({ ...msg, email: v })} label="Email" desc={demo ? 'Uses the sender email above.' : 'Off: email is not offered when you send a message.'} />
           {/* The toggle stays for the demo (which shows the finished product) and
               is off the table in a real portal until V2 — a switch that turns
               nothing on is worse than one that says why. */}
           {demo
             ? <Toggle T={T} accent={accent} on={msg.text} onChange={v => setMsg({ ...msg, text: v })} label="Text (SMS)" desc="Uses the sender phone above." />
             : <Toggle T={T} accent={accent} on={false} onChange={() => {}} label={`Text (SMS) · ${V2_LABEL}`} desc="Email and in-app both send today. Tell us if texting is something you'd use and it moves up the list." />}
-          <Toggle T={T} accent={accent} on={msg.inapp} onChange={v => setMsg({ ...msg, inapp: v })} label="In-app (Lumio message)" desc="Always available to players in the app." />
+          <Toggle T={T} accent={accent} on={msg.inapp} onChange={v => setMsg({ ...msg, inapp: v })} label="In-app (Lumio message)" desc={demo ? 'Always available to players in the app.' : 'A message in the player app. Off: it is not offered when you send a message.'} />
         </Modal>
       )}
     </div>

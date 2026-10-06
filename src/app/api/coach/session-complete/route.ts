@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
-import { sessionCoachId, serviceClient } from '@/lib/coach/oauth'
+import { serviceClient } from '@/lib/coach/oauth'
+import { coachGate } from '@/lib/coach/membership'
 import { buildSessionWriteUp, formatWriteUp } from '@/lib/coach/lesson-writeup'
+import { sharedLessonText } from '@/lib/coach/lesson-recap'
+import { ukDate } from '@/lib/coach/uk-date'
 
 export const maxDuration = 120
 
@@ -20,10 +23,15 @@ export const maxDuration = 120
 // losing the prose about it.
 
 export async function POST(req: NextRequest) {
-  const coachId = await sessionCoachId()
-  if (!coachId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
+  // The academy whose portal the coach is in — not the caller's own user id,
+  // which is only the academy for a head coach at home. An invited coach
+  // pressing "Session done" used to be told "Plan not found".
+  const who = await coachGate()
+  if (!who.ok) return NextResponse.json({ error: who.error }, { status: who.status })
   // A demo account is signed in too. Only a real academy may use this.
-  if (!await isAcademyUser(coachId)) return notAnAcademy()
+  if (!await isAcademyUser(who.userId)) return notAnAcademy()
+  const coachId = who.seat.academyId
+  const mine = who.seat.isHead ? null : who.seat.staffId   // an invited coach: their own coach record
 
   const b = (await req.json().catch(() => ({}))) as {
     planId?: string; covered?: string[]; drills?: string[]; note?: string; rating?: number; writeUp?: boolean
@@ -33,7 +41,11 @@ export async function POST(req: NextRequest) {
   const db = serviceClient()
   const { data: plan } = await db.from('coach_session_plans').select('*')
     .eq('id', b.planId).eq('coach_id', coachId).maybeSingle()
-  if (!plan) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+  // An invited coach finishes their own sessions only.
+  if (!plan || (mine && plan.staff_id !== mine)) return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+  // The lesson belongs to the coach the plan belongs to, so it shows in their
+  // Lesson Summaries (and the head coach's) — whoever pressed the button.
+  const staffId: string | null = (plan.staff_id as string | null) ?? null
 
   // Already written up? Say so and stop.
   //
@@ -48,25 +60,57 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, sessionId: already![0].id, written: true, duplicate: true })
   }
 
-  const playerName = String(plan.group_name || plan.title || '').trim()
-  const when = String(plan.session_date || '').slice(0, 10) || new Date().toISOString().slice(0, 10)
+  // WHO the session was with. Only the plan's own player/group name — never the
+  // plan's title. A group session has no player, and falling back to the title
+  // filed its summary under a "player" called "Group — Plain group focus".
+  let playerName = String(plan.group_name || '').trim()
+  // Today in the UK, not in UTC: at 00:30 on a summer night the UTC date is
+  // still yesterday.
+  const when = String(plan.session_date || '').slice(0, 10) || ukDate()
 
   // The player, by id where we can — a name is not an identity, and a summary
-  // filed against the wrong duplicate profile is invisible to the family.
+  // filed against the wrong duplicate profile is invisible to the family. The
+  // booking the plan was written for knows exactly who it is; the name is only
+  // used when there is no booking, and only when it matches ONE player.
   let playerId: string | null = null
-  if (playerName) {
+  if (plan.booking_id) {
+    const { data: bk } = await db.from('coach_bookings')
+      .select('player_id').eq('id', plan.booking_id).eq('coach_id', coachId).maybeSingle()
+    playerId = (bk as { player_id?: string | null } | null)?.player_id ?? null
+  }
+  // Then the player the plan itself was written for (migration 208) — chosen
+  // by the coach from the roster, so it is exact even when two share a name.
+  if (!playerId && (plan as { player_id?: string | null }).player_id) playerId = String((plan as { player_id?: string | null }).player_id)
+  if (!playerId && playerName) {
     const { data: p } = await db.from('coach_players')
-      .select('id').eq('coach_id', coachId).ilike('name', playerName).limit(1)
-    playerId = (p as any)?.[0]?.id ?? null
+      .select('id').eq('coach_id', coachId).ilike('name', playerName.replace(/[\\%_]/g, m => `\\${m}`)).limit(2)
+    const hits = (p as { id: string }[] | null) || []
+    if (hits.length === 1) playerId = hits[0].id
+  }
+  if (playerId) {
+    const { data: pl } = await db.from('coach_players').select('name, staff_id').eq('id', playerId).eq('coach_id', coachId).maybeSingle()
+    // An invited coach writes lessons for their own players. A plan that names
+    // somebody else's player must not put a lesson on that family's page.
+    if (mine && (pl as { staff_id?: string | null } | null)?.staff_id !== mine) {
+      return NextResponse.json({ error: 'That player is not one of yours, so the lesson was not saved. Ask your head coach to assign them to you.' }, { status: 403 })
+    }
+    if ((pl as { name?: string } | null)?.name) playerName = String((pl as { name: string }).name)
   }
 
   // The previous lesson, so the write-up can say what has moved rather than
-  // describing this hour in isolation.
-  const { data: prev } = await db.from('coach_sessions')
-    .select('session_date, focus, summary, review_json')
-    .eq('coach_id', coachId).ilike('player_name', playerName || '%')
-    .order('session_date', { ascending: false }).limit(1)
-  const last = (prev as any)?.[0] || null
+  // describing this hour in isolation. THIS player's previous lesson: with no
+  // player there is nothing to look up (it used to match every lesson in the
+  // academy and hand the write-up somebody else's history).
+  type Prev = { session_date?: string | null; focus?: string | null; summary?: string | null; review_json?: { nextFocus?: string | null; coachNote?: string } | null }
+  let last = null as Prev | null
+  if (playerId || playerName) {
+    let prevQ = db.from('coach_sessions')
+      .select('session_date, focus, summary, review_json')
+      .eq('coach_id', coachId)
+    prevQ = playerId ? prevQ.eq('player_id', playerId) : prevQ.ilike('player_name', playerName.replace(/[\\%_]/g, m => `\\${m}`))
+    const { data: prev } = await prevQ.order('session_date', { ascending: false }).limit(1)
+    last = (prev as Prev[] | null)?.[0] || null
+  }
 
   const covered = (b.covered || []).map(s => String(s).trim()).filter(Boolean).slice(0, 12)
   const drills = (b.drills || []).map(s => String(s).trim()).filter(Boolean).slice(0, 12)
@@ -79,7 +123,7 @@ export async function POST(req: NextRequest) {
   if (b.writeUp !== false) {
     try {
       const out = await buildSessionWriteUp({
-        playerName: playerName || 'this player',
+        playerName: playerName || (plan.session_type ? `the ${String(plan.session_type).toLowerCase()} group` : 'the group'),
         focus: plan.focus,
         sessionType: plan.session_type,
         durationMin: plan.duration_min,
@@ -89,11 +133,14 @@ export async function POST(req: NextRequest) {
         note,
         rating,
         last: last ? {
-          date: last.session_date, focus: last.focus, summary: last.summary,
+          // This write-up is read by the family, so the model is told only what
+          // the family could already read about the last lesson. A summary saved
+          // before the private note had its own field IS that note.
+          date: last.session_date, focus: last.focus, summary: sharedLessonText(last).summary,
           nextFocus: last.review_json?.nextFocus ?? null,
         } : null,
       })
-      review = { ...out, source: 'session-complete' }
+      review = { ...out, ...(plan.session_type ? { type: plan.session_type } : {}), source: 'session-complete' }
       aiReview = formatWriteUp(out)
     } catch (e) {
       // Not fatal. The lesson is still recorded; the coach is told why it is bare.
@@ -102,14 +149,32 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Saved without a write-up (switched off, or Lumio Coach could not write it):
+  // the review still says what kind of session it was, so the summary reads
+  // "Group session" rather than borrowing a name.
+  if (!review && plan.session_type) review = { type: plan.session_type, source: 'session-complete' }
+
+  // The "How did it go?" note is labelled "shared with the player", so it is
+  // filed as the note TO the player — the one the family's page prints as "From
+  // your coach". Saved only as the summary line it reached nobody once Lumio
+  // Coach had written a recap. This is the Finish-session note and nothing else:
+  // the plan's own note (what the coach asked for when building the plan) is
+  // private and is never put here.
+  if (note) review = { ...(review || { source: 'session-complete' }), playerNote: note }
+
   const row = {
     coach_id: coachId,
+    staff_id: staffId,
     player_id: playerId,
-    player_name: playerName || 'Session',
+    player_name: playerName || null,
     session_date: when,
     focus: (review?.focus as string) || plan.focus || plan.title || 'Session',
     rating: rating ?? (typeof review?.rating === 'number' ? review.rating : null),
-    summary: note || String(plan.notes || ''),
+    // The shared line is the "How did it go?" note and nothing else. It used to
+    // fall back to the plan's own note — what the coach asked Lumio Coach for
+    // when building the plan ("push her hard, mum says she is lazy") — which
+    // then appeared on the family's page as the lesson's summary.
+    summary: note,
     ai_review: aiReview,
     review_json: review,
     plan_id: plan.id,
@@ -128,7 +193,7 @@ export async function POST(req: NextRequest) {
     const { data: won } = await db.from('coach_sessions')
       .select('id').eq('coach_id', coachId).eq('plan_id', plan.id).limit(1)
     if ((won as { id: string }[] | null)?.length) {
-      return NextResponse.json({ ok: true, sessionId: won![0].id, written: !!review, duplicate: true })
+      return NextResponse.json({ ok: true, sessionId: won![0].id, written: !!aiReview, duplicate: true })
     }
   }
   if (error || !session) {
@@ -142,7 +207,7 @@ export async function POST(req: NextRequest) {
       const { data: ex } = await db.from('coach_attendance')
         .select('id').eq('coach_id', coachId).eq('player_id', playerId).eq('session_date', when).limit(1)
       if (!(ex as any)?.length) {
-        await db.from('coach_attendance').insert({ coach_id: coachId, player_id: playerId, session_date: when, present: true })
+        await db.from('coach_attendance').insert({ coach_id: coachId, staff_id: staffId, player_id: playerId, session_date: when, present: true })
       }
     } catch (e) { console.warn('[coach/session-complete] attendance', e) }
   }
@@ -153,5 +218,5 @@ export async function POST(req: NextRequest) {
     await db.from('coach_session_plans').update({ completed_at: new Date().toISOString() }).eq('id', plan.id)
   } catch { /* the column may not exist on an older database */ }
 
-  return NextResponse.json({ ok: true, sessionId: session.id, written: !!review, aiError })
+  return NextResponse.json({ ok: true, sessionId: session.id, written: !!aiReview, aiError })
 }

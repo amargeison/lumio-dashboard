@@ -19,7 +19,7 @@
 // on one side, a service-role query fenced to one player on the other — and the
 // view has no business knowing which.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { RACKET_STAGES, SKILLS_BY_STAGE, SKILL_LEVELS } from '@/app/coach/[slug]/_lib/coach-db'
 import { avatarSrc } from '@/lib/avatar'
@@ -92,6 +92,13 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
   onReact?: (id: string, reaction: string | null) => Promise<void>
 }) {
   const [playing, setPlaying] = useState<StudentClip | null>(null)
+  // Escape closes the clip, as it does every other overlay.
+  useEffect(() => {
+    if (!playing) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPlaying(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [playing])
   const { player, skills, lessons, clips, voiceNotes, watch, resources, sectionsOff, awardThreshold } = bundle
   const books = bundle.books || []
   const messages = bundle.messages || []
@@ -107,7 +114,12 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
   const nextStage = RACKET_STAGES[Math.min(stageIdx + 1, RACKET_STAGES.length - 1)]
   const stageSkills = SKILLS_BY_STAGE[stage?.id || ''] || []
   const scoreOf = (name: string) => skills.find(s => s.skill === name)?.score ?? 0
-  const remaining = stageSkills.filter(s => scoreOf(s) < awardThreshold).length
+  // How far the next racket is, by the rule that actually awards one: four bars
+  // on every skill (the coach's Racket Progression page). The academy's "show a
+  // skill as done at" setting still decides the tick beside each skill below,
+  // but it used to drive this too — so a family read "3 skills from the Blue
+  // racket" and "25%" while the coach's page said 0% and offered no award.
+  const remaining = stageSkills.filter(s => scoreOf(s) < 4).length
   const pct = stageSkills.length ? Math.round(((stageSkills.length - remaining) / stageSkills.length) * 100) : 0
   const hasRacket = !!player.racket_stage && stageSkills.length > 0
   const racketModule = !bundle.features || bundle.features.racket !== false
@@ -226,7 +238,8 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
               // The summary leads. It is the paragraph that actually gets read —
               // burying it under a takeaway quote made the page look like notes
               // rather than an answer to "how did it go?".
-              const recap = lessonRecap({ ...l, player_name: player.name })
+              // An adult reading their own page is "you", not "Addie's session".
+              const recap = lessonRecap({ ...l, player_name: f.audience === 'adult' ? '' : player.name })
               const take = (r.takeaways || [])[0] || (l.summary || '').trim()
               return (
                 <div key={l.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '12px 14px' }}>
@@ -239,9 +252,16 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
                     <div style={{ fontSize: 12.5, color: T.text, marginTop: 8, lineHeight: 1.65 }}>{recap.text}</div>
                   )}
                   {!!take && take !== recap.text && <div style={{ fontSize: 12, color: T.text2, marginTop: 6, lineHeight: 1.5, fontStyle: 'italic' }}>“{take}”</div>}
-                  {!!r.coachNote && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 6, fontStyle: 'italic', display: 'flex', gap: 6 }}>
-                    <Icon name="megaphone" size={12} stroke={1.7} style={{ color: T.accent, flexShrink: 0, marginTop: 2 }} />Coach: {r.coachNote}
-                  </div>}
+                  {/* The coach's PRIVATE note is not shown here. The lesson form
+                      calls it "Coach note (private) — not shared", and this page
+                      is the family's. The server no longer sends it either.
+                      What is shown is `playerNote`: the separate note the coach
+                      (or Lumio Coach) wrote TO the player. */}
+                  {!!r.playerNote && r.playerNote !== recap.text && r.playerNote !== take && (
+                    <div style={{ fontSize: 12, color: T.text2, marginTop: 8, lineHeight: 1.55 }}>
+                      <span style={{ fontWeight: 700, color: T.text3 }}>From your coach: </span>{r.playerNote}
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -274,13 +294,15 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
               <div style={{ fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>Coach voice notes</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {voiceNotes.map(a => (
-                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10 }}>
+                  // Wraps: on a phone the player drops under the title. Side by
+                  // side, the title was squeezed to one word per line.
+                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, padding: '9px 12px', background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10 }}>
                     <span style={{ width: 30, height: 30, borderRadius: 8, display: 'grid', placeItems: 'center', background: T.accentDim, flexShrink: 0 }}><Icon name="mic" size={15} stroke={1.7} style={{ color: T.accent }} /></span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ flex: '1 1 150px', minWidth: 0 }}>
                       <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>{a.title || 'Voice note'}</div>
                       <div style={{ fontSize: 10.5, color: T.text3 }}>{prettyDate(a.created_at)}{a.duration_seconds ? ` · ${Math.round(a.duration_seconds / 60)} min` : ''}</div>
                     </div>
-                    {!!a.url && <audio controls src={a.url} style={{ height: 30, maxWidth: 190 }} />}
+                    {!!a.url && <audio controls src={a.url} style={{ height: 30, maxWidth: '100%', flex: '0 1 190px' }} />}
                   </div>
                 ))}
               </div>
@@ -611,6 +633,16 @@ function MessageThread({ T, messages, adult, me, coaches, campThreads, onSend, o
   const hidden = Math.max(0, ordered.length - 12)
   const shown = showAll ? ordered : ordered.slice(-12)
 
+  // Open at the newest message, and go back there when one arrives or is sent.
+  // The box scrolls inside itself, and it used to open at the top — so the
+  // coach's latest reply, and the message just sent, sat out of sight below.
+  const box = useRef<HTMLDivElement | null>(null)
+  const newestId = shown.length ? shown[shown.length - 1].id : ''
+  useEffect(() => {
+    const el = box.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [newestId, audience, chan])
+
   const tabs: { id: string; label: string; sub?: string }[] = [
     { id: 'academy', label: 'Your coach' },
     ...team.slice(0, 6).map(c => ({ id: `coach:${c.name}`, label: c.name.split(/\s+/)[0], sub: c.role || 'Coach' })),
@@ -687,7 +719,7 @@ function MessageThread({ T, messages, adult, me, coaches, campThreads, onSend, o
               : 'No messages yet.'}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: onSend ? 14 : 0, maxHeight: showAll ? 'none' : 560, overflowY: showAll ? 'visible' : 'auto' }}>
+        <div ref={box} style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: onSend ? 14 : 0, maxHeight: showAll ? 'none' : 560, overflowY: showAll ? 'visible' : 'auto' }}>
           {shown.map(m => {
             // In a one-to-one thread, everything inbound is from this family. In
             // a CAMP thread it is not: every other player, and every Discord
@@ -796,7 +828,8 @@ function MessageThread({ T, messages, adult, me, coaches, campThreads, onSend, o
             </div>
           </div>
           <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10, lineHeight: 1.55 }}>
-            This is their side of it. {adult ? 'They' : 'The parent'} can type here, tap a message to react, reply or forward it, and pick which coach — or the camp — they are writing to.
+            {/* One string, so the space after "The parent" cannot be lost when the page is built. */}
+            {`This is their side of it. ${adult ? 'They' : 'The parent'} can type here, tap a message to react, reply or forward it, and pick which coach — or the camp — they are writing to. `}
             You can&rsquo;t send from the preview, because it would go out in their name; reply from your own Messages page instead.
           </div>
         </>
@@ -819,10 +852,18 @@ function MessageComposer({ T, value, onChange, onSend, reply, onCancelReply, to,
 }) {
   const [state, setState] = useState('')
   const [emojiOpen, setEmojiOpen] = useState(false)
+  // One message per press. The box is only cleared when the request comes back,
+  // so a double-click used to send the same text twice. A ref, not state: the
+  // second click of a double-click lands before a re-render could disable the
+  // button.
+  const busy = useRef(false)
+  const [sending, setSending] = useState(false)
   const send = async () => {
-    if (!value.trim()) return
+    if (!value.trim() || busy.current) return
+    busy.current = true; setSending(true)
     setState('Sending…')
-    try { await onSend(); setState('✓ Sent') } catch { setState('Could not send') }
+    try { await onSend(); setState('✓ Sent') } catch { setState('Your message was not sent. Please try again.') }
+    finally { busy.current = false; setSending(false) }
   }
   return (
     <>
@@ -849,8 +890,8 @@ function MessageComposer({ T, value, onChange, onSend, reply, onCancelReply, to,
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10 }}>
         <button onClick={() => setEmojiOpen(o => !o)} title="Add an emoji"
           style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', borderRadius: 10, padding: '8px 11px', fontSize: 15, cursor: 'pointer', lineHeight: 1 }}>🙂</button>
-        <button onClick={send} disabled={!value.trim()}
-          style={{ appearance: 'none', border: 0, background: T.accent, color: T.btnText, borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: value.trim() ? 'pointer' : 'not-allowed', opacity: value.trim() ? 1 : 0.5, fontFamily: 'inherit' }}>Send</button>
+        <button onClick={send} disabled={!value.trim() || sending}
+          style={{ appearance: 'none', border: 0, background: T.accent, color: T.btnText, borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: value.trim() && !sending ? 'pointer' : 'not-allowed', opacity: value.trim() && !sending ? 1 : 0.5, fontFamily: 'inherit' }}>Send</button>
         {!!state && <span style={{ fontSize: 11.5, color: state.startsWith('✓') ? T.good : T.text3 }}>{state}</span>}
       </div>
     </>
@@ -1444,8 +1485,8 @@ function Countdown({ T, camp, started, days, you }: {
     : ''
 
   const unit = (n: number, label: string) => (
-    <div style={{ textAlign: 'center', minWidth: 54 }}>
-      <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: T.text, lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>{String(n).padStart(2, '0')}</div>
+    <div style={{ textAlign: 'center', minWidth: 0, flex: '0 1 54px' }}>
+      <div style={{ fontFamily: MONO, fontSize: 'clamp(20px, 6.4vw, 28px)', fontWeight: 700, color: T.text, lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>{String(n).padStart(2, '0')}</div>
       <div style={{ fontSize: 9, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 3 }}>{label}</div>
     </div>
   )
@@ -1465,7 +1506,9 @@ function Countdown({ T, camp, started, days, you }: {
           <div style={{ fontSize: 10, color: T.accent, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>
             {camp.status === 'pending' ? 'Place held' : 'Place booked'} · counting down
           </div>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', marginTop: 10, flexWrap: 'wrap' }}>
+          {/* One line at any width: wrapped, it read "20 : 08 : 15 :" with the
+              seconds alone underneath. The numbers shrink a little on a phone. */}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', marginTop: 10, flexWrap: 'nowrap' }}>
             {unit(dd, dd === 1 ? 'day' : 'days')}
             <Colon T={T} />{unit(hh, 'hrs')}
             <Colon T={T} />{unit(mm, 'min')}

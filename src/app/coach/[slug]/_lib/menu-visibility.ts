@@ -19,6 +19,25 @@ function write(list: string[]) {
   if (typeof window === 'undefined') return
   try { ls.setItem(KEY, JSON.stringify(list)) } catch { /* ignore quota */ }
   window.dispatchEvent(new CustomEvent(EVT))
+  try { persist?.(list) } catch { /* a failed mirror must not block the toggle */ }
+}
+
+// ── Following the account ───────────────────────────────────────────────────
+// The hidden list lived only in this browser, so a coach who tidied their menu
+// on the desktop found every item back on their phone — and the coaches they
+// invited never saw the tidy version at all. settings-sync registers a hook
+// here that saves the list with the rest of the academy's settings, and primes
+// it back on load. Same arrangement as the feature flags.
+type Persist = (hidden: string[]) => void
+let persist: Persist | null = null
+export function setMenuPersist(fn: Persist | null) { persist = fn }
+
+/** Load the account's copy into the cache WITHOUT saving it straight back. */
+export function primeHidden(list: unknown) {
+  if (typeof window === 'undefined') return
+  const clean = Array.isArray(list) ? list.filter((x): x is string => typeof x === 'string') : []
+  try { ls.setItem(KEY, JSON.stringify(clean)) } catch { /* ignore quota */ }
+  window.dispatchEvent(new CustomEvent(EVT))
 }
 
 // Hidden ids, with the always-visible ones defensively stripped out.

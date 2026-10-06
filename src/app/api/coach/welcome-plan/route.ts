@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { runCoachAgent, extractJson, buildPlayerContext } from '@/lib/coach/agent'
 import { welcomePlanTask } from '@/lib/coach/agent-persona'
 import { rateLimit } from '@/lib/rate-limit'
+import { studentAudience } from '@/lib/student/bundle'
 
 export const maxDuration = 60
 
@@ -56,7 +57,11 @@ export async function POST(req: NextRequest) {
     // RLS scopes this to the coach's own roster.
     const { data: player } = await supabase
       .from('coach_players')
-      .select('name, age, racket_stage, standard, goal, level, notes')
+      // `level` and `category` — NOT `standard`, which has never existed on this
+      // table. Asking for a column that is not there makes the whole read fail,
+      // so every request answered "Player not found" and the pack always fell
+      // back to the generic plan. (player-targets had the same fault.)
+      .select('name, age, racket_stage, goal, level, category, parent_name, parent_email')
       .eq('id', playerId).maybeSingle()
     if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
 
@@ -67,15 +72,16 @@ export async function POST(req: NextRequest) {
     // welcome pack — buildPlayerContext returns '' and the plan is written from
     // the stage, age and goal alone. A player being handed one late (a transfer,
     // a returning junior) does have history, and it gets used.
-    const context = await buildPlayerContext(supabase, player.name)
+    const context = await buildPlayerContext(supabase, player.name, playerId)
 
     const task = welcomePlanTask({
       playerName: player.name,
       age: player.age ?? null,
       stage: player.racket_stage ?? null,
-      standard: player.standard ?? null,
+      standard: player.level ?? player.category ?? null,
       goal: player.goal ?? null,
-      notes: player.notes ?? null,
+      // The coach's private roster note is never sent: the family reads this pack.
+      notes: null,
       academy: profile?.brand_name || 'the academy',
       coachName: profile?.display_name || 'your coach',
       context,
@@ -84,20 +90,29 @@ export async function POST(req: NextRequest) {
     const { text } = await runCoachAgent({ apiKey, task, maxTokens: 1200 })
     const plan = extractJson<Plan>(text, {})
 
-    const weeks = (plan.weeks || [])
-      .filter(w => w && (w.week || w.focus))
-      .slice(0, 6)
-      .map((w, i) => ({ week: String(w.week || `Week ${i + 1}`).slice(0, 30), focus: String(w.focus || '').slice(0, 300) }))
+    // "First four weeks" is the heading the pack prints, so four is the most it
+    // gets, and a week with nothing in it is not a week. Numbered here rather
+    // than trusting the labels, so dropping an empty one cannot leave a gap.
+    const weeks = (Array.isArray(plan.weeks) ? plan.weeks : [])
+      .filter(w => w && typeof w.focus === 'string' && w.focus.trim())
+      .slice(0, 4)
+      .map((w, i) => ({ week: `Week ${i + 1}`, focus: String(w.focus).trim().slice(0, 300) }))
 
     // A welcome pack with no plan in it is worse than the old template, so if
     // Lumio Coach came back empty the caller is told and keeps the template.
     if (weeks.length === 0) throw new Error('no weeks returned')
 
+    // Only plain text is printed. Anything else Lumio Coach sends back in a
+    // field (a list, an object) is left out rather than printed as "[object Object]".
+    const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+    // An adult has no parent to write a note to.
+    const adult = studentAudience(player) === 'adult'
+
     return NextResponse.json({
-      welcome: String(plan.welcome || '').slice(0, 800),
+      welcome: str(plan.welcome, 800),
       weeks,
-      first_session: String(plan.first_session || '').slice(0, 500),
-      parent_note: String(plan.parent_note || '').slice(0, 600),
+      first_session: str(plan.first_session, 500),
+      parent_note: adult ? '' : str(plan.parent_note, 600),
     })
   } catch (err) {
     console.error('[coach/welcome-plan]', err)

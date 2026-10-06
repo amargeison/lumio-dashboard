@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { uploadAvatar } from '../avatar/route'
+import { coachSeat } from '@/lib/coach/membership'
 
 export const runtime = 'nodejs'
 
@@ -38,14 +39,12 @@ async function me() {
     { auth: { persistSession: false } },
   )
   // Resolved from the membership, never from the request — otherwise a coach
-  // could name somebody else's staff row and edit it.
-  const { data: rows } = await admin.from('coach_members')
-    .select('academy_id, staff_id, role, status')
-    .eq('member_user_id', user.id).eq('status', 'active')
-    .order('created_at', { ascending: false }).limit(1)
-  const m = rows?.[0]
-  if (!m || m.role !== 'coach' || !m.staff_id) return null
-  return { admin, academyId: m.academy_id as string, staffId: m.staff_id as string }
+  // could name somebody else's staff row and edit it. A coach at two academies
+  // has a record at each: the portal's address picks which (see coachSeat),
+  // and only between academies they are already a coach at.
+  const m = await coachSeat(user.id, user.email)
+  if (!m || m.isHead || !m.staffId) return null
+  return { admin, academyId: m.academyId, staffId: m.staffId }
 }
 
 export async function GET() {
@@ -53,7 +52,7 @@ export async function GET() {
   if (!who) return NextResponse.json({ error: 'No coach access' }, { status: 403 })
 
   const [{ data: staff }, { data: venues }] = await Promise.all([
-    who.admin.from('coach_staff').select(READABLE).eq('id', who.staffId).maybeSingle(),
+    who.admin.from('coach_staff').select(READABLE).eq('id', who.staffId).eq('coach_id', who.academyId).maybeSingle(),
     who.admin.from('coach_staff_venues')
       .select('venue_id, is_primary, coach_venues(name)')
       .eq('staff_id', who.staffId),
@@ -102,6 +101,18 @@ export async function POST(req: NextRequest) {
   for (const k of EDITABLE) if (k in body) patch[k] = body[k] === '' ? null : body[k]
   if (!Object.keys(patch).length) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
+  }
+  // Checked here as well as in the form: the form is not the only way to reach
+  // this route, and an address that is not one was stored as given — then used
+  // as the address invites and messages for this coach are sent to.
+  if (typeof patch.email === 'string') {
+    const email = patch.email.trim().toLowerCase()
+    if (email.length > 200 || !/^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(email)) {
+      return NextResponse.json({ error: 'That email address does not look right. Check it, or leave it empty.' }, { status: 400 })
+    }
+    patch.email = email
+  } else if ('email' in patch && patch.email !== null) {
+    return NextResponse.json({ error: 'That email address does not look right. Check it, or leave it empty.' }, { status: 400 })
   }
   patch.updated_at = new Date().toISOString()
 

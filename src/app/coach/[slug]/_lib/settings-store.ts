@@ -138,6 +138,10 @@ export type CoachSettings = {
   // club's trophies or nothing but certificates is running the same system and
   // should not be reading about merchandise they have not bought.
   ownRewards: boolean
+  // Same-name players the coach has said are different people, so the roster
+  // stops offering to merge them. Each entry is that group's player ids, sorted
+  // and joined with "+". Optional: absent until the first time it is used.
+  notDuplicates?: string[]
   // Help that cannot be switched off is nagging. Both default ON for a new
   // portal; a coach who knows their way around turns them off in Settings.
   helpHints: boolean          // the ⓘ beside each page title
@@ -159,6 +163,12 @@ export type CoachSettings = {
   // The head coach's own contact + DBS / safeguarding record (the account owner).
   // Empty by default so a new head is correctly flagged until they record it.
   head: { phone: string; email: string; contractedHours: number | null; dbsNumber: string; dbsIssued: string; dbsExpiry: string; safeguardingTrained: boolean; safeguardingDate: string; avatarUrl: string }
+  // First-run choices that have to follow the account, not the browser: the
+  // coach pressed "Skip for now" on the setup wizard, or "Go to my portal now"
+  // on the we-are-setting-you-up screen. Without them both came back on every
+  // page load, on every device.
+  setupSkipped?: boolean
+  setupPendingSeen?: boolean
 }
 
 /** A date `days` from today as YYYY-MM-DD — for the demo persona's records. */
@@ -348,9 +358,15 @@ export function setSettingsPersist(fn: PersistFn | null) { persist = fn }
 // Write straight to the cache WITHOUT echoing back to the server. Used by the
 // hydrate path — without this, loading from the server would immediately push
 // the same values back up as if the coach had just changed them.
+//
+// The server copy REPLACES the cache; it is not laid over it. Merging kept every
+// key the server copy lacked, so whatever was in this browser before — another
+// account's academy name, DBS number, logo — showed through in a new account
+// and was then saved into it. getSettings() fills anything missing from the
+// defaults, so a short server copy is still a complete settings object.
 export function primeSettingsCache(next: Partial<CoachSettings>) {
   if (typeof window === 'undefined') return
-  try { ls.setItem(KEY, JSON.stringify({ ...getSettings(), ...next })) } catch { /* ignore */ }
+  try { ls.setItem(KEY, JSON.stringify(next)) } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(EVT))
 }
 
@@ -397,13 +413,23 @@ export function setSectionOff(moduleId: string, key: string, off: boolean) {
   setSettings({ sectionsOff: { ...cur, [moduleId]: Array.from(list) } })
 }
 
+// "Reset" puts back how the portal LOOKS, and nothing else. It used to empty
+// the whole settings record, which is also where the head coach's DBS and
+// safeguarding dates, the academy's details, the player-app switch and the
+// booking-email switch are kept — so one click lost a compliance record and
+// switched emails to parents back on. Named one by one, so a setting added
+// later is kept unless somebody decides it is only a matter of appearance.
 export function resetSettings() {
   if (typeof window === 'undefined') return
-  try { ls.removeItem(KEY) } catch { /* ignore */ }
-  window.dispatchEvent(new CustomEvent(EVT))
-  // Clear the server copy too, or the next hydrate would restore what the coach
-  // just reset — on this device and every other one.
-  persist?.(activeDefaults())
+  const d = activeDefaults()
+  const s = getSettings()
+  // What families see in the player app is a decision, not a layout: kept.
+  const student = s.sectionsOff?.student
+  setSettings({
+    theme: d.theme, accentKey: d.accentKey, density: d.density,
+    helpHints: d.helpHints, gettingStarted: d.gettingStarted,
+    sectionsOff: student ? { student } : {},
+  })
 }
 
 // ── Canonical head-coach record ─────────────────────────────────────────────

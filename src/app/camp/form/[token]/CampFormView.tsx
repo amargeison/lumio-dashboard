@@ -10,6 +10,8 @@ export type FormPublic = {
   campName: string; startDate: string | null; endDate: string | null; location: string | null
   adult: boolean; intro: string | null; sections: FormSection[]
   answers: Answers; submittedAt: string | null
+  /** Required questions added since they sent the form. They are asked for just these. */
+  stillNeeded?: string[]
 }
 
 const ACCENT = '#3A8EE0'
@@ -23,7 +25,14 @@ export default function CampFormView({ data }: { data: FormPublic }) {
   const [done, setDone] = useState(false)
   // Someone coming back to a form they have already sent sees their answers,
   // and can change them.
-  const [editing, setEditing] = useState(!data.submittedAt)
+  // Unless the coach has since added something they must answer: then they are
+  // asked for just those questions, with everything they already said kept.
+  const [topUp, setTopUp] = useState(!!data.submittedAt && !!data.stillNeeded?.length)
+  const [editing, setEditing] = useState(!data.submittedAt || topUp)
+  const need = new Set(data.stillNeeded || [])
+  const sections = topUp
+    ? data.sections.map(s => ({ ...s, questions: s.questions.filter(q => need.has(q.id)) })).filter(s => s.questions.length > 0)
+    : data.sections
 
   const set = (id: string, v: string | string[]) => { setA(p => ({ ...p, [id]: v })); if (missing.includes(id)) setMissing(m => m.filter(x => x !== id)) }
   const isEmpty = (q: FormQuestion) => { const v = a[q.id]; return Array.isArray(v) ? v.length === 0 : !String(v ?? '').trim() }
@@ -41,7 +50,7 @@ export default function CampFormView({ data }: { data: FormPublic }) {
       const res = await fetch('/api/camp/form', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: data.token, answers: a }) })
       const d = await res.json().catch(() => ({}))
       if (!res.ok) { if (Array.isArray(d.missing)) setMissing(d.missing); throw new Error(d.error || 'Could not save your answers') }
-      setDone(true); setEditing(false); window.scrollTo({ top: 0, behavior: 'smooth' })
+      setDone(true); setEditing(false); setTopUp(false); window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (e) { setErr(e instanceof Error ? e.message : 'Could not save your answers') }
     setBusy(false)
   }
@@ -110,12 +119,21 @@ export default function CampFormView({ data }: { data: FormPublic }) {
                 Something changed? <button onClick={() => { setEditing(true); setDone(false) }} style={{ appearance: 'none', border: 0, background: 'none', padding: 0, color: ACCENT, font: 'inherit', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>Change your answers</button> — this link keeps working until the camp is over.
               </p>
             </>
+          ) : topUp ? (
+            <>
+              <p style={{ fontSize: 15.5, lineHeight: 1.6, color: '#7c4a03', background: '#fff7ed', border: '1px solid #fcd9a8', borderRadius: 10, padding: '11px 13px', margin: '10px 0 0' }}>
+                <strong>{need.size === 1 ? 'One more question' : `${need.size} more questions`}.</strong> {data.coachName || 'Your coach'} has added to this form since you filled it in. Everything you told us before is saved — only {need.size === 1 ? 'this one is' : 'these are'} needed.
+              </p>
+              <p style={{ fontSize: 14, color: '#6b7280', margin: '12px 0 0', lineHeight: 1.6 }}>
+                <button onClick={() => setTopUp(false)} style={{ appearance: 'none', border: 0, background: 'none', padding: 0, color: ACCENT, font: 'inherit', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>See or change your other answers</button>
+              </p>
+            </>
           ) : (
             data.intro && <p style={{ fontSize: 15, lineHeight: 1.65, color: '#374151', margin: '6px 0 0', whiteSpace: 'pre-line' }}>{data.intro}</p>
           )}
         </div>
 
-        {data.sections.map(s => (
+        {sections.map(s => (
           <div key={s.id} style={card}>
             <div style={h2}>{s.title}</div>
             {s.help && editing && <p style={{ fontSize: 13.5, lineHeight: 1.55, color: '#6b7280', margin: '0 0 6px', whiteSpace: 'pre-line' }}>{s.help}</p>}
@@ -142,7 +160,7 @@ export default function CampFormView({ data }: { data: FormPublic }) {
             {!!err && <div style={{ fontSize: 14, color: '#dc2626', marginBottom: 12 }}>{err}</div>}
             <button onClick={() => { void submit() }} disabled={busy}
               style={{ appearance: 'none', border: 0, background: ACCENT, color: '#fff', borderRadius: 12, padding: '14px 28px', fontSize: 16, fontWeight: 700, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, width: '100%', maxWidth: 320, fontFamily: 'inherit' }}>
-              {busy ? 'Sending…' : data.submittedAt ? 'Save my changes' : 'Send my answers'}
+              {busy ? 'Sending…' : topUp ? 'Send these answers' : data.submittedAt ? 'Save my changes' : 'Send my answers'}
             </button>
             <div style={{ fontSize: 12.5, color: '#9aa1b1', marginTop: 10 }}>* needs an answer. Your answers go only to {data.coachName || 'your coach'} and the coaching team.</div>
           </div>

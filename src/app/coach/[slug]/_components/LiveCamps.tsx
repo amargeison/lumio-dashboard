@@ -7,11 +7,12 @@
 // Attendees link to the roster so Player Packs pull real racket/attendance/skills.
 
 import { useState, useEffect, useMemo, type CSSProperties, type ReactNode } from 'react'
+import { useAskBeforeClose } from '../_lib/ask-before-close'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { useCoachTable, dbInsert, useCoachProfile, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbList, useCoachProfile, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
 import { avatarSrc } from '@/lib/avatar'
-import { CampDesigner, type CampPlan } from './CampDesigner'
+import { CampDesigner, realDays, type CampPlan } from './CampDesigner'
 import { campOrg, printParentBrief, printRunSheet, printPlayerReport, printCertificate, printCampPack } from '../_lib/camp-printables'
 import { CampPromote } from './CampPromote'
 import { CampEmails } from './CampEmails'
@@ -22,8 +23,11 @@ import { getSettings, setSettings } from '../_lib/settings-store'
 import { useCoachSettings } from '../_lib/use-settings'
 import { stageWords } from '../_lib/stage-words'
 import { AUDIENCES, campAudience } from '@/lib/coach/camp-audience'
+import { formDone } from '@/lib/coach/camp-form'
 import { flagFor } from '@/lib/coach/country-flag'
-import { campMoney } from '@/lib/coach/camp-money'
+import { campMoney, paidSoFar } from '@/lib/coach/camp-money'
+import { formatPounds } from '@/lib/coach/money'
+import { ukDate } from '@/lib/coach/uk-date'
 // The four tabs a coach uses once the camp is sold and has to be run. They live
 // in their own module because each is a screen in its own right, not a panel.
 import { KitChecklist, AttendeeTable, TargetsBoard, FinanceBoard, CampCoaches } from './CampTabs'
@@ -102,19 +106,27 @@ type Player = {
   id: string; name: string; age?: number | null; racket_stage?: string | null; avatar_url?: string | null
   // Used by the Promote tab to work out who an announcement can reach.
   email?: string | null; parent_email?: string | null; parent_name?: string | null
+  category?: string | null; no_camp_emails?: boolean | null
 }
 
 const DAY = 86400000
 const fmtD = (d?: string | null) => { const t = d ? new Date(d) : null; return t && !isNaN(t.getTime()) ? t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—' }
-const money = (n: number) => `£${(n || 0).toLocaleString('en-GB')}`
+const money = (n: number) => formatPounds(n)
 const campDays = (c: Camp) => { if (c.start_date && c.end_date) { const d = Math.round((new Date(c.end_date).getTime() - new Date(c.start_date).getTime()) / DAY) + 1; return d > 0 ? d : (c.itinerary?.length || 0) } return c.itinerary?.length || 0 }
-const isPast = (c: Camp) => !!c.end_date && new Date(c.end_date).getTime() < Date.now() - DAY
-const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
+// Finished = its last day has gone, on the UK calendar — the same rule the public
+// sign-up page uses. A camp with no end date is a one-day camp, so its last day
+// is its first (it used to stay "Upcoming" for ever).
+const isPast = (c: Camp) => { const last = String(c.end_date || c.start_date || '').slice(0, 10); return !!last && last < ukDate() }
+// Array.from takes whole characters, so a name that starts with an emoji is not cut in half.
+const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => Array.from(w)[0]?.toUpperCase()).join('') || '?'
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+// A cancelled place is not a booking: it does not take a spot or count in any total.
+const notCancelled = (a: { status?: string | null }) => (a.status || '') !== 'cancelled'
 
 export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const camps = useCoachTable<Camp>('coach_camps')
   const attendees = useCoachTable<Attendee>('coach_camp_attendees')
-  const { rows: players } = useCoachTable<Player>('coach_players')
+  const { rows: players, reload: reloadPlayers } = useCoachTable<Player>('coach_players')
   // updated_at comes back already (dbList selects *) — it is what lets a certificate
   // say a racket was earned DURING this camp rather than just asserting it.
   const { rows: skillRows } = useCoachTable<{ player_id: string; skill: string; score: number; updated_at?: string }>('coach_player_skills')
@@ -162,6 +174,54 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
 
   const sel = camps.rows.find(c => c.id === selId) ?? camps.rows[0]
   const campAttendees = attendees.rows.filter(a => a.camp_id === sel?.id)
+  // The number every heading shows. Cancelled places stay listed on the
+  // Attendees tab but are not "booked".
+  const bookedCount = campAttendees.filter(notCancelled).length
+
+  // New camp: saved, then OPENED. `camps.add` hands nothing back, so the row is
+  // written here directly — the id is what selects the new camp and what turns
+  // its Discord tab on. Without it the previous camp stayed on screen and the
+  // Discord tick was lost.
+  const createCamp = async (v: Record<string, any>, o: { discord: boolean }) => {
+    const r = await dbInsert('coach_camps', v) as { id?: string } | null
+    await camps.reload()
+    if (r?.id) { setSelId(r.id); setTab('overview'); if (o.discord) setDiscord(r.id, true) }
+    setFormOpen(false)
+  }
+
+  // Deleting a camp takes everything attached to it — the database removes the
+  // places, form answers, payment ticks, email history and group chat with it.
+  // So the question says exactly what will go, in numbers, before anything does.
+  const deleteCamp = async () => {
+    if (!sel) return
+    const live = campAttendees.filter(notCancelled)
+    const forms = campAttendees.filter(a => a.form_submitted_at).length
+    const payers = live.filter(a => paidSoFar(sel, a) > 0)
+    const collected = payers.reduce((n, a) => n + paidSoFar(sel, a), 0)
+    let emails = 0, chat = 0
+    try {
+      const [logRows, msgRows] = await Promise.all([
+        dbList<{ camp_id?: string | null; status?: string }>('coach_camp_emails'),
+        dbList<{ camp_id?: string | null }>('coach_messages'),
+      ])
+      emails = logRows.filter(l => l.camp_id === sel.id && l.status === 'sent').length
+      chat = msgRows.filter(m => m.camp_id === sel.id).length
+    } catch { /* the counts below still say what is known */ }
+    const lines = [
+      campAttendees.length ? `• ${plural(campAttendees.length, 'person', 'people')} on the attendee list, with their rooms, goals and medical notes` : '',
+      forms ? `• ${plural(forms, 'filled-in information form')}` : '',
+      payers.length ? `• the payment record for ${plural(payers.length, 'person', 'people')} (${money(collected)} received)` : '',
+      emails ? `• the record of ${plural(emails, 'email')} sent` : '',
+      chat ? `• ${plural(chat, 'message')} in the camp’s group chat` : '',
+      sel.itinerary?.length ? `• the ${sel.itinerary.length}-day itinerary, kit list and targets` : '',
+    ].filter(Boolean)
+    const msg = `Delete “${sel.name}” for good?\n\n`
+      + (lines.length ? `This will also delete:\n${lines.join('\n')}\n\n` : '')
+      + `${sel.signup_slug || campAttendees.length ? 'The sign-up page and every family’s form link will stop working. ' : ''}Your roster players are kept. This cannot be undone.`
+    if (!confirm(msg)) return
+    try { await camps.remove(sel.id); await attendees.reload(); setSelId(null) }
+    catch (e) { alert(e instanceof Error ? e.message : 'That camp could not be deleted. Try again.') }
+  }
 
   const skillMap = useMemo(() => { const m: Record<string, Record<string, number>> = {}; for (const r of skillRows) { (m[r.player_id] ||= {})[r.skill] = r.score } return m }, [skillRows])
   const skillDates = useMemo(() => { const m: Record<string, Record<string, string>> = {}; for (const r of skillRows) { if (r.updated_at) (m[r.player_id] ||= {})[r.skill] = r.updated_at } return m }, [skillRows])
@@ -175,13 +235,13 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
           <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Create your first camp — Lumio’s AI will design the itinerary, kit and targets for you.</div>
           <button onClick={() => setFormOpen(true)} style={{ marginTop: 14, appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ New camp</button>
         </div>
-        {formOpen && <CampForm T={T} accent={accent} camp={null} discord={false} onClose={() => setFormOpen(false)} onSave={async (v, o) => { const r = await camps.add(v) as { id?: string } | undefined; if (r?.id && o.discord) setDiscord(r.id, true); setFormOpen(false) }} />}
+        {formOpen && <CampForm T={T} accent={accent} camp={null} discord={false} onClose={() => setFormOpen(false)} onSave={createCamp} />}
       </div>
     )
   }
 
-  const booked = (c: Camp) => attendees.rows.filter(a => a.camp_id === c.id).length
-  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['coaches', `Coaches${Array.isArray(sel!.coach_ids) && (sel!.coach_ids as string[]).length ? ` · ${(sel!.coach_ids as string[]).length}` : ''}`], ['attendees', `Attendees · ${campAttendees.length}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['trip', 'Trip hub'], ['form', `Info form${campAttendees.length ? ` · ${campAttendees.filter(a => a.form_submitted_at).length}/${campAttendees.length}` : ''}`], ['emails', 'Emails'], ['discord', 'Discord'], ['promote', 'Promote'], ['finance', 'Finance']]
+  const booked = (c: Camp) => attendees.rows.filter(a => a.camp_id === c.id && notCancelled(a)).length
+  const TABS = [['overview', 'Overview'], ['itinerary', `${campDays(sel!) || ''}${campDays(sel!) ? '-Day ' : ''}Itinerary`], ['equipment', 'Equipment'], ['coaches', `Coaches${Array.isArray(sel!.coach_ids) && (sel!.coach_ids as string[]).length ? ` · ${(sel!.coach_ids as string[]).length}` : ''}`], ['attendees', `Attendees · ${bookedCount}`], ['targets', 'Targets'], ['packs', 'Player Packs'], ['trip', 'Trip hub'], ['form', `Info form${bookedCount ? ` · ${campAttendees.filter(a => notCancelled(a) && formDone(sel!, a)).length}/${bookedCount}` : ''}`], ['emails', 'Emails'], ['discord', 'Discord'], ['promote', 'Promote'], ['finance', 'Finance']]
     .filter(([id]) => id !== 'discord' || discordOn(sel?.id))
 
   return (
@@ -200,7 +260,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
                 <span style={{ fontSize: 8.5, fontWeight: 700, color: past ? T.good : accent.hex, background: past ? `${T.good}22` : accent.dim, padding: '2px 6px', borderRadius: 4, textTransform: 'uppercase' }}>{past ? 'Completed' : 'Upcoming'}</span>
               </div>
               <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{c.location || c.region || '—'}</div>
-              <div style={{ fontSize: 10.5, color: T.text3, marginTop: 6 }}>{fmtD(c.start_date)} → {fmtD(c.end_date)}{campDays(c) ? ` · ${campDays(c)} days` : ''}</div>
+              <div style={{ fontSize: 10.5, color: T.text3, marginTop: 6 }}>{fmtD(c.start_date)} → {fmtD(c.end_date)}{campDays(c) ? ` · ${plural(campDays(c), 'day')}` : ''}</div>
               <div style={{ height: 5, borderRadius: 3, background: T.hover, marginTop: 8, overflow: 'hidden' }}><div style={{ width: `${cap ? Math.min(100, bk / cap * 100) : 0}%`, height: '100%', background: past ? T.good : accent.hex }} /></div>
               <div style={{ fontSize: 10, color: T.text3, marginTop: 3, textAlign: 'right' }}>{bk}/{cap || '—'}</div>
             </button>
@@ -212,19 +272,21 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
         {/* Camp header */}
         <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 18, marginBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 240, display: 'flex', gap: 13, alignItems: 'flex-start' }}>
+            <div style={{ flex: '1 1 240px', minWidth: 0, display: 'flex', gap: 13, alignItems: 'flex-start' }}>
               {/* Read off the free-text region. No flag rather than a wrong one. */}
               {flagFor(sel.region, sel.location) && (
                 <span aria-hidden style={{ fontSize: 34, lineHeight: 1, marginTop: 1 }}>{flagFor(sel.region, sel.location)}</span>
               )}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              {/* overflowWrap: a very long name or an unbroken description wraps
+                  inside its own column instead of running under the figures. */}
+              <div style={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>
               <div style={{ fontSize: 19, fontWeight: 700, color: T.text }}>{sel.name}</div>
-              <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>{[sel.location, sel.region, sel.surface, sel.courts ? `${sel.courts} courts` : ''].filter(Boolean).join(' · ')}</div>
+              <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>{[sel.location, sel.region, sel.surface, sel.courts ? plural(sel.courts, 'court') : ''].filter(Boolean).join(' · ')}</div>
               {sel.description && <div style={{ fontSize: 12.5, color: T.text2, marginTop: 10, lineHeight: 1.5, maxWidth: 640 }}>{sel.description}</div>}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}>
-              {[['Dates', `${campDays(sel)} days`], ['Booked', `${campAttendees.length}/${sel.capacity || '—'}`], ['Per head', money(sel.price || 0)], ['Booked value', money((sel.price || 0) * campAttendees.length)]].map(([l, v], i) => (
+              {[['Dates', plural(campDays(sel), 'day')], ['Booked', `${bookedCount}/${sel.capacity || '—'}`], ['Per head', money(sel.price || 0)], ['Booked value', money((sel.price || 0) * bookedCount)]].map(([l, v], i) => (
                 <div key={l}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{l}</div><div style={{ fontSize: 15, fontWeight: 700, color: i === 3 ? T.good : i === 2 ? accent.hex : T.text, marginTop: 3 }}>{v}</div></div>
               ))}
             </div>
@@ -240,9 +302,9 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
           )}
         </div>
 
-        {tab === 'overview' && <Overview T={T} accent={accent} camp={sel} booked={campAttendees.length} attendees={campAttendees} />}
+        {tab === 'overview' && <Overview T={T} accent={accent} camp={sel} booked={bookedCount} attendees={campAttendees} />}
         {tab === 'itinerary' && <Itinerary T={T} accent={accent} camp={sel} onSave={v => camps.edit(sel.id, v)} attendeeNames={campAttendees.map(a => a.player_name)} />}
-        {tab === 'equipment' && <KitChecklist T={T} accent={accent} camp={sel} attendeeCount={campAttendees.length} onSave={v => camps.edit(sel.id, v)} />}
+        {tab === 'equipment' && <KitChecklist T={T} accent={accent} camp={sel} attendeeCount={bookedCount} onSave={v => camps.edit(sel.id, v)} />}
         {tab === 'targets' && (
           <TargetsBoard T={T} accent={accent} camp={sel} attendees={campAttendees} players={players}
             onSave={v => camps.edit(sel.id, v)} onReload={() => camps.reload()} editAtt={attendees.edit} />
@@ -253,7 +315,8 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
             coaches={staffRows.filter(st => (Array.isArray(sel.coach_ids) ? (sel.coach_ids as string[]) : []).map(String).includes(String(st.id)))}
             addPlayer={async (name, playerId) => {
               const row = await dbInsert('coach_camp_attendees', { camp_id: sel.id, player_id: playerId, player_name: name }) as { id?: string } | null
-              attendees.reload()
+              // Awaited, so "+ Add" stays locked until the new place is on screen.
+              await attendees.reload()
               // Confirm it the same three ways a lesson is confirmed: in their
               // portal, by email, and with a calendar entry they can add.
               // Fire-and-forget — the place is already booked either way.
@@ -281,23 +344,23 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
         {tab === 'discord' && discordOn(sel.id) && <CampDiscord T={T} accent={accent} campId={sel.id} campName={sel.name} />}
         {tab === 'promote' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <SignupPanel T={T} accent={accent} camp={sel} booked={campAttendees.length}
+            <SignupPanel T={T} accent={accent} camp={sel} booked={bookedCount}
               signups={campAttendees.filter(a => a.source === 'signup').length}
               onSave={v => camps.edit(sel.id, v)} />
-            <CampPromote T={T} accent={accent} campId={sel.id} campName={sel.name} players={players} />
+            <CampPromote T={T} accent={accent} campId={sel.id} campName={sel.name} players={players} attendees={campAttendees} onPlayersChanged={reloadPlayers} />
           </div>
         )}
         {tab === 'finance' && <FinanceBoard T={T} accent={accent} camp={sel} attendees={campAttendees} editAtt={attendees.edit} editCamp={v => camps.edit(sel.id, v)} />}
 
         <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => setEditOpen(true)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>Edit camp details</button>
-          <button onClick={async () => { if (confirm(`Delete ${sel.name}?`)) { await camps.remove(sel.id); setSelId(null) } }} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.bad, borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>Delete camp</button>
+          <button onClick={() => void deleteCamp()} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.bad, borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>Delete camp</button>
         </div>
 
         {editOpen && <CampForm T={T} accent={accent} camp={sel} discord={discordOn(sel.id)} discordLocked={discordLinked(sel.id)} onClose={() => setEditOpen(false)} onSave={async (v, o) => { await camps.edit(sel.id, v); if (!discordLinked(sel.id)) setDiscord(sel.id, o.discord); setEditOpen(false) }} />}
       </>}
 
-      {formOpen && <CampForm T={T} accent={accent} camp={null} discord={false} onClose={() => setFormOpen(false)} onSave={async (v, o) => { const r = await camps.add(v) as { id?: string } | undefined; if (r?.id) { setSelId(r.id); if (o.discord) setDiscord(r.id, true) } setFormOpen(false) }} />}
+      {formOpen && <CampForm T={T} accent={accent} camp={null} discord={false} onClose={() => setFormOpen(false)} onSave={createCamp} />}
     </div>
   )
 }
@@ -339,7 +402,7 @@ function Overview({ T, accent, camp, booked, attendees }: { T: ThemeTokens; acce
   const collected = m.collected
   const glance: [string, ReactNode][] = [
     ['Location', camp.location || '—'], ['Region', camp.region || '—'],
-    ['Duration', `${campDays(camp)} days · ${fmtD(camp.start_date)}–${fmtD(camp.end_date)}`], ['Courts', [camp.courts, camp.surface].filter(Boolean).join(' · ') || '—'],
+    ['Duration', `${plural(campDays(camp), 'day')} · ${fmtD(camp.start_date)}–${fmtD(camp.end_date)}`], ['Courts', [camp.courts, camp.surface].filter(Boolean).join(' · ') || '—'],
     // Written by Lumio Coach when the camp is designed — it is his one-line
     // summary of how a day is shaped and why it is ordered that way. Blank until
     // then, and saying so beats an unexplained dash.
@@ -348,14 +411,16 @@ function Overview({ T, accent, camp, booked, attendees }: { T: ThemeTokens; acce
   ]
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14 }}>
-      <div style={card(T)}>
+    {/* Two columns on a desktop, one on a phone: at 360px the fixed
+        `1.4fr 1fr` left tiles 75px wide, one word to a line. */}
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'stretch' }}>
+      <div style={{ ...card(T), flex: '1.4 1 320px', minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 12 }}>Camp at a glance</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {glance.map(([l, v]) => <div key={l} style={box(T)}><div style={lbl(T)}>{l}</div><div style={{ fontSize: 12.5, color: T.text, marginTop: 3 }}>{v}</div></div>)}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: 10 }}>
+          {glance.map(([l, v]) => <div key={l} style={{ ...box(T), minWidth: 0, overflowWrap: 'anywhere' }}><div style={lbl(T)}>{l}</div><div style={{ fontSize: 12.5, color: T.text, marginTop: 3 }}>{v}</div></div>)}
         </div>
       </div>
-      <div style={card(T)}>
+      <div style={{ ...card(T), flex: '1 1 260px', minWidth: 0 }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 12 }}>Financial snapshot</div>
         {([
           [`If it sells out · ${camp.capacity || '—'} × ${money(price)}`, potential, T.text3],
@@ -403,6 +468,7 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
   useEffect(() => { setOrigin(window.location.origin) }, [])
 
   const isOpen = !!camp.signup_open
+  const over = isPast(camp)
   const cleanSlug = slugify(slug)
   const url = origin && cleanSlug ? origin + '/camp/' + cleanSlug : ''
   const depNum = Number(dep) || 0
@@ -430,6 +496,9 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
 
   const toggle = async () => {
     if (!isOpen && !cleanSlug) { setErr('Give the page a link first.'); return }
+    // The public page refuses sign-ups once the last day has gone, so "opening"
+    // them here would show Live while nobody could sign up.
+    if (!isOpen && over) { setErr('This camp has finished, so nobody can sign up for it. If it is running again, change its dates first.'); return }
     await save({ signup_open: !isOpen })
   }
 
@@ -439,12 +508,15 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
     <div style={card(T)}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Public sign-up page</div>
-        <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, padding: '2px 7px', borderRadius: 999, color: isOpen ? T.good : T.text3, background: isOpen ? T.good + '22' : T.hover, border: '1px solid ' + (isOpen ? T.good + '55' : T.border) }}>{isOpen ? 'Live' : 'Closed'}</span>
+        <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, padding: '2px 7px', borderRadius: 999, color: isOpen && !over ? T.good : T.text3, background: isOpen && !over ? T.good + '22' : T.hover, border: '1px solid ' + (isOpen && !over ? T.good + '55' : T.border) }}>{over ? 'Camp finished' : isOpen ? 'Live' : 'Closed'}</span>
         {signups > 0 && <span style={{ fontSize: 11, color: T.text3 }}>{signups} signed up through the page</span>}
         <button onClick={toggle} disabled={busy} style={{ marginLeft: 'auto', appearance: 'none', border: isOpen ? '1px solid ' + T.border : 0, background: isOpen ? 'transparent' : accent.hex, color: isOpen ? T.text2 : T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: busy ? 'wait' : 'pointer', fontFamily: FONT }}>
           {isOpen ? 'Close sign-ups' : 'Open sign-ups'}
         </button>
       </div>
+      {over && <div style={{ marginTop: 8, fontSize: 12, color: T.warn, lineHeight: 1.5 }}>
+        This camp has finished, so the page takes no more sign-ups{isOpen ? ' and tells visitors so' : ''}. If it is running again, change its dates.
+      </div>}
       <p style={{ margin: '6px 0 14px', fontSize: 12, color: T.text3, lineHeight: 1.55, maxWidth: 640 }}>
         Share one link and people sign themselves up. Name, age, medical notes and consents land straight on your
         Attendees list. Taking the money on the page arrives in V2 — for now the page reserves the place and you
@@ -505,8 +577,8 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
       </div>
 
       {dirty && <div style={{ fontSize: 11.5, color: T.warn, marginTop: 8 }}>Unsaved changes — the live page still shows the old details until you save.</div>}
-      {camp.capacity
-        ? <div style={{ fontSize: 11.5, color: T.text3, marginTop: 8 }}>The page stops taking sign-ups at {camp.capacity} places — {Math.max(0, camp.capacity - booked)} left.</div>
+      {over ? null : camp.capacity
+        ? <div style={{ fontSize: 11.5, color: T.text3, marginTop: 8 }}>The page stops taking sign-ups at {plural(camp.capacity, 'place')} — {Math.max(0, camp.capacity - booked)} left.</div>
         : <div style={{ fontSize: 11.5, color: T.warn, marginTop: 8 }}>No capacity set, so the page will keep accepting sign-ups. Set one with “Edit camp details”.</div>}
       {mode !== 'none' && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 6 }}>Places are only held once payment clears. If your Stripe account isn&apos;t connected yet, sign-ups are still saved and marked awaiting payment.</div>}
     </div>
@@ -523,12 +595,19 @@ function Itinerary({ T, accent, camp, onSave, attendeeNames }: { T: ThemeTokens;
   // this button and overwrote the camp with whatever came back — no preview, no
   // undo, and a coach who had spent an evening editing days lost them to one click.
   const acceptPlan = async (plan: CampPlan, inputs: { ages: string; group_size: number | null; intent: string; board: string }) => {
+    // A plan with no days is not a plan. Refused here too, so whatever reaches
+    // this function can never replace a saved itinerary with nothing.
+    // Days with nothing in them do not count, and are never written.
+    const planned = realDays(plan.itinerary)
+    if (planned.length === 0) throw new Error('There is no plan to accept. Nothing has been changed.')
     await onSave({
-      itinerary: plan.itinerary || [],
+      itinerary: planned,
       equipment: plan.equipment || camp.equipment,
       objectives: plan.objectives || camp.objectives,
       daily_rhythm: plan.daily_rhythm || camp.daily_rhythm,
-      parent_brief: plan.parent_brief || null,
+      // A plan that came without a brief keeps the brief already saved — it is
+      // the copy on the public sign-up page.
+      parent_brief: plan.parent_brief || camp.parent_brief || null,
       ages: inputs.ages || null,
       group_size: inputs.group_size,
       intent: inputs.intent || null,
@@ -712,8 +791,10 @@ function Packs({ T, accent, camp, attendees, players, skillMap, skillDates, attR
   const tiles: [string, string][] = [['Attendance', attPct === null ? '—' : `${attPct}%`], [W.Noun, st ? st.name : '—'], ['Skills mastered', String(mastered.length)], ['Camp days', String(campDays(camp))]]
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 14 }}>
-      <div style={{ ...card(T), padding: 8, alignSelf: 'start' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'flex-start' }}>
+      {/* A fixed list beside the pack on a desktop; on a phone the pack drops
+          underneath it instead of being squeezed into what is left. */}
+      <div style={{ ...card(T), padding: 8, flex: '1 0 220px', maxWidth: 260, minWidth: 0 }}>
         {attendees.map(a => {
           const active = a.id === sel.id
           return <div key={a.id} onClick={() => setSelId(a.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 3 }}>
@@ -725,7 +806,7 @@ function Packs({ T, accent, camp, attendees, players, skillMap, skillDates, attR
           </div>
         })}
       </div>
-      <div style={card(T)}>
+      <div style={{ ...card(T), flex: '1 1 280px', minWidth: 0, overflowWrap: 'anywhere' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{sel.player_name}</div>
           <div style={{ fontSize: 11.5, color: T.text3 }}>{camp.name} · {fmtD(camp.start_date)}–{fmtD(camp.end_date)}</div>
@@ -746,7 +827,7 @@ function Packs({ T, accent, camp, attendees, players, skillMap, skillDates, attR
           {camp.itinerary.slice(0, 14).map((d, i) => (
             <div key={i} style={{ display: 'flex', gap: 10, padding: '6px 0', borderTop: i ? `1px solid ${T.border}` : 'none' }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: accent.hex, width: 34, flexShrink: 0 }}>D{d.day}</span>
-              <div><div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{d.focus}</div>{d.did && <div style={{ fontSize: 11, color: T.text3 }}>{d.did}</div>}</div>
+              <div><div style={{ fontSize: 12, color: T.text, fontWeight: 600 }}>{d.theme || d.focus}</div>{d.did && <div style={{ fontSize: 11, color: T.text3 }}>{d.did}</div>}</div>
             </div>
           ))}
         </>}
@@ -758,19 +839,47 @@ function Packs({ T, accent, camp, attendees, players, skillMap, skillDates, attR
 
 function CampForm({ T, accent, camp, discord = false, discordLocked = false, onClose, onSave }: { T: ThemeTokens; accent: AccentTokens; camp: Camp | null; discord?: boolean; discordLocked?: boolean; onClose: () => void; onSave: (v: Record<string, any>, opts: { discord: boolean }) => Promise<void> }) {
   const [useDiscord, setUseDiscord] = useState(discord)
-  const [d, setD] = useState<Record<string, any>>({ name: camp?.name || '', location: camp?.location || '', region: camp?.region || '', start_date: camp?.start_date || '', end_date: camp?.end_date || '', capacity: camp?.capacity || 16, price: camp?.price || 0, surface: camp?.surface || '', courts: camp?.courts || '', board: camp?.board || '', description: camp?.description || '', audience: campAudience(camp) })
+  // 16 is only a starting suggestion for a NEW camp. Editing one shows what it
+  // actually holds: a camp with no limit used to be given 16 places the first
+  // time anything about it was edited.
+  const [d, setD] = useState<Record<string, any>>({ name: camp?.name || '', location: camp?.location || '', region: camp?.region || '', start_date: camp?.start_date || '', end_date: camp?.end_date || '', capacity: camp ? (camp.capacity ?? '') : 16, price: camp?.price || 0, surface: camp?.surface || '', courts: camp?.courts || '', board: camp?.board || '', description: camp?.description || '', audience: campAudience(camp) })
   const [saving, setSaving] = useState(false)
-  const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
+  const [err, setErr] = useState('')
+  const set = (k: string, v: any) => { setErr(''); setD(p => ({ ...p, [k]: v })) }
+  // Escape closes it, like every other dialog in the portal.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
   const field: CSSProperties = { width: '100%', background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box', outline: 'none' }
   const lab: CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 5px' }
+  // What is wrong with what has been typed, or '' when it can be saved. A blank
+  // box is always allowed — it means "not set", never zero.
+  const problem = (): string => {
+    const whole = (v: unknown) => String(v ?? '').trim() === '' || /^\d+$/.test(String(v).trim())
+    if (d.start_date && d.end_date && String(d.end_date) < String(d.start_date)) return 'The end date is before the start date. Check the two dates.'
+    if (d.end_date && !d.start_date) return 'Add a start date as well as an end date.'
+    if (!whole(d.capacity) || Number(d.capacity) > 5000) return 'Capacity needs to be a whole number of places, up to 5,000. Leave it blank for no limit.'
+    if (String(d.price ?? '').trim() !== '' && (!(Number(d.price) >= 0) || Number(d.price) > 100000)) return 'The price per head needs to be an amount in pounds, from 0 to 100,000.'
+    if (!whole(d.courts) || Number(d.courts) > 500) return 'Courts needs to be a whole number, up to 500. Leave it blank if you are not sure yet.'
+    return ''
+  }
   const save = async () => {
     if (!String(d.name).trim() || saving) return
-    setSaving(true)
-    try { await onSave({ name: d.name, location: d.location, region: d.region, start_date: d.start_date || null, end_date: d.end_date || null, capacity: Number(d.capacity) || null, price: Number(d.price) || null, surface: d.surface, courts: Number(d.courts) || null, board: d.board, description: d.description, audience: d.audience }, { discord: useDiscord }) }
+    const bad = problem()
+    if (bad) { setErr(bad); return }
+    setSaving(true); setErr('')
+    try { await onSave({ name: String(d.name).trim(), location: d.location, region: d.region, start_date: d.start_date || null, end_date: d.end_date || null, capacity: Number(d.capacity) || null, price: Number(d.price) || null, surface: d.surface, courts: Number(d.courts) || null, board: d.board, description: d.description, audience: d.audience }, { discord: useDiscord }) }
+    // A save the database turns down has to say so. It used to leave the form
+    // sitting open with no message at all.
+    catch (e) { setErr(`That was not saved${e instanceof Error && e.message ? ` — ${e.message}` : ''}. Check the details and try again.`) }
     finally { setSaving(false) }
   }
+  // A tap on the dark margin asks first once something has been typed.
+  const closeOutside = useAskBeforeClose(JSON.stringify(d), onClose)
   return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '4vh 16px', overflowY: 'auto' }}>
+    <div onClick={e => { if (e.target === e.currentTarget) closeOutside() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '4vh 16px', overflowY: 'auto' }}>
       <div style={{ width: '100%', maxWidth: 520, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 20 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 14 }}>{camp ? 'Edit camp' : 'New camp'}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -779,14 +888,16 @@ function CampForm({ T, accent, camp, discord = false, discordLocked = false, onC
             <div><label style={lab}>Location</label><input value={d.location} onChange={e => set('location', e.target.value)} placeholder="Vale do Lobo" style={field} /></div>
             <div><label style={lab}>Region</label><input value={d.region} onChange={e => set('region', e.target.value)} placeholder="Algarve, Portugal" style={field} /></div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div><label style={lab}>Start date</label><input type="date" value={d.start_date} onChange={e => set('start_date', e.target.value)} style={field} /></div>
-            <div><label style={lab}>End date</label><input type="date" value={d.end_date} onChange={e => set('end_date', e.target.value)} style={field} /></div>
+          {/* auto-fit + minWidth 0: on a narrow phone the two date boxes stack
+              rather than the second one poking out past the edge of the form. */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+            <div style={{ minWidth: 0 }}><label style={lab}>Start date</label><input type="date" value={d.start_date} onChange={e => set('start_date', e.target.value)} style={{ ...field, minWidth: 0 }} /></div>
+            <div style={{ minWidth: 0 }}><label style={lab}>End date</label><input type="date" value={d.end_date} min={d.start_date || undefined} onChange={e => set('end_date', e.target.value)} style={{ ...field, minWidth: 0 }} /></div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-            <div><label style={lab}>Capacity</label><input type="number" value={d.capacity} onChange={e => set('capacity', e.target.value)} style={field} /></div>
-            <div><label style={lab}>Per head £</label><input type="number" value={d.price} onChange={e => set('price', e.target.value)} style={field} /></div>
-            <div><label style={lab}>Courts</label><input type="number" value={d.courts} onChange={e => set('courts', e.target.value)} style={field} /></div>
+            <div style={{ minWidth: 0 }}><label style={lab}>Capacity</label><input type="number" min={1} step={1} inputMode="numeric" value={d.capacity} placeholder="No limit" onChange={e => set('capacity', e.target.value)} style={field} /></div>
+            <div style={{ minWidth: 0 }}><label style={lab}>Per head £</label><input type="number" min={0} inputMode="decimal" value={d.price} onChange={e => set('price', e.target.value)} style={field} /></div>
+            <div style={{ minWidth: 0 }}><label style={lab}>Courts</label><input type="number" min={0} step={1} inputMode="numeric" value={d.courts} onChange={e => set('courts', e.target.value)} style={field} /></div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div><label style={lab}>Surface</label><input value={d.surface} onChange={e => set('surface', e.target.value)} placeholder="Clay & hard" style={field} /></div>
@@ -834,10 +945,11 @@ function CampForm({ T, accent, camp, discord = false, discordLocked = false, onC
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 10.5, color: T.text3, marginTop: 10 }}>After creating, open the Itinerary tab and tap “Design with AI” to generate the full plan, kit and targets.</div>
+        {!camp && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 10 }}>After creating, open the Itinerary tab and tap “Design with Lumio Coach” to generate the full plan, kit and targets.</div>}
+        {err && <div role="alert" style={{ fontSize: 12.5, color: T.bad, background: `${T.bad}14`, border: `1px solid ${T.bad}44`, borderRadius: 9, padding: '9px 12px', marginTop: 12, lineHeight: 1.5 }}>{err}</div>}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
           <button onClick={onClose} style={{ appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
-          <button onClick={save} disabled={!String(d.name).trim() || saving} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: String(d.name).trim() && !saving ? 1 : 0.5, fontFamily: FONT }}>{saving ? 'Creating…' : 'Create camp'}</button>
+          <button onClick={save} disabled={!String(d.name).trim() || saving} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: String(d.name).trim() && !saving ? 1 : 0.5, fontFamily: FONT }}>{saving ? 'Saving…' : camp ? 'Save changes' : 'Create camp'}</button>
         </div>
       </div>
     </div>

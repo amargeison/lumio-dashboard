@@ -143,9 +143,20 @@ export function tidyForm(raw: unknown): InfoForm | null {
   return { enabled: r.enabled !== false, intro: String(r.intro ?? '').trim().slice(0, 2000) || undefined, sections }
 }
 
-/** The camp's form as the coach left it, or the standard one. Includes trip questions. */
+/**
+ * The camp's form as the coach left it, or the standard one. Includes trip questions.
+ *
+ * What is saved on the camp is one of three things: nothing (the standard form,
+ * on), `{ enabled: false }` (the standard form, switched off), or a whole form
+ * (the coach's own version). The middle one matters: switching the form off
+ * and on again used to save a full copy of the standard form, which froze its
+ * wording — no passport question if the camp was later marked abroad.
+ */
 export function campForm(camp: FormCamp): InfoForm {
-  return tidyForm(camp.info_form) || defaultInfoForm(camp)
+  const own = tidyForm(camp.info_form)
+  if (own) return own
+  const off = !!camp.info_form && typeof camp.info_form === 'object' && (camp.info_form as { enabled?: unknown }).enabled === false
+  return { ...defaultInfoForm(camp), enabled: !off }
 }
 export const formIsCustom = (camp: FormCamp) => !!tidyForm(camp.info_form)
 export const formEnabled = (camp: FormCamp) => campForm(camp).enabled !== false
@@ -160,6 +171,25 @@ export function askedForm(camp: FormCamp): InfoForm {
       .map(s => ({ ...s, questions: s.questions.filter(q => abroad || !q.trip) }))
       .filter(s => s.questions.length > 0),
   }
+}
+
+/**
+ * Required questions this attendee has not answered — including ones added
+ * after they sent the form (a new question, or a camp since marked abroad).
+ */
+// (The index signature is what lets the full attendee row be passed in — without
+// it TypeScript refuses a row that has thirty other fields and none of these.)
+export function formOutstanding(camp: FormCamp, a: { form_answers?: unknown; [k: string]: unknown }): string[] {
+  return cleanAnswers(askedForm(camp), a.form_answers).missing
+}
+
+/**
+ * Has this attendee finished the form AS IT IS ASKED TODAY? Sending it once is
+ * not enough if the coach has since added something they must answer: they are
+ * asked for just those, and chased with everybody else until they have.
+ */
+export function formDone(camp: FormCamp, a: { form_submitted_at?: unknown; form_answers?: unknown; [k: string]: unknown }): boolean {
+  return !!a.form_submitted_at && formOutstanding(camp, a).length === 0
 }
 
 /** Keep only answers to questions that are being asked, in the shape each expects. */
@@ -197,17 +227,29 @@ const shortDate = (iso: string) => { const d = new Date(`${iso}T00:00:00`); retu
  * Found by each question's `key`, so a coach rewording a question changes nothing.
  */
 export function attendeePatch(form: InfoForm, answers: Answers, current: Record<string, unknown>): Record<string, unknown> {
-  const byKey: Record<string, string> = {}
-  for (const s of form.sections) for (const q of s.questions) {
-    const a = answers[q.id]
-    if (q.key && a && !Array.isArray(a)) byKey[q.key] = a
+  const keyed = (from: Answers) => {
+    const out: Record<string, string> = {}
+    for (const s of form.sections) for (const q of s.questions) {
+      const a = from[q.id]
+      if (q.key && a && !Array.isArray(a)) out[q.key] = a
+    }
+    return out
   }
+  const byKey = keyed(answers)
   const patch: Record<string, unknown> = {}
   const ec = [byKey.ec_name, byKey.ec_relation ? `(${byKey.ec_relation})` : '', byKey.ec_phone].filter(Boolean).join(' ')
   if (ec) patch.emergency_contact = ec.slice(0, 160)
   const none = (v?: string) => !v || /^(none|no|n\/a|na|nil|nothing|-)\.?$/i.test(v.trim())
-  const med = [none(byKey.medical) ? '' : byKey.medical, none(byKey.dietary) ? '' : `Dietary: ${byKey.dietary}`, none(byKey.injury) ? '' : `Injury: ${byKey.injury}`].filter(Boolean).join(' · ')
-  if (med) { patch.medical_notes = med.slice(0, 500); patch.consent_medical = true }
+  const medOf = (k: Record<string, string>) => [none(k.medical) ? '' : k.medical, none(k.dietary) ? '' : `Dietary: ${k.dietary}`, none(k.injury) ? '' : `Injury: ${k.injury}`].filter(Boolean).join(' · ').slice(0, 500)
+  const med = medOf(byKey)
+  if (med) { patch.medical_notes = med; patch.consent_medical = true }
+  else {
+    // Corrected to "none". The note is cleared only when it is the one this
+    // form put there last time — a note the coach wrote, or one from the
+    // sign-up page, is not the form's to remove.
+    const was = current.form_answers && typeof current.form_answers === 'object' ? medOf(keyed(current.form_answers as Answers)) : ''
+    if (was && String(current.medical_notes ?? '') === was) patch.medical_notes = null
+  }
   if (byKey.photo) patch.consent_photo = /^yes/i.test(byKey.photo)
   if (byKey.phone && !current.parent_phone) patch.parent_phone = byKey.phone.slice(0, 40)
   if (byKey.room) patch.room = [byKey.room, byKey.room_share ? `with ${byKey.room_share}` : ''].filter(Boolean).join(' · ').slice(0, 160)

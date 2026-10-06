@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getMembership, scopedDb } from '@/lib/coach/membership'
+import { familyAccess, nameIsUnique, scopedDb } from '@/lib/coach/membership'
 
 export const runtime = 'nodejs'
 
@@ -14,26 +14,43 @@ export const runtime = 'nodejs'
 // Everything here stays scope-locked: the sender can only write into their own
 // academy, under their own player's conversation, or into a camp their player
 // actually holds a place on. None of those is taken on trust from the request.
+//
+// Which child they are acting for comes with the request (`playerId`, the one
+// picked at the top of the page) and is checked by familyAccess(): the caller
+// must hold an active membership for exactly that player.
+//
+// A conversation belongs to a PLAYER, not a name (migration 194). Every row
+// written here carries player_id and the ACADEMY's id. thread_key still holds
+// the name as well, because the coach's inbox groups on it.
+
+type MsgRow = { id: string; player_id?: string | null; thread_key?: string | null; recipients?: string | null; camp_id?: string | null }
+
+// Is this message part of THIS player's one-to-one conversation? By id; or, for
+// a row written before messages carried one, by name — but only when the name
+// is this player's alone, so two children who share a name can never reach
+// each other's thread.
+const inThread = (msg: MsgRow, playerId: string, name: string, soleName: boolean) =>
+  msg.player_id === playerId ||
+  (!msg.player_id && !msg.camp_id && soleName && !!name &&
+    (msg.thread_key === name || (!msg.thread_key && (msg.recipients || '').trim() === name)))
 
 const clean = (v: unknown, max = 4000) => String(v ?? '').trim().slice(0, max)
 const REACTIONS = ['👍', '❤️', '😄', '✅', '🎾', '🙌']
 
 export async function POST(req: NextRequest) {
-  const m = await getMembership()
-  if (!m || (m.role !== 'parent' && m.role !== 'student') || !m.scopePlayerId) {
-    return NextResponse.json({ error: 'No access' }, { status: 403 })
-  }
-
   const b = (await req.json().catch(() => ({}))) as {
-    body?: string; toName?: string; replyTo?: string; campId?: string; channel?: string
+    body?: string; toName?: string; replyTo?: string; campId?: string; channel?: string; playerId?: string
   }
+  const access = await familyAccess(b.playerId)
+  if (!access.ok) return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
+  const m = access.m
   const body = clean(b.body)
   if (!body) return NextResponse.json({ error: 'Message is empty' }, { status: 400 })
 
   const db = scopedDb()
   const { data: player } = await db.from('coach_players')
     .select('name').eq('id', m.scopePlayerId).eq('coach_id', m.academyId).maybeSingle()
-  if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
+  if (!player) return NextResponse.json({ error: 'This player is no longer on the academy\u2019s roster.' }, { status: 404 })
 
   const conv = (player.name || '').trim()
 
@@ -70,8 +87,10 @@ export async function POST(req: NextRequest) {
   let replyTo: string | null = null
   if (b.replyTo) {
     const { data: parent } = await db.from('coach_messages')
-      .select('id, thread_key, camp_id').eq('id', b.replyTo).eq('coach_id', m.academyId).maybeSingle()
-    const ok = parent && (parent.thread_key === conv || (campId && parent.camp_id === campId))
+      .select('id, player_id, thread_key, recipients, camp_id').eq('id', b.replyTo).eq('coach_id', m.academyId).maybeSingle()
+    const ok = parent && (campId
+      ? parent.camp_id === campId
+      : inThread(parent as MsgRow, m.scopePlayerId, conv, await nameIsUnique(db, m.academyId, conv)))
     replyTo = ok ? (parent!.id as string) : null
   }
 
@@ -98,6 +117,7 @@ export async function POST(req: NextRequest) {
 
   const { data: row, error } = await db.from('coach_messages').insert({
     coach_id: m.academyId,
+    player_id: m.scopePlayerId,
     direction: 'in',
     from_name: conv,
     recipients: campId ? `Camp · ${campName}` : conv,
@@ -112,7 +132,7 @@ export async function POST(req: NextRequest) {
     read: false,
     created_at: new Date().toISOString(),
   }).select('id, created_at').single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) { console.error('[portal/message] insert', error.message); return NextResponse.json({ error: 'Your message could not be sent. Please try again.' }, { status: 500 }) }
 
   // …and out to Discord, if the camp's channels are mirrored.
   //
@@ -142,11 +162,10 @@ export async function POST(req: NextRequest) {
 // A reaction. Same four-plus emoji the coach's inbox uses, so a thumbs-up means
 // the same thing on both sides of it.
 export async function PATCH(req: NextRequest) {
-  const m = await getMembership()
-  if (!m || (m.role !== 'parent' && m.role !== 'student') || !m.scopePlayerId) {
-    return NextResponse.json({ error: 'No access' }, { status: 403 })
-  }
-  const { id, reaction } = (await req.json().catch(() => ({}))) as { id?: string; reaction?: string | null }
+  const { id, reaction, playerId } = (await req.json().catch(() => ({}))) as { id?: string; reaction?: string | null; playerId?: string }
+  const access = await familyAccess(playerId)
+  if (!access.ok) return NextResponse.json({ error: access.error, code: access.code }, { status: access.status })
+  const m = access.m
   if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
   const emoji = reaction ? clean(reaction, 8) : null
   if (emoji && !REACTIONS.includes(emoji)) return NextResponse.json({ error: 'Unknown reaction' }, { status: 400 })
@@ -158,9 +177,9 @@ export async function PATCH(req: NextRequest) {
 
   // Only inside a conversation they are part of.
   const { data: msg } = await db.from('coach_messages')
-    .select('id, thread_key, camp_id').eq('id', id).eq('coach_id', m.academyId).maybeSingle()
+    .select('id, player_id, thread_key, recipients, camp_id').eq('id', id).eq('coach_id', m.academyId).maybeSingle()
   if (!msg) return NextResponse.json({ error: 'Message not found' }, { status: 404 })
-  let allowed = msg.thread_key === conv
+  let allowed = inThread(msg as MsgRow, m.scopePlayerId, conv, await nameIsUnique(db, m.academyId, conv))
   if (!allowed && msg.camp_id) {
     const { data: place } = await db.from('coach_camp_attendees')
       .select('id').eq('coach_id', m.academyId).eq('camp_id', msg.camp_id)
@@ -169,7 +188,7 @@ export async function PATCH(req: NextRequest) {
   }
   if (!allowed) return NextResponse.json({ error: 'Not your message' }, { status: 403 })
 
-  const { error } = await db.from('coach_messages').update({ reaction: emoji }).eq('id', id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const { error } = await db.from('coach_messages').update({ reaction: emoji }).eq('id', id).eq('coach_id', m.academyId)
+  if (error) { console.error('[portal/message] react', error.message); return NextResponse.json({ error: 'That could not be saved. Please try again.' }, { status: 500 }) }
   return NextResponse.json({ ok: true })
 }

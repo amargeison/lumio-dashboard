@@ -8,24 +8,47 @@ import { useState, useRef, useEffect } from 'react'
 import { sb, forgetIdentity } from '../_lib/coach-db'
 import { CoachImport, IMPORT_TEMPLATE_URL, ImportPendingDialog, type PendingImport } from './CoachImport'
 import { addVenue } from '../_lib/venues-store'
-import { setSettings, getSettings, ACCREDITATIONS, PLAYER_LEVELS, ACCENT_PRESETS, type AccentKey } from '../_lib/settings-store'
+import { setSettings, getSettings, setHeadProfile, ACCREDITATIONS, PLAYER_LEVELS, ACCENT_PRESETS, type AccentKey, type CoachSettings } from '../_lib/settings-store'
+import { saveSettingsNow, rememberOnAccount, startSettingsSync } from '../_lib/settings-sync'
 import { THEMES } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { seedLumioResources } from '../_lib/lumio-resources'
-import { seedLumioPackages } from '../_lib/lumio-packages'
 import { applyTier, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
 
 const IMPORT_THEME = { text: '#fff', text2: '#D1D5DB', text3: '#9CA3AF', panel: '#0d1117', panel2: '#111318', border: '#1F2937', btnText: '#fff', isDark: true }
 type Skin = 'dark' | 'light' | 'white'
 const SKINS: { v: Skin; label: string }[] = [{ v: 'dark', label: 'Dark' }, { v: 'light', label: 'Light' }, { v: 'white', label: 'White' }]
-const slugify = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const MAX_SLUG = 60
+const slugify = (v: string) => v.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, MAX_SLUG).replace(/-+$/g, '')
+const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// A phone number, loosely: digits with the usual punctuation, at least seven of them.
+const phoneOk = (v: string) => /^[+()\d\s.-]+$/.test(v) && v.replace(/\D/g, '').length >= 7
 
-function compress(file: File, size: number): Promise<string> {
+// Shrink an upload to fit inside `size` × `size`, KEEPING ITS SHAPE. It used to
+// be drawn onto a square whatever its proportions, so a wide logo came out
+// squashed, and always as a JPEG, so a transparent logo got a black background.
+// A logo keeps its transparency (PNG); a photo stays a JPEG, which is smaller.
+function compress(file: File, size: number, keepTransparency = false): Promise<string> {
   return new Promise((resolve, reject) => {
+    if (!file.type.startsWith('image/')) { reject(new Error('not an image')); return }
     const reader = new FileReader()
-    reader.onload = e => { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); c.width = size; c.height = size; c.getContext('2d')!.drawImage(img, 0, 0, size, size); resolve(c.toDataURL('image/jpeg', 0.7)) }; img.onerror = reject; img.src = e.target?.result as string }
-    reader.onerror = reject; reader.readAsDataURL(file)
+    reader.onload = e => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, size / Math.max(img.width, img.height))
+        const c = document.createElement('canvas')
+        c.width = Math.max(1, Math.round(img.width * scale)); c.height = Math.max(1, Math.round(img.height * scale))
+        const ctx = c.getContext('2d')
+        if (!ctx) { reject(new Error('no canvas')); return }
+        ctx.drawImage(img, 0, 0, c.width, c.height)
+        resolve(keepTransparency ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.7))
+      }
+      img.onerror = () => reject(new Error('unreadable image'))
+      img.src = e.target?.result as string
+    }
+    reader.onerror = () => reject(new Error('unreadable file')); reader.readAsDataURL(file)
   })
 }
+const NOT_AN_IMAGE = 'We couldn’t use that file. Choose a picture — PNG or JPG work best.'
 
 type Props = { defaultName?: string; defaultAcademy?: string; defaultEmail?: string; onClose: () => void; onDone: () => void }
 type Player = { name: string; level: string; coach: string }
@@ -56,20 +79,29 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
   // Whether the address is free, checked as they type. Finding out on the last
   // step that another academy already has "penrith-tennis-club" is the wrong
   // moment; finding out while looking at the box is the right one.
-  const [slugState, setSlugState] = useState<{ checked: string; available: boolean; suggestion?: string } | null>(null)
+  const [slugState, setSlugState] = useState<{ checked: string; available: boolean; suggestion?: string; reason?: string } | null>(null)
+  const checkSlug = async (want: string) => {
+    const r = await fetch(`/api/coach/slug-check?slug=${encodeURIComponent(want)}`)
+    if (!r.ok) return null
+    const j = await r.json()
+    return { checked: want, available: !!j.available, suggestion: j.suggestion as string | undefined, reason: j.reason as string | undefined }
+  }
   useEffect(() => {
     const want = slug.trim()
     if (!want) return
     const t = setTimeout(async () => {
-      try {
-        const r = await fetch(`/api/coach/slug-check?slug=${encodeURIComponent(want)}`)
-        if (!r.ok) return
-        const j = await r.json()
-        setSlugState({ checked: j.slug, available: !!j.available, suggestion: j.suggestion })
-      } catch { /* offline — the database still refuses a duplicate on save */ }
+      try { const v = await checkSlug(want); if (v) setSlugState(v) }
+      catch { /* offline — the database still refuses a duplicate on save */ }
     }, 350)
     return () => clearTimeout(t)
   }, [slug])
+  // Why an address cannot be used, in the coach's terms.
+  const slugProblem = (v: { available: boolean; suggestion?: string; reason?: string }) =>
+    v.available ? ''
+      : v.reason === 'reserved' ? 'That address is kept for Lumio’s own pages. Choose another.'
+      : v.reason === 'long' ? `That address is too long — keep it to ${MAX_SLUG} characters.`
+      : v.reason === 'short' || v.reason === 'empty' ? 'Choose an address of at least two letters or numbers.'
+      : 'Another academy already uses that address.'
   const [logo, setLogo] = useState<string | null>(null)
   // Their own sign-in page at /login/<slug>. Ticked means families sign in on a
   // page with the academy's logo and name; unticked means the standard Lumio one.
@@ -113,8 +145,83 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
   const [pCoach, setPCoach] = useState('')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
+  // Coaches whose invite could not be sent when the wizard finished.
+  const [inviteFailed, setInviteFailed] = useState<string[] | null>(null)
   const logoRef = useRef<HTMLInputElement>(null)
   const photoRef = useRef<HTMLInputElement>(null)
+
+  // ── Start from what is already saved ───────────────────────────────────────
+  // The wizard can be opened again from the dashboard. It used to start blank
+  // every time: the address box went back to the academy-name guess (so
+  // finishing MOVED the academy to a new address), the home court was added a
+  // second time, and "set it up for me" quietly became "I'll do it myself".
+  // Everything below is read from the account before the form is shown.
+  const [loaded, setLoaded] = useState(false)
+  const [homeVenue, setHomeVenue] = useState<{ id: string; name: string } | null>(null)
+  const [wasComplete, setWasComplete] = useState(false)
+  useEffect(() => {
+    let alive = true
+    let release: (() => void) | null = null
+    ;(async () => {
+      try {
+        // The account's settings must be in this browser before the form can be
+        // filled in: what is typed here is saved on top of them, and saving on
+        // top of an empty cache would blank everything saved earlier. The
+        // portal starts the same sync; this holds it until the wizard closes.
+        const stop = await startSettingsSync()
+        if (alive) release = stop; else stop()
+        const { data: auth } = await sb().auth.getUser()
+        const uid = auth.user?.id
+        if (!uid) return
+        const [{ data: p }, { data: venues }, { data: cfg }] = await Promise.all([
+          sb().from('sports_profiles')
+            .select('display_name, brand_name, portal_slug, avatar_url, brand_logo_url, contact_email, contact_phone, calendar_provider, setup_type, dpa_accepted_at, onboarding_complete')
+            .eq('id', uid).maybeSingle(),
+          sb().from('coach_venues').select('id, name').eq('coach_id', uid).eq('is_home', true).order('created_at', { ascending: true }).limit(1),
+          sb().from('coach_settings').select('data').eq('coach_id', uid).maybeSingle(),
+        ])
+        if (!alive) return
+        const saved = ((cfg as { data?: Partial<CoachSettings> } | null)?.data || {}) as Partial<CoachSettings>
+        if (p) {
+          if (p.brand_name) setAcademy(p.brand_name)
+          if (p.display_name) setName(p.display_name)
+          // The address they already have. Marked as chosen, so retyping the
+          // academy name does not change it behind their back.
+          if (p.portal_slug) { setSlug(String(p.portal_slug).toLowerCase()); setSlugTouched(true) }
+          if (typeof p.avatar_url === 'string' && /^(data:|https?:)/.test(p.avatar_url)) setPhoto(p.avatar_url)
+          if (p.brand_logo_url) setLogo(p.brand_logo_url)
+          if (p.contact_email) setEmail(p.contact_email)
+          if (p.contact_phone) setPhone(p.contact_phone)
+          if (p.calendar_provider) setCalendar(p.calendar_provider)
+          if (p.setup_type === 'lumio' || p.setup_type === 'self') setSetupType(p.setup_type)
+          if (p.dpa_accepted_at) setDpa(true)
+          setWasComplete(!!p.onboarding_complete)
+        }
+        if (saved.cert) setAccreditation(saved.cert)
+        if (saved.brandLogo) setLogo(saved.brandLogo)
+        if (saved.theme === 'dark' || saved.theme === 'light' || saved.theme === 'white') setSkin(saved.theme)
+        if (saved.accentKey && saved.accentKey in ACCENT_PRESETS) setAccentKey(saved.accentKey)
+        if (typeof saved.partnerLogin === 'boolean') setPartnerLogin(saved.partnerLogin)
+        if (typeof saved.resourcesPreloaded === 'boolean') setResourcesPreloaded(saved.resourcesPreloaded)
+        // The sync answer, only where it was really given. A saved settings
+        // blob always carries a default for it, so "on" is believed only when a
+        // provider was recorded with it, and "off" only after a finished setup.
+        if (p?.calendar_provider && saved.conn?.calendarSync) {
+          setSyncOn(true)
+          if (saved.messaging?.senderEmail) setSyncEmail(saved.messaging.senderEmail)
+        } else if (p?.onboarding_complete && saved.conn?.calendarSync === false) setSyncOn(false)
+        if (saved.head) {
+          if (saved.head.dbsNumber) setDbsNumber(saved.head.dbsNumber)
+          if (saved.head.dbsExpiry) setDbsExpiry(saved.head.dbsExpiry)
+          if (saved.head.safeguardingDate) setSafeguarding(saved.head.safeguardingDate)
+        }
+        const home = (venues as { id: string; name: string }[] | null)?.[0]
+        if (home) { setHomeVenue(home); setHomeCourt(home.name) }
+      } catch { /* start from what the page passed in */ }
+      finally { if (alive) setLoaded(true) }
+    })()
+    return () => { alive = false; release?.() }
+  }, [])
 
   const TOTAL = setupType === 'self' ? 3 : 2
 
@@ -140,13 +247,19 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       const uid = auth.user?.id
       if (!uid) throw new Error('Not signed in')
       // Checked once more at the moment of saving — somebody else may have
-      // taken it since the box went green — and swapped for the nearest free
-      // address rather than failing the whole sign-up over a URL.
-      let finalSlug = slug.trim() || slugify(academy)
+      // taken it since the box went green. They are told, and choose; the
+      // address is not swapped for another one without their say-so. And it is
+      // never blank: a blank address has nowhere to go.
+      let finalSlug = slugify(slug) || slugify(academy)
+      if (finalSlug.length < 2) {
+        setErr('Choose a web address for your portal — at least two letters or numbers.'); setStep(1); setSaving(false); return
+      }
       try {
-        const r = await fetch(`/api/coach/slug-check?slug=${encodeURIComponent(finalSlug)}`)
-        const j = r.ok ? await r.json() : null
-        if (j && !j.available && j.suggestion) { finalSlug = j.suggestion; setSlug(j.suggestion) }
+        const verdict = await checkSlug(finalSlug)
+        if (verdict && !verdict.available) {
+          setSlug(finalSlug); setSlugState(verdict)
+          setErr(`${slugProblem(verdict)}${verdict.suggestion ? ` You could use ${verdict.suggestion}.` : ''}`); setStep(1); setSaving(false); return
+        }
       } catch { /* fall through to the database, which is the real guarantee */ }
       const update: Record<string, any> = {
         display_name: name.trim(),
@@ -160,7 +273,23 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       // profile card reads. It was previously only reachable via Settings, so a
       // coach who completed onboarding and never opened Settings had no
       // qualification shown anywhere, and the rail line silently rendered nothing.
-      if (accreditation) setSettings({ cert: accreditation })
+      //
+      // Written through the head-coach record, with the rest of what was typed
+      // about them: contact details and DBS. These used to go only to columns
+      // no screen reads, so the Coaches page said "No DBS on file" for a head
+      // coach who had just entered it. Only what was actually filled in is
+      // written, so re-running the wizard never blanks a saved value.
+      setHeadProfile({
+        name: name.trim(),
+        ...(accreditation ? { accreditation } : {}),
+        ...(email.trim() ? { email: email.trim() } : {}),
+        ...(phone.trim() ? { phone: phone.trim() } : {}),
+        ...(dbsNumber.trim() ? { dbsNumber: dbsNumber.trim() } : {}),
+        ...(dbsExpiry ? { dbsExpiry } : {}),
+        ...(safeguarding ? { safeguardingDate: safeguarding, safeguardingTrained: true } : {}),
+      })
+      // The academy's name, so Settings and the account agree from the start.
+      setSettings({ academy: academy.trim() })
       // The sign-in page switch, and the logo it shows. Written to settings (which
       // sync to coach_settings — the copy the /login page and the welcome emails
       // read) whether on or off, so a coach who unticks it is definitely off.
@@ -226,6 +355,15 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       }
       if (error) throw new Error(error.message)
 
+      // The academy now lives at finalSlug, so this page does too — from here
+      // on. Every request to the coach API names the academy by the address in
+      // the address bar (see coach-db), and this used to be left until the end:
+      // with a changed address, the invites below still named the OLD one, were
+      // refused (403), and the coaches were never invited.
+      if (typeof window !== 'undefined') {
+        try { window.history.replaceState(null, '', `/tennis/coach/${finalSlug}`) } catch {}
+      }
+
       // The coaching team, if they added one. Written before anything else that
       // could fail so a coach who typed four names does not lose them to a
       // downstream error.
@@ -255,17 +393,30 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         const { data: existingHead } = await sb().from('coach_staff')
           .select('id').eq('coach_id', uid).eq('is_head', true).limit(1).maybeSingle()
         headStaffId = existingHead?.id || null
+        // What the wizard knows about the head coach as a coach. Only filled-in
+        // answers, so an existing record is never blanked by an empty box.
+        const headDetails: Record<string, unknown> = {
+          name: name.trim() || 'Head Coach',
+          ...(accreditation ? { qualifications: accreditation } : {}),
+          ...((email.trim() || defaultEmail) ? { email: email.trim() || defaultEmail } : {}),
+          ...(phone.trim() ? { phone: phone.trim() } : {}),
+          ...(dbsNumber.trim() ? { dbs_number: dbsNumber.trim() } : {}),
+          ...(dbsExpiry ? { dbs_expiry: dbsExpiry } : {}),
+          ...(safeguarding ? { safeguarding_date: safeguarding, safeguarding_trained: true } : {}),
+        }
         if (!headStaffId) {
           const { data: headRow, error: headErr } = await sb().from('coach_staff').insert({
             coach_id: uid,
-            name: name.trim() || 'Head Coach',
             role: 'Head Coach',
-            qualifications: null,
-            email: (email.trim() || defaultEmail) || null,
             is_head: true,
+            ...headDetails,
           }).select('id').single()
           if (headErr) console.error('[onboarding] head coach staff row failed', headErr)
           headStaffId = headRow?.id || null
+        } else {
+          // Created at sign-up (or by an earlier run) — bring it up to date.
+          const { error: headErr } = await sb().from('coach_staff').update(headDetails).eq('id', headStaffId)
+          if (headErr) console.error('[onboarding] head coach staff row update failed', headErr)
         }
       }
 
@@ -309,22 +460,29 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       // tables this wizard just wrote, so anything the head coach adds later
       // simply appears. There is nothing to wait for.
       //
-      // Fire and forget: a Resend hiccup must not fail onboarding, and the head
-      // coach can always re-send from the Coaches page.
-      for (const r of staffRows) {
-        if (!r.email) continue
-        fetch('/api/portal/invite', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: r.email, role: 'coach', staffId: r.id, scopeCoachName: r.name, name: r.name }),
-        }).catch(() => {})
-      }
+      // Never fatal: a failed invite must not fail onboarding, and the head
+      // coach can re-send from the Coaches page. But it is no longer silent —
+      // the ones that did not go are collected here and named before the
+      // portal opens (see inviteFailed), instead of a coach waiting for a login
+      // that was never sent.
+      const invites = staffRows.filter(r => r.email).map(async r => {
+        try {
+          const res = await fetch('/api/portal/invite', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: r.email, role: 'coach', staffId: r.id, scopeCoachName: r.name, name: r.name }),
+          })
+          return res.ok ? null : r.name
+        } catch { return r.name }
+      })
 
       // Coaches is always visible now (a solo coach simply sees themselves), so we
       // no longer hide it during onboarding.
 
       // The modules a new account starts with — everything during the founder
-      // period. See NEW_ACCOUNT_TIER in feature-flags.ts.
-      applyTier(NEW_ACCOUNT_TIER)
+      // period. See NEW_ACCOUNT_TIER in feature-flags.ts. First time only:
+      // running the wizard again must not switch back on what the coach has
+      // since switched off.
+      if (!wasComplete) applyTier(NEW_ACCOUNT_TIER)
 
       // Resource Centre: preload Lumio's library (live), or start empty for own content.
       setSettings({ resourcesPreloaded })
@@ -334,8 +492,10 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
       if (resourcesPreloaded) {
         seedLumioResources(uid).catch(e => console.error('[onboarding] resource seed failed', e))
       }
-      // Always preload the default package price list — the coach edits/prices it.
-      seedLumioPackages().catch(() => {})
+      // The price list is NOT loaded here. Payments & Packs asks the coach
+      // which starter packages they want (or none) the first time they open it,
+      // and Settings says the same — loading six of Lumio's prices behind their
+      // back contradicted both.
 
       // Home court → seed it into the Court Planner as the home/main site.
       if (homeCourt.trim()) {
@@ -350,12 +510,26 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         // site") quietly went unkept. One id now, and the write is logged rather
         // than swallowed: supabase-js REPORTS errors, it does not throw them, so
         // the old try/catch caught nothing and hid everything.
-        const { data: venueRow, error: venueErr } = await sb().from('coach_venues')
-          .insert({ coach_id: uid, name: homeCourt.trim(), contact_name: name.trim() || null, contact_phone: phone.trim() || null, contact_email: email.trim() || null, is_home: true })
-          .select('id').single()
-        if (venueErr) console.error('[onboarding] home venue insert failed', venueErr)
+        //
+        // One home court. An academy that already has one keeps it (renamed if
+        // the name was edited here) — each run of the wizard used to add
+        // another, all marked as home.
+        let venueRow: { id: string } | null = null
+        if (homeVenue) {
+          venueRow = { id: homeVenue.id }
+          if (homeVenue.name !== homeCourt.trim()) {
+            const { error: renameErr } = await sb().from('coach_venues').update({ name: homeCourt.trim() }).eq('id', homeVenue.id)
+            if (renameErr) console.error('[onboarding] home venue rename failed', renameErr)
+          }
+        } else {
+          const { data: made, error: venueErr } = await sb().from('coach_venues')
+            .insert({ coach_id: uid, name: homeCourt.trim(), contact_name: name.trim() || null, contact_phone: phone.trim() || null, contact_email: email.trim() || null, is_home: true })
+            .select('id').single()
+          if (venueErr) console.error('[onboarding] home venue insert failed', venueErr)
+          venueRow = made
+        }
         const venueId = venueRow?.id || `venue-home-${Date.now()}`
-        addVenue({ id: venueId, name: homeCourt.trim(), type: 'Home court', address: '', distance: 'Home base', manager: name.trim() || 'You', managerPhone: phone.trim() || '', managerEmail: email.trim() || '', access: '', facilities: [], courts: [] })
+        if (!homeVenue) addVenue({ id: venueId, name: homeCourt.trim(), type: 'Home court', address: '', distance: 'Home base', manager: name.trim() || 'You', managerPhone: phone.trim() || '', managerEmail: email.trim() || '', access: '', facilities: [], courts: [] })
         const cur = getSettings()
         setSettings({ primaryVenueId: venueId, syncedVenues: [...new Set([...(cur.syncedVenues || []), venueId])] })
 
@@ -363,9 +537,16 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         // then not appearing at it is the kind of small broken promise that makes
         // a coach distrust everything else the wizard claimed to have set up.
         if (venueRow?.id && headStaffId) {
-          const { error: linkErr } = await sb().from('coach_staff_venues')
-            .insert({ coach_id: uid, staff_id: headStaffId, venue_id: venueRow.id, is_primary: true })
-          if (linkErr) console.error('[onboarding] head coach venue assignment failed', linkErr)
+          // The database links a head coach to the academy's only venue by
+          // itself, so the link is usually there already — adding it again was
+          // refused as a duplicate and logged as a failure on every finish.
+          const { data: linked } = await sb().from('coach_staff_venues')
+            .select('staff_id').eq('staff_id', headStaffId).eq('venue_id', venueRow.id).limit(1)
+          if (!(linked as unknown[] | null)?.length) {
+            const { error: linkErr } = await sb().from('coach_staff_venues')
+              .insert({ coach_id: uid, staff_id: headStaffId, venue_id: venueRow.id, is_primary: true })
+            if (linkErr) console.error('[onboarding] head coach venue assignment failed', linkErr)
+          }
           await sb().from('coach_staff').update({ home_venue: homeCourt.trim() }).eq('id', headStaffId)
         }
       }
@@ -378,15 +559,21 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         }).catch(() => {})
       }
 
-      // Reflect the chosen slug in the URL (cosmetic — data is keyed to the session).
-      if (typeof window !== 'undefined') {
-        try { window.history.replaceState(null, '', `/tennis/coach/${finalSlug}`) } catch {}
-      }
       // whoami's answer changed under us — academy name, slug, logo and photo all
       // arrived in this function. The identity cache still holds whatever was true
       // before onboarding, so clear it: the shell repaints from the new profile
       // instead of needing a manual refresh.
       forgetIdentity()
+      // Everything above that went into Settings — accreditation, DBS, the sync
+      // choice, the home court, the resource choice — is saved to the account
+      // NOW. The page is about to reload, and the usual short-delay save would
+      // never run: those answers stayed in this browser and were missing on
+      // every other device.
+      await saveSettingsNow()
+      // Everything is saved. If an invite did not go, say so and wait for the
+      // coach to carry on; otherwise straight into the portal.
+      const notInvited = (await Promise.all(invites)).filter((n): n is string => !!n)
+      if (notInvited.length) { setInviteFailed(notInvited); setSaving(false); return }
       onDone()
       onClose()
     } catch (e) {
@@ -399,19 +586,37 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
   const lbl: React.CSSProperties = { color: '#9CA3AF', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#07080F', zIndex: 9999, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px 48px' }}>
+    <div style={{ position: 'fixed', inset: 0, background: '#07080F', zIndex: 9999, overflowY: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center',
+      // Room at the bottom for the cookie notice while it is showing, so the
+      // last field and the Continue button can be scrolled clear of it.
+      padding: '24px 16px calc(48px + var(--lumio-cookie-h, 0px))' }}>
       <img src="/tennis_coach_logo.png" alt="Lumio Tennis Coach" style={{ height: 48, objectFit: 'contain', marginBottom: 20 }} />
       <div style={{ width: '100%', maxWidth: 560, marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 6 }}>{Array.from({ length: TOTAL }).map((_, i) => <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < step ? ACCENT : '#1F2937' }} />)}</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#4B5563', fontSize: 12, cursor: 'pointer' }}>Skip for now</button>
+          {/* Remembered on the account, so the wizard does not come back on
+              every page load. "Set up your academy" on the dashboard reopens it. */}
+          <button onClick={() => { if (inviteFailed) { onDone(); onClose(); return } if (!wasComplete) void rememberOnAccount({ setupSkipped: true }); onClose() }} style={{ visibility: inviteFailed ? 'hidden' : 'visible', background: 'none', border: 'none', color: '#4B5563', fontSize: 12, cursor: 'pointer' }}>Skip for now</button>
           <p style={{ color: '#6B7280', fontSize: 12, margin: 0 }}>Step {step} of {TOTAL}</p>
         </div>
       </div>
 
       <div style={{ width: '100%', maxWidth: 560, background: '#0d1117', border: '1px solid #1F2937', borderRadius: 20, padding: 36 }}>
+        {!loaded && <p style={{ color: '#6B7280', fontSize: 14, margin: 0 }}>Loading your details…</p>}
+        {inviteFailed && (
+          <div role="alert">
+            <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 8 }}>Your academy is set up</h2>
+            <p style={{ color: '#9CA3AF', fontSize: 14, lineHeight: 1.6, marginBottom: 10 }}>
+              Everything you entered is saved. We couldn&rsquo;t send {inviteFailed.length === 1 ? 'the invite' : 'the invites'} to {inviteFailed.join(', ')}, so they have no login yet.
+            </p>
+            <p style={{ color: '#9CA3AF', fontSize: 14, lineHeight: 1.6, marginBottom: 22 }}>
+              You can send {inviteFailed.length === 1 ? 'it' : 'them'} again from the Coaches page.
+            </p>
+            <button onClick={() => { onDone(); onClose() }} style={primary(true, ACCENT)}>Go to my portal →</button>
+          </div>
+        )}
         {/* STEP 1 — Academy + you */}
-        {step === 1 && (
+        {loaded && !inviteFailed && step === 1 && (
           <div>
             <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Set up your academy</h2>
             <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 24 }}>Tell us about your coaching business. You can change all of this later in Settings.</p>
@@ -436,13 +641,18 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                 <label style={lbl}>Your portal URL</label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
                   <span style={{ color: '#4B5563', fontSize: 12, whiteSpace: 'nowrap' }}>lumiosports.com/tennis/coach/</span>
-                  <input value={slug} onChange={e => { setSlug(slugify(e.target.value)); setSlugTouched(true) }} placeholder="your-academy" style={{ ...input, marginTop: 0, color: ACCENT, fontFamily: 'monospace', border: `1px solid ${slugState && slugState.checked === slug && !slugState.available ? '#E0A23A' : `${ACCENT}40`}` }} />
+                  <input value={slug} maxLength={MAX_SLUG} aria-label="Your portal web address"
+                    // A hyphen at the end is left alone while typing (it is the
+                    // middle of a word, not the end of one) and tidied on leaving the box.
+                    onChange={e => { setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+/, '').slice(0, MAX_SLUG)); setSlugTouched(true) }}
+                    onBlur={() => setSlug(v => slugify(v))}
+                    placeholder="your-academy" style={{ ...input, marginTop: 0, color: ACCENT, fontFamily: 'monospace', border: `1px solid ${slugState && slugState.checked === slug && !slugState.available ? '#E0A23A' : `${ACCENT}40`}` }} />
                 </div>
                 {slugState && slugState.checked === slug && (
                   slugState.available
                     ? <p style={{ color: '#6FA88A', fontSize: 11.5, margin: '6px 0 0' }}>✓ That address is yours.</p>
                     : <p style={{ color: '#E0A23A', fontSize: 11.5, margin: '6px 0 0', lineHeight: 1.5 }}>
-                        Another academy already uses that address.
+                        {slugProblem(slugState)}
                         {slugState.suggestion && <> <button type="button" onClick={() => { setSlug(slugState.suggestion!); setSlugTouched(true) }}
                           style={{ appearance: 'none', background: 'transparent', border: 0, padding: 0, color: ACCENT, fontWeight: 700, cursor: 'pointer', fontFamily: 'monospace', fontSize: 11.5 }}>Use {slugState.suggestion}</button>, or type your own.</>}
                       </p>
@@ -451,12 +661,12 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
               <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
                   <label style={lbl}>Academy logo <span style={{ color: '#4B5563', fontWeight: 400 }}>(optional)</span></label>
-                  <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && compress(e.target.files[0], 300).then(setLogo)} />
+                  <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) compress(f, 300, true).then(v => { setLogo(v); setErr('') }).catch(() => setErr(NOT_AN_IMAGE)); e.target.value = '' }} />
                   <button onClick={() => logoRef.current?.click()} style={{ ...input, cursor: 'pointer', textAlign: 'left', color: logo ? ACCENT : '#6B7280', border: `1px solid ${logo ? ACCENT : '#374151'}` }}>{logo ? '✓ Logo added' : '⬆ Upload logo'}</button>
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={lbl}>Your photo <span style={{ color: '#4B5563', fontWeight: 400 }}>(optional)</span></label>
-                  <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files?.[0] && compress(e.target.files[0], 400).then(setPhoto)} />
+                  <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) compress(f, 400).then(v => { setPhoto(v); setErr('') }).catch(() => setErr(NOT_AN_IMAGE)); e.target.value = '' }} />
                   <button onClick={() => photoRef.current?.click()} style={{ ...input, cursor: 'pointer', textAlign: 'left', color: photo ? ACCENT : '#6B7280', border: `1px solid ${photo ? ACCENT : '#374151'}` }}>{photo ? '✓ Photo added' : '⬆ Upload photo'}</button>
                 </div>
               </div>
@@ -573,7 +783,10 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                     <input type="date" value={safeguarding} onChange={e => setSafeguarding(e.target.value)} style={input} />
                   </div>
                 </div>
-                <p style={{ color: '#6B7280', fontSize: 11.5, margin: '8px 0 0', lineHeight: 1.5 }}>You can upload the certificate PDF and manage your team&apos;s DBS records once you&apos;re in — Settings → Head coach profile and the Staff page.</p>
+                {dbsExpiry && dbsExpiry < new Date().toISOString().slice(0, 10) && (
+                  <p style={{ color: '#E0A23A', fontSize: 11.5, margin: '8px 0 0', lineHeight: 1.5 }}>That expiry date has already passed. If it is right, it will be saved and shown as expired.</p>
+                )}
+                <p style={{ color: '#6B7280', fontSize: 11.5, margin: '8px 0 0', lineHeight: 1.5 }}>You can change these and manage your team&apos;s DBS records once you&apos;re in — Settings → Head coach profile and the Coaches page.</p>
               </div>
               <div style={{ borderTop: '1px solid #1F2937', paddingTop: 16, marginTop: 2 }}>
                 <label style={lbl}>Do you want to add coaching staff?</label>
@@ -613,12 +826,13 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
                       {ACCREDITATIONS.map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
                     <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                      <input value={sEmail} onChange={e => setSEmail(e.target.value)} type="email" placeholder="Email (optional — needed to invite them later)" style={{ ...input, marginTop: 0, flex: 1 }} />
+                      <input value={sEmail} onChange={e => setSEmail(e.target.value)} type="email" placeholder="Email (optional — we send their login when you finish)" style={{ ...input, marginTop: 0, flex: 1 }} />
                       <button type="button"
                         onClick={() => {
                           if (!sName.trim()) return
+                          if (sEmail.trim() && !EMAIL_OK.test(sEmail.trim())) { setErr(`Check ${sName.trim()}’s email address — it doesn’t look right.`); return }
                           setStaff(prev => [...prev, { name: sName.trim(), role: sRole, accreditation: sAccred, email: sEmail.trim() }])
-                          setSName(''); setSRole('Coach'); setSAccred(''); setSEmail('')
+                          setSName(''); setSRole('Coach'); setSAccred(''); setSEmail(''); setErr('')
                         }}
                         style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 10, padding: '0 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Add</button>
                     </div>
@@ -643,7 +857,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         )}
 
         {/* STEP 2 — Setup choice */}
-        {step === 2 && (
+        {loaded && !inviteFailed && step === 2 && (
           <div>
             <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>How would you like to get started?</h2>
             <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 24 }}>Founding members get white-glove setup — our team loads everything for you.</p>
@@ -673,7 +887,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         )}
 
         {/* STEP 3 — First players (self only) */}
-        {step === 3 && (
+        {loaded && !inviteFailed && step === 3 && (
           <div>
             <h2 style={{ color: '#fff', fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Add your players</h2>
             <p style={{ color: '#6B7280', fontSize: 14, marginBottom: 16 }}>Have a spreadsheet? Upload it and we&apos;ll add everyone for you — or add a few by hand below. All optional.</p>
@@ -713,7 +927,7 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
           </div>
         )}
 
-        {step >= 2 && (
+        {step >= 2 && !inviteFailed && (
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 18, fontSize: 12.5, color: '#9CA3AF', cursor: 'pointer' }}>
             <input type="checkbox" checked={dpa} onChange={e => setDpa(e.target.checked)} style={{ marginTop: 2 }} />
             <span>I accept Lumio&apos;s Data Processing Agreement — I&apos;m the data controller for my players&apos; data and Lumio processes it on my behalf to run my portal. <span style={{ color: '#EF4444' }}>(required)</span></span>
@@ -731,11 +945,22 @@ export function CoachOnboardingWizard({ defaultName = '', defaultAcademy = '', d
         )}
 
         {/* Nav */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 30 }}>
+        <div style={{ display: inviteFailed ? 'none' : 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 30 }}>
           {step > 1 ? <button onClick={() => setStep(s => s - 1)} style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 14, cursor: 'pointer' }}>← Back</button> : <div />}
           {step === 1 && (
             <button onClick={() => {
               if (!academy.trim() || !name.trim()) { setErr('Add your academy name and your name'); return }
+              if (academy.trim().length > 80 || name.trim().length > 80) { setErr('Please keep your academy name and your own name under 80 characters each.'); return }
+              // The address must be usable before moving on — not found out at
+              // the end, and never swapped for a different one unasked.
+              const wantSlug = slugify(slug)
+              if (wantSlug.length < 2) { setErr('Choose a web address for your portal — at least two letters or numbers.'); return }
+              if (wantSlug !== slug) setSlug(wantSlug)
+              if (slugState && slugState.checked === wantSlug && !slugState.available) { setErr(slugProblem(slugState)); return }
+              if (email.trim() && !EMAIL_OK.test(email.trim())) { setErr('Check your email address — it doesn’t look right.'); return }
+              if (phone.trim() && !phoneOk(phone.trim())) { setErr('Check your mobile number — use digits only, with + for a country code.'); return }
+              if (syncOn && syncEmail.trim() && !EMAIL_OK.test(syncEmail.trim())) { setErr('Check the account to sync — that email address doesn’t look right.'); return }
+              if (sName.trim() && sEmail.trim() && !EMAIL_OK.test(sEmail.trim())) { setErr(`Check ${sName.trim()}’s email address — it doesn’t look right.`); return }
               // Commit a coach whose details are typed but who was never "Add"ed.
               // Losing them here is silent — the head coach finishes onboarding
               // believing their team is in, and finds an empty Coaches page.

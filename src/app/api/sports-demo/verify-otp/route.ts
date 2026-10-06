@@ -113,7 +113,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: BLOCKED_MESSAGE }, { status: 403 })
       }
       // The authority on "is this a real member" is the membership table.
-      if (!isMember && await isAcademyMember(normalisedEmail)) isMember = true
+      const invited = await isAcademyMember(normalisedEmail)
+      if (!isMember && invited) isMember = true
+      // …in both directions. A member sign-in for an address nobody has invited
+      // is refused before anything is created: it used to mint a sign-in account
+      // for whatever address was sent. Same words as a wrong code, so the route
+      // does not say who is a member.
+      if (purpose === 'member' && !invited) {
+        return NextResponse.json({ error: 'Invalid or expired code' }, { status: 400 })
+      }
     }
 
     // The shared demo code.

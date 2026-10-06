@@ -792,7 +792,12 @@ function WorldClock() {
 function PersonalBanner({ company, firstName, onVoiceCommand, ttsEnabled = true, voiceCommandsEnabled = true, demoDataActive = false, onScrollTo, onBellClick, roleSwitcher, settingsHref, userNameProp }: { company: string; firstName?: string; onVoiceCommand?: (cmd: VoiceCommandResult) => void; ttsEnabled?: boolean; voiceCommandsEnabled?: boolean; demoDataActive?: boolean; onScrollTo?: (widget: string) => void; onBellClick?: () => void; roleSwitcher?: React.ReactNode; settingsHref?: string; userNameProp?: string }) {
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-  const date = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  // Worked out in the browser, once the page is up. The server writes the same
+  // date with a comma ("Sunday, 4 October 2026") and the browser without, so
+  // rendering it on both threw a hydration error on every visit to an address
+  // that is not a workspace. The space keeps the line's height until then.
+  const [date, setDate] = useState('\u00a0')
+  useEffect(() => { setDate(new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })) }, [])
   const [bg, setBg] = useState(BG_GRADIENTS[0])
   useEffect(() => { setBg(BG_GRADIENTS[new Date().getDay()]) }, [])
   const { speak, stop, isPlaying } = useSpeech()

@@ -36,13 +36,18 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'Lumio Coach is not configured on this server.' }, { status: 503 })
 
-  // A dashboard mounts often. The client caches per day, but the cap is what
+  // A dashboard mounts often. The client asks once a day, but the cap is what
   // stops a navigation loop quietly spending money.
+  //
+  // Over the cap the answer is still "no briefing" — but said as an ordinary
+  // reply (200 with `limited`), not as HTTP 429. The dashboard already handles
+  // "no briefing" by showing the plain numbers; a 429 made the browser log an
+  // error on every visit for something that is working as intended.
   const gate = rateLimit(`briefing:${user.id}`, 12, 60 * 60_000)
   if (!gate.ok) {
     return NextResponse.json(
-      { error: 'Briefing already refreshed recently.' },
-      { status: 429, headers: { 'Retry-After': String(gate.retryAfterSeconds) } },
+      { limited: true, retryAfterSeconds: gate.retryAfterSeconds, error: 'Briefing already refreshed recently.' },
+      { headers: { 'Retry-After': String(gate.retryAfterSeconds) } },
     )
   }
 

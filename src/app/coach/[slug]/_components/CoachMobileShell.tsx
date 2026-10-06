@@ -43,7 +43,7 @@ function MoreGlyph() {
 }
 
 export function CoachMobileShell({
-  T, accent, active, onNavigate, showDemoBanner, hiddenMenu, avatar, children, roleBanner,
+  T, accent, active, onNavigate, showDemoBanner, hiddenMenu, avatar, children, roleBanner, barCovered = false,
   navLabel = (item) => item.label,
 }: {
   T: ThemeTokens
@@ -54,6 +54,8 @@ export function CoachMobileShell({
   hiddenMenu: string[]
   avatar: ReactNode
   children: ReactNode
+  /** A full-screen layer (the first-run wizard) is covering the tab bar. */
+  barCovered?: boolean
   // "Viewing as" banner — passed from the portal shell so the mobile shell stays
   // role-agnostic. Switching view itself lives in the top-bar avatar menu
   // (`avatar`), which is the single profile control on mobile too.
@@ -74,6 +76,20 @@ export function CoachMobileShell({
     meta.content = accent.hex
     return () => { if (meta) meta.content = prev ?? '#07080F' }
   }, [accent.hex])
+
+  // Tell page-wide notices (the cookie notice lives in the root layout and
+  // knows nothing about this shell) how tall the tab bar is, so they sit above
+  // it instead of on top of it — navigation stays usable while one is showing.
+  // While the first-run wizard covers the tab bar there is nothing to sit
+  // above: the notice goes to the bottom edge instead of floating 64px up with
+  // an empty strip under it.
+  useEffect(() => {
+    const root = document.documentElement
+    root.style.setProperty('--lumio-bottom-bar', barCovered ? '0px' : 'calc(64px + env(safe-area-inset-bottom))')
+    // The notice measures itself when the window changes size; it has moved, so ask it to again.
+    window.dispatchEvent(new Event('resize'))
+    return () => { root.style.removeProperty('--lumio-bottom-bar') }
+  }, [barCovered])
 
   const barBg = T.panel2
   const activeItem = COACH_SIDEBAR.find(i => i.id === active)
@@ -123,14 +139,24 @@ export function CoachMobileShell({
     }}>
       <style>{`.tnum{font-variant-numeric:tabular-nums}
         .no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{scrollbar-width:none}
-        @media (max-width: 768px){
-          .cm-12{ grid-template-columns:1fr !important }
-          .cm-md{ grid-template-columns:1fr !important }
-          .cm-2{ grid-template-columns:1fr !important }
-          .cm-3{ grid-template-columns:1fr !important }
+        @media (max-width: 767px){
+          /* minmax(0,1fr), not 1fr. A bare 1fr column is never narrower than
+             its widest unbreakable content, so one long single-line text (a
+             message preview on the dashboard) stretched the column — and the
+             whole phone screen — to 2,500px. minmax(0,…) lets the column stay
+             screen-width and the text cut off with "…" as it was meant to. */
+          .cm-12{ grid-template-columns:minmax(0,1fr) !important }
+          .cm-md{ grid-template-columns:minmax(0,1fr) !important }
+          .cm-2{ grid-template-columns:minmax(0,1fr) !important }
+          .cm-3{ grid-template-columns:minmax(0,1fr) !important }
           /* collapsed to one column → stop children spanning multiple tracks,
              which would otherwise spawn implicit auto columns and overflow */
           .cm-12 > *, .cm-md > *, .cm-2 > *, .cm-3 > *{ grid-column:auto !important }
+          /* A finger needs about 40px. Small text buttons, thin bars and chips
+             marked cm-tap keep their look and their place in the layout; only
+             the area that takes the tap grows, centred on the control. */
+          .cm-tap{ position:relative }
+          .cm-tap::after{ content:''; position:absolute; left:50%; top:50%; width:max(100%,40px); height:max(100%,40px); transform:translate(-50%,-50%) }
         }`}</style>
 
       {/* Top app bar */}
@@ -150,7 +176,7 @@ export function CoachMobileShell({
       {roleBanner}
 
       {/* Scrollable main — desktop views render single-column in here, unchanged */}
-      <main style={{ flex: 1, minWidth: 0, padding: 14, paddingBottom: 'calc(64px + 22px + env(safe-area-inset-bottom))' }}>
+      <main style={{ flex: 1, minWidth: 0, padding: 14, paddingBottom: 'calc(64px + 14px + env(safe-area-inset-bottom))' }}>
         {children}
       </main>
 
@@ -169,10 +195,9 @@ export function CoachMobileShell({
           )}
           {tabBtn('more', 'More', <MoreGlyph />, !onPrimary, () => setMoreOpen(true))}
         </div>
-        {/* iOS home-indicator safe area */}
-        <div style={{ height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ width: 110, height: 4, borderRadius: 2, background: T.text4 }} />
-        </div>
+        {/* No drawn "home indicator" here: the phone draws its own, and the
+            padding above already leaves the real safe area for it. A painted
+            one showed a second bar on iPhones and a meaningless one on Android. */}
       </nav>
 
       <MobileMoreSheet
