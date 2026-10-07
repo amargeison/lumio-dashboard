@@ -594,6 +594,18 @@ const _inflight = new Map<CoachTable, Promise<any[]>>()
 // that is kept.
 const _newest = new Map<CoachTable, Promise<any[]>>()
 
+// Are these the same rows as before? Compared by id and last-changed time,
+// which every table carries; rows without them are compared whole.
+function sameRows(a: unknown[], b: unknown[]): boolean {
+  if (a.length !== b.length) return false
+  const key = (r: unknown) => {
+    const o = r as { id?: unknown; updated_at?: unknown; created_at?: unknown } | null
+    return o && o.id != null ? `${o.id}|${o.updated_at ?? o.created_at ?? ''}` : JSON.stringify(r)
+  }
+  for (let i = 0; i < a.length; i++) if (key(a[i]) !== key(b[i])) return false
+  return true
+}
+
 function _fetchList<T>(table: CoachTable, force = false): Promise<T[]> {
   if (!force && _inflight.has(table)) return _inflight.get(table) as Promise<T[]>
   const gen = _cacheGen
@@ -611,7 +623,17 @@ function _fetchList<T>(table: CoachTable, force = false): Promise<T[]> {
       // A failed read must not replace rows that loaded earlier with nothing,
       // and must not be remembered as "this table is empty".
       if (_failed.has(table)) return (_tableCache.get(table) as T[] | undefined) ?? rows
+      const before = _tableCache.get(table)
       _tableCache.set(table, rows)
+      // Rows can change without this browser doing it: a family signs up on the
+      // public camp page, another coach adds a booking. Opening a screen reads
+      // its table again, and that screen showed the new rows — but anything
+      // else built from the same table (the right-hand panel's player count)
+      // kept the old ones until the page was reloaded. So when a read comes
+      // back different from what was held, everything showing the table is
+      // told. Listeners take the rows just stored; none of them reads again,
+      // so this cannot loop.
+      if (before !== undefined && !sameRows(before, rows)) tellChanged(table)
       return rows
     })
     .catch(err => { if (_inflight.get(table) === (p as Promise<any[]>)) _inflight.delete(table); throw err })
