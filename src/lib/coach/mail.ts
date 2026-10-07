@@ -8,6 +8,24 @@ import { sendMailSmtp } from './smtp'
 
 export type OutboundMail = { to: string; subject: string; html: string; replyTo?: string; bcc?: string }
 
+// A header may only hold plain ASCII. Our subjects carry a dash and a middle dot
+// ("Session booked — QA Junior One · Thu, 8 Oct"), and sent as they were they
+// arrived as "Ã¢Â€Â”" in the parent's inbox. Anything beyond ASCII is wrapped
+// the standard way (RFC 2047), in pieces short enough for one header line. Line
+// breaks are removed first, so nothing typed into a name can start a new header.
+function headerText(s: string): string {
+  const flat = String(s ?? '').replace(/[\r\n]+/g, ' ').trim()
+  if (/^[\x20-\x7E]*$/.test(flat)) return flat
+  const words: string[] = []
+  let piece = ''
+  for (const ch of flat) {
+    if (Buffer.byteLength(piece + ch, 'utf8') > 45) { words.push(piece); piece = '' }
+    piece += ch
+  }
+  if (piece) words.push(piece)
+  return words.map(w => `=?UTF-8?B?${Buffer.from(w, 'utf8').toString('base64')}?=`).join('\r\n ')
+}
+
 // Build a base64url-encoded RFC 822 message for the Gmail send API.
 function buildRawMessage(from: string | undefined, msg: OutboundMail): string {
   const headers = [
@@ -15,7 +33,7 @@ function buildRawMessage(from: string | undefined, msg: OutboundMail): string {
     `To: ${msg.to}`,
     msg.bcc ? `Bcc: ${msg.bcc}` : '',
     msg.replyTo ? `Reply-To: ${msg.replyTo}` : '',
-    `Subject: ${msg.subject}`,
+    `Subject: ${headerText(msg.subject)}`,
     'MIME-Version: 1.0',
     'Content-Type: text/html; charset="UTF-8"',
   ].filter(Boolean).join('\r\n')
