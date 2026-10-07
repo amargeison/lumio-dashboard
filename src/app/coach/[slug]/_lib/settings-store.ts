@@ -243,8 +243,9 @@ export const LIVE_DEFAULT_SETTINGS: CoachSettings = {
   coach: '',
   cert: '',
   privateRate: 0,
-  // Real academies opt IN to the parent & player app (Settings → Parent &
-  // player app). Only the demo seed defaults it on.
+  // The parent & player app is ON for a new academy: inviting a parent is one
+  // of the first things a coach does, and it was refused until they found this
+  // switch. Settings → Parent & player app switches it off.
   //
   // ownRewards ON by default for a live academy: Lumio does not stock the
   // keyrings and dampeners yet, so promising them on day one would be selling
@@ -253,7 +254,7 @@ export const LIVE_DEFAULT_SETTINGS: CoachSettings = {
   // before anyone is asked to buy kit. A coach who wants the Lumio kit turns
   // this off in Settings. The demo still shows the full branded version.
   ownRewards: true,
-  studentApp: false,
+  studentApp: true,
   profile: { role: 'Head Coach', email: '', phone: '', dbsNumber: '', dbsExpiry: '', safeguardingDate: '' },
   staff: { ...DEFAULT_SETTINGS.staff, dsl: '' },
   messaging: { ...DEFAULT_SETTINGS.messaging, senderEmail: '', senderPhone: '' },

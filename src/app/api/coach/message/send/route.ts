@@ -55,7 +55,9 @@ const CHANNELS = ['inapp', 'email', 'sms'] as const
 const MAX_RECIPIENTS = 300      // one message; a whole roster fits, a mailing list does not
 const MAX_TYPED = 5             // addresses typed by hand ("Someone else") per message
 const MAX_BODY = 10_000
-const EMAIL_ADDRESS = 'hello@lumiocms.com'
+// A tennis academy's families should hear from the sports address, not the
+// business product's.
+const EMAIL_ADDRESS = 'hello@lumiosports.com'
 const looksLikeEmail = (s: string) => /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.test(s)
 const isUuid = (s: unknown): s is string => typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s)
 const oneLine = (s: unknown, max: number) => String(s ?? '').replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, max)
@@ -256,7 +258,9 @@ export async function POST(req: NextRequest) {
   // Replies route to the Lumio inbound address (carrying an academy+conversation
   // token) so they thread back into the in-app inbox. The token names the player
   // by id, so a reply cannot land in a namesake's conversation.
-  const replyToFor = (t: Target) => inboundReplyTo(me.academyId, t.playerId ? `player:${t.playerId}` : t.threadKey)
+  // undefined when no reply address can be made for this conversation: the
+  // email still goes, without one.
+  const replyToFor = (t: Target) => inboundReplyTo(me.academyId, t.playerId ? `player:${t.playerId}` : t.threadKey) ?? undefined
 
   // ── In-app (Lumio message) ───────────────────────────────────────────────
   // A row in the message log, which a player's or parent's app reads. Somebody
@@ -307,7 +311,13 @@ export async function POST(req: NextRequest) {
         // 2) Resend fallback
         if (resend) {
           try {
-            const { error } = await resend.emails.send({ from, to: t.email, subject: subj, html, replyTo: replyToFor(t), bcc: bccAddress })
+            let { error } = await resend.emails.send({ from, to: t.email, subject: subj, html, replyTo: replyToFor(t), bcc: bccAddress })
+            // A message must never be lost over its reply address. If the
+            // sending service will not take that address, send without it.
+            if (error && /reply_to|reply-to/i.test(error.message || '')) {
+              console.error('[coach/message/send] reply address refused, sending without it:', error.message)
+              ;({ error } = await resend.emails.send({ from, to: t.email, subject: subj, html, bcc: bccAddress }))
+            }
             push(t, 'email', !error, error ? error.message : 'Sent')
           } catch (e) {
             push(t, 'email', false, e instanceof Error ? e.message : 'Send failed')

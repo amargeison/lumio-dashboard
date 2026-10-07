@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       const sportLabel = sport.charAt(0).toUpperCase() + sport.slice(1)
 
       const { error: sendErr } = await resend.emails.send({
-        from: 'Lumio Sports <hello@lumiocms.com>',
+        from: 'Lumio Sports <hello@lumiosports.com>',
         to: email,
         subject: `Your Lumio ${sportLabel} portal is ready 🎯`,
         html: emailLayout({

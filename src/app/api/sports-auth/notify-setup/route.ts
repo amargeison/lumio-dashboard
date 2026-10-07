@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
 
     // EMAIL 1 — Internal notification to support
     const { error: sendErr } = await resend.emails.send({
-      from: 'Lumio Sports <hello@lumiocms.com>',
+      from: 'Lumio Sports <hello@lumiosports.com>',
       to: 'support@lumiosports.com',
       subject: `New onboarding request — ${sport} — ${name}`,
       html: `
@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
     const credentials = SPORT_CREDENTIALS[sport] || []
     if (credentials.length > 0) {
       const { error: sendErr } = await resend.emails.send({
-        from: 'Lumio Sports <hello@lumiocms.com>',
+        from: 'Lumio Sports <hello@lumiosports.com>',
         to: email,
         subject: `Getting your ${sport} portal ready — here's what we need from you`,
         html: `
@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
     if (sport === 'coach' && email && String(email).includes('@')) {
       const templateUrl = 'https://www.lumiosports.com/templates/lumio-coach-import-template.xlsx'
       const { error: sendErr } = await resend.emails.send({
-        from: 'Lumio Sports <hello@lumiocms.com>',
+        from: 'Lumio Sports <hello@lumiosports.com>',
         to: email,
         subject: `Getting ${clubName || 'your academy'} set up — your data template`,
         html: `

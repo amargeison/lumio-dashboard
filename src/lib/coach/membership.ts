@@ -177,14 +177,19 @@ export async function coachGate(opts: { headOnly?: boolean } = {}): Promise<Coac
   return { ok: true, userId: user.id, email: user.email ?? null, seat }
 }
 
-// Has this academy switched its player app on? (Settings → Parent & player
-// app.) Off — or never switched on — means families cannot be invited and their
-// page does not open. Anything other than a stored `true` is "off": if the
-// setting cannot be read, the answer is no.
+// Has this academy got its player app on? (Settings → Parent & player app.)
+//
+// On unless the head coach has switched it OFF. It used to be "off unless
+// switched on", and a new academy starts with nothing stored — so the first
+// parent a coach invited was refused, and an academy that had never opened that
+// setting would have had its families shut out. Only a stored `false` is off.
+// If the setting cannot be read at all the answer is still no: a database
+// fault must not open a page the coach has closed.
 export async function playerAppOn(db: ReturnType<typeof admin>, academyId: string): Promise<boolean> {
   try {
-    const { data } = await db.from('coach_settings').select('data').eq('coach_id', academyId).maybeSingle()
-    return (data?.data as { studentApp?: unknown } | null)?.studentApp === true
+    const { data, error } = await db.from('coach_settings').select('data').eq('coach_id', academyId).maybeSingle()
+    if (error) return false
+    return (data?.data as { studentApp?: unknown } | null)?.studentApp !== false
   } catch { return false }
 }
 

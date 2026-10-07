@@ -495,11 +495,15 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
   }
 
   const toggle = async () => {
-    if (!isOpen && !cleanSlug) { setErr('Give the page a link first.'); return }
+    // No link typed yet: use the one suggested from the camp's name (it is
+    // shown greyed in the box, which reads as if it were already filled in).
+    const link = cleanSlug || slugify(camp.name)
+    if (!isOpen && !link) { setErr('Give the page a link first.'); return }
     // The public page refuses sign-ups once the last day has gone, so "opening"
     // them here would show Live while nobody could sign up.
     if (!isOpen && over) { setErr('This camp has finished, so nobody can sign up for it. If it is running again, change its dates first.'); return }
-    await save({ signup_open: !isOpen })
+    if (!isOpen && !cleanSlug) setSlug(link)
+    await save(!isOpen ? { signup_open: true, signup_slug: link } : { signup_open: false })
   }
 
   const inp: CSSProperties = { background: T.panel2, color: T.text, border: '1px solid ' + T.border, borderRadius: 8, padding: '8px 10px', fontSize: 12.5, fontFamily: FONT, width: '100%', boxSizing: 'border-box', outline: 'none' }
