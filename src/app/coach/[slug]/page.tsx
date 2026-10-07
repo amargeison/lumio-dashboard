@@ -760,6 +760,17 @@ function CoachPortalInner({ session, isEmpty: realAccount = false, slugClubName 
       activeRef.current = next
       setActiveState(next)
     }
+    // Back from Google or Microsoft after "Connect": the answer (connected,
+    // refused, missing a permission) is shown inside Connected accounts, but the
+    // way back cannot carry the #settings part of the address, so the coach
+    // landed on the dashboard with nothing said. Open that card for them.
+    try {
+      const q = new URLSearchParams(window.location.search)
+      if (q.get('integration') && q.get('status') && !window.location.hash) {
+        sessionStorage.setItem('lumio_open_settings', 'integrations')
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#settings`)
+      }
+    } catch { /* storage or history unavailable — they land on the dashboard as before */ }
     fromAddress()
     window.addEventListener('popstate', fromAddress)
     window.addEventListener('hashchange', fromAddress)
