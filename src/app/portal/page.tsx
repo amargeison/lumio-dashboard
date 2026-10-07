@@ -92,7 +92,7 @@ export default function PortalSignIn() {
   }, [])
 
   // clearPrivateCaches: a shared phone must hold nothing of this family's once they sign out.
-  const signOut = async () => { await supa.auth.signOut().finally(clearPrivateCaches); setMember(null); toSignIn() }
+  const signOut = async () => { await supa.auth.signOut({ scope: 'global' }).finally(clearPrivateCaches); setMember(null); toSignIn() }
 
   const wrap = (children: React.ReactNode) => (
     <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'system-ui, -apple-system, Segoe UI, Arial, sans-serif' }}>

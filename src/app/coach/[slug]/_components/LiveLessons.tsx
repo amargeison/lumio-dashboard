@@ -709,10 +709,16 @@ function CoachAiBrief({ T, accent, s }: { T: ThemeTokens; accent: AccentTokens; 
 function ShareMenu({ T, accent, s, onClose }: { T: ThemeTokens; accent: AccentTokens; s: Session; onClose: () => void }) {
   const text = shareText(s)
   const subject = `Lesson summary — ${s.player_name || 'your session'}`
+  // Who it goes to: the parent's address if the roster has one, else the
+  // player's own. Matched on the player's id only — never on a name, which two
+  // players can share. With neither, the mail app opens with the box empty.
+  const { rows: roster } = useCoachTable<{ id: string; email?: string | null; parent_email?: string | null }>('coach_players')
+  const who = s.player_id ? roster.find(p => String(p.id) === String(s.player_id)) : undefined
+  const to = String(who?.parent_email || who?.email || '').trim()
   const [copied, setCopied] = useState(false)
   const opts: { label: string; icon: string; run: () => void }[] = [
     { label: copied ? 'Copied to clipboard ✓' : 'Copy summary', icon: '📋', run: () => navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600) }).catch(() => {}) },
-    { label: 'Email it', icon: '✉️', run: () => { window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`); onClose() } },
+    { label: 'Email it', icon: '✉️', run: () => { window.open(`mailto:${/^[^\s@,;?&]+@[^\s@,;?&]+$/.test(to) ? to : ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`); onClose() } },
     { label: 'Share on WhatsApp', icon: '🟢', run: () => { window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank'); onClose() } },
   ]
   return (
@@ -928,8 +934,11 @@ function SummaryFormModal({ T, accent, players, session, onClose, onSave }: {
   }
 
   return (
-    <div onClick={e => { if (e.target === e.currentTarget) closeOutside() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '4vh 16px', overflowY: 'auto' }}>
-      <div style={{ width: '100%', maxWidth: 620, minWidth: 0, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16 }}>
+    <div onClick={e => { if (e.target === e.currentTarget) closeOutside() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, fontFamily: FONT, padding: '0 16px', overflowY: 'auto' }}>
+      {/* The gap above and below is the card's margin, not the backdrop's padding:
+          a title bar that sticks inside a padded scroller stops short of the top,
+          and the form scrolled into view in the strip above it. */}
+      <div style={{ width: '100%', maxWidth: 620, minWidth: 0, margin: '4vh 0', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '15px 20px', borderBottom: `1px solid ${T.border}`, position: 'sticky', top: 0, background: T.panel, borderRadius: '16px 16px 0 0', zIndex: 1 }}>
           <div style={{ width: 30, height: 30, borderRadius: 8, display: 'grid', placeItems: 'center', background: accent.dim, color: accent.hex }}>📝</div>
           <div style={{ flex: 1, fontSize: 15, fontWeight: 700, color: T.text }}>{session ? 'Edit lesson summary' : 'New lesson summary'}</div>

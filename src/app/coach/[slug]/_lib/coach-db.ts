@@ -90,7 +90,9 @@ function installAcademyFetch() {
     if (url.origin !== window.location.origin || !ACADEMY_ROUTES.test(url.pathname)) return inner(input, init)
     const headers = new Headers(init?.headers ?? (typeof input === 'object' && 'headers' in input ? input.headers : undefined))
     headers.set(ACADEMY_HEADER, here)
-    return inner(input, { ...init, headers })
+    // "Not signed in" from our own server, on a page that WAS signed in: go and
+    // find out whether the sign-in has really ended (see checkSignedOut).
+    return inner(input, { ...init, headers }).then(res => { if (res.status === 401) void checkSignedOut(true); return res })
   }
 }
 installAcademyFetch()
@@ -230,6 +232,34 @@ export async function tabStillMine(): Promise<boolean> {
     if (uid && !_tabUser) _tabUser = uid
   } catch { /* could not tell — row level security still checks every write */ }
   return true
+}
+
+// ── Has the sign-in ended somewhere else? ───────────────────────────────────
+// Signing out signs the account out on every device. A portal left open on
+// another one went on looking live: the plan builder answered "Not signed in"
+// in small red text and nothing said why or what to do. Asked whenever our own
+// server refuses a request as not signed in, and whenever the tab is looked at
+// again (at most once a minute). The auth server is the one that knows, so it
+// is the one asked; a failed connection is not a sign-out. The page listens
+// for SIGNED_OUT_ELSEWHERE, clears what this account kept in the browser and
+// goes to the sign-in page.
+export const SIGNED_OUT_ELSEWHERE = 'lumio-coach-signed-out'
+let _signedOut = false
+let _signedOutAsked = 0
+export async function checkSignedOut(now = false): Promise<void> {
+  if (_signedOut || typeof window === 'undefined' || isDemoPath() || !portalAddress()) return
+  // Never signed in on this page: its own sign-in screen is already showing.
+  if (!_tabUser && !_me) return
+  if (!now && Date.now() - _signedOutAsked < 60_000) return
+  _signedOutAsked = Date.now()
+  try {
+    const { data, error } = await sb().auth.getUser()
+    if (data?.user) return
+    const e = error as { name?: string; status?: number } | null
+    if (e && (e.name === 'AuthRetryableFetchError' || !e.status || e.status >= 500)) return
+    _signedOut = true
+    window.dispatchEvent(new Event(SIGNED_OUT_ELSEWHERE))
+  } catch { /* could not ask — try again next time */ }
 }
 
 /** The academy id every coach_* row is filed under. */
@@ -594,6 +624,18 @@ const _inflight = new Map<CoachTable, Promise<any[]>>()
 // that is kept.
 const _newest = new Map<CoachTable, Promise<any[]>>()
 
+// Are these the same rows as before? Compared by id and last-changed time,
+// which every table carries; rows without them are compared whole.
+function sameRows(a: unknown[], b: unknown[]): boolean {
+  if (a.length !== b.length) return false
+  const key = (r: unknown) => {
+    const o = r as { id?: unknown; updated_at?: unknown; created_at?: unknown } | null
+    return o && o.id != null ? `${o.id}|${o.updated_at ?? o.created_at ?? ''}` : JSON.stringify(r)
+  }
+  for (let i = 0; i < a.length; i++) if (key(a[i]) !== key(b[i])) return false
+  return true
+}
+
 function _fetchList<T>(table: CoachTable, force = false): Promise<T[]> {
   if (!force && _inflight.has(table)) return _inflight.get(table) as Promise<T[]>
   const gen = _cacheGen
@@ -611,7 +653,17 @@ function _fetchList<T>(table: CoachTable, force = false): Promise<T[]> {
       // A failed read must not replace rows that loaded earlier with nothing,
       // and must not be remembered as "this table is empty".
       if (_failed.has(table)) return (_tableCache.get(table) as T[] | undefined) ?? rows
+      const before = _tableCache.get(table)
       _tableCache.set(table, rows)
+      // Rows can change without this browser doing it: a family signs up on the
+      // public camp page, another coach adds a booking. Opening a screen reads
+      // its table again, and that screen showed the new rows — but anything
+      // else built from the same table (the right-hand panel's player count)
+      // kept the old ones until the page was reloaded. So when a read comes
+      // back different from what was held, everything showing the table is
+      // told. Listeners take the rows just stored; none of them reads again,
+      // so this cannot loop.
+      if (before !== undefined && !sameRows(before, rows)) tellChanged(table)
       return rows
     })
     .catch(err => { if (_inflight.get(table) === (p as Promise<any[]>)) _inflight.delete(table); throw err })
