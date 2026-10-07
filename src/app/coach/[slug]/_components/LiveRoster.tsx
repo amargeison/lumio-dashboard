@@ -556,7 +556,7 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
     try { setPhoto(await fileToAvatarDataUrl(file)); setDropPhoto(false) } catch { setErr('That file is not a photo we can use. Choose a JPG or PNG.') }
   }
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
-  const { rows: staffRows } = useCoachTable<{ id: string; name: string; role?: string | null; email?: string | null }>('coach_staff')
+  const { rows: staffRows } = useCoachTable<{ id: string; name: string; role?: string | null; email?: string | null; is_head?: boolean | null }>('coach_staff')
   const { rows: rosterRows } = useCoachTable<any>('coach_players')
   // The coach is chosen by who they are, not by their name: two coaches can
   // share a name, and the database follows the id (migration 165).
@@ -708,7 +708,7 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
           <div><label style={lbl}>Colour</label><select value={d.racket_stage ?? ''} onChange={e => set('racket_stage', e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
           {me && !me.isHead
             ? <div><label style={lbl}>Coach</label><input value={me.displayName || 'You'} readOnly disabled aria-label="Coach" style={input} /></div>
-            : <div><label style={lbl}>Coach</label><select value={staffValue} onChange={e => set('staff_id', e.target.value || null)} style={input}><option value="">Head coach</option>{staffRows.map(c => <option key={c.id} value={c.id}>{staffLabel(c)}</option>)}</select></div>}
+            : <div><label style={lbl}>Coach</label><select value={staffValue} onChange={e => set('staff_id', e.target.value || null)} style={input}><option value="">Head coach</option>{staffRows.filter(c => !c.is_head).map(c => <option key={c.id} value={c.id}>{staffLabel(c)}</option>)}</select></div>}
           <div><label style={lbl}>Level</label>
             <select value={d.level ?? ''} onChange={e => set('level', e.target.value)} style={input}>
               <option value="">—</option>

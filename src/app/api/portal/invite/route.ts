@@ -210,7 +210,7 @@ export async function POST(req: NextRequest) {
 
       const { Resend } = await import('resend')
       const resend = new Resend(process.env.RESEND_API_KEY)
-      const { error: sendErr } = await resend.emails.send({ from: 'Lumio Sports <hello@lumiocms.com>', to: emailLc, subject, html })
+      const { error: sendErr } = await resend.emails.send({ from: 'Lumio Sports <hello@lumiosports.com>', to: emailLc, subject, html })
       if (sendErr) console.error('[portal/invite] send rejected → @' + emailLc.split('@')[1] + ':', sendErr)
     }
   } catch (e) { console.warn('[portal/invite] email', e) }

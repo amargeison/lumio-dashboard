@@ -262,7 +262,7 @@ export async function POST(req: NextRequest) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
       const { error: sendErr } = await resend.emails.send({
-        from: 'Lumio Sports <hello@lumiocms.com>',
+        from: 'Lumio Sports <hello@lumiosports.com>',
         to: email,
         subject: `Welcome to Lumio Sports, ${displayName.split(' ')[0]} 🎉`,
         html: generateSportsWelcomeEmail(displayName, sport, 'founder', email),

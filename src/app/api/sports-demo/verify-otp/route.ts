@@ -189,6 +189,8 @@ export async function POST(req: NextRequest) {
     // sb-*-auth-token onto our outgoing response (Secure + HttpOnly forced
     // in setAll above).
     let supabaseUserId: string | null = null
+    // True only when this address had no account before this sign-in.
+    let firstSight = false
     let sessionMinted = false
     const admin = getAdminClient()
     if (!admin) {
@@ -218,6 +220,7 @@ export async function POST(req: NextRequest) {
         // to that address, which is what confirmation means. The OTP is the proof.
         const linkUserPre = linkData?.user
         const needsCreate = !!linkErr || !linkUserPre
+        firstSight = needsCreate
         const needsConfirm = !!linkUserPre && !linkUserPre.email_confirmed_at
 
         if (needsCreate || needsConfirm) {
@@ -404,7 +407,9 @@ export async function POST(req: NextRequest) {
     // signup (both come through this route) so the team sees who's coming in.
     // NOT for members: an invited coach signing into their club's portal is not a
     // new lead, and logging them as "New Demo signup" misreports the funnel.
-    if (process.env.RESEND_API_KEY && !isMember) {
+    // A founder is reported once, when their account is first made — not on
+    // every later sign-in, which used to arrive as another "New signup".
+    if (process.env.RESEND_API_KEY && !isMember && (!isFounder || firstSight)) {
       try {
         const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
         const kind = isFounder ? 'Founding access' : 'Demo'
