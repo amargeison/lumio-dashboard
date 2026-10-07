@@ -42,6 +42,26 @@ const SPORT_ROOTS = new Set([
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // ── One address, not two ──────────────────────────────────────────────
+  // lumiosports.com and www.lumiosports.com both served the whole site, and a
+  // browser treats them as two different sites: a coach signed in on one is a
+  // stranger on the other. Emails link to www, but PUBLIC_SITE_URL is the bare
+  // address, so "Connect Google" left from www and came back to the bare
+  // address, where there was no sign-in and no saved state — the connection
+  // failed with a sign-in screen. The bare address now forwards to www.
+  //
+  // Pages only, plus the two return addresses the outside services send the
+  // browser back to. Every other /api call is left alone: webhooks and timed
+  // jobs call the bare address directly and must not be bounced.
+  // 307, not 308: a browser remembers a 308 for good.
+  if ((request.method === 'GET' || request.method === 'HEAD')
+    && request.headers.get('host')?.replace(/:\d+$/, '') === 'lumiosports.com') {
+    const isReturn = /^\/api\/coach\/(?:oauth\/[^/]+|discord)\/callback$/.test(pathname)
+    if (isReturn || (!pathname.startsWith('/api/') && !pathname.startsWith('/_next/'))) {
+      return NextResponse.redirect(`https://www.lumiosports.com${pathname}${request.nextUrl.search}`, 307)
+    }
+  }
+
   // ── Sport routes: hands-off (with one exception) ──────────────────────
   // /sport/* must never be touched by middleware. The /sport/app auth check
   // below is a separate, intentional carve-out for the founder portal.

@@ -233,8 +233,8 @@ export function IntegrationsPanel({ T, accent }: { T: ThemeTokens; accent: Accen
             {/* iCloud connect form (no OAuth) */}
             {m.id === 'icloud' && !isOn && (
               <div style={{ marginTop: 11, paddingTop: 11, borderTop: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <input value={appleId} onChange={e => setAppleId(e.target.value)} placeholder="Apple ID (email)" style={{ padding: '9px 11px', borderRadius: 9, fontSize: 12.5, color: T.text, background: T.panel, border: `1px solid ${T.borderHi}`, outline: 'none', fontFamily: FONT }} />
-                <input type="password" autoComplete="off" value={appPw} onChange={e => setAppPw(e.target.value)} placeholder="App-specific password (appleid.apple.com)" style={{ padding: '9px 11px', borderRadius: 9, fontSize: 12.5, color: T.text, background: T.panel, border: `1px solid ${T.borderHi}`, outline: 'none', fontFamily: FONT }} />
+                <input type="email" autoComplete="off" name="icloud-apple-id" value={appleId} onChange={e => setAppleId(e.target.value)} placeholder="Apple ID (email)" style={{ padding: '9px 11px', borderRadius: 9, fontSize: 12.5, color: T.text, background: T.panel, border: `1px solid ${T.borderHi}`, outline: 'none', fontFamily: FONT }} />
+                <input type="password" autoComplete="new-password" data-1p-ignore data-lpignore="true" value={appPw} onChange={e => setAppPw(e.target.value)} placeholder="App-specific password (appleid.apple.com)" style={{ padding: '9px 11px', borderRadius: 9, fontSize: 12.5, color: T.text, background: T.panel, border: `1px solid ${T.borderHi}`, outline: 'none', fontFamily: FONT }} />
                 {icloudErr && <div style={{ fontSize: 11, color: T.bad }}>{icloudErr}</div>}
                 <button onClick={connectIcloud} disabled={icloudBusy || !appleId.trim() || !appPw.trim()} style={{ ...btn(accent.hex, T.btnText), alignSelf: 'flex-start', opacity: icloudBusy || !appleId.trim() || !appPw.trim() ? 0.5 : 1 }}>{icloudBusy ? 'Connecting…' : 'Connect iCloud'}</button>
               </div>

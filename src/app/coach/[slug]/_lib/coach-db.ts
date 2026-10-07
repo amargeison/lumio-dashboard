@@ -90,7 +90,9 @@ function installAcademyFetch() {
     if (url.origin !== window.location.origin || !ACADEMY_ROUTES.test(url.pathname)) return inner(input, init)
     const headers = new Headers(init?.headers ?? (typeof input === 'object' && 'headers' in input ? input.headers : undefined))
     headers.set(ACADEMY_HEADER, here)
-    return inner(input, { ...init, headers })
+    // "Not signed in" from our own server, on a page that WAS signed in: go and
+    // find out whether the sign-in has really ended (see checkSignedOut).
+    return inner(input, { ...init, headers }).then(res => { if (res.status === 401) void checkSignedOut(true); return res })
   }
 }
 installAcademyFetch()
@@ -230,6 +232,34 @@ export async function tabStillMine(): Promise<boolean> {
     if (uid && !_tabUser) _tabUser = uid
   } catch { /* could not tell — row level security still checks every write */ }
   return true
+}
+
+// ── Has the sign-in ended somewhere else? ───────────────────────────────────
+// Signing out signs the account out on every device. A portal left open on
+// another one went on looking live: the plan builder answered "Not signed in"
+// in small red text and nothing said why or what to do. Asked whenever our own
+// server refuses a request as not signed in, and whenever the tab is looked at
+// again (at most once a minute). The auth server is the one that knows, so it
+// is the one asked; a failed connection is not a sign-out. The page listens
+// for SIGNED_OUT_ELSEWHERE, clears what this account kept in the browser and
+// goes to the sign-in page.
+export const SIGNED_OUT_ELSEWHERE = 'lumio-coach-signed-out'
+let _signedOut = false
+let _signedOutAsked = 0
+export async function checkSignedOut(now = false): Promise<void> {
+  if (_signedOut || typeof window === 'undefined' || isDemoPath() || !portalAddress()) return
+  // Never signed in on this page: its own sign-in screen is already showing.
+  if (!_tabUser && !_me) return
+  if (!now && Date.now() - _signedOutAsked < 60_000) return
+  _signedOutAsked = Date.now()
+  try {
+    const { data, error } = await sb().auth.getUser()
+    if (data?.user) return
+    const e = error as { name?: string; status?: number } | null
+    if (e && (e.name === 'AuthRetryableFetchError' || !e.status || e.status >= 500)) return
+    _signedOut = true
+    window.dispatchEvent(new Event(SIGNED_OUT_ELSEWHERE))
+  } catch { /* could not ask — try again next time */ }
 }
 
 /** The academy id every coach_* row is filed under. */

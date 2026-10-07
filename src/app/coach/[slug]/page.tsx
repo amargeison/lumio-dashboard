@@ -37,7 +37,7 @@ import { getSession as getDemoSession, saveSession as saveDemoSession } from '@/
 import {
   normalizeRole, viewFromRole, coachIdForRole, roleAllowsNav, setScopeCoachId, type CoachViewRole, type CoachView,
 } from './_lib/role-scope'
-import { currentIdentity, identityProblem, identityMessage, IDENTITY_CHANGED, saveCoachProfile, tabStillMine, TAB_LOST_MESSAGE, type CoachIdentity } from './_lib/coach-db'
+import { currentIdentity, identityProblem, identityMessage, IDENTITY_CHANGED, saveCoachProfile, tabStillMine, checkSignedOut, SIGNED_OUT_ELSEWHERE, TAB_LOST_MESSAGE, type CoachIdentity } from './_lib/coach-db'
 import { CoachMobileShell } from './_components/CoachMobileShell'
 import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { CoachPwaInstaller } from './_components/CoachPwaInstaller'
@@ -142,8 +142,15 @@ async function signOutCoach(live: boolean) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   try {
-    if (url && key) await createBrowserClient(url, key).auth.signOut()
+    // Every device, on purpose: a coach who loses a phone signs out anywhere to cut it off.
+    if (url && key) await createBrowserClient(url, key).auth.signOut({ scope: 'global' })
   } catch { /* still clear locally and leave */ }
+  await leaveToSignIn()
+}
+
+// The end of every sign-out, whichever device it was pressed on: clear what
+// this account kept in this browser, then go to the sign-in page.
+async function leaveToSignIn() {
   wipeDemoSurvivors('coach')
   // …and everything this account cached in the browser: settings, the hidden
   // menu, the modules that are switched on, the dashboard briefing. Left
@@ -636,14 +643,24 @@ function CoachPortalInner({ session, isEmpty: realAccount = false, slugClubName 
   useEffect(() => {
     if (isDemo) return
     const lost = () => setTabLost(true)
-    const check = () => { if (document.visibilityState === 'visible') { stillOwner(); void tabStillMine() } }
+    const check = () => { if (document.visibilityState === 'visible') { stillOwner(); void tabStillMine(); void checkSignedOut() } }
+    // Signed out on another device (sign-out covers every device). The sign-in
+    // kept in this browser is dead: drop it, then leave the way a sign-out does.
+    const out = () => {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      const drop = url && key ? createBrowserClient(url, key).auth.signOut({ scope: 'local' }).catch(() => {}) : Promise.resolve()
+      void Promise.resolve(drop).then(() => leaveToSignIn())
+    }
     if (tabIsLost()) lost()
     void tabStillMine()   // remembers who this tab was opened for
     window.addEventListener(TAB_LOST, lost)
+    window.addEventListener(SIGNED_OUT_ELSEWHERE, out)
     window.addEventListener('focus', check)
     document.addEventListener('visibilitychange', check)
     return () => {
       window.removeEventListener(TAB_LOST, lost)
+      window.removeEventListener(SIGNED_OUT_ELSEWHERE, out)
       window.removeEventListener('focus', check)
       document.removeEventListener('visibilitychange', check)
     }
