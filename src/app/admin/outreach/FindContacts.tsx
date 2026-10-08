@@ -61,6 +61,8 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
   // free search
   const [words, setWords] = useState('tennis'); const [exclude, setExclude] = useState('table tennis, construction, surfaces, courts ltd'); const [location, setLocation] = useState('')
   const [segment, setSegment] = useState<Segment | 'auto'>('auto'); const [max, setMax] = useState('100')
+  // by activity code — coaching companies whose name does not say tennis
+  const [codes, setCodes] = useState<string[]>(['85510'])
   // paid
   const [paidOpen, setPaidOpen] = useState<'' | 'lookup' | 'discover'>('')
   const [howMany, setHowMany] = useState('25'); const [desc, setDesc] = useState(''); const [count, setCount] = useState('15'); const [cap, setCap] = useState('20')
@@ -85,16 +87,16 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
   // FREE: a few at a time until there are none left, or Stop is pressed.
   const freeLook = () => run('free', async () => {
     let checked = 0, found = 0
-    const t = { no_email: 0, not_theirs: 0, no_site: 0 }
+    const t = { no_email: 0, not_theirs: 0, no_site: 0, not_tennis: 0 }
     for (;;) {
       const d = await call('freeLook') as { checked: number; found: number; left: number; tally?: typeof t }
       checked += d.checked; found += d.found
-      if (d.tally) { t.no_email += d.tally.no_email; t.not_theirs += d.tally.not_theirs; t.no_site += d.tally.no_site }
+      if (d.tally) { t.no_email += d.tally.no_email; t.not_theirs += d.tally.not_theirs; t.no_site += d.tally.no_site; t.not_tennis += d.tally.not_tennis || 0 }
       setProgress(`Checked ${checked}, found ${found} email${found === 1 ? '' : 's'} — ${d.left} to go`)
       if (!d.checked || !d.left || stop.current) break
     }
     // Says where the rest stopped, so "found nothing" can be told from "is not working".
-    return { note: `Looked up ${checked} for free: ${found} email${found === 1 ? '' : 's'} found · ${t.no_email} have a website with no email on it · ${t.not_theirs} had a website at that address that is not theirs · ${t.no_site} have no website at the likely addresses.${stop.current ? ' Stopped.' : ''}` }
+    return { note: `Looked up ${checked} for free: ${found} email${found === 1 ? '' : 's'} found · ${t.no_email} have a website with no email on it · ${t.not_theirs} had a website at that address that is not theirs · ${t.no_site} have no website at the likely addresses.${t.not_tennis ? ` ${t.not_tennis} found by activity code were dropped: no website about tennis.` : ''}${stop.current ? ' Stopped.' : ''}` }
   })
 
   // PAID: only ever called from the "Run paid search" button below.
@@ -155,6 +157,32 @@ export default function FindContacts({ onContactsChanged }: { onContactsChanged:
         <button disabled={working || !data.ready.companiesHouse} style={btn('primary', working || !data.ready.companiesHouse)}
           onClick={() => { void run('find', () => call('findCompanies', { words, exclude, location, segment, max: Number(max) || 100 })) }}>
           {busy === 'find' ? 'Searching the register…' : 'Find companies'}
+        </button>
+      </div>
+
+      {/* ── Step 1b: by activity code (free) ── */}
+      <div className="text-xs font-semibold mt-4 mb-1" style={{ color: C.sub }}>…or find the ones whose name does not say tennis <span style={{ color: C.good }}>· free</span></div>
+      <div className="text-xs mb-2" style={{ color: C.dim }}>Registered companies by what they do. Uses the Area, File them under and How many boxes above. Names that say another sport are skipped, and the free look keeps only the ones whose own website is about tennis.</div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        {([['85510', 'Sports coaching'], ['93110', 'Sports facilities'], ['93120', 'Sports clubs'], ['93190', 'Other sports']] as const).map(([c, l]) => (
+          <label key={c} className="text-xs flex items-center gap-1.5" style={{ color: C.sub }}>
+            <input type="checkbox" checked={codes.includes(c)} onChange={e => setCodes(v => e.target.checked ? [...v, c] : v.filter(x => x !== c))} />
+            {l} <span style={{ color: C.dim }}>({c})</span>
+          </label>
+        ))}
+        <button disabled={working || !data.ready.companiesHouse || !codes.length} style={btn('ghost', working || !data.ready.companiesHouse || !codes.length)}
+          onClick={() => { void run('activity', () => call('findByActivity', { codes, exclude, location, segment, max: Number(max) || 100 })) }}>
+          {busy === 'activity' ? 'Searching the register…' : 'Find by activity'}
+        </button>
+      </div>
+
+      {/* ── Step 1c: the map (free) ── */}
+      <div className="text-xs font-semibold mt-4 mb-1" style={{ color: C.sub }}>…or find tennis clubs and centres on the map <span style={{ color: C.good }}>· free</span></div>
+      <div className="text-xs mb-2" style={{ color: C.dim }}>From OpenStreetMap, usually with their website. Each one is checked on the register: only companies are added, because a club run by its members cannot be sent a cold email. Uses the Area box (a town or county as named on the map, or blank for the whole UK). Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" style={{ textDecoration: 'underline' }}>OpenStreetMap contributors</a>.</div>
+      <div className="flex flex-wrap items-center gap-2">
+        <button disabled={working || !data.ready.companiesHouse} style={btn('ghost', working || !data.ready.companiesHouse)}
+          onClick={() => { void run('map', () => call('findOnMap', { location, segment, max: Number(max) || 100 })) }}>
+          {busy === 'map' ? 'Reading the map and checking the register…' : 'Find on the map'}
         </button>
       </div>
 

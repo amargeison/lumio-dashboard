@@ -2,7 +2,11 @@
 //
 // Everything in this file costs nothing to run:
 //   1. Companies House's public register: which companies exist with "tennis"
-//      (or "padel", or whatever is asked for) in their name.
+//      (or "padel", or whatever is asked for) in their name — or, for the ones
+//      whose name does not say tennis, which registered coaching and sports
+//      companies there are (by the activity they registered).
+//   1b. OpenStreetMap: the tennis clubs and centres people have put on the
+//      map, kept only when they are a company on the register.
 //   2. The organisation's own website: guess its address from its name, check
 //      the page really is theirs, and read the contact email they publish.
 //
@@ -110,31 +114,50 @@ const titleCase = (s: string) => s === s.toUpperCase()
   ? s.toLowerCase().replace(/\b([a-z])/g, m => m.toUpperCase()).replace(/\b(Ltd|Llp|Cic|Plc|Uk|Lta|Fc|Tc|Ltc)\b/g, m => m.toUpperCase()).replace(/\bLTD\b/g, 'Ltd')
   : s
 
-/**
- * Companies on the register whose name contains the words given.
- * Adds the ones we have not seen before as prospects. Free.
- */
-export async function findCompanies(o: { words: string; exclude?: string; location?: string; segment: Segment | 'auto'; max: number }) {
-  const words = tidy(o.words, 80)
-  if (words.length < 3) throw new Error('Give at least one word the company name should contain, e.g. “tennis”.')
-  const max = Math.max(1, Math.min(500, Math.round(o.max) || 100))
+/** What is already on the list or in contacts, so nothing is offered twice. */
+async function alreadyHave() {
   const sb = db()
   const [{ data: have }, { data: contacts }] = await Promise.all([
-    sb.from('outreach_prospects').select('company_number, org_name').limit(50000),
-    sb.from('outreach_contacts').select('org_name').limit(50000),
+    sb.from('outreach_prospects').select('company_number, org_name, website').limit(50000),
+    sb.from('outreach_contacts').select('org_name, website').limit(50000),
   ])
-  const key = (n: unknown) => nameWords(String(n ?? '')).join(' ')
-  const seenNumbers = new Set((have || []).map(p => p.company_number as string).filter(Boolean))
-  const seenNames = new Set([...(have || []), ...(contacts || [])].map(p => key(p.org_name)).filter(Boolean))
-  const not = tidy(o.exclude, 200).toLowerCase().split(/[,;]+/).map(s => s.trim()).filter(s => s.length > 1)
+  const hostOf = (w: unknown) => { try { return new URL(/^https?:/i.test(String(w)) ? String(w) : `https://${w}`).hostname.replace(/^www\./, '').toLowerCase() } catch { return '' } }
+  return {
+    numbers: new Set((have || []).map(p => p.company_number as string).filter(Boolean)),
+    names: new Set([...(have || []), ...(contacts || [])].map(p => nameKey(p.org_name)).filter(Boolean)),
+    hosts: new Set([...(have || []), ...(contacts || [])].map(p => p.website ? hostOf(p.website) : '').filter(Boolean)),
+    hostOf,
+  }
+}
+const nameKey = (n: unknown) => nameWords(String(n ?? '')).join(' ')
 
+async function saveProspects(rows: Record<string, unknown>[]) {
+  const sb = db()
+  const numbered = rows.filter(r => r.company_number), plain = rows.filter(r => !r.company_number)
+  for (let i = 0; i < numbered.length; i += 500) {
+    const { error } = await sb.from('outreach_prospects').upsert(numbered.slice(i, i + 500), { onConflict: 'company_number', ignoreDuplicates: true })
+    if (error) throw new Error(error.message)
+  }
+  for (let i = 0; i < plain.length; i += 500) {
+    const { error } = await sb.from('outreach_prospects').insert(plain.slice(i, i + 500))
+    if (error) throw new Error(error.message)
+  }
+}
+
+/**
+ * Page through one advanced search of the register, adding the companies we
+ * have not seen before. The register hands back up to 5,000 per search; we
+ * page until we have enough NEW ones, so a second press carries on where the
+ * first stopped.
+ */
+async function searchRegister(o: {
+  query: Record<string, string>; exclude: string[]; skip?: (lowerName: string) => boolean
+  segment: Segment | 'auto'; max: number; source: string; seen: Awaited<ReturnType<typeof alreadyHave>>
+}) {
   const rows: Record<string, unknown>[] = []
   let matched = 0, already = 0, excluded = 0
-  // The register hands back up to 5,000 at a time; page through until we have
-  // enough NEW ones, so a second press carries on where the first stopped.
-  for (let start = 0; start < 5000 && rows.length < max; start += 500) {
-    const q = new URLSearchParams({ company_name_includes: words, company_status: 'active', size: '500', start_index: String(start) })
-    if (tidy(o.location)) q.set('location', tidy(o.location, 60))
+  for (let start = 0; start < 5000 && rows.length < o.max; start += 500) {
+    const q = new URLSearchParams({ ...o.query, company_status: 'active', size: '500', start_index: String(start) })
     const page = await ch(`/advanced-search/companies?${q}`)
     const items = ((page?.items as ChItem[]) || [])
     if (!items.length) break
@@ -143,9 +166,9 @@ export async function findCompanies(o: { words: string; exclude?: string; locati
       const name = tidy(it.company_name), number = tidy(it.company_number, 20)
       if (!name || !number) continue
       const lower = name.toLowerCase()
-      if (not.some(w => lower.includes(w))) { excluded++; continue }
-      if (seenNumbers.has(number) || seenNames.has(key(name))) { already++; continue }
-      seenNumbers.add(number); seenNames.add(key(name))
+      if (o.exclude.some(w => lower.includes(w)) || o.skip?.(lower)) { excluded++; continue }
+      if (o.seen.numbers.has(number) || o.seen.names.has(nameKey(name))) { already++; continue }
+      o.seen.numbers.add(number); o.seen.names.add(nameKey(name))
       const lf = legalFormOf(String(it.company_type || ''), it.company_subtype)
       const sic = (Array.isArray(it.sic_codes) ? it.sic_codes : []).map(c => String(c).replace(/\D/g, '')).filter(Boolean).slice(0, 4)
       rows.push({
@@ -154,17 +177,180 @@ export async function findCompanies(o: { words: string; exclude?: string; locati
         district: districtOf(it.registered_office_address?.postal_code),
         segment: o.segment === 'auto' ? segmentFromName(name, sic) : o.segment,
         notes: sic.length ? `SIC ${sic.join(', ')}` : null,
-        source: `Companies House: “${words}”${tidy(o.location) ? ` in ${tidy(o.location, 60)}` : ''}`,
+        source: o.source,
       })
-      if (rows.length >= max) break
+      if (rows.length >= o.max) break
     }
     if (items.length < 500) break
   }
-  for (let i = 0; i < rows.length; i += 500) {
-    const { error } = await sb.from('outreach_prospects').upsert(rows.slice(i, i + 500), { onConflict: 'company_number', ignoreDuplicates: true })
-    if (error) throw new Error(error.message)
+  return { rows, matched, already, excluded }
+}
+
+const butNot = (v: unknown) => tidy(v, 200).toLowerCase().split(/[,;]+/).map(s => s.trim()).filter(s => s.length > 1)
+const howMany = (v: unknown) => Math.max(1, Math.min(500, Math.round(Number(v)) || 100))
+
+/**
+ * Companies on the register whose name contains the words given.
+ * Adds the ones we have not seen before as prospects. Free.
+ */
+export async function findCompanies(o: { words: string; exclude?: string; location?: string; segment: Segment | 'auto'; max: number }) {
+  const words = tidy(o.words, 80)
+  if (words.length < 3) throw new Error('Give at least one word the company name should contain, e.g. “tennis”.')
+  const where = tidy(o.location, 60)
+  const r = await searchRegister({
+    query: { company_name_includes: words, ...(where ? { location: where } : {}) },
+    exclude: butNot(o.exclude), segment: o.segment, max: howMany(o.max), seen: await alreadyHave(),
+    source: `Companies House: “${words}”${where ? ` in ${where}` : ''}`,
+  })
+  await saveProspects(r.rows)
+  return { added: r.rows.length, matched: r.matched, already: r.already, excluded: r.excluded }
+}
+
+// ── Companies House by activity ──────────────────────────────────────────────
+// The name search only finds companies that put "tennis" in their name, and
+// plenty do not: "Ace Coaching Ltd", "Matchpoint Academy Ltd". Every company
+// tells the register what it does (its SIC code), and coaching businesses and
+// clubs use these four. They also cover football schools, swimming clubs and
+// gyms, so these prospects carry a condition: their own website must be about
+// tennis, or the free look drops them (see freeLookBatch). Names that plainly
+// belong to another sport are left out before that, to save the look-ups.
+export const ACTIVITY_CODES = {
+  '85510': 'Sports coaching (sports and recreation education)',
+  '93110': 'Sports facilities',
+  '93120': 'Sports clubs',
+  '93190': 'Other sports activities',
+} as const
+export const ACTIVITY_SOURCE = 'Companies House activity'
+const OTHER_SPORT = /\b(football|soccer|futsal|rugby|cricket|golf|swim\w*|aquatics?|dance|dancing|ballet|gym|gymnastics?|fitness|yoga|pilates|martial|karate|judo|ju-?jitsu|jiu|taekwondo|kickboxing|boxing|mma|netball|basketball|hockey|athletics|running|runners|cycling|bikes?|triathlon|equestrian|horses?|riding|pony|climbing|ski|skiing|snow|sailing|yacht|rowing|canoe|kayak|surf\w*|diving|cheer\w*|archery|fencing|bowls|bowling|darts|snooker|billiards|angling|fishing|shooting|motor\w*|karting|skate\w*|trampolin\w*|volleyball|badminton|table tennis|baseball|softball|lacrosse|handball|wrestling|weightlifting|crossfit|bootcamp|personal train\w*|nursery|childcare|music|drama|theatre|esports?|gaming|paintball|laser|bounce|soft play)\b/
+
+export async function findByActivity(o: { codes: string[]; exclude?: string; location?: string; segment: Segment | 'auto'; max: number }) {
+  const codes = (o.codes || []).map(String).filter(c => c in ACTIVITY_CODES)
+  if (!codes.length) throw new Error('Tick at least one kind of company.')
+  const where = tidy(o.location, 60), max = howMany(o.max)
+  const seen = await alreadyHave(), exclude = butNot(o.exclude)
+  const tot = { added: 0, matched: 0, already: 0, excluded: 0 }
+  for (const code of codes) {
+    if (tot.added >= max) break
+    const r = await searchRegister({
+      query: { sic_codes: code, ...(where ? { location: where } : {}) },
+      exclude, skip: lower => !lower.includes('tennis') && OTHER_SPORT.test(lower),
+      segment: o.segment, max: max - tot.added, seen,
+      source: `${ACTIVITY_SOURCE} ${code}${where ? ` in ${where}` : ''}`,
+    })
+    await saveProspects(r.rows)
+    tot.added += r.rows.length; tot.matched += r.matched; tot.already += r.already; tot.excluded += r.excluded
   }
-  return { added: rows.length, matched, already, excluded }
+  return tot
+}
+
+/** Is a page about tennis? Said in its title or description, or more than in passing. */
+export function aboutTennis(html: string): boolean {
+  const head = [html.match(/<title[^>]*>([^<]*)/i)?.[1] || '', ...[...html.matchAll(/<meta[^>]+(?:name|property)="(?:description|og:title|og:description|og:site_name)"[^>]*content="([^"]*)"/gi)].map(m => m[1])].join(' ')
+  if (/\btennis\b/i.test(head) && !/\btable tennis\b/i.test(head)) return true
+  const body = textOf(html).replace(/\btable tennis\b/g, ' ')
+  return (body.match(/\btennis\b/g) || []).length >= 3
+}
+
+// ── OpenStreetMap ────────────────────────────────────────────────────────────
+// The map people build together (openstreetmap.org) marks tennis clubs and
+// centres, often with their website. Its licence (ODbL) lets us keep what we
+// take, with credit: "© OpenStreetMap contributors", shown on the admin page.
+//
+// A club on the map is only useful to us if it is a company. A club that is
+// not (most are unincorporated associations of members) counts as a private
+// individual under the email marketing rules, so it cannot be sent a cold
+// email at all. Each one is looked up on the register: companies join the list
+// as prospects; the rest are kept as dismissed, so they are not looked up
+// again and can never be emailed by accident.
+const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']
+type OsmPlace = { name: string; operator: string | null; website: string | null; town: string | null; postcode: string | null; kind: string }
+let _osm: { at: number; area: string; places: OsmPlace[] } | null = null
+
+async function tennisOnMap(area: string): Promise<OsmPlace[]> {
+  // One fetch serves several presses: the whole country is a few thousand
+  // places, and the public map servers ask to be used sparingly.
+  if (_osm && _osm.area === area && Date.now() - _osm.at < 3_600_000) return _osm.places
+  const esc = area.replace(/["\\]/g, '')
+  const scope = esc
+    ? `area["ISO3166-1"="GB"][admin_level=2]->.uk;area["name"="${esc}"]["boundary"="administrative"]->.a;`
+    : `area["ISO3166-1"="GB"][admin_level=2]->.a;`
+  const t = '["sport"~"(^|;)tennis(;|$)"]'
+  const query = `[out:json][timeout:90];${scope}(nwr${t}["club"](area.a);nwr${t}["leisure"~"^(sports_centre|club|sports_hall|stadium)$"](area.a);nwr["club"="tennis"](area.a);nwr${t}["leisure"="pitch"]["name"]["website"](area.a);nwr${t}["leisure"="pitch"]["name"]["operator"](area.a););out tags;`
+  let last = 'no answer'
+  for (const url of OVERPASS) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST', body: new URLSearchParams({ data: query }), signal: AbortSignal.timeout(100_000),
+        headers: { 'User-Agent': UA, 'Content-Type': 'application/x-www-form-urlencoded' },
+      })
+      if (!res.ok) { last = `${res.status}`; continue }
+      const j = await res.json() as { elements?: { tags?: Record<string, string> }[] }
+      const places: OsmPlace[] = []
+      for (const e of j.elements || []) {
+        const g = e.tags || {}
+        const name = tidy(g.name, 120)
+        if (!name || /\btable tennis\b/i.test(name)) continue
+        places.push({
+          name, operator: tidy(g.operator, 120) || null,
+          website: tidy(g.website || g['contact:website'] || g.url, 200) || null,
+          town: tidy(g['addr:city'] || g['addr:town'] || g['addr:village'], 80) || null,
+          postcode: tidy(g['addr:postcode'], 10).toUpperCase() || null,
+          kind: g.club ? 'club' : g.leisure || 'place',
+        })
+      }
+      _osm = { at: Date.now(), area, places }
+      return places
+    } catch (e) { last = (e as Error)?.name === 'TimeoutError' ? 'timed out' : 'could not connect' }
+  }
+  throw new Error(`The map server did not answer (${last}). It is a free public service and is sometimes busy — try again in a few minutes.`)
+}
+
+export async function findOnMap(o: { location?: string; segment: Segment | 'auto'; max: number }) {
+  const area = tidy(o.location, 60), max = howMany(o.max)
+  const places = await tennisOnMap(area)
+  if (!places.length) return { added: 0, notCompany: 0, already: 0, onMap: 0, left: 0 }
+  const seen = await alreadyHave()
+  // The same club is often on the map several times (the clubhouse, each block
+  // of courts). One look-up per name.
+  const byName = new Map<string, OsmPlace>()
+  for (const p of places) {
+    const k = nameKey(p.name)
+    if (!k) continue
+    const had = byName.get(k)
+    if (!had || (!had.website && p.website)) byName.set(k, p)
+  }
+  const fresh = [...byName.entries()].filter(([k, p]) => !seen.names.has(k) && !(p.website && seen.hosts.has(seen.hostOf(p.website))))
+  const already = byName.size - fresh.length
+  // The register is asked once or twice per place; keep each press inside the
+  // time a request may take, and let the next press carry on.
+  const batch = fresh.slice(0, Math.min(max * 3, 120))
+  const keep: Record<string, unknown>[] = [], drop: Record<string, unknown>[] = []
+  for (let i = 0; i < batch.length && keep.length < max; i += 4) {
+    await Promise.all(batch.slice(i, i + 4).map(async ([k, p]) => {
+      const reg = await confirmOnRegister(p.name).catch(() => null)
+        ?? (p.operator && !/council|borough|city of|county|school|university|college|trust$/i.test(p.operator) ? await confirmOnRegister(p.operator).catch(() => null) : null)
+      seen.names.add(k)
+      const base = {
+        org_name: p.name, town: p.town || reg?.town || null, district: districtOf(p.postcode || undefined) || reg?.district || null,
+        website: p.website, source: `OpenStreetMap${area ? ` in ${area}` : ''}`,
+      }
+      if (reg && reg.corporate && !seen.numbers.has(reg.company_number)) {
+        seen.numbers.add(reg.company_number)
+        const auto = segmentFromName(p.name)
+        keep.push({ ...base, company_number: reg.company_number, legal_form: reg.form, corporate_ok: true,
+          // On the map as a club or centre: a venue, unless its name says academy or coach.
+          segment: o.segment === 'auto' ? (auto === 'academy' && !/academy|coaching/i.test(p.name) ? 'venue' : auto) : o.segment,
+          notes: `On the map as a tennis ${p.kind}` })
+      } else if (reg && seen.numbers.has(reg.company_number)) {
+        // Already on the list under its registered name.
+      } else {
+        drop.push({ ...base, company_number: null, legal_form: reg ? reg.form : 'Not on the register', corporate_ok: false, segment: 'venue', state: 'dismissed',
+          notes: reg ? `On the register as ${reg.form}, which is not a company — not emailed` : 'Not a registered company (most clubs are run by their members), so it cannot be sent a cold email' })
+      }
+    }))
+  }
+  await saveProspects([...keep, ...drop])
+  return { added: keep.length, notCompany: drop.length, already, onMap: byName.size, left: Math.max(0, fresh.length - batch.length) }
 }
 
 /** Is this organisation on the register under (near enough) this name? Free. */
@@ -448,7 +634,7 @@ export async function emailFromSite(home: { url: string; html: string }): Promis
  *   no_email    their website, with no email address published on it
  *   found       their website and an email
  */
-export type FreeLook = { website: string | null; email: string | null; segment: Segment | null; why: 'found' | 'no_email' | 'not_theirs' | 'no_site'; detail?: string }
+export type FreeLook = { website: string | null; email: string | null; segment: Segment | null; why: 'found' | 'no_email' | 'not_theirs' | 'no_site'; detail?: string; tennis?: boolean }
 export async function lookUpFree(p: Pick<Prospect, 'org_name' | 'town' | 'district' | 'company_number' | 'website'>): Promise<FreeLook> {
   let tries = p.website ? [p.website] : guessDomains(p.org_name)
   const guessed = tries.length
@@ -474,7 +660,7 @@ export async function lookUpFree(p: Pick<Prospect, 'org_name' | 'town' | 'distri
       const there = await getPageWhy(onward)
       if (!('fail' in there) && !PARKED.test(there.html.slice(0, 60_000)) && !CHALLENGE.test(there.html.slice(0, 20_000)) && pageIsTheirs(there.html, 'https://x.uk/', p, t)) {
         const email = await emailFromSite(there)
-        return { website: there.url.replace(/[?#].*$/, ''), email, segment: segmentFromPage(there.html), why: email ? 'found' : 'no_email' }
+        return { website: there.url.replace(/[?#].*$/, ''), email, segment: segmentFromPage(there.html), why: email ? 'found' : 'no_email', tennis: aboutTennis(there.html) }
       }
     }
     // A website someone gave us is taken as theirs unless it is plainly a
@@ -482,7 +668,7 @@ export async function lookUpFree(p: Pick<Prospect, 'org_name' | 'town' | 'distri
     if (p.website ? PARKED.test(page.html.slice(0, 60_000)) : !pageIsTheirs(page.html, page.url, p, t)) { seen.push(`${t}: ${describe(page.html)}`); continue }
     const site = new URL(page.url).origin
     const email = await emailFromSite(page)
-    return { website: site, email, segment: segmentFromPage(page.html), why: email ? 'found' : 'no_email' }
+    return { website: site, email, segment: segmentFromPage(page.html), why: email ? 'found' : 'no_email', tennis: aboutTennis(page.html) }
   }
   return {
     website: p.website || null, email: null, segment: null, why: sawSomething ? 'not_theirs' : 'no_site',
@@ -521,11 +707,22 @@ export async function freeLookBatch(size = 6) {
     const blocked = await canBrowse()
     if (blocked) throw new Error(`The server could not load a test web page (${blocked}), so nothing was looked up and nothing has been marked. This is a server network problem, not a problem with the list.`)
   }
-  const tally = { found: 0, no_email: 0, not_theirs: 0, no_site: 0 }
+  const tally = { found: 0, no_email: 0, not_theirs: 0, no_site: 0, not_tennis: 0 }
   await Promise.all(batch.map(async p => {
     const r = await lookUpFree(p).catch((): FreeLook => ({ website: p.website, email: null, segment: null, why: 'no_site' }))
-    tally[r.why]++
     const sic = (p.notes || '').match(/^SIC [\d, ]+/)?.[0] || ''
+    // Found by activity code, not by name: only worth keeping if their own
+    // website is about tennis. No website means we cannot tell, and a paid
+    // search on a football school would be money wasted, so those go too.
+    if ((p.source || '').startsWith(ACTIVITY_SOURCE) && !r.tennis) {
+      tally.not_tennis++
+      await sb.from('outreach_prospects').update({
+        website: r.website, state: 'dismissed', updated_at: new Date().toISOString(),
+        notes: [sic, r.website ? 'Their website is not about tennis' : 'No website found to show they do tennis'].filter(Boolean).join(' · '),
+      }).eq('id', p.id).eq('state', 'new')
+      return
+    }
+    tally[r.why]++
     await sb.from('outreach_prospects').update({
       website: r.website, email: r.email, state: r.email ? 'found' : 'no_email', updated_at: new Date().toISOString(),
       // What their own site says they are beats what their name suggests.

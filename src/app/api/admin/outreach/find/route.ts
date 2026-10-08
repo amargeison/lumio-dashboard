@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminFor, db } from '@/lib/outreach/core'
-import { addProspects, companiesHouseReady, findCompanies, freeLookBatch, resortProspects, retryFree, toSeg, type Prospect } from '@/lib/outreach/prospect'
+import { addProspects, companiesHouseReady, findByActivity, findCompanies, findOnMap, freeLookBatch, resortProspects, retryFree, toSeg, type Prospect } from '@/lib/outreach/prospect'
 import { SEGMENTS } from '@/lib/outreach/core'
 import { paidDiscover, paidLookupBatch, paidSearchReady, spendThisMonth } from '@/lib/outreach/paid-search'
 
@@ -11,7 +11,7 @@ export const maxDuration = 120
 //
 // Two kinds of action live here and they are kept visibly apart:
 //
-//   FREE   findCompanies, freeLook, retryFree, resort, setSegment, add, accept, setEmail, dismiss, clear, cap
+//   FREE   findCompanies, findByActivity, findOnMap, freeLook, retryFree, resort, setSegment, add, accept, setEmail, dismiss, clear, cap
 //   PAID   paidLookup, paidDiscover
 //
 // A paid action runs only when the request says `confirm: 'paid'` — which the
@@ -69,6 +69,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, ...r, note: r.added
           ? `Added ${r.added} compan${r.added === 1 ? 'y' : 'ies'} from the register.${r.already ? ` ${r.already} we already had.` : ''}${r.excluded ? ` ${r.excluded} left out by your “but not” words.` : ''}`
           : r.matched ? `Nothing new — all ${r.matched} matching companies are already here or were left out.` : 'The register has no active company with those words in its name.' })
+      }
+      case 'findByActivity': {
+        const codes = Array.isArray(body.codes) ? body.codes.map(String) : []
+        const r = await findByActivity({ codes, exclude: String(body.exclude ?? ''), location: String(body.location ?? ''), segment: segChoice(body.segment), max: Number(body.max) || 100 })
+        return NextResponse.json({ ok: true, ...r, note: r.added
+          ? `Added ${r.added} coaching and sports compan${r.added === 1 ? 'y' : 'ies'}. The free look keeps only the ones whose website is about tennis.${r.already ? ` ${r.already} we already had.` : ''}${r.excluded ? ` ${r.excluded} left out because their name says another sport.` : ''}`
+          : r.matched ? `Nothing new — all ${r.matched} matching companies are already here or were left out.` : 'The register has no active company of that kind there.' })
+      }
+      case 'findOnMap': {
+        const r = await findOnMap({ location: String(body.location ?? ''), segment: segChoice(body.segment), max: Number(body.max) || 100 })
+        return NextResponse.json({ ok: true, ...r, note: !r.onMap
+          ? 'The map has no tennis clubs or centres there. For a town, give its name as it is written on the map, e.g. “Bristol”.'
+          : `${r.onMap} tennis clubs and centres on the map. Added ${r.added} that are registered companies.${r.notCompany ? ` ${r.notCompany} are not companies, so they cannot be cold-emailed — kept out of the list.` : ''}${r.already ? ` ${r.already} we already had.` : ''}${r.left ? ` ${r.left} still to check — press again.` : ''}` })
       }
       case 'freeLook':
         return NextResponse.json({ ok: true, ...await freeLookBatch(6) })
