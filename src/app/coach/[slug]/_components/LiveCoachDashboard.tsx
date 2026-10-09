@@ -50,6 +50,18 @@ const wmo = (c: number): string => c === 0 ? 'clear' : c <= 3 ? 'cloudy' : c <= 
 // Everything the dashboard reads, in the order it destructures them.
 const DASH_TABLES: CoachTable[] = ['coach_players', 'coach_bookings', 'coach_sessions', 'coach_payments', 'coach_attendance', 'coach_player_skills', 'coach_messages', 'coach_equipment', 'coach_staff', 'coach_venues', 'coach_camps', 'coach_camp_attendees', 'coach_session_plans']
 
+// One line in the Today list. Four of them fill the space beside the greeting.
+const TODAY_ROW = 30
+// Opens the Today list at the next session rather than at the first of the
+// day, which by the afternoon has long gone. Once per list, so it never pulls
+// the list back while someone is scrolling it.
+function scrollToNextSession(el: HTMLDivElement | null) {
+  if (!el || el.dataset.placed) return
+  el.dataset.placed = '1'
+  const next = el.querySelector<HTMLElement>('[data-today-row="next"]')
+  if (next) el.scrollTop = Math.max(0, next.offsetTop - TODAY_ROW)
+}
+
 export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, onStartWizard, asCoach, canNavigate }: Common & { clubName: string; onNavigate: (id: string) => void; onStartWizard?: () => void; asCoach?: { name: string; profileDone: boolean; staffId?: string | null } | null; canNavigate?: (id: string) => boolean }) {
   const profile = useCoachProfile()
   // Shared cache first: coming back to the dashboard from another page paints
@@ -440,24 +452,34 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           </div>
         </div>
         <div style={{ ...card, display: showSec('today') ? undefined : 'none' }}>
-          <p style={sectionTitle}>Today</p>
+          <p style={{ ...sectionTitle, display: 'flex', justifyContent: 'space-between' }}>Today{todays.length > 4 && <span style={{ fontSize: 11, fontWeight: 500, color: T.text3 }}>{todays.length} sessions</span>}</p>
+          {/* One line per session and four in view, the rest a scroll away. Two
+              lines each made a busy day (seven sessions) push the whole banner
+              to twice its height, most of it empty space beside the greeting. */}
+          {/* A scrollbar that is always there when there is more to see. Macs
+              hide scrollbars until you scroll, which left no sign that six
+              more sessions were below the fourth; a styled bar stays visible. */}
+          {todays.length > 4 && <style>{`.lumio-today-list::-webkit-scrollbar{width:6px}.lumio-today-list::-webkit-scrollbar-track{background:transparent}.lumio-today-list::-webkit-scrollbar-thumb{background:${T.border};border-radius:3px}`}</style>}
+          <div ref={scrollToNextSession} className="lumio-today-list" style={{ maxHeight: TODAY_ROW * 4, overflowY: 'auto', marginRight: -6, paddingRight: 6 }}>
           <div style={{ position: 'relative' }}>
-            {todays.length > 0 && <div style={{ position: 'absolute', left: 49, top: 6, bottom: 6, width: 1, background: T.border }} />}
+            {todays.length > 0 && <div style={{ position: 'absolute', left: 49, top: TODAY_ROW / 2, bottom: TODAY_ROW / 2, width: 1, background: T.border }} />}
             {todays.length === 0 ? (
               <p style={{ color: T.text3, fontSize: 13, margin: 0 }}>No sessions today. <button onClick={() => (can('calendar') ? onNavigate('calendar') : setBooking(true))} style={linkBtn(accent)}>Add a booking →</button></p>
             ) : todays.map(b => {
               const hl = b.id === todayHighlightId
+              const sub = [b.court, b.type].filter(Boolean).join(' · ')
               return (
-                <div key={b.id} style={{ position: 'relative', display: 'flex', gap: 14, padding: '6px 0' }}>
-                  <div style={{ fontSize: 11, color: hl ? accent.hex : T.text3, width: 44, paddingTop: 2 }}>{b.start_time || '—'}</div>
-                  <div style={{ position: 'absolute', left: 46, top: 9, width: 7, height: 7, borderRadius: '50%', background: hl ? accent.hex : T.panel, border: `1.5px solid ${hl ? accent.hex : T.border}` }} />
-                  <div style={{ flex: 1, paddingLeft: 14, minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, color: T.text, fontWeight: hl ? 600 : 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.title || b.player_name || 'Session'}</div>
-                    <div style={{ fontSize: 10.5, color: T.text3 }}>{[b.court, b.type].filter(Boolean).join(' · ')}</div>
+                <div key={b.id} data-today-row={hl ? 'next' : undefined} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, height: TODAY_ROW }}>
+                  <div style={{ fontSize: 11, color: hl ? accent.hex : T.text3, width: 44, flexShrink: 0 }}>{b.start_time || '—'}</div>
+                  <div style={{ position: 'absolute', left: 46, top: (TODAY_ROW - 7) / 2, width: 7, height: 7, borderRadius: '50%', background: hl ? accent.hex : T.panel, border: `1.5px solid ${hl ? accent.hex : T.border}` }} />
+                  <div style={{ flex: 1, paddingLeft: 14, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span style={{ fontSize: 12.5, color: T.text, fontWeight: hl ? 600 : 500 }}>{b.title || b.player_name || 'Session'}</span>
+                    {sub && <span style={{ fontSize: 10.5, color: T.text3, marginLeft: 8 }}>{sub}</span>}
                   </div>
                 </div>
               )
             })}
+          </div>
           </div>
         </div>
       </div>
