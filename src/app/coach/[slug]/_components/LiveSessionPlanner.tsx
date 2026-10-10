@@ -132,6 +132,11 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   // session or a moved booking shows at once instead of a stale copy.
   const sel = selId ? plans.rows.find((pl: any) => String(pl.id) === selId) || null : null
   const setSel = (pl: any | null) => setSelId(pl ? String(pl.id) : null)
+  // Bring an opened plan into view (see where it is drawn on the Overview).
+  const runSheetRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (selId) runSheetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [selId])
   const [showAllNeeds, setShowAllNeeds] = useState(false)
   const [assignErr, setAssignErr] = useState('')
   const isMobile = useIsMobile()
@@ -170,7 +175,17 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   const isFinished = (b: any) => !!planFor(b)?.completed_at
   const hasEnded = (b: any) => (b.booking_date || '') < todayISO
     || (b.booking_date === todayISO && toMins(b.start_time) != null && (toMins(b.start_time) as number) + (b.duration_min || 60) <= nowMins)
-  const nextUp = upcoming.find(b => !isFinished(b) && !hasEnded(b)) || null
+  // Next up is the next lesson that has not STARTED. It used to be the first
+  // one not yet over, so at half past ten the 09:00 session still running was
+  // "next up" while the 11:00 waited behind it. A lesson under way is shown
+  // separately, as "on now".
+  const hasStarted = (b: any) => (b.booking_date || '') < todayISO
+    || (b.booking_date === todayISO && toMins(b.start_time) != null && (toMins(b.start_time) as number) <= nowMins)
+  const nextUp = upcoming.find(b => !isFinished(b) && !hasStarted(b) && b.type !== 'Block') || null
+  const onNow = upcoming.filter(b => !isFinished(b) && hasStarted(b) && !hasEnded(b) && b.type !== 'Block')
+  // "Today", "Tomorrow" or the day — a bare 11/10/2026 read as if it were today.
+  const tomorrowISO = isoD(addD(today, 1))
+  const whenLabel = (d?: string | null) => !d ? '' : d === todayISO ? 'Today' : d === tomorrowISO ? 'Tomorrow' : new Date(`${d.slice(0, 10)}T12:00:00`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
   // Still to plan: not a Block (court time held, nothing to coach), not over.
   // The header shows the real number, however many are listed underneath.
   const needsPlanAll = upcoming.filter(b => !planFor(b) && b.type !== 'Block' && !hasEnded(b))
@@ -269,12 +284,26 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
                   })()}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 17, fontWeight: 700, color: T.text }}>{nextUp.player_name || nextUp.title || 'Session'}</div>
-                    <div style={{ fontSize: 12, color: T.text3, marginTop: 3 }}>{[nextUp.booking_date && new Date(nextUp.booking_date).toLocaleDateString('en-GB'), nextUp.start_time, nextUp.type, nextUp.court].filter(Boolean).join(' · ')}</div>
+                    <div style={{ fontSize: 12, color: T.text3, marginTop: 3 }}>{[whenLabel(nextUp.booking_date), nextUp.start_time, nextUp.type, nextUp.court].filter(Boolean).join(' · ')}</div>
                     {planFor(nextUp)?.focus && <div style={{ fontSize: 12.5, color: T.text2, marginTop: 8 }}>🎯 {planFor(nextUp)?.focus}</div>}
                   </div>
                   <button onClick={() => openBooking(nextUp)} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{planFor(nextUp) ? 'Open' : 'Build session'}</button>
                 </div>
               ) : <div style={{ fontSize: 13, color: T.text3 }}>No upcoming bookings. Add bookings in the Booking Calendar and they’ll appear here.</div>}
+              {onNow.length > 0 ? (
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.border}`, fontSize: 12, color: T.text3, display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'center' }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: T.good, textTransform: 'uppercase', letterSpacing: '0.06em' }}>On now</span>
+                  {onNow.map(b => (
+                    <button key={b.id} onClick={() => openBooking(b)} style={{ appearance: 'none', border: 0, background: 'transparent', padding: 0, cursor: 'pointer', color: T.text2, fontSize: 12, fontFamily: 'inherit' }}>
+                      {b.player_name || b.title || 'Session'} <span style={{ color: T.text3 }}>· {[b.start_time, b.court].filter(Boolean).join(' · ')}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : nextUp && nextUp.booking_date !== todayISO && todays.length > 0 ? (
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: `1px solid ${T.border}`, fontSize: 12, color: T.text3 }}>
+                  Today’s {todays.length} session{todays.length === 1 ? ' is' : 's are'} finished.
+                </div>
+              ) : null}
             </div>
             {/* Stats */}
             <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -284,6 +313,23 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
               {stat('Pending bookings', pending, '#3A8EE0')}
             </div>
           </div>
+
+          {/* The plan itself, inline — not a modal. A run-sheet is the thing the
+              coach is about to work from for an hour; it belongs on the page at
+              full width, next to the player's history and the kit they need,
+              rather than in a 620px box floating over a dimmed planner.
+              Directly under Next up, and brought into view when opened: it
+              used to sit below the whole Needs a plan list, so "Open" seemed
+              to do nothing — the plan had opened a screen and a half down. */}
+          {sel && (
+            <div ref={runSheetRef} style={{ scrollMarginTop: 16 }}>
+            <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} lessons={sessions.rows} onNavigate={onNavigate} inline
+              onCompleted={() => { setSel(null); plans.reload() }}
+              onEdit={() => editSaved(sel)}
+              onClose={() => setSel(null)}
+              onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />
+            </div>
+          )}
 
           {/* Needs a plan */}
           <div style={{ display: showSec('needsplan') ? undefined : 'none', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16 }}>
@@ -337,18 +383,6 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
                 </div>
               ))}
             </div>
-          )}
-
-          {/* The plan itself, inline — not a modal. A run-sheet is the thing the
-              coach is about to work from for an hour; it belongs on the page at
-              full width, next to the player's history and the kit they need,
-              rather than in a 620px box floating over a dimmed planner. */}
-          {sel && (
-            <SessionRunSheet T={T} accent={accent} density={density} plan={sel} players={players.rows} lessons={sessions.rows} onNavigate={onNavigate} inline
-              onCompleted={() => { setSel(null); plans.reload() }}
-              onEdit={() => editSaved(sel)}
-              onClose={() => setSel(null)}
-              onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />
           )}
 
           {/* This week's calendar (synced from bookings) */}
@@ -1268,7 +1302,7 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
               )}
               {last ? (
                 <div style={{ fontSize: 11.5, color: T.text3, marginTop: 9, lineHeight: 1.55 }}>
-                  <span style={{ color: T.text2, fontWeight: 700 }}>Last lesson ({new Date(String(last.session_date) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}):</span>{' '}
+                  <span style={{ color: T.text2, fontWeight: 700 }}>Last write-up ({new Date(String(last.session_date) + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}):</span>{' '}
                   {String(last.focus || '').trim()}{last.summary ? `. ${String(last.summary).slice(0, 160)}` : ''}
                 </div>
               ) : (

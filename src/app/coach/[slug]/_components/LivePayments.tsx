@@ -36,7 +36,8 @@ async function pushEquipmentToKit(kind: string, equipment: string) {
 type Pkg = { id: string; name: string; kind?: string | null; price?: number | null; sessions?: number | null; period?: string | null; description?: string | null; features?: string | null }
 type Pay = { id: string; player_id?: string | null; player_name?: string | null; item?: string | null; amount?: number | null; status?: string | null; sessions_used?: number | null; sessions_total?: number | null; renews_date?: string | null; paid?: boolean | null; paid_at?: string | null; due_date?: string | null; notes?: string | null; created_at?: string | null }
 type Player = { id: string; name: string; payment_method?: string | null; parent_name?: string | null; age?: number | null; year_group?: string | null; created_at?: string | null }
-type Sess = { id: string; player_id?: string | null; player_name?: string | null; session_date?: string | null; focus?: string | null; rating?: number | null; created_at?: string | null }
+type Sess = { id: string; player_id?: string | null; player_name?: string | null; session_date?: string | null; focus?: string | null; rating?: number | null; created_at?: string | null; written?: boolean; kind?: 'private' | 'group' }
+type Bk = { id: string; player_id?: string | null; player_name?: string | null; booking_date?: string | null; start_time?: string | null; type?: string | null; status?: string | null; created_at?: string | null }
 type PayStatus = 'active' | 'expiring' | 'expired' | 'used' | 'overdue' | 'due' | 'settled' | 'void' | 'none'
 // One line of the table. `used`/`sessions` are the lessons counted against THIS
 // line: a pack's own lessons, or (on a line with no pack) the lessons no pack covers.
@@ -112,12 +113,19 @@ function allocateLessons(packs: Pay[], lessons: Sess[]): { byPack: Map<string, S
     .sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')))
   for (const p of ordered) byPack.set(p.id, [])
   const dateOf = (s: Sess) => dk(s.session_date) || (s.created_at ? ukDate(s.created_at) : '')
+  // A private lesson comes off a private pack and a squad session off a group
+  // term — a child with both had their private lessons used up the term pass.
+  // Where the player has no pack of that kind, any pack may take it, as before.
+  const kindOf = (p: Pay) => /group|squad|term|cardio|club night/i.test(p.item || '') ? 'group' : 'private'
   for (const s of [...lessons].sort((a, b) => dateOf(a).localeCompare(dateOf(b)))) {
     const day = dateOf(s)
-    const pack = ordered.find(p => {
+    const fits = (p: Pay) => {
       const got = byPack.get(p.id) as Sess[]
       return !!day && soldOn(p) <= day && (!p.renews_date || day <= dk(p.renews_date)) && got.length < (p.sessions_total || 0)
-    })
+    }
+    const want = s.kind || 'private'
+    const sameKind = ordered.filter(p => kindOf(p) === want)
+    const pack = sameKind.length ? sameKind.find(fits) : ordered.find(fits)
     if (pack) (byPack.get(pack.id) as Sess[]).push(s); else loose.push(s)
   }
   return { byPack, loose }
@@ -127,6 +135,8 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const packages = useCoachTable<Pkg>('coach_packages')
   const payments = useCoachTable<Pay>('coach_payments')
   const sessions = useCoachTable<Sess>('coach_sessions')
+  const bookings = useCoachTable<Bk>('coach_bookings')
+  const attendance = useCoachTable<{ player_id?: string | null; session_date?: string | null; present?: boolean | null }>('coach_attendance')
   const { rows: players } = useCoachTable<Player>('coach_players')
   const camps = useCoachTable<{ id: string; price?: number | null; capacity?: number | null }>('coach_camps')
   const campAttendees = useCoachTable<{ camp_id: string; paid?: boolean | null; amount_pennies?: number | null; status?: string | null }>('coach_camp_attendees')
@@ -179,7 +189,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const loadAllSetup = async () => { await seedLumioPackages(); finishSetup(); packages.reload() }
 
   // Lesson packages are driven by the roster: every player appears, on a package
-  // or "pay as you go". Sessions used are derived from submitted lesson summaries
+  // or "pay as you go". Sessions used are the lessons taken (see lessonsTaken below)
   // (coach_sessions) — no manual ticking.
   const today = ukDate()
   const nameKey = (s?: string | null) => (s || '').trim().toLowerCase()
@@ -204,7 +214,51 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
     return m
   }
   const paysByOwner = group(payments.rows)
-  const lessonsByOwner = group(sessions.rows)
+  // What comes off a pack is a lesson TAKEN, not a lesson written up: a booking
+  // for that player that has happened (not cancelled, not still waiting to be
+  // confirmed, not a court block) where they were not marked absent. Counting
+  // write-ups meant a coach who did not write up every lesson had packs that
+  // never ran down — nine lessons in and the family's ten-pack still showed
+  // seven left. A write-up with no booking behind it still counts, so nothing
+  // that counted before is lost. Where a lesson was written up, its focus and
+  // rating are shown against it.
+  const nowHM = new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false })
+  const lessonsTaken: Sess[] = (() => {
+    const key = (pid: unknown, d: unknown) => `${pid}|${dk(d as string)}`
+    const absent = new Set(attendance.rows.filter(a => a.present === false && a.player_id).map(a => key(a.player_id, a.session_date)))
+    const writeUps = new Map(sessions.rows.filter(w => w.player_id).map(w => [key(w.player_id, w.session_date), w]))
+    const out: Sess[] = [], seen = new Set<string>()
+    for (const b of bookings.rows) {
+      const d = dk(b.booking_date)
+      if (!b.player_id || !d || b.status === 'cancelled' || b.status === 'pending' || b.type === 'Block') continue
+      if (d > today || (d === today && (b.start_time || '99:99') > nowHM)) continue
+      const k = key(b.player_id, d)
+      if (absent.has(k) || seen.has(k)) continue
+      seen.add(k)
+      const w = writeUps.get(k)
+      out.push({ id: b.id, player_id: b.player_id, player_name: b.player_name, session_date: d, focus: w?.focus || b.type || 'Lesson', rating: w?.rating ?? null, created_at: b.created_at, written: !!w,
+        kind: /group|squad|cardio|match/i.test(b.type || '') ? 'group' : 'private' })
+    }
+    for (const w of sessions.rows) {
+      const k = w.player_id ? key(w.player_id, w.session_date) : ''
+      if (k && seen.has(k)) continue
+      if (k) seen.add(k)
+      out.push({ ...w, written: true })
+    }
+    // A squad session is booked for the group, not for each child, so the
+    // player's own record of it is their attendance mark.
+    for (const a of attendance.rows) {
+      const d = dk(a.session_date)
+      if (!a.player_id || a.present === false || !d || d > today) continue
+      const k = key(a.player_id, d)
+      if (seen.has(k)) continue
+      seen.add(k)
+      const w = writeUps.get(k)
+      out.push({ id: `att:${k}`, player_id: a.player_id, session_date: d, focus: w?.focus || 'Group session', rating: w?.rating ?? null, written: !!w, kind: 'group' })
+    }
+    return out
+  })()
+  const lessonsByOwner = group(lessonsTaken)
   // Something to tell two players with the same name apart, shown under the name.
   // The shared rule, so the hint here matches the one in the form and on the
   // other screens — and two namesakes never get the same one.
@@ -346,7 +400,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
       <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, display: showSec('lessonpacks') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Lesson packages</div>
-          <span style={{ fontSize: 11.5, color: T.text3 }}>Every player and every invoice — what is owed first. Sessions tick automatically from lesson summaries.</span>
+          <span style={{ fontSize: 11.5, color: T.text3 }}>Every player and every invoice — what is owed first. Sessions tick off automatically as booked lessons take place.</span>
           <button onClick={() => setEditPay('new')} style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>+ Assign package</button>
         </div>
         {lessonRows.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No players on the roster yet — add players in Player Roster and they’ll appear here.</div> : (
@@ -628,7 +682,7 @@ function AssignForm({ T, accent, players, packages, pay, prefillPlayerId, onClos
         <option value="active">No — work the status out from the dates</option>
         <option value="overdue">Yes — show it as overdue until it is paid</option>
       </select></div>
-      <div style={{ fontSize: 11, color: T.text3 }}>Sessions used tick automatically each time you submit a lesson summary for this player, starting from the day the package is added — no manual counting.</div>
+      <div style={{ fontSize: 11, color: T.text3 }}>Sessions used tick off automatically as this player’s booked lessons take place (unless they are marked absent), starting from the day the package is added — no manual counting.</div>
       {fieldErr(T, errs.save)}
     </Shell>
   )
@@ -658,7 +712,7 @@ function PackageRunSheet({ T, accent, row, onClose, onEditPlan, onTakePayment }:
         {total > 0 && row.used >= total && <div style={{ fontSize: 11.5, color: T.warn, marginTop: 8 }}>This package is used up. Lessons from here on are not covered by it.</div>}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 14 }}>
-          {slots === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No sessions logged yet. Submit a lesson summary and it’ll appear here automatically.</div> : list.map((s, i) => {
+          {slots === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No lessons taken yet. Each booked lesson appears here once it has happened.</div> : list.map((s, i) => {
             const done = !!s
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: done ? accent.dim : T.panel2, border: `1px solid ${done ? accent.border : T.border}`, borderRadius: 9, padding: '9px 11px' }}>
@@ -667,15 +721,15 @@ function PackageRunSheet({ T, accent, row, onClose, onEditPlan, onTakePayment }:
                   <div style={{ fontSize: 12.5, fontWeight: 600, color: T.text }}>Session {i + 1}</div>
                   {done && <div style={{ fontSize: 10.5, color: T.text3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{[s!.session_date && fmtD(s!.session_date), s!.focus].filter(Boolean).join(' · ') || 'Lesson summary logged'}</div>}
                 </div>
-                {done && <span style={{ fontSize: 9.5, fontWeight: 700, color: accent.hex }}>SUMMARY</span>}
+                {done && s!.written && <span style={{ fontSize: 9.5, fontWeight: 700, color: accent.hex }}>SUMMARY</span>}
               </div>
             )
           })}
         </div>
         <div style={{ fontSize: 10.5, color: T.text3, marginTop: 12, lineHeight: 1.5 }}>
           {total > 0
-            ? `Sessions tick automatically as you submit lesson summaries — you don’t mark these by hand. This package counts lessons from ${fmtD(soldOn(a!))}, the day it was added${a?.renews_date ? `, up to ${fmtD(a.renews_date)}` : ''}. Each lesson comes off one package only, the oldest first.`
-            : 'Lesson summaries that are not covered by a package. Sessions tick automatically as you submit them.'}
+            ? `Lessons tick off automatically as they take place — you don’t mark these by hand; mark a player absent on their profile and that lesson is not counted. This package counts lessons from ${fmtD(soldOn(a!))}, the day it was added${a?.renews_date ? `, up to ${fmtD(a.renews_date)}` : ''}. Each lesson comes off one package only, the oldest first.`
+            : 'Lessons taken that are not covered by a package. They appear automatically once each lesson has happened.'}
           {total > 0 && (row.loose || 0) > 0 ? ` ${row.loose} other lesson${row.loose === 1 ? ' is' : 's are'} not covered by a package.` : ''}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>

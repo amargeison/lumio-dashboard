@@ -535,7 +535,7 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
                   <input value={customEmail} onChange={e => setCustomEmail(e.target.value)} type="email" inputMode="email" autoComplete="off" placeholder={`Email address for ${customPerson.trim()}`}
                     style={{ width: '100%', padding: '11px 13px', borderRadius: 12, fontSize: 13, color: T.text, background: T.panel2, border: `1px solid ${customNeedsEmail ? T.warn : T.borderHi}`, outline: 'none', fontFamily: FONT }} />
                   <div style={{ fontSize: 10.5, color: T.text3, marginTop: 5, lineHeight: 1.45 }}>
-                    {customPerson.trim()} is not on your roster, so they can only be reached by email. Add their address to carry on.
+                    {customPerson.trim()} is not on your roster, so they can only be reached by email.{customNeedsEmail || !customEmail.trim() ? ' Add their address to carry on.' : ''}
                   </div>
                 </div>
               )}
