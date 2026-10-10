@@ -11,6 +11,7 @@
 import React, { createContext, useContext } from 'react'
 import * as TP from '@/data/tenproject/demo-data'
 import { TEN_PROJECT_BRAND, TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
+import type { ImpactOrgSettings } from '@/lib/impact/org'
 
 type Palette = 'TP_RED' | 'TP_BLACK' | 'TP_DARK' | 'TP_PAPER'
 type TpModule = Omit<typeof TP, Palette>
@@ -26,12 +27,25 @@ export type ImpactDataset = {
 export type ImpactBrand = typeof TEN_PROJECT_BRAND
 export type ImpactCopy = typeof TEN_PROJECT_COPY
 
+/** Saved per-org settings (impact_orgs) — present on /impact portals only. */
+export interface ImpactOrgHandle {
+  slug: string
+  settings: ImpactOrgSettings
+  /** Signed-in HQ of this org, and the settings row exists. */
+  canEdit: boolean
+  /** Why settings are read-only, when they are. */
+  readOnlyReason?: string
+  save: (next: ImpactOrgSettings) => Promise<{ ok: boolean; error?: string }>
+}
+
 export interface ImpactPortalContext {
   /** 'demo' renders curated content; 'live' renders data-driven/empty states. */
   mode: 'demo' | 'live'
   brand: ImpactBrand
   copy: ImpactCopy
   data: ImpactDataset
+  /** Absent on the legacy /tenproject route (no org settings there). */
+  org?: ImpactOrgHandle
 }
 
 const { TP_RED: _r, TP_BLACK: _b, TP_DARK: _d, TP_PAPER: _p, ...TP_DATA } = TP

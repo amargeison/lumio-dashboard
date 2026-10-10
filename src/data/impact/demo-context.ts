@@ -11,4 +11,12 @@ export const IMPACT_DEMO_CONTEXT: ImpactPortalContext = {
   brand: IMPACT_DEMO_BRAND satisfies ImpactBrand,
   copy: IMPACT_DEMO_COPY satisfies ImpactCopy,
   data: { ...DEMO } satisfies ImpactDataset,
+  // Demo: every module on, settings shown but not editable (Coach demo idiom).
+  org: {
+    slug: 'demo',
+    settings: { modules: {} },
+    canEdit: false,
+    readOnlyReason: 'This is the demo — settings are shown but can’t be changed.',
+    save: async () => ({ ok: false, error: 'Read-only demo' }),
+  },
 }

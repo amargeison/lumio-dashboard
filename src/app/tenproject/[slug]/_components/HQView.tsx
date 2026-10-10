@@ -15,6 +15,7 @@ import SportNetworkTab from './SportNetworkTab'
 import { openFunderDoc } from '../_lib/funder-docs'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { moduleOn } from '@/lib/impact/org'
 
 const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> = {
   running: 'green',
@@ -85,7 +86,7 @@ export default function HQView({ section, onSectionChange }: {
           { id: 'equipment' as const, label: 'Equipment', icon: Package },
           { id: 'network' as const, label: 'Sport Network', icon: Landmark },
           { id: 'settings' as const, label: 'Settings', icon: Settings },
-        ]).map(t => {
+        ]).filter(t => moduleOn(ctx.org?.settings, t.id)).map(t => {
           const Icon = t.icon
           const active = tab === t.id
           return (
