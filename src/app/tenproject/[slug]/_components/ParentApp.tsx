@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { BookOpen, Award, Calendar, MessageCircle, Users, PlayCircle, CheckCircle, QrCode, Heart, MapPin, Navigation, Camera } from 'lucide-react'
-import { Pill } from './ui'
+import { Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK, TP_PAPER } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 
@@ -29,6 +29,8 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
   const homeVenue = VENUE_DETAILS[PARENT.venue.id]
   const MAP_Q = encodeURIComponent(`${homeVenue?.address}, ${homeVenue?.postcode}`)
   const childNames = PARENT.children.map(c => c.name)
+  // Live portal with no families registered yet
+  const noFamily = PARENT.children.length === 0
 
   return (
     <div style={fullScreen ? {} : { display: 'flex', justifyContent: 'center' }}>
@@ -41,13 +43,16 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={brand.logoDark} alt={brand.logoAlt} style={{ height: 26, width: 'auto', display: 'block' }} />
           <div style={{ color: '#C9C4BE', fontSize: 11.5, marginTop: 6 }}>
-            Hi {PARENT.name.split(' ')[0]} — Week 4 of 10 · {brand.tagline}
+            {noFamily ? <>Welcome · {brand.tagline}</> : <>Hi {PARENT.name.split(' ')[0]} — Week 4 of 10 · {brand.tagline}</>}
           </div>
         </div>
 
         {/* Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: 14, display: 'grid', gap: 10, alignContent: 'start' }}>
-          {tab === 'week' && (
+          {noFamily && (
+            <EmptyState icon={Users} title="No families registered yet" sub="When parents register their children, each family sees their child's ten weeks here — this week's skill, sticker progress, sessions and messages." />
+          )}
+          {!noFamily && tab === 'week' && (
             <>
               <div style={{ background: TP_RED, borderRadius: 14, padding: 16, color: '#fff' }}>
                 <div style={{ fontSize: 10.5, fontWeight: 800, opacity: 0.85, letterSpacing: 1 }}>WEEKS {block.weeks}</div>
@@ -121,7 +126,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
             </>
           )}
 
-          {tab === 'progress' && (
+          {!noFamily && tab === 'progress' && (
             <>
               {PARENT.children.map(child => (
                 <div key={child.name} style={{ background: '#fff', borderRadius: 12, padding: 14 }}>
@@ -150,7 +155,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
             </>
           )}
 
-          {tab === 'sessions' && (
+          {!noFamily && tab === 'sessions' && (
             <>
               <div style={{ background: '#fff', borderRadius: 12, padding: 14 }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: TP_RED, letterSpacing: 0.6 }}>YOUR NEXT FAMILY SESSION</div>
@@ -186,7 +191,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
             </>
           )}
 
-          {tab === 'messages' && (
+          {!noFamily && tab === 'messages' && (
             <>
               {PARENT_MESSAGES.map(m => (
                 <div key={m.id} style={{ background: '#fff', borderRadius: 12, padding: 13 }}>
@@ -203,7 +208,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
             </>
           )}
 
-          {tab === 'family' && (
+          {!noFamily && tab === 'family' && (
             <>
               <div style={{ background: '#fff', borderRadius: 12, padding: 14 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: TP_DARK, marginBottom: 8 }}>Your children</div>

@@ -6,7 +6,8 @@
 
 import React, { useState } from 'react'
 import { Mail, MessageSquare, Smartphone, Send, X, School, Users, Megaphone, CheckCircle, Sparkles, Newspaper, Inbox as InboxIcon, Heart, Reply, Forward, Eye, Zap, LayoutTemplate, Target, GitBranch, BarChart3, Clock, FlaskConical } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
+import { draftWithImpactAI } from '@/lib/impact/ai'
 import { TP_RED, TP_DARK, type CommsCampaign } from '@/data/tenproject/demo-data'
 import { openNewsletter } from '../_lib/newsletter-docs'
 import { useImpact, type ImpactDataset } from './ImpactDataContext'
@@ -20,9 +21,18 @@ const CHANNEL_META: Record<string, { label: string; icon: React.ComponentType<{ 
 
 // ─── Send Message wizard (shared) ───────────────────────────────────────────
 export function SendMessageWizard({ onClose, defaultRecipient, defaultMessage }: { onClose: () => void; defaultRecipient?: string; defaultMessage?: string }) {
-  const { copy, data } = useImpact()
+  const { copy, data, brand, mode } = useImpact()
   const { COMMS_RECIPIENTS } = data
   const [step, setStep] = useState(1)
+  const [drafting, setDrafting] = useState(false)
+  // Demo: canned draft. Live: drafted by /api/ai/impact for this recipient.
+  async function draftMessage() {
+    if (mode !== 'live') { setMessage(copy.comms.aiDraftMessage); return }
+    setDrafting(true)
+    try {
+      setMessage(await draftWithImpactAI(`Write a short, warm message (under 70 words) from ${brand.org} to ${who ?? 'families'} about this week's free community family tennis session. Sign off with "${brand.tagline}".`, 220))
+    } catch { setMessage('') } finally { setDrafting(false) }
+  }
   const [who, setWho] = useState<string | null>(defaultRecipient ?? null)
   const [channels, setChannels] = useState<string[]>(['app', 'email'])
   const [message, setMessage] = useState(defaultMessage ?? '')
@@ -62,7 +72,8 @@ export function SendMessageWizard({ onClose, defaultRecipient, defaultMessage }:
             {stepChip(1, 'Who')}{stepChip(2, 'How')}{stepChip(3, 'Message')}{stepChip(4, 'Preview')}
           </div>
 
-          {step === 1 && (
+          {step === 1 && (<>
+            {COMMS_RECIPIENTS.length === 0 && <EmptyState compact icon={Users} title="No contacts yet" sub="Schools, family groups, volunteers and coaches appear here as they're added to the portal." />}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {COMMS_RECIPIENTS.map(r => {
                 const Icon = r.icon === 'school' ? School : r.icon === 'broadcast' ? Megaphone : Users
@@ -79,7 +90,7 @@ export function SendMessageWizard({ onClose, defaultRecipient, defaultMessage }:
                 )
               })}
             </div>
-          )}
+          </>)}
 
           {step === 2 && (
             <div style={{ display: 'grid', gap: 8 }}>
@@ -103,9 +114,9 @@ export function SendMessageWizard({ onClose, defaultRecipient, defaultMessage }:
               <textarea value={message} onChange={e => setMessage(e.target.value)} rows={5}
                 placeholder={`Message to ${who ?? '…'}`}
                 style={{ width: '100%', border: '1px solid #E7E2DC', borderRadius: 10, padding: '11px 13px', fontSize: 13, outline: 'none', background: '#F7F5F2', resize: 'vertical', fontFamily: 'inherit' }} />
-              <button onClick={() => setMessage(copy.comms.aiDraftMessage)}
+              <button onClick={draftMessage} disabled={drafting}
                 style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: TP_RED, border: `1px solid ${TP_RED}44`, borderRadius: 8, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
-                <Sparkles size={13} /> Draft it for me (AI)
+                <Sparkles size={13} /> {drafting ? 'Drafting…' : 'Draft it for me (AI)'}
               </button>
             </div>
           )}
@@ -230,6 +241,7 @@ export default function CommsTab() {
               ))}
             </div>
           </div>
+          {inbox.length === 0 && <EmptyState compact icon={InboxIcon} title="Inbox empty" sub="Email, SMS, app and WhatsApp replies from families, schools and volunteers land here in one thread per contact." />}
           <div style={{ display: 'grid', gap: 7 }}>
             {inbox.map(m => {
               const Icon = CHANNEL_META[m.channel].icon
@@ -274,6 +286,7 @@ export default function CommsTab() {
                 <Sparkles size={13} /> New campaign (AI)
               </button>
             </div>
+            {campaigns.length === 0 && <EmptyState compact icon={Newspaper} title="No campaigns sent yet" sub="Newsletters you send appear here with open, click and bounce analytics." />}
             <div style={{ display: 'grid', gap: 8 }}>
               {campaigns.map(c => (
                 <button key={c.id} onClick={() => openNewsletter(c.title.toLowerCase().includes('week 4') || c.title.toLowerCase().includes('backhand') ? copy.newsletters.week4 : copy.newsletters.september, ctx)}
@@ -314,7 +327,7 @@ export default function CommsTab() {
                 ))}
               </div>
             </Card>
-            <Card>
+            {copy.comms.replaceTitle && <Card>
               <SectionTitle sub="Everything the big tools do — built in"><CheckCircle size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{copy.comms.replaceTitle}</SectionTitle>
               <div style={{ display: 'grid', gap: 5 }}>
                 {['Drag-and-drop branded builder', 'Audience segments & personalisation', 'A/B subject-line testing', 'Send-time optimisation', 'Scheduling & recurring sends', 'Open / click / bounce analytics', 'Deliverability + unsubscribe handling', 'GDPR consent & preference centre'].map(f => (
@@ -324,7 +337,7 @@ export default function CommsTab() {
               <div style={{ fontSize: 11, color: '#8A847E', marginTop: 10, background: '#FDE8E8', borderRadius: 9, padding: '9px 11px' }}>
                 {copy.comms.replaceNote}
               </div>
-            </Card>
+            </Card>}
           </div>
         </div>
       </>)}
@@ -335,6 +348,7 @@ export default function CommsTab() {
           <SectionTitle sub="Multi-step journeys that trigger on what a family does — set once, run forever">
             <GitBranch size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Automation journeys
           </SectionTitle>
+          {COMMS_JOURNEYS.length === 0 && <EmptyState compact icon={GitBranch} title="No journeys set up yet" sub="Welcome series, weekend-conversion nudges and win-backs trigger on what each family does." />}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
             {COMMS_JOURNEYS.map(j => {
               const on = journeyOn[j.id]
@@ -366,6 +380,7 @@ export default function CommsTab() {
           <SectionTitle sub="Single-trigger rules — the comms that just happen">
             <Zap size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Event automations
           </SectionTitle>
+          {COMMS_EVENT_AUTOS.length === 0 && <EmptyState compact icon={Zap} title="No automations running yet" sub="Session confirmations, sticker notifications, change alerts and register chasing switch on with your first programme." />}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
             {COMMS_EVENT_AUTOS.map(a => (
               <div key={a.id} style={{ background: '#F7F5F2', borderRadius: 10, padding: '10px 12px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -389,6 +404,7 @@ export default function CommsTab() {
           <SectionTitle sub="Segments update themselves as families register, attend and convert — no list management">Audiences & segments</SectionTitle>
           <button style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}><Target size={13} /> New segment</button>
         </div>
+        {COMMS_AUDIENCES.length === 0 && <Card><EmptyState icon={Target} title="No audiences yet" sub="Segments build themselves as families register, attend and convert — no lists to import or clean." /></Card>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {COMMS_AUDIENCES.map(a => (
             <Card key={a.id} style={{ padding: 16 }}>
@@ -477,6 +493,7 @@ export default function CommsTab() {
             <div style={{ fontSize: 12, color: '#6B6560', marginBottom: 10 }}>
               The AI reads the term calendar, registers and campaigns, then drafts the whole thing — sections, subject line, per-venue session cards. Pick the angle:
             </div>
+            {AI_NEWSLETTER_ANGLES.length === 0 && <EmptyState compact icon={Sparkles} title="Nothing to draft from yet" sub="The AI drafts newsletters from your term calendar, registers and campaigns — it has material once your first programme is live." />}
             <div style={{ display: 'grid', gap: 8 }}>
               {AI_NEWSLETTER_ANGLES.map((a, i) => (
                 <button key={i} onClick={() => setAngle(i)}
@@ -485,6 +502,7 @@ export default function CommsTab() {
                 </button>
               ))}
             </div>
+            {AI_NEWSLETTER_ANGLES.length > 0 && <>
             <div style={{ background: '#F7F5F2', borderRadius: 10, padding: '11px 13px', marginTop: 10, fontSize: 11.5, color: '#5B554F', lineHeight: 1.6 }}>
               <strong>Draft includes:</strong> {copy.comms.draftIncludes}
             </div>
@@ -496,6 +514,7 @@ export default function CommsTab() {
                 Save as draft
               </button>
             </div>
+            </>}
           </div>
         </div>
       )}

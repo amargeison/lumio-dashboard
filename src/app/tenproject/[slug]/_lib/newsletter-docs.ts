@@ -18,7 +18,7 @@ export type NewsletterContent = ImpactCopy['newsletters']['september']
 export function newsletterHtml(n: NewsletterContent, ctx: ImpactPortalContext): string {
   const b = ctx.brand
   const firstName = ctx.data.PARENT.name.split(' ')[0]
-  const pct = n.fundraising ? Math.min(100, Math.round((n.fundraising.raised / n.fundraising.target) * 100)) : 0
+  const pct = n.fundraising && n.fundraising.target > 0 ? Math.min(100, Math.round((n.fundraising.raised / n.fundraising.target) * 100)) : 0
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>${esc(n.subject)}</title>
 <link rel="icon" href="${b.favicon32}">

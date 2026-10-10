@@ -6,7 +6,7 @@
 
 import React from 'react'
 import { Landmark, CheckCircle, CircleDashed, Circle, CalendarClock, FileText, ExternalLink, ArrowUpRight, School, Info } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK, type PesspnVerdict, type PesspnStatus } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 
@@ -79,7 +79,7 @@ export default function SportNetworkTab() {
   const scored = SCHOOLS.map(s => ({ s, rd: SCHOOL_READINESS[s.id] })).filter(x => x.rd)
   const counts = { 'on-track': 0, nearly: 0, 'at-risk': 0 } as Record<PesspnVerdict, number>
   scored.forEach(x => { counts[x.rd.verdict]++ })
-  const avg = Math.round(scored.reduce((n, x) => n + x.rd.score, 0) / scored.length)
+  const avg = scored.length ? Math.round(scored.reduce((n, x) => n + x.rd.score, 0) / scored.length) : 0
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -112,6 +112,7 @@ export default function SportNetworkTab() {
         {/* Schools readiness table */}
         <Card>
           <SectionTitle sub="Every school’s indicative readiness — and the single biggest gap to close">School readiness</SectionTitle>
+          {scored.length === 0 && <EmptyState compact icon={School} title="No schools tracked yet" sub="Each partner school's readiness for the new funding model is scored here from its registers, CPD, reach and impact evidence." />}
           <div style={{ display: 'grid', gap: 8 }}>
             {scored.map(({ s, rd }) => {
               const v = VERDICT[rd.verdict]

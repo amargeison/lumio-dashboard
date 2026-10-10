@@ -5,7 +5,7 @@
 
 import React from 'react'
 import { TrendingUp, Users, Download, Sparkles, HeartHandshake, MapPin, ShieldCheck, PieChart, Repeat, Coins, Quote } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { openFunderDoc } from '../_lib/funder-docs'
@@ -75,6 +75,8 @@ export default function Insights() {
         </div>
       </Card>
 
+      {I.headline.length === 0 && <Card><EmptyState icon={TrendingUp} title="No programme data yet" sub="Participation, conversion, demographics, wellbeing, compliance and social value fill in automatically from registers, QR check-ins and family surveys as soon as sessions run." /></Card>}
+      {!(I.headline.length === 0) && (<>
       {/* Headline tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
         {I.headline.map(h => (
@@ -312,6 +314,7 @@ export default function Insights() {
           <Pill tone="grey">DEMO DATA</Pill>&nbsp; Every figure on this page draws from registers, QR check-ins and surveys — one click to a branded PDF for any school, borough or trust.
         </div>
       </Card>
+      </>)}
     </div>
   )
 }

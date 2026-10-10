@@ -5,7 +5,7 @@
 
 import React from 'react'
 import { TrendingUp, Award, HeartHandshake, Download, Share2, GraduationCap, Sparkles, Quote, BarChart2, ArrowUpRight } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { openFunderDoc } from '../_lib/funder-docs'
@@ -42,6 +42,8 @@ export default function SchoolInsights() {
         </div>
       </Card>
 
+      {S.headline.length === 0 && <Card><EmptyState icon={BarChart2} title="No results yet" sub="Attendance, skill growth, wellbeing and your Sports Premium evidence build from the programme's registers once your ten weeks begin." /></Card>}
+      {!(S.headline.length === 0) && (<>
       {/* Headline tiles with sub-lines */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
         {S.headline.map(h => (
@@ -209,6 +211,7 @@ export default function SchoolInsights() {
           <Pill tone="grey">DEMO DATA</Pill>&nbsp; The live dashboard updates as the programme runs — governors can be given read-only access, and every panel exports to your branded governor pack.
         </div>
       </Card>
+      </>)}
     </div>
   )
 }

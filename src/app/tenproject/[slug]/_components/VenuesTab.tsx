@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react'
 import { ArrowLeft, MapPin, Users, Package, TrendingUp, ClipboardList, ExternalLink, KeyRound } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK, type DemoVenue } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 
@@ -143,6 +143,7 @@ export default function VenuesTab({ initialId }: { initialId?: string }) {
         </button>
       </div>
 
+      {VENUES.length === 0 && <Card><EmptyState icon={MapPin} title="No weekend venues yet" sub={`Add a community venue to run free family sessions — access, storage, ${brand.volunteer} team, QR check-in and attendance in one place.`} /></Card>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
         {VENUES.map(v => {
           const d = VENUE_DETAILS[v.id]

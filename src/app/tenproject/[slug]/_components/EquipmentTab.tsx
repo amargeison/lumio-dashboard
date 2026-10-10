@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react'
 import { Package, Printer, ShoppingCart, CheckCircle } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { shell, brandHeader, esc, openDocWindow, foot } from '../_lib/funder-docs'
 import { useImpact, fill, type ImpactPortalContext } from './ImpactDataContext'
@@ -75,9 +75,10 @@ export default function EquipmentTab() {
         {ordered && (
           <div style={{ background: '#E5F5EA', borderRadius: 10, padding: '10px 13px', marginBottom: 10, fontSize: 12.5, color: '#187A3C', fontWeight: 700 }}>
             <CheckCircle size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} />
-            {fill(ctx.copy.equipment.orderNote, ctx.brand, { count: ticked.length })}
+            {fill(ctx.copy.equipment.orderNote || 'Order drafted for {count} items — awaiting your approval in Comms.', ctx.brand, { count: ticked.length })}
           </div>
         )}
+        {TP_RESTOCK.length === 0 && <EmptyState compact icon={ShoppingCart} title="Nothing to restock" sub="Items running low, due for repair or to order — across venues, school bags and welcome-pack stock — list here." />}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 10 }}>
           {TP_RESTOCK.map(r => {
             const on = ticked.includes(r.id)
@@ -101,6 +102,7 @@ export default function EquipmentTab() {
       {/* Kits */}
       <Card>
         <SectionTitle sub="Grab-and-go checklists — one per session type">Kit for each session type</SectionTitle>
+        {TP_KITS.length === 0 && <EmptyState compact icon={Package} title="No kit lists yet" sub="Grab-and-go checklists per session type — in-school, weekend family, welcome pack, festival." />}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 10 }}>
           {TP_KITS.map(k => (
             <div key={k.name} style={{ background: '#F7F5F2', borderRadius: 12, padding: '13px 14px' }}>
@@ -116,6 +118,7 @@ export default function EquipmentTab() {
       </Card>
 
       {/* Inventory */}
+      {TP_INVENTORY.length === 0 && <Card><SectionTitle>Inventory</SectionTitle><EmptyState compact icon={Package} title="No equipment tracked yet" sub="Rackets, balls, court kit, print stock and first-aid — by venue, with stock levels and repair status." /></Card>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
         {TP_INVENTORY.map(cat => (
           <Card key={cat.category}>

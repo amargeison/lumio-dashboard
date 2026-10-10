@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { QrCode, WifiOff, CheckCircle, Users, ClipboardList, Sparkles, PlayCircle, BookOpen, ShieldAlert, Package, Phone, FileText, BarChart3, MapPin, GraduationCap, CalendarDays, Send, Navigation, Printer, Share2, School } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
 import { SendMessageWizard } from './CommsTab'
 import { openResourceDoc, openSessionCardDoc } from '../_lib/resource-docs'
@@ -100,6 +100,11 @@ export function CoachView({ section }: { section?: CoachSection }) {
   const present = children.filter(c => c.present).length
   const block = CURRICULUM[1]
   const maxTrend = Math.max(...COACH_STATS.attendanceTrend)
+  // Live portals before any programme is assigned to this coach
+  const noWeekend = !COACH_WEEKEND.lead.venue
+  const noStats = COACH_STATS.headline.length === 0
+  const noCohorts = COACH_STATS.cohortProgress.length === 0
+  const noResources = COACH_RESOURCES.curriculum.length + COACH_RESOURCES.development.length + COACH_RESOURCES.admin.length === 0
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -127,7 +132,10 @@ export function CoachView({ section }: { section?: CoachSection }) {
       {wizard && <SendMessageWizard onClose={() => setWizard(false)} defaultRecipient={copy.coach.messageRecipient} />}
 
       {/* ── WEEKEND ── */}
-      {tab === 'weekend' && (<>
+      {tab === 'weekend' && noWeekend && (
+        <Card><EmptyState icon={CalendarDays} title="No weekend sessions yet" sub={`Weekend family sessions you lead or support — with venue access, ${brand.volunteer} team and the week's session card — appear here once you're assigned a venue.`} /></Card>
+      )}
+      {tab === 'weekend' && !noWeekend && (<>
         <Card style={{ background: TP_DARK, border: 'none' }}>
           <div style={{ color: '#fff', fontSize: 15, fontWeight: 900 }}>Your weekend — 2 sessions</div>
           <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 4 }}>{COACH_WEEKEND.setupDuty}</div>
@@ -179,7 +187,11 @@ export function CoachView({ section }: { section?: CoachSection }) {
       </>)}
 
       {/* ── MY STATS ── */}
-      {tab === 'stats' && (<>
+      {tab === 'stats' && noStats && (<>
+        <Card><EmptyState icon={BarChart3} title="No sessions delivered yet" sub="Your children coached, sessions, attendance, stickers and compliance build automatically from your registers." /></Card>
+        <UpcomingCalendar role="coach" />
+      </>)}
+      {tab === 'stats' && !noStats && (<>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
           {COACH_STATS.headline.map(h => (
             <Card key={h.label} style={{ padding: '14px 16px' }}>
@@ -238,7 +250,10 @@ export function CoachView({ section }: { section?: CoachSection }) {
       </>)}
 
       {/* ── RESOURCES ── */}
-      {tab === 'resources' && (
+      {tab === 'resources' && noResources && (
+        <Card><EmptyState icon={BookOpen} title="No resources published yet" sub="Session plans, schemes of work, CPD and safeguarding guides your HQ publishes appear here." /></Card>
+      )}
+      {tab === 'resources' && !noResources && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
           {([
             { title: 'Curriculum & session plans', icon: ClipboardList, items: COACH_RESOURCES.curriculum },
@@ -264,7 +279,10 @@ export function CoachView({ section }: { section?: CoachSection }) {
       )}
 
       {/* ── SCHOOLS ── */}
-      {tab === 'today' && (<>
+      {tab === 'today' && noCohorts && (
+        <Card><EmptyState icon={School} title="No schools assigned yet" sub="When HQ assigns you a school programme, today's session, the one-tap register and the run-sheet appear here." /></Card>
+      )}
+      {tab === 'today' && !noCohorts && (<>
       {/* My schools strip */}
       <Card>
         <SectionTitle sub="The schools you deliver — today’s live session is highlighted">
@@ -363,8 +381,11 @@ export function TenorView({ section }: { section?: TenorSection }) {
   useEffect(() => { if (section !== undefined) setTab(section) }, [section])
   const [shared, setShared] = useState(false)
   const venue = VENUES[0]
-  const vd = VENUE_DETAILS[venue.id]
-  const mapQ = encodeURIComponent(`${vd.address}, ${vd.postcode}`)
+  const vd = venue ? VENUE_DETAILS[venue.id] : undefined
+  const mapQ = encodeURIComponent(`${vd?.address}, ${vd?.postcode}`)
+  // Live portals before a venue and volunteer team exist
+  const noVenue = !venue
+  const noResources = TENOR_RESOURCES.weeks.length + TENOR_RESOURCES.guides.length + TENOR_RESOURCES.contacts.length === 0
   const checkedIn = families.filter(f => f.checkedIn)
   const childCount = checkedIn.reduce((n, f) => n + f.children.split('+').length, 0)
   const plan = WEEK4_SESSION_PLAN
@@ -400,7 +421,10 @@ export function TenorView({ section }: { section?: TenorSection }) {
       </div>
       {wizard && <SendMessageWizard onClose={() => setWizard(false)} defaultRecipient={copy.tenor.messageRecipient} />}
 
-      {tab === 'resources' && (
+      {tab === 'resources' && noResources && (
+        <Card><EmptyState icon={PlayCircle} title="No resources yet" sub="The shot videos, session cards, guides and who-to-call contacts for your venue appear here." /></Card>
+      )}
+      {tab === 'resources' && !noResources && (
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
           <Card>
             <SectionTitle sub="The shot videos and session cards for every week of the programme">
@@ -449,7 +473,11 @@ export function TenorView({ section }: { section?: TenorSection }) {
         </div>
       )}
 
-      {tab === 'session' && (<>
+      {tab === 'session' && noVenue && (<>
+        <Card><EmptyState icon={MapPin} title="No weekend session yet" sub="Once you're inducted onto a venue, today's family session, the gate QR, the live count and the register appear here." /></Card>
+        <UpcomingCalendar role="tenor" />
+      </>)}
+      {tab === 'session' && !noVenue && venue && vd && (<>
       {/* eslint-disable-next-line no-lone-blocks */}
       <Card style={{ background: TP_DARK, border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>

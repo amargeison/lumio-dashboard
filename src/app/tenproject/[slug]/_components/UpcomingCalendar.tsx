@@ -67,6 +67,9 @@ export default function UpcomingCalendar({ role, events: eventsProp, title, sub 
         })}
       </div>
 
+      {events.length === 0 && (
+        <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 10, fontWeight: 700 }}>Nothing scheduled this week — sessions appear here as soon as they're booked.</div>
+      )}
       <div style={{ fontSize: 11, color: '#8A847E', marginTop: 10 }}>
         Session changes (venue moved, weather-off) update everyone’s calendar and send a scoped message — no more chasing.
       </div>

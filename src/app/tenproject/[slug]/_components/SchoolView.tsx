@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { Sparkles, Calendar, PoundSterling, Share2, CheckCircle, X, BarChart3, Download, LineChart } from 'lucide-react'
-import { Card, SectionTitle, Pill, Thermometer } from './ui'
+import { Card, SectionTitle, Pill, Thermometer, EmptyState } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
 import SchoolInsights from './SchoolInsights'
 import { openFunderDoc } from '../_lib/funder-docs'
@@ -31,6 +31,12 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
   const { brand, copy } = ctx
   const { CAMPAIGN, FUND_EVENTS, AI_EVENT_PACK, SCHOOL_STATS } = ctx.data
   const aiEvent = copy.school.aiEvent
+  // Live portals: nothing to show until a school has a programme / campaign.
+  const noCampaign = !CAMPAIGN.school
+  const noProgramme = SCHOOL_STATS.headline.length === 0 && noCampaign
+  const moneyIn: [string, string][] = copy.school.moneyIn.length
+    ? copy.school.moneyIn
+    : noCampaign ? [] : [['Raised so far (all sources)', `£${CAMPAIGN.raised.toLocaleString()}`], ['Supporters', `${CAMPAIGN.supporters}`]]
   const [showPack, setShowPack] = useState(false)
   const [events, setEvents] = useState<FundraisingEvent[]>(FUND_EVENTS)
   const [selectedEvent, setSelectedEvent] = useState<FundraisingEvent | null>(null)
@@ -70,7 +76,12 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
       {tab === 'insights' && <SchoolInsights />}
 
       {/* ── OUR PROGRAMME (operational status — what's happening & what's next) ── */}
-      {tab === 'programme' && (<>
+      {tab === 'programme' && noProgramme && (
+        <Card>
+          <EmptyState icon={BarChart3} title="No programme linked yet" sub="Once your school's 10-week programme is set up, its status, cohorts, coach, linked weekend venue and next steps show here." />
+        </Card>
+      )}
+      {tab === 'programme' && !noProgramme && (<>
         {/* Status banner */}
         <Card style={{ background: TP_DARK, border: 'none' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
@@ -129,7 +140,12 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
       </>)}
 
       {/* ── FUNDRAISING ── */}
-      {tab === 'fundraising' && (<>
+      {tab === 'fundraising' && noCampaign && (
+        <Card>
+          <EmptyState icon={PoundSterling} title="No fundraising campaign yet" sub="Start a campaign to raise your programme cost — thermometer, events, pledges and a public donation page, all tracked here." />
+        </Card>
+      )}
+      {tab === 'fundraising' && !noCampaign && (<>
       {/* Campaign hero */}
       <Card style={{ background: TP_DARK, border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
@@ -139,9 +155,9 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
               {fill(copy.school.campaignSub, brand, { supporters: CAMPAIGN.supporters })}
             </div>
           </div>
-          <a href={copy.school.publicPageUrl} target="_blank" rel="noreferrer" style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, textDecoration: 'none' }}>
+          {copy.school.publicPageUrl && <a href={copy.school.publicPageUrl} target="_blank" rel="noreferrer" style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, textDecoration: 'none' }}>
             <Share2 size={14} /> View your public page
-          </a>
+          </a>}
         </div>
         <div style={{ background: '#fff', borderRadius: 12, padding: 16, marginTop: 14 }}>
           <Thermometer raised={CAMPAIGN.raised} target={CAMPAIGN.target} />
@@ -158,6 +174,7 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
           <SectionTitle sub="Your fundraising calendar across the academic year — every event feeds the thermometer">
             <Calendar size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Events
           </SectionTitle>
+          {events.length === 0 && <EmptyState compact icon={Calendar} title="No events yet" sub="Add a fair stall, cake sale, quiz night or sponsored ball hit — every event feeds the thermometer." />}
           <div style={{ display: 'grid', gap: 8 }}>
             {events.map(ev => (
               <button key={ev.id} onClick={() => setSelectedEvent(ev)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F7F5F2', border: '1px solid transparent', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
@@ -172,12 +189,12 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
               </button>
             ))}
           </div>
-          <button
+          {AI_EVENT_PACK.items.length > 0 && <button
             onClick={() => setShowPack(true)}
             style={{ marginTop: 12, background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}
           >
             <Sparkles size={14} /> Plan a new event with AI
-          </button>
+          </button>}
         </Card>
 
         {/* Donations + pledges */}
@@ -186,7 +203,7 @@ export default function SchoolView({ section }: { section?: SchoolSection }) {
             <PoundSterling size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Money in
           </SectionTitle>
           <div style={{ display: 'grid', gap: 8, fontSize: 12.5 }}>
-            {copy.school.moneyIn.map(([k, v]) => (
+            {moneyIn.map(([k, v]) => (
               <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #F0EBE5', paddingBottom: 7 }}>
                 <span style={{ color: '#6B6560' }}>{k}</span>
                 <span style={{ fontWeight: 800, color: TP_DARK }}>{v}</span>

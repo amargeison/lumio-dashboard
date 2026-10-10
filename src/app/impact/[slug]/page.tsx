@@ -20,8 +20,10 @@ import React, { use, useEffect, useState } from 'react'
 import { LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp, Landmark } from 'lucide-react'
 import { TP_RED, TP_DARK, TP_BLACK, TP_PAPER } from '@/data/tenproject/demo-data'
 import { isDemoSlug } from '@/lib/config/demo-slugs'
-import { ImpactDataProvider, TEN_PROJECT_CONTEXT, useImpact, type ImpactBrand, type ImpactCopy, type ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
+import { ImpactDataProvider, useImpact, type ImpactBrand, type ImpactCopy, type ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import { IMPACT_DEMO_CONTEXT } from '@/data/impact/demo-context'
+import { useLiveImpact } from '@/lib/impact/use-live-impact'
+import { createBrowserClient } from '@supabase/ssr'
 import { SportsDemoGate } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { clearDemoSession, markDemoSignedOut } from '@/lib/demo-session/clear'
@@ -115,8 +117,11 @@ function headerFor(role: Role, section: string, titles: Record<Role, { title: st
   return h ?? titles[role]
 }
 
-function ImpactPortalInner({ session, slug }: { session: SportsDemoSession; slug: string }) {
+function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSession; slug: string; onSignOut?: () => void }) {
   const { brand, copy, mode } = useImpact()
+  // Live: a real HQ signs out of Supabase; a gated visitor leaves the portal.
+  const exitPortal = onSignOut ?? (() => signOutImpact(slug))
+  const exitLabel = mode === 'live' ? 'Sign out' : 'Exit demo'
   const ROLES = rolesFor(brand, copy)
   const ROLE_TITLES = roleTitlesFor(brand, copy)
   // Role starts unset so the programme's role picker still fronts the portal,
@@ -247,8 +252,8 @@ function ImpactPortalInner({ session, slug }: { session: SportsDemoSession; slug
             <div style={{ flex: 1, color: '#C9C4BE', fontSize: 12, fontWeight: 700 }}>{ROLES.find(r => r.id === lockedRole)?.label}</div>
           )}
           <button
-            onClick={() => signOutImpact(slug)}
-            aria-label="Exit demo"
+            onClick={exitPortal}
+            aria-label={exitLabel}
             style={{ background: 'none', color: '#8A847E', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}
           >
             <LogOut size={16} />
@@ -433,10 +438,10 @@ function ImpactPortalInner({ session, slug }: { session: SportsDemoSession; slug
         {expanded && (
         <div style={{ padding: 12 }}>
           <button
-            onClick={() => signOutImpact(slug)}
+            onClick={exitPortal}
             style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', color: '#8A847E', border: '1px solid #33333B', borderRadius: 9, padding: '9px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}
           >
-            <LogOut size={14} /> Exit demo
+            <LogOut size={14} /> {exitLabel}
           </button>
         </div>
         )}
@@ -466,8 +471,37 @@ function ImpactPortalInner({ session, slug }: { session: SportsDemoSession; slug
 // (see src/app/nonleague/[slug]/page.tsx): email → OTP → the portal below.
 export default function ImpactPortal({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
-  // URL decides demo vs live (see src/lib/config/demo-slugs.ts).
-  const ctx: ImpactPortalContext = isDemoSlug(slug, 'impact') ? IMPACT_DEMO_CONTEXT : TEN_PROJECT_CONTEXT
+  // URL decides demo vs live (see src/lib/config/demo-slugs.ts) — never the
+  // session. Live portals load their HQ's Supabase data, or stay empty.
+  const isDemo = isDemoSlug(slug, 'impact')
+  const live = useLiveImpact(!isDemo)
+  const ctx: ImpactPortalContext = isDemo ? IMPACT_DEMO_CONTEXT : live.ctx
+
+  if (!live.ready) return (
+    <div style={{ minHeight: '100vh', background: TP_PAPER, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ fontSize: 11, color: '#8A847E', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Loading…</div>
+    </div>
+  )
+
+  // Signed-in Impact HQ → straight into their portal (Tennis pattern).
+  if (!isDemo && live.hq) {
+    const hq = live.hq
+    const session: SportsDemoSession = {
+      email: hq.email, userName: hq.name, clubName: hq.orgName || ctx.brand.org, role: 'hq',
+      photoDataUrl: null, logoDataUrl: null, sport: 'impact', verifiedAt: new Date().toISOString(), isDemoShell: false,
+    }
+    const handleSignOut = async () => {
+      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      await supabase.auth.signOut()
+      window.location.href = '/sports-login'
+    }
+    return (
+      <ImpactDataProvider value={ctx}>
+        <ImpactPortalInner session={session} slug={slug} onSignOut={handleSignOut} />
+      </ImpactDataProvider>
+    )
+  }
+
   return (
     <ImpactDataProvider value={ctx}>
     <SportsDemoGate

@@ -224,7 +224,28 @@ function newsletterSnippet(ctx: ImpactPortalContext) {
   return shell(ctx, `${b.org} — Newsletter Snippet`, body, text)
 }
 
+// Live portal with nothing recorded yet — say so rather than print empty tables.
+function noDataDoc(ctx: ImpactPortalContext, title: string) {
+  const b = ctx.brand
+  const body = `
+    ${brandHeader(ctx, title.toUpperCase())}
+    <h1>${esc(b.org)} — ${esc(title)}</h1>
+    <div class="sub">Nothing to report yet</div>
+    <p>This document is generated from the programme's digital registers, QR check-ins and family surveys. Once sessions are running and registers are submitted, it fills in automatically — no manual data entry.</p>
+    <div class="foot">${esc(b.legal)} · ${foot(ctx)}</div>
+  `
+  return shell(ctx, `${b.org} — ${title}`, body)
+}
+
+const DOC_TITLE: Record<FunderDocKind, string> = {
+  'term-report': 'Term Report', 'funder-pack': 'Funder Pack', 'bid-narrative': 'Bid Narrative',
+  'governor-pack': 'Governor Pack', 'newsletter-snippet': 'Newsletter Snippet',
+}
+
 export function openFunderDoc(kind: FunderDocKind, ctx: ImpactPortalContext) {
+  const schoolDoc = kind === 'governor-pack' || kind === 'newsletter-snippet'
+  const empty = ctx.mode === 'live' && (schoolDoc ? ctx.data.SCHOOL_STATS.headline.length === 0 : ctx.data.INSIGHTS.headline.length === 0)
+  if (empty) { openDocWindow(noDataDoc(ctx, DOC_TITLE[kind])); return }
   const html =
     kind === 'term-report' ? termReport(ctx)
     : kind === 'funder-pack' ? funderPack(ctx)

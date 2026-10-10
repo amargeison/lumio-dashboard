@@ -46,7 +46,7 @@ export function Pill({ children, tone = 'grey' }: { children: React.ReactNode; t
 }
 
 export function Thermometer({ raised, target, height = 22 }: { raised: number; target: number; height?: number }) {
-  const pct = Math.min(100, Math.round((raised / target) * 100))
+  const pct = target > 0 ? Math.min(100, Math.round((raised / target) * 100)) : 0
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: TP_DARK, marginBottom: 6 }}>
@@ -68,5 +68,23 @@ export function DemoBadge() {
     <span style={{ background: '#FDE8E8', color: TP_RED, border: `1px solid ${TP_RED}33`, borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 800, letterSpacing: 0.6 }}>
       DEMO DATA
     </span>
+  )
+}
+
+// Empty state for live portals with nothing connected yet — the paper-theme
+// counterpart of the tennis portal's EmptyState (src/app/tennis/[slug]/page.tsx).
+// Rendered in place of a card's content, so the layout matches the demo.
+export function EmptyState({ title, sub, icon: Icon, compact }: {
+  title: string
+  sub?: string
+  icon?: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }>
+  compact?: boolean
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: compact ? '16px 14px' : '28px 18px', border: '1.5px dashed #D9D3CC', borderRadius: 12, background: '#FAFAF8' }}>
+      {Icon && <Icon size={compact ? 18 : 24} style={{ color: '#B0A9A2', marginBottom: 8 }} />}
+      <div style={{ fontSize: compact ? 12.5 : 13.5, fontWeight: 800, color: '#6B6560' }}>{title}</div>
+      {sub && <div style={{ fontSize: 11.5, color: '#8A847E', marginTop: 4, maxWidth: 440, lineHeight: 1.5 }}>{sub}</div>}
+    </div>
   )
 }

@@ -7,7 +7,7 @@
 
 import React, { useState } from 'react'
 import { AlertTriangle, Phone, Mail, UserPlus, ShieldCheck } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { PersonDetailView, AddCoachModal } from './PersonDetail'
 import { TP_RED, TP_DARK, type TpCoach, type TpTenor, type TpPersonDetail } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
@@ -91,13 +91,13 @@ export function CoachesTab() {
 
       <StatsRow items={TP_COACH_STATS_ROW} />
 
-      <div style={{ background: '#FCF1DC', border: '1px solid #E8CD9A', borderRadius: 12, padding: '12px 15px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+      {TP_COACH_ATTENTION && <div style={{ background: '#FCF1DC', border: '1px solid #E8CD9A', borderRadius: 12, padding: '12px 15px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
         <AlertTriangle size={16} style={{ color: '#9A6A0B', flexShrink: 0, marginTop: 1 }} />
         <div>
           <div style={{ fontSize: 12.5, fontWeight: 900, color: '#9A6A0B' }}>DBS & certification attention needed</div>
           <div style={{ fontSize: 12, color: '#6B5A2E', marginTop: 2 }}>{TP_COACH_ATTENTION}</div>
         </div>
-      </div>
+      </div>}
 
       <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
         {(['All', 'Lead', 'Coach', 'Assistant', 'Apprentice'] as const).map(f => (
@@ -108,6 +108,7 @@ export function CoachesTab() {
         ))}
       </div>
 
+      {roster.length === 0 && <Card><EmptyState icon={ShieldCheck} title="No coaches yet" sub="Add your coaching team — DBS, safeguarding, First Aid and insurance are tracked with expiry alerts from day one." /></Card>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
         {coaches.map(c => {
           const d = COACH_DETAILS[c.id] ?? fallbackDetail(c.name, brand.emailDomain)
@@ -187,6 +188,7 @@ export function TenorsTab() {
         <SectionTitle sub={`Minimum two inducted ${brand.volunteers} per venue for a session to run`}>
           <ShieldCheck size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Venue readiness
         </SectionTitle>
+        {TP_VENUE_READINESS.length === 0 && <EmptyState compact title="No venues to cover yet" sub={`Each weekend venue shows whether it has enough inducted ${brand.volunteers} to run.`} />}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
           {TP_VENUE_READINESS.map(v => (
             <div key={v.venue} style={{ background: '#F7F5F2', borderRadius: 10, padding: '11px 13px' }}>
@@ -200,6 +202,7 @@ export function TenorsTab() {
         </div>
       </Card>
 
+      {TP_TENORS.length === 0 && <Card><EmptyState icon={UserPlus} title={`No ${brand.volunteers} yet`} sub="Invite volunteer parents — inductions, DBS and the venues they cover are tracked here." /></Card>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
         {TP_TENORS.map(t => {
           const d = TENOR_DETAILS[t.id] ?? fallbackDetail(t.name, brand.emailDomain)
