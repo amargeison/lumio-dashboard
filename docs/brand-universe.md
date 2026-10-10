@@ -111,6 +111,42 @@ fixtures, Westmoor ground ↔ Calderbrook fixtures, etc.) so demo content
 reads cohesively when a fabricated fixture pairs a county with its
 home ground.
 
+## D — Lumio Impact fictional programme (/impact/demo)
+
+The Lumio Impact demo depicts a fictional charity running a schools tennis
+programme. It replaces the real partner content (Ten Project, its schools,
+venues, booklet terms and real third-party names) used by the legacy
+/tenproject demo. Source: `src/data/impact/demo-data.ts` + `demo-copy.ts`.
+
+| Entity type          | Fictional name                                   | Notes |
+|----------------------|--------------------------------------------------|-------|
+| Charity / operator   | Northvale Sport Foundation                       | Registered address 14 Larkspur Row, Northvale NV3 7QD; domain northvalesport.org.uk |
+| Programme            | Rally Ten                                        | 10-week in-school tennis + free weekend family sessions; tagline "EVERY CHILD. EVERY RALLY."; #rallyten / @rallytenuk |
+| Volunteer role       | Court Captain(s)                                 | Replaces Ten Project's "TENOR" |
+| School (running)     | Hollinsmere Primary                              | Replaces the approved "Hollybrook" — Hollybrook Infant/Junior Schools are real (Southampton) |
+| School (fundraising) | St Aldric's C of E Primary                       | The fundraising-campaign school |
+| School (complete)    | Fernley Park Primary                             | Renewal at risk |
+| School (confirmed)   | Thornleigh Green Primary                         | Starts September |
+| School (enquiry)     | Copperwick Primary                               | Bring-to-your-area enquiry |
+| Weekend venues       | Northvale Rec Ground · Copperfield Green Courts · Ellisford Park Courts (inclusive, linked venue) | |
+| Boroughs             | Northvale · Ashgrove · Kestwick                  | Fictional postcode areas NV / AG |
+| Booklet skill areas  | Move & ABCs · The Shots · Games & Challenges · Rally & Score · Teamwork & Respect · The Festival | "Skill Stickers" replace Ten Project's "Success Stickers" |
+
+Cameos from the existing sponsor universe: **Meridian Community Fund**
+(match-funds school campaigns), **Apex Performance** (activity booklet
+edition), **Vanta Sports** (court-kit supplier quotes), **Meridian Open**
+(the family-photo competition prize). People, cohorts (Otters, Foxes,
+Badgers, Owls) and school staff are invented; phone numbers stay in the
+Ofcom drama ranges (07700 900xxx, 020 7946 0xxx).
+
+Pattern 2 (kept factual): DfE, PE & Sport Premium, PE & School Sport
+Partnership Network (PESSPN), GOV.UK guidance links, Sport England, LTA
+coaching qualifications and safeguarding training, CMO activity guideline.
+
+Name checks (Oct 2026): no UK school found for Hollinsmere, St Aldric's,
+Fernley Park, Thornleigh Green or Copperwick Primary, and no organisation
+called Northvale Sport Foundation or Rally Ten.
+
 ## Existing sponsor universe (no change — for reference)
 
 The Meridian / Apex / Crown / Vanta sponsor universe is already documented

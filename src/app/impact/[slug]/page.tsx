@@ -1,23 +1,27 @@
 'use client'
 
-// ─── LUMIO IMPACT PORTAL — DEMO SHELL ───────────────────────────────────────
-// URL: /impact/[slug] (demo slug: /impact/tenproject)
+// ─── LUMIO IMPACT PORTAL ─────────────────────────────────────────────────────
+// URL: /impact/[slug]
+//   /impact/demo        — the demo: fictional Northvale Sport Foundation /
+//                         "Rally Ten" data (src/data/impact), Lumio Impact chrome
+//   /impact/<any other> — a live programme portal (e.g. /impact/ten-project)
+// The URL decides demo vs live via isDemoSlug(slug, 'impact') — same rule as
+// the sport portals (src/lib/config/demo-slugs.ts), never the session.
 //
-// The Ten Project build on the house demo pattern: SportsDemoGate (email →
-// OTP) replaces the old client-side DEMO_PIN, so Impact captures leads into
+// House demo pattern: SportsDemoGate (email → OTP) captures leads into
 // sports_demo_leads and sends the per-sport welcome email like every other
-// portal. Views and demo data are unchanged — see
-// src/app/tenproject/[slug]/page.tsx, which stays in place until this is
-// verified and that route is retired or redirected.
-// First build slice per docs Ten_Project_Portal_Scoping_v2.docx: PIN gate
-// (071711, matching all sport portals), five-role switcher, four surfaces —
-// HQ dashboard, School fundraising, Parent app, Coach + TENOR registers.
-// All data is fictional demo data (src/data/tenproject/demo-data.ts).
+// portal. Five roles, four surfaces — HQ dashboard, School fundraising,
+// Parent app, Coach + volunteer registers — rendered by the shared views in
+// src/app/tenproject/[slug]/_components, fed through ImpactDataProvider.
+// The legacy /tenproject route renders the same views with Ten Project data.
 // Standard portal zoom 0.9 — sidebar compensates with calc(100vh / 0.9).
 
 import React, { use, useEffect, useState } from 'react'
 import { LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp, Landmark } from 'lucide-react'
 import { TP_RED, TP_DARK, TP_BLACK, TP_PAPER } from '@/data/tenproject/demo-data'
+import { isDemoSlug } from '@/lib/config/demo-slugs'
+import { ImpactDataProvider, TEN_PROJECT_CONTEXT, useImpact, type ImpactBrand, type ImpactCopy, type ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
+import { IMPACT_DEMO_CONTEXT } from '@/data/impact/demo-context'
 import { SportsDemoGate } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
 import { clearDemoSession, markDemoSignedOut } from '@/lib/demo-session/clear'
@@ -27,41 +31,50 @@ import ParentApp from '@/app/tenproject/[slug]/_components/ParentApp'
 import { CoachView, TenorView, type CoachSection, type TenorSection } from '@/app/tenproject/[slug]/_components/RegisterViews'
 
 // Roles offered by SportsDemoGate's wizard (it wants emoji icons). Mirrors
-// ROLES below one-for-one; ROLES keeps the lucide icons the portal chrome uses.
-const IMPACT_ROLES = [
-  { id: 'hq',     label: 'Ten Project HQ', icon: '📊', description: 'Programme health & oversight' },
-  { id: 'school', label: 'School',         icon: '🏫', description: 'Fundraising & programme'      },
-  { id: 'parent', label: 'Parent',         icon: '📱', description: 'The family app'               },
-  { id: 'coach',  label: 'Coach',          icon: '📋', description: 'Sessions & registers'         },
-  { id: 'tenor',  label: 'TENOR',          icon: '👥', description: 'Weekend venue & QR scan-in'   },
-]
+// rolesFor() below one-for-one; that keeps the lucide icons the chrome uses.
+function gateRolesFor(brand: ImpactBrand) {
+  return [
+    { id: 'hq',     label: brand.hq,        icon: '📊', description: 'Programme health & oversight' },
+    { id: 'school', label: 'School',        icon: '🏫', description: 'Fundraising & programme'      },
+    { id: 'parent', label: 'Parent',        icon: '📱', description: 'The family app'               },
+    { id: 'coach',  label: 'Coach',         icon: '📋', description: 'Sessions & registers'         },
+    { id: 'tenor',  label: brand.volunteer, icon: '👥', description: 'Weekend venue & QR scan-in'   },
+  ]
+}
 
 // Exit demo — the house idiom (see src/app/coach/[slug]/page.tsx). Clearing the
 // session alone is not enough: the gate rebuilds one from the survivors on its
 // next mount, so the marker is what parks it back on the email screen.
-function signOutImpact() {
+function signOutImpact(slug: string) {
   if (typeof window === 'undefined') return
   clearDemoSession('impact')
   markDemoSignedOut('impact')
-  window.location.href = '/impact/tenproject'
+  window.location.href = `/impact/${slug}`
 }
 
 type Role = 'hq' | 'school' | 'parent' | 'coach' | 'tenor'
 
-const ROLES: { id: Role; label: string; desc: string; icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }> }[] = [
-  { id: 'hq', label: 'Ten Project HQ', desc: 'Programme health, schools, funnel, fundraising oversight', icon: LayoutDashboard },
-  { id: 'school', label: 'School', desc: 'St Clement’s — fundraising dashboard & events', icon: School },
-  { id: 'parent', label: 'Parent', desc: 'The family app — booklet, sessions, messages', icon: Smartphone },
-  { id: 'coach', label: 'Coach', desc: 'In-school session, one-tap register, skill taps', icon: ClipboardList },
-  { id: 'tenor', label: 'TENOR', desc: 'Weekend venue, QR scan-in, live count', icon: Users },
-]
+type RoleDef = { id: Role; label: string; desc: string; icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }> }
 
-const ROLE_TITLES: Record<Role, { title: string; sub: string }> = {
-  hq: { title: 'HQ — Programme Health', sub: 'Everything across schools, coaches, venues and funders' },
-  school: { title: 'St Clement’s Primary — School view', sub: 'Ran Ten Project 2025/26 · fundraising to bring it back for 2026/27' },
-  parent: { title: 'Parent app', sub: 'Sarah Whitfield · Mia (7) & Tom (5) · Oakridge Primary' },
-  coach: { title: 'Coach — Natalie Brooks', sub: 'Today’s in-school session and register' },
-  tenor: { title: 'TENOR — David Okafor', sub: 'Saturday family session at Kingsmead Rec Ground' },
+function rolesFor(brand: ImpactBrand, copy: ImpactCopy): RoleDef[] {
+  return [
+    { id: 'hq', label: brand.hq, desc: 'Programme health, schools, funnel, fundraising oversight', icon: LayoutDashboard },
+    { id: 'school', label: 'School', desc: copy.portal.schoolRoleDesc || 'Fundraising dashboard & events', icon: School },
+    { id: 'parent', label: 'Parent', desc: 'The family app — booklet, sessions, messages', icon: Smartphone },
+    { id: 'coach', label: 'Coach', desc: 'In-school session, one-tap register, skill taps', icon: ClipboardList },
+    { id: 'tenor', label: brand.volunteer, desc: 'Weekend venue, QR scan-in, live count', icon: Users },
+  ]
+}
+
+function roleTitlesFor(brand: ImpactBrand, copy: ImpactCopy): Record<Role, { title: string; sub: string }> {
+  const p = copy.portal
+  return {
+    hq: { title: 'HQ — Programme Health', sub: 'Everything across schools, coaches, venues and funders' },
+    school: { title: p.schoolTitle || 'School view', sub: p.schoolSub || 'Your programme, results and fundraising' },
+    parent: { title: 'Parent app', sub: p.parentSub || 'The family app — booklet, sessions, messages' },
+    coach: { title: p.coachTitle || 'Coach', sub: 'Today’s in-school session and register' },
+    tenor: { title: p.tenorTitle || brand.volunteer, sub: p.tenorSub || 'Weekend family sessions and registers' },
+  }
 }
 
 // The landing section per role keeps the role title; every other section shows
@@ -74,7 +87,7 @@ const SECTION_HEADERS: Record<string, Record<string, { title: string; sub: strin
     schools: { title: 'Schools', sub: 'Every partner school — profile, programme, stats and actions in one place' },
     venues: { title: 'Weekend venues', sub: 'Every weekend community venue — access, sessions, teams and attendance in one place' },
     coaches: { title: 'Coaches', sub: 'Your coaching team at a glance — accreditations, compliance and workload across the programme' },
-    tenors: { title: 'TENORs', sub: 'Your volunteer parents — inductions, venue cover and the “can this session run?” view' },
+    tenors: { title: 'Volunteers', sub: 'Your volunteer parents — inductions, venue cover and the “can this session run?” view' },
     comms: { title: 'Communications', sub: 'One inbox, newsletters and automations — replacing your email tools' },
     social: { title: 'Social', sub: 'Plan, schedule, publish and measure across every channel' },
     equipment: { title: 'Equipment & Kit', sub: 'Everything across venues, school bags and welcome-pack stock — edit inline, restock in one click' },
@@ -95,13 +108,18 @@ const SECTION_HEADERS: Record<string, Record<string, { title: string; sub: strin
   },
 }
 
-function headerFor(role: Role, section: string): { title: string; sub: string } {
-  if (section === LANDING_SECTION[role]) return ROLE_TITLES[role]
-  return SECTION_HEADERS[role]?.[section] ?? ROLE_TITLES[role]
+function headerFor(role: Role, section: string, titles: Record<Role, { title: string; sub: string }>, brand: ImpactBrand): { title: string; sub: string } {
+  if (section === LANDING_SECTION[role]) return titles[role]
+  const h = SECTION_HEADERS[role]?.[section]
+  if (role === 'hq' && section === 'tenors' && h) return { ...h, title: brand.volunteers }
+  return h ?? titles[role]
 }
 
-function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
-  // Role starts unset so the Ten Project role picker still fronts the portal,
+function ImpactPortalInner({ session, slug }: { session: SportsDemoSession; slug: string }) {
+  const { brand, copy, mode } = useImpact()
+  const ROLES = rolesFor(brand, copy)
+  const ROLE_TITLES = roleTitlesFor(brand, copy)
+  // Role starts unset so the programme's role picker still fronts the portal,
   // exactly as it did behind the PIN.
   const [role, setRole] = useState<Role | null>(null)
   const [lockedRole, setLockedRole] = useState<Role | null>(null)
@@ -146,7 +164,7 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
 
   // Content-area inversion keeps every component untouched; images re-invert
   // so logos, crests and photos stay true-colour. Sidebar/top bar already dark.
-  // Main bg is #EEEEEB when dark — its inverse is exactly Ten Project #111114.
+  // Main bg is #EEEEEB when dark — its inverse is exactly the chrome #111114.
   const darkStyle = dark ? (
     <style>{`
       .tp-theme-dark { filter: invert(1) hue-rotate(180deg); }
@@ -158,10 +176,10 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    // Deep-link support: /impact/tenproject?role=parent lands straight on that
+    // Deep-link support: /impact/demo?role=parent lands straight on that
     // role after the gate AND locks the session to it — a parent following the
-    // website CTA never sees HQ/School/Coach/TENOR (mirrors real role-based
-    // access). The unrestricted demo stays at /impact/tenproject with no param.
+    // website CTA never sees HQ/School/Coach/volunteer (mirrors real role-based
+    // access). The unrestricted demo stays at /impact/demo with no param.
     const wanted = new URLSearchParams(window.location.search).get('role')
     if (wanted && ROLES.some(r => r.id === wanted)) {
       setRole(wanted as Role)
@@ -179,7 +197,7 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
         <div style={{ maxWidth: 680, width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: 26 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tenproject_logo.png" alt="Ten Project" style={{ width: 190, height: 'auto', display: 'block', margin: '0 auto 10px' }} />
+            <img src={brand.logo} alt={brand.logoAlt} style={{ width: 190, height: 'auto', display: 'block', margin: '0 auto 10px', borderRadius: 10 }} />
             <div style={{ fontSize: 15, fontWeight: 900, color: TP_DARK, letterSpacing: 2 }}>PORTAL</div>
             <div style={{ color: '#6B6560', fontSize: 13.5, marginTop: 6 }}>
               One platform · five roles. Pick a view to explore.
@@ -215,7 +233,7 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
       <div style={{ minHeight: '100dvh', background: TP_PAPER, display: 'flex', flexDirection: 'column' }}>
         <div style={{ height: 52, background: TP_BLACK, display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px', flexShrink: 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ height: 24, width: 'auto' }} />
+          <img src={brand.logoDark} alt={brand.logoAlt} style={{ height: 24, width: 'auto' }} />
           {!lockedRole ? (
             <div style={{ flex: 1, display: 'flex', gap: 6, overflowX: 'auto' }}>
               {ROLES.map(r => (
@@ -229,7 +247,7 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
             <div style={{ flex: 1, color: '#C9C4BE', fontSize: 12, fontWeight: 700 }}>{ROLES.find(r => r.id === lockedRole)?.label}</div>
           )}
           <button
-            onClick={signOutImpact}
+            onClick={() => signOutImpact(slug)}
             aria-label="Exit demo"
             style={{ background: 'none', color: '#8A847E', border: 'none', cursor: 'pointer', padding: 4, flexShrink: 0 }}
           >
@@ -286,7 +304,7 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
       ] },
       { group: 'TEAM', items: [
         { id: 'coaches', label: 'Coaches', icon: ShieldCheck },
-        { id: 'tenors', label: 'TENORs', icon: Users },
+        { id: 'tenors', label: brand.volunteers, icon: Users },
       ] },
       { group: 'ENGAGE', items: [
         { id: 'comms', label: 'Communications', icon: Send },
@@ -335,7 +353,7 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
 
   return (
     <div style={{ zoom: 0.9, minHeight: 'calc(100vh / 0.9)', background: TP_PAPER, display: 'flex' }}>
-      {/* Sidebar — Ten Project black, floating rail with pin, grouped icon menu */}
+      {/* Sidebar — black chrome, floating rail with pin, grouped icon menu */}
       {!pinned && <div style={{ width: 64, flexShrink: 0 }} />}
       <aside
         onMouseEnter={() => setRailHover(true)}
@@ -352,15 +370,15 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
           {expanded ? (
             <div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ width: 108, height: 'auto', display: 'block' }} />
-              <div style={{ fontSize: 9.5, color: '#8A847E', marginTop: 6, letterSpacing: 1 }}>PORTAL · DEMO</div>
+              <img src={brand.logoDark} alt={brand.logoAlt} style={{ width: 108, height: 'auto', display: 'block', borderRadius: 6 }} />
+              <div style={{ fontSize: 9.5, color: '#8A847E', marginTop: 6, letterSpacing: 1 }}>{mode === 'live' ? 'PORTAL' : 'PORTAL · DEMO'}</div>
               {session.userName && (
                 <div style={{ fontSize: 10, color: '#C9C4BE', marginTop: 4, maxWidth: 108, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{session.userName}</div>
               )}
             </div>
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src="/tenproject-favicon-64.png" alt="TP" style={{ width: 30, height: 30, borderRadius: 7 }} />
+            <img src={brand.favicon64} alt={brand.faviconAlt} style={{ width: 30, height: 30, borderRadius: 7 }} />
           )}
           {expanded && (
             <button onClick={togglePin} title={pinned ? 'Unpin — sidebar floats and expands on hover' : 'Pin sidebar open'}
@@ -415,7 +433,7 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
         {expanded && (
         <div style={{ padding: 12 }}>
           <button
-            onClick={signOutImpact}
+            onClick={() => signOutImpact(slug)}
             style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', color: '#8A847E', border: '1px solid #33333B', borderRadius: 9, padding: '9px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}
           >
             <LogOut size={14} /> Exit demo
@@ -427,7 +445,7 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
       {/* Main */}
       {darkStyle}
       <main className={contentClass} style={{ flex: 1, minWidth: 0, padding: '22px 26px 40px', background: mainBg }}>
-        {(() => { const hm = role === 'parent' ? meta : headerFor(role, activeSection); return (
+        {(() => { const hm = role === 'parent' ? meta : headerFor(role, activeSection, ROLE_TITLES, brand); return (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 21, fontWeight: 900, color: TP_DARK }}>{hm.title}</div>
           <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 3 }}>{hm.sub}</div>
@@ -448,23 +466,27 @@ function ImpactPortalInner({ session }: { session: SportsDemoSession }) {
 // (see src/app/nonleague/[slug]/page.tsx): email → OTP → the portal below.
 export default function ImpactPortal({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
+  // URL decides demo vs live (see src/lib/config/demo-slugs.ts).
+  const ctx: ImpactPortalContext = isDemoSlug(slug, 'impact') ? IMPACT_DEMO_CONTEXT : TEN_PROJECT_CONTEXT
   return (
+    <ImpactDataProvider value={ctx}>
     <SportsDemoGate
       sport="impact"
-      defaultClubName="Ten Project"
+      defaultClubName={ctx.brand.org}
       defaultSlug={slug}
       accentColor="#D7262C"
       accentColorLight="#F87171"
       sportEmoji="🏫"
       sportLabel="Lumio Impact"
-      roles={IMPACT_ROLES}
+      roles={gateRolesFor(ctx.brand)}
       // Straight from OTP into the portal. The wizard's profile step renders a
       // six-attribute FIFA-style player card (SPORT_STATS), which is the wrong
       // artefact for a programme platform — and with no 'impact' entry it would
       // fall back to football's. The portal has its own role picker anyway.
       skipWizard
     >
-      {(session) => <ImpactPortalInner session={session} />}
+      {(session) => <ImpactPortalInner session={session} slug={slug} />}
     </SportsDemoGate>
+    </ImpactDataProvider>
   )
 }

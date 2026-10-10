@@ -15,10 +15,12 @@ import { TEN_PROJECT_BRAND, TEN_PROJECT_COPY } from '@/data/tenproject/portal-co
 type Palette = 'TP_RED' | 'TP_BLACK' | 'TP_DARK' | 'TP_PAPER'
 type TpModule = Omit<typeof TP, Palette>
 
-// STICKER_AREAS is `as const` in the Ten Project file; widen it so other
-// datasets can carry their own labels.
-export type ImpactDataset = Omit<TpModule, 'STICKER_AREAS'> & {
-  STICKER_AREAS: readonly { id: string; label: string; desc: string }[]
+// Top-level string consts (and the `as const` STICKER_AREAS) are literal-typed
+// in the Ten Project file; widen them so other datasets carry their own values.
+export type ImpactDataset = {
+  [K in keyof TpModule]: K extends 'STICKER_AREAS'
+    ? readonly { id: string; label: string; desc: string }[]
+    : TpModule[K] extends string ? string : TpModule[K]
 }
 
 export type ImpactBrand = typeof TEN_PROJECT_BRAND

@@ -29,14 +29,15 @@ const SHARED = [
 
 // lumiosports.com. Unmatched paths 404 here (see src/app/[slug]/layout.tsx),
 // so there is no tenant surface to keep out — only the sports sign-in flows and
-// the two demos that are not for search: the coach demo and the partner-facing
-// Impact workspace.
+// the two demos that are not for search: the coach demo and the Impact portal
+// (/impact/demo and every live /impact/<slug> portal — the /impact marketing
+// page itself stays crawlable).
 const SPORTS_ONLY = [
   '/sports-login',
   '/sports-signup',
   '/sports-admin/',
   '/tennis/coach/demo',
-  '/impact/tenproject',
+  '/impact/',
 ]
 
 // lumiocms.com. The workspace catch-all is live here, so the department routes

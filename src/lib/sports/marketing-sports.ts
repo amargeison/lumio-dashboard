@@ -35,7 +35,7 @@ export type Sport = {
 }
 
 export const SPORTS: Sport[] = [
-  { id: 'impact',     label: 'Impact',          logo: '/impact_logo.png',    href: '/impact/tenproject',                   accent: '#a855f7', desc: 'Digital registers, funder reporting, fundraising, parent app',                  available: true  },
+  { id: 'impact',     label: 'Impact',          logo: '/impact_logo.png',    href: '/impact/demo',                         accent: '#a855f7', desc: 'Digital registers, funder reporting, fundraising, parent app',                  available: true  },
   { id: 'tenniscoach', label: 'Tennis Coach',   logo: '/tennis_coach_logo.png', href: '/tennis/coach/demo',                accent: '#3A8EE0', desc: 'Session planner, AI reviews, Racket Progression, GPS heatmaps',                  available: true  },
   { id: 'tennis',     label: 'Tennis',          logo: '/tennis_logo.png',    href: '/tennis/demo',                         accent: '#14B8A6', desc: 'ATP/WTA rankings, match prep, AI briefing, GPS heatmaps',                        available: true  },
   { id: 'football',   label: 'Football Pro',    logo: '/football_logo.png',  href: '/football/oakridge-fc',                accent: '#3b82f6', desc: 'PSR compliance, FIFA pitch view, set pieces, board suite',                       available: true  },
