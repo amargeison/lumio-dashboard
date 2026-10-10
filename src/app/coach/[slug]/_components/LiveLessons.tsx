@@ -20,7 +20,7 @@ import { playerLabels } from '../_lib/tell-apart'
 import { pollMedia, processStageShort } from '../_lib/media-upload'
 import { avatarSrc } from '@/lib/avatar'
 import { lessonRecap, sharedLessonText } from '@/lib/coach/lesson-recap'
-import { ukDate } from '@/lib/coach/uk-date'
+import { ukDate, ukWeek, addDaysIso } from '@/lib/coach/uk-date'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
 import { getFlags, subscribe as subscribeFeatures, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
 
@@ -142,10 +142,15 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
   const [editing, setEditing] = useState<Session | 'new' | null>(null)
   const [copied, setCopied] = useState(false)
 
+  // Calendar weeks (Monday to Sunday) and the calendar month, as the tabs say —
+  // the same weeks as "Lessons this week" in the side panel. They were the last
+  // 7 / 8–14 / 31 days, so "This week" and the side panel disagreed by a day or two.
+  const wk = ukWeek(), lastWk = ukWeek(addDaysIso(wk.start, -7))
+  const dayOf = (s: Session) => String(s.session_date || '').slice(0, 10)
   const inRange = (s: Session) => range === 'all' ? true
-    : range === 'week' ? daysAgo(s.session_date) <= 7
-    : range === 'lastweek' ? (daysAgo(s.session_date) > 7 && daysAgo(s.session_date) <= 14)
-    : daysAgo(s.session_date) <= 31
+    : range === 'week' ? (dayOf(s) >= wk.start && dayOf(s) <= wk.end)
+    : range === 'lastweek' ? (dayOf(s) >= lastWk.start && dayOf(s) <= lastWk.end)
+    : dayOf(s).slice(0, 7) === ukDate().slice(0, 7)
   const list = [...rows].filter(inRange).sort((a, b) => daysAgo(a.session_date) - daysAgo(b.session_date))
   const sel = rows.find(s => s.id === selId) ?? list[0] ?? rows[0]
 

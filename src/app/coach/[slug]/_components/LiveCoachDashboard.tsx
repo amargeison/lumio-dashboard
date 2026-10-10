@@ -287,9 +287,11 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const tagFor = (raw?: string | null, playerId?: string | null): string => {
     const key = (raw || '').trim()
     if (key.startsWith('camp:') || /^camp\s*·/i.test(key)) return 'Camp'
-    // A message filed under a player is that player's, whatever name it carries.
-    if (playerId && d.players.some((p: any) => p.id === playerId)) return 'Player'
     const n = key.split(',')[0].trim().toLowerCase()
+    // A message filed under a player is that player's family's. Written by the
+    // parent (their name on it), it says Parent; otherwise Player.
+    const owner = playerId ? d.players.find((p: any) => p.id === playerId) : null
+    if (owner) return n && (owner.parent_name || '').trim().toLowerCase() === n ? 'Parent' : 'Player'
     if (!n) return 'Contact'
     if (d.venues.some((v: any) => (v.name || '').trim().toLowerCase() === n)) return 'Venue'
     if (d.staff.some((s: any) => (s.name || '').trim().toLowerCase() === n)) return 'Coach'
@@ -548,7 +550,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           { l: 'This week', sub: 'Mon–Sun', v: thisWeek.length, nav: 'calendar' },
           // Opens the calendar on the week that session is in — next Monday's
           // lesson is not on this week's page.
-          { l: 'Next session', v: next ? `${dk(next.booking_date) === today ? 'Today' : fmtDate(next.booking_date)}${next.start_time ? ' ' + next.start_time : ''}` : '—', nav: 'calendar', small: true, date: next?.booking_date },
+          { l: 'Next session', v: next ? `${dk(next.booking_date) === today ? 'Today' : dk(next.booking_date) === addDaysIso(today, 1) ? 'Tomorrow' : fmtDate(next.booking_date)}${next.start_time ? ' ' + next.start_time : ''}` : '—', nav: 'calendar', small: true, date: next?.booking_date },
           { l: 'Players', v: d.players.length, nav: 'roster' },
           // Opens the list of those players underneath, not the whole roster.
           { l: 'Nothing booked', v: unbooked.length, toggle: true },

@@ -158,7 +158,8 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
       playerId: player?.id || null,
       // Somebody written to by a typed address, or a coach on a camp list, is
       // not a player even when a player happens to share their name.
-      tag: player ? 'Player' : msgs.some(m => m.thread_key?.startsWith('contact:')) ? 'Contact' : msgs.some(m => m.thread_key?.startsWith('staff:')) ? 'Coach' : null,
+      // A coach or a venue written to at their own address is still a coach or a venue.
+      tag: player ? 'Player' : msgs.some(m => m.thread_key?.startsWith('contact:')) ? (/^(Coach|Venue)$/.test(tagFor(labelOf.get(id) || name)) ? tagFor(labelOf.get(id) || name) : 'Contact') : msgs.some(m => m.thread_key?.startsWith('staff:')) ? 'Coach' : null,
       campId: id.startsWith('camp:') ? id.slice(5) : null,
       msgs: msgs.slice().sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')),
     }

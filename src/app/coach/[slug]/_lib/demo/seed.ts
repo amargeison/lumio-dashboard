@@ -1092,11 +1092,54 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
 
   out.coach_sessions = []
   out.coach_session_plans = []
+  // The few upcoming lessons without a plan yet: the furthest away (next
+  // weekend's, not thought about yet) and one new booking later this week.
+  // Every one of them used to have a 30–60% chance of no plan, which left two
+  // dozen in "Needs a plan" — not a coach who is on top of things.
+  const notYetPlanned = new Set<string>()
+  {
+    const ahead = occs.filter(o => !o.past && !o.isToday && o.slot.type !== 'Block' && bookingOf.get(o.key)?.status !== 'cancelled')
+      .sort((x, y) => x.date.getTime() - y.date.getTime() || x.slot.time.localeCompare(y.slot.time))
+    for (const o of ahead.slice(-4)) notYetPlanned.add(o.key)
+    const soon = ahead.slice(3, Math.max(4, ahead.length - 4)).find(o => !!o.slot.player && bookingOf.get(o.key)?.status === 'pending')
+      || ahead.slice(3, Math.max(4, ahead.length - 4)).find(o => !!o.slot.player)
+    if (soon) notYetPlanned.add(soon.key)
+  }
   const windowStart = plus(today, -28)
   const lastLessonOf = new Map<string, Occ>()
-  for (const o of occs) if (o.past && o.slot.player && bookingOf.get(o.key)?.status !== 'cancelled' && !unwritten.has(o.key)) lastLessonOf.set(o.slot.player, o)
   const sessionCount: Record<string, number> = {}
   const sessionOf = new Map<string, Row>()
+
+  // Which past lessons were written up. Not every one: a coach writes up a
+  // player every few weeks, and a squad now and then. Writing up every lesson
+  // put thirty summaries in the current week alone, which read as made up.
+  // Every fourth lesson for each player or squad, staggered by player so the
+  // month fills evenly — topped up for the players whose hand-written
+  // summaries and recordings the demo shows off.
+  const SHOWCASE = new Set([...Object.keys(FEATURED), 'daniel', 'ava', 'priya'])
+  const RECORDED_TWICE = new Set(['tom', 'mia', 'daniel'])
+  const writtenUp = new Set<string>()
+  {
+    const byWho = new Map<string, Occ[]>()
+    for (const o of occs) {
+      if (!o.past || o.slot.type === 'Block' || o.date < windowStart || unwritten.has(o.key) || bookingOf.get(o.key)?.status === 'cancelled') continue
+      const who = o.slot.player || (o.slot.title as string)
+      byWho.set(who, [...(byWho.get(who) || []), o])
+    }
+    for (const [who, list] of byWho) {
+      const newestFirst = [...list].sort((x, y) => y.date.getTime() - x.date.getTime() || y.slot.time.localeCompare(x.slot.time))
+      const every = list[0].slot.player ? 4 : 5
+      const offset = hash(`wu:${who}`) % every
+      newestFirst.forEach((o, i) => { if ((i + offset) % every === 0) writtenUp.add(o.key) })
+      // The showcase players need one written-up lesson (two for the ones with
+      // two recordings). Topped up from their second-newest back, not the
+      // newest, so they do not all pile into this week.
+      const need = RECORDED_TWICE.has(who) ? 2 : SHOWCASE.has(who) ? 1 : 0
+      for (let i = 1; newestFirst.filter(o => writtenUp.has(o.key)).length < need && i <= newestFirst.length; i++) writtenUp.add(newestFirst[i % newestFirst.length].key)
+    }
+  }
+  // The newest written-up lesson of each player carries their hand-written summary.
+  for (const o of occs) if (o.past && o.slot.player && writtenUp.has(o.key)) lastLessonOf.set(o.slot.player, o)
 
   for (const o of occs) {
     const s = o.slot
@@ -1132,6 +1175,8 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
         out.coach_session_plans.push(plan)
         planId = plan.id
       }
+      // Planned and run, but not written up (see writtenUp).
+      if (!writtenUp.has(o.key)) continue
       const review = {
         focus: theme.focus, covered: theme.covered,
         takeaways: [cap(theme.win), `Still to fix: ${theme.gap}`],
@@ -1151,10 +1196,10 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
       continue
     }
 
-    // Today and ahead: the plan for it, where one has been built. Everything
-    // today is planned; further out the head coach is further ahead than most.
+    // Today and ahead: the plan for it. A coach plans the week ahead, so nearly
+    // everything is planned — see notYetPlanned for the handful that are not.
     const theme = themeFor(o)
-    const planned = o.isToday || unit(`pl:${o.key}`) < (s.coach === 'vincent' ? 0.7 : 0.4)
+    const planned = o.isToday || !notYetPlanned.has(o.key)
     if (!planned) continue
     const byCoach = unit(`pb:${o.key}`) < 0.25
     const designed = stamp(at(plus(o.date, -between(`pd:${o.key}`, 2, 5)), '20:40'))
@@ -1833,13 +1878,29 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
   // whole thread slides back a day if its last message would be in the future.
   type Msg = { d: number; t: string; dir: 'in' | 'out'; body: string; subject?: string; unread?: boolean; from?: string; reaction?: string; channels?: string }
   out.coach_messages = []
+  // A parent's or a player's conversation belongs to the PLAYER, by id, as the
+  // live portal files them — without it, Reply did not know who Grace Okafor
+  // was ("not on your roster") although she is Tom's mother. The venue's is
+  // filed under its contact address, so a reply opens with it filled in.
+  const ownerOf = (who: string) => {
+    const p = PLAYERS.find(x => x.parent === who) || PLAYERS.find(x => x.name === who)
+    return p ? playerId[p.key] : null
+  }
+  const venueKey = (who: string) => {
+    const v = VENUES.find(x => x.name === who)
+    if (v?.email) return `contact:${v.email}`
+    // A coach on the team: their academy address, as coach_staff has it.
+    const st = STAFF.find(x => x.name === who)
+    return st ? `contact:${st.name.toLowerCase().replace(/\s+/g, '.')}@lumiotennisclub.example` : null
+  }
   const thread = (who: string, msgs: Msg[], extra: Row = {}) => {
     const latest = Math.max(...msgs.map(m => at(plus(today, -m.d), m.t).getTime()))
     const shift = latest > now.getTime() - 120_000 ? 1 : 0
     msgs.forEach((m, i) => {
       const when = at(plus(today, -m.d - shift), m.t).toISOString()
       out.coach_messages.push(row(T.message, {
-        recipients: who, thread_key: extra.thread_key || who, to_name: m.dir === 'out' ? who : null,
+        recipients: who, thread_key: extra.thread_key || venueKey(who) || who, to_name: m.dir === 'out' ? who : null,
+        player_id: extra.camp_id ? null : ownerOf(who),
         direction: m.dir, from_name: m.dir === 'in' ? (m.from || who) : null,
         channels: m.channels || (m.dir === 'in' ? 'email' : 'inapp, email'), subject: m.subject || null, body: m.body,
         status: m.dir === 'in' ? 'received' : 'sent', results: null,
