@@ -38,6 +38,8 @@ const SPORTS_ONLY = [
   '/sports-admin/',
   '/tennis/coach/demo',
   '/impact/',
+  // Named for clarity — already covered by '/impact/' above.
+  '/impact/lumio-test',
 ]
 
 // lumiocms.com. The workspace catch-all is live here, so the department routes

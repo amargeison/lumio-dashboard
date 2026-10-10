@@ -36,11 +36,11 @@ interface IdentifyResult {
 }
 
 // Resolve a founder's portal destination from identify-user fields, without a
-// client-side DB read. Coach/Women's are slug-based; others go to /{sport}/app.
+// client-side DB read. Coach/Women's/Impact are slug-based; others go to /{sport}/app.
 function founderDest(info: IdentifyResult): string {
   const sport = info.founderSport || info.sport
   if (!sport) return '/sports-signup'
-  if (sport === 'coach' || sport === 'womens') {
+  if (sport === 'coach' || sport === 'womens' || sport === 'impact') {
     return portalUrlFor({ sport, portal_slug: info.founderSlug, brand_name: info.founderBrand, display_name: info.founderDisplayName })
   }
   return `/${sport}/app`
