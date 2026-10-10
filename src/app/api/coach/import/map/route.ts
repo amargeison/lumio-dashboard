@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import Anthropic from '@anthropic-ai/sdk'
 import { IMPORT_FIELDS, IMPORT_CATEGORIES, ENUMS, type SheetPlan } from '@/lib/coach/import-records'
+import { importGate, recordImportSpend } from '@/lib/import-engine/guard'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -78,6 +79,9 @@ export async function POST(req: NextRequest) {
   if (!await isAcademyUser(user.id)) return notAnAcademy()
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'AI not configured' }, { status: 500 })
+  // Rate limit + daily spend cap per account (the importer had none).
+  const limited = importGate(user.id)
+  if (limited) return limited
 
   const body = await req.json().catch(() => ({})) as { fileName?: string; sheets?: { name: string; sample: string }[] }
   const sheets = (Array.isArray(body.sheets) ? body.sheets : []).filter(s => s && typeof s.name === 'string' && typeof s.sample === 'string').slice(0, 20)
@@ -91,6 +95,7 @@ export async function POST(req: NextRequest) {
       max_tokens: 6000,
       messages: [{ role: 'user', content: [{ type: 'text', text }, { type: 'text', text: PROMPT }] }],
     })
+    recordImportSpend(user.id, res.usage, 'claude-sonnet-4-6', 'coach')
     let txt = ''
     for (const b of res.content) if (b.type === 'text') txt += b.text
     const match = txt.replace(/```json\s*/gi, '').replace(/```/g, '').match(/\{[\s\S]*\}/)

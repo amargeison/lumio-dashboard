@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import Anthropic from '@anthropic-ai/sdk'
 import { fileToContent, UnreadableFile } from '@/lib/coach/file-to-content'
 import { cleanRecord, IMPORT_CATEGORIES, type ImportCategory } from '@/lib/coach/import-records'
+import { importGate, recordImportSpend } from '@/lib/import-engine/guard'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -81,6 +82,9 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'AI not configured' }, { status: 500 })
+  // Rate limit + daily spend cap per account (the importer had none).
+  const limited = importGate(user.id)
+  if (limited) return limited
 
   // Two ways in: a file (PDF, Word, photo…), or a piece of a spreadsheet tab
   // the browser has already opened and split up (JSON { text, label }).
@@ -113,11 +117,13 @@ export async function POST(req: NextRequest) {
     // Pieces of a spreadsheet are plain rows to copy out — the fast model does
     // that well and several times quicker. Whole PDFs, photos and Word files
     // keep the stronger model, which has the harder job of finding the records.
+    const model = isChunk ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-6'
     const res = await client.messages.create({
-      model: isChunk ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-6',
+      model,
       max_tokens: 16000,
       messages: [{ role: 'user', content: content as any }],
     })
+    recordImportSpend(user.id, res.usage, model, 'coach')
     let txt = ''
     for (const b of res.content) if (b.type === 'text') txt += b.text
     const extracted = parseLines(txt)
