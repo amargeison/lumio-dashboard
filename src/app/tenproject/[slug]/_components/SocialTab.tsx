@@ -6,11 +6,10 @@
 
 import React, { useState } from 'react'
 import { Instagram, Facebook, Youtube, Twitter, Sparkles, CalendarClock, Send, Image as ImageIcon, Video, Layers, Clock, Heart, MessageCircle, Share2, Bookmark, Eye, TrendingUp, CheckCircle, Hash } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
-import {
-  TP_RED, TP_DARK, SOCIAL_STATS, SOCIAL_QUEUE, SOCIAL_PUBLISHED, SOCIAL_AI_CAPTIONS,
-  SOCIAL_GROWTH, SOCIAL_BEST_TIMES, SOCIAL_HASHTAGS, type SocialPost,
-} from '@/data/tenproject/demo-data'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
+import { draftWithImpactAI } from '@/lib/impact/ai'
+import { TP_RED, TP_DARK, type SocialPost } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 const PLATFORM_ICON: Record<string, React.ComponentType<{ size?: number | string; style?: React.CSSProperties }>> = {
   Instagram, Facebook, YouTube: Youtube, 'X / Twitter': Twitter, IG: Instagram, FB: Facebook, YT: Youtube, X: Twitter,
@@ -34,6 +33,8 @@ function Thumb({ media, hue, size = 60 }: { media: string; hue: number; size?: n
 type SubTab = 'queue' | 'compose' | 'published'
 
 export default function SocialTab() {
+  const { brand, copy, data, mode } = useImpact()
+  const { SOCIAL_STATS, SOCIAL_QUEUE, SOCIAL_PUBLISHED, SOCIAL_AI_CAPTIONS, SOCIAL_GROWTH, SOCIAL_BEST_TIMES, SOCIAL_HASHTAGS } = data
   const [sub, setSub] = useState<SubTab>('queue')
   const [queue, setQueue] = useState<SocialPost[]>(SOCIAL_QUEUE)
   const [platforms, setPlatforms] = useState<string[]>(['IG'])
@@ -41,9 +42,17 @@ export default function SocialTab() {
   const [aiIdx, setAiIdx] = useState(0)
   const [when, setWhen] = useState('Today 17:00')
   const [media, setMedia] = useState<'photo' | 'video' | 'carousel' | 'none'>('photo')
-  const [tags, setTags] = useState<string[]>(['#tenproject', '#LearnPlayTogether'])
+  const [tags, setTags] = useState<string[]>(copy.social.defaultTags)
 
-  function generate() { setCaption(SOCIAL_AI_CAPTIONS[aiIdx % SOCIAL_AI_CAPTIONS.length]); setAiIdx(i => i + 1) }
+  const [drafting, setDrafting] = useState(false)
+  // Demo: rotate the canned captions. Live: draft one via /api/ai/impact.
+  async function generate() {
+    if (mode !== 'live') { setCaption(SOCIAL_AI_CAPTIONS[aiIdx % SOCIAL_AI_CAPTIONS.length]); setAiIdx(i => i + 1); return }
+    setDrafting(true)
+    try {
+      setCaption(await draftWithImpactAI(`Write one upbeat social media caption (under 45 words) for ${brand.org}, a free schools and family tennis programme, for ${platforms.join(' / ') || 'Instagram'}. Do not include hashtags.`, 160))
+    } catch { /* leave the caption as-is */ } finally { setDrafting(false) }
+  }
   function schedule() {
     if (!caption.trim()) return
     setQueue(prev => [{ id: `new-${Date.now()}`, when, platform: (platforms[0] as SocialPost['platform']) ?? 'IG', status: 'scheduled', text: caption.trim() + (tags.length ? ' ' + tags.join(' ') : ''), media, hue: 8 }, ...prev])
@@ -51,6 +60,7 @@ export default function SocialTab() {
   }
 
   const maxG = Math.max(...SOCIAL_GROWTH.map(g => g.n)), minG = Math.min(...SOCIAL_GROWTH.map(g => g.n))
+  const noAccounts = SOCIAL_STATS.length === 0
   const gpts = SOCIAL_GROWTH.map((g, i) => `${(i / (SOCIAL_GROWTH.length - 1)) * 300},${70 - ((g.n - minG) / (maxG - minG)) * 60}`).join(' ')
 
   const SUBTABS: { id: SubTab; label: string; icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }> }[] = [
@@ -79,6 +89,7 @@ export default function SocialTab() {
       </div>
 
       {/* Follower tiles — account overview, shown on every tab */}
+      {noAccounts && <Card><EmptyState icon={Share2} title="No social accounts connected" sub="Connect Instagram, Facebook, YouTube and X to schedule, publish and measure every post from here." /></Card>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
         {SOCIAL_STATS.map(s => {
           const Icon = PLATFORM_ICON[s.platform] ?? Instagram
@@ -98,7 +109,7 @@ export default function SocialTab() {
       {/* ── QUEUE ── */}
       {sub === 'queue' && (<>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-          {([[String(queue.filter(q => q.status === 'scheduled').length), 'SCHEDULED'], [String(queue.filter(q => q.status === 'draft').length), 'DRAFTS'], [String(queue.filter(q => q.status === 'needs approval').length), 'NEEDS APPROVAL'], ['38K', 'REACH (7 DAYS)'], ['#tenproject', 'CAMPAIGN TAG']] as [string, string][]).map(([v, l]) => (
+          {([[String(queue.filter(q => q.status === 'scheduled').length), 'SCHEDULED'], [String(queue.filter(q => q.status === 'draft').length), 'DRAFTS'], [String(queue.filter(q => q.status === 'needs approval').length), 'NEEDS APPROVAL'], [copy.social.reach7d || '—', 'REACH (7 DAYS)'], [brand.hashtag, 'CAMPAIGN TAG']] as [string, string][]).map(([v, l]) => (
             <Card key={l} style={{ padding: '13px 16px' }}><div style={{ fontSize: 10, fontWeight: 800, color: '#8A847E', letterSpacing: 0.8 }}>{l}</div><div style={{ fontSize: 19, fontWeight: 900, color: TP_RED, marginTop: 3 }}>{v}</div></Card>
           ))}
         </div>
@@ -106,6 +117,7 @@ export default function SocialTab() {
           <SectionTitle sub="Everything booked in — with the media, ready to approve, edit or pull before it posts">
             <CalendarClock size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Post queue
           </SectionTitle>
+          {queue.length === 0 && <EmptyState compact icon={CalendarClock} title="Nothing scheduled" sub="Posts you compose and schedule queue here — ready to approve, edit or pull before they go out." />}
           <div style={{ display: 'grid', gap: 9 }}>
             {queue.map(q => {
               const PIcon = PLATFORM_ICON[q.platform] ?? Instagram
@@ -160,8 +172,8 @@ export default function SocialTab() {
               <div style={{ flex: 1, border: '1.5px dashed #D9D3CC', borderRadius: 10, padding: '12px', fontSize: 11, color: '#8A847E', textAlign: 'center', fontWeight: 700 }}>Drop {media} here — or choose files</div>
             </div>
 
-            <button onClick={generate} style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', marginBottom: 10 }}>
-              <Sparkles size={14} /> Generate caption with AI
+            <button onClick={generate} disabled={drafting} style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', marginBottom: 10 }}>
+              <Sparkles size={14} /> {drafting ? 'Drafting…' : 'Generate caption with AI'}
             </button>
             <textarea value={caption} onChange={e => setCaption(e.target.value)} rows={4} placeholder="Caption — or generate one above" style={{ width: '100%', border: '1px solid #E7E2DC', borderRadius: 10, padding: '11px 13px', fontSize: 12.5, outline: 'none', background: '#F7F5F2', resize: 'vertical', fontFamily: 'inherit' }} />
 
@@ -191,8 +203,8 @@ export default function SocialTab() {
               <div style={{ border: '1px solid #E7E2DC', borderRadius: 12, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', background: '#fff' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/tenproject-favicon-64.png" alt="TP" style={{ width: 26, height: 26, borderRadius: '50%' }} />
-                  <div style={{ fontSize: 11.5, fontWeight: 800, color: TP_DARK }}>tenprojectuk</div>
+                  <img src={brand.favicon64} alt={brand.faviconAlt} style={{ width: 26, height: 26, borderRadius: '50%' }} />
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: TP_DARK }}>{brand.socialHandle}</div>
                   <div style={{ marginLeft: 'auto', fontSize: 10, color: '#8A847E' }}>{platforms.join(' · ') || 'IG'}</div>
                 </div>
                 {media !== 'none' ? (
@@ -202,7 +214,7 @@ export default function SocialTab() {
                   </div>
                 ) : null}
                 <div style={{ padding: '10px 12px', fontSize: 12, color: '#33302C', lineHeight: 1.5, background: '#fff' }}>
-                  <strong>tenprojectuk</strong> {caption || 'Your caption will appear here…'}
+                  <strong>{brand.socialHandle}</strong> {caption || 'Your caption will appear here…'}
                   {tags.length > 0 && <div style={{ color: TP_RED, marginTop: 4 }}>{tags.join(' ')}</div>}
                 </div>
               </div>
@@ -222,7 +234,10 @@ export default function SocialTab() {
       )}
 
       {/* ── PUBLISHED & ANALYTICS ── */}
-      {sub === 'published' && (<>
+      {sub === 'published' && SOCIAL_PUBLISHED.length === 0 && (
+        <Card><EmptyState icon={TrendingUp} title="Nothing published yet" sub="Follower growth, reach, engagement and per-post results appear once your accounts are connected and posting." /></Card>
+      )}
+      {sub === 'published' && SOCIAL_PUBLISHED.length > 0 && SOCIAL_GROWTH.length > 0 && (<>
         <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 16 }}>
           <Card>
             <SectionTitle sub="Total followers across all channels, last 8 weeks">
@@ -234,13 +249,13 @@ export default function SocialTab() {
               {SOCIAL_GROWTH.map((g, i) => <circle key={g.w} cx={(i / (SOCIAL_GROWTH.length - 1)) * 300} cy={70 - ((g.n - minG) / (maxG - minG)) * 60} r="2.6" fill={TP_RED} />)}
             </svg>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#8A847E', fontWeight: 700 }}>
-              <span>{SOCIAL_GROWTH[0].n.toLocaleString()}</span><span>+26% → {SOCIAL_GROWTH[SOCIAL_GROWTH.length - 1].n.toLocaleString()}</span>
+              <span>{SOCIAL_GROWTH[0].n.toLocaleString()}</span><span>{copy.social.growthLabel} → {SOCIAL_GROWTH[SOCIAL_GROWTH.length - 1].n.toLocaleString()}</span>
             </div>
           </Card>
           <Card>
             <SectionTitle sub="This month across all channels">Performance</SectionTitle>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {([['1.3M', 'REACH'], ['9.4%', 'ENGAGEMENT'], ['504', 'LINK CLICKS'], ['+710', 'NEW FOLLOWERS']] as [string, string][]).map(([v, l]) => (
+              {copy.social.performance.map(([v, l]) => (
                 <div key={l} style={{ background: '#F7F5F2', borderRadius: 10, padding: '12px 14px' }}>
                   <div style={{ fontSize: 20, fontWeight: 900, color: TP_RED }}>{v}</div>
                   <div style={{ fontSize: 9.5, color: '#8A847E', fontWeight: 800, letterSpacing: 0.4 }}>{l}</div>

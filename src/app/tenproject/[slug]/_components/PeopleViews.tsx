@@ -7,14 +7,10 @@
 
 import React, { useState } from 'react'
 import { AlertTriangle, Phone, Mail, UserPlus, ShieldCheck } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { PersonDetailView, AddCoachModal } from './PersonDetail'
-import {
-  TP_RED, TP_DARK, TP_COACHES, TP_COACH_STATS_ROW, TP_COACH_ATTENTION,
-  TP_TENORS, TP_TENOR_STATS_ROW, TP_VENUE_READINESS,
-  COACH_DETAILS, TENOR_DETAILS,
-  type TpCoach, type TpTenor, type TpPersonDetail,
-} from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK, type TpCoach, type TpTenor, type TpPersonDetail } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 const DBS_PILL: Record<string, { tone: 'green' | 'amber' | 'red' | 'grey'; label: string }> = {
   'valid': { tone: 'green', label: 'DBS VALID' },
@@ -26,9 +22,9 @@ const DBS_PILL: Record<string, { tone: 'green' | 'amber' | 'red' | 'grey'; label
 }
 
 // Fallback profile for coaches added live in the demo
-function fallbackDetail(name: string): TpPersonDetail {
+function fallbackDetail(name: string, emailDomain: string): TpPersonDetail {
   return {
-    email: `${name.split(' ')[0].toLowerCase()}@tenproject.org.uk`,
+    email: `${name.split(' ')[0].toLowerCase()}@${emailDomain}`,
     phone: '07700 900000',
     availability: 'To be confirmed at onboarding',
     dbsNumber: '— onboarding in progress', dbsIssued: '—', dbsExpiry: '—',
@@ -66,6 +62,8 @@ function StatsRow({ items }: { items: { label: string; value: string }[] }) {
 
 // ─── COACHES ────────────────────────────────────────────────────────────────
 export function CoachesTab() {
+  const { brand, data } = useImpact()
+  const { TP_COACHES, TP_COACH_STATS_ROW, TP_COACH_ATTENTION, COACH_DETAILS } = data
   const [filter, setFilter] = useState<'All' | TpCoach['role']>('All')
   const [roster, setRoster] = useState<TpCoach[]>(TP_COACHES)
   const [selected, setSelected] = useState<TpCoach | null>(null)
@@ -76,7 +74,7 @@ export function CoachesTab() {
     return (
       <PersonDetailView
         person={selected}
-        detail={COACH_DETAILS[selected.id] ?? fallbackDetail(selected.name)}
+        detail={COACH_DETAILS[selected.id] ?? fallbackDetail(selected.name, brand.emailDomain)}
         kind="coach"
         onBack={() => setSelected(null)}
       />
@@ -93,13 +91,13 @@ export function CoachesTab() {
 
       <StatsRow items={TP_COACH_STATS_ROW} />
 
-      <div style={{ background: '#FCF1DC', border: '1px solid #E8CD9A', borderRadius: 12, padding: '12px 15px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+      {TP_COACH_ATTENTION && <div style={{ background: '#FCF1DC', border: '1px solid #E8CD9A', borderRadius: 12, padding: '12px 15px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
         <AlertTriangle size={16} style={{ color: '#9A6A0B', flexShrink: 0, marginTop: 1 }} />
         <div>
           <div style={{ fontSize: 12.5, fontWeight: 900, color: '#9A6A0B' }}>DBS & certification attention needed</div>
           <div style={{ fontSize: 12, color: '#6B5A2E', marginTop: 2 }}>{TP_COACH_ATTENTION}</div>
         </div>
-      </div>
+      </div>}
 
       <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
         {(['All', 'Lead', 'Coach', 'Assistant', 'Apprentice'] as const).map(f => (
@@ -110,9 +108,10 @@ export function CoachesTab() {
         ))}
       </div>
 
+      {roster.length === 0 && <Card><EmptyState icon={ShieldCheck} title="No coaches yet" sub="Add your coaching team — DBS, safeguarding, First Aid and insurance are tracked with expiry alerts from day one." /></Card>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
         {coaches.map(c => {
-          const d = COACH_DETAILS[c.id] ?? fallbackDetail(c.name)
+          const d = COACH_DETAILS[c.id] ?? fallbackDetail(c.name, brand.emailDomain)
           return (
             <Card key={c.id} style={{ padding: 16, cursor: 'pointer' }}>
               <div onClick={() => setSelected(c)}>
@@ -160,13 +159,15 @@ export function CoachesTab() {
 
 // ─── TENORS ─────────────────────────────────────────────────────────────────
 export function TenorsTab() {
+  const { brand, data } = useImpact()
+  const { TP_TENORS, TP_TENOR_STATS_ROW, TP_VENUE_READINESS, TENOR_DETAILS } = data
   const [selected, setSelected] = useState<TpTenor | null>(null)
 
   if (selected) {
     return (
       <PersonDetailView
         person={{ name: selected.name, dbs: selected.dbs, sessionsCovered: selected.sessionsCovered, inducted: selected.inducted }}
-        detail={TENOR_DETAILS[selected.id] ?? fallbackDetail(selected.name)}
+        detail={TENOR_DETAILS[selected.id] ?? fallbackDetail(selected.name, brand.emailDomain)}
         kind="tenor"
         onBack={() => setSelected(null)}
       />
@@ -177,16 +178,17 @@ export function TenorsTab() {
     <div style={{ display: 'grid', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -50, marginBottom: 4, position: 'relative', zIndex: 1 }}>
         <button style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
-          <UserPlus size={14} /> Invite TENOR
+          <UserPlus size={14} /> Invite {brand.volunteer}
         </button>
       </div>
 
       <StatsRow items={TP_TENOR_STATS_ROW} />
 
       <Card>
-        <SectionTitle sub="Minimum two inducted TENORs per venue for a session to run">
+        <SectionTitle sub={`Minimum two inducted ${brand.volunteers} per venue for a session to run`}>
           <ShieldCheck size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Venue readiness
         </SectionTitle>
+        {TP_VENUE_READINESS.length === 0 && <EmptyState compact title="No venues to cover yet" sub={`Each weekend venue shows whether it has enough inducted ${brand.volunteers} to run.`} />}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
           {TP_VENUE_READINESS.map(v => (
             <div key={v.venue} style={{ background: '#F7F5F2', borderRadius: 10, padding: '11px 13px' }}>
@@ -194,15 +196,16 @@ export function TenorsTab() {
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{v.venue}</div>
                 <Pill tone={v.ready ? 'green' : 'red'}>{v.ready ? 'READY' : 'AT RISK'}</Pill>
               </div>
-              <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 4 }}>{v.tenors} TENORs (min {v.min}){v.note ? ` — ${v.note}` : ''}</div>
+              <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 4 }}>{v.tenors} {brand.volunteers} (min {v.min}){v.note ? ` — ${v.note}` : ''}</div>
             </div>
           ))}
         </div>
       </Card>
 
+      {TP_TENORS.length === 0 && <Card><EmptyState icon={UserPlus} title={`No ${brand.volunteers} yet`} sub="Invite volunteer parents — inductions, DBS and the venues they cover are tracked here." /></Card>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
         {TP_TENORS.map(t => {
-          const d = TENOR_DETAILS[t.id] ?? fallbackDetail(t.name)
+          const d = TENOR_DETAILS[t.id] ?? fallbackDetail(t.name, brand.emailDomain)
           return (
             <Card key={t.id} style={{ padding: 16, cursor: 'pointer' }}>
               <div onClick={() => setSelected(t)}>

@@ -65,7 +65,7 @@ export default function ImpactPage() {
             The platform for organisations delivering sport and activity into schools and communities. Your registers become funder-grade impact evidence, a built-in fundraising engine keeps unfunded schools in the game, and a parent app ties it all together — on your own brand.
           </p>
           <div style={{ display: 'flex', gap: 12, marginTop: 30, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Link href="/tenproject/demo" style={{ background: PURPLE, color: '#fff', borderRadius: 10, padding: '14px 24px', fontSize: 15, fontWeight: 800, textDecoration: 'none' }}>
+            <Link href="/impact/demo" style={{ background: PURPLE, color: '#fff', borderRadius: 10, padding: '14px 24px', fontSize: 15, fontWeight: 800, textDecoration: 'none' }}>
               See it live in a demo →
             </Link>
             <a href="mailto:hello@lumiosports.com?subject=Lumio%20Impact" style={{ background: 'transparent', color: TEXT, border: `1.5px solid ${BORDER}`, borderRadius: 10, padding: '14px 24px', fontSize: 15, fontWeight: 800, textDecoration: 'none' }}>
@@ -159,7 +159,7 @@ export default function ImpactPage() {
             We white-label it to your brand, run it on your domain, and get you from paper and inboxes to funder-ready in a term.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link href="/tenproject/demo" style={{ background: PURPLE, color: '#fff', borderRadius: 10, padding: '15px 28px', fontSize: 15.5, fontWeight: 800, textDecoration: 'none' }}>
+            <Link href="/impact/demo" style={{ background: PURPLE, color: '#fff', borderRadius: 10, padding: '15px 28px', fontSize: 15.5, fontWeight: 800, textDecoration: 'none' }}>
               See it live in a demo →
             </Link>
             <a href="mailto:hello@lumiosports.com?subject=Lumio%20Impact" style={{ background: 'transparent', color: TEXT, border: `1.5px solid ${BORDER}`, borderRadius: 10, padding: '15px 28px', fontSize: 15.5, fontWeight: 800, textDecoration: 'none' }}>

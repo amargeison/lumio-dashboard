@@ -5,15 +5,18 @@
 
 import React, { useState } from 'react'
 import { ArrowLeft, School, Phone, Mail, ShieldCheck, Package, PoundSterling, MapPin, TrendingUp, ClipboardList } from 'lucide-react'
-import { Card, SectionTitle, Pill, Thermometer } from './ui'
+import { Card, SectionTitle, Pill, Thermometer, EmptyState } from './ui'
 import { SchoolReadinessCard } from './SportNetworkTab'
-import { TP_RED, TP_DARK, SCHOOLS, SCHOOL_DETAILS, type DemoSchool } from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK, type DemoSchool } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> = {
   running: 'green', fundraising: 'red', confirmed: 'dark', enquiry: 'grey', complete: 'amber',
 }
 
 export default function SchoolsTab({ initialId }: { initialId?: string }) {
+  const { copy, data } = useImpact()
+  const { SCHOOLS, SCHOOL_DETAILS } = data
   const [selected, setSelected] = useState<DemoSchool | null>(
     initialId ? SCHOOLS.find(s => s.id === initialId) ?? null : null,
   )
@@ -124,7 +127,7 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
               <SectionTitle sub={`${d.fundraising.supporters} supporters — feeds the public page and match-funding triggers`}>
                 <PoundSterling size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Fundraising campaign
               </SectionTitle>
-              <a href="/fundraise/st-clements-demo" target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 800, color: '#fff', background: TP_RED, borderRadius: 8, padding: '8px 13px', textDecoration: 'none' }}>View public page</a>
+              <a href={copy.school.publicPageUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 800, color: '#fff', background: TP_RED, borderRadius: 8, padding: '8px 13px', textDecoration: 'none' }}>View public page</a>
             </div>
             <Thermometer raised={d.fundraising.raised} target={d.fundraising.target} height={16} />
           </Card>
@@ -138,6 +141,7 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
           <Card>
             <SectionTitle>Notes</SectionTitle>
             <div style={{ display: 'grid', gap: 6 }}>
+              {d && d.notes.length === 0 && <div style={{ fontSize: 12.5, color: '#8A847E' }}>No notes yet.</div>}
               {d?.notes.map(n => <div key={n} style={{ fontSize: 12.5, color: '#5B554F', background: '#F7F5F2', borderRadius: 9, padding: '9px 12px' }}>{n}</div>)}
             </div>
           </Card>
@@ -146,6 +150,7 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
               <ClipboardList size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Next actions
             </SectionTitle>
             <div style={{ display: 'grid', gap: 6 }}>
+              {d && d.nextActions.length === 0 && <div style={{ fontSize: 12.5, color: '#8A847E' }}>No actions yet.</div>}
               {d?.nextActions.map(n => <div key={n} style={{ fontSize: 12.5, color: TP_DARK, background: '#FDE8E8', borderRadius: 9, padding: '9px 12px', fontWeight: 600 }}>→ {n}</div>)}
             </div>
           </Card>
@@ -162,6 +167,7 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
         </button>
       </div>
 
+      {SCHOOLS.length === 0 && <Card><EmptyState icon={School} title="No schools yet" sub="Add a partner school to track its profile, contacts, programme, cohorts, kit, fundraising and next actions in one place." /></Card>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
         {SCHOOLS.map(s => {
           const d = SCHOOL_DETAILS[s.id]

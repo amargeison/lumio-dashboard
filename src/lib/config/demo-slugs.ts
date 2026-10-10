@@ -19,7 +19,10 @@
 // /<sport>/demo via tier-level redirect pages (src/app/<sport>/demo/page.tsx
 // → /<sport>/<canonical-slug>) rather than calling isDemoSlug, but adding
 // them keeps the URL convention uniform across the product.
-const VALID_SPORTS = new Set(['tennis', 'golf', 'darts', 'boxing', 'football', 'cricket', 'rugby', 'womens'])
+//
+// 'impact' is Lumio Impact (programme platform, not a sport): /impact/demo is
+// the fictional Northvale / Rally Ten demo, every other slug is a live portal.
+const VALID_SPORTS = new Set(['tennis', 'golf', 'darts', 'boxing', 'football', 'cricket', 'rugby', 'womens', 'impact'])
 
 export function isDemoSlug(slug: string, sport: string): boolean {
   if (!VALID_SPORTS.has(sport)) return false

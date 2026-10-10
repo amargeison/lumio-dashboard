@@ -5,8 +5,9 @@
 
 import React from 'react'
 import { TrendingUp, Users, Download, Sparkles, HeartHandshake, MapPin, ShieldCheck, PieChart, Repeat, Coins, Quote } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
-import { TP_RED, TP_DARK, INSIGHTS, FUNNEL } from '@/data/tenproject/demo-data'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
+import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 import { openFunderDoc } from '../_lib/funder-docs'
 
 const RED_SOFT = '#F0524F'
@@ -40,6 +41,9 @@ function BarRow({ label, pct, width = 118, color = RED_SOFT, suffix = '%' }: { l
 }
 
 export default function Insights() {
+  const ctx = useImpact()
+  const { brand, copy } = ctx
+  const { INSIGHTS, FUNNEL } = ctx.data
   const I = INSIGHTS
   const maxTerm = Math.max(...I.termGrowth.map(t => t.children))
   const trend = I.weekendTrend
@@ -61,16 +65,18 @@ export default function Insights() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={() => openFunderDoc('funder-pack')} style={{ background: '#fff', color: TP_DARK, border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+            <button onClick={() => openFunderDoc('funder-pack', ctx)} style={{ background: '#fff', color: TP_DARK, border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <Download size={14} /> Export funder pack
             </button>
-            <button onClick={() => openFunderDoc('bid-narrative')} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+            <button onClick={() => openFunderDoc('bid-narrative', ctx)} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <Sparkles size={14} /> AI bid narrative
             </button>
           </div>
         </div>
       </Card>
 
+      {I.headline.length === 0 && <Card><EmptyState icon={TrendingUp} title="No programme data yet" sub="Participation, conversion, demographics, wellbeing, compliance and social value fill in automatically from registers, QR check-ins and family surveys as soon as sessions run." /></Card>}
+      {!(I.headline.length === 0) && (<>
       {/* Headline tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
         {I.headline.map(h => (
@@ -97,7 +103,7 @@ export default function Insights() {
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, color: '#8A847E', fontWeight: 700, marginTop: 2 }}>
             {I.monthlyReach.map(m => <span key={m.m}>{m.m}</span>)}
           </div>
-          <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 8 }}>Peak 2,140/week in July — the December dip is the school holidays, not attrition.</div>
+          <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 8 }}>{copy.insights.reachNote}</div>
         </Card>
         <Card>
           <SectionTitle sub="Per week in curriculum time, by term">Participation growth</SectionTitle>
@@ -110,7 +116,7 @@ export default function Insights() {
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 8 }}>3.3× in five terms.</div>
+          <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 8 }}>{copy.insights.growthNote}</div>
         </Card>
       </div>
 
@@ -193,7 +199,7 @@ export default function Insights() {
             ))}
           </div>
           <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 12, background: '#F7F5F2', borderRadius: 9, padding: '9px 11px' }}>
-            Willowbrook’s 26% is the benchmark — its recipe (early activation, one linked venue) is being rolled out.
+            {copy.insights.conversionNote}
           </div>
         </Card>
       </div>
@@ -227,7 +233,7 @@ export default function Insights() {
       {/* Wellbeing survey + boroughs */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Card>
-          <SectionTitle sub="% of surveyed families citing each area — Ten Project’s own impact taxonomy">
+          <SectionTitle sub={`% of surveyed families citing each area — ${brand.org}’s own impact taxonomy`}>
             <HeartHandshake size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />What families say it improves
           </SectionTitle>
           <div style={{ display: 'grid', gap: 6 }}>{I.impactSurvey.map(a => <BarRow key={a.area} label={a.area} pct={a.pct} />)}</div>
@@ -252,7 +258,7 @@ export default function Insights() {
             </tbody>
           </table>
           <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 10, background: '#F7F5F2', borderRadius: 9, padding: '9px 11px' }}>
-            3 boroughs, 6 schools, 3 community venues — with a Brookhaven expansion enquiry in the pipeline.
+            {copy.insights.boroughNote}
           </div>
         </Card>
       </div>
@@ -260,7 +266,7 @@ export default function Insights() {
       {/* Compliance + social value */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 16 }}>
         <Card>
-          <SectionTitle sub="Safeguarding you can prove — every coach and TENOR tracked">
+          <SectionTitle sub={`Safeguarding you can prove — every coach and ${brand.volunteer} tracked`}>
             <ShieldCheck size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Compliance & safeguarding
           </SectionTitle>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'space-around' }}>
@@ -278,7 +284,7 @@ export default function Insights() {
             {([
               [`£${I.socialValue.perChild}`, 'cost per child, per programme'],
               [`£${I.socialValue.svRatio}`, 'social value per £1 spent'],
-              [I.socialValue.volunteerHours.toLocaleString(), 'TENOR volunteer hours / year'],
+              [I.socialValue.volunteerHours.toLocaleString(), `${brand.volunteer} volunteer hours / year`],
               [`${I.socialValue.clubReferrals}`, 'children referred to local clubs'],
             ] as [string, string][]).map(([v, l]) => (
               <div key={l} style={{ background: '#F7F5F2', borderRadius: 10, padding: '12px 14px' }}>
@@ -288,7 +294,7 @@ export default function Insights() {
             ))}
           </div>
           <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 12 }}>
-            £4.70 back for every £1 — through raised activity, reduced inactivity risk, family wellbeing and volunteer contribution.
+            {copy.insights.socialValueNote}
           </div>
         </Card>
       </div>
@@ -308,6 +314,7 @@ export default function Insights() {
           <Pill tone="grey">DEMO DATA</Pill>&nbsp; Every figure on this page draws from registers, QR check-ins and surveys — one click to a branded PDF for any school, borough or trust.
         </div>
       </Card>
+      </>)}
     </div>
   )
 }

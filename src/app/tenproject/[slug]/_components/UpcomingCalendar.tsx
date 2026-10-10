@@ -7,7 +7,8 @@
 import React from 'react'
 import { CalendarDays, RefreshCw } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
-import { TP_RED, TP_DARK, CAL_EVENTS, type CalEvent } from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK, type CalEvent } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 const DAYS: CalEvent['day'][] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -24,6 +25,7 @@ export default function UpcomingCalendar({ role, events: eventsProp, title, sub 
   title?: string
   sub?: string
 }) {
+  const { CAL_EVENTS } = useImpact().data
   const events = eventsProp ?? CAL_EVENTS[role ?? 'coach']
 
   return (
@@ -65,6 +67,9 @@ export default function UpcomingCalendar({ role, events: eventsProp, title, sub 
         })}
       </div>
 
+      {events.length === 0 && (
+        <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 10, fontWeight: 700 }}>Nothing scheduled this week — sessions appear here as soon as they're booked.</div>
+      )}
       <div style={{ fontSize: 11, color: '#8A847E', marginTop: 10 }}>
         Session changes (venue moved, weather-off) update everyone’s calendar and send a scoped message — no more chasing.
       </div>

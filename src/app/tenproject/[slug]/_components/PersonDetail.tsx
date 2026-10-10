@@ -10,6 +10,7 @@ import { ArrowLeft, Phone, Mail, School, MapPin, X, UserPlus } from 'lucide-reac
 import { Card, SectionTitle, Pill } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
 import { TP_RED, TP_DARK, type TpCoach, type TpPersonDetail } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 const DBS_TONE: Record<string, 'green' | 'amber' | 'red' | 'grey'> = {
   valid: 'green', 'due-soon': 'amber', expired: 'red', missing: 'red', pending: 'amber', 'n/a': 'grey',
@@ -23,6 +24,7 @@ export function PersonDetailView({ person, detail, kind, onBack }: {
   kind: 'coach' | 'tenor'
   onBack: () => void
 }) {
+  const { brand } = useImpact()
   const stats: [string | number, string][] = kind === 'coach'
     ? [[person.sessionsWeek ?? 0, 'THIS WEEK'], [person.childrenCovered ?? 0, 'CHILDREN'], [detail.assignments.length, 'ASSIGNMENTS'], [detail.availability, 'AVAILABILITY']]
     : [[person.sessionsCovered ?? 0, 'SESSIONS COVERED'], [detail.assignments.length, 'VENUE'], [person.inducted ? 'YES' : 'PENDING', 'INDUCTED'], [detail.availability, 'AVAILABILITY']]
@@ -30,7 +32,7 @@ export function PersonDetailView({ person, detail, kind, onBack }: {
   return (
     <div style={{ display: 'grid', gap: 16 }}>
       <button onClick={onBack} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#fff', color: TP_DARK, border: '1px solid #E7E2DC', borderRadius: 9, padding: '8px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', width: 'fit-content' }}>
-        <ArrowLeft size={14} /> All {kind === 'coach' ? 'coaches' : 'TENORs'}
+        <ArrowLeft size={14} /> All {kind === 'coach' ? 'coaches' : brand.volunteers}
       </button>
 
       {/* Header */}
@@ -45,7 +47,7 @@ export function PersonDetailView({ person, detail, kind, onBack }: {
               {person.name} {person.role && <Pill tone={person.role === 'Lead' ? 'red' : 'grey'}>{person.role.toUpperCase()}</Pill>} {person.online && <span style={{ fontSize: 11, color: '#187A3C', fontWeight: 800 }}>● Active</span>}
             </div>
             <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 3 }}>
-              {kind === 'coach' ? person.qual : 'Volunteer parent (TENOR)'} · {detail.availability}
+              {kind === 'coach' ? person.qual : `Volunteer parent (${brand.volunteer})`} · {detail.availability}
             </div>
             <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 5 }}>
               <Phone size={12} style={{ verticalAlign: '-1px', marginRight: 5 }} />{detail.phone}
@@ -104,7 +106,7 @@ export function PersonDetailView({ person, detail, kind, onBack }: {
 
       {/* Assignments */}
       <Card>
-        <SectionTitle sub={kind === 'coach' ? 'The schools and weekend venues this coach delivers' : 'The venue this TENOR covers'}>
+        <SectionTitle sub={kind === 'coach' ? 'The schools and weekend venues this coach delivers' : `The venue this ${brand.volunteer} covers`}>
           Assigned {kind === 'coach' ? 'schools & venues' : 'venue'}
         </SectionTitle>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
@@ -134,6 +136,7 @@ export function AddCoachModal({ onAdd, onClose }: {
   onAdd: (coach: TpCoach) => void
   onClose: () => void
 }) {
+  const { copy } = useImpact()
   const [name, setName] = useState('')
   const [role, setRole] = useState<TpCoach['role']>('Coach')
   const [qual, setQual] = useState('LTA Level 2')
@@ -195,7 +198,7 @@ export function AddCoachModal({ onAdd, onClose }: {
           <div>
             <span style={label}>INITIAL ASSIGNMENT</span>
             <select value={schools} onChange={e => setSchools(e.target.value)} style={field}>
-              {['Unassigned', 'Oakridge Primary', 'Meridian Park Primary (Sept)', 'Kingsmead Rec Ground (Sat)', 'Bramley Green Courts (Sat)', 'Elmwood Park Courts (Sun)'].map(s => <option key={s}>{s}</option>)}
+              {copy.people.assignmentOptions.map(s => <option key={s}>{s}</option>)}
             </select>
           </div>
         </div>

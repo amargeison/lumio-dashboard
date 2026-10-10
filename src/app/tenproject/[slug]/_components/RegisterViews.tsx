@@ -2,15 +2,16 @@
 
 import React, { useEffect, useState } from 'react'
 import { QrCode, WifiOff, CheckCircle, Users, ClipboardList, Sparkles, PlayCircle, BookOpen, ShieldAlert, Package, Phone, FileText, BarChart3, MapPin, GraduationCap, CalendarDays, Send, Navigation, Printer, Share2, School } from 'lucide-react'
-import { Card, SectionTitle, Pill } from './ui'
+import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
 import { SendMessageWizard } from './CommsTab'
 import { openResourceDoc, openSessionCardDoc } from '../_lib/resource-docs'
-import { TP_RED, TP_DARK, COHORT_CHILDREN, WEEKEND_FAMILIES, VENUES, CURRICULUM, WEEK4_SESSION_PLAN, WEEK4_SCHOOL_PLAN, OAKRIDGE_ADDRESS, TENOR_RESOURCES, COACH_STATS, COACH_WEEKEND, COACH_RESOURCES, VENUE_DETAILS } from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
+import { useImpact, fill, type ImpactDataset } from './ImpactDataContext'
 
 // ─── Shared session run-sheet card (used by Coach today/weekend + TENOR) ────
 function SessionRunSheet({ plan, context, onPrint }: {
-  plan: typeof WEEK4_SESSION_PLAN
+  plan: ImpactDataset['WEEK4_SESSION_PLAN']
   context: string
   onPrint: () => void
 }) {
@@ -87,6 +88,9 @@ export const TENOR_SECTIONS: { id: TenorSection; label: string }[] = [
 
 // ─── COACH: today / weekend / stats / resources ─────────────────────────────
 export function CoachView({ section }: { section?: CoachSection }) {
+  const ctx = useImpact()
+  const { brand, copy } = ctx
+  const { COHORT_CHILDREN, VENUES, CURRICULUM, WEEK4_SESSION_PLAN, WEEK4_SCHOOL_PLAN, OAKRIDGE_ADDRESS, COACH_STATS, COACH_WEEKEND, COACH_RESOURCES, VENUE_DETAILS } = ctx.data
   const [children, setChildren] = useState(COHORT_CHILDREN)
   const [skillTapped, setSkillTapped] = useState<Record<string, boolean>>({})
   const [tab, setTab] = useState<'today' | 'weekend' | 'stats' | 'resources'>(section ?? 'stats')
@@ -96,6 +100,11 @@ export function CoachView({ section }: { section?: CoachSection }) {
   const present = children.filter(c => c.present).length
   const block = CURRICULUM[1]
   const maxTrend = Math.max(...COACH_STATS.attendanceTrend)
+  // Live portals before any programme is assigned to this coach
+  const noWeekend = !COACH_WEEKEND.lead.venue
+  const noStats = COACH_STATS.headline.length === 0
+  const noCohorts = COACH_STATS.cohortProgress.length === 0
+  const noResources = COACH_RESOURCES.curriculum.length + COACH_RESOURCES.development.length + COACH_RESOURCES.admin.length === 0
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -120,17 +129,20 @@ export function CoachView({ section }: { section?: CoachSection }) {
           <Send size={14} /> Send message
         </button>
       </div>
-      {wizard && <SendMessageWizard onClose={() => setWizard(false)} defaultRecipient="Oakridge Primary" />}
+      {wizard && <SendMessageWizard onClose={() => setWizard(false)} defaultRecipient={copy.coach.messageRecipient} />}
 
       {/* ── WEEKEND ── */}
-      {tab === 'weekend' && (<>
+      {tab === 'weekend' && noWeekend && (
+        <Card><EmptyState icon={CalendarDays} title="No weekend sessions yet" sub={`Weekend family sessions you lead or support — with venue access, ${brand.volunteer} team and the week's session card — appear here once you're assigned a venue.`} /></Card>
+      )}
+      {tab === 'weekend' && !noWeekend && (<>
         <Card style={{ background: TP_DARK, border: 'none' }}>
           <div style={{ color: '#fff', fontSize: 15, fontWeight: 900 }}>Your weekend — 2 sessions</div>
           <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 4 }}>{COACH_WEEKEND.setupDuty}</div>
         </Card>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           {[COACH_WEEKEND.lead, COACH_WEEKEND.support].map(s => {
-            const vd = VENUE_DETAILS[s.venue.includes('Kingsmead') ? 'kingsmead' : 'elmwood']
+            const vd = VENUE_DETAILS[VENUES.find(v => v.name === s.venue)?.id ?? '']
             const q = encodeURIComponent(`${vd.address}, ${vd.postcode}`)
             return (
               <Card key={s.venue}>
@@ -154,13 +166,13 @@ export function CoachView({ section }: { section?: CoachSection }) {
                 </div>
                 <div style={{ fontSize: 12, color: '#5B554F', marginTop: 10, background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>{s.note}</div>
                 <div style={{ display: 'grid', gap: 5, marginTop: 10, fontSize: 11.5, color: '#6B6560' }}>
-                  <div><Users size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />TENORs: {s.tenors.join(', ')}</div>
+                  <div><Users size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />{brand.volunteers}: {s.tenors.join(', ')}</div>
                   <div><Package size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />Storage: {vd.storage}</div>
                   <div><QrCode size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />Access: {vd.access} · last register: <strong style={{ color: TP_RED }}>{s.lastCount}</strong> children · {vd.familiesRegistered} families registered</div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                  <button onClick={() => openResourceDoc('Week 4 session plan — BACKHAND (family)')} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>Open session plan</button>
-                  <button onClick={() => setWizard(true)} style={{ background: '#fff', color: TP_DARK, border: '1.5px solid #E7E2DC', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>Message TENORs</button>
+                  <button onClick={() => openResourceDoc(copy.coach.familyPlanTitle, ctx)} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>Open session plan</button>
+                  <button onClick={() => setWizard(true)} style={{ background: '#fff', color: TP_DARK, border: '1.5px solid #E7E2DC', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>Message {brand.volunteers}</button>
                 </div>
               </Card>
             )
@@ -169,13 +181,17 @@ export function CoachView({ section }: { section?: CoachSection }) {
 
         <SessionRunSheet
           plan={WEEK4_SESSION_PLAN}
-          context="Saturday's family session at Kingsmead — you lead, TENORs run the register"
-          onPrint={openSessionCardDoc}
+          context={copy.coach.weekendContext}
+          onPrint={() => openSessionCardDoc(ctx)}
         />
       </>)}
 
       {/* ── MY STATS ── */}
-      {tab === 'stats' && (<>
+      {tab === 'stats' && noStats && (<>
+        <Card><EmptyState icon={BarChart3} title="No sessions delivered yet" sub="Your children coached, sessions, attendance, stickers and compliance build automatically from your registers." /></Card>
+        <UpcomingCalendar role="coach" />
+      </>)}
+      {tab === 'stats' && !noStats && (<>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
           {COACH_STATS.headline.map(h => (
             <Card key={h.label} style={{ padding: '14px 16px' }}>
@@ -213,7 +229,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
                   <div key={i} style={{ flex: 1, height: `${(v / maxTrend) * 100}%`, background: i === COACH_STATS.attendanceTrend.length - 1 ? TP_RED : '#E8B4B3', borderRadius: '4px 4px 0 0' }} title={`${v}%`} />
                 ))}
               </div>
-              <div style={{ fontSize: 11, color: '#6B6560', marginTop: 8 }}>Latest: {COACH_STATS.attendanceTrend[COACH_STATS.attendanceTrend.length - 1]}% — above the programme average of 91%.</div>
+              <div style={{ fontSize: 11, color: '#6B6560', marginTop: 8 }}>Latest: {COACH_STATS.attendanceTrend[COACH_STATS.attendanceTrend.length - 1]}%{copy.coach.trendNote}</div>
             </Card>
             <Card>
               <SectionTitle sub="HQ sees this too — expiries flagged before they bite">
@@ -234,7 +250,10 @@ export function CoachView({ section }: { section?: CoachSection }) {
       </>)}
 
       {/* ── RESOURCES ── */}
-      {tab === 'resources' && (
+      {tab === 'resources' && noResources && (
+        <Card><EmptyState icon={BookOpen} title="No resources published yet" sub="Session plans, schemes of work, CPD and safeguarding guides your HQ publishes appear here." /></Card>
+      )}
+      {tab === 'resources' && !noResources && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
           {([
             { title: 'Curriculum & session plans', icon: ClipboardList, items: COACH_RESOURCES.curriculum },
@@ -247,7 +266,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
                 <SectionTitle><Icon size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{col.title}</SectionTitle>
                 <div style={{ display: 'grid', gap: 7 }}>
                   {col.items.map(r => (
-                    <button key={r.title} onClick={() => openResourceDoc(r.title)} style={{ background: '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
+                    <button key={r.title} onClick={() => openResourceDoc(r.title, ctx)} style={{ background: '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
                       <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{r.title} <span style={{ color: TP_RED }}>▸</span></div>
                       <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2 }}>{r.desc}</div>
                     </button>
@@ -260,7 +279,10 @@ export function CoachView({ section }: { section?: CoachSection }) {
       )}
 
       {/* ── SCHOOLS ── */}
-      {tab === 'today' && (<>
+      {tab === 'today' && noCohorts && (
+        <Card><EmptyState icon={School} title="No schools assigned yet" sub="When HQ assigns you a school programme, today's session, the one-tap register and the run-sheet appear here." /></Card>
+      )}
+      {tab === 'today' && !noCohorts && (<>
       {/* My schools strip */}
       <Card>
         <SectionTitle sub="The schools you deliver — today’s live session is highlighted">
@@ -285,9 +307,9 @@ export function CoachView({ section }: { section?: CoachSection }) {
       </Card>
 
       <Card style={{ background: TP_DARK, border: 'none' }}>
-        <div style={{ color: '#fff', fontSize: 16, fontWeight: 900 }}>Oakridge Primary — Y3 Falcons · Week 4 of 10</div>
+        <div style={{ color: '#fff', fontSize: 16, fontWeight: 900 }}>{copy.coach.todayTitle}</div>
         <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 4 }}>
-          Today 1.15–2.15pm · {block.skill} block · Mrs Patel (PE lead) assisting — hand-over segment in together time
+          {fill(copy.coach.todaySub, brand, { skill: block.skill })}
         </div>
         <div style={{ color: '#C9C4BE', fontSize: 12, marginTop: 6 }}>
           <MapPin size={12} style={{ verticalAlign: '-1px', marginRight: 5, color: TP_RED }} />{OAKRIDGE_ADDRESS} · sign in at reception
@@ -300,8 +322,8 @@ export function CoachView({ section }: { section?: CoachSection }) {
             <Navigation size={12} /> Directions
           </a>
           <Pill tone="red">{present} / {children.length} PRESENT</Pill>
-          <Pill tone="grey">KIT: 24 rackets · red balls · cones</Pill>
-          <Pill tone="grey">NEXT: Y4 Kestrels 2.20pm</Pill>
+          <Pill tone="grey">{copy.coach.kitPill}</Pill>
+          <Pill tone="grey">{copy.coach.nextPill}</Pill>
         </div>
       </Card>
 
@@ -326,7 +348,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
                   onClick={() => setSkillTapped(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
                   style={{ marginTop: 6, width: '100%', background: skillTapped[c.id] ? '#187A3C' : '#FDE8E8', color: skillTapped[c.id] ? '#fff' : TP_RED, border: 'none', borderRadius: 7, padding: '5px 8px', fontSize: 10.5, fontWeight: 800, cursor: 'pointer' }}
                 >
-                  {skillTapped[c.id] ? '★ BACKHAND recorded' : '+ record BACKHAND'}
+                  {skillTapped[c.id] ? `★ ${block.skill} recorded` : `+ record ${block.skill}`}
                 </button>
               )}
             </div>
@@ -340,7 +362,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
       <SessionRunSheet
         plan={WEEK4_SCHOOL_PLAN}
         context="Everything you need for today's in-school session"
-        onPrint={() => openResourceDoc('Week 4 session plan — BACKHAND (school)')}
+        onPrint={() => openResourceDoc(copy.coach.schoolPlanTitle, ctx)}
       />
       </>)}
     </div>
@@ -349,6 +371,9 @@ export function CoachView({ section }: { section?: CoachSection }) {
 
 // ─── TENOR: weekend venue + QR scan-in feed + resources ─────────────────────
 export function TenorView({ section }: { section?: TenorSection }) {
+  const ctx = useImpact()
+  const { brand, copy } = ctx
+  const { WEEKEND_FAMILIES, VENUES, WEEK4_SESSION_PLAN, TENOR_RESOURCES, VENUE_DETAILS } = ctx.data
   const [families, setFamilies] = useState(WEEKEND_FAMILIES)
   const [tab, setTab] = useState<'session' | 'resources'>(section ?? 'session')
   const [wizard, setWizard] = useState(false)
@@ -356,14 +381,17 @@ export function TenorView({ section }: { section?: TenorSection }) {
   useEffect(() => { if (section !== undefined) setTab(section) }, [section])
   const [shared, setShared] = useState(false)
   const venue = VENUES[0]
-  const vd = VENUE_DETAILS[venue.id]
-  const mapQ = encodeURIComponent(`${vd.address}, ${vd.postcode}`)
+  const vd = venue ? VENUE_DETAILS[venue.id] : undefined
+  const mapQ = encodeURIComponent(`${vd?.address}, ${vd?.postcode}`)
+  // Live portals before a venue and volunteer team exist
+  const noVenue = !venue
+  const noResources = TENOR_RESOURCES.weeks.length + TENOR_RESOURCES.guides.length + TENOR_RESOURCES.contacts.length === 0
   const checkedIn = families.filter(f => f.checkedIn)
   const childCount = checkedIn.reduce((n, f) => n + f.children.split('+').length, 0)
   const plan = WEEK4_SESSION_PLAN
 
   async function shareCard() {
-    const text = `Ten Project — Week ${plan.week} ${plan.skill} session card: ${plan.blocks.map(b => `${b.time} ${b.title}`).join(' · ')}`
+    const text = `${brand.org} — Week ${plan.week} ${plan.skill} session card: ${plan.blocks.map(b => `${b.time} ${b.title}`).join(' · ')}`
     try {
       if (navigator.share) await navigator.share({ title: 'Session card — Week 4', text })
       else { await navigator.clipboard.writeText(text); setShared(true); setTimeout(() => setShared(false), 2000) }
@@ -391,9 +419,12 @@ export function TenorView({ section }: { section?: TenorSection }) {
           <Send size={14} /> Send message
         </button>
       </div>
-      {wizard && <SendMessageWizard onClose={() => setWizard(false)} defaultRecipient="Kingsmead families" />}
+      {wizard && <SendMessageWizard onClose={() => setWizard(false)} defaultRecipient={copy.tenor.messageRecipient} />}
 
-      {tab === 'resources' && (
+      {tab === 'resources' && noResources && (
+        <Card><EmptyState icon={PlayCircle} title="No resources yet" sub="The shot videos, session cards, guides and who-to-call contacts for your venue appear here." /></Card>
+      )}
+      {tab === 'resources' && !noResources && (
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
           <Card>
             <SectionTitle sub="The shot videos and session cards for every week of the programme">
@@ -417,7 +448,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
               </SectionTitle>
               <div style={{ display: 'grid', gap: 7 }}>
                 {TENOR_RESOURCES.guides.map(g => (
-                  <button key={g.title} onClick={() => openResourceDoc(g.title)} style={{ background: '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
+                  <button key={g.title} onClick={() => openResourceDoc(g.title, ctx)} style={{ background: '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
                     <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{g.title} <span style={{ color: TP_RED }}>▸</span></div>
                     <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2 }}>{g.desc}</div>
                   </button>
@@ -442,13 +473,17 @@ export function TenorView({ section }: { section?: TenorSection }) {
         </div>
       )}
 
-      {tab === 'session' && (<>
+      {tab === 'session' && noVenue && (<>
+        <Card><EmptyState icon={MapPin} title="No weekend session yet" sub="Once you're inducted onto a venue, today's family session, the gate QR, the live count and the register appear here." /></Card>
+        <UpcomingCalendar role="tenor" />
+      </>)}
+      {tab === 'session' && !noVenue && venue && vd && (<>
       {/* eslint-disable-next-line no-lone-blocks */}
       <Card style={{ background: TP_DARK, border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
           <div>
             <div style={{ color: '#fff', fontSize: 16, fontWeight: 900 }}>{venue.name} — Family Session</div>
-            <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 4 }}>{venue.day} {venue.time} · you + 2 TENORs on duty · equipment in the green store box</div>
+            <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 4 }}>{venue.day} {venue.time} · {fill(copy.tenor.sessionDuty, brand)}</div>
             <div style={{ color: '#C9C4BE', fontSize: 12, marginTop: 6 }}>
               <MapPin size={12} style={{ verticalAlign: '-1px', marginRight: 5, color: TP_RED }} />{vd.address}, {vd.postcode}
             </div>
@@ -481,7 +516,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
                   <div style={{ fontSize: 11, color: '#6B6560' }}>{f.children}</div>
                 </div>
                 {f.checkedIn ? (
-                  <Pill tone={f.via === 'QR' ? 'green' : 'dark'}>{f.via === 'QR' ? '✓ QR SCAN' : '✓ TENOR TAP'}</Pill>
+                  <Pill tone={f.via === 'QR' ? 'green' : 'dark'}>{f.via === 'QR' ? '✓ QR SCAN' : `✓ ${brand.volunteerUpper} TAP`}</Pill>
                 ) : (
                   <button
                     onClick={() => setFamilies(prev => prev.map(x => x.id === f.id ? { ...x, checkedIn: true, via: 'TENOR' } : x))}
@@ -525,7 +560,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
             <ClipboardList size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Session card — Week {plan.week}: {plan.skill}
           </SectionTitle>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={openSessionCardDoc} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
+            <button onClick={() => openSessionCardDoc(ctx)} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
               <Printer size={13} /> Print
             </button>
             <button onClick={shareCard} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: TP_DARK, border: '1px solid #E7E2DC', borderRadius: 8, padding: '8px 13px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>

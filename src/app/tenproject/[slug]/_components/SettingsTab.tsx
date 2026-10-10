@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react'
 import { Building2, Palette, Plug, Bell, Users, ShieldCheck, Moon, MessageSquare } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
@@ -29,6 +30,17 @@ function Row({ label, desc, on, onChange }: { label: string; desc: string; on: b
 }
 
 export default function SettingsTab() {
+  const { brand, copy } = useImpact()
+  // Live portals have no demo copy — fall back to the organisation's own brand.
+  const commsRows: [string, string][] = copy.settings.commsRows.length ? copy.settings.commsRows : [
+    ['Sender name', brand.org],
+    ['Reply-to', `info@${brand.emailDomain}`],
+    ['Newsletter footer', 'Charity details · unsubscribe · preference centre (auto-added)'],
+  ]
+  const orgRows: [string, string][] = copy.settings.orgRows.length ? copy.settings.orgRows : [
+    ['Organisation', brand.legal],
+    ['Registered address', brand.address],
+  ]
   const [t, setT] = useState<Record<string, boolean>>({
     weeklyComms: true, sessionAlerts: true, dbsAlerts: true, fundingAlerts: true, digest: false,
     stripe: false, mailchimp: true, gcal: true, ms365: false, clubspark: true,
@@ -64,11 +76,7 @@ export default function SettingsTab() {
           <MessageSquare size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Communications
         </SectionTitle>
         <div style={{ display: 'grid', gap: 10, fontSize: 12.5, marginBottom: 6 }}>
-          {([
-            ['Sender name', 'Ten Project'],
-            ['Reply-to', 'info@tenproject.org.uk'],
-            ['Newsletter footer', 'Charity details · unsubscribe · preference centre (auto-added)'],
-          ] as [string, string][]).map(([l, v]) => (
+          {commsRows.map(([l, v]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, borderBottom: '1px solid #F0EBE5', paddingBottom: 8 }}>
               <span style={{ color: '#8A847E', fontWeight: 700 }}>{l}</span>
               <span style={{ fontWeight: 800, color: TP_DARK, textAlign: 'right' }}>{v}</span>
@@ -84,13 +92,7 @@ export default function SettingsTab() {
         <Card>
           <SectionTitle><Building2 size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Organisation</SectionTitle>
           <div style={{ display: 'grid', gap: 10, fontSize: 12.5 }}>
-            {([
-              ['Organisation', 'Ten Project Ltd'],
-              ['Registered address', '7 Cranmer Close, Morden, London, SM4 4SU'],
-              ['Programme admin', 'Harry Lloyd — harry@tenproject.org.uk'],
-              ['Safeguarding lead', 'HQ safeguarding lead · 07700 900789'],
-              ['Demo PIN', '••••••'],
-            ] as [string, string][]).map(([l, v]) => (
+            {orgRows.map(([l, v]) => (
               <div key={l} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, borderBottom: '1px solid #F0EBE5', paddingBottom: 8 }}>
                 <span style={{ color: '#8A847E', fontWeight: 700 }}>{l}</span>
                 <span style={{ fontWeight: 800, color: TP_DARK, textAlign: 'right' }}>{v}</span>
@@ -105,7 +107,7 @@ export default function SettingsTab() {
           <SectionTitle><Palette size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Branding</SectionTitle>
           <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: '#F7F5F2', borderRadius: 12, padding: '14px 16px' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tenproject_logo.png" alt="Ten Project" style={{ height: 40, width: 'auto' }} />
+            <img src={brand.logo} alt={brand.logoAlt} style={{ height: 40, width: 'auto' }} />
             <div style={{ display: 'flex', gap: 8 }}>
               {['#D7262C', '#111114', '#F7F5F2'].map(c => (
                 <div key={c} style={{ width: 26, height: 26, borderRadius: 7, background: c, border: '1px solid #E7E2DC' }} title={c} />
@@ -128,8 +130,8 @@ export default function SettingsTab() {
             <Plug size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Integrations
           </SectionTitle>
           <Row label="Stripe (donations & pledges)" desc="Powers online fundraising — pending the receiving-entity decision" on={t.stripe} onChange={flip('stripe')} />
-          <Row label="Mailchimp import" desc="One-off import of the existing family mailing list" on={t.mailchimp} onChange={flip('mailchimp')} />
-          <Row label="Google Calendar sync" desc="Coach / TENOR / school calendars stay in sync automatically" on={t.gcal} onChange={flip('gcal')} />
+          <Row label={copy.settings.importLabel || 'Mailing-list import'} desc={copy.settings.importDesc || 'One-off import of an existing family mailing list'} on={t.mailchimp} onChange={flip('mailchimp')} />
+          <Row label="Google Calendar sync" desc={`Coach / ${brand.volunteer} / school calendars stay in sync automatically`} on={t.gcal} onChange={flip('gcal')} />
           <Row label="Microsoft 365 sync" desc="Calendar + email for schools on Outlook" on={t.ms365} onChange={flip('ms365')} />
           <Row label="Partner booking platform (linked venues)" desc="External-booking hand-off for partner-run park sessions" on={t.clubspark} onChange={flip('clubspark')} />
         </Card>
@@ -141,7 +143,7 @@ export default function SettingsTab() {
           </SectionTitle>
           <Row label="Weekly parent comms" desc="Scoped session confirmations every Mon + Thu in term time" on={t.weeklyComms} onChange={flip('weeklyComms')} />
           <Row label="Missing register alerts" desc="Flag any session without a submitted register by 6pm" on={t.sessionAlerts} onChange={flip('sessionAlerts')} />
-          <Row label="DBS & certificate expiry alerts" desc="60 / 30 / 7 days before any coach or TENOR document lapses" on={t.dbsAlerts} onChange={flip('dbsAlerts')} />
+          <Row label="DBS & certificate expiry alerts" desc={`60 / 30 / 7 days before any coach or ${brand.volunteer} document lapses`} on={t.dbsAlerts} onChange={flip('dbsAlerts')} />
           <Row label="Fundraising triggers" desc="Match-funding thresholds and campaign completions" on={t.fundingAlerts} onChange={flip('fundingAlerts')} />
           <Row label="Weekly HQ digest" desc="Monday-morning programme-health email" on={t.digest} onChange={flip('digest')} />
         </Card>
@@ -157,7 +159,7 @@ export default function SettingsTab() {
             {([
               ['HQ / Programme admin', 'Everything', 'red'],
               ['Coach', 'Their schools, registers, resources, own compliance', 'grey'],
-              ['TENOR', 'Their venue, register, resources', 'grey'],
+              [brand.volunteer, 'Their venue, register, resources', 'grey'],
               ['School', 'Their cohorts, results, fundraising dashboard', 'grey'],
               ['Parent', 'Their children only — booklet, sessions, messages', 'grey'],
             ] as [string, string, 'red' | 'grey'][]).map(([role, scope, tone]) => (
@@ -177,7 +179,7 @@ export default function SettingsTab() {
           <Row label="Photography default: OFF" desc="Photos only where a family has explicitly consented — flag shown at every register" on={!t.photoDefault} onChange={flip('photoDefault')} />
           <Row label="Auto-retention policy" desc="Child records anonymised 2 years after last participation" on={t.retention} onChange={flip('retention')} />
           <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 10, background: '#F7F5F2', borderRadius: 9, padding: '9px 12px' }}>
-            Consent records carry a full audit trail. Data processing agreement: Lumio (processor) · Ten Project Ltd (controller).
+            Consent records carry a full audit trail. Data processing agreement: Lumio (processor) · {brand.legal} (controller).
           </div>
         </Card>
       </div>
