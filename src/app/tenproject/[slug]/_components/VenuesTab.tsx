@@ -6,9 +6,12 @@
 import React, { useState } from 'react'
 import { ArrowLeft, MapPin, Users, Package, TrendingUp, ClipboardList, ExternalLink, KeyRound } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
-import { TP_RED, TP_DARK, VENUES, VENUE_DETAILS, type DemoVenue } from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK, type DemoVenue } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 export default function VenuesTab({ initialId }: { initialId?: string }) {
+  const { brand, data } = useImpact()
+  const { VENUES, VENUE_DETAILS } = data
   const [selected, setSelected] = useState<DemoVenue | null>(
     initialId ? VENUES.find(v => v.id === initialId) ?? null : null,
   )
@@ -38,7 +41,7 @@ export default function VenuesTab({ initialId }: { initialId?: string }) {
               {([
                 [selected.lastCount ?? '—', 'LAST REGISTER'],
                 [d?.familiesRegistered ?? '—', 'FAMILIES REGISTERED'],
-                [d?.tenorTeam.length ?? '—', 'TENORS'],
+                [d?.tenorTeam.length ?? '—', brand.volunteersUpper],
               ] as [string | number, string][]).map(([v, l]) => (
                 <div key={l} style={{ background: '#22222A', borderRadius: 10, padding: '10px 15px', textAlign: 'center' }}>
                   <div style={{ fontSize: 19, fontWeight: 900, color: TP_RED }}>{v}</div>
@@ -66,7 +69,7 @@ export default function VenuesTab({ initialId }: { initialId?: string }) {
             </div>
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 11, fontWeight: 900, color: TP_DARK, letterSpacing: 0.5, marginBottom: 6 }}>
-                <Users size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} />TENOR TEAM
+                <Users size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} />{brand.volunteerUpper} TEAM
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {d?.tenorTeam.map(t => <Pill key={t} tone="grey">{t}</Pill>)}
@@ -157,7 +160,7 @@ export default function VenuesTab({ initialId }: { initialId?: string }) {
                 </div>
                 <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 4 }}>{v.day} {v.time} · {d?.postcode} · lead: {d?.leadCoach}</div>
                 <div style={{ fontSize: 12, color: '#5B554F', marginTop: 8, background: '#F7F5F2', borderRadius: 9, padding: '8px 11px' }}>
-                  {d?.courts} · {v.tenors} TENORs · {d?.familiesRegistered} families registered
+                  {d?.courts} · {v.tenors} {brand.volunteers} · {d?.familiesRegistered} families registered
                 </div>
                 <div style={{ display: 'flex', gap: 16, marginTop: 10, borderTop: '1px solid #F0EBE5', paddingTop: 10, alignItems: 'center' }}>
                   <div>

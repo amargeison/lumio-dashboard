@@ -3,13 +3,8 @@
 import React, { useState } from 'react'
 import { BookOpen, Award, Calendar, MessageCircle, Users, PlayCircle, CheckCircle, QrCode, Heart, MapPin, Navigation, Camera } from 'lucide-react'
 import { Pill } from './ui'
-import {
-  TP_RED, TP_DARK, TP_PAPER, CURRICULUM, STICKER_AREAS, PARENT, PARENT_MESSAGES, CAMPAIGN, VENUE_DETAILS,
-} from '@/data/tenproject/demo-data'
-
-const YT_CHANNEL = 'https://www.youtube.com/channel/UC3-1ehFIPwAKgH98SXfLf1w'
-const KINGSMEAD = VENUE_DETAILS.kingsmead
-const MAP_Q = encodeURIComponent(`${KINGSMEAD.address}, ${KINGSMEAD.postcode}`)
+import { TP_RED, TP_DARK, TP_PAPER } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 type Tab = 'week' | 'progress' | 'sessions' | 'messages' | 'family'
 
@@ -27,7 +22,13 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
   const [tab, setTab] = useState<Tab>('week')
   const [confirmed, setConfirmed] = useState(false)
   const [practiceLogged, setPracticeLogged] = useState(false)
+  const { brand, copy, data } = useImpact()
+  const { CURRICULUM, STICKER_AREAS, PARENT, PARENT_MESSAGES, CAMPAIGN, VENUE_DETAILS } = data
   const block = CURRICULUM[1] // weeks 3 & 4 — BACKHAND
+  // The family's linked weekend venue
+  const homeVenue = VENUE_DETAILS[PARENT.venue.id]
+  const MAP_Q = encodeURIComponent(`${homeVenue?.address}, ${homeVenue?.postcode}`)
+  const childNames = PARENT.children.map(c => c.name)
 
   return (
     <div style={fullScreen ? {} : { display: 'flex', justifyContent: 'center' }}>
@@ -38,9 +39,9 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
         {/* Header */}
         <div style={{ background: TP_DARK, padding: '14px 18px 12px' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/tenproject_logo_dark.png" alt="Ten Project" style={{ height: 26, width: 'auto', display: 'block' }} />
+          <img src={brand.logoDark} alt={brand.logoAlt} style={{ height: 26, width: 'auto', display: 'block' }} />
           <div style={{ color: '#C9C4BE', fontSize: 11.5, marginTop: 6 }}>
-            Hi {PARENT.name.split(' ')[0]} — Week 4 of 10 · LEARN. PLAY. TOGETHER.
+            Hi {PARENT.name.split(' ')[0]} — Week 4 of 10 · {brand.tagline}
           </div>
         </div>
 
@@ -57,7 +58,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                 <div style={{ fontSize: 11, fontWeight: 800, color: TP_RED, letterSpacing: 0.6 }}>TOP TIPS</div>
                 <div style={{ fontSize: 13, color: TP_DARK, marginTop: 4 }}>{block.tip}</div>
               </div>
-              <a href={YT_CHANNEL} target="_blank" rel="noreferrer" style={{ background: '#fff', borderRadius: 12, padding: 14, display: 'flex', gap: 10, alignItems: 'center', textDecoration: 'none' }}>
+              <a href={copy.parent.videoUrl} target="_blank" rel="noreferrer" style={{ background: '#fff', borderRadius: 12, padding: 14, display: 'flex', gap: 10, alignItems: 'center', textDecoration: 'none' }}>
                 <PlayCircle size={30} style={{ color: TP_RED, flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: TP_DARK }}>Watch: the backhand</div>
@@ -69,7 +70,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                 onClick={() => setPracticeLogged(true)}
                 style={{ background: practiceLogged ? '#187A3C' : TP_DARK, color: '#fff', border: 'none', borderRadius: 10, padding: '12px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
               >
-                {practiceLogged ? '✓ Practice logged — great work Mia & Tom!' : 'We practised this week — log it'}
+                {practiceLogged ? `✓ Practice logged — great work ${childNames.join(' & ')}!` : 'We practised this week — log it'}
               </button>
 
               {/* Next session */}
@@ -96,7 +97,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                     <div style={{ fontSize: 11, fontWeight: 800, color: '#6B6560' }}>{c.stickers}/6</div>
                   </div>
                 ))}
-                <div style={{ fontSize: 10.5, color: '#8A847E' }}>Mia earned The Shots sticker today — tap to see the wall 🎉</div>
+                <div style={{ fontSize: 10.5, color: '#8A847E' }}>{copy.parent.stickerNote}</div>
               </button>
 
               {/* Latest message */}
@@ -110,11 +111,11 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                 </div>
               </button>
 
-              {/* #tenproject competition */}
+              {/* Family photo competition */}
               <div style={{ background: TP_DARK, borderRadius: 12, padding: 14, color: '#fff', display: 'flex', gap: 10, alignItems: 'center' }}>
                 <Camera size={22} style={{ color: TP_RED, flexShrink: 0 }} />
                 <div style={{ fontSize: 11.5, lineHeight: 1.5 }}>
-                  <strong>#tenproject competition</strong> — share a family practice photo or clip for the chance to win a trip to Wimbledon! (Only ever shared with your consent.)
+                  <strong>{copy.parent.competitionTitle}</strong>{copy.parent.competitionBody}
                 </div>
               </div>
             </>
@@ -156,7 +157,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                 <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK, marginTop: 4 }}>{PARENT.venue.name}</div>
                 <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 2 }}>{PARENT.venue.day} {PARENT.venue.time} · free · all the family welcome</div>
                 <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 8, background: TP_PAPER, borderRadius: 9, padding: '8px 10px' }}>
-                  <MapPin size={12} style={{ verticalAlign: '-2px', marginRight: 5, color: TP_RED }} />{KINGSMEAD.address}, {KINGSMEAD.postcode}
+                  <MapPin size={12} style={{ verticalAlign: '-2px', marginRight: 5, color: TP_RED }} />{homeVenue?.address}, {homeVenue?.postcode}
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                   <a href={`https://maps.google.com/?q=${MAP_Q}`} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: 'center', background: TP_PAPER, color: TP_DARK, border: '1px solid #E7E2DC', borderRadius: 9, padding: '9px 0', fontSize: 11.5, fontWeight: 800, textDecoration: 'none' }}>
@@ -179,7 +180,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                   <QrCode size={84} style={{ color: TP_DARK }} />
                 </div>
                 <div style={{ fontSize: 11, color: '#6B6560', marginTop: 8 }}>
-                  Scan at the gate — “Tap to check in: Mia + Tom?” Works offline; syncs when you have signal.
+                  Scan at the gate — “Tap to check in: {childNames.join(' + ')}?” Works offline; syncs when you have signal.
                 </div>
               </div>
             </>
@@ -224,7 +225,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
               <div style={{ background: '#fff', borderRadius: 12, padding: 14, display: 'flex', gap: 10, alignItems: 'center' }}>
                 <Heart size={22} style={{ color: TP_RED, flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>Become a TENOR</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>Become a {brand.volunteer}</div>
                   <div style={{ fontSize: 11.5, color: '#6B6560' }}>Lend us your voice and enthusiasm — help run Saturday’s session.</div>
                 </div>
               </div>

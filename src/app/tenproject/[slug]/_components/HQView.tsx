@@ -13,9 +13,8 @@ import SocialTab from './SocialTab'
 import EquipmentTab from './EquipmentTab'
 import SportNetworkTab from './SportNetworkTab'
 import { openFunderDoc } from '../_lib/funder-docs'
-import {
-  TP_RED, TP_DARK, SCHOOLS, VENUES, HQ_STATS, FUNNEL, IMPACT_AREAS, NEEDS_ATTENTION, CAMPAIGN,
-} from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> = {
   running: 'green',
@@ -46,6 +45,9 @@ export default function HQView({ section, onSectionChange }: {
   section?: HqTab
   onSectionChange?: (s: HqTab) => void
 }) {
+  const ctx = useImpact()
+  const { brand } = ctx
+  const { SCHOOLS, VENUES, HQ_STATS, FUNNEL, IMPACT_AREAS, NEEDS_ATTENTION, CAMPAIGN } = ctx.data
   const [tab, setTabState] = useState<HqTab>(section ?? 'overview')
   const [openId, setOpenId] = useState<string | undefined>(undefined)
   const controlled = section !== undefined
@@ -77,7 +79,7 @@ export default function HQView({ section, onSectionChange }: {
           { id: 'schools' as const, label: 'Schools', icon: School },
           { id: 'venues' as const, label: 'Venues', icon: MapPin },
           { id: 'coaches' as const, label: 'Coaches', icon: ShieldCheck },
-          { id: 'tenors' as const, label: 'TENORs', icon: Users },
+          { id: 'tenors' as const, label: brand.volunteers, icon: Users },
           { id: 'comms' as const, label: 'Communications', icon: Send },
           { id: 'social' as const, label: 'Social', icon: Share2 },
           { id: 'equipment' as const, label: 'Equipment', icon: Package },
@@ -195,7 +197,7 @@ export default function HQView({ section, onSectionChange }: {
             <SectionTitle sub="Campaigns across unfunded schools, with match-funding triggers">
               <PoundSterling size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Fundraising oversight
             </SectionTitle>
-            <button onClick={() => goTo('schools', 'stclements')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: TP_DARK, marginBottom: 8, fontFamily: 'inherit' }}>{CAMPAIGN.school} <span style={{ color: TP_RED, fontWeight: 900, fontSize: 11 }}>→</span></button>
+            <button onClick={() => goTo('schools', ctx.copy.hq.campaignSchoolId)} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: TP_DARK, marginBottom: 8, fontFamily: 'inherit' }}>{CAMPAIGN.school} <span style={{ color: TP_RED, fontWeight: 900, fontSize: 11 }}>→</span></button>
             <Thermometer raised={CAMPAIGN.raised} target={CAMPAIGN.target} height={16} />
             <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 8 }}>{CAMPAIGN.matchNote}</div>
           </Card>
@@ -205,7 +207,7 @@ export default function HQView({ section, onSectionChange }: {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Weekend venues */}
         <Card>
-          <SectionTitle sub="Community sessions, TENOR cover and last register counts">
+          <SectionTitle sub={`Community sessions, ${brand.volunteer} cover and last register counts`}>
             <Users size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Weekend venues
           </SectionTitle>
           <div style={{ display: 'grid', gap: 8 }}>
@@ -213,7 +215,7 @@ export default function HQView({ section, onSectionChange }: {
               <button key={v.id} onClick={() => goTo('venues', v.id)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: TP_DARK }}>{v.name} {v.external && <Pill tone="grey">LINKED VENUE</Pill>} <span style={{ color: TP_RED, fontWeight: 900, fontSize: 11 }}>→</span></div>
-                  <div style={{ fontSize: 11.5, color: '#6B6560' }}>{v.day} {v.time} · {v.tenors} TENORs</div>
+                  <div style={{ fontSize: 11.5, color: '#6B6560' }}>{v.day} {v.time} · {v.tenors} {brand.volunteers}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 17, fontWeight: 900, color: TP_RED }}>{v.lastCount}</div>
@@ -235,7 +237,7 @@ export default function HQView({ section, onSectionChange }: {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {IMPACT_AREAS.map(a => <Pill key={a} tone="grey">{a}</Pill>)}
           </div>
-          <button onClick={() => openFunderDoc('term-report')} style={{ marginTop: 14, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+          <button onClick={() => openFunderDoc('term-report', ctx)} style={{ marginTop: 14, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
             <ClipboardList size={14} /> Draft term report for funders (AI)
           </button>
         </Card>

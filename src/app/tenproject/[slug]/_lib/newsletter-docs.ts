@@ -1,75 +1,27 @@
 'use client'
 
-// The Ten Project newsletter — email-styled, fully branded preview that opens
+// The programme newsletter — email-styled, fully branded preview that opens
 // in a new tab with Print/Save-as-PDF. This is what replaces the Mailchimp
 // sends: same look for every family, but scoped per venue and tracked per
 // household in production.
 
 import { openDocWindow, esc } from './funder-docs'
+import type { ImpactCopy, ImpactPortalContext } from '../_components/ImpactDataContext'
 
 const RED = '#D7262C'
 const DARK = '#111114'
 
-export interface NewsletterContent {
-  subject: string
-  preheader: string
-  heroKicker: string
-  heroTitle: string
-  intro: string
-  sessionCard: { title: string; lines: string[]; cta: string }
-  sections: { title: string; body: string }[]
-  fundraising?: { school: string; raised: number; target: number; line: string }
-  signoff: string
-}
+// Newsletter content now lives with each dataset's copy (portal-copy.ts /
+// src/data/impact/*), so the same template renders any programme's sends.
+export type NewsletterContent = ImpactCopy['newsletters']['september']
 
-export const NEWSLETTER_SEPTEMBER: NewsletterContent = {
-  subject: 'WE’RE BACK! Your September sessions — venues, dates & a big year ahead 🎾',
-  preheader: 'Free family tennis returns — find your venue and save your Saturdays.',
-  heroKicker: 'SEPTEMBER RESTART',
-  heroTitle: 'WE’RE BACK — AND SO ARE YOUR SATURDAYS',
-  intro: 'The school holidays are nearly done, the courts are calling, and our Free Community Family Sessions are back from the first weekend of September. Everything you need is below — your venue, your time, and one tap to tell us you’re coming.',
-  sessionCard: {
-    title: 'YOUR FAMILY SESSION',
-    lines: ['Kingsmead Rec Ground — Saturdays 1.30–2.30pm', 'Back from Saturday 6 September', 'Free · all equipment provided · every family welcome'],
-    cta: 'Confirm we’re coming →',
-  },
-  sections: [
-    { title: 'NEW SCHOOLS JOINING THIS TERM', body: 'A warm welcome to Meridian Park Primary, starting their first 10-week programme in September — 45 children get their welcome packs in week one. If you know a school that should be next, tell them about us (or forward this email to the head!).' },
-    { title: 'WHAT A SUMMER THAT WAS', body: '2,000+ children a week in school, 950+ family visits to weekend sessions, and 100% of surveyed families said they’d recommend us. Thank you — this programme is you.' },
-    { title: '#TENPROJECT — WIN A TRIP TO WIMBLEDON', body: 'Share a photo or clip of your family practising with the tag #tenproject for the chance to win our Wimbledon trip. Only ever shared with your consent — full details in the parent app.' },
-  ],
-  fundraising: {
-    school: 'St Clement’s Primary',
-    raised: 2150,
-    target: 3200,
-    line: 'St Clement’s families are £1,050 from bringing Ten Project back for 2026/27 — and match funding kicks in at £2,560. The Sponsored Ball Hit is 10 October. Every pound counts.',
-  },
-  signoff: 'See you on court — LEARN. PLAY. TOGETHER.\nHarry & the Ten Project team',
-}
-
-export const NEWSLETTER_WEEK4: NewsletterContent = {
-  subject: 'Week 4 — BACKHAND week! Your Saturday session details inside 🎾',
-  preheader: 'Two hands on the grip, one bounce only — see you Saturday.',
-  heroKicker: 'WEEK 4 OF 10',
-  heroTitle: 'IT’S BACKHAND WEEK',
-  intro: 'This week the children are learning the backhand — favourite hand at the bottom of the grip, swing low to high. Ask them to show you, then come and try it together this weekend.',
-  sessionCard: {
-    title: 'YOUR FAMILY SESSION',
-    lines: ['Kingsmead Rec Ground — this Saturday 1.30–2.30pm', 'Scan the QR at the gate to check in', 'Free · all equipment provided'],
-    cta: 'Confirm we’re coming →',
-  },
-  sections: [
-    { title: 'WATCH THE BACKHAND VIDEO', body: 'Two minutes forty of everything they’re learning this week — take it to your court, try it at home, but most of all try it as a family.' },
-    { title: 'STICKER WATCH', body: 'The Shots stickers are landing in booklets this week. When one comes home, that’s your cue: “show me!”' },
-  ],
-  signoff: 'See you Saturday — LEARN. PLAY. TOGETHER.\nHarry & the Ten Project team',
-}
-
-export function newsletterHtml(n: NewsletterContent): string {
+export function newsletterHtml(n: NewsletterContent, ctx: ImpactPortalContext): string {
+  const b = ctx.brand
+  const firstName = ctx.data.PARENT.name.split(' ')[0]
   const pct = n.fundraising ? Math.min(100, Math.round((n.fundraising.raised / n.fundraising.target) * 100)) : 0
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><title>${esc(n.subject)}</title>
-<link rel="icon" href="/tenproject-favicon-32.png">
+<link rel="icon" href="${b.favicon32}">
 <style>
   * { box-sizing: border-box; margin: 0; }
   body { font-family: system-ui, -apple-system, sans-serif; background: #EDEAE5; padding: 0; }
@@ -106,10 +58,10 @@ export function newsletterHtml(n: NewsletterContent): string {
 <div class="toolbar"><span>Newsletter preview — exactly what families receive</span><button onclick="window.print()">Print / Save as PDF</button></div>
 <div class="meta"><b>Subject:</b> ${esc(n.subject)}<br><b>Preheader:</b> ${esc(n.preheader)} · <b>Audience:</b> scoped per venue — each family sees THEIR session only</div>
 <div class="email">
-  <div class="hd"><img src="/tenproject_logo_dark.png" alt="Ten Project"></div>
+  <div class="hd"><img src="${b.logoDark}" alt="${esc(b.logoAlt)}"></div>
   <div class="hero"><div class="k">${esc(n.heroKicker)}</div><h1>${esc(n.heroTitle)}</h1></div>
   <div class="body">
-    <p>Hi Sarah,</p>
+    <p>Hi ${esc(firstName)},</p>
     <p style="margin-top:10px">${esc(n.intro)}</p>
     <div class="card">
       <div class="t">${esc(n.sessionCard.title)}</div>
@@ -126,14 +78,14 @@ export function newsletterHtml(n: NewsletterContent): string {
     <div class="sign">${esc(n.signoff)}</div>
   </div>
   <div class="ft">
-    Ten Project Ltd · 7 Cranmer Close, Morden, London SM4 4SU<br>
-    You’re receiving this because your family is registered with Ten Project.<br>
-    <a href="#">Update preferences</a> · <a href="#">Unsubscribe</a> — LEARN. PLAY. TOGETHER.
+    ${esc(b.legal)} · ${esc(b.address)}<br>
+    You’re receiving this because your family is registered with ${esc(b.org)}.<br>
+    <a href="#">Update preferences</a> · <a href="#">Unsubscribe</a> — ${esc(b.tagline)}
   </div>
 </div>
 </body></html>`
 }
 
-export function openNewsletter(n: NewsletterContent) {
-  openDocWindow(newsletterHtml(n))
+export function openNewsletter(n: NewsletterContent, ctx: ImpactPortalContext) {
+  openDocWindow(newsletterHtml(n, ctx))
 }

@@ -7,7 +7,8 @@
 import React from 'react'
 import { CalendarDays, RefreshCw } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
-import { TP_RED, TP_DARK, CAL_EVENTS, type CalEvent } from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK, type CalEvent } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 const DAYS: CalEvent['day'][] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -24,6 +25,7 @@ export default function UpcomingCalendar({ role, events: eventsProp, title, sub 
   title?: string
   sub?: string
 }) {
+  const { CAL_EVENTS } = useImpact().data
   const events = eventsProp ?? CAL_EVENTS[role ?? 'coach']
 
   return (

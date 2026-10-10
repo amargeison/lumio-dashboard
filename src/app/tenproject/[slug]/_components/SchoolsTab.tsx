@@ -7,13 +7,16 @@ import React, { useState } from 'react'
 import { ArrowLeft, School, Phone, Mail, ShieldCheck, Package, PoundSterling, MapPin, TrendingUp, ClipboardList } from 'lucide-react'
 import { Card, SectionTitle, Pill, Thermometer } from './ui'
 import { SchoolReadinessCard } from './SportNetworkTab'
-import { TP_RED, TP_DARK, SCHOOLS, SCHOOL_DETAILS, type DemoSchool } from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK, type DemoSchool } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> = {
   running: 'green', fundraising: 'red', confirmed: 'dark', enquiry: 'grey', complete: 'amber',
 }
 
 export default function SchoolsTab({ initialId }: { initialId?: string }) {
+  const { copy, data } = useImpact()
+  const { SCHOOLS, SCHOOL_DETAILS } = data
   const [selected, setSelected] = useState<DemoSchool | null>(
     initialId ? SCHOOLS.find(s => s.id === initialId) ?? null : null,
   )
@@ -124,7 +127,7 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
               <SectionTitle sub={`${d.fundraising.supporters} supporters — feeds the public page and match-funding triggers`}>
                 <PoundSterling size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Fundraising campaign
               </SectionTitle>
-              <a href="/fundraise/st-clements-demo" target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 800, color: '#fff', background: TP_RED, borderRadius: 8, padding: '8px 13px', textDecoration: 'none' }}>View public page</a>
+              <a href={copy.school.publicPageUrl} target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 800, color: '#fff', background: TP_RED, borderRadius: 8, padding: '8px 13px', textDecoration: 'none' }}>View public page</a>
             </div>
             <Thermometer raised={d.fundraising.raised} target={d.fundraising.target} height={16} />
           </Card>

@@ -6,14 +6,17 @@
 import React from 'react'
 import { TrendingUp, Award, HeartHandshake, Download, Share2, GraduationCap, Sparkles, Quote, BarChart2, ArrowUpRight } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
-import { TP_RED, TP_DARK, SCHOOL_INSIGHTS } from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 import { openFunderDoc } from '../_lib/funder-docs'
 
 const RED_SOFT = '#F0524F'
 const RED_TINT = '#E8B4B3'
 
 export default function SchoolInsights() {
-  const S = SCHOOL_INSIGHTS
+  const ctx = useImpact()
+  const { brand, copy } = ctx
+  const S = ctx.data.SCHOOL_INSIGHTS
   const maxWeek = Math.max(...S.weeklyAttendance)
 
   return (
@@ -23,16 +26,16 @@ export default function SchoolInsights() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>{S.school.toUpperCase()} · IMPACT DASHBOARD</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginTop: 6 }}>Your Ten Project results — {S.term}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginTop: 6 }}>Your {brand.org} results — {S.term}</div>
             <div style={{ fontSize: 12.5, color: '#C9C4BE', marginTop: 4, maxWidth: 560 }}>
               Everything you need for governors, sponsors and your Sports Premium return — evidenced from digital registers, not estimates.
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={() => openFunderDoc('governor-pack')} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+            <button onClick={() => openFunderDoc('governor-pack', ctx)} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <Download size={14} /> Governor pack (PDF)
             </button>
-            <button onClick={() => openFunderDoc('newsletter-snippet')} style={{ background: '#fff', color: TP_DARK, border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+            <button onClick={() => openFunderDoc('newsletter-snippet', ctx)} style={{ background: '#fff', color: TP_DARK, border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               <Share2 size={14} /> Newsletter snippet
             </button>
           </div>
@@ -64,7 +67,7 @@ export default function SchoolInsights() {
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 8 }}>Week 10 (the Festival) was the best-attended session of the year.</div>
+          <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 8 }}>{copy.schoolInsights.attendanceNote}</div>
         </Card>
         <Card>
           <SectionTitle sub="% of children ‘secure’ in each skill — start of term vs end. This is the learning, measured.">
@@ -128,7 +131,7 @@ export default function SchoolInsights() {
 
       {/* How you compare — benchmark panel (distinct from the operational page) */}
       <Card>
-        <SectionTitle sub="Your school against the Ten Project average and the national baseline — context governors ask for">
+        <SectionTitle sub={`Your school against the ${brand.org} average and the national baseline — context governors ask for`}>
           <BarChart2 size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />How your school compares
         </SectionTitle>
         <div style={{ display: 'grid', gap: 12 }}>
@@ -136,7 +139,7 @@ export default function SchoolInsights() {
             const max = Math.max(b.you, b.programme, b.national, 1)
             const rows: [string, number, string][] = [
               ['Your school', b.you, TP_RED],
-              ['Ten Project avg', b.programme, RED_SOFT],
+              [`${brand.org} avg`, b.programme, RED_SOFT],
               ['National', b.national, '#C9C4BE'],
             ]
             return (

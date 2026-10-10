@@ -7,12 +7,9 @@
 import React, { useState } from 'react'
 import { Mail, MessageSquare, Smartphone, Send, X, School, Users, Megaphone, CheckCircle, Sparkles, Newspaper, Inbox as InboxIcon, Heart, Reply, Forward, Eye, Zap, LayoutTemplate, Target, GitBranch, BarChart3, Clock, FlaskConical } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
-import {
-  TP_RED, TP_DARK, COMMS_INBOX, COMMS_RECIPIENTS,
-  COMMS_STATS_NL, COMMS_CAMPAIGNS, COMMS_TEMPLATES, COMMS_AUDIENCES, COMMS_JOURNEYS, COMMS_EVENT_AUTOS,
-  type CommsCampaign,
-} from '@/data/tenproject/demo-data'
-import { openNewsletter, NEWSLETTER_SEPTEMBER, NEWSLETTER_WEEK4 } from '../_lib/newsletter-docs'
+import { TP_RED, TP_DARK, type CommsCampaign } from '@/data/tenproject/demo-data'
+import { openNewsletter } from '../_lib/newsletter-docs'
+import { useImpact, type ImpactDataset } from './ImpactDataContext'
 
 const CHANNEL_META: Record<string, { label: string; icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }> }> = {
   email: { label: 'EMAIL', icon: Mail },
@@ -23,6 +20,8 @@ const CHANNEL_META: Record<string, { label: string; icon: React.ComponentType<{ 
 
 // ─── Send Message wizard (shared) ───────────────────────────────────────────
 export function SendMessageWizard({ onClose, defaultRecipient, defaultMessage }: { onClose: () => void; defaultRecipient?: string; defaultMessage?: string }) {
+  const { copy, data } = useImpact()
+  const { COMMS_RECIPIENTS } = data
   const [step, setStep] = useState(1)
   const [who, setWho] = useState<string | null>(defaultRecipient ?? null)
   const [channels, setChannels] = useState<string[]>(['app', 'email'])
@@ -104,7 +103,7 @@ export function SendMessageWizard({ onClose, defaultRecipient, defaultMessage }:
               <textarea value={message} onChange={e => setMessage(e.target.value)} rows={5}
                 placeholder={`Message to ${who ?? '…'}`}
                 style={{ width: '100%', border: '1px solid #E7E2DC', borderRadius: 10, padding: '11px 13px', fontSize: 13, outline: 'none', background: '#F7F5F2', resize: 'vertical', fontFamily: 'inherit' }} />
-              <button onClick={() => setMessage('Quick update: this Saturday’s family session is at Kingsmead Rec Ground, 1.30–2.30pm — backhand week! All equipment provided, scan in at the gate. See you there. LEARN. PLAY. TOGETHER.')}
+              <button onClick={() => setMessage(copy.comms.aiDraftMessage)}
                 style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: TP_RED, border: `1px solid ${TP_RED}44`, borderRadius: 8, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>
                 <Sparkles size={13} /> Draft it for me (AI)
               </button>
@@ -143,16 +142,15 @@ export function SendMessageWizard({ onClose, defaultRecipient, defaultMessage }:
 }
 
 // ─── HQ Communications tab ──────────────────────────────────────────────────
-type InboxMsg = typeof COMMS_INBOX[number]
-
-const AI_NEWSLETTER_ANGLES = [
-  'September restart — venues, dates and the big year ahead (welcome Meridian Park, summer results, #tenproject competition, St Clement’s fundraising push)',
-  'Half-term special — holiday practice ideas, sticker league table, and the Sponsored Ball Hit countdown',
-]
+type InboxMsg = ImpactDataset['COMMS_INBOX'][number]
 
 type SubTab = 'inbox' | 'newsletters' | 'automations' | 'audiences'
 
 export default function CommsTab() {
+  const ctx = useImpact()
+  const { copy } = ctx
+  const { COMMS_INBOX, COMMS_STATS_NL, COMMS_CAMPAIGNS, COMMS_TEMPLATES, COMMS_AUDIENCES, COMMS_JOURNEYS, COMMS_EVENT_AUTOS } = ctx.data
+  const AI_NEWSLETTER_ANGLES = copy.comms.newsletterAngles
   const [sub, setSub] = useState<SubTab>('inbox')
   const [wizard, setWizard] = useState<{ open: boolean; message?: string }>({ open: false })
   const [filter, setFilter] = useState<'all' | 'email' | 'sms' | 'app' | 'whatsapp'>('all')
@@ -181,7 +179,7 @@ export default function CommsTab() {
     setReplyText('')
   }
   function saveNewsletterDraft() {
-    setCampaigns(prev => [{ id: `new-${Date.now()}`, title: angle === 0 ? 'September restart — venues & the year ahead (AI draft)' : 'Half-term special — practice + Ball Hit countdown (AI draft)', status: 'draft', when: 'ready to schedule', audience: 'All families' }, ...prev])
+    setCampaigns(prev => [{ id: `new-${Date.now()}`, title: copy.comms.draftTitles[angle] ?? copy.comms.draftTitles[0], status: 'draft', when: 'ready to schedule', audience: 'All families' }, ...prev])
     setBuilder(false); setSub('newsletters')
   }
 
@@ -216,7 +214,7 @@ export default function CommsTab() {
       {/* ── INBOX ── */}
       {sub === 'inbox' && (<>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-          {([[`${unread}`, 'UNREAD'], ['3', 'AWAITING REPLY'], ['121', 'REACHABLE IN-APP'], ['2/wk', 'SCHEDULED COMMS'], ['4', 'CHANNELS IN ONE INBOX']] as [string, string][]).map(([v, l]) => (
+          {([[`${unread}`, 'UNREAD'], ...copy.comms.inboxStats] as [string, string][]).map(([v, l]) => (
             <Card key={l} style={{ padding: '13px 16px' }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: '#8A847E', letterSpacing: 0.8 }}>{l}</div>
               <div style={{ fontSize: 23, fontWeight: 900, color: TP_DARK, marginTop: 3 }}>{v}</div>
@@ -278,7 +276,7 @@ export default function CommsTab() {
             </div>
             <div style={{ display: 'grid', gap: 8 }}>
               {campaigns.map(c => (
-                <button key={c.id} onClick={() => openNewsletter(c.title.toLowerCase().includes('week 4') || c.title.toLowerCase().includes('backhand') ? NEWSLETTER_WEEK4 : NEWSLETTER_SEPTEMBER)}
+                <button key={c.id} onClick={() => openNewsletter(c.title.toLowerCase().includes('week 4') || c.title.toLowerCase().includes('backhand') ? copy.newsletters.week4 : copy.newsletters.september, ctx)}
                   style={{ background: '#F7F5F2', border: 'none', borderRadius: 10, padding: '11px 13px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                     <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>
@@ -317,14 +315,14 @@ export default function CommsTab() {
               </div>
             </Card>
             <Card>
-              <SectionTitle sub="Everything the big tools do — built in"><CheckCircle size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />No more Mailchimp</SectionTitle>
+              <SectionTitle sub="Everything the big tools do — built in"><CheckCircle size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{copy.comms.replaceTitle}</SectionTitle>
               <div style={{ display: 'grid', gap: 5 }}>
                 {['Drag-and-drop branded builder', 'Audience segments & personalisation', 'A/B subject-line testing', 'Send-time optimisation', 'Scheduling & recurring sends', 'Open / click / bounce analytics', 'Deliverability + unsubscribe handling', 'GDPR consent & preference centre'].map(f => (
                   <div key={f} style={{ fontSize: 11.5, color: '#5B554F' }}><CheckCircle size={12} style={{ verticalAlign: '-2px', marginRight: 6, color: '#187A3C' }} />{f}</div>
                 ))}
               </div>
               <div style={{ fontSize: 11, color: '#8A847E', marginTop: 10, background: '#FDE8E8', borderRadius: 9, padding: '9px 11px' }}>
-                Scoped per venue and tracked per family — so a Leeds family never gets a Kingston session. Mailchimp can’t do that.
+                {copy.comms.replaceNote}
               </div>
             </Card>
           </div>
@@ -488,10 +486,10 @@ export default function CommsTab() {
               ))}
             </div>
             <div style={{ background: '#F7F5F2', borderRadius: 10, padding: '11px 13px', marginTop: 10, fontSize: 11.5, color: '#5B554F', lineHeight: 1.6 }}>
-              <strong>Draft includes:</strong> subject + preheader · hero · personalised session card (each family sees their venue) · new-schools welcome · summer results · #tenproject Wimbledon competition · St Clement’s fundraising bar · footer with preferences/unsubscribe.
+              <strong>Draft includes:</strong> {copy.comms.draftIncludes}
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button onClick={() => openNewsletter(NEWSLETTER_SEPTEMBER)} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 10, padding: '12px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
+              <button onClick={() => openNewsletter(copy.newsletters.september, ctx)} style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 10, padding: '12px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
                 <Eye size={14} /> Preview the draft
               </button>
               <button onClick={saveNewsletterDraft} style={{ flex: 1, background: TP_RED, color: '#fff', border: 'none', borderRadius: 10, padding: '12px 14px', fontSize: 12.5, fontWeight: 900, cursor: 'pointer' }}>

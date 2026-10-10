@@ -7,10 +7,8 @@
 import React from 'react'
 import { Landmark, CheckCircle, CircleDashed, Circle, CalendarClock, FileText, ExternalLink, ArrowUpRight, School, Info } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
-import {
-  TP_RED, TP_DARK, SCHOOLS, SCHOOL_READINESS, PESSPN_CRITERIA, PESSPN_TIMELINE, PESSPN_GUIDANCE,
-  type PesspnVerdict, type PesspnStatus,
-} from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK, type PesspnVerdict, type PesspnStatus } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 const VERDICT: Record<PesspnVerdict, { label: string; color: string; tone: 'green' | 'amber' | 'red' }> = {
   'on-track': { label: 'On track to qualify', color: '#187A3C', tone: 'green' },
@@ -38,6 +36,7 @@ function ScoreRing({ score, verdict, size = 76 }: { score: number; verdict: Pess
 
 // ─── Per-school readiness card (reused in Schools detail) ────────────────────
 export function SchoolReadinessCard({ schoolId }: { schoolId: string }) {
+  const { SCHOOL_READINESS, PESSPN_CRITERIA } = useImpact().data
   const rd = SCHOOL_READINESS[schoolId]
   if (!rd) return null
   const v = VERDICT[rd.verdict]
@@ -75,6 +74,8 @@ export function SchoolReadinessCard({ schoolId }: { schoolId: string }) {
 
 // ─── HQ Sport Network tab ────────────────────────────────────────────────────
 export default function SportNetworkTab() {
+  const { brand, data } = useImpact()
+  const { SCHOOLS, SCHOOL_READINESS, PESSPN_CRITERIA, PESSPN_TIMELINE, PESSPN_GUIDANCE } = data
   const scored = SCHOOLS.map(s => ({ s, rd: SCHOOL_READINESS[s.id] })).filter(x => x.rd)
   const counts = { 'on-track': 0, nearly: 0, 'at-risk': 0 } as Record<PesspnVerdict, number>
   scored.forEach(x => { counts[x.rd.verdict]++ })
@@ -87,7 +88,7 @@ export default function SportNetworkTab() {
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>FUNDING TRANSITION · 2026/27</div>
         <div style={{ fontSize: 19, fontWeight: 900, color: '#fff', marginTop: 6 }}>PE &amp; School Sport Partnership Network — your one-stop shop</div>
         <div style={{ fontSize: 12.5, color: '#C9C4BE', marginTop: 5, maxWidth: 640 }}>
-          The PE &amp; Sport Premium is ending. This is where every school’s readiness for the new model lives — who’s on track, who needs a push, the key dates, and the latest DfE guidance. Ten Project’s registers, CPD and impact data are exactly what schools will need to qualify.
+          The PE &amp; Sport Premium is ending. This is where every school’s readiness for the new model lives — who’s on track, who needs a push, the key dates, and the latest DfE guidance. {brand.org}’s registers, CPD and impact data are exactly what schools will need to qualify.
         </div>
       </Card>
 
@@ -191,7 +192,7 @@ export default function SportNetworkTab() {
               ['Money stops flowing to schools', 'The £320m Premium was paid to schools to spend. From 2026/27 it’s replaced by a centrally-commissioned Network — support in kind, not cash.'],
               ['Less money, more schools', '£580m over seven terms (~22% lower annually), and now spread to secondary schools too.'],
               ['Funding follows evidence', 'Provision is commissioned through providers who can prove participation and impact — exactly the data the portal produces.'],
-              ['The Ten Project angle', 'Registers, CPD, priority-group reach and impact reporting are the qualifying evidence. Fundraising keeps unfunded schools in the game.'],
+              [`The ${brand.org} angle`, 'Registers, CPD, priority-group reach and impact reporting are the qualifying evidence. Fundraising keeps unfunded schools in the game.'],
             ].map(([h, b]) => (
               <div key={h} style={{ background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>
                 <div style={{ fontSize: 12, fontWeight: 900, color: TP_DARK }}>{h}</div>
@@ -203,7 +204,7 @@ export default function SportNetworkTab() {
       </div>
 
       <div style={{ fontSize: 11, color: '#8A847E' }}>
-        <Pill tone="grey">INDICATIVE</Pill>&nbsp; Readiness criteria are Ten Project’s framework based on the published direction and the outgoing Premium’s five key indicators. They’ll be reconciled to DfE’s conditions of grant when published (Sept 2026).
+        <Pill tone="grey">INDICATIVE</Pill>&nbsp; Readiness criteria are {brand.org}’s framework based on the published direction and the outgoing Premium’s five key indicators. They’ll be reconciled to DfE’s conditions of grant when published (Sept 2026).
       </div>
     </div>
   )

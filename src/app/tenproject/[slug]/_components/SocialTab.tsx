@@ -7,10 +7,8 @@
 import React, { useState } from 'react'
 import { Instagram, Facebook, Youtube, Twitter, Sparkles, CalendarClock, Send, Image as ImageIcon, Video, Layers, Clock, Heart, MessageCircle, Share2, Bookmark, Eye, TrendingUp, CheckCircle, Hash } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
-import {
-  TP_RED, TP_DARK, SOCIAL_STATS, SOCIAL_QUEUE, SOCIAL_PUBLISHED, SOCIAL_AI_CAPTIONS,
-  SOCIAL_GROWTH, SOCIAL_BEST_TIMES, SOCIAL_HASHTAGS, type SocialPost,
-} from '@/data/tenproject/demo-data'
+import { TP_RED, TP_DARK, type SocialPost } from '@/data/tenproject/demo-data'
+import { useImpact } from './ImpactDataContext'
 
 const PLATFORM_ICON: Record<string, React.ComponentType<{ size?: number | string; style?: React.CSSProperties }>> = {
   Instagram, Facebook, YouTube: Youtube, 'X / Twitter': Twitter, IG: Instagram, FB: Facebook, YT: Youtube, X: Twitter,
@@ -34,6 +32,8 @@ function Thumb({ media, hue, size = 60 }: { media: string; hue: number; size?: n
 type SubTab = 'queue' | 'compose' | 'published'
 
 export default function SocialTab() {
+  const { brand, copy, data } = useImpact()
+  const { SOCIAL_STATS, SOCIAL_QUEUE, SOCIAL_PUBLISHED, SOCIAL_AI_CAPTIONS, SOCIAL_GROWTH, SOCIAL_BEST_TIMES, SOCIAL_HASHTAGS } = data
   const [sub, setSub] = useState<SubTab>('queue')
   const [queue, setQueue] = useState<SocialPost[]>(SOCIAL_QUEUE)
   const [platforms, setPlatforms] = useState<string[]>(['IG'])
@@ -41,7 +41,7 @@ export default function SocialTab() {
   const [aiIdx, setAiIdx] = useState(0)
   const [when, setWhen] = useState('Today 17:00')
   const [media, setMedia] = useState<'photo' | 'video' | 'carousel' | 'none'>('photo')
-  const [tags, setTags] = useState<string[]>(['#tenproject', '#LearnPlayTogether'])
+  const [tags, setTags] = useState<string[]>(copy.social.defaultTags)
 
   function generate() { setCaption(SOCIAL_AI_CAPTIONS[aiIdx % SOCIAL_AI_CAPTIONS.length]); setAiIdx(i => i + 1) }
   function schedule() {
@@ -98,7 +98,7 @@ export default function SocialTab() {
       {/* ── QUEUE ── */}
       {sub === 'queue' && (<>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-          {([[String(queue.filter(q => q.status === 'scheduled').length), 'SCHEDULED'], [String(queue.filter(q => q.status === 'draft').length), 'DRAFTS'], [String(queue.filter(q => q.status === 'needs approval').length), 'NEEDS APPROVAL'], ['38K', 'REACH (7 DAYS)'], ['#tenproject', 'CAMPAIGN TAG']] as [string, string][]).map(([v, l]) => (
+          {([[String(queue.filter(q => q.status === 'scheduled').length), 'SCHEDULED'], [String(queue.filter(q => q.status === 'draft').length), 'DRAFTS'], [String(queue.filter(q => q.status === 'needs approval').length), 'NEEDS APPROVAL'], [copy.social.reach7d, 'REACH (7 DAYS)'], [brand.hashtag, 'CAMPAIGN TAG']] as [string, string][]).map(([v, l]) => (
             <Card key={l} style={{ padding: '13px 16px' }}><div style={{ fontSize: 10, fontWeight: 800, color: '#8A847E', letterSpacing: 0.8 }}>{l}</div><div style={{ fontSize: 19, fontWeight: 900, color: TP_RED, marginTop: 3 }}>{v}</div></Card>
           ))}
         </div>
@@ -191,8 +191,8 @@ export default function SocialTab() {
               <div style={{ border: '1px solid #E7E2DC', borderRadius: 12, overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 11px', background: '#fff' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/tenproject-favicon-64.png" alt="TP" style={{ width: 26, height: 26, borderRadius: '50%' }} />
-                  <div style={{ fontSize: 11.5, fontWeight: 800, color: TP_DARK }}>tenprojectuk</div>
+                  <img src={brand.favicon64} alt={brand.faviconAlt} style={{ width: 26, height: 26, borderRadius: '50%' }} />
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: TP_DARK }}>{brand.socialHandle}</div>
                   <div style={{ marginLeft: 'auto', fontSize: 10, color: '#8A847E' }}>{platforms.join(' · ') || 'IG'}</div>
                 </div>
                 {media !== 'none' ? (
@@ -202,7 +202,7 @@ export default function SocialTab() {
                   </div>
                 ) : null}
                 <div style={{ padding: '10px 12px', fontSize: 12, color: '#33302C', lineHeight: 1.5, background: '#fff' }}>
-                  <strong>tenprojectuk</strong> {caption || 'Your caption will appear here…'}
+                  <strong>{brand.socialHandle}</strong> {caption || 'Your caption will appear here…'}
                   {tags.length > 0 && <div style={{ color: TP_RED, marginTop: 4 }}>{tags.join(' ')}</div>}
                 </div>
               </div>
@@ -234,13 +234,13 @@ export default function SocialTab() {
               {SOCIAL_GROWTH.map((g, i) => <circle key={g.w} cx={(i / (SOCIAL_GROWTH.length - 1)) * 300} cy={70 - ((g.n - minG) / (maxG - minG)) * 60} r="2.6" fill={TP_RED} />)}
             </svg>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#8A847E', fontWeight: 700 }}>
-              <span>{SOCIAL_GROWTH[0].n.toLocaleString()}</span><span>+26% → {SOCIAL_GROWTH[SOCIAL_GROWTH.length - 1].n.toLocaleString()}</span>
+              <span>{SOCIAL_GROWTH[0].n.toLocaleString()}</span><span>{copy.social.growthLabel} → {SOCIAL_GROWTH[SOCIAL_GROWTH.length - 1].n.toLocaleString()}</span>
             </div>
           </Card>
           <Card>
             <SectionTitle sub="This month across all channels">Performance</SectionTitle>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {([['1.3M', 'REACH'], ['9.4%', 'ENGAGEMENT'], ['504', 'LINK CLICKS'], ['+710', 'NEW FOLLOWERS']] as [string, string][]).map(([v, l]) => (
+              {copy.social.performance.map(([v, l]) => (
                 <div key={l} style={{ background: '#F7F5F2', borderRadius: 10, padding: '12px 14px' }}>
                   <div style={{ fontSize: 20, fontWeight: 900, color: TP_RED }}>{v}</div>
                   <div style={{ fontSize: 9.5, color: '#8A847E', fontWeight: 800, letterSpacing: 0.4 }}>{l}</div>
