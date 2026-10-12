@@ -17,7 +17,7 @@
 // Standard portal zoom 0.9 — sidebar compensates with calc(100vh / 0.9).
 
 import React, { use, useEffect, useState } from 'react'
-import { LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp, Landmark } from 'lucide-react'
+import { Heart, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp, Landmark } from 'lucide-react'
 import { TP_RED, TP_DARK, TP_BLACK, TP_PAPER } from '@/data/tenproject/demo-data'
 import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { ImpactDataProvider, useImpact, type ImpactBrand, type ImpactCopy, type ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
@@ -88,6 +88,7 @@ const SECTION_HEADERS: Record<string, Record<string, { title: string; sub: strin
   hq: {
     insights: { title: 'Insights', sub: 'Participation, conversion, impact and social value — funder-ready' },
     schools: { title: 'Schools', sub: 'Every partner school — profile, programme, stats and actions in one place' },
+    families: { title: 'Families', sub: 'Every household and its children — contacts, consents, medical flags, fees and comms opt-outs' },
     venues: { title: 'Weekend venues', sub: 'Every weekend community venue — access, sessions, teams and attendance in one place' },
     coaches: { title: 'Coaches', sub: 'Your coaching team at a glance — accreditations, compliance and workload across the programme' },
     tenors: { title: 'Volunteers', sub: 'Your volunteer parents — inductions, venue cover and the “can this session run?” view' },
@@ -109,6 +110,46 @@ const SECTION_HEADERS: Record<string, Record<string, { title: string; sub: strin
   tenor: {
     resources: { title: 'Resources', sub: 'Videos, session cards, guides and who to call' },
   },
+}
+
+// The Parent app. Demo: the demo family. Live: there are no parent logins yet,
+// so HQ picks a household and sees a clearly-labelled, read-only PREVIEW of
+// what that family would see — never presented as a live parent login.
+function ParentPreview({ fullScreen = false }: { fullScreen?: boolean }) {
+  const ctx = useImpact()
+  const families = (ctx.people?.families ?? []).filter(f => f.children.length)
+  const [familyId, setFamilyId] = useState<string>('')
+  if (ctx.mode !== 'live') return <ParentApp fullScreen={fullScreen} />
+  const fam = families.find(f => f.id === familyId) ?? families[0]
+  const blankVenue = { id: '', name: '', day: '', time: '', tenors: 0 }
+  const preview = fam ? {
+    ...ctx,
+    data: {
+      ...ctx.data,
+      PARENT: {
+        name: fam.guardian,
+        children: fam.children.map(c => ({ name: c.name.split(' ')[0], age: c.age ?? 0, school: c.school ?? '', stickers: c.stickers })),
+        venue: ctx.data.VENUES[0] ?? blankVenue,
+        consents: { data: fam.consentData ?? false, photo: fam.consentPhoto ?? false, emergency: '—' },
+      },
+      PARENT_MESSAGES: [],
+    },
+  } : ctx
+  return (
+    <div style={{ display: 'grid', gap: 10, justifyItems: 'center' }}>
+      <div style={{ width: '100%', maxWidth: 560, background: '#FCF8EE', border: '1px solid #E8CD9A', borderRadius: 11, padding: '10px 12px', fontSize: 11.5, color: '#6B5A2E' }}>
+        <strong>Preview of what this family sees</strong> — not a live parent login. Parents get their own sign-in in a later phase; nothing here can be changed from this view.
+        {families.length > 0 && (
+          <select value={fam?.id ?? ''} onChange={e => setFamilyId(e.target.value)} style={{ display: 'block', marginTop: 8, width: '100%', border: '1px solid #E7E2DC', borderRadius: 8, padding: '7px 9px', fontSize: 12, background: '#fff', color: TP_DARK }}>
+            {families.map(f => <option key={f.id} value={f.id}>{f.guardian} — {f.children.map(c => c.name.split(' ')[0]).join(' & ')}</option>)}
+          </select>
+        )}
+      </div>
+      <ImpactDataProvider value={preview}>
+        <ParentApp fullScreen={fullScreen} />
+      </ImpactDataProvider>
+    </div>
+  )
 }
 
 function headerFor(role: Role, section: string, titles: Record<Role, { title: string; sub: string }>, brand: ImpactBrand): { title: string; sub: string } {
@@ -276,7 +317,7 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
         </div>
         {darkStyle}
         {role === 'parent' ? (
-          <div className={contentClass}><ParentApp fullScreen /></div>
+          <div className={contentClass}><ParentPreview fullScreen /></div>
         ) : (
           <main className={`tp-resp ${contentClass ?? ''}`} style={{ flex: 1, minWidth: 0, padding: '14px 12px 30px', background: mainBg }}>
             {/* Mobile responsiveness: flatten fixed two-column grids, make the
@@ -321,6 +362,7 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
       { group: 'NETWORK', items: [
         { id: 'schools', label: 'Schools', icon: School },
         { id: 'venues', label: 'Venues', icon: MapPin },
+        { id: 'families', label: 'Families', icon: Heart },
       ] },
       { group: 'TEAM', items: [
         { id: 'coaches', label: 'Coaches', icon: ShieldCheck },
@@ -476,7 +518,7 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
         ) })()}
         {role === 'hq' && <HQView section={hqSection} onSectionChange={setHqSection} />}
         {role === 'school' && <SchoolView section={schoolSection} />}
-        {role === 'parent' && <ParentApp />}
+        {role === 'parent' && <ParentPreview />}
         {role === 'coach' && <CoachView section={coachSection} />}
         {role === 'tenor' && <TenorView section={tenorSection} />}
       </main>

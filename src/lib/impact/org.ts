@@ -105,6 +105,7 @@ export function impactModules(brand: ImpactBrand): ImpactModule[] {
     { id: 'insights', label: 'Insights', desc: 'Participation, conversion, impact and social value' },
     { id: 'schools', label: 'Schools', desc: 'Partner schools — and the School view' },
     { id: 'venues', label: 'Venues', desc: 'Weekend community venues' },
+    { id: 'families', label: 'Families', desc: 'Households and children — consents, medical flags, fees and opt-outs' },
     { id: 'coaches', label: 'Coaches', desc: 'Coaching team, compliance — and the Coach view' },
     { id: 'tenors', label: brand.volunteers, desc: `Volunteer ${brand.volunteers.toLowerCase()} — and the ${brand.volunteer} view` },
     { id: 'comms', label: 'Communications', desc: 'Inbox, newsletters, automations, audiences' },

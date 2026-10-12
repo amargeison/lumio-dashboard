@@ -27,7 +27,8 @@ Return ONLY JSON, no commentary:
 
 Rules:
 - The category is what ONE ROW is. One plan per tab, in the order given.
-- A tab listing children, families or a register is "skip" — never import individual children here.
+- A tab listing children with their parents' details is "children" (guardian_name/email/phone come from the parent columns). A mixed contacts list with tags/roles is "contacts".
+- Never "fix" values in "values" maps beyond mapping to an allowed enumerated value.
 - confidence: "high" only when obvious; the user confirms anything else.
 - "irregular": true ONLY when there is no heading row with one record per row below it AND the tab still holds schools/programmes. Use sparingly.
 - For enumerated fields add a "values" entry for every sample value that is not already allowed.
