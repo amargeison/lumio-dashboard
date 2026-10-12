@@ -1,19 +1,27 @@
 import type { Metadata, Viewport } from 'next'
 import { headers } from 'next/headers'
 import { shareMeta, ogImageUrl } from '@/lib/share-meta'
-import { Geist, JetBrains_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import './globals.css'
 import CookieBanner from '@/components/gdpr/CookieBanner'
 import PageViewTracker from '@/components/analytics/PageViewTracker'
 
-const geist = Geist({
+// Self-hosted (src/fonts, SIL OFL). next/font/google downloads fonts during
+// `next build`, so a Google Fonts hiccup on the VPS could fail the whole
+// deploy. Same latin subset and full weight ranges as before, as variable files.
+const geist = localFont({
+  src: '../fonts/geist/Geist-latin-var.woff2',
   variable: '--font-geist-sans',
-  subsets: ['latin'],
+  weight: '100 900',
+  style: 'normal',
+  display: 'swap',
 })
 
-const jetbrainsMono = JetBrains_Mono({
+const jetbrainsMono = localFont({
+  src: '../fonts/jetbrains-mono/JetBrainsMono-latin-var.woff2',
   variable: '--font-jetbrains-mono',
-  subsets: ['latin'],
+  weight: '100 800',
+  style: 'normal',
   display: 'swap',
   // Only the portals use the mono face; don't make every marketing page
   // download it before first paint.
