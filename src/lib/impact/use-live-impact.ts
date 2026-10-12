@@ -1,44 +1,80 @@
 'use client'
 
-// Live Impact portal loader — mirrors the Tennis portal's auth check
-// (src/app/tennis/[slug]/page.tsx): a signed-in user whose sports_profiles row
-// is sport 'impact' is the portal's HQ, and their tp_* rows (RLS-scoped to
-// hq_id = auth.uid()) feed the views. Anyone else — including every anonymous
-// visitor on day one — gets the empty founder view.
-//
-// NOTE: sports_profiles_sport_check does not allow 'impact' yet, so no profile
-// can match until the drafted migration (supabase/drafts/) is reviewed and
-// applied. Until then this resolves to the empty context for everyone.
+// Live Impact portal loader for /impact/<slug> — mirrors the Tennis Coach
+// address model: the slug picks the org, the signed-in login decides access.
+//   1. impact_orgs[slug] → that org's saved settings (brand, modules) and its
+//      HQ login (hq_id). Read publicly, so the portal looks right for anyone.
+//   2. Signed-in user with a sports_profiles row of sport 'impact':
+//        hq_id === user  → they're this org's HQ: load their tp_* rows
+//                          (RLS hq_id = auth.uid()) and allow editing settings
+//        someone else's  → refused, pointed at their own portal (Coach idiom)
+//   3. Anyone else (incl. every anonymous visitor) → read-only empty view.
+// If impact_orgs isn't there yet (draft 211 not applied) the brand falls back
+// per slug (FOUNDER_FALLBACK) and HQ matching uses sports_profiles.portal_slug.
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import type { ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
-import { IMPACT_LIVE_EMPTY_CONTEXT, mapLiveRows, type LiveRows } from './live-context'
+import type { ImpactDataset, ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
+import { EMPTY_IMPACT_COPY, EMPTY_IMPACT_DATA, mapLiveRows, type LiveRows } from './live-context'
+import { brandFor, type ImpactOrgSettings } from './org'
 
 export interface LiveImpactState {
   ready: boolean
   ctx: ImpactPortalContext
-  /** Signed-in Impact HQ, when there is one. */
-  hq: { userId: string; email: string; name: string; orgName: string } | null
+  /** Signed-in HQ of THIS org. */
+  hq: { userId: string; email: string; name: string } | null
+  /** Signed-in Impact HQ of a DIFFERENT org — refused at this address. */
+  denied: { ownSlug: string | null } | null
 }
 
-export function useLiveImpact(enabled: boolean): LiveImpactState {
-  const [state, setState] = useState<LiveImpactState>({ ready: !enabled, ctx: IMPACT_LIVE_EMPTY_CONTEXT, hq: null })
+const sb = () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+
+export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
+  const [ready, setReady] = useState(!enabled)
+  const [settings, setSettings] = useState<ImpactOrgSettings | null>(null)
+  const [rowExists, setRowExists] = useState(false)
+  const [data, setData] = useState<ImpactDataset>(EMPTY_IMPACT_DATA)
+  const [hq, setHq] = useState<LiveImpactState['hq']>(null)
+  const [denied, setDenied] = useState<LiveImpactState['denied']>(null)
 
   useEffect(() => {
     if (!enabled) return
     let cancelled = false
-    const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    const supabase = sb()
     ;(async () => {
       try {
+        // 1. The org behind this address (public branding + its HQ).
+        let orgHq: string | null = null
+        let orgKnown = false
+        const org = await supabase.from('impact_orgs').select('settings, hq_id').eq('slug', slug).maybeSingle()
+        if (!org.error) {
+          orgKnown = true
+          if (org.data) {
+            if (!cancelled) { setSettings((org.data.settings as ImpactOrgSettings) ?? {}); setRowExists(true) }
+            orgHq = (org.data.hq_id as string | null) ?? null
+          }
+        }
+
+        // 2. Who's signed in.
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
         const { data: profile } = await supabase
           .from('sports_profiles')
-          .select('sport, display_name, brand_name')
+          .select('sport, display_name, portal_slug')
           .eq('id', user.id)
           .maybeSingle()
         if (!profile || profile.sport !== 'impact') return
+
+        const isHq = orgKnown ? orgHq === user.id : (!profile.portal_slug || profile.portal_slug === slug)
+        if (!isHq) {
+          let ownSlug: string | null = profile.portal_slug ?? null
+          if (orgKnown) {
+            const own = await supabase.from('impact_orgs').select('slug').eq('hq_id', user.id).maybeSingle()
+            ownSlug = (own.data?.slug as string | undefined) ?? ownSlug
+          }
+          if (!cancelled) setDenied({ ownSlug: ownSlug && ownSlug !== slug ? ownSlug : null })
+          return
+        }
 
         const [schools, programmes, campaigns, events, donations, checkins] = await Promise.all([
           supabase.from('tp_schools').select('id, name, borough, address, head_name, pe_lead_name, safeguarding_lead, contact_email, contact_phone, funding_source, status, notes').order('name'),
@@ -57,19 +93,42 @@ export function useLiveImpact(enabled: boolean): LiveImpactState {
           checkins: checkins.data ?? [],
         }
         if (cancelled) return
-        setState(s => ({
-          ...s,
-          ctx: { ...IMPACT_LIVE_EMPTY_CONTEXT, data: mapLiveRows(rows) },
-          hq: { userId: user.id, email: user.email ?? '', name: profile.display_name ?? '', orgName: profile.brand_name ?? '' },
-        }))
+        setData(mapLiveRows(rows))
+        setHq({ userId: user.id, email: user.email ?? '', name: profile.display_name ?? '' })
       } catch {
-        // Tables not migrated / network down → stay on the empty founder view.
+        // Tables not migrated / network down → stay on the empty read-only view.
       } finally {
-        if (!cancelled) setState(s => ({ ...s, ready: true }))
+        if (!cancelled) setReady(true)
       }
     })()
     return () => { cancelled = true }
-  }, [enabled])
+  }, [slug, enabled])
 
-  return state
+  const save = useCallback(async (next: ImpactOrgSettings) => {
+    const { error } = await sb().from('impact_orgs').update({ settings: next }).eq('slug', slug).select('slug').single()
+    if (error) return { ok: false, error: 'Couldn’t save — please try again.' }
+    setSettings(next)
+    return { ok: true }
+  }, [slug])
+
+  const ctx = useMemo<ImpactPortalContext>(() => {
+    const canEdit = !!hq && rowExists
+    return {
+      mode: 'live',
+      brand: brandFor(slug, rowExists ? settings : null),
+      copy: EMPTY_IMPACT_COPY,
+      data,
+      org: {
+        slug,
+        settings: settings ?? {},
+        canEdit,
+        readOnlyReason: canEdit ? undefined
+          : hq ? 'This portal’s settings record hasn’t been set up yet — Lumio will enable it.'
+          : 'Sign in as this organisation’s HQ to change settings.',
+        save,
+      },
+    }
+  }, [slug, settings, rowExists, data, hq, save])
+
+  return { ready, ctx, hq, denied }
 }

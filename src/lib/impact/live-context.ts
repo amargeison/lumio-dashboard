@@ -11,7 +11,8 @@
 
 import * as TP from '@/data/tenproject/demo-data'
 import type { DemoSchool, FundraisingEvent, SchoolStatus, TpSchoolDetail } from '@/data/tenproject/demo-data'
-import { TEN_PROJECT_BRAND, TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
+import { TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
+import { GENERIC_BRAND } from './org'
 import type { ImpactCopy, ImpactDataset, ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 
 const KEEP: (keyof ImpactDataset)[] = [
@@ -50,10 +51,10 @@ function emptyDataset(): ImpactDataset {
 export const EMPTY_IMPACT_DATA: ImpactDataset = emptyDataset()
 export const EMPTY_IMPACT_COPY: ImpactCopy = blank(TEN_PROJECT_COPY)
 
-/** Live portal with nothing connected yet — the day-one founder view. */
+/** Live portal with nothing connected yet — a fresh org, generic brand. */
 export const IMPACT_LIVE_EMPTY_CONTEXT: ImpactPortalContext = {
   mode: 'live',
-  brand: TEN_PROJECT_BRAND,
+  brand: GENERIC_BRAND,
   copy: EMPTY_IMPACT_COPY,
   data: EMPTY_IMPACT_DATA,
 }

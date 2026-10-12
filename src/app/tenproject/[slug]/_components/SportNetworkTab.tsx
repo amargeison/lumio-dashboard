@@ -1,14 +1,17 @@
 'use client'
 
-// PE & School Sport Partnership Network (PESSPN) — HQ one-stop shop, plus the
+// PE & School Sport Partnerships Network (PESSPN) — HQ one-stop shop, plus the
 // per-school readiness card reused inside the Schools detail view.
-// Indicative framework — DfE confirms qualifying criteria Sept 2026.
+// Policy facts come from src/data/impact/sport-network.ts (verified baseline)
+// or the stored copy the Update button refreshes from gov.uk / DfE / YST.
+// Readiness scores are an indicative framework, not DfE criteria.
 
 import React from 'react'
-import { Landmark, CheckCircle, CircleDashed, Circle, CalendarClock, FileText, ExternalLink, ArrowUpRight, School, Info } from 'lucide-react'
+import { Landmark, CheckCircle, CircleDashed, Circle, CalendarClock, FileText, ExternalLink, ArrowUpRight, School, Info, RefreshCw, PoundSterling } from 'lucide-react'
 import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK, type PesspnVerdict, type PesspnStatus } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { useSportNetwork } from '@/lib/impact/use-sport-network'
 
 const VERDICT: Record<PesspnVerdict, { label: string; color: string; tone: 'green' | 'amber' | 'red' }> = {
   'on-track': { label: 'On track to qualify', color: '#187A3C', tone: 'green' },
@@ -42,8 +45,8 @@ export function SchoolReadinessCard({ schoolId }: { schoolId: string }) {
   const v = VERDICT[rd.verdict]
   return (
     <Card>
-      <SectionTitle sub="Indicative readiness for the new funding model — DfE confirms criteria Sept 2026">
-        <Landmark size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />PE &amp; School Sport Partnership Network — readiness
+      <SectionTitle sub="Indicative readiness for the Partnerships Network (operational from January 2027)">
+        <Landmark size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />PE &amp; School Sport Partnerships Network — readiness
       </SectionTitle>
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', background: '#F7F5F2', borderRadius: 12, padding: '14px 16px', marginBottom: 12, flexWrap: 'wrap' }}>
         <ScoreRing score={rd.score} verdict={rd.verdict} />
@@ -75,7 +78,9 @@ export function SchoolReadinessCard({ schoolId }: { schoolId: string }) {
 // ─── HQ Sport Network tab ────────────────────────────────────────────────────
 export default function SportNetworkTab() {
   const { brand, data } = useImpact()
-  const { SCHOOLS, SCHOOL_READINESS, PESSPN_CRITERIA, PESSPN_TIMELINE, PESSPN_GUIDANCE } = data
+  const { SCHOOLS, SCHOOL_READINESS, PESSPN_CRITERIA } = data
+  const { content: N, updating, message, update } = useSportNetwork()
+  const updatedLabel = new Date(N.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const scored = SCHOOLS.map(s => ({ s, rd: SCHOOL_READINESS[s.id] })).filter(x => x.rd)
   const counts = { 'on-track': 0, nearly: 0, 'at-risk': 0 } as Record<PesspnVerdict, number>
   scored.forEach(x => { counts[x.rd.verdict]++ })
@@ -85,11 +90,20 @@ export default function SportNetworkTab() {
     <div style={{ display: 'grid', gap: 16 }}>
       {/* Hero */}
       <Card style={{ background: TP_DARK, border: 'none' }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>FUNDING TRANSITION · 2026/27</div>
-        <div style={{ fontSize: 19, fontWeight: 900, color: '#fff', marginTop: 6 }}>PE &amp; School Sport Partnership Network — your one-stop shop</div>
-        <div style={{ fontSize: 12.5, color: '#C9C4BE', marginTop: 5, maxWidth: 640 }}>
-          The PE &amp; Sport Premium is ending. This is where every school’s readiness for the new model lives — who’s on track, who needs a push, the key dates, and the latest DfE guidance. {brand.org}’s registers, CPD and impact data are exactly what schools will need to qualify.
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>{N.hero.kicker}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, color: '#C9C4BE', fontWeight: 700 }}>Last updated: {updatedLabel} · source: GOV.UK</span>
+            <button onClick={update} disabled={updating} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: TP_DARK, border: 'none', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: updating ? 'wait' : 'pointer' }}>
+              <RefreshCw size={12} /> {updating ? 'Checking GOV.UK…' : 'Update'}
+            </button>
+          </div>
         </div>
+        <div style={{ fontSize: 19, fontWeight: 900, color: '#fff', marginTop: 6 }}>{N.hero.title}</div>
+        <div style={{ fontSize: 12.5, color: '#C9C4BE', marginTop: 5, maxWidth: 640 }}>
+          {N.hero.body} {brand.org}’s registers, CPD and impact data are the evidence schools will need.
+        </div>
+        {message && <div style={{ fontSize: 11.5, color: '#fff', marginTop: 8, fontWeight: 700 }}>{message}</div>}
       </Card>
 
       {/* Verdict tiles */}
@@ -150,11 +164,11 @@ export default function SportNetworkTab() {
             <CalendarClock size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Key dates
           </SectionTitle>
           <div style={{ display: 'grid', gap: 0 }}>
-            {PESSPN_TIMELINE.map((t, i) => (
+            {N.timeline.map((t, i) => (
               <div key={i} style={{ display: 'flex', gap: 11 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <div style={{ width: 12, height: 12, borderRadius: '50%', background: t.done ? '#187A3C' : TP_RED, flexShrink: 0, marginTop: 3 }} />
-                  {i < PESSPN_TIMELINE.length - 1 && <div style={{ width: 2, flex: 1, background: '#E7E2DC', minHeight: 16 }} />}
+                  {i < N.timeline.length - 1 && <div style={{ width: 2, flex: 1, background: '#E7E2DC', minHeight: 16 }} />}
                 </div>
                 <div style={{ paddingBottom: 12 }}>
                   <div style={{ fontSize: 11.5, fontWeight: 900, color: t.done ? '#8A847E' : TP_DARK }}>{t.when}</div>
@@ -173,7 +187,7 @@ export default function SportNetworkTab() {
             <FileText size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Guidance & documents
           </SectionTitle>
           <div style={{ display: 'grid', gap: 8 }}>
-            {PESSPN_GUIDANCE.map(g => (
+            {N.guidance.map(g => (
               <a key={g.title} href={g.url} target="_blank" rel="noreferrer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, background: '#F7F5F2', borderRadius: 10, padding: '11px 13px', textDecoration: 'none' }}>
                 <div>
                   <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{g.title}</div>
@@ -190,10 +204,8 @@ export default function SportNetworkTab() {
           </SectionTitle>
           <div style={{ display: 'grid', gap: 8 }}>
             {[
-              ['Money stops flowing to schools', 'The £320m Premium was paid to schools to spend. From 2026/27 it’s replaced by a centrally-commissioned Network — support in kind, not cash.'],
-              ['Less money, more schools', '£580m over seven terms (~22% lower annually), and now spread to secondary schools too.'],
-              ['Funding follows evidence', 'Provision is commissioned through providers who can prove participation and impact — exactly the data the portal produces.'],
-              [`The ${brand.org} angle`, 'Registers, CPD, priority-group reach and impact reporting are the qualifying evidence. Fundraising keeps unfunded schools in the game.'],
+              ...N.keyFacts.map(f => [f.title, f.body]),
+              [`The ${brand.org} angle`, 'Registers, CPD, priority-group reach and impact reporting are the evidence schools will need for the Network. Fundraising keeps unfunded schools in the game.'],
             ].map(([h, b]) => (
               <div key={h} style={{ background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>
                 <div style={{ fontSize: 12, fontWeight: 900, color: TP_DARK }}>{h}</div>
@@ -204,8 +216,29 @@ export default function SportNetworkTab() {
         </Card>
       </div>
 
-      <div style={{ fontSize: 11, color: '#8A847E' }}>
-        <Pill tone="grey">INDICATIVE</Pill>&nbsp; Readiness criteria are {brand.org}’s framework based on the published direction and the outgoing Premium’s five key indicators. They’ll be reconciled to DfE’s conditions of grant when published (Sept 2026).
+      {/* PE & Sport Premium 2026/27 */}
+      <Card>
+        <SectionTitle sub="Allocations, payment dates and the spending return — from the 2026/27 conditions of grant">
+          <PoundSterling size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{N.premium.title}
+        </SectionTitle>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
+          {N.premium.rows.map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, background: '#F7F5F2', borderRadius: 10, padding: '10px 12px', fontSize: 12 }}>
+              <span style={{ color: '#6B6560', fontWeight: 700 }}>{k}</span>
+              <span style={{ color: TP_DARK, fontWeight: 900, textAlign: 'right' }}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div style={{ fontSize: 11, color: '#8A847E', lineHeight: 1.6 }}>
+        <Pill tone="grey">INDICATIVE</Pill>&nbsp; {N.footnote}
+        <div style={{ marginTop: 6 }}>
+          Last updated {updatedLabel}. Source:{' '}
+          {N.sources.map((s, i) => (
+            <span key={s.url}>{i > 0 && ' · '}<a href={s.url} target="_blank" rel="noreferrer" style={{ color: TP_RED, fontWeight: 700 }}>{s.title}</a></span>
+          ))}
+        </div>
       </div>
     </div>
   )

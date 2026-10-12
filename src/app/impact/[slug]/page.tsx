@@ -23,6 +23,7 @@ import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { ImpactDataProvider, useImpact, type ImpactBrand, type ImpactCopy, type ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import { IMPACT_DEMO_CONTEXT } from '@/data/impact/demo-context'
 import { useLiveImpact } from '@/lib/impact/use-live-impact'
+import { moduleOn } from '@/lib/impact/org'
 import { createBrowserClient } from '@supabase/ssr'
 import { SportsDemoGate } from '@/components/sports-demo'
 import type { SportsDemoSession } from '@/components/sports-demo'
@@ -118,11 +119,16 @@ function headerFor(role: Role, section: string, titles: Record<Role, { title: st
 }
 
 function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSession; slug: string; onSignOut?: () => void }) {
-  const { brand, copy, mode } = useImpact()
+  const { brand, copy, mode, org } = useImpact()
+  // Per-org modules (Settings → Modules). Off = gone from the sidebar, and a
+  // role view whose module is off (School / Coach / volunteer) is hidden too.
+  const on = (id: string) => moduleOn(org?.settings, id)
+  const ROLE_MODULE: Partial<Record<Role, string>> = { school: 'schools', coach: 'coaches', tenor: 'tenors' }
+  const roleOn = (r: Role) => !ROLE_MODULE[r] || on(ROLE_MODULE[r]!)
   // Live: a real HQ signs out of Supabase; a gated visitor leaves the portal.
   const exitPortal = onSignOut ?? (() => signOutImpact(slug))
   const exitLabel = mode === 'live' ? 'Sign out' : 'Exit demo'
-  const ROLES = rolesFor(brand, copy)
+  const ROLES = rolesFor(brand, copy).filter(r => roleOn(r.id))
   const ROLE_TITLES = roleTitlesFor(brand, copy)
   // Role starts unset so the programme's role picker still fronts the portal,
   // exactly as it did behind the PIN.
@@ -134,6 +140,15 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
   const [schoolSection, setSchoolSection] = useState<SchoolSection>('programme')
   const [coachSection, setCoachSection] = useState<CoachSection>('stats')
   const [tenorSection, setTenorSection] = useState<TenorSection>('session')
+
+  // A module switched off while it's open → back to Overview (Coach idiom);
+  // a role view switched off → back to HQ.
+  const modulesKey = JSON.stringify(org?.settings?.modules ?? {})
+  useEffect(() => {
+    if (role && !roleOn(role)) { setRole(lockedRole && roleOn(lockedRole) ? lockedRole : 'hq'); return }
+    if (!on(hqSection)) setHqSection('overview')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modulesKey, role, hqSection])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -345,6 +360,9 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
     : [
       { group: 'FAMILY', items: [{ id: 'app', label: 'The family app', icon: Smartphone }] },
     ]
+  const VISIBLE_NAV = role === 'hq'
+    ? NAV_GROUPS.map(g => ({ ...g, items: g.items.filter(i => on(i.id)) })).filter(g => g.items.length > 0)
+    : NAV_GROUPS
   const activeSection =
     role === 'hq' ? hqSection : role === 'school' ? schoolSection : role === 'coach' ? coachSection : role === 'tenor' ? tenorSection : 'app'
   function setSection(id: string) {
@@ -393,7 +411,7 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
           )}
         </div>
         <nav style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', padding: expanded ? '2px 10px' : '2px 8px' }}>
-          {NAV_GROUPS.map(g => (
+          {VISIBLE_NAV.map(g => (
             <div key={g.group} style={{ marginBottom: 8 }}>
               {expanded && (
                 <div style={{ fontSize: 9, fontWeight: 800, color: '#6B6560', letterSpacing: 1.4, padding: '6px 12px 4px' }}>{g.group}</div>
@@ -474,7 +492,7 @@ export default function ImpactPortal({ params }: { params: Promise<{ slug: strin
   // URL decides demo vs live (see src/lib/config/demo-slugs.ts) — never the
   // session. Live portals load their HQ's Supabase data, or stay empty.
   const isDemo = isDemoSlug(slug, 'impact')
-  const live = useLiveImpact(!isDemo)
+  const live = useLiveImpact(slug, !isDemo)
   const ctx: ImpactPortalContext = isDemo ? IMPACT_DEMO_CONTEXT : live.ctx
 
   if (!live.ready) return (
@@ -483,11 +501,31 @@ export default function ImpactPortal({ params }: { params: Promise<{ slug: strin
     </div>
   )
 
-  // Signed-in Impact HQ → straight into their portal (Tennis pattern).
+  // Signed in as another org's HQ → refused at this address (Coach idiom).
+  if (!isDemo && live.denied) {
+    const own = live.denied.ownSlug
+    return (
+      <div style={{ minHeight: '100vh', background: TP_PAPER, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div style={{ maxWidth: 440, background: '#fff', border: '1px solid #E7E2DC', borderRadius: 14, padding: 24, textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK }}>This isn’t your organisation’s portal</div>
+          <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 8, lineHeight: 1.55 }}>
+            You’re signed in as the HQ of a different Lumio Impact organisation, so this portal’s data isn’t available to you.
+          </div>
+          {own && (
+            <a href={`/impact/${own}`} style={{ display: 'inline-block', marginTop: 14, background: TP_RED, color: '#fff', borderRadius: 9, padding: '10px 16px', fontSize: 12.5, fontWeight: 800, textDecoration: 'none' }}>
+              Go to your portal →
+            </a>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Signed-in Impact HQ of this org → straight into their portal (Tennis pattern).
   if (!isDemo && live.hq) {
     const hq = live.hq
     const session: SportsDemoSession = {
-      email: hq.email, userName: hq.name, clubName: hq.orgName || ctx.brand.org, role: 'hq',
+      email: hq.email, userName: hq.name, clubName: ctx.brand.org, role: 'hq',
       photoDataUrl: null, logoDataUrl: null, sport: 'impact', verifiedAt: new Date().toISOString(), isDemoShell: false,
     }
     const handleSignOut = async () => {

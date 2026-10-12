@@ -1,13 +1,16 @@
 'use client'
 
 // HQ Settings — organisation, branding, integrations, comms, roles, data.
-// Toggles are live in-session (demo state); production persists per-org.
+// On /impact portals the Organisation details and Modules are the org's own
+// saved settings (OrgSettings.tsx → impact_orgs); other toggles are in-session.
 
 import React, { useEffect, useState } from 'react'
 import { Building2, Palette, Plug, Bell, Users, ShieldCheck, Moon, MessageSquare } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { OrgDetailsCard, ModulesCard } from './OrgSettings'
+import ImportCard from './ImportCard'
 
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
@@ -30,11 +33,11 @@ function Row({ label, desc, on, onChange }: { label: string; desc: string; on: b
 }
 
 export default function SettingsTab() {
-  const { brand, copy } = useImpact()
+  const { brand, copy, org } = useImpact()
   // Live portals have no demo copy — fall back to the organisation's own brand.
   const commsRows: [string, string][] = copy.settings.commsRows.length ? copy.settings.commsRows : [
     ['Sender name', brand.org],
-    ['Reply-to', `info@${brand.emailDomain}`],
+    ['Reply-to', org?.settings.email || (brand.emailDomain ? `info@${brand.emailDomain}` : '—')],
     ['Newsletter footer', 'Charity details · unsubscribe · preference centre (auto-added)'],
   ]
   const orgRows: [string, string][] = copy.settings.orgRows.length ? copy.settings.orgRows : [
@@ -70,6 +73,12 @@ export default function SettingsTab() {
         <Row label="Dark mode" desc="Darkens the whole portal on this device — logos, photos and documents stay true-colour" on={darkMode} onChange={toggleDarkMode} />
       </Card>
 
+      {/* Modules — per-org on/off (Impact portals only) */}
+      {org && <ModulesCard />}
+
+      {/* Import data — bulk import into this org (Impact portals only) */}
+      {org && <ImportCard />}
+
       {/* Communications */}
       <Card>
         <SectionTitle sub="Sender identity, channels and automation rules for the Communications centre">
@@ -89,7 +98,7 @@ export default function SettingsTab() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Organisation */}
-        <Card>
+        {org ? <OrgDetailsCard /> : <Card>
           <SectionTitle><Building2 size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Organisation</SectionTitle>
           <div style={{ display: 'grid', gap: 10, fontSize: 12.5 }}>
             {orgRows.map(([l, v]) => (
@@ -100,7 +109,7 @@ export default function SettingsTab() {
             ))}
           </div>
           <button style={{ marginTop: 12, background: '#fff', color: TP_DARK, border: '1px solid #E7E2DC', borderRadius: 8, padding: '8px 14px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer' }}>Edit details</button>
-        </Card>
+        </Card>}
 
         {/* Branding */}
         <Card>
