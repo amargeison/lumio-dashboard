@@ -57,6 +57,14 @@ export interface ImportSchema<C extends string> {
   sameThing?: (category: C) => ((a: Rec, b: Rec) => boolean) | undefined
   /** Cross-record merging after de-duplication (e.g. first-name-only people). */
   afterDedupe?: (category: C, byKey: Map<string, Rec>, merge: (have: Rec, r: Rec) => void) => void
+  // ── Review flags (opt-in) ──
+  /** When true, every value that didn't fit its column (and every validate()
+   *  finding) is listed on the record as `_review: string[]`, so the product can
+   *  ask the user before saving instead of silently filing it in the notes.
+   *  `_review` is never a table column. Off by default. */
+  collectIssues?: boolean
+  /** Extra checks on a clean record (e.g. "email has no @"). Only used with collectIssues. */
+  validate?: (category: C, out: Rec) => string[]
 }
 
 // ── Generic value conversion ─────────────────────────────────────────────────
@@ -209,6 +217,10 @@ export function cleanRecord<C extends string>(schema: ImportSchema<C>, category:
   if (schema.headingPrefix.test(label.trim())) return null
   schema.afterClean?.(category, out)
   if (spill.length) out.notes = [out.notes, spill.join(' · ')].filter(Boolean).join(' · ').slice(0, 4000)
+  if (schema.collectIssues) {
+    const issues = [...spill.map(s => `Couldn’t read ${s}`), ...(schema.validate?.(category, out) ?? [])]
+    if (issues.length) out._review = issues
+  }
   return out
 }
 
