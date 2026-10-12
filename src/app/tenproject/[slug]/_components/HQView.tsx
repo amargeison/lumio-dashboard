@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { AlertCircle, Info, TrendingUp, Users, School, ClipboardList, ShieldCheck, PoundSterling, BarChart3, LayoutDashboard, MapPin, Settings, Send, Share2, Package, Landmark } from 'lucide-react'
+import { Heart, AlertCircle, Info, TrendingUp, Users, School, ClipboardList, ShieldCheck, PoundSterling, BarChart3, LayoutDashboard, MapPin, Settings, Send, Share2, Package, Landmark } from 'lucide-react'
 import { Card, SectionTitle, Stat, Pill, Thermometer, EmptyState } from './ui'
 import Insights from './Insights'
 import { CoachesTab, TenorsTab } from './PeopleViews'
@@ -12,6 +12,7 @@ import CommsTab from './CommsTab'
 import SocialTab from './SocialTab'
 import EquipmentTab from './EquipmentTab'
 import SportNetworkTab from './SportNetworkTab'
+import FamiliesTab from './FamiliesTab'
 import { openFunderDoc } from '../_lib/funder-docs'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
@@ -25,7 +26,7 @@ const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> =
   complete: 'amber',
 }
 
-export type HqTab = 'overview' | 'insights' | 'schools' | 'venues' | 'coaches' | 'tenors' | 'comms' | 'social' | 'equipment' | 'network' | 'settings'
+export type HqTab = 'overview' | 'insights' | 'schools' | 'venues' | 'families' | 'coaches' | 'tenors' | 'comms' | 'social' | 'equipment' | 'network' | 'settings'
 
 export const HQ_SECTIONS: { id: HqTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -79,6 +80,7 @@ export default function HQView({ section, onSectionChange }: {
           { id: 'insights' as const, label: 'Insights', icon: BarChart3 },
           { id: 'schools' as const, label: 'Schools', icon: School },
           { id: 'venues' as const, label: 'Venues', icon: MapPin },
+          ...(ctx.org ? [{ id: 'families' as const, label: 'Families', icon: Heart }] : []),
           { id: 'coaches' as const, label: 'Coaches', icon: ShieldCheck },
           { id: 'tenors' as const, label: brand.volunteers, icon: Users },
           { id: 'comms' as const, label: 'Communications', icon: Send },
@@ -107,6 +109,7 @@ export default function HQView({ section, onSectionChange }: {
       {tab === 'coaches' && <CoachesTab />}
       {tab === 'tenors' && <TenorsTab />}
       {tab === 'venues' && <VenuesTab initialId={openId} />}
+      {tab === 'families' && <FamiliesTab />}
       {tab === 'comms' && <CommsTab />}
       {tab === 'social' && <SocialTab />}
       {tab === 'equipment' && <EquipmentTab />}

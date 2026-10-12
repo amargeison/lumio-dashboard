@@ -87,6 +87,11 @@ export default function Insights() {
         ))}
       </div>
 
+      {ctx.mode === 'live' ? (
+        <Card>
+          <EmptyState icon={TrendingUp} title="Charts build as your data does" sub="Reach over the year, school-to-weekend conversion, retention, demographics, wellbeing and social value fill in automatically from registers, QR check-ins and family surveys." />
+        </Card>
+      ) : (<>
       {/* Reach over the year + term growth */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 16 }}>
         <Card>
@@ -314,6 +319,7 @@ export default function Insights() {
           <Pill tone="grey">DEMO DATA</Pill>&nbsp; Every figure on this page draws from registers, QR check-ins and surveys — one click to a branded PDF for any school, borough or trust.
         </div>
       </Card>
+      </>)}
       </>)}
     </div>
   )

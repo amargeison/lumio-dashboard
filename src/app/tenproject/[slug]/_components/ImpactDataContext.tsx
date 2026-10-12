@@ -46,7 +46,19 @@ export interface ImpactPortalContext {
   data: ImpactDataset
   /** Absent on the legacy /tenproject route (no org settings there). */
   org?: ImpactOrgHandle
+  /** Live portals: households and their children (Families module, parent preview). */
+  people?: ImpactPeople
 }
+
+export interface ImpactChild {
+  id: string; name: string; age: number | null; yearGroup: string | null; school: string | null
+  medical: string | null; photoConsent: boolean | null; feeStatus: string; stickers: number
+}
+export interface ImpactFamily {
+  id: string; guardian: string; email: string | null; phone: string | null
+  consentData: boolean | null; consentPhoto: boolean | null; unsubscribed: boolean; children: ImpactChild[]
+}
+export interface ImpactPeople { families: ImpactFamily[]; unlinkedChildren: ImpactChild[] }
 
 const { TP_RED: _r, TP_BLACK: _b, TP_DARK: _d, TP_PAPER: _p, ...TP_DATA } = TP
 

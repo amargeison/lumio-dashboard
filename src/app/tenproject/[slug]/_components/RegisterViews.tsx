@@ -1,13 +1,23 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { QrCode, WifiOff, CheckCircle, Users, ClipboardList, Sparkles, PlayCircle, BookOpen, ShieldAlert, Package, Phone, FileText, BarChart3, MapPin, GraduationCap, CalendarDays, Send, Navigation, Printer, Share2, School } from 'lucide-react'
+import { Lock, QrCode, WifiOff, CheckCircle, Users, ClipboardList, Sparkles, PlayCircle, BookOpen, ShieldAlert, Package, Phone, FileText, BarChart3, MapPin, GraduationCap, CalendarDays, Send, Navigation, Printer, Share2, School } from 'lucide-react'
 import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
 import { SendMessageWizard } from './CommsTab'
 import { openResourceDoc, openSessionCardDoc } from '../_lib/resource-docs'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact, fill, type ImpactDataset } from './ImpactDataContext'
+
+// Shown above a register on live portals: what you see is the saved register;
+// tapping to change it isn't available yet (it would only change this screen).
+function ReadOnlyNote() {
+  return (
+    <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', fontSize: 11.5, color: '#6B6560', background: '#F7F5F2', border: '1px dashed #D9D3CC', borderRadius: 9, padding: '8px 11px', marginBottom: 10 }}>
+      <Lock size={13} style={{ flexShrink: 0, marginTop: 1 }} /> Read-only for now — this shows the register as saved. Marking attendance here is coming next; until then it can’t be changed from this screen.
+    </div>
+  )
+}
 
 // ─── Shared session run-sheet card (used by Coach today/weekend + TENOR) ────
 function SessionRunSheet({ plan, context, onPrint }: {
@@ -105,6 +115,10 @@ export function CoachView({ section }: { section?: CoachSection }) {
   const noStats = COACH_STATS.headline.length === 0
   const noCohorts = COACH_STATS.cohortProgress.length === 0
   const noResources = COACH_RESOURCES.curriculum.length + COACH_RESOURCES.development.length + COACH_RESOURCES.admin.length === 0
+  // Live portals show the register read-only until tap-to-save ships — no tap
+  // that looks like it saved and then quietly vanishes.
+  const readOnly = ctx.mode === 'live'
+  const firstCohort = COACH_STATS.cohortProgress[0]?.cohort
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -222,7 +236,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
             </div>
           </Card>
           <div style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
-            <Card>
+            {COACH_STATS.attendanceTrend.length > 0 && <Card>
               <SectionTitle sub="% attendance, your last 10 sessions">Attendance trend</SectionTitle>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 5, height: 80 }}>
                 {COACH_STATS.attendanceTrend.map((v, i) => (
@@ -230,7 +244,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
                 ))}
               </div>
               <div style={{ fontSize: 11, color: '#6B6560', marginTop: 8 }}>Latest: {COACH_STATS.attendanceTrend[COACH_STATS.attendanceTrend.length - 1]}%{copy.coach.trendNote}</div>
-            </Card>
+            </Card>}
             <Card>
               <SectionTitle sub="HQ sees this too — expiries flagged before they bite">
                 <GraduationCap size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />My compliance
@@ -307,43 +321,45 @@ export function CoachView({ section }: { section?: CoachSection }) {
       </Card>
 
       <Card style={{ background: TP_DARK, border: 'none' }}>
-        <div style={{ color: '#fff', fontSize: 16, fontWeight: 900 }}>{copy.coach.todayTitle}</div>
+        <div style={{ color: '#fff', fontSize: 16, fontWeight: 900 }}>{copy.coach.todayTitle || firstCohort}</div>
         <div style={{ color: '#C9C4BE', fontSize: 12.5, marginTop: 4 }}>
           {fill(copy.coach.todaySub, brand, { skill: block.skill })}
         </div>
-        <div style={{ color: '#C9C4BE', fontSize: 12, marginTop: 6 }}>
+        {OAKRIDGE_ADDRESS && <div style={{ color: '#C9C4BE', fontSize: 12, marginTop: 6 }}>
           <MapPin size={12} style={{ verticalAlign: '-1px', marginRight: 5, color: TP_RED }} />{OAKRIDGE_ADDRESS} · sign in at reception
-        </div>
+        </div>}
         <div style={{ display: 'flex', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
-          <a href={`https://maps.google.com/?q=${encodeURIComponent(OAKRIDGE_ADDRESS)}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#22222A', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}>
+          {OAKRIDGE_ADDRESS && <><a href={`https://maps.google.com/?q=${encodeURIComponent(OAKRIDGE_ADDRESS)}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#22222A', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}>
             <MapPin size={12} /> Map
           </a>
           <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(OAKRIDGE_ADDRESS)}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#22222A', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}>
             <Navigation size={12} /> Directions
-          </a>
+          </a></>}
           <Pill tone="red">{present} / {children.length} PRESENT</Pill>
-          <Pill tone="grey">{copy.coach.kitPill}</Pill>
-          <Pill tone="grey">{copy.coach.nextPill}</Pill>
+          {copy.coach.kitPill && <Pill tone="grey">{copy.coach.kitPill}</Pill>}
+          {copy.coach.nextPill && <Pill tone="grey">{copy.coach.nextPill}</Pill>}
         </div>
       </Card>
 
       <Card>
-        <SectionTitle sub="One tap = attendance. Second tap = this week’s skill recorded — the parent sees the sticker mirrored tonight.">
-          <ClipboardList size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Register — tap to mark
+        <SectionTitle sub={readOnly ? 'The latest register for this cohort, as recorded.' : 'One tap = attendance. Second tap = this week’s skill recorded — the parent sees the sticker mirrored tonight.'}>
+          <ClipboardList size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{readOnly ? 'Register — latest session' : 'Register — tap to mark'}
         </SectionTitle>
+        {readOnly && <ReadOnlyNote />}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8 }}>
           {children.map(c => (
             <div key={c.id} style={{ border: '1px solid #F0EBE5', borderRadius: 10, padding: '10px 12px', background: c.present ? '#fff' : '#F7F5F2' }}>
               <button
-                onClick={() => setChildren(prev => prev.map(x => x.id === c.id ? { ...x, present: !x.present } : x))}
-                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                onClick={() => { if (!readOnly) setChildren(prev => prev.map(x => x.id === c.id ? { ...x, present: !x.present } : x)) }}
+                disabled={readOnly}
+                style={{ background: 'none', border: 'none', padding: 0, cursor: readOnly ? 'default' : 'pointer', textAlign: 'left', width: '100%' }}
               >
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: c.present ? TP_DARK : '#9A948E' }}>
                   {c.present ? '✓ ' : ''}{c.name}
                 </div>
                 <div style={{ fontSize: 10.5, color: '#8A847E' }}>{c.year} · {c.stickers}/6 stickers</div>
               </button>
-              {c.present && (
+              {c.present && !readOnly && (
                 <button
                   onClick={() => setSkillTapped(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
                   style={{ marginTop: 6, width: '100%', background: skillTapped[c.id] ? '#187A3C' : '#FDE8E8', color: skillTapped[c.id] ? '#fff' : TP_RED, border: 'none', borderRadius: 7, padding: '5px 8px', fontSize: 10.5, fontWeight: 800, cursor: 'pointer' }}
@@ -354,16 +370,16 @@ export function CoachView({ section }: { section?: CoachSection }) {
             </div>
           ))}
         </div>
-        <button style={{ marginTop: 12, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+        {!readOnly && <button style={{ marginTop: 12, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
           <Sparkles size={14} /> AI cohort summary for the school (demo)
-        </button>
+        </button>}
       </Card>
 
-      <SessionRunSheet
+      {WEEK4_SCHOOL_PLAN.blocks.length > 0 && <SessionRunSheet
         plan={WEEK4_SCHOOL_PLAN}
         context="Everything you need for today's in-school session"
         onPrint={() => openResourceDoc(copy.coach.schoolPlanTitle, ctx)}
-      />
+      />}
       </>)}
     </div>
   )
@@ -385,6 +401,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
   const mapQ = encodeURIComponent(`${vd?.address}, ${vd?.postcode}`)
   // Live portals before a venue and volunteer team exist
   const noVenue = !venue
+  const readOnly = ctx.mode === 'live'
   const noResources = TENOR_RESOURCES.weeks.length + TENOR_RESOURCES.guides.length + TENOR_RESOURCES.contacts.length === 0
   const checkedIn = families.filter(f => f.checkedIn)
   const childCount = checkedIn.reduce((n, f) => n + f.children.split('+').length, 0)
@@ -506,8 +523,10 @@ export function TenorView({ section }: { section?: TenorSection }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 16 }}>
         <Card>
           <SectionTitle sub="Families scan the gate QR themselves — you just sanity-check the live count and tap in anyone without a phone">
-            <Users size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Today’s register
+            <Users size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{readOnly ? 'Latest register' : 'Today’s register'}
           </SectionTitle>
+          {readOnly && <ReadOnlyNote />}
+          {families.length === 0 && <EmptyState compact icon={Users} title="No check-ins yet" sub="Families appear here as they scan in at the gate." />}
           <div style={{ display: 'grid', gap: 7 }}>
             {families.map(f => (
               <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: f.checkedIn ? '#F7F5F2' : '#fff', border: '1px solid #F0EBE5', borderRadius: 10, padding: '9px 12px' }}>
@@ -517,6 +536,8 @@ export function TenorView({ section }: { section?: TenorSection }) {
                 </div>
                 {f.checkedIn ? (
                   <Pill tone={f.via === 'QR' ? 'green' : 'dark'}>{f.via === 'QR' ? '✓ QR SCAN' : `✓ ${brand.volunteerUpper} TAP`}</Pill>
+                ) : readOnly ? (
+                  <Pill tone="grey">NOT CHECKED IN</Pill>
                 ) : (
                   <button
                     onClick={() => setFamilies(prev => prev.map(x => x.id === f.id ? { ...x, checkedIn: true, via: 'TENOR' } : x))}
@@ -540,7 +561,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
               <WifiOff size={13} /> Works offline — check-ins sync when signal returns
             </div>
           </Card>
-          <Card>
+          {plan.blocks.length > 0 && <Card>
             <SectionTitle>This week at a glance</SectionTitle>
             <div style={{ fontSize: 12.5, color: TP_DARK }}>
               Week {plan.week} — {plan.skill} · {plan.duration}. Full run-sheet below; videos in the Resources tab.
@@ -549,10 +570,11 @@ export function TenorView({ section }: { section?: TenorSection }) {
               <CheckCircle size={13} style={{ verticalAlign: '-2px', marginRight: 6, color: '#187A3C' }} />
               Register auto-submits at 3pm — no paperwork, no chasing.
             </div>
-          </Card>
+          </Card>}
         </div>
       </div>
 
+      {plan.blocks.length > 0 && (<>
       {/* Full session run-sheet */}
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
@@ -622,6 +644,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
           </div>
         </div>
       </Card>
+      </>)}
 
       <UpcomingCalendar role="tenor" />
       </>)}

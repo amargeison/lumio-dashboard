@@ -15,7 +15,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import type { ImpactDataset, ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
-import { EMPTY_IMPACT_COPY, EMPTY_IMPACT_DATA, mapLiveRows, type LiveRows } from './live-context'
+import { EMPTY_IMPACT_COPY, EMPTY_IMPACT_DATA, mapLiveRows, buildPeople, type LiveRows } from './live-context'
+import type { ImpactPeople } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import { brandFor, type ImpactOrgSettings } from './org'
 
 export interface LiveImpactState {
@@ -34,6 +35,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
   const [settings, setSettings] = useState<ImpactOrgSettings | null>(null)
   const [rowExists, setRowExists] = useState(false)
   const [data, setData] = useState<ImpactDataset>(EMPTY_IMPACT_DATA)
+  const [people, setPeople] = useState<ImpactPeople | undefined>(undefined)
   const [hq, setHq] = useState<LiveImpactState['hq']>(null)
   const [denied, setDenied] = useState<LiveImpactState['denied']>(null)
 
@@ -84,6 +86,19 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
           supabase.from('tp_donations').select('campaign_id, event_id, amount_pence'),
           supabase.from('tp_qr_checkins').select('children_count'),
         ])
+        // Impact-owned people & places (drafts 213/214). A table that isn't
+        // there yet just reads as empty — the portal keeps its empty states.
+        const rowsOf = async <T,>(q: PromiseLike<{ data: T[] | null; error: unknown }>) => { const r = await q; return r.error ? [] : (r.data ?? []) }
+        const [venues, staff, volunteers, families, children, sessions, attendance, programmeLinks] = await Promise.all([
+          rowsOf(supabase.from('tp_venues').select('id, name, address, postcode, courts, surface, access_notes, storage_notes, session_day, session_time, inclusive, external_partner, external_url, notes').order('name')),
+          rowsOf(supabase.from('tp_staff').select('id, name, role, qualification, email, phone, availability, specialisms, dbs_status, dbs_number, dbs_expiry, safeguarding_date, first_aid_expiry, insurance, notes').order('name')),
+          rowsOf(supabase.from('tp_volunteers').select('id, name, email, phone, venue_id, inducted, induction_date, dbs_status, since, notes').order('name')),
+          rowsOf(supabase.from('tp_families').select('id, guardian_name, email, phone, emergency_contact, consent_data, consent_photo, unsubscribed_at').order('guardian_name')),
+          rowsOf(supabase.from('tp_children').select('id, family_id, name, date_of_birth, year_group, school_id, programme_id, medical_notes, photo_consent, fee_status, stickers').order('name')),
+          rowsOf(supabase.from('tp_sessions').select('id, kind, programme_id, venue_id, session_date, lead_staff_id').order('session_date')),
+          rowsOf(supabase.from('tp_attendance').select('session_id, child_id, present, via')),
+          rowsOf(supabase.from('tp_programmes').select('id, lead_staff_id, venue_id')),
+        ])
         const rows: LiveRows = {
           schools: schools.data ?? [],
           programmes: programmes.data ?? [],
@@ -91,9 +106,11 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
           events: events.data ?? [],
           donations: donations.data ?? [],
           checkins: checkins.data ?? [],
-        }
+          venues, staff, volunteers, families, children, sessions, attendance, programmeLinks,
+        } as LiveRows
         if (cancelled) return
         setData(mapLiveRows(rows))
+        setPeople(buildPeople(rows))
         setHq({ userId: user.id, email: user.email ?? '', name: profile.display_name ?? '' })
       } catch {
         // Tables not migrated / network down → stay on the empty read-only view.
@@ -118,6 +135,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
       brand: brandFor(slug, rowExists ? settings : null),
       copy: EMPTY_IMPACT_COPY,
       data,
+      people,
       org: {
         slug,
         settings: settings ?? {},
@@ -128,7 +146,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
         save,
       },
     }
-  }, [slug, settings, rowExists, data, hq, save])
+  }, [slug, settings, rowExists, data, people, hq, save])
 
   return { ready, ctx, hq, denied }
 }
