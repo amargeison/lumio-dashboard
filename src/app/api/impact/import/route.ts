@@ -11,23 +11,26 @@ export const maxDuration = 120
 
 // Lumio Impact bulk import — read step. Accepts an org's file (PDF, Word,
 // photo, text) or a piece of a spreadsheet tab the browser already opened,
-// and returns categorised records (schools, programmes). Same engine as
-// Tennis Coach's importer; Impact's own schema, prompt, guards and auth.
+// and returns categorised records (schools, programmes, venues, coaches,
+// volunteers, families, children, registers, fundraising, feedback, contacts).
+// Same engine as Tennis Coach's importer; Impact's own schema, prompt, guards
+// and auth.
 
-const SCHEMA_PROMPT = `You are importing a schools sport-programme organisation's data into their management portal. Read the supplied file and extract every school and programme you can find. Map columns/labels intelligently even if headings differ.
+const SCHEMA_PROMPT = `You are importing a schools sport-programme organisation's data into their management portal. Read the supplied file and extract every record you can find. Map columns/labels intelligently even if headings differ.
 
 Output ONE record per line as a JSON object (JSON Lines) — no array, no markdown, no commentary. Each line has a "type" plus any of that type's fields you can determine:
 ${IMPACT_IMPORT_CATEGORIES.map(c => `  ${c}: ${IMPACT_IMPORT_FIELDS[c].join(', ')}`).join('\n')}
-Example line: {"type":"schools","name":"Hollinsmere Primary","borough":"Northvale","head_name":"Mrs H. Sandford","status":"running"}
+Example lines:
+{"type":"schools","name":"Hollinsmere Primary","borough":"Northvale","status":"running"}
+{"type":"children","name":"Amy Clark","date_of_birth":"2018-03-12","year_group":"Y3","guardian_name":"Jo Clark","guardian_email":"jo@example.com","photo_consent":"yes"}
 ${IMPACT_MEANINGS}
 Rules:
-- One line per real thing. Do not repeat a school for every row it appears on.
-- "status" for schools: enquiry, fundraising, confirmed, running, complete or renewal. For programmes: planned, fundraising, confirmed, running or complete.
-- current_week is the week reached (0–10). cost is the programme cost as a plain number (no currency symbol).
-- Dates as YYYY-MM-DD (British day-first when ambiguous).
-- Never extract individual children, parents or their contact details — leave them out.
-- Useful details with no field go in "notes".
-- Skip headings, totals and blank rows. Be thorough — extract ALL schools and programmes.`
+- One line per real thing. Do not repeat a school, venue or family for every row it appears on.
+- Copy values as written — do NOT fix, guess or invent them. An impossible or partial date, an email with no @, an amount in words: copy it exactly; it is checked afterwards and shown to the user.
+- A row naming two children (e.g. "Jack & Mia Okafor (twins)"): copy the name exactly as written; it is split afterwards.
+- Never leave out a child, parent or contact — every person in the file matters.
+- Useful details with no field go in "notes". Medical information goes in medical_notes.
+- Skip headings, totals and blank rows. Be thorough — extract ALL records.`
 
 export async function POST(req: NextRequest) {
   const hq = await impactHq()
@@ -65,7 +68,7 @@ export async function POST(req: NextRequest) {
     for (const b of res.content) if (b.type === 'text') txt += b.text
     const extracted = parseRecordLines(IMPACT_IMPORT_SCHEMA, txt)
     const found = Object.values(extracted).reduce((n, r) => n + (r?.length ?? 0), 0)
-    if (!found && !isChunk) return NextResponse.json({ error: 'Could not find any schools or programmes in that file.' }, { status: 422 })
+    if (!found && !isChunk) return NextResponse.json({ error: 'Could not find any records in that file.' }, { status: 422 })
     return NextResponse.json({ extracted, ...(res.stop_reason === 'max_tokens' ? { truncated: true } : {}) })
   } catch (err) {
     const e = err as { message?: string; status?: number }
