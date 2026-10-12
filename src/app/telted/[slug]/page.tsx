@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { Public_Sans } from 'next/font/google'
+import localFont from 'next/font/local'
 import Link from 'next/link'
 import {
   LayoutDashboard, TrendingUp, Building2, Users, UserCheck, Shield, Clock,
@@ -38,7 +38,16 @@ import {
   RosteringPage, MisSyncPage, WorkflowsPage, ReportsToolPage,
 } from '@/components/neli/SidebarPages'
 
-const publicSans = Public_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], display: 'swap' })
+// Public Sans, self-hosted (src/fonts/public-sans, SIL OFL). next/font/google
+// downloads fonts during `next build`, so a Google Fonts hiccup on the VPS
+// failed the whole deploy. Same latin subset and 400–800 range as before,
+// as one variable file.
+const publicSans = localFont({
+  src: '../../../fonts/public-sans/PublicSans-latin-var.woff2',
+  weight: '400 800',
+  style: 'normal',
+  display: 'swap',
+})
 
 const LanguageScreenApp = dynamic(() => import('@/components/neli/LanguageScreenApp'), { ssr: false })
 
