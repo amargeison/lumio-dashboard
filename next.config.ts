@@ -4,9 +4,23 @@ import type { NextConfig } from 'next'
 // next-pwa was removed because it's incompatible with Next 16 + Turbopack — its
 // last release predates Next 14 and it overwrites /public/sw.js during build.
 
+// Build memory (the VPS has 3.8 GB RAM + 4 GB swap). `npm run build` type-checks
+// FIRST, as its own process (next typegen && tsc --noEmit), and only then runs
+// `next build` with LUMIO_TYPECHECKED=1 — so Next's internal "Running
+// TypeScript" worker (~3 GB) never sits alongside the bundler (~3 GB). A bare
+// `next build` without that flag still type-checks, so nothing ships unchecked.
+const typeCheckedAlready = process.env.LUMIO_TYPECHECKED === '1'
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   turbopack: {},
+  typescript: { ignoreBuildErrors: typeCheckedAlready },
+  experimental: {
+    // One page-generation worker, and a cap on Turbopack's own (native) memory,
+    // which NODE_OPTIONS --max-old-space-size does not limit.
+    cpus: 1,
+    turbopackMemoryLimit: 2 * 1024 * 1024 * 1024,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'nrrympsgxsadiemzqwci.supabase.co' },

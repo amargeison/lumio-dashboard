@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next typegen && tsc --noEmit && LUMIO_TYPECHECKED=1 next build",
+    "typecheck": "next typegen && tsc --noEmit",
     "start": "next start",
     "lint": "eslint",
     "golive": "git checkout main && git merge dev && git push origin main && ssh -i ~/.ssh/lumio_vps lumio@46.224.227.190 '/home/lumio/deploy.sh' && git checkout dev",
