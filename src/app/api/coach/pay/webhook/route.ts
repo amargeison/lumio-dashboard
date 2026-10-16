@@ -3,6 +3,7 @@ import { formLinkFor } from '@/lib/coach/camp-form-server'
 import { publicSiteOrigin } from '@/lib/public-origin'
 import { isAdult } from '@/lib/coach/camp-audience'
 import { stripe, admin } from '../_stripe'
+import { finishSetup } from '../_saved'
 import { sendCampSignupEmails } from '@/lib/coach/camp-signup-email'
 
 export const runtime = 'nodejs'
@@ -24,6 +25,31 @@ export async function POST(req: NextRequest) {
 
   const db = admin()
   try {
+    // A client saved a card or Direct Debit (/card/<token>). Read back from
+    // Stripe and filed against their coach's request; the return page does the
+    // same, and whichever comes second changes nothing.
+    const setup = event.type === 'checkout.session.completed' ? event.data.object as { id: string; mode?: string; metadata?: Record<string, string> | null } : null
+    if (setup && setup.mode === 'setup') {
+      if (setup.metadata?.lumio_card_link && event.account) {
+        const r = await finishSetup(db, event.account, setup.id)
+        if (!r.ok) console.error('[pay/webhook] card not filed', setup.id, r.error)
+      }
+      return NextResponse.json({ received: true })
+    }
+    // A charge on a saved card or Direct Debit settled (or failed) later — a
+    // Direct Debit takes about three working days.
+    if (event.type === 'payment_intent.succeeded' || event.type === 'payment_intent.payment_failed') {
+      const pi = event.data.object as { id: string; metadata?: Record<string, string> | null; last_payment_error?: { message?: string } | null }
+      const chargeId = pi.metadata?.charge_id
+      if (chargeId) {
+        const ok = event.type === 'payment_intent.succeeded'
+        await db.from('coach_charges').update(ok
+          ? { status: 'paid', paid_at: new Date().toISOString(), stripe_payment_intent_id: pi.id, failure_reason: null, updated_at: new Date().toISOString() }
+          : { status: 'failed', failure_reason: pi.last_payment_error?.message ? `The payment failed: ${pi.last_payment_error.message}` : 'The payment failed.', updated_at: new Date().toISOString() })
+          .eq('id', chargeId).in('status', ['charging', 'processing'])
+      }
+      return NextResponse.json({ received: true })
+    }
     if (event.type === 'checkout.session.completed') {
       const s = event.data.object as { id: string; payment_intent?: string | null; amount_total?: number | null; metadata?: Record<string, string> | null }
       await db.from('coach_charges').update({

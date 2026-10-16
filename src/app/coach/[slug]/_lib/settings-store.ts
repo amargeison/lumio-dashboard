@@ -4,6 +4,7 @@
 // portal. localStorage + a window event so changes propagate live.
 
 import { DEMO_PRICE_LIST, type PriceRule } from '@/lib/coach/pricing'
+import type { CancelPolicy } from '@/lib/coach/cancel-policy'
 import { COACH_ORG } from './coach-data'
 import { ls, isDemoPath } from './storage-scope'
 
@@ -112,6 +113,10 @@ export type CoachSettings = {
   // (src/lib/coach/pricing.ts). Empty: privates use privateRate, nothing else
   // has a price until the coach sets one.
   priceList: PriceRule[]
+  // Cancellations and saved cards (src/lib/coach/cancel-policy.ts). Read it
+  // through readPolicy(): absent or partial means the defaults (24 hours, full
+  // charge, no automatic charging).
+  cancelPolicy?: Partial<CancelPolicy>
   lessonTypes: string[]
   bookableHours: string
   // ── Per-area settings (the expanded Settings cards) ──
@@ -317,6 +322,7 @@ export const MODULE_SECTIONS: Record<string, { key: string; label: string }[]> =
   ],
   payments: [
     { key: 'stats',      label: 'Stat cards' },
+    { key: 'cards',      label: 'Card payments' },
     { key: 'earnings',   label: 'Lessons & courts' },
     { key: 'packages',   label: 'Packages on offer' },
     { key: 'lessonpacks', label: 'Lesson packages' },

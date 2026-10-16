@@ -32,6 +32,7 @@ import { campAudience, isAdult } from '@/lib/coach/camp-audience'
 import { cleanTrip, type Trip } from '@/lib/coach/trip'
 import { buildNextSession } from '@/lib/student/next-session'
 import { bookById } from '@/lib/coach/books'
+import { priceFor, DEMO_PRICE_LIST } from '@/lib/coach/pricing'
 import { isLumioResource } from '@/lib/coach/lumio-resources-data'
 import { resourceHref } from '@/lib/coach/resource-files'
 
@@ -1868,6 +1869,48 @@ const payCheckout: Handler = async ({ body }) => {
 }
 const payConnect: Handler = async () => { await beat(); return fail('Connecting a bank account is switched off in the demo.') }
 
+// Cards on file. Every third demo player has one saved, and most of the
+// lessons they have had are already paid — taken automatically when the
+// 24-hour window closed — so the Payments page shows both a history and a
+// few lessons still waiting. Built from the demo's own data each time, so it
+// always matches the calendar. Nothing is charged: the buttons say so.
+const DEMO_BRANDS = ['visa', 'mastercard', 'visa', 'amex']
+const digits = (id: string) => String(Math.abs(Array.from(id).reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) | 0, 7)) % 10000).padStart(4, '0')
+const payCards: Handler = async () => {
+  await beat()
+  const players = demoTable('coach_players')
+  const carded = players.filter((_, i) => i % 3 === 0)
+  const savedAt = new Date(Date.now() - 40 * 86_400_000).toISOString()
+  const methods = carded.map((p, i) => ({
+    id: `demo-card-${p.id}`, player_id: p.id, status: 'active', kind: i % 5 === 4 ? 'bacs_debit' : 'card',
+    brand: i % 5 === 4 ? 'Direct Debit' : DEMO_BRANDS[i % DEMO_BRANDS.length], last4: digits(String(p.id)),
+    exp_month: (i % 12) + 1, exp_year: 2028 + (i % 3), saved_at: savedAt, link_sent_to: p.parent_email || p.email || null, link_sent_at: savedAt,
+    policy_agreed_at: savedAt, agreed_by: p.parent_name || p.name, created_at: savedAt, url: '#',
+  }))
+  const has = new Set(carded.map(p => String(p.id)))
+  const today = new Date().toISOString().slice(0, 10)
+  const since = new Date(Date.now() - 61 * 86_400_000).toISOString().slice(0, 10)
+  const charges = demoTable('coach_bookings')
+    .filter(b => b && has.has(String(b.player_id)) && b.status === 'confirmed' && b.type !== 'Block' && b.booking_date >= since && b.booking_date < today)
+    // A handful of recent lessons are left unpaid, so "waiting to be charged" has something in it.
+    .filter((b, i) => !(i % 4 === 0 && b.booking_date >= new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10)))
+    .map(b => {
+      const player = players.find(p => String(p.id) === String(b.player_id))
+      const price = priceFor(b, { rules: DEMO_PRICE_LIST, client: player || null, defaultHourly: 38 })
+      const at = `${b.booking_date}T09:00:00.000Z`
+      return {
+        id: `demo-charge-${b.id}`, player_id: b.player_id, player_name: player?.name || b.player_name, booking_id: b.id, kind: 'lesson',
+        description: `${b.type || 'Lesson'} · ${player?.name || ''}`, amount_pennies: price.each != null && price.people > 1 ? price.each : price.total,
+        status: 'paid', failure_reason: null, refunded_pennies: null, charged_by: 'auto', created_at: at, paid_at: at,
+      }
+    })
+    .filter(c => c.amount_pennies > 0)
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+  return json({ connected: true, chargesEnabled: true, methods, charges })
+}
+const CARDS_OFF = 'Saved cards are switched off in the demo. In your own portal the client gets a link, agrees to your cancellation policy and saves their card with Stripe; you then charge lessons from it in one click.'
+const payCardsOff: Handler = async () => { await sleep(400); return fail(CARDS_OFF) }
+
 // ── Calendar ────────────────────────────────────────────────────────────────
 
 // GET /api/coach/calendar/availability — "busy" blocks from the connected
@@ -2509,6 +2552,10 @@ const ROUTES: Record<string, Handler> = {
   [`GET ${C}/pay/status`]: payStatus,
   [`POST ${C}/pay/checkout`]: payCheckout,
   [`POST ${C}/pay/connect`]: payConnect,
+  [`GET ${C}/pay/cards`]: payCards,
+  [`POST ${C}/pay/cards`]: payCardsOff,
+  [`DELETE ${C}/pay/cards`]: payCardsOff,
+  [`POST ${C}/pay/charge`]: payCardsOff,
   [`GET ${C}/calendar/availability`]: availability,
   [`POST ${C}/calendar/event`]: calendarEventPost,
   [`DELETE ${C}/calendar/event`]: calendarEventDelete,

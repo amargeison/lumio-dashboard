@@ -21,6 +21,7 @@ import { CoachVenuesSettings } from './CoachVenuesSettings'
 import { CoachDevelopmentSettings } from './CoachDevelopmentSettings'
 import { TakePayments } from './TakePayments'
 import { PriceListEditor } from './PriceListEditor'
+import { CancelPolicyEditor } from './CancelPolicyEditor'
 import { CoachCompliance } from './CoachCompliance'
 import { CoachImport, ImportPendingDialog, type PendingImport } from './CoachImport'
 import { seedLumioResources, LUMIO_RESOURCES, isLumioResource } from '../_lib/lumio-resources'
@@ -1313,6 +1314,8 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           <PriceListEditor T={T} accent={accent} />
           <div style={{ height: 16 }} />
           <TakePayments T={T} accent={accent} />
+          <div style={{ height: 16 }} />
+          <CancelPolicyEditor T={T} accent={accent} />
         </Modal>
       )}
 

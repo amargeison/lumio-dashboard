@@ -18,6 +18,7 @@ import { playerLabels } from '../_lib/tell-apart'
 import { getSettings } from '../_lib/settings-store'
 import { priceFor, courtCostFor, type ClientRate } from '@/lib/coach/pricing'
 import { parseAmount, formatPennies } from '@/lib/coach/money'
+import { BookingCharge } from './BookingCharge'
 import { campSpans, campsOn, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 import { BookingLinkModal } from './BookingLinkModal'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
@@ -32,6 +33,8 @@ type Booking = {
   // WHAT IT COSTS (migration 209): a price typed on this booking, and how many
   // share it. Both empty on most bookings — the price list decides.
   price_pennies?: number | null; headcount?: number | null
+  // Set by the database when the status becomes cancelled (migration 210).
+  cancelled_at?: string | null
   booking_date: string | null; start_time: string | null; duration_min: number | null
   status: string | null; type: string | null; notes: string | null
   /** What the family was last told (set by the server). Read only here. */
@@ -911,6 +914,9 @@ function BookingFormModal({ T, accent, players, coaches, myName, headNames, type
               )}
             </div>
           )}
+          {/* Taking the money for a lesson that is already saved — from the card
+              the client saved, at the price the booking had when it was saved. */}
+          {booking?.player_id && <BookingCharge T={T} accent={accent} booking={booking} settings={cfg} client={rateOf(booking.player_id)} />}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div><label style={lbl}>Status</label>
               <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...field, cursor: 'pointer' }}>

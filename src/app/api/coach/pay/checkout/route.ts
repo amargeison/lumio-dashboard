@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
   // A demo account is signed in too. Only a real academy may use this.
   if (!await isAcademyUser(user.id)) return notAnAcademy()
 
-  const { amount, description = 'Tennis coaching', player_name = null, package_id = null, payment_id = null, returnPath = '/' } =
-    (await req.json().catch(() => ({}))) as { amount: number; description?: string; player_name?: string | null; package_id?: string | null; payment_id?: string | null; returnPath?: string }
+  const { amount, description = 'Tennis coaching', player_name = null, package_id = null, payment_id = null, returnPath = '/', booking_id = null, kind = null } =
+    (await req.json().catch(() => ({}))) as { amount: number; description?: string; player_name?: string | null; package_id?: string | null; payment_id?: string | null; returnPath?: string; booking_id?: string | null; kind?: string | null }
 
   const pennies = Math.round(Number(amount) * 100)
   if (!Number.isFinite(pennies) || pennies < 50) return NextResponse.json({ error: 'Enter an amount of at least £0.50' }, { status: 400 })
@@ -65,6 +65,18 @@ export async function POST(req: NextRequest) {
   // a plain path on this site ("//elsewhere", ".evil.example") becomes "/".
   const backTo = typeof returnPath === 'string' && /^\/(?!\/)[\w\-./%]*$/.test(returnPath) ? returnPath : '/'
 
+  // A payment link for one lesson (a saved card the bank would not let us
+  // charge without the client): filed against that lesson, so it shows as paid
+  // there once the money lands.
+  let lesson: { id: string; player_id: string | null } | null = null
+  if (booking_id) {
+    if (!isUuid(booking_id)) return NextResponse.json({ error: 'We could not find that lesson.' }, { status: 404 })
+    const { data: bk } = await db.from('coach_bookings').select('id, player_id').eq('id', booking_id).eq('coach_id', academyId).maybeSingle()
+    if (!bk) return NextResponse.json({ error: 'We could not find that lesson.' }, { status: 404 })
+    lesson = bk as { id: string; player_id: string | null }
+  }
+  const lessonKind = kind && ['lesson', 'late_cancel', 'no_show', 'other'].includes(kind) ? kind : lesson ? 'lesson' : null
+
   const { data: row } = await db.from('coach_stripe').select('*').eq('coach_id', academyId).maybeSingle()
   if (!row?.stripe_account_id || !row.charges_enabled) return NextResponse.json({ error: who.staffId ? 'Card payments aren’t switched on for the academy yet — ask your head coach.' : 'Connect your bank first (Settings → Payments & Packages).' }, { status: 400 })
 
@@ -83,6 +95,9 @@ export async function POST(req: NextRequest) {
     await db.from('coach_charges').insert({
       coach_id: academyId, player_name: playerName, package_id, description, amount_pennies: pennies,
       status: 'pending', stripe_checkout_session_id: session.id,
+      // Only sent for a lesson's payment link, so an ordinary payment still
+      // records on a database without migration 210.
+      ...(lesson ? { booking_id: lesson.id, player_id: lesson.player_id, kind: lessonKind, charged_by: 'coach' } : {}),
     })
     return NextResponse.json({ url: session.url })
   } catch (e) {
