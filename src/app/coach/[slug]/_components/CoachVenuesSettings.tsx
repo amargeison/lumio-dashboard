@@ -10,8 +10,19 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, sb } from '../_lib/coach-db'
 import { ukDate } from '@/lib/coach/uk-date'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { BILLING_LABEL, type CourtBilling } from '@/lib/coach/pricing'
+import { parseAmount, formatPennies } from '@/lib/coach/money'
 
-type Venue = { id: string; name: string; address?: string | null; contact_name?: string | null; contact_phone?: string | null; contact_email?: string | null; facilities?: string | null; access_note?: string | null; is_home?: boolean | null }
+/** "Courts £10/hr · Invoiced to me (monthly)", or nothing when not set. */
+export function courtCostLine(v: { court_cost_pennies?: number | null; court_billing?: string | null }): string {
+  const billing = v.court_billing && v.court_billing in BILLING_LABEL ? v.court_billing as CourtBilling : null
+  if (billing === 'free') return 'Courts free to use'
+  const cost = Number(v.court_cost_pennies) || 0
+  if (!cost && !billing) return ''
+  return [cost ? `Courts ${formatPennies(cost)} an hour` : 'Court cost not set', billing ? BILLING_LABEL[billing] : ''].filter(Boolean).join(' · ')
+}
+
+type Venue = { id: string; name: string; address?: string | null; contact_name?: string | null; contact_phone?: string | null; contact_email?: string | null; facilities?: string | null; access_note?: string | null; is_home?: boolean | null; court_cost_pennies?: number | null; court_billing?: string | null }
 type Court = { id: string; venue_id?: string | null; name: string; surface?: string | null; status?: string | null }
 type BookingLite = { id: string; venue_id?: string | null; court_id?: string | null; booking_date?: string | null; status?: string | null }
 const STATUSES = ['Free', 'Booked', 'Maintenance']
@@ -100,6 +111,7 @@ export function CoachVenuesSettings({ T, accent, addNew }: { T: ThemeTokens; acc
               </div>
               {v.address && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>{v.address}</div>}
               {(v.contact_name || v.contact_email || v.contact_phone) && <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>{[v.contact_name, v.contact_phone, v.contact_email].filter(Boolean).join(' · ')}</div>}
+              {courtCostLine(v) && <div style={{ fontSize: 11, color: T.text2, marginTop: 4 }}>{courtCostLine(v)}</div>}
               <CourtManager T={T} accent={accent} venue={v} courts={courts.rows.filter(c => c.venue_id === v.id)} add={courts.add} edit={courts.edit} remove={courts.remove}
                 bookedOn={courtId => upcomingAt(b => b.court_id === courtId)} />
             </div>
@@ -211,9 +223,13 @@ function VenueForm({ T, accent, venue, onClose, onSave }: {
   const [facilities, setFacilities] = useState(venue?.facilities || '')
   const [access, setAccess] = useState(venue?.access_note || '')
   const [isHome, setIsHome] = useState(!!venue?.is_home)
+  // What a court costs the coach here, and how it is paid. Used for the margin
+  // on each lesson and the court hours to check against the venue's invoice.
+  const [cost, setCost] = useState(venue?.court_cost_pennies ? String(venue.court_cost_pennies / 100) : '')
+  const [billing, setBilling] = useState<string>(venue?.court_billing || '')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
-  const closeOutside = useAskBeforeClose(JSON.stringify([name, address, cName, cPhone, cEmail, facilities, access, isHome]), onClose)
+  const closeOutside = useAskBeforeClose(JSON.stringify([name, address, cName, cPhone, cEmail, facilities, access, isHome, cost, billing]), onClose)
 
   const field: CSSProperties = { width: '100%', minWidth: 0, background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 9, padding: '9px 11px', fontSize: 13, fontFamily: FONT, boxSizing: 'border-box', outline: 'none' }
   const lbl: CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: T.text3, margin: '0 0 5px' }
@@ -221,8 +237,18 @@ function VenueForm({ T, accent, venue, onClose, onSave }: {
     if (!name.trim() || saving) return
     // The contact email is what "Request courts" writes to, so it has to be one.
     if (cEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cEmail.trim())) { setErr('That contact email does not look right. Check it, or leave it empty.'); return }
+    let costPennies: number | null = null
+    if (cost.trim() && billing !== 'free') {
+      const a = parseAmount(cost, { max: 1000, allowZero: true })
+      if (!a.ok) { setErr(`Court cost: ${a.error}`); return }
+      costPennies = a.pennies
+    }
     setSaving(true); setErr('')
-    try { await onSave({ name: name.trim(), address, contact_name: cName, contact_phone: cPhone, contact_email: cEmail.trim(), facilities, access_note: access, is_home: isHome }) }
+    // The court fields are only sent when there is something to say, so a
+    // venue still saves on a database that has not had migration 209 yet.
+    const money = (costPennies != null || billing || venue?.court_cost_pennies != null || venue?.court_billing)
+      ? { court_cost_pennies: costPennies, court_billing: billing || null } : {}
+    try { await onSave({ name: name.trim(), address, contact_name: cName, contact_phone: cPhone, contact_email: cEmail.trim(), facilities, access_note: access, is_home: isHome, ...money }) }
     catch { setErr('The venue could not be saved. Please try again.') }
     finally { setSaving(false) }
   }
@@ -240,6 +266,16 @@ function VenueForm({ T, accent, venue, onClose, onSave }: {
           <div><label style={lbl}>Contact email</label><input value={cEmail} onChange={e => setCEmail(e.target.value)} style={field} /></div>
           <div><label style={lbl}>Facilities (comma separated)</label><input value={facilities} onChange={e => setFacilities(e.target.value)} placeholder="Café, Parking, Floodlights" style={field} /></div>
           <div><label style={lbl}>Access note</label><input value={access} onChange={e => setAccess(e.target.value)} placeholder="e.g. Coach fob entry · gate code after 6pm" style={field} /></div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+            <div><label style={lbl} htmlFor="venue-billing">Courts here are</label>
+              <select id="venue-billing" value={billing} onChange={e => setBilling(e.target.value)} style={field}>
+                <option value="">Not set</option>
+                {(Object.keys(BILLING_LABEL) as CourtBilling[]).map(k => <option key={k} value={k}>{BILLING_LABEL[k]}</option>)}
+              </select>
+            </div>
+            {billing !== 'free' && <div><label style={lbl} htmlFor="venue-cost">Court cost (£ per hour)</label><input id="venue-cost" value={cost} inputMode="decimal" onChange={e => setCost(e.target.value)} placeholder="e.g. 10 or 13.50" style={field} /></div>}
+          </div>
+          <div style={{ fontSize: 11, color: T.text3, marginTop: -6 }}>Used to work out what you make on each lesson, and the court hours to check against this venue's bill.</div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: T.text2, cursor: 'pointer' }}>
             <input type="checkbox" checked={isHome} onChange={e => setIsHome(e.target.checked)} style={{ width: 18, height: 18 }} /> Set as home base
           </label>

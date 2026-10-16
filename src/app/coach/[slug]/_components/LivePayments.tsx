@@ -12,6 +12,7 @@ import { useCoachTable, sb, currentCoachId, currentIdentity, getPreviewStaff } f
 import { getSettings, setSettings, isDemoPortal } from '../_lib/settings-store'
 import { seedLumioPackages, PACKAGE_CHOICES } from '../_lib/lumio-packages'
 import { SetupWizard } from './SetupWizard'
+import { LessonEarnings } from './LessonEarnings'
 import { formatPounds, formatPennies, toPennies, sumPennies, parseAmount, isVoidPayment, paymentOwedPennies } from '@/lib/coach/money'
 import { ukDate, ukMonth, daysBetweenIso } from '@/lib/coach/uk-date'
 import { campMoney } from '@/lib/coach/camp-money'
@@ -368,6 +369,8 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
           {(campTotals.collected > 0 || campTotals.owed > 0) && <div>Camp fees are not in these totals — they are kept on each camp’s Finance tab. Across your camps: {formatPennies(campTotals.collected)} collected, {formatPennies(campTotals.owed)} still owed.</div>}
         </div>
       )}
+
+      {showSec('earnings') && <LessonEarnings T={T} accent={accent} />}
 
       {/* Packages on offer */}
       <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 16, display: showSec('packages') ? undefined : 'none' }}>

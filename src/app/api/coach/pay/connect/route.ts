@@ -5,7 +5,17 @@ import { publicSiteOrigin } from '@/lib/public-origin'
 
 export const runtime = 'nodejs'
 
-// Get-or-create the coach's Stripe Express account and return a hosted onboarding link.
+// Get-or-create the coach's Stripe account and return a hosted onboarding link.
+//
+// The account is one where STRIPE bills the coach for its fees (a "Standard"
+// account): the coach pays Stripe's card fees out of each payment, has their
+// own full Stripe dashboard, and Stripe — not Lumio — carries the risk of a
+// coach's balance going negative. The Express accounts this used to create
+// make the platform pay Stripe £2 a month for every coach who is paid out,
+// plus 0.25% + 10p on every payout. Lumio takes nothing from a payment, so
+// there is no reason for it to pay to pass money along.
+// (Existing accounts keep whatever they were created as; a dashboard type
+// cannot be changed after creation.)
 export async function POST(req: NextRequest) {
   const user = await getCoach()
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 })
@@ -34,8 +44,9 @@ export async function POST(req: NextRequest) {
 
     if (!accountId) {
       const account = await stripe.accounts.create({
-        type: 'express', country: 'GB', email: user.email ?? undefined,
-        business_type: 'individual',
+        country: 'GB', email: user.email ?? undefined,
+        // Sole trader or limited company — the coach says which during onboarding.
+        controller: { fees: { payer: 'account' }, losses: { payments: 'stripe' }, stripe_dashboard: { type: 'full' } },
         capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
       })
       accountId = account.id

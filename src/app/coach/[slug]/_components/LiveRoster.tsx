@@ -14,7 +14,8 @@ import { fileToAvatarDataUrl, avatarSrc } from '@/lib/avatar'
 import { getSettings, setSettings, subscribe as subscribeSettings, PLAYER_LEVELS, PAYMENT_METHODS } from '../_lib/settings-store'
 import { stageWords } from '../_lib/stage-words'
 import { studentAudience } from '@/lib/student/bundle'
-import { formatPounds } from '@/lib/coach/money'
+import { formatPounds, parseAmount, formatPennies } from '@/lib/coach/money'
+import { RATE_REASONS } from '@/lib/coach/pricing'
 
 // v1: Effort & Rewards is manual-only — smartwatch QR pairing is hidden until v2.
 const SHOW_WATCH_PAIRING: boolean = false
@@ -64,10 +65,13 @@ function stageOf(id?: string | null) {
 // It only ever offers a merge, never performs one on its own: which profile is
 // the real one is the coach's call, even when one of them obviously holds
 // everything. The suggestion is marked, and it is only a suggestion.
-function DuplicatePlayers({ T, accent, players, skills, attendance, onMerged }: {
+function DuplicatePlayers({ T, accent, players, skills, attendance, onMerged, onDelete }: {
   T: ThemeTokens; accent: AccentTokens
   players: any[]; skills: any[]; attendance: any[]
   onMerged: () => void
+  // A duplicate that should not exist at all (an import that went in twice)
+  // is deleted rather than merged.
+  onDelete: (p: any) => Promise<void>
 }) {
   const [openName, setOpenName] = useState<string | null>(null)
   const [keepId, setKeepId] = useState<string>('')
@@ -198,6 +202,10 @@ function DuplicatePlayers({ T, accent, players, skills, attendance, onMerged }: 
                     style={{ appearance: 'none', border: 0, borderRadius: 8, padding: '6px 12px', background: accent.hex, color: T.btnText, fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
                     {open ? 'Close' : 'Merge them'}
                   </button>
+                  <button onClick={() => { setOpenName(key); setKeepId(suggested?.id || ''); setErr('') }}
+                    style={{ appearance: 'none', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 8, padding: '6px 10px', background: 'transparent', color: '#EF4444', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}>
+                    Delete one
+                  </button>
                   <button onClick={() => dismiss(group)}
                     style={{ appearance: 'none', border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 10px', background: 'transparent', color: T.text3, fontSize: 11.5, cursor: 'pointer' }}>
                     Different people
@@ -207,13 +215,14 @@ function DuplicatePlayers({ T, accent, players, skills, attendance, onMerged }: 
 
               {open && (
                 <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 11, color: T.text3, marginBottom: 7 }}>Which one do you want to keep?</div>
+                  <div style={{ fontSize: 11, color: T.text3, marginBottom: 7 }}>Which one do you want to keep? Or delete one that should not be there.</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {[...group].sort((a, b) => weight(b) - weight(a)).map(p => {
                       const on = (keepId || suggested?.id) === p.id
                       return (
-                        <button key={p.id} onClick={() => setKeepId(p.id)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', appearance: 'none', cursor: 'pointer', background: on ? accent.dim : 'transparent', border: `1px solid ${on ? accent.hex : T.border}`, borderRadius: 9, padding: '8px 10px' }}>
+                        <div key={p.id} style={{ display: 'flex', gap: 6, alignItems: 'stretch' }}>
+                        <button onClick={() => setKeepId(p.id)}
+                          style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', appearance: 'none', cursor: 'pointer', background: on ? accent.dim : 'transparent', border: `1px solid ${on ? accent.hex : T.border}`, borderRadius: 9, padding: '8px 10px' }}>
                           <Avatar accent={accent} name={p.name} size={26} url={p.avatar_url} />
                           <span style={{ flex: 1, minWidth: 0 }}>
                             <span style={{ display: 'block', fontSize: 12, color: T.text, fontWeight: 600 }}>
@@ -223,6 +232,12 @@ function DuplicatePlayers({ T, accent, players, skills, attendance, onMerged }: 
                           </span>
                           <span style={{ fontSize: 11, fontWeight: 700, color: on ? accent.hex : T.text4 }}>{on ? 'KEEP' : ''}</span>
                         </button>
+                        <button disabled={busy} onClick={async () => { setBusy(true); try { await onDelete(p) } finally { setBusy(false) } }}
+                          aria-label={`Delete this ${p.name} profile`} title="Delete this profile"
+                          style={{ appearance: 'none', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 8, padding: '0 11px', background: 'transparent', color: '#EF4444', fontSize: 11.5, fontWeight: 600, cursor: busy ? 'wait' : 'pointer', flexShrink: 0 }}>
+                          Delete
+                        </button>
+                        </div>
                       )
                     })}
                   </div>
@@ -395,7 +410,8 @@ export function LiveRoster({ T, accent, density }: Common) {
           skills={skills.rows} attendance={attendance.rows}
           // A merge moves bookings, lessons, payments and messages onto the kept
           // player too — every screen and the right-hand rail read them again.
-          onMerged={() => { rowsChanged(...PLAYER_TABLES) }} />
+          onMerged={() => { rowsChanged(...PLAYER_TABLES) }}
+          onDelete={async p => { if (await deletePlayerFlow(p)) { invalidateCoachTable(); rowsChanged(...PLAYER_TABLES) } }} />
       )}
 
       {players.loading ? (
@@ -453,10 +469,20 @@ export function LiveRoster({ T, accent, density }: Common) {
                   <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎯 {p.goal || 'No goal set'}</span>
                   <span style={{ color: accent.hex, fontWeight: 600, whiteSpace: 'nowrap' }}>View →</span>
                 </div>
+                {p.rate_pennies > 0 && <div title="Their one-to-one lessons are priced at this rate" style={{ fontSize: 10.5, color: T.text2, marginTop: 6 }}>Own rate {formatPennies(p.rate_pennies)} an hour{p.rate_reason ? ` · ${p.rate_reason}` : ''}</div>}
                 {!p.consent_photo && <div style={{ fontSize: 10.5, color: '#EF4444', marginTop: 6 }}>⚠ No photo/video consent</div>}
-                <button onClick={e => { e.stopPropagation(); printWelcomePack(p, wpOrg) }} style={{ width: '100%', marginTop: 8, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '7px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                  <Icon name="note" size={13} stroke={1.8} style={{ color: accent.hex }} /> Welcome pack
-                </button>
+                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                <button onClick={e => { e.stopPropagation(); printWelcomePack(p, wpOrg) }} style={{ flex: 1, minWidth: 0, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '7px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <Icon name="note" size={13} stroke={1.8} style={{ color: accent.hex }} /> Welcome pack
+                  </button>
+                  {/* Delete from the card itself — it used to be only on the
+                      profile's Contact tab, where nobody found it. */}
+                  <button onClick={async e => { e.stopPropagation(); if (await deletePlayerFlow(p)) { invalidateCoachTable(); if (sel?.id === p.id) setSel(null); players.reload(); skills.reload(); attendance.reload() } }}
+                    aria-label={`Delete ${p.name}`} title={`Delete ${p.name}`}
+                    style={{ appearance: 'none', border: '1px solid rgba(239,68,68,0.35)', background: 'transparent', color: '#EF4444', borderRadius: 8, padding: '7px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                    Delete
+                  </button>
+                </div>
               </div>
             )
           })}
@@ -481,25 +507,7 @@ export function LiveRoster({ T, accent, density }: Common) {
           onChanged={() => { players.reload() }}
           onClose={() => setSel(null)}
           onEdit={() => { setEditing(sel); setSel(null) }}
-          onDelete={async () => {
-            // Say what goes with them BEFORE asking. It used to be a bare
-            // "Delete Sam?" that removed one row and left the bookings, the
-            // money owed and the parent's login behind.
-            const first = String(sel.name || 'This player').trim().split(/\s+/)[0]
-            let has: DeleteImpact | null = null
-            try { const r = await fetch(`/api/coach/players/delete?id=${encodeURIComponent(sel.id)}`); if (r.ok) has = (await r.json()).has } catch { /* handled below */ }
-            if (!has) { alert(`We could not check what ${first} has on record, so nothing was deleted. Please try again.`); return }
-            if (!confirm(deleteQuestion(String(sel.name || 'this player').trim(), has))) return
-            try {
-              const r = await fetch('/api/coach/players/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: sel.id }) })
-              const d = await r.json().catch(() => ({}))
-              if (!r.ok) { alert(d.error || 'The player could not be deleted, so nothing was changed. Please try again.'); return }
-            } catch { alert('The player could not be deleted — you appear to be offline. Nothing was changed.'); return }
-            // Bookings, lessons, payments and messages changed too, on screens
-            // that keep their own copy.
-            invalidateCoachTable()
-            setSel(null); players.reload(); skills.reload(); attendance.reload()
-          }} />
+          onDelete={async () => { if (await deletePlayerFlow(sel)) { invalidateCoachTable(); setSel(null); players.reload(); skills.reload(); attendance.reload() } }} />
       )}
       {editing !== undefined && (
         <PlayerForm T={T} accent={accent} initial={editing}
@@ -511,6 +519,24 @@ export function LiveRoster({ T, accent, density }: Common) {
 }
 
 // ── Deleting: what the coach is told first ──────────────────────────────────
+// One way to delete a player, wherever the button is (the player's card, their
+// profile, a duplicate in the merge list). Say what goes with them BEFORE
+// asking — it used to be a bare "Delete Sam?" that removed one row and left the
+// bookings, the money owed and the parent's login behind. True once deleted.
+async function deletePlayerFlow(p: { id: string; name?: string | null }): Promise<boolean> {
+  const first = String(p.name || 'This player').trim().split(/\s+/)[0]
+  let has: DeleteImpact | null = null
+  try { const r = await fetch(`/api/coach/players/delete?id=${encodeURIComponent(p.id)}`); if (r.ok) has = (await r.json()).has } catch { /* handled below */ }
+  if (!has) { alert(`We could not check what ${first} has on record, so nothing was deleted. Please try again.`); return false }
+  if (!confirm(deleteQuestion(String(p.name || 'this player').trim(), has))) return false
+  try {
+    const r = await fetch('/api/coach/players/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id }) })
+    const d = await r.json().catch(() => ({}))
+    if (!r.ok) { alert(d.error || 'The player could not be deleted, so nothing was changed. Please try again.'); return false }
+  } catch { alert('The player could not be deleted — you appear to be offline. Nothing was changed.'); return false }
+  return true
+}
+
 type DeleteImpact = { familyLogins: number; upcomingBookings: number; lessons: number; unpaidPayments: number; unpaidTotal: number; paidPayments: number; campPlaces: number; messages: number; recordings: number; plans?: number }
 function deleteQuestion(name: string, has: DeleteImpact): string {
   const first = name.split(/\s+/)[0]
@@ -556,6 +582,8 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
     try { setPhoto(await fileToAvatarDataUrl(file)); setDropPhoto(false) } catch { setErr('That file is not a photo we can use. Choose a JPG or PNG.') }
   }
   const set = (k: string, v: any) => setD(p => ({ ...p, [k]: v }))
+  // Their own hourly rate, typed in pounds; stored in pennies.
+  const rateText: string = d.rate_pounds !== undefined ? String(d.rate_pounds) : (d.rate_pennies ? String(d.rate_pennies / 100) : '')
   const { rows: staffRows } = useCoachTable<{ id: string; name: string; role?: string | null; email?: string | null; is_head?: boolean | null }>('coach_staff')
   const { rows: rosterRows } = useCoachTable<any>('coach_players')
   // The coach is chosen by who they are, not by their name: two coaches can
@@ -616,6 +644,8 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
     const phone = String(d.phone ?? '').trim()
     if (phone && !(/^[+\d][\d\s().-]*$/.test(phone) && digitsOf(phone).length >= 7 && digitsOf(phone).length <= 15)) return 'The phone number does not look right. Use digits, for example 07700 900123, or leave it blank.'
     if (d.consent_date && String(d.consent_date).slice(0, 10) > todayIso()) return 'The consent date cannot be in the future.'
+    if (rateText.trim()) { const a = parseAmount(rateText, { max: 1000 }); if (!a.ok) return `Their rate: ${a.error}` }
+    if (String(d.rate_reason ?? '').trim().length > 60) return 'The reason for their rate is too long. Keep it to 60 characters.'
     return ''
   }
 
@@ -634,6 +664,14 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
       // from the id that was still set, and the change was silently undone. Left
       // out when untouched so a new player added by an assistant coach is still
       // filed under that coach.
+      // Their own rate. Only sent when there is one, or there was one, so a
+      // player still saves on a database without migration 209.
+      const rate = rateText.trim() ? parseAmount(rateText, { max: 1000 }) : null
+      const reason = String(d.rate_reason ?? '').trim()
+      if (rate?.ok || reason || initial?.rate_pennies != null || initial?.rate_reason) {
+        row.rate_pennies = rate?.ok ? rate.pennies : null
+        row.rate_reason = rate?.ok && reason ? reason : null
+      }
       if (staffValue !== startStaff && !(staffValue === '' && !initial?.staff_id && !initial?.assigned_coach)) {
         row.staff_id = staffValue || null
         row.assigned_coach = staffRows.find(c => c.id === staffValue)?.name ?? null
@@ -727,6 +765,15 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
                   typed before this list existed is never silently rewritten. */}
               {Array.from(new Set([d.payment_method, ...PAYMENT_METHODS].filter(Boolean))).map((m: string) => <option key={m} value={m}>{m}</option>)}
             </select>
+          </div>
+          {/* A client on their own price: an older rate kept on, family, a friend.
+              Their one-to-one lessons are priced at this instead of the price list. */}
+          <div><label style={lbl} htmlFor="player-rate">Their rate (£ an hour)</label>
+            <input id="player-rate" value={rateText} inputMode="decimal" placeholder="Leave empty for your usual prices" onChange={e => set('rate_pounds', e.target.value)} style={input} />
+          </div>
+          <div><label style={lbl} htmlFor="player-rate-reason">Why this rate</label>
+            <input id="player-rate-reason" list="player-rate-reasons" value={d.rate_reason ?? ''} maxLength={60} disabled={!rateText.trim()} placeholder={rateText.trim() ? 'e.g. Legacy rate' : 'Set a rate first'} onChange={e => set('rate_reason', e.target.value)} style={{ ...input, opacity: rateText.trim() ? 1 : 0.6 }} />
+            <datalist id="player-rate-reasons">{RATE_REASONS.map(r => <option key={r} value={r} />)}</datalist>
           </div>
         </div>
         <div style={{ marginTop: 12 }}>{field('goal', 'Goal', 'text', 'e.g. First serve over the net consistently')}</div>
