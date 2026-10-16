@@ -20,6 +20,7 @@ import { readHours } from '@/lib/coach/bookable-hours'
 import { CoachVenuesSettings } from './CoachVenuesSettings'
 import { CoachDevelopmentSettings } from './CoachDevelopmentSettings'
 import { TakePayments } from './TakePayments'
+import { PriceListEditor } from './PriceListEditor'
 import { CoachCompliance } from './CoachCompliance'
 import { CoachImport, ImportPendingDialog, type PendingImport } from './CoachImport'
 import { seedLumioResources, LUMIO_RESOURCES, isLumioResource } from '../_lib/lumio-resources'
@@ -1020,7 +1021,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     { id: 'booking',     g: 'Academy',    icon: 'calendar',  t: 'Booking calendar',    d: `${booking.defaultDuration}m default · ${booking.buffer}m buffer${demo ? ` · ${booking.autoConfirm ? 'auto-confirm' : 'you approve each one'}` : ''}` },
     { id: 'availability',g: 'Academy',    icon: 'grid',      t: 'Availability & courts', d: `${s.bookableHours} · ${demo ? s.lessonTypes.length : (s.lessonTypes.filter(t => BOOKABLE_TYPES.includes(t)).length || BOOKABLE_TYPES.length)} lesson types` },
     { id: 'partnerlogin',g: 'Academy',    icon: 'shield',    t: 'Partner sign-in page', d: s.partnerLogin ? `On · lumiosports.com/login/${portalSlug}` : 'Off · families use the standard Lumio sign-in' },
-    { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: s.privateRate ? `Private ${formatPounds(s.privateRate)}/hr · take payments` : 'Set your hourly rate · take payments' },
+    { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: [s.privateRate ? `Private ${formatPounds(s.privateRate)}/hr` : '', s.priceList?.length ? `${s.priceList.length} price${s.priceList.length === 1 ? '' : 's'}` : ''].filter(Boolean).concat('take payments').join(' · ').replace(/^take payments$/, 'Set your prices · take payments') },
     { id: 'belts',       g: 'Coaching',   icon: 'trophy',    t: 'Racket criteria',     d: demo ? `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` : `A skill shows as done to players at ${s.awardThreshold === 4 ? 'four bars (Consistent)' : 'three bars (Consolidating)'}` },
     { id: 'rewards',     g: 'Coaching',   icon: 'flag',      t: 'Effort & Rewards',    d: demo ? `Leaderboard ${rewards.leaderboard ? 'on' : 'off'} · watch consent default ${rewards.watchConsentDefault ? 'on' : 'off'}` : `Leaderboard ${leaderboardOn ? 'on' : 'off'} · ${effortToPlayers ? 'shown to players' : 'hidden from players'}` },
     { id: 'sharing',     g: 'Coaching',   icon: 'megaphone', t: 'Sharing a summary',      d: `Shares include: ${sharingList}` },
@@ -1306,9 +1307,11 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
       {addVenueOpen && <AddVenueModal T={T} accent={accent} onClose={() => setAddVenueOpen(false)} />}
 
       {open === 'pricing' && (
-        <Modal readOnly={demo} T={T} accent={accent} title="Pricing & packages" sub="Reflected on the Payments page" onClose={() => setOpen(null)}>
+        <Modal wide readOnly={demo} T={T} accent={accent} title="Pricing & packages" sub="Prices every booking on the calendar and the Payments page" onClose={() => setOpen(null)}>
           <RateField T={T} />
-          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5 }}>Packages and renewal rules are managed on the Payments page; this rate feeds new quotes and the Payments header.</div>
+          <div style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5, marginBottom: 16 }}>Used for a private when nothing below fits. Packs are set up on the Payments page; a client's own rate is on their player card; court costs are on each venue in Venues &amp; courts.</div>
+          <PriceListEditor T={T} accent={accent} />
+          <div style={{ height: 16 }} />
           <TakePayments T={T} accent={accent} />
         </Modal>
       )}

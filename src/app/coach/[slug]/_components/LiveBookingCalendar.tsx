@@ -16,6 +16,8 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, ensureRosterPlayer, useCoachProfile, subscribeCalendarSync, currentIdentity, type CalSyncState, type CoachIdentity } from '../_lib/coach-db'
 import { playerLabels } from '../_lib/tell-apart'
 import { getSettings } from '../_lib/settings-store'
+import { priceFor, courtCostFor, type ClientRate } from '@/lib/coach/pricing'
+import { parseAmount, formatPennies } from '@/lib/coach/money'
 import { campSpans, campsOn, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 import { BookingLinkModal } from './BookingLinkModal'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
@@ -27,6 +29,9 @@ type Booking = {
   // WHERE: the venue and the court by id (migrations 197 and 198). `court` keeps
   // the court's name as text — it is what is printed, and it may be typed by hand.
   venue_id?: string | null; court_id?: string | null
+  // WHAT IT COSTS (migration 209): a price typed on this booking, and how many
+  // share it. Both empty on most bookings — the price list decides.
+  price_pennies?: number | null; headcount?: number | null
   booking_date: string | null; start_time: string | null; duration_min: number | null
   status: string | null; type: string | null; notes: string | null
   /** What the family was last told (set by the server). Read only here. */
@@ -92,8 +97,8 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   T: ThemeTokens; accent: AccentTokens; onNavigate?: (section: string) => void
 }) {
   const { rows, add, edit, remove, reload } = useCoachTable<Booking>('coach_bookings')
-  const { rows: playerRows } = useCoachTable<{ id: string; name: string; email?: string | null; parent_email?: string | null; contact_email?: string | null }>('coach_players')
-  const { rows: venueRows } = useCoachTable<{ id: string; name: string; is_home?: boolean | null }>('coach_venues')
+  const { rows: playerRows } = useCoachTable<{ id: string; name: string; email?: string | null; parent_email?: string | null; contact_email?: string | null; rate_pennies?: number | null; rate_reason?: string | null }>('coach_players')
+  const { rows: venueRows } = useCoachTable<{ id: string; name: string; is_home?: boolean | null; court_cost_pennies?: number | null; court_billing?: string | null }>('coach_venues')
   const { rows: courtRows } = useCoachTable<{ id: string; name: string; venue_id?: string | null }>('coach_courts')
   const isMobile = useIsMobile()
   // Two players with the same name are told apart in the picker ("Jack Taylor (age 10, parent Sam)").
@@ -192,6 +197,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   const modals = editing && (
     <BookingFormModal T={T} accent={accent} players={players} coaches={coaches} myName={myName} headNames={headNames} typeColour={TYPE_COLOUR}
       bookings={rows} camps={camps} venues={venueRows} courts={courtRows}
+      rateOf={id => playerRows.find(p => String(p.id) === String(id)) || null}
       booking={editing === 'new' ? null : editing}
       defaultDate={newSlot?.date || iso(cursor)}
       defaultStart={newSlot?.start}
@@ -557,7 +563,7 @@ function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, camps, on
 }
 
 // ── Add / Edit booking modal ──────────────────────────────────────────────────
-function BookingFormModal({ T, accent, players, coaches, myName, headNames, typeColour, bookings, camps, venues, courts, booking, defaultDate, defaultStart, onClose, onSave, onDelete }: {
+function BookingFormModal({ T, accent, players, coaches, myName, headNames, typeColour, bookings, camps, venues, courts, rateOf, booking, defaultDate, defaultStart, onClose, onSave, onDelete }: {
   T: ThemeTokens; accent: AccentTokens; players: { id: string; name: string; label?: string }[]; coaches: string[]
   /** The signed-in coach's own name when they are an invited coach; '' for the head coach. */
   myName: string
@@ -565,8 +571,10 @@ function BookingFormModal({ T, accent, players, coaches, myName, headNames, type
   typeColour: (t: string | null) => string
   bookings: Booking[]
   camps: ReturnType<typeof campSpans>
-  venues: { id: string; name: string; is_home?: boolean | null }[]
+  venues: { id: string; name: string; is_home?: boolean | null; court_cost_pennies?: number | null; court_billing?: string | null }[]
   courts: { id: string; name: string; venue_id?: string | null }[]
+  /** A player's own rate, if they have one. */
+  rateOf: (playerId: string) => ClientRate
   booking: Booking | null; defaultDate: string; defaultStart?: string
   onClose: () => void
   onSave: (vals: Record<string, any>, newPlayer: string | null) => Promise<void>
@@ -627,15 +635,30 @@ function BookingFormModal({ T, accent, players, coaches, myName, headNames, type
   const [status, setStatus] = useState(booking?.status || 'confirmed')
   const [coach, setCoach] = useState((booking as any)?.assigned_coach || '')
   const [notes, setNotes] = useState(booking?.notes || '')
+  // ── What it costs ──────────────────────────────────────────────────────────
+  // How many are playing (a private shared by friends is priced by the head),
+  // and a price for this one booking when it is not the usual one. Both empty
+  // means the price list decides, and the form shows what it comes to.
+  const [people, setPeople] = useState(booking?.headcount ? String(booking.headcount) : '')
+  const [priceText, setPriceText] = useState(booking?.price_pennies != null ? String(booking.price_pennies / 100) : '')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
   const selPlayer = players.find(p => p.id === playerSel) || null
   const who = (playerSel === '__new__' ? newPlayer : selPlayer?.name || '').trim()
+  const peopleN = /^\d{1,2}$/.test(people.trim()) ? Number(people.trim()) : null
+  const priceParsed = priceText.trim() ? parseAmount(priceText, { max: 10000, allowZero: true }) : null
+  const durN = Number(String(dur).trim()) || 60
+  const shownVenueId = (courtSel && courtSel !== OTHER ? courts.find(c => c.id === courtSel)?.venue_id : null) || venueId || null
+  const price = type === 'Block' ? null : priceFor(
+    { type, venue_id: shownVenueId, duration_min: durN, headcount: peopleN, price_pennies: priceParsed?.ok ? priceParsed.pennies : null },
+    { rules: cfg.priceList || [], client: selPlayer ? rateOf(selPlayer.id) : null, defaultHourly: cfg.privateRate, venueName: id => venues.find(v => v.id === id)?.name },
+  )
+  const courtCost = type === 'Block' ? 0 : courtCostFor({ duration_min: durN }, venues.find(v => v.id === shownVenueId) || null)
 
   // Tapping outside, or pressing Escape, closes the form — after asking, if
   // anything in it has been changed.
-  const closeOutside = useAskBeforeClose(JSON.stringify([title, playerSel, newPlayer, venueId, courtSel, court, date, start, dur, type, status, coach, notes]), onClose)
+  const closeOutside = useAskBeforeClose(JSON.stringify([title, playerSel, newPlayer, venueId, courtSel, court, date, start, dur, type, status, coach, notes, people, priceText]), onClose)
   const closeRef = useRef(closeOutside)
   closeRef.current = closeOutside
   useEffect(() => {
@@ -750,6 +773,8 @@ function BookingFormModal({ T, accent, players, coaches, myName, headNames, type
     if (!/^\d{1,2}:\d{2}$/.test(start) || parseMins(start) == null) { setErr('Choose a start time.'); return }
     const mins = Number(String(dur).trim())
     if (String(dur).trim() === '' || !Number.isInteger(mins) || mins < 5 || mins > 600) { setErr('Enter the length in whole minutes, between 5 and 600.'); return }
+    if (people.trim() && !(peopleN && peopleN >= 1 && peopleN <= 50)) { setErr('Enter how many are playing as a whole number from 1 to 50, or leave it empty.'); return }
+    if (priceParsed && !priceParsed.ok) { setErr(`Price: ${priceParsed.error}`); return }
 
     // WHO. A typed name that is already on the roster — in any case, with or
     // without stray spaces — is that player, and the booking carries their id.
@@ -770,6 +795,10 @@ function BookingFormModal({ T, accent, players, coaches, myName, headNames, type
         court: courtName || null, court_id: listed?.id ?? null, venue_id: (listed?.venue_id || venueId) || null,
         booking_date: date, start_time: start, duration_min: mins,
         type, status, assigned_coach: coach || null, notes: notes.trim() || null,
+        // Only sent when set, or when clearing one that was, so a booking still
+        // saves on a database that has not had migration 209 yet.
+        ...((peopleN || booking?.headcount != null) ? { headcount: peopleN } : {}),
+        ...((priceParsed?.ok || booking?.price_pennies != null) ? { price_pennies: priceParsed?.ok ? priceParsed.pennies : null } : {}),
       }, isNewPlayer ? who : null)
     } catch (e) {
       console.error('[calendar] save booking', e)
@@ -862,6 +891,26 @@ function BookingFormModal({ T, accent, players, coaches, myName, headNames, type
               <div style={{ fontSize: 11, color: T.text3, marginTop: 6 }}>No free {durMins}-min slots between 07:00 and 21:00 on this day.</div>
             )}
           </div>
+          {type !== 'Block' && (
+            <div style={{ border: `1px solid ${T.border}`, background: T.panel2, borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))', gap: 10 }}>
+                <div style={{ minWidth: 0 }}><label style={lbl} htmlFor="bk-people">Playing</label>
+                  <input id="bk-people" type="number" inputMode="numeric" min={1} max={50} value={people} placeholder="1" onChange={e => setPeople(e.target.value)} style={field} /></div>
+                <div style={{ minWidth: 0 }}><label style={lbl} htmlFor="bk-price">Price (£, this booking)</label>
+                  <input id="bk-price" inputMode="decimal" value={priceText} placeholder={price && price.source !== 'booking' && price.total ? (price.total / 100).toFixed(price.total % 100 ? 2 : 0) : 'Usual price'} onChange={e => setPriceText(e.target.value)} style={field} /></div>
+              </div>
+              {price && (
+                <div data-testid="booking-price" style={{ fontSize: 12, color: T.text2, lineHeight: 1.5 }}>
+                  {price.total || price.source === 'booking' ? <>
+                    <strong style={{ color: T.text }}>{formatPennies(price.total)}</strong>
+                    {price.each != null && price.people > 1 ? ` (${formatPennies(price.each)} each for ${price.people})` : ''}
+                    <span style={{ color: T.text3 }}> · {price.why}</span>
+                    {courtCost > 0 && <div style={{ color: T.text3 }}>Court {formatPennies(courtCost)} · you make <strong style={{ color: price.total - courtCost >= 0 ? T.good : T.bad }}>{formatPennies(price.total - courtCost)}</strong></div>}
+                  </> : <span style={{ color: T.text3 }}>No price for a {type} lesson yet. Type one above, or set your prices in Settings → Pricing &amp; packages.</span>}
+                </div>
+              )}
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div><label style={lbl}>Status</label>
               <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...field, cursor: 'pointer' }}>

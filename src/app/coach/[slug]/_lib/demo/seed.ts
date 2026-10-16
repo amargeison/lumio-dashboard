@@ -790,6 +790,9 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     const r = row(T.venue, {
       name: v.name, address: v.address, contact_name: v.contact, contact_phone: v.phone, contact_email: v.email,
       facilities: v.facilities, access_note: v.access, is_home: !!v.home, external_booking_url: null, inclusive_sessions: false,
+      // The three ways a coach pays for courts: a monthly invoice per court
+      // hour, paying at reception, and a free court.
+      court_cost_pennies: [1000, 1350, null][i] ?? null, court_billing: ['invoice', 'pay', 'free'][i] ?? null,
     }, ago(600 + i * 40))
     venueId[v.key] = r.id
     return r
@@ -977,6 +980,9 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
       consent_by: p.parent || p.name, consent_date: ymd(plus(today, -p.joined)),
       medical_notes: p.medical && !/^no known/i.test(p.medical) ? p.medical : null,
       payment_method: p.pays || null,
+      // A few clients on their own rate, so the price list has something to give way to.
+      rate_pennies: [null, null, 3000, null, null, 3200, null, null, null][pi % 9] ?? null,
+      rate_reason: [null, null, 'Legacy rate', null, null, 'Family', null, null, null][pi % 9] ?? null,
       xp_total: 0,                                   // filled in below from their effort sessions
       watch_token: hex64(`watch:${p.key}`),
       targets: targets ? targets.map(t => ({ ...t, by: 'End of term' })) : null,
@@ -1030,6 +1036,9 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     const r = row(T.booking, {
       title: name, player_name: p ? p.name : null, player_id: p ? playerId[p.key] : null,
       court: s.court, booking_date: o.dateStr, start_time: s.time, duration_min: s.mins,
+      venue_id: venueId[s.venue || HOME.key] ?? null,
+      // A group is priced by the head, so it says how many came.
+      headcount: s.type === 'Group' || s.type === 'Cardio' ? between(`hc:${o.key}`, 4, 8) : null,
       type: s.type, status,
       notes: absent ? pick(`cx:${o.key}`, p && p.cat === 'Adult' ? CANCEL_ADULT : CANCEL_JUNIOR)
         : s.venue ? `At ${VENUES.find(v => v.key === s.venue)?.name}.`
