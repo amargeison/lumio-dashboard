@@ -6,13 +6,14 @@
 
 import { useState, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { V2_LABEL, V2_NOTES } from '@/lib/coach/v2'
+import { V2_NOTES } from '@/lib/coach/v2'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, sb, currentCoachId, currentIdentity, getPreviewStaff } from '../_lib/coach-db'
 import { getSettings, setSettings, isDemoPortal } from '../_lib/settings-store'
 import { seedLumioPackages, PACKAGE_CHOICES } from '../_lib/lumio-packages'
 import { SetupWizard } from './SetupWizard'
 import { LessonEarnings } from './LessonEarnings'
+import { ReadyToCharge } from './ReadyToCharge'
 import { formatPounds, formatPennies, toPennies, sumPennies, parseAmount, isVoidPayment, paymentOwedPennies } from '@/lib/coach/money'
 import { ukDate, ukMonth, daysBetweenIso } from '@/lib/coach/uk-date'
 import { campMoney } from '@/lib/coach/camp-money'
@@ -335,13 +336,13 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Payments &amp; Packages</h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Lesson packs, credits used and what’s outstanding.{(() => { const r = getSettings().privateRate; return r > 0 ? ` · Private ${formatPounds(r)}/hr` : '' })()}</p>
         </div>
-        {/* Card payments are V2. The button stays — a coach who has connected a
-            bank can still use it — but it says what it is until then. */}
+        {/* Until the coach connects their bank, the button says that is the
+            next step rather than opening a payment that cannot be taken. */}
         <button onClick={() => setPay({})}
           title={payConnected ? 'Card · Apple Pay · Google Pay' : V2_NOTES.payments}
           style={{ appearance: 'none', border: payConnected ? 0 : `1px solid ${T.border}`, background: payConnected ? accent.hex : 'transparent', color: payConnected ? T.btnText : T.text3, borderRadius: 10, padding: '9px 15px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 8 }}>
           💳 Take a payment
-          {!payConnected && <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: accent.hex, background: accent.dim, borderRadius: 999, padding: '2px 7px' }}>{V2_LABEL}</span>}
+          {!payConnected && <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: accent.hex, background: accent.dim, borderRadius: 999, padding: '2px 7px' }}>Connect bank</span>}
         </button>
       </div>
 
@@ -370,6 +371,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
         </div>
       )}
 
+      {showSec('cards') && <ReadyToCharge T={T} accent={accent} />}
       {showSec('earnings') && <LessonEarnings T={T} accent={accent} />}
 
       {/* Packages on offer */}
@@ -769,21 +771,20 @@ export function PayModal({ T, accent, connected, init, onClose }: { T: ThemeToke
     } catch { setErr('Could not start payment') } finally { setCreating(false) }
   }
 
-  // No bank connected means, in founders access, that card payments are not on
-  // yet — and sending a coach to Settings to connect one would be sending them
-  // to a dead end. Say what is actually true and what they can do instead.
+  // No bank connected: say so, and where to connect it (Settings → Pricing &
+  // packages → Take payments).
   if (connected === false) {
     return (
       <Shell T={T} title="Take a payment" onClose={onClose} footer={<button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, border: 0, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Got it</button>}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '3px 9px' }}>{V2_LABEL}</span>
+          <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '3px 9px' }}>Bank not connected yet</span>
         </div>
         <div style={{ fontSize: 13, color: T.text2, lineHeight: 1.6 }}>{V2_NOTES.payments}</div>
 
         {/* What it will actually do. "Coming soon" with no detail is a shrug;
             this is the list a coach can decide whether they want. */}
         <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '12px 14px', marginTop: 12 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.text3, marginBottom: 8 }}>What it will do</div>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', color: T.text3, marginBottom: 8 }}>Once your bank is connected</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             {[
               ['💳', 'Take card, Apple Pay and Google Pay on the spot — a link and a QR code to scan courtside'],
