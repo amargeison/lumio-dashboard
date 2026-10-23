@@ -16,10 +16,11 @@ const nextConfig: NextConfig = {
   turbopack: {},
   typescript: { ignoreBuildErrors: typeCheckedAlready },
   experimental: {
-    // One page-generation worker, and a cap on Turbopack's own (native) memory,
-    // which NODE_OPTIONS --max-old-space-size does not limit.
+    // One page-generation worker. (turbopackMemoryLimit, the 2 GB cap on
+    // Turbopack's native memory, was removed in Next 16.4 with no build-time
+    // replacement, so builds on the VPS are no longer capped. Watch memory
+    // during golive.)
     cpus: 1,
-    turbopackMemoryLimit: 2 * 1024 * 1024 * 1024,
   },
   images: {
     remotePatterns: [
