@@ -8,6 +8,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
+import { CoachNotes } from './CoachNotes'
+import { PlayerKnowledge } from './PlayerKnowledge'
 import { useCoachTable, currentIdentity, type CoachIdentity, dbInsert, dbUpdate, dbRemove, dbList, invalidateCoachTable, rowsChanged, PLAYER_TABLES, RACKET_STAGES, RACKET_SKILLS, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore, useCoachProfile } from '../_lib/coach-db'
 import { WatchConnectPanel } from './WatchConnectPanel'
 import { CardOnFile } from './CardOnFile'
@@ -828,7 +830,7 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
   onChanged: () => void
   onClose: () => void; onEdit: () => void; onDelete: () => void | Promise<void>
 }) {
-  const [tab, setTab] = useState<'dev' | 'contact' | 'lessons' | 'attendance' | 'consent'>('dev')
+  const [tab, setTab] = useState<'dev' | 'contact' | 'lessons' | 'about' | 'attendance' | 'consent'>('dev')
   const [lessons, setLessons] = useState<any[]>([])
   const [nextSession, setNextSession] = useState<string>('—')
   // Starts on today: a register is nearly always taken on the day, and a
@@ -1052,7 +1054,7 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
 
           {/* tabs */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 14, padding: 2, background: T.hover, borderRadius: 9, width: 'fit-content', maxWidth: '100%' }}>
-            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${lessons.length}`], ['attendance', `Attendance · ${attendanceRows.length}`], ['consent', 'Consent']] as const).map(([id, l]) => (
+            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${lessons.length}`], ['about', 'About them'], ['attendance', `Attendance · ${attendanceRows.length}`], ['consent', 'Consent']] as const).map(([id, l]) => (
               <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === id ? T.panel : 'transparent', color: tab === id ? T.text : T.text2, fontWeight: tab === id ? 600 : 400 }}>{l}</button>
             ))}
           </div>
@@ -1119,8 +1121,11 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
             </div>
           )}
 
+          {tab === 'about' && <CoachNotes T={T} accent={accent} player={player} />}
           {tab === 'lessons' && (
             <div>
+              {/* What they told you, and what their lessons have and have not covered lately. */}
+              <div style={{ marginBottom: 12 }}><PlayerKnowledge T={T} accent={accent} playerId={player.id} firstName={String(player.name || '').trim().split(/\s+/)[0] || undefined} /></div>
               {lessons.length === 0 ? (
                 <p style={{ fontSize: 12.5, color: T.text3 }}>No lessons logged for this player yet. Log them in the Lesson Summaries module.</p>
               ) : lessons.map((l, i) => (
@@ -1213,10 +1218,13 @@ async function exportPlayerData(player: any, nameShared: boolean, skillMap: Reco
   // Linked rows, plus name-only rows when the name is this player's alone —
   // the same rule the card uses.
   const mine = (rows: any[], nameKey = 'player_name') => rows.filter(r => r.player_id ? r.player_id === player.id : (!nameShared && !!name && fold(String(r[nameKey] || '').trim()) === name))
-  const [bookings, lessons, payments, effort, messages, campPlaces, camps, recordings, development, recommendations, gps] = await Promise.all([
+  const [bookings, lessons, payments, effort, messages, campPlaces, camps, recordings, development, recommendations, gps, notes, questionnaires, passes, levels] = await Promise.all([
     dbList('coach_bookings'), dbList('coach_sessions'), dbList('coach_payments'), dbList('coach_watch_sessions'), dbList('coach_messages'),
     dbList('coach_camp_attendees'), dbList('coach_camps'), dbList('coach_media'), dbList('coach_development'), dbList('coach_player_resources'), dbList('coach_gps_sessions'),
+    // Migration 216 and 219: answers, the coach's notes and adult checklist passes.
+    dbList('coach_player_notes').catch(() => []), dbList('coach_questionnaires').catch(() => []), dbList('coach_adult_passes').catch(() => []), dbList('coach_adult_levels').catch(() => []),
   ])
+  const levelName = (id: string) => (levels as any[]).find(l => l.id === id)?.name ?? null
   const campName = (id: string) => (camps as any[]).find(c => c.id === id)?.name ?? null
   const data = {
     exported_at: new Date().toISOString(),
@@ -1233,6 +1241,11 @@ async function exportPlayerData(player: any, nameShared: boolean, skillMap: Reco
     recordings: mine(recordings).map(forExport),
     development_notes: mine(development).map(forExport),
     recommendations: (recommendations as any[]).filter(r => r.player_id === player.id).map(forExport),
+    // A subject access request covers what the coach wrote about them too.
+    coach_notes: (notes as any[]).filter(r => r.player_id === player.id).map(forExport),
+    questionnaires: (questionnaires as any[]).filter(r => r.player_id === player.id).map(forExport),
+    adult_level: player.adult_level_id ? levelName(player.adult_level_id) : null,
+    adult_checklist_passes: (passes as any[]).filter(r => r.player_id === player.id).map(r => ({ level: levelName(r.level_id), ...forExport(r) })),
     portal_logins: logins.map(m => ({ email: m.email, role: m.role, status: m.status, signed_in: m.signedIn })),
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })

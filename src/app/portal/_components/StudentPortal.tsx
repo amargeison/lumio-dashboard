@@ -50,6 +50,7 @@ type Raw = {
   books?: unknown[]
   sectionsOff?: string[]
   awardThreshold?: number
+  adultLevel?: unknown
 }
 
 const card: React.CSSProperties = { background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 18, marginTop: 14 }
@@ -230,6 +231,7 @@ export function StudentPortal({ onSignOut, players, playerId, onSelect }: {
     campThreads: (raw.campThreads || []) as StudentBundle['campThreads'],
     sectionsOff: raw.sectionsOff || [],
     awardThreshold: raw.awardThreshold ?? 3,
+    adultLevel: (raw.adultLevel || null) as StudentBundle['adultLevel'],
   }
   const f = studentFraming(bundle.player)
 

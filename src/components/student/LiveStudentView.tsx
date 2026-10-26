@@ -44,6 +44,47 @@ export type StudentTheme = {
 const FONT = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, monospace'
 
+// The adult level they are on: where it sits, its video, and what is left to pass.
+function AdultLevelCard({ T, level, you, first }: { T: StudentTheme; level: NonNullable<StudentBundle['adultLevel']>; you: boolean; first: string }) {
+  const [watch, setWatch] = useState(false)
+  const left = level.total - level.done
+  return (
+    <Card T={T}>
+      <Head T={T} icon="trophy" title={`${level.name} · level ${level.number} of ${level.of}`} sub={level.summary || undefined} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <div style={{ flex: 1, height: 8, borderRadius: 4, background: T.accentDim, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${level.total ? (level.done / level.total) * 100 : 0}%`, background: T.accent }} />
+        </div>
+        <span className="lsv-num" style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{level.done}/{level.total}</span>
+      </div>
+      <div style={{ fontSize: 14, color: T.text2, marginBottom: 10 }}>
+        {level.total === 0 ? 'Your coach is setting the checklist for this level.'
+          : left === 0 ? (level.next ? `${you ? 'You have' : `${first} has`} passed ${level.name}. Your coach will move ${you ? 'you' : first} up to ${level.next}.` : `${you ? 'You have' : `${first} has`} passed the top level.`)
+          : `${left} to pass${level.next ? ` before ${level.next}` : ''}.`}
+      </div>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {level.checklist.map((c, i) => (
+          <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: c.passed ? T.text : T.text2, lineHeight: 1.45 }}>
+            <span aria-label={c.passed ? 'passed' : 'not yet'} style={{ width: 20, height: 20, borderRadius: 6, flexShrink: 0, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 800, background: c.passed ? T.accent : 'transparent', color: c.passed ? T.btnText : T.text3, border: `1px solid ${c.passed ? T.accent : T.border}` }}>{c.passed ? '✓' : ''}</span>
+            <span>{c.text}</span>
+          </li>
+        ))}
+      </ul>
+      {level.video && (
+        <div style={{ marginTop: 14 }}>
+          {watch ? (
+            <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 12, overflow: 'hidden', background: '#000' }}>
+              <iframe src={level.video.embed} title={`${level.name} video`} allow="encrypted-media; picture-in-picture; fullscreen" allowFullScreen style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
+            </div>
+          ) : (
+            <button onClick={() => setWatch(true)} style={{ appearance: 'none', border: 0, background: T.accent, color: T.btnText, borderRadius: 10, padding: '10px 16px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>▶ Watch the {level.name} video</button>
+          )}
+        </div>
+      )}
+    </Card>
+  )
+}
+
 // ── primitives (soft and roomy — the parent's page, not the coach's console) ──
 function Card({ T, children, style }: { T: StudentTheme; children: React.ReactNode; style?: React.CSSProperties }) {
   return <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: Math.max(T.radius, 16), padding: T.pad + 4, ...style }}>{children}</div>
@@ -154,6 +195,7 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
     report: studentSectionOn('report', off, !!latestWatch, feat),
     rewards: studentSectionOn('rewards', off, watch.length > 0 && xpTotal > 0, feat),
     racket: studentSectionOn('racket', off, hasRacket, feat),
+    adultlevel: studentSectionOn('adultlevel', off, !!bundle.adultLevel, feat),
     homework: studentSectionOn('homework', off, !!(guidance.homework || guidance.nextFocus), feat),
     lessons: studentSectionOn('lessons', off, lessons.length > 0, feat),
     resources: studentSectionOn('resources', off, resources.length > 0 || books.length > 0, feat),
@@ -408,6 +450,9 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
           </div>
         </Card>
       )}
+
+      {/* ── ADULT LEVEL — the level, its video and the checklist ─────────────── */}
+      {show.adultlevel && bundle.adultLevel && <AdultLevelCard T={T} level={bundle.adultLevel} you={f.audience === 'adult'} first={f.first} />}
 
       {/* ── HOMEWORK & WHAT'S NEXT ─────────────────────────────────────────── */}
       {show.homework && (

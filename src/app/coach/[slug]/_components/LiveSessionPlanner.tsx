@@ -10,6 +10,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, useCoachProfile, dbInsert, dbUpdate, dbRemove, invalidateCoachTable, RACKET_STAGES, RACKET_SKILLS } from '../_lib/coach-db'
+import { PlayerKnowledge } from './PlayerKnowledge'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
@@ -841,6 +842,7 @@ function NewSession({ T, accent, density, players, prefill, edit, onClose, onSav
   const [built, setBuilt] = useState(!!edit && edit.built_by === 'lumio-coach' && editSheet.length > 0)
   const [rebuilt, setRebuilt] = useState(false)
   const [onHistory, setOnHistory] = useState(false)
+  const [onAnswers, setOnAnswers] = useState(false)
   const [manual, setManual] = useState(!!edit && !(edit.built_by === 'lumio-coach' && editSheet.length > 0))
   // A saved plan is never rebuilt behind the coach's back — only when asked.
   const autoRan = useRef(!!edit)
@@ -899,6 +901,7 @@ function NewSession({ T, accent, density, players, prefill, edit, onClose, onSav
       setAiKit(data.kit || [])
       setCoachNote(data.coach_note || '')
       setOnHistory(!!data.built_on_history)
+      setOnAnswers(!!data.built_on_answers)
       setBuilt(true); setRebuilt(true); setManual(false)
     } catch (e) { setErr(e instanceof Error ? e.message : 'Lumio Coach could not build the plan just now. Try again, or choose “Write it myself”.') }
     setDrafting(false)
@@ -1015,6 +1018,12 @@ function NewSession({ T, accent, density, players, prefill, edit, onClose, onSav
                 {!tiedToBooking && <div style={{ fontSize: 10.5, color: T.text3, marginTop: 4 }}>This name goes on the plan only. To track a new player’s lessons and progress, add them on the Roster first.</div>}
               </>
             )}
+            {/* What they told you, and what their lessons have and have not covered lately. */}
+            {mode === 'roster' && playerId && (
+              <div style={{ marginTop: 10 }}>
+                <PlayerKnowledge T={T} accent={accent} playerId={playerId} firstName={player.trim().split(/\s+/)[0]} compact onPick={a => { typed.current = true; setFocus(a) }} />
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginTop: 12 }}>
               <div style={{ minWidth: 0 }}><label style={lbl}>Type</label><select value={type} disabled={tiedToBooking} onChange={e => setType(e.target.value as SType)} style={{ ...input, ...locked }}>{TYPES.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
@@ -1049,7 +1058,8 @@ function NewSession({ T, accent, density, players, prefill, edit, onClose, onSav
               {built && rebuilt && (
                 <div style={{ fontSize: 11, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>
                   {onHistory
-                    ? 'Built from this player’s last session and their record — edit anything below.'
+                    ? `Built from this player’s last session and their record${onAnswers ? ', and what they told you in their welcome questionnaire' : ''} — edit anything below.`
+                    : onAnswers ? 'No previous sessions for this player yet, so this is built from the focus and what they told you in their welcome questionnaire.'
                     : 'No previous sessions for this player yet, so this is built from the stage and focus alone.'}
                 </div>
               )}

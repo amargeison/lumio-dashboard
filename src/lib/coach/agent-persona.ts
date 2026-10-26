@@ -82,6 +82,8 @@ export function sessionPlanTask(p: {
   racket?: string; standard?: string; focus?: string; note?: string
   context?: string
   lastCovered?: string; lastHomework?: string; lastNextFocus?: string
+  /** What the client said in their welcome questionnaire, and what has and has not been covered lately (coverage.ts). */
+  knowledge?: string
 }): string {
   const mins = Number(p.duration) || 60
   const last = [
@@ -97,7 +99,7 @@ Stage / standard: ${[p.racket, p.standard].filter(Boolean).join(' · ') || 'unsp
 Coach's intended focus: ${p.focus || 'general technical work'}
 ${p.note ? `Coach note: ${p.note}` : ''}
 ${last}
-
+${p.knowledge ? `\n${p.knowledge}\n\nUse this: keep to the coach's intended focus, but choose drills, games and the way you explain things to suit what they told you (their goals, what they enjoy, how they like to be coached), and where it fits naturally, link today's focus to a part of the game they want that has not been covered lately. Do not mention the questionnaire by name.\n` : ''}
 ${SESSION_PLAN_STANDARD}
 
 Return ONLY valid JSON (no markdown, no commentary) in EXACTLY this shape:

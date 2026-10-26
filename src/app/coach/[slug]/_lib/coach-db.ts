@@ -55,6 +55,9 @@ export type CoachTable =
   | 'coach_membership_bills'
   | 'coach_welcome_links'
   | 'coach_questionnaires'
+  | 'coach_player_notes'
+  | 'coach_adult_levels'
+  | 'coach_adult_passes'
 
 // The demo portal runs these same components against an in-memory academy.
 // Its coach-API calls are answered in the browser from the moment this module
@@ -308,6 +311,8 @@ const ASSIGNABLE = new Set<CoachTable>([
   'coach_groups', 'coach_group_members',
   // Monthly plans (migration 216): the plan is set up by the coach.
   'coach_memberships',
+  // Coach's notes and adult checklist passes (migration 219) follow the player.
+  'coach_player_notes', 'coach_adult_passes',
   // Equipment joined this list with migration 168, which gave a coach their own
   // kit. Their rows are only visible — and only writable — when they carry their
   // staff_id, so without the stamp every "Add item" was refused by row level
@@ -724,7 +729,7 @@ export function rowsChanged(...tables: CoachTable[]) {
 
 // Everything that hangs off a player. Deleting or merging players is done by a
 // server route and changes all of these at once.
-export const PLAYER_TABLES: CoachTable[] = ['coach_players', 'coach_player_skills', 'coach_attendance', 'coach_bookings', 'coach_sessions', 'coach_payments', 'coach_messages', 'coach_camp_attendees', 'coach_media', 'coach_development']
+export const PLAYER_TABLES: CoachTable[] = ['coach_players', 'coach_player_skills', 'coach_attendance', 'coach_bookings', 'coach_sessions', 'coach_payments', 'coach_messages', 'coach_camp_attendees', 'coach_media', 'coach_development', 'coach_player_notes', 'coach_adult_passes']
 
 // The freshest rows without asking twice: the read that is already on its way
 // if there is one, else what is cached, else a first read.
