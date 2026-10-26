@@ -1104,6 +1104,7 @@ export const COACH_SIDEBAR: CoachNavItem[] = [
   { id: 'staff',       label: 'Coaches',            icon: 'people',       group: 'TEAM', badge: 'NEW' },
   { id: 'calendar',    label: 'Booking Calendar',   icon: 'calendar',     group: 'SCHEDULE' },
   { id: 'venues',      label: 'Court Planner',      icon: 'pin',          group: 'SCHEDULE', badge: 'NEW' },
+  { id: 'groups',      label: 'Weekly Groups',      icon: 'ticket',       group: 'SCHEDULE', badge: 'NEW' },
   { id: 'camps',       label: 'Training Camps',     icon: 'sun',          group: 'SCHEDULE', badge: 'NEW' },
   { id: 'roster',      label: 'Player Roster',      icon: 'people',       group: 'PLAYERS' },
   { id: 'messages',    label: 'Messages',           icon: 'megaphone',    group: 'PLAYERS' },

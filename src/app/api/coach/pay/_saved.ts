@@ -117,12 +117,12 @@ export async function priceBooking(db: Db, academyId: string, settings: Record<s
 }
 
 // ── Charging ────────────────────────────────────────────────────────────────
-export type ChargeKind = 'lesson' | 'late_cancel' | 'no_show' | 'other'
+export type ChargeKind = 'lesson' | 'late_cancel' | 'no_show' | 'other' | 'group'
 export type ChargeResult =
   | { ok: true; status: 'paid' | 'processing'; chargeId: string }
   | { ok: false; status: 'failed' | 'refused'; error: string; chargeId?: string; needsClient?: boolean }
 
-const KIND_WORDS: Record<ChargeKind, string> = { lesson: 'Lesson', late_cancel: 'Late cancellation', no_show: 'Missed lesson', other: 'Payment' }
+const KIND_WORDS: Record<ChargeKind, string> = { lesson: 'Lesson', late_cancel: 'Late cancellation', no_show: 'Missed lesson', other: 'Payment', group: 'Group place' }
 
 /**
  * Take money from a player's saved card or Direct Debit, off-session.
@@ -136,6 +136,10 @@ const KIND_WORDS: Record<ChargeKind, string> = { lesson: 'Lesson', late_cancel: 
 export async function chargeSaved(db: Db, m: AcademyMoney, o: {
   academyId: string; playerId: string; playerName: string; amountPennies: number
   kind: ChargeKind; bookingId?: string | null; description?: string; by: 'coach' | 'auto'
+  /** A weekly-group answer (migration 214): one payment per answer, not per lesson. */
+  replyId?: string | null
+  /** A pack or invoice on the Payments page (migration 215): marked paid when the money is in. */
+  paymentId?: string | null
 }): Promise<ChargeResult> {
   if (!m.accountId || !m.chargesEnabled) return { ok: false, status: 'refused', error: 'Card payments are not switched on yet. Connect your bank in Settings → Pricing & packages.' }
   const amount = Math.round(o.amountPennies)
@@ -149,13 +153,15 @@ export async function chargeSaved(db: Db, m: AcademyMoney, o: {
   const { data: row, error: insErr } = await db.from('coach_charges').insert({
     coach_id: o.academyId, player_id: o.playerId, player_name: o.playerName, booking_id: o.bookingId || null,
     kind: o.kind, method_id: method.id, description, amount_pennies: amount, status: 'charging', charged_by: o.by,
+    ...(o.replyId ? { reply_id: o.replyId } : {}),
+    ...(o.paymentId ? { payment_id: o.paymentId } : {}),
   }).select('id').single()
   if (insErr || !row) {
     // 23505: the lesson already has a charge for this reason in hand or paid.
     if ((insErr as { code?: string } | null)?.code === '23505') return { ok: false, status: 'refused', error: 'This has already been charged.' }
     return { ok: false, status: 'refused', error: 'The payment could not be started. Please try again.' }
   }
-  return askStripe(db, m, { id: row.id, coach_id: o.academyId, player_id: o.playerId, player_name: o.playerName, booking_id: o.bookingId || null, kind: o.kind, amount_pennies: amount, description }, method)
+  return askStripe(db, m, { id: row.id, coach_id: o.academyId, player_id: o.playerId, player_name: o.playerName, booking_id: o.bookingId || null, kind: o.kind, amount_pennies: amount, description, payment_id: o.paymentId || null }, method)
 }
 
 /** The exact request for one charge row. Built the same way every time, so asking again with the same idempotency key gets Stripe's first answer back. */
@@ -164,11 +170,11 @@ function piParams(c: ChargeRow, method: Record<string, any>): Stripe.PaymentInte
     amount: c.amount_pennies, currency: 'gbp', customer: method.stripe_customer_id, payment_method: method.stripe_payment_method_id,
     payment_method_types: [method.kind === 'bacs_debit' ? 'bacs_debit' : 'card'],
     off_session: true, confirm: true, description: c.description,
-    metadata: { coach_id: c.coach_id, charge_id: c.id, player_id: c.player_id, ...(c.booking_id ? { booking_id: c.booking_id } : {}), kind: c.kind },
+    metadata: { coach_id: c.coach_id, charge_id: c.id, player_id: c.player_id, ...(c.booking_id ? { booking_id: c.booking_id } : {}), ...(c.payment_id ? { payment_id: c.payment_id } : {}), kind: c.kind },
   }
 }
 
-type ChargeRow = { id: string; coach_id: string; player_id: string; player_name: string; booking_id: string | null; kind: ChargeKind; amount_pennies: number; description: string }
+type ChargeRow = { id: string; coach_id: string; player_id: string; player_name: string; booking_id: string | null; kind: ChargeKind; amount_pennies: number; description: string; payment_id?: string | null }
 
 /**
  * Ask Stripe for one charge row and record the answer. Also how a row left at
@@ -184,6 +190,7 @@ export async function askStripe(db: Db, m: AcademyMoney, c: ChargeRow, method: R
     const pi = await stripe.paymentIntents.create(piParams(c, method), { stripeAccount: m.accountId!, idempotencyKey: `lumio-charge-${row.id}` })
     if (pi.status === 'succeeded') {
       await done({ status: 'paid', paid_at: new Date().toISOString(), stripe_payment_intent_id: pi.id })
+      if (c.payment_id) await settleInvoice(db, row.id)
       return { ok: true, status: 'paid', chargeId: row.id }
     }
     if (pi.status === 'processing') {
@@ -225,4 +232,18 @@ export async function refundCharge(db: Db, m: AcademyMoney, academyId: string, c
   const total = (c.refunded_pennies || 0) + amount
   await db.from('coach_charges').update({ refunded_pennies: total, ...(total >= c.amount_pennies ? { status: 'refunded' } : {}), updated_at: new Date().toISOString() }).eq('id', c.id)
   return { ok: true, refunded: amount }
+}
+
+/**
+ * A pack or invoice paid from a saved card: tick it paid once the money is in.
+ * Only when the charge is for exactly what the invoice is for — the same check
+ * the payment-link route makes — so a different sum never settles it.
+ */
+export async function settleInvoice(db: Db, chargeId: string): Promise<void> {
+  const { data: c } = await db.from('coach_charges').select('coach_id, payment_id, amount_pennies, status').eq('id', chargeId).maybeSingle()
+  if (!c?.payment_id || c.status !== 'paid') return
+  const { data: inv } = await db.from('coach_payments').select('amount, paid, status').eq('id', c.payment_id).eq('coach_id', c.coach_id).maybeSingle()
+  if (!inv || inv.paid || Math.round(Number(inv.amount) * 100) !== c.amount_pennies) return
+  await db.from('coach_payments').update({ paid: true, paid_at: new Date().toISOString(), ...(inv.status === 'overdue' ? { status: 'active' } : {}) })
+    .eq('id', c.payment_id).eq('coach_id', c.coach_id)
 }

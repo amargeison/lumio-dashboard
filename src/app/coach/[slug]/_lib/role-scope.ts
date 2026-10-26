@@ -43,7 +43,7 @@ export const COACH_VIEW_COACH_ID = 'rachel'
 // Payments is NOT hidden: a coach takes, records and marks paid the payments for
 // THEIR players (migration 188 limits the rows to those). The academy's other
 // balances and the price list's editing stay with the head coach.
-export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues', 'leads']
+export const COACH_HIDDEN_NAV = ['staff', 'camps', 'venues', 'leads', 'groups']
 
 // Normalise whatever the session carries (may be a legacy role like
 // 'assistant'/'manager', or undefined) to one of the three view roles.

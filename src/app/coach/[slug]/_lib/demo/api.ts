@@ -34,6 +34,7 @@ import { buildNextSession } from '@/lib/student/next-session'
 import { bookById } from '@/lib/coach/books'
 import { priceFor, DEMO_PRICE_LIST } from '@/lib/coach/pricing'
 import { cleanImportRow, IMPORT_MAX } from '@/lib/coach/leads'
+import { upcomingDate } from '@/lib/coach/groups'
 import { isLumioResource } from '@/lib/coach/lumio-resources-data'
 import { resourceHref } from '@/lib/coach/resource-files'
 
@@ -1906,8 +1907,10 @@ const payCards: Handler = async () => {
       }
     })
     .filter(c => c.amount_pennies > 0)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
-  return json({ connected: true, chargesEnabled: true, methods, charges })
+  // Weekly-group places, paid when people said yes (seeded with the groups).
+  const all = [...charges, ...demoTable('coach_charges').map(c => ({ ...c }))]
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+  return json({ connected: true, chargesEnabled: true, methods, charges: all })
 }
 // The weather on the demo dashboard: today's and tomorrow's lessons with a
 // made-up forecast — dry in the morning, showers from mid-afternoon tomorrow —
@@ -1940,6 +1943,58 @@ const demoWeather: Handler = async () => {
 }
 const SEND_OFF = 'Sending to families is switched off in the demo. In your own portal Lumio emails it for you, from your own mailbox, and files it in their messages in the app.'
 const sendOff: Handler = async () => { await sleep(400); return fail(SEND_OFF) }
+
+// ── Weekly groups ───────────────────────────────────────────────────────────
+// "Ask now" and "Mark coming" work on the demo's own groups; no email is sent.
+const groupsPost: Handler = async ({ body }) => {
+  await sleep(450)
+  const b = obj(body)
+  const now = new Date().toISOString()
+  const recount = (sessionId: string) => {
+    const w = byId('coach_group_sessions', sessionId)
+    const g = w ? byId('coach_groups', w.group_id) : null
+    const bk = w?.booking_id ? byId('coach_bookings', w.booking_id) : null
+    if (!bk || !g) return
+    const n = demoTable('coach_group_replies').filter(r => r.session_id === sessionId && r.answer === 'yes').length
+    bk.headcount = n || null; bk.price_pennies = n ? n * g.price_pennies : null
+  }
+  if (b.action === 'ask') {
+    const g = byId('coach_groups', b.groupId)
+    if (!g) return fail('We could not find that group.', 404)
+    const ids = Array.from(new Set(demoTable('coach_group_members').filter(m => m.group_id === g.id).map(m => String(m.player_id))))
+    if (!ids.length) return fail('Add people to the group first.')
+    const date = upcomingDate({ weekday: Number(g.weekday), start_time: String(g.start_time) })
+    let w = demoTable('coach_group_sessions').find(x => x.group_id === g.id && x.session_date === date)
+    if (!w) {
+      const bk = { id: demoId(), coach_id: DEMO_COACH_ID, staff_id: null, title: g.name, type: 'Group', status: 'confirmed', booking_date: date, start_time: g.start_time, duration_min: g.duration_min, venue_id: g.venue_id, court: g.court, headcount: null, price_pennies: null, player_id: null, player_name: null, created_at: now, updated_at: now }
+      demoTable('coach_bookings').push(bk)
+      w = { id: demoId(), coach_id: DEMO_COACH_ID, staff_id: null, group_id: g.id, session_date: date, booking_id: bk.id, status: 'open', asked_at: now, created_at: now }
+      demoTable('coach_group_sessions').push(w)
+    }
+    if (w.status !== 'open') return fail('That week has been called off.')
+    const have = new Set(demoTable('coach_group_replies').filter(r => r.session_id === w!.id).map(r => String(r.player_id)))
+    let asked = 0
+    for (const pid of ids) {
+      if (have.has(pid)) continue
+      demoTable('coach_group_replies').push({ id: demoId(), coach_id: DEMO_COACH_ID, staff_id: null, session_id: w.id, group_id: g.id, player_id: pid, token: demoId(), sent_at: now, opened_at: null, answer: null, answered_at: null, answered_by: null, late: false, created_at: now, updated_at: now })
+      asked++
+    }
+    return json({ ok: true, date, asked, failed: 0, noEmail: 0, members: ids.length })
+  }
+  if (b.action === 'mark') {
+    const r = byId('coach_group_replies', b.replyId)
+    if (!r || !['yes', 'no'].includes(String(b.answer))) return fail('We could not find that answer.', 404)
+    if (b.answer === 'yes') {
+      const w = byId('coach_group_sessions', r.session_id), g = w ? byId('coach_groups', w.group_id) : null
+      const n = demoTable('coach_group_replies').filter(x => x.session_id === r.session_id && x.answer === 'yes').length
+      if (g && r.answer !== 'yes' && n >= g.capacity) return fail('This week is full. Raise the number of places on the group to add them.', 409)
+    }
+    Object.assign(r, { answer: b.answer, answered_at: now, answered_by: 'coach', late: false, updated_at: now })
+    recount(r.session_id)
+    return json({ ok: true, late: false, refunded: 0 })
+  }
+  return fail('Unknown action.')
+}
 
 // ── Leads ───────────────────────────────────────────────────────────────────
 // The private address is a real web address that Zapier or Make posts to, so
@@ -2618,6 +2673,7 @@ const ROUTES: Record<string, Handler> = {
   [`GET ${C}/leads/hook`]: leadsHookGet,
   [`POST ${C}/leads/hook`]: leadsHookOff,
   [`POST ${C}/leads/import`]: leadsImport,
+  [`POST ${C}/groups`]: groupsPost,
   [`GET ${C}/calendar/availability`]: availability,
   [`POST ${C}/calendar/event`]: calendarEventPost,
   [`DELETE ${C}/calendar/event`]: calendarEventDelete,

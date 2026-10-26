@@ -19,6 +19,9 @@ import { ukDate, ukMonth, daysBetweenIso } from '@/lib/coach/uk-date'
 import { campMoney } from '@/lib/coach/camp-money'
 import { tellApartHints } from '../_lib/tell-apart'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { lessonUses, allocate, soldOn as packSoldOn, type Use } from '@/lib/coach/packs'
+import { readPolicy } from '@/lib/coach/cancel-policy'
+import { useWallet, savedFor, methodLabel, reloadWallet } from '../_lib/pay-wallet'
 
 // Package type → Equipment & Kit session-type checklist.
 const KIND_TO_SESSION: Record<string, string> = { Private: 'Private lesson', Performance: 'Private lesson', Adult: 'Private lesson', Group: 'Group / squad', Junior: 'Group / squad', Cardio: 'Cardio Tennis' }
@@ -38,8 +41,9 @@ async function pushEquipmentToKit(kind: string, equipment: string) {
 type Pkg = { id: string; name: string; kind?: string | null; price?: number | null; sessions?: number | null; period?: string | null; description?: string | null; features?: string | null }
 type Pay = { id: string; player_id?: string | null; player_name?: string | null; item?: string | null; amount?: number | null; status?: string | null; sessions_used?: number | null; sessions_total?: number | null; renews_date?: string | null; paid?: boolean | null; paid_at?: string | null; due_date?: string | null; notes?: string | null; created_at?: string | null }
 type Player = { id: string; name: string; payment_method?: string | null; parent_name?: string | null; age?: number | null; year_group?: string | null; created_at?: string | null }
-type Sess = { id: string; player_id?: string | null; player_name?: string | null; session_date?: string | null; focus?: string | null; rating?: number | null; created_at?: string | null; written?: boolean; kind?: 'private' | 'group' }
-type Bk = { id: string; player_id?: string | null; player_name?: string | null; booking_date?: string | null; start_time?: string | null; type?: string | null; status?: string | null; created_at?: string | null }
+type Sess = Use
+type WriteUpRow = { id: string; player_id?: string | null; player_name?: string | null; session_date?: string | null; focus?: string | null; rating?: number | null; created_at?: string | null }
+type Bk = { id: string; player_id?: string | null; player_name?: string | null; booking_date?: string | null; start_time?: string | null; type?: string | null; status?: string | null; created_at?: string | null; cancelled_at?: string | null; cancelled_by?: string | null }
 type PayStatus = 'active' | 'expiring' | 'expired' | 'used' | 'overdue' | 'due' | 'settled' | 'void' | 'none'
 // One line of the table. `used`/`sessions` are the lessons counted against THIS
 // line: a pack's own lessons, or (on a line with no pack) the lessons no pack covers.
@@ -65,7 +69,7 @@ const isVoid = isVoidPayment
 const owedPennies = paymentOwedPennies
 // The day a pack was sold. There is no separate "start" date, so this is the
 // day the line was added.
-const soldOn = (p: Pay) => (p.created_at ? ukDate(p.created_at) : '')
+const soldOn = (p: Pay) => packSoldOn(p)
 
 // What to call a line RIGHT NOW, worked out from its dates and its tick rather
 // than from the word stored on the row. The stored word was whatever the form
@@ -96,47 +100,20 @@ const badgeFor = (p: Pay, s: PayStatus) => {
   return STATUS_LABEL[s]
 }
 
-// Which lessons count against which pack.
-//
-// It used to be "every lesson this player has ever had", applied to every one of
-// their packs — so a pack sold today was already used up by last month's
-// lessons, and one lesson came off two packs at once. Now each lesson is given
-// to ONE pack: the oldest that was already sold on the day of the lesson, had
-// not passed its renewal date, and still has room. A lesson no pack covers is
-// left over ("pay as you go").
+// Which lessons count against which pack, and the credit rules (late
+// cancellations and missed lessons use a credit; the coach's own cancellations
+// never do) — the shared rules in '@/lib/coach/packs', so a lesson that comes
+// off a pack here is never also charged to a card.
 //
 // Limitation, stated rather than hidden: a lesson carries no link to a pack, so
 // this is worked out from dates. A pack entered late (sold a month ago, typed in
 // today) does not pick up the lessons taken before it was entered.
-function allocateLessons(packs: Pay[], lessons: Sess[]): { byPack: Map<string, Sess[]>; loose: Sess[] } {
-  const byPack = new Map<string, Sess[]>()
-  const loose: Sess[] = []
-  const ordered = packs.filter(p => (p.sessions_total || 0) > 0)
-    .sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')))
-  for (const p of ordered) byPack.set(p.id, [])
-  const dateOf = (s: Sess) => dk(s.session_date) || (s.created_at ? ukDate(s.created_at) : '')
-  // A private lesson comes off a private pack and a squad session off a group
-  // term — a child with both had their private lessons used up the term pass.
-  // Where the player has no pack of that kind, any pack may take it, as before.
-  const kindOf = (p: Pay) => /group|squad|term|cardio|club night/i.test(p.item || '') ? 'group' : 'private'
-  for (const s of [...lessons].sort((a, b) => dateOf(a).localeCompare(dateOf(b)))) {
-    const day = dateOf(s)
-    const fits = (p: Pay) => {
-      const got = byPack.get(p.id) as Sess[]
-      return !!day && soldOn(p) <= day && (!p.renews_date || day <= dk(p.renews_date)) && got.length < (p.sessions_total || 0)
-    }
-    const want = s.kind || 'private'
-    const sameKind = ordered.filter(p => kindOf(p) === want)
-    const pack = sameKind.length ? sameKind.find(fits) : ordered.find(fits)
-    if (pack) (byPack.get(pack.id) as Sess[]).push(s); else loose.push(s)
-  }
-  return { byPack, loose }
-}
+const allocateLessons = (packs: Pay[], lessons: Sess[]) => allocate(packs, lessons)
 
 export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const packages = useCoachTable<Pkg>('coach_packages')
   const payments = useCoachTable<Pay>('coach_payments')
-  const sessions = useCoachTable<Sess>('coach_sessions')
+  const sessions = useCoachTable<WriteUpRow>('coach_sessions')
   const bookings = useCoachTable<Bk>('coach_bookings')
   const attendance = useCoachTable<{ player_id?: string | null; session_date?: string | null; present?: boolean | null }>('coach_attendance')
   const { rows: players } = useCoachTable<Player>('coach_players')
@@ -147,7 +124,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const [runSheet, setRunSheet] = useState<RosterRow | null>(null)
   // The player (by id) the assign form opens on, when it is opened from a player's line.
   const [assignPrefill, setAssignPrefill] = useState<string | null>(null)
-  const [pay, setPay] = useState<{ amount?: number; description?: string; player_name?: string; payment_id?: string } | null>(null)
+  const [pay, setPay] = useState<{ amount?: number; description?: string; player_name?: string; payment_id?: string; player_id?: string } | null>(null)
   const [payConnected, setPayConnected] = useState<boolean | null>(null)
   // A coach sees, takes and marks paid the payments for THEIR players (the rows
   // are limited to those — migration 188). The price list is the academy's: they
@@ -224,42 +201,8 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   // seven left. A write-up with no booking behind it still counts, so nothing
   // that counted before is lost. Where a lesson was written up, its focus and
   // rating are shown against it.
-  const nowHM = new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false })
-  const lessonsTaken: Sess[] = (() => {
-    const key = (pid: unknown, d: unknown) => `${pid}|${dk(d as string)}`
-    const absent = new Set(attendance.rows.filter(a => a.present === false && a.player_id).map(a => key(a.player_id, a.session_date)))
-    const writeUps = new Map(sessions.rows.filter(w => w.player_id).map(w => [key(w.player_id, w.session_date), w]))
-    const out: Sess[] = [], seen = new Set<string>()
-    for (const b of bookings.rows) {
-      const d = dk(b.booking_date)
-      if (!b.player_id || !d || b.status === 'cancelled' || b.status === 'pending' || b.type === 'Block') continue
-      if (d > today || (d === today && (b.start_time || '99:99') > nowHM)) continue
-      const k = key(b.player_id, d)
-      if (absent.has(k) || seen.has(k)) continue
-      seen.add(k)
-      const w = writeUps.get(k)
-      out.push({ id: b.id, player_id: b.player_id, player_name: b.player_name, session_date: d, focus: w?.focus || b.type || 'Lesson', rating: w?.rating ?? null, created_at: b.created_at, written: !!w,
-        kind: /group|squad|cardio|match/i.test(b.type || '') ? 'group' : 'private' })
-    }
-    for (const w of sessions.rows) {
-      const k = w.player_id ? key(w.player_id, w.session_date) : ''
-      if (k && seen.has(k)) continue
-      if (k) seen.add(k)
-      out.push({ ...w, written: true })
-    }
-    // A squad session is booked for the group, not for each child, so the
-    // player's own record of it is their attendance mark.
-    for (const a of attendance.rows) {
-      const d = dk(a.session_date)
-      if (!a.player_id || a.present === false || !d || d > today) continue
-      const k = key(a.player_id, d)
-      if (seen.has(k)) continue
-      seen.add(k)
-      const w = writeUps.get(k)
-      out.push({ id: `att:${k}`, player_id: a.player_id, session_date: d, focus: w?.focus || 'Group session', rating: w?.rating ?? null, written: !!w, kind: 'group' })
-    }
-    return out
-  })()
+  const policy = readPolicy(getSettings().cancelPolicy)
+  const lessonsTaken: Sess[] = lessonUses({ bookings: bookings.rows, attendance: attendance.rows, writeUps: sessions.rows, policy })
   const lessonsByOwner = group(lessonsTaken)
   // Something to tell two players with the same name apart, shown under the name.
   // The shared rule, so the hint here matches the one in the form and on the
@@ -478,7 +421,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
                         ? <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                             <button onClick={e => { e.stopPropagation(); togglePaid(a).catch(() => {}) }} title="Click to mark paid / unpaid" style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, whiteSpace: 'nowrap', fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5, border: `1px solid ${a.paid ? T.good : T.warn}`, background: a.paid ? `${T.good}22` : 'transparent', color: a.paid ? T.good : T.warn }}>{a.paid ? '✓ Paid' : 'Mark paid'}</button>
                             {!a.paid && payConnected && payable && (
-                              <button onClick={e => { e.stopPropagation(); setPay({ payment_id: a.id, amount: Number(a.amount) || undefined, description: (a.item ? `${a.item} — ${a.player_name || ''}` : `Tennis coaching — ${a.player_name || ''}`).trim(), player_name: a.player_name || undefined }) }} title="Take a card / Apple Pay payment — auto-marks this pack paid" style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5, border: 0, background: accent.hex, color: T.btnText }}>💳 Collect</button>
+                              <button onClick={e => { e.stopPropagation(); setPay({ payment_id: a.id, player_id: a.player_id || undefined, amount: Number(a.amount) || undefined, description: (a.item ? `${a.item} — ${a.player_name || ''}` : `Tennis coaching — ${a.player_name || ''}`).trim(), player_name: a.player_name || undefined }) }} title="Take a card / Apple Pay payment — auto-marks this pack paid" style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 9.5, fontWeight: 700, textTransform: 'uppercase', padding: '3px 9px', borderRadius: 5, border: 0, background: accent.hex, color: T.btnText }}>💳 Collect</button>
                             )}
                           </div>
                         : <span style={{ fontSize: 12, color: T.text3 }}>—</span>}</td>
@@ -496,7 +439,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
         onClose={() => setRunSheet(null)}
         onTakePayment={() => { const r = runSheet; setRunSheet(null); setPay({ amount: Number(r.assign?.amount) || undefined, description: r.assign?.item ? `${r.assign.item} — ${r.name}` : `Tennis coaching — ${r.name}`, player_name: r.name }) }}
         onEditPlan={() => { const a = runSheet.assign; const pid = runSheet.playerId || null; setRunSheet(null); if (a) setEditPay(a); else { setAssignPrefill(pid); setEditPay('new') } }} />}
-      {pay && <PayModal T={T} accent={accent} connected={payConnected} init={pay} onClose={() => setPay(null)} />}
+      {pay && <PayModal T={T} accent={accent} connected={payConnected} init={pay} onClose={() => setPay(null)} onPaid={() => payments.reload()} />}
       {editPkg && <PackageForm T={T} accent={accent} pkg={editPkg === 'new' ? null : editPkg} onClose={() => setEditPkg(null)} onSave={async v => { if (editPkg === 'new') await packages.add(v); else await packages.edit(editPkg.id, v); setEditPkg(null) }} />}
       {editPay && <AssignForm T={T} accent={accent} players={players} packages={packages.rows} pay={editPay === 'new' ? null : editPay} prefillPlayerId={assignPrefill}
         onClose={() => { setEditPay(null); setAssignPrefill(null) }}
@@ -687,7 +630,7 @@ function AssignForm({ T, accent, players, packages, pay, prefillPlayerId, onClos
         <option value="active">No — work the status out from the dates</option>
         <option value="overdue">Yes — show it as overdue until it is paid</option>
       </select></div>
-      <div style={{ fontSize: 11, color: T.text3 }}>Sessions used tick off automatically as this player’s booked lessons take place (unless they are marked absent), starting from the day the package is added — no manual counting.</div>
+      <div style={{ fontSize: 11, color: T.text3 }}>Sessions used tick off automatically as this player’s booked lessons take place, starting from the day the package is added — no manual counting. A late cancellation or a missed lesson uses one too, if your cancellation policy charges for it; a lesson you call off never does. Lessons that come off a pack are never charged to a card.</div>
       {fieldErr(T, errs.save)}
     </Shell>
   )
@@ -733,7 +676,7 @@ function PackageRunSheet({ T, accent, row, onClose, onEditPlan, onTakePayment }:
         </div>
         <div style={{ fontSize: 10.5, color: T.text3, marginTop: 12, lineHeight: 1.5 }}>
           {total > 0
-            ? `Lessons tick off automatically as they take place — you don’t mark these by hand; mark a player absent on their profile and that lesson is not counted. This package counts lessons from ${fmtD(soldOn(a!))}, the day it was added${a?.renews_date ? `, up to ${fmtD(a.renews_date)}` : ''}. Each lesson comes off one package only, the oldest first.`
+            ? `Lessons tick off automatically as they take place — you don’t mark these by hand. Under your cancellation policy a late cancellation or a missed lesson uses a lesson from the pack instead of a charge, and a lesson you call off never does. This package counts lessons from ${fmtD(soldOn(a!))}, the day it was added${a?.renews_date ? `, up to ${fmtD(a.renews_date)}` : ''}. Each lesson comes off one package only, the oldest first.`
             : 'Lessons taken that are not covered by a package. They appear automatically once each lesson has happened.'}
           {total > 0 && (row.loose || 0) > 0 ? ` ${row.loose} other lesson${row.loose === 1 ? ' is' : 's are'} not covered by a package.` : ''}
         </div>
@@ -747,7 +690,24 @@ function PackageRunSheet({ T, accent, row, onClose, onEditPlan, onTakePayment }:
   )
 }
 
-export function PayModal({ T, accent, connected, init, onClose }: { T: ThemeTokens; accent: AccentTokens; connected: boolean | null; init: { amount?: number; description?: string; player_name?: string; payment_id?: string }; onClose: () => void }) {
+export function PayModal({ T, accent, connected, init, onClose, onPaid }: { T: ThemeTokens; accent: AccentTokens; connected: boolean | null; init: { amount?: number; description?: string; player_name?: string; payment_id?: string; player_id?: string }; onClose: () => void; onPaid?: () => void }) {
+  // A pack for a player with a card or Direct Debit saved: take it from that,
+  // no link to send. The server charges exactly what the line is for.
+  const { wallet } = useWallet()
+  const saved = init.payment_id && init.player_id ? savedFor(wallet, init.player_id) : null
+  const [charging, setCharging] = useState(false)
+  const [done, setDone] = useState<string | null>(null)
+  const chargeSaved = async () => {
+    if (!saved || charging) return
+    setCharging(true); setErr('')
+    try {
+      const r = await fetch('/api/coach/pay/charge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paymentId: init.payment_id }) })
+      const d = await r.json()
+      if (d.ok) { setDone(d.status === 'processing' ? `✓ Direct Debit started for ${formatPennies(d.amountPennies)}. It is ticked paid when the money arrives, in about three working days.` : `✓ ${formatPennies(d.amountPennies)} taken from ${methodLabel(saved)}. Marked paid.`); onPaid?.(); void reloadWallet() }
+      else setErr(d.error || 'The payment did not go through.')
+    } catch { setErr('You appear to be offline. Nothing was charged.') }
+    finally { setCharging(false) }
+  }
   const [amount, setAmount] = useState(init.amount ? String(init.amount) : '')
   const [description, setDescription] = useState(init.description || '')
   const [playerName, setPlayerName] = useState(init.player_name || '')
@@ -826,6 +786,14 @@ export function PayModal({ T, accent, connected, init, onClose }: { T: ThemeToke
     )
   }
 
+  if (done) {
+    return (
+      <Shell T={T} title="Payment taken" onClose={onClose} footer={<button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, border: 0, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Done</button>}>
+        <div role="status" style={{ fontSize: 13, color: T.good, lineHeight: 1.6 }}>{done}</div>
+      </Shell>
+    )
+  }
+
   return (
     <Shell T={T} title="Take a payment" onClose={onClose}
       footer={<>
@@ -837,7 +805,13 @@ export function PayModal({ T, accent, connected, init, onClose }: { T: ThemeToke
         <div><label style={lab(T)}>Player</label><input value={playerName} readOnly={fixed} onChange={e => setPlayerName(e.target.value)} placeholder="Optional" style={{ ...field(T), opacity: fixed ? 0.7 : 1 }} /></div>
       </div>
       <div><label style={lab(T)}>Description</label><input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g. 10-lesson private pack" style={field(T)} /></div>
-      <div style={{ fontSize: 11, color: T.text3 }}>Creates a Stripe checkout (card · Apple Pay · Google Pay). You’ll get a link + QR to scan in person — money goes straight to your bank.</div>
+      {saved && (
+        <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ flex: 1, minWidth: 180, fontSize: 12.5, color: T.text2 }}>{init.player_name || 'This player'} has {methodLabel(saved)} saved. Take it from that, and the line is ticked paid.</span>
+          <button onClick={chargeSaved} disabled={charging} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', opacity: charging ? 0.5 : 1, fontFamily: FONT }}>{charging ? 'Charging…' : `Charge ${init.amount ? formatPounds(init.amount) : ''} now`}</button>
+        </div>
+      )}
+      <div style={{ fontSize: 11, color: T.text3 }}>{saved ? 'Or create' : 'Creates'} a Stripe checkout (card · Apple Pay · Google Pay). You’ll get a link + QR to scan in person — money goes straight to your bank.</div>
       {err && <div role="alert" style={{ fontSize: 12, color: T.bad }}>{err}</div>}
     </Shell>
   )

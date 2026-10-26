@@ -47,6 +47,10 @@ export type CoachTable =
   | 'coach_camp_channels'
   | 'coach_leads'
   | 'coach_lead_events'
+  | 'coach_groups'
+  | 'coach_group_members'
+  | 'coach_group_sessions'
+  | 'coach_group_replies'
 
 // The demo portal runs these same components against an in-memory academy.
 // Its coach-API calls are answered in the browser from the moment this module
@@ -296,6 +300,8 @@ const ASSIGNABLE = new Set<CoachTable>([
   'coach_camps', 'coach_development', 'coach_attendance',
   // Leads are a coach's own work too (migration 213).
   'coach_leads', 'coach_lead_events',
+  // Weekly groups (migration 214). Their weeks and answers are the server's.
+  'coach_groups', 'coach_group_members',
   // Equipment joined this list with migration 168, which gave a coach their own
   // kit. Their rows are only visible — and only writable — when they carry their
   // staff_id, so without the stamp every "Add item" was refused by row level

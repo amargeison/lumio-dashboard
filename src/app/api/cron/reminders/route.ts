@@ -7,6 +7,8 @@ import { familyAddress, fileInApp, sendFamilyEmail } from '@/lib/coach/family-ma
 import { sendSummary } from '@/lib/coach/summary-send'
 import { ukLocalToMs } from '@/lib/coach/cancel-policy'
 import { addDaysIso, ukDate, ukTime } from '@/lib/coach/uk-date'
+import { runGroupAsks } from '@/lib/coach/groups-server'
+import { publicSiteOrigin } from '@/lib/public-origin'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -21,7 +23,10 @@ export const maxDuration = 300
 //   2. The day-before reminder, for academies that switched it on (Settings →
 //      Reminders & summaries), once their chosen time has passed today: one
 //      email per lesson tomorrow, with the forecast if there is one, saying it
-//      is confirmed (and paid, when it is).
+//      is confirmed (and paid, when it is). Weekly groups too: everyone who
+//      said yes to tomorrow's session.
+//   3. Weekly groups: "are you coming?" for every group whose ask day has
+//      come (six days before, by default), in the daytime only.
 //
 // Safe to run twice: each reminder is claimed in coach_notices (one per lesson)
 // before it is sent, and a scheduled summary is claimed by clearing its time.
@@ -41,7 +46,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const sb = db()
-  const out = { summaries: 0, summaryFailed: 0, reminders: 0, reminderFailed: 0, skipped: 0, academies: 0 }
+  const out = { summaries: 0, summaryFailed: 0, reminders: 0, reminderFailed: 0, skipped: 0, academies: 0, groupsAsked: 0, groupAskFailed: 0 }
   let budget = MAX_PER_RUN
 
   // ── 1. Scheduled summaries ──
@@ -68,16 +73,33 @@ export async function POST(req: NextRequest) {
       if (!cfg.dayBefore || now < cfg.at) continue
       const academyId = row.coach_id as string
       out.academies++
-      const { data: lessons } = await sb.from('coach_bookings').select('*')
+      const { data: oneToOne } = await sb.from('coach_bookings').select('*')
         .eq('coach_id', academyId).eq('booking_date', tomorrow).eq('status', 'confirmed').not('player_id', 'is', null)
-      if (!lessons?.length) continue
+      // Weekly groups: one reminder for each person who said yes, as if it were
+      // their own booking. Claimed per answer ('reminder:<answer id>').
+      const { data: weeks } = await sb.from('coach_group_sessions').select('id, booking_id').eq('coach_id', academyId).eq('session_date', tomorrow).eq('status', 'open')
+      const groupBookings = (weeks || []).filter(w => w.booking_id)
+      let groupLessons: Record<string, any>[] = []
+      if (groupBookings.length) {
+        const [{ data: gb }, { data: yes }] = await Promise.all([
+          sb.from('coach_bookings').select('*').in('id', groupBookings.map(w => w.booking_id)).eq('status', 'confirmed'),
+          sb.from('coach_group_replies').select('id, session_id, player_id').in('session_id', groupBookings.map(w => w.id)).eq('answer', 'yes'),
+        ])
+        for (const y of yes || []) {
+          const w = groupBookings.find(x => x.id === y.session_id)
+          const b = (gb || []).find(x => x.id === w?.booking_id)
+          if (b) groupLessons.push({ ...b, player_id: y.player_id, _replyId: y.id })
+        }
+      }
+      const lessons = [...(oneToOne || []), ...groupLessons]
+      if (!lessons.length) continue
       const [{ data: prof }, { data: venues }, { data: players }, { data: paid }] = await Promise.all([
         sb.from('sports_profiles').select('brand_name, display_name, contact_email').eq('id', academyId).maybeSingle(),
         sb.from('coach_venues').select('id, coach_id, name, address, lat, lng, geocoded_at, is_home').eq('coach_id', academyId),
         sb.from('coach_players').select('id, name, email, parent_email, parent_name, contact_email').eq('coach_id', academyId).in('id', lessons.map(l => l.player_id)),
-        sb.from('coach_charges').select('booking_id').eq('coach_id', academyId).in('booking_id', lessons.map(l => l.id)).in('status', ['paid', 'processing']),
+        sb.from('coach_charges').select('booking_id, reply_id').eq('coach_id', academyId).in('booking_id', lessons.map(l => l.id)).in('status', ['paid', 'processing']),
       ])
-      const paidSet = new Set((paid || []).map(c => c.booking_id))
+      const paidSet = new Set((paid || []).map(c => c.reply_id || c.booking_id))
       const home = (venues || []).find(v => v.is_home) || null
       const forecasts = new Map<string, Awaited<ReturnType<typeof venueForecast>>>()
       for (const b of lessons) {
@@ -87,7 +109,8 @@ export async function POST(req: NextRequest) {
         const addr = player ? familyAddress(player) : null
         if (!player || !addr) { out.skipped++; continue }
         // Claim: one reminder per lesson, ever.
-        const { error: claimErr } = await sb.from('coach_notices').insert({ coach_id: academyId, booking_id: b.id, kind: 'reminder', status: 'sending', sent_to: addr.to })
+        const kind = b._replyId ? `reminder:${b._replyId}` : 'reminder'
+        const { error: claimErr } = await sb.from('coach_notices').insert({ coach_id: academyId, booking_id: b.id, kind, status: 'sending', sent_to: addr.to })
         if (claimErr) continue
         budget--
         const venue = (venues || []).find(v => v.id === b.venue_id) || (b.venue_id ? null : home)
@@ -101,21 +124,27 @@ export async function POST(req: NextRequest) {
           hello: addr.hello, childFirst: addr.toParent ? String(player.name).split(/\s+/)[0] : null,
           academy: (prof?.brand_name as string) || 'Your coach', coachName: (prof?.display_name as string) || null,
           time: String(b.start_time || '').slice(0, 5), durMin: Number(b.duration_min) || 60, type: b.type,
-          venue: venue?.name || null, court: b.court || null, paid: paidSet.has(b.id), weather,
+          venue: venue?.name || null, court: b.court || null, paid: paidSet.has(b._replyId || b.id), weather,
         })
         const ok = await sendFamilyEmail(academyId, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: (prof?.contact_email as string) || null, context: 'coach/day-before reminder' })
         if (ok) {
           await sb.from('coach_notices').update({ status: 'sent', updated_at: new Date().toISOString(), detail: weather ? weather.words : null })
-            .eq('booking_id', b.id).eq('kind', 'reminder')
+            .eq('booking_id', b.id).eq('kind', kind)
           out.reminders++
           await fileInApp(sb, { coachId: academyId, player, subject: msg.subject, body: msg.text })
         } else {
           // Nothing went out: let go of the claim so the next run tries again (until 9pm).
-          await sb.from('coach_notices').delete().eq('booking_id', b.id).eq('kind', 'reminder').eq('status', 'sending')
+          await sb.from('coach_notices').delete().eq('booking_id', b.id).eq('kind', kind).eq('status', 'sending')
           out.reminderFailed++
         }
       }
     }
   }
+
+  // ── 3. Weekly groups: who is coming? ──
+  try {
+    const g = await runGroupAsks(sb, publicSiteOrigin('https://www.lumiosports.com'), Math.max(0, budget))
+    out.groupsAsked = g.asked; out.groupAskFailed = g.failed
+  } catch (e) { console.error('[cron/reminders] groups', e) }
   return NextResponse.json({ ok: true, ...out })
 }

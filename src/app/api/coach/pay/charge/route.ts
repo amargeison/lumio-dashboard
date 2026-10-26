@@ -4,6 +4,7 @@ import { coachGate, isUuid } from '@/lib/coach/membership'
 import { feeFor, isLateCancel } from '@/lib/coach/cancel-policy'
 import { admin } from '../_stripe'
 import { academyMoney, chargeSaved, priceBooking, refundCharge, type ChargeKind } from '../_saved'
+import { packCover } from '@/lib/coach/packs-server'
 
 export const runtime = 'nodejs'
 
@@ -16,6 +17,10 @@ export const runtime = 'nodejs'
 //   so the screen cannot ask for a different sum than the one it displayed by
 //   accident. A typed amount (the coach's own figure) is used as given.
 //
+// POST { paymentId } charges a pack or invoice from the Payments page to the
+//   player's saved card, for exactly what it is for, and ticks it paid when the
+//   money is in.
+//
 // POST { refund: chargeId, amountPennies? } gives money back instead.
 
 const KINDS: ChargeKind[] = ['lesson', 'late_cancel', 'no_show', 'other']
@@ -26,7 +31,7 @@ export async function POST(req: NextRequest) {
   if (!await isAcademyUser(who.userId)) return notAnAcademy()
   const academyId = who.seat.academyId
   const mine = who.seat.isHead ? null : who.seat.staffId
-  const b = (await req.json().catch(() => ({}))) as { playerId?: string; bookingId?: string | null; kind?: ChargeKind; amountPennies?: number; refund?: string }
+  const b = (await req.json().catch(() => ({}))) as { playerId?: string; bookingId?: string | null; kind?: ChargeKind; amountPennies?: number; refund?: string; paymentId?: string }
   const db = admin()
   const m = await academyMoney(db, academyId)
 
@@ -40,6 +45,22 @@ export async function POST(req: NextRequest) {
     }
     const r = await refundCharge(db, m, academyId, b.refund, b.amountPennies == null ? undefined : Number(b.amountPennies))
     return NextResponse.json(r, { status: r.ok ? 200 : 400 })
+  }
+
+  // ── A pack or invoice ──
+  if (b.paymentId) {
+    if (!isUuid(b.paymentId)) return NextResponse.json({ error: 'We could not find that invoice.' }, { status: 404 })
+    const { data: inv } = await db.from('coach_payments').select('id, player_id, player_name, item, amount, paid').eq('id', b.paymentId).eq('coach_id', academyId).maybeSingle()
+    if (!inv || !inv.player_id) return NextResponse.json({ error: 'We could not find that invoice, or it is not linked to a player.' }, { status: 404 })
+    const { data: pl } = await db.from('coach_players').select('id, name, staff_id').eq('id', inv.player_id).eq('coach_id', academyId).maybeSingle()
+    if (!pl || (mine && pl.staff_id !== mine)) return NextResponse.json({ error: 'That invoice is not for one of your players.' }, { status: 403 })
+    if (inv.paid) return NextResponse.json({ error: 'That is already marked paid.' }, { status: 400 })
+    const pennies = Math.round(Number(inv.amount) * 100)
+    if (!(pennies > 0)) return NextResponse.json({ error: 'There is nothing to pay on that line.' }, { status: 400 })
+    const { data: live } = await db.from('coach_charges').select('id').eq('payment_id', inv.id).in('status', ['charging', 'processing', 'paid']).limit(1)
+    if (live?.length) return NextResponse.json({ error: 'This has already been charged. A Direct Debit takes about three working days to arrive.' }, { status: 400 })
+    const r = await chargeSaved(db, m, { academyId, playerId: pl.id, playerName: pl.name, amountPennies: pennies, kind: 'other', paymentId: inv.id, description: `${inv.item || 'Payment'} · ${pl.name}`, by: 'coach' })
+    return NextResponse.json({ ...r, amountPennies: pennies }, { status: r.ok ? 200 : r.status === 'refused' ? 400 : 402 })
   }
 
   // ── Charge ──
@@ -62,6 +83,12 @@ export async function POST(req: NextRequest) {
     // cancelled with notice is not charged for.
     if (kind === 'late_cancel' && !isLateCancel(bk, m.policy)) return NextResponse.json({ error: `This lesson was cancelled with more than ${m.policy.hours} hours’ notice, so your cancellation policy does not charge for it.` }, { status: 400 })
     if (kind === 'lesson' && bk.status === 'cancelled') return NextResponse.json({ error: 'This lesson was cancelled. Charge a late-cancellation fee instead, if your policy allows it.' }, { status: 400 })
+    // A lesson that comes off the player's pack is paid for by the pack.
+    if (kind !== 'other') {
+      const { cover } = await packCover(db, academyId, [player.id], m.policy)
+      const pack = cover.get(bk.id)
+      if (pack) return NextResponse.json({ error: `This lesson comes off ${player.name}’s pack (${pack.item || 'lesson pack'}), so there is nothing to charge.` }, { status: 400 })
+    }
     if (amount == null) {
       const price = await priceBooking(db, academyId, m.settings, bk)
       // A lesson shared by several is charged per head: this player's share.
