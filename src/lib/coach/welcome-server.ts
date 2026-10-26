@@ -48,7 +48,7 @@ export async function sendWelcome(db: Db, senderId: string, m: AcademyMoney, pla
     url: `${origin}/welcome/${link.token}`, minutes: minutesFor(link.version as Version),
     askCard: m.chargesEnabled && !card, askRecording: !player.consent_record_how, plan: plan && !plan.agreed_at ? planWords(plan as { amount_pennies: number; day_of_month: number }) : null,
   })
-  const ok = await sendFamilyEmail(senderId, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/welcome link' })
+  const ok = await sendFamilyEmail(senderId, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/welcome link', push: { url: `${origin}/welcome/${link.token}` } })
   if (ok) await db.from('coach_welcome_links').update({ sent_at: new Date().toISOString(), sent_to: addr.to, updated_at: new Date().toISOString() }).eq('id', link.id)
   return ok ? { ok, to: addr.to } : { ok, error: `The email to ${addr.to} did not send.` }
 }

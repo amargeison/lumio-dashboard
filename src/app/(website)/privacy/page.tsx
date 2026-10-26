@@ -13,7 +13,7 @@ export default function PrivacyPage() {
         <div className="mb-10">
           <p className="text-xs text-gray-600 uppercase tracking-widest mb-3">Legal</p>
           <h1 className="text-4xl font-black mb-4">Privacy Policy</h1>
-          <p className="text-gray-400">Last updated: June 2026 · Lumio Ltd</p>
+          <p className="text-gray-400">Last updated: October 2026 · Lumio Ltd</p>
         </div>
 
         <div className="prose prose-invert max-w-none space-y-8 text-gray-300 text-sm leading-relaxed">
@@ -133,6 +133,7 @@ export default function PrivacyPage() {
                     ['ElevenLabs', 'Voice synthesis (text-to-speech)', 'USA (SCCs applied)'],
                     ['Google (Workspace SSO)', 'Authentication (sign-in with Google)', 'USA (SCCs applied)'],
                     ['Microsoft (Azure AD SSO)', 'Authentication (sign-in with Microsoft)', 'USA (SCCs applied)'],
+                    ['Apple', 'Delivering notifications to the Lumio Tennis Coach iPhone app', 'USA (SCCs applied)'],
                   ].map(([processor, purpose, location]) => (
                     <tr key={processor} className="border-b border-white/5">
                       <td className="py-2 pr-4 font-medium text-gray-300">{processor}</td>
@@ -177,8 +178,21 @@ export default function PrivacyPage() {
             </p>
           </section>
 
+          <section id="iphone-app">
+            <h2 className="text-lg font-bold text-white mb-3">10. The Lumio Tennis Coach iPhone app</h2>
+            <p>
+              The app shows the same Lumio service as the website, and the same account, data and choices apply.
+              It has no advertising and does not track you across other companies&apos; apps or websites.
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-gray-400 mt-3">
+              <li><strong className="text-gray-300">Notifications:</strong> if you allow them, your phone gives us a device token (the address Apple uses to deliver a notification to it). We keep it with your account and email address so we can tell you about your lessons, groups, messages and enquiries, and we pass it to Apple only to deliver those notifications.</li>
+              <li><strong className="text-gray-300">Stopping them:</strong> signing out on the phone, turning notifications off in the iPhone&apos;s Settings, or deleting the app stops them. Tokens Apple tells us are no longer valid are switched off, and a token moves to whoever signs in on that phone next.</li>
+              <li><strong className="text-gray-300">Camera, microphone and photos:</strong> used only when you choose to take or add a photo, video or recording, and only for that.</li>
+            </ul>
+          </section>
+
           <section>
-            <h2 className="text-lg font-bold text-white mb-3">10. Changes to this policy</h2>
+            <h2 className="text-lg font-bold text-white mb-3">11. Changes to this policy</h2>
             <p>
               We may update this policy from time to time. We will notify you of significant changes by email.
               The &ldquo;last updated&rdquo; date at the top of this page always shows when it was last revised.

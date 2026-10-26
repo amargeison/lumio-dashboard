@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { createBrowserClient } from '@supabase/ssr'
 import { portalUrlFor } from '@/lib/sports-admin/portal-url'
 import { clearPrivateCaches } from '@/components/PwaInstaller'
+import { useIsNativeApp } from '@/lib/app/use-native-app'
 
 function getSupabase() {
   return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
@@ -87,6 +88,9 @@ function paletteFor(b: PartnerBrand): Palette {
 
 export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
   const P = brand ? paletteFor(brand) : LUMIO
+  // Inside the iPhone app: it is Lumio Tennis Coach, accounts are made on the
+  // website (a coach) or by invitation (a family), and anyone can try the demo.
+  const app = useIsNativeApp() && !brand
   const router = useRouter()
   const params = useSearchParams()
   const intendedRedirect = safePath(params.get('redirectTo') || '')
@@ -377,6 +381,11 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
               <strong style={{ color: P.sub, fontWeight: 700 }}>{brand.name}</strong> — running on Lumio Tennis Coach
             </div>
           </div>
+        ) : app ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/tennis_coach_logo_on_dark.png" alt="Lumio Tennis Coach" style={{ height: 64, margin: '0 auto 24px', display: 'block', objectFit: 'contain' }} />
+          </>
         ) : (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -388,10 +397,10 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         {step === 'email' && (
           <>
             <h1 style={{ color: P.text, fontSize: 22, fontWeight: 800, textAlign: 'center', marginBottom: 4 }}>
-              {brand ? `Sign in to ${brand.name}` : 'Sign in to Lumio Sports'}
+              {brand ? `Sign in to ${brand.name}` : app ? 'Sign in' : 'Sign in to Lumio Sports'}
             </h1>
             <p style={{ color: P.muted, fontSize: 13, textAlign: 'center', marginBottom: 28 }}>
-              Enter your email and we&apos;ll send you a code.
+              {app ? 'Coaches, players and parents: enter your email and we\u2019ll send you a code.' : <>Enter your email and we&apos;ll send you a code.</>}
             </p>
             <input
               type="email" value={email} onChange={e => setEmail(e.target.value)}
@@ -501,10 +510,18 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
             <p style={{ color: P.muted, fontSize: 13, textAlign: 'center', marginBottom: 28 }}>
               {brand
                 ? <><strong style={{ color: P.sub }}>{email}</strong> isn&apos;t on {brand.name}&apos;s list yet. Ask {brand.name} to add you — they&apos;ll send you an invite to this address.</>
+                : app
+                ? <><strong style={{ color: P.sub }}>{email}</strong> isn&apos;t on Lumio Tennis Coach yet. Players and parents: ask your coach to add you, and they&apos;ll send an invite to this address.</>
                 : <><strong style={{ color: P.sub }}>{email}</strong> isn&apos;t linked to a founding member account or a demo session.</>}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {!brand && <>
+              {app && (
+                <Link href="/app/demo"
+                  style={{ display: 'block', width: '100%', background: P.accent, color: P.onAccent, border: 'none', borderRadius: 12, padding: 14, fontSize: 15, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>
+                  Explore the demo →
+                </Link>
+              )}
+              {!brand && !app && <>
               <Link href="/sports-signup"
                 style={{ display: 'block', width: '100%', background: P.accent, color: P.onAccent, border: 'none', borderRadius: 12, padding: 14, fontSize: 15, fontWeight: 700, textAlign: 'center', textDecoration: 'none' }}>
                 Apply for founding access →
@@ -522,7 +539,16 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
           </>
         )}
 
-        {step !== 'unknown' && !brand && (
+        {step === 'email' && app && (
+          <div style={{ marginTop: 24, textAlign: 'center', borderTop: `1px solid ${P.border}`, paddingTop: 20 }}>
+            <Link href="/app/demo" data-testid="app-demo" style={{ color: P.muted, fontSize: 13, textDecoration: 'none' }}>
+              New to Lumio? <span style={{ color: P.accent, fontWeight: 600 }}>Explore the demo</span>
+            </Link>
+            <div style={{ color: P.muted, fontSize: 11.5, marginTop: 8, lineHeight: 1.5 }}>Sample data, no account needed.</div>
+          </div>
+        )}
+
+        {step !== 'unknown' && !brand && !app && (
           <div style={{ marginTop: 24, textAlign: 'center', borderTop: `1px solid ${P.border}`, paddingTop: 20 }}>
             <Link href="/sports-signup" style={{ color: P.muted, fontSize: 13, textDecoration: 'none' }}>
               Don&apos;t have an account? <span style={{ color: P.accent, fontWeight: 600 }}>Sign up free</span>

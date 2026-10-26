@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { familyAccess, nameIsUnique, scopedDb } from '@/lib/coach/membership'
+import { nudgeCoach } from '@/lib/app/push'
 
 export const runtime = 'nodejs'
 
@@ -133,6 +134,8 @@ export async function POST(req: NextRequest) {
     created_at: new Date().toISOString(),
   }).select('id, created_at').single()
   if (error) { console.error('[portal/message] insert', error.message); return NextResponse.json({ error: 'Your message could not be sent. Please try again.' }, { status: 500 }) }
+  // The coach's phone, if they have the app.
+  await nudgeCoach(db, m.academyId, { title: campId ? `${conv} · ${campName}` : conv, body })
 
   // …and out to Discord, if the camp's channels are mirrored.
   //

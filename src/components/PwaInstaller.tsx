@@ -1,5 +1,6 @@
 'use client'
 
+import { isNativeApp } from '@/lib/app/native'
 import { useEffect, useState } from 'react'
 
 type Sport = 'tennis' | 'golf' | 'darts' | 'boxing'
@@ -42,6 +43,8 @@ function isIosSafari(): boolean {
 
 function isStandalone(): boolean {
   if (typeof window === 'undefined') return false
+  // The App Store app is already installed: never offer "Add to Home Screen" in it.
+  if (isNativeApp()) return true
   return window.matchMedia('(display-mode: standalone)').matches
     // iOS legacy prop — narrowed through a typed guard
     || (window.navigator as Navigator & { standalone?: boolean }).standalone === true

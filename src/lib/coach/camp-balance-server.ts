@@ -47,7 +47,7 @@ export async function remind(db: Db, m: AcademyMoney, camp: Row, a: Row, origin:
   if (!to || owed < 50 || !camp.balance_due) return false
   const url = await balanceUrl(db, a, origin)
   const msg = balanceReminder({ hello: helloFor(a), player: first(a.player_name), camp: camp.name, academy: m.academy, who: m.coachName || m.academy, balance: owed, due: camp.balance_due, card: autoTakes(camp, a) ? cardWords(a) : null, url })
-  const ok = await sendFamilyEmail(camp.coach_id, { to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/camp balance reminder' })
+  const ok = await sendFamilyEmail(camp.coach_id, { to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/camp balance reminder', push: { url } })
   if (ok) await db.from('coach_camp_attendees').update({ balance_reminded_at: new Date().toISOString() }).eq('id', a.id)
   return ok
 }

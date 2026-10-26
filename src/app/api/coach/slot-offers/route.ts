@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
       hello: addr.hello, childFirst: addr.toParent ? String(p.name).split(/\s+/)[0] : null, coachName, academy,
       logoUrl: (prof?.brand_logo_url as string) || null, date, time, durMin, type, venue: venueName, note, url: `${origin}/slot/${token}`,
     })
-    const ok = await sendFamilyEmail(g.who.userId, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: (prof?.contact_email as string) || null, context: 'coach/free slot offer' })
+    const ok = await sendFamilyEmail(g.who.userId, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: (prof?.contact_email as string) || null, context: 'coach/free slot offer', push: { url: `${origin}/slot/${token}` } })
     if (ok) { sent++; await db.from('coach_slot_offer_recipients').update({ sent_at: new Date().toISOString() }).eq('token', token) }
   }
   if (!sent) await db.from('coach_slot_offers').update({ status: 'withdrawn', updated_at: new Date().toISOString() }).eq('id', offer.id)

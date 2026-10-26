@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+import { nudgeCoach } from '@/lib/app/push'
 
 export const runtime = 'nodejs'
 
@@ -122,6 +123,7 @@ export async function POST(req: NextRequest) {
       thread_key: match ? conv : `contact:${fp}`,
       body, channels: 'sms', status: 'received', external_id: sid || null, read: false, created_at: new Date().toISOString(),
     })
+    await nudgeCoach(admin, academyId, { title: `Text from ${conv}`, body })
     return twiml()
   } catch {
     return twiml()

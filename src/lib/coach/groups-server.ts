@@ -114,7 +114,7 @@ export async function ensureWeek(db: Db, g: Row, date: string, o: { origin: stri
       price: g.price_pennies, way: payWayFor(m.chargesEnabled, !!card), methodLabel: methodWords(card), freeUntil: m.policy.hours > 0 ? freeUntil : null,
       url: `${o.origin}/group/${r.token}`,
     })
-    const ok = await sendFamilyEmail(g.coach_id, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/group ask' })
+    const ok = await sendFamilyEmail(g.coach_id, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/group ask', push: { url: `${o.origin}/group/${r.token}` } })
     if (ok) { out.asked++; await fileInApp(db, { coachId: g.coach_id, player, subject: msg.subject, body: msg.text }) }
     else { out.failed++; await db.from('coach_group_replies').update({ sent_at: null, sent_to: null }).eq('id', r.id) }
   }
@@ -226,7 +226,7 @@ export async function sayYes(db: Db, L: Loaded, by: 'client' | 'coach', origin: 
       paid: res.payNote && !res.needsLink ? res.payNote : (res.needsLink ? `Your place is held. Pay ${formatPennies(price)} by card from the link below.` : price > 0 && !m.chargesEnabled ? `It is ${formatPennies(price)}, paid on the day.` : null),
       freeUntil: m.policy.hours > 0 ? cs.freeUntil : null, url: `${origin}/group/${reply.token}`,
     })
-    await sendFamilyEmail(reply.coach_id, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/group yes' }).catch(() => false)
+    await sendFamilyEmail(reply.coach_id, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/group yes', push: false }).catch(() => false)
   }
   return res
 }

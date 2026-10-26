@@ -11,6 +11,7 @@
 // the portal's T/accent tokens. Installability itself comes from the manifest +
 // layout metadata; this is just the nudge + SW.
 
+import { isNativeApp } from '@/lib/app/native'
 import { useEffect, useRef, useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 
@@ -49,6 +50,8 @@ function isIosSafari(): boolean {
 
 function isStandalone(): boolean {
   if (typeof window === 'undefined') return false
+  // The App Store app is already installed: never offer "Add to Home Screen" in it.
+  if (isNativeApp()) return true
   return window.matchMedia('(display-mode: standalone)').matches
     || (window.navigator as Navigator & { standalone?: boolean }).standalone === true
 }

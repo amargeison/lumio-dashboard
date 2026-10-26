@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 import { parseInboundToken } from '@/lib/coach/inbound'
+import { nudgeCoach } from '@/lib/app/push'
 
 export const runtime = 'nodejs'
 
@@ -145,5 +146,6 @@ export async function POST(req: NextRequest) {
     subject, body, channels: 'email', status: 'received', external_id: externalId, read: false, created_at: new Date().toISOString(),
   })
   if (error) return NextResponse.json({ ok: true, error: error.message })
+  await nudgeCoach(admin, parsed.coachId, { title: `Email from ${conv}`, body: subject ? `${subject}: ${body}` : body })
   return NextResponse.json({ ok: true, added: 1 })
 }
