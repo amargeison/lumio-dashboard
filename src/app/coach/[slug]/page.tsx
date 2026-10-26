@@ -84,6 +84,7 @@ const LiveDevelopment = lazyNamed(() => import('./_components/LiveDevelopment'),
 const LiveCourtPlanner = lazyNamed(() => import('./_components/LiveCourtPlanner'), 'LiveCourtPlanner')
 const LiveCamps = lazyNamed(() => import('./_components/LiveCamps'), 'LiveCamps')
 const LivePayments = lazyNamed(() => import('./_components/LivePayments'), 'LivePayments')
+const LiveLeads = lazyNamed(() => import('./_components/LiveLeads'), 'LiveLeads')
 const LiveEquipment = lazyNamed(() => import('./_components/LiveEquipment'), 'LiveEquipment')
 const LiveResources = lazyNamed(() => import('./_components/LiveResources'), 'LiveResources')
 const LiveVideoAudio = lazyNamed(() => import('./_components/LiveVideoAudio'), 'LiveVideoAudio')
@@ -568,6 +569,7 @@ const LIVE_MODULE_TABLES: Record<string, CoachTable[]> = {
   lessons: ['coach_sessions', 'coach_bookings', 'coach_players', 'coach_session_plans'],
   camps: ['coach_camps', 'coach_camp_attendees', 'coach_camp_channels', 'coach_players', 'coach_staff', 'coach_attendance', 'coach_player_skills'],
   payments: ['coach_payments', 'coach_packages', 'coach_players', 'coach_sessions'],
+  leads: ['coach_leads', 'coach_lead_events', 'coach_players'],
   gpsheatmaps: ['coach_players', 'coach_watch_sessions'],
   videoaudio: ['coach_media', 'coach_players'],
   planner: ['coach_bookings', 'coach_sessions', 'coach_session_plans', 'coach_players', 'coach_camps', 'coach_player_skills'],
@@ -1158,6 +1160,7 @@ function CoachPortalInner({ session, isEmpty: realAccount = false, slugClubName 
         case 'lessons':     return <LiveLessons T={T} accent={accent} />
         case 'camps':       return <LiveCamps T={T} accent={accent} />
         case 'payments':    return <LivePayments T={T} accent={accent} />
+        case 'leads':       return <LiveLeads T={T} accent={accent} />
         case 'gpsheatmaps': return <LiveEffortRewards T={T} accent={accent} density={density} />
         case 'videoaudio':  return <LiveVideoAudio T={T} accent={accent} videoOn={feat.video} audioOn={feat.audio} />
         case 'planner':     return <LiveSessionPlanner T={T} accent={accent} density={density} onNavigate={setActive} />

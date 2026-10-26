@@ -1111,6 +1111,7 @@ export const COACH_SIDEBAR: CoachNavItem[] = [
   { id: 'gpsheatmaps', label: 'Effort & Rewards',   icon: 'trophy',       group: 'PERFORMANCE', badge: 'NEW' },
   { id: 'equipment',   label: 'Equipment & Kit',    icon: 'wrench',       group: 'RESOURCES', badge: 'NEW' },
   { id: 'resources',   label: 'Resource Centre',    icon: 'grid',         group: 'RESOURCES', badge: 'NEW' },
+  { id: 'leads',       label: 'Leads',              icon: 'briefcase',    group: 'BUSINESS', badge: 'NEW' },
   { id: 'payments',    label: 'Payments & Packs',   icon: 'pound',        group: 'BUSINESS' },
   { id: 'settings',    label: 'Settings',           icon: 'settings',     group: 'SETTINGS' },
 ]

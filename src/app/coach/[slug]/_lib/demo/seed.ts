@@ -766,7 +766,7 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     staff: '01', venue: '02', court: '03', player: '04', skill: '05', attendance: '06', booking: '07', plan: '08',
     session: '09', camp: '0a', attendee: '0b', email: '0c', payment: '0d', pkg: '0e', message: '0f', equipment: '10',
     kit: '11', resource: '12', playerResource: '13', media: '14', watch: '15', gps: '16', consent: '17',
-    development: '18', staffVenue: '19',
+    development: '18', staffVenue: '19', lead: '1a', leadEvent: '1b',
   }
   /** A row with the columns every table shares. `created` doubles as updated_at
       unless a later one is given; `false` is for tables with no updated_at. */
@@ -2128,6 +2128,61 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
   out.coach_charges = []
   out.coach_members = []
   out.coach_settings = []
+
+  // ── Leads ──────────────────────────────────────────────────────────────────
+  // A coach's enquiries across the two pipelines, at every stage, with the
+  // follow-ups and the last three weeks of activity behind the weekly score.
+  const LEADS: { name: string; forName?: string; pipeline: 'coaching' | 'holiday'; stage: string; source: string; days: number; via?: string; next?: [number, string]; list?: string; campaign?: string; note?: string; email?: boolean; review?: boolean }[] = [
+    { name: 'Helen Carter', forName: 'Alfie', pipeline: 'coaching', stage: 'Enquired', source: 'Meta ad', days: 0, campaign: 'Autumn juniors', email: true, note: 'Alfie is 8, played a little at school.' },
+    { name: 'Mark Ellison', pipeline: 'coaching', stage: 'Enquired', source: 'Meta ad', days: 1, campaign: 'Adult improvers', email: true, next: [0, 'Call back after 6pm'] },
+    { name: 'Priya Shah', pipeline: 'coaching', stage: 'Contacted', source: 'Website', days: 4, via: 'Email', next: [-1, 'Chase if no reply'], email: true },
+    { name: 'Tom Raines', pipeline: 'coaching', stage: 'Contacted', source: 'Referral', days: 6, via: 'WhatsApp', note: 'Friend of the Okafors.', next: [2, 'Send trial times'] },
+    { name: 'Sarah Lowe', forName: 'Maisie', pipeline: 'coaching', stage: 'Communicated with', source: 'Meta ad', days: 9, via: 'Phone', next: [1, 'Book a trial'], email: true },
+    { name: 'James Whitlock', pipeline: 'coaching', stage: 'Trial', source: 'Google', days: 12, via: 'WhatsApp', note: 'Trial Saturday 9am. Wants to work on serve.', next: [3, 'Ask how the trial went'] },
+    { name: 'Anna Fischer', forName: 'Lukas', pipeline: 'coaching', stage: 'Keen for future', source: 'Website', days: 30, via: 'Email', list: 'Contact next term', note: 'Doing karate this term, keen after Christmas.', email: true },
+    { name: 'Gary Holt', pipeline: 'coaching', stage: 'Keen for future', source: 'Walk-in', days: 21, via: 'In person', list: 'Midweek evenings waiting list', note: 'Can only do Tuesday or Wednesday after 7pm.' },
+    { name: 'Rachel Moore', pipeline: 'coaching', stage: 'Keen for future', source: 'Meta ad', days: 18, via: 'Phone', list: 'Midweek evenings waiting list', note: 'Injured shoulder, wants to restart soon.', email: true },
+    { name: 'Dev Patel', pipeline: 'coaching', stage: 'Not keen', source: 'Meta ad', days: 25, via: 'Phone', note: 'Too far to travel.' },
+    { name: 'Claire Benson', forName: 'Ollie', pipeline: 'coaching', stage: 'Joined', source: 'Referral', days: 40, via: 'WhatsApp', review: true },
+    { name: 'Paul Grant', pipeline: 'holiday', stage: 'Enquired', source: 'Meta ad', days: 0, campaign: 'Portugal spring camp', email: true },
+    { name: 'Nicola Hayes', pipeline: 'holiday', stage: 'Contact attempted', source: 'Meta ad', days: 3, via: 'Phone', campaign: 'Portugal spring camp', next: [0, 'Try again, left a voicemail'] },
+    { name: 'Steve & Jo Burns', pipeline: 'holiday', stage: 'Spoken to', source: 'Website', days: 7, via: 'Phone', note: 'Interested in a double room, upgrade.', next: [2, 'Send the info pack'], email: true },
+    { name: 'Margaret Kerr', pipeline: 'holiday', stage: 'Keen for future', source: 'Referral', days: 33, via: 'Email', note: 'Can’t do spring; ask about autumn.', list: 'Autumn trip interest', email: true },
+    { name: 'Ian Doyle', pipeline: 'holiday', stage: 'Already been', source: 'Import', days: 120, via: 'WhatsApp', review: true },
+    { name: 'Fiona Clarke', pipeline: 'holiday', stage: 'Not keen', source: 'Meta ad', days: 15, via: 'Email', note: 'Budget.' },
+  ]
+  const leadRows: Row[] = []
+  const leadEvents: Row[] = []
+  LEADS.forEach((l, i) => {
+    const created = ago(l.days, `${String(9 + (i % 9)).padStart(2, '0')}:${i % 2 ? '30' : '05'}`)
+    const r = row(T.lead, {
+      staff_id: null, pipeline: l.pipeline, stage: l.stage, name: l.name, for_name: l.forName || null,
+      email: l.email ? `${l.name.split(/\s+/)[0].toLowerCase()}.${l.name.split(/\s+/).slice(-1)[0].toLowerCase()}@example.com` : null,
+      phone: nextPhone(), source: l.source, campaign: l.campaign || null, message: null, notes: l.note || null,
+      contact_method: l.via || null, google_review: !!l.review, list: l.list || null,
+      next_action_at: l.next ? ymd(plus(today, l.next[0])) : null, next_action: l.next ? l.next[1] : null,
+      player_id: null, stage_changed_at: ago(Math.max(0, Math.floor(l.days / 2))),
+    }, created)
+    leadRows.push(r)
+    leadEvents.push(row(T.leadEvent, { staff_id: null, lead_id: r.id, kind: 'created', from_stage: null, to_stage: 'Enquired', text: null, points: 0 }, created, false))
+  })
+  // Three weeks of moving leads on, laid out on the calendar weeks so the
+  // score reads the same whatever day the demo is opened: 7 points two weeks
+  // ago, 6 last week (a two-week streak) and 3 so far this week.
+  // [lead, weeks back, day of that week (0 = Monday), from, to, points]
+  const wd = (new Date(`${ymd(today)}T12:00:00Z`).getUTCDay() + 6) % 7
+  const moves: [number, number, number, string, string, number][] = [
+    [8, 2, 0, 'Enquired', 'Contacted', 1], [7, 2, 1, 'Enquired', 'Contacted', 1], [16, 2, 1, 'Enquired', 'Contact attempted', 1],
+    [8, 2, 3, 'Contacted', 'Keen for future', 1], [7, 2, 4, 'Contacted', 'Keen for future', 1], [16, 2, 4, 'Contact attempted', 'Not keen', 1], [14, 2, 5, 'Spoken to', 'Keen for future', 1],
+    [5, 1, 0, 'Communicated with', 'Trial', 2], [4, 1, 1, 'Enquired', 'Contacted', 1], [4, 1, 3, 'Contacted', 'Communicated with', 1], [13, 1, 5, 'Enquired', 'Spoken to', 2],
+    [2, 0, 0, 'Enquired', 'Contacted', 1], [3, 0, 1, 'Enquired', 'Contacted', 1], [12, 0, 2, 'Enquired', 'Contact attempted', 1],
+  ]
+  for (const [li, w, dow, from, to, pts] of moves) {
+    const lead = leadRows[li], days = Math.min(LEADS[li].days, w ? wd - dow + 7 * w : wd - Math.min(dow, wd))
+    leadEvents.push(row(T.leadEvent, { staff_id: null, lead_id: lead.id, kind: 'stage', from_stage: from, to_stage: to, text: null, points: pts }, ago(days, w ? '12:00' : '09:00'), false))
+  }
+  out.coach_leads = leadRows
+  out.coach_lead_events = leadEvents
 
   return out
 }
