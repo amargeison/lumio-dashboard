@@ -16,7 +16,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { fileToAvatarDataUrl } from '@/lib/avatar'
-import { LiveStudentView, type StudentTheme } from '@/components/student/LiveStudentView'
+import { LiveStudentView, type StudentTheme, type StudentActions } from '@/components/student/LiveStudentView'
 import { studentFraming, type StudentBundle } from '@/lib/student/bundle'
 
 const BG = '#0B0F17', CARD = '#0F1623', PANEL2 = '#0B1220', BORDER = '#1E293B', TEXT = '#F4F7FB', MUTED = '#93A1B5', ACCENT = '#3A8EE0'
@@ -51,6 +51,7 @@ type Raw = {
   sectionsOff?: string[]
   awardThreshold?: number
   adultLevel?: unknown
+  my?: unknown
 }
 
 const card: React.CSSProperties = { background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 18, marginTop: 14 }
@@ -185,6 +186,31 @@ export function StudentPortal({ onSignOut, players, playerId, onSelect }: {
     load()
   }
 
+  // What the family can do from the page: their lessons, booking, and their
+  // weekly groups (the group's own link does the work, so it behaves exactly
+  // like the email). Each one reloads the page afterwards so it shows the truth.
+  const post = async (url: string, body: Record<string, unknown>) => {
+    try {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const d = await r.json().catch(() => ({}))
+      return { ok: r.ok, ...d } as { ok: boolean; notice?: string; error?: string; url?: string; days?: unknown }
+    } catch { return { ok: false, error: 'You appear to be offline. Nothing was changed.' } }
+  }
+  const actions: StudentActions = {
+    lesson: async (bookingId, action) => { const r = await post('/api/portal/lesson', { playerId, bookingId, action }); load(); return r },
+    slots: async mins => {
+      const r = await fetch(`/api/portal/book?playerId=${encodeURIComponent(playerId)}&mins=${mins}`).catch(() => null)
+      const d = r ? await r.json().catch(() => ({})) : {}
+      return r?.ok ? { days: d.days || [] } : { days: [], error: d.error || 'The free times could not be loaded.' }
+    },
+    book: async (date, time, mins) => { const r = await post('/api/portal/book', { playerId, date, time, mins }); if (r.ok) load(); return r as never },
+    group: async (token, action) => {
+      const r = await post(`/api/group/${encodeURIComponent(token)}`, { action })
+      if (r.url) { window.location.href = r.url; return r }
+      load(); return r
+    },
+  }
+
   if (loading) return <Shell onSignOut={onSignOut} look={look} accent={lk.accent}>{picker}<div style={{ color: MUTED, fontSize: 13 }}>Loading…</div></Shell>
   if (!raw?.player) return (
     <Shell onSignOut={onSignOut} look={look} accent={lk.accent}>
@@ -232,6 +258,7 @@ export function StudentPortal({ onSignOut, players, playerId, onSelect }: {
     sectionsOff: raw.sectionsOff || [],
     awardThreshold: raw.awardThreshold ?? 3,
     adultLevel: (raw.adultLevel || null) as StudentBundle['adultLevel'],
+    my: (raw.my || null) as StudentBundle['my'],
   }
   const f = studentFraming(bundle.player)
 
@@ -258,7 +285,7 @@ export function StudentPortal({ onSignOut, players, playerId, onSelect }: {
       {/* Messages are a section of the shared view now, so the coach previewing
           this page sees the same conversation the player does. Only the player
           gets a box to type in — that is what onSendMessage is. */}
-      <LiveStudentView T={lk.st} bundle={bundle} onSendMessage={send} onReact={react} />
+      <LiveStudentView T={lk.st} bundle={bundle} onSendMessage={send} onReact={react} actions={actions} />
 
       {/* ── Log a session ───────────────────────────────────────────────── */}
       <div style={card}>

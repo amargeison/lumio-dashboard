@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { readReminders, reminderMessage } from '@/lib/coach/reminders'
+import { lessonToken } from '@/lib/student/lesson-actions'
 import { lessonWeather } from '@/lib/coach/weather'
 import { venueForecast } from '@/lib/coach/weather-server'
 import { familyAddress, fileInApp, sendFamilyEmail } from '@/lib/coach/family-mail'
@@ -120,7 +121,18 @@ export async function POST(req: NextRequest) {
           const series = forecasts.get(venue.id) || []
           weather = series.length ? lessonWeather(series, ukLocalToMs(b.booking_date, String(b.start_time || '00:00').slice(0, 5)), Number(b.duration_min) || 60, cfg) : null
         }
+        // One-to-one lessons get "I'll be there" / "I can't make it" links.
+        // A group place has its own link already (the weekly ask).
+        let links: { yes: string; no: string } | null = null
+        if (!b._replyId) {
+          try {
+            const tok = await lessonToken(sb, b)
+            const base = `${publicSiteOrigin('https://www.lumiosports.com')}/lesson/${tok}`
+            links = { yes: `${base}?a=yes`, no: `${base}?a=no` }
+          } catch (e) { console.error('[cron/reminders] lesson link', e) }
+        }
         const msg = reminderMessage({
+          links,
           hello: addr.hello, childFirst: addr.toParent ? String(player.name).split(/\s+/)[0] : null,
           academy: (prof?.brand_name as string) || 'Your coach', coachName: (prof?.display_name as string) || null,
           time: String(b.start_time || '').slice(0, 5), durMin: Number(b.duration_min) || 60, type: b.type,

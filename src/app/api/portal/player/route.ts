@@ -6,6 +6,8 @@ import { isLumioResource } from '@/lib/coach/lumio-resources-data'
 import { resourceHref } from '@/lib/coach/resource-files'
 import { buildNextSession } from '@/lib/student/next-session'
 import { loadStudentAdultLevel } from '@/lib/student/adult-level'
+import { loadMyPage } from '@/lib/student/my-account-server'
+import { publicSiteOrigin } from '@/lib/public-origin'
 
 export const runtime = 'nodejs'
 
@@ -273,6 +275,8 @@ export async function GET(req: NextRequest) {
   const nextSession = await buildNextSession(db, m.academyId, m.scopePlayerId, soleName ? name : '')
   // Their adult level, its video and the checklist (migration 219).
   const adultLevel = await loadStudentAdultLevel(db, m.academyId, m.scopePlayerId)
+  // Their next lessons (confirm or cancel), weekly groups, plan and anything owed (migration 220).
+  const my = await loadMyPage(db, m.academyId, m.scopePlayerId, { origin: publicSiteOrigin(req.nextUrl.origin), sectionsOff })
 
   // ── Who they can write to, and the camp conversations they are in ────────
   // A family messaging "the academy" is fine when there is one coach. With eight
@@ -351,6 +355,6 @@ export async function GET(req: NextRequest) {
       xp_total: player.xp_total,
     },
     skills, lessons, messages, watch, highlights, nextSession,
-    media: mediaSigned, resources, books, camps, sectionsOff, awardThreshold, features, adultLevel,
+    media: mediaSigned, resources, books, camps, sectionsOff, awardThreshold, features, adultLevel, my,
   })
 }

@@ -95,6 +95,7 @@ export function LiveStudentPreview({ T, accent, density, onNavigate }: {
           sectionsOff: s.sectionsOff?.student || [],
           awardThreshold: s.awardThreshold || 3,
           adultLevel: d.adultLevel || null,
+          my: d.my || null,
         })
       } catch {
         if (alive) setErr('Could not load this player')

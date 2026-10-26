@@ -23,6 +23,11 @@
 // reply for fire-and-forget calls nobody reads.
 
 import { studentAdultLevel } from '@/lib/student/adult-level'
+import { cancelTerms, started, policyShort, bookingDurations, whenWords, momentWords, type MyPage, type MyLesson, type MyGroup } from '@/lib/student/my-account'
+import { readPolicy, policyTerms, ukLocalToMs } from '@/lib/coach/cancel-policy'
+import { planWords, coversWords } from '@/lib/coach/memberships'
+import { everyWords, askOn as groupAskOn } from '@/lib/coach/groups'
+import { ukDate as demoUkDate } from '@/lib/coach/uk-date'
 import { demoTable, demoId, DEMO_COACH_ID, DEMO_EMAIL, type Row } from './store'
 import { demoClient } from './client'
 import { scoreManualSession, MANUAL_MIN_DURATION_MIN } from '@/lib/coach/effort-score'
@@ -2588,6 +2593,61 @@ const MSG_COLS = ['id', 'direction', 'from_name', 'subject', 'body', 'created_at
 
 // GET /api/coach/student-preview?playerId= — the same bundle the family's own
 // portal is given, assembled from the same tables by the same rules.
+// The family page's lessons, groups and plan, from the demo academy's tables —
+// the same shape the live route builds (lib/student/my-account-server.ts), for
+// the coach's read-only preview.
+function demoMyPage(player: Row): MyPage {
+  const id = String(player.id)
+  const settings = (demoTable('coach_settings')[0]?.data || {}) as Row
+  const policy = readPolicy(settings.cancelPolicy)
+  const academy = String(settings.academy || 'Lumio Tennis Club')
+  const today = demoUkDate()
+  const plans = demoTable('coach_memberships').filter(m => String(m?.player_id) === id && ['offered', 'active', 'paused'].includes(String(m?.status)))
+  const live = plans.find(m => m.status === 'active' && m.agreed_at)
+  const packs = demoTable('coach_payments').filter(x => String(x?.player_id) === id && Number(x?.sessions_total) > 0 && Number(x?.sessions_used || 0) < Number(x?.sessions_total))
+  const paid = new Set(demoTable('coach_charges').filter(c => ['paid', 'processing'].includes(String(c?.status))).map(c => String(c.booking_id)))
+  const lessons: MyLesson[] = demoTable('coach_bookings')
+    .filter(b => String(b?.player_id) === id && String(b.booking_date || '') >= today && String(b.status || '').toLowerCase() !== 'cancelled' && b.type !== 'Block' && !started(b.booking_date, b.start_time))
+    .sort((a, b) => `${a.booking_date} ${a.start_time}`.localeCompare(`${b.booking_date} ${b.start_time}`)).slice(0, 8)
+    .map(b => {
+      const cover = live && live.covers === 'lessons' && !/group|squad|cardio|match/i.test(String(b.type || '')) ? 'plan' as const : packs.length ? 'pack' as const : null
+      const time = b.start_time ? String(b.start_time).slice(0, 5) : null
+      return {
+        id: String(b.id), date: b.booking_date, time, mins: Number(b.duration_min) || 60, type: b.type || null, court: b.court || null, coach: b.assigned_coach || null,
+        paid: paid.has(String(b.id)), cover,
+        confirmed: b.client_confirmed_at ? { at: b.client_confirmed_at, by: b.client_confirmed_by || null } : null,
+        cancel: cancelTerms({ date: b.booking_date, time }, policy, cover, academy),
+      }
+    })
+  const groups: MyGroup[] = demoTable('coach_group_members').filter(m => String(m?.player_id) === id).map(m => byId('coach_groups', m.group_id)).filter(Boolean).map(g => {
+    const week = demoTable('coach_group_sessions').filter(w => w.group_id === g!.id && String(w.session_date) >= today && !started(w.session_date, g!.start_time)).sort((a, b) => String(a.session_date).localeCompare(String(b.session_date)))[0]
+    const reply = week ? demoTable('coach_group_replies').find(r => r.session_id === week.id && String(r.player_id) === id) : null
+    const yes = week ? demoTable('coach_group_replies').filter(r => r.session_id === week.id && r.answer === 'yes').length : 0
+    const date = week?.session_date || upcomingDate(g as never)
+    const free = ukLocalToMs(date, g!.start_time) - policy.hours * 3_600_000
+    return {
+      id: String(g!.id), name: String(g!.name), every: everyWords(g as never), price: Number(g!.price_pennies) || 0, venue: g!.venue_id ? String(byId('coach_venues', g!.venue_id)?.name || '') || null : null,
+      next: { date, time: String(g!.start_time).slice(0, 5), token: reply?.token || null, askOn: reply ? null : ((a: string | null) => (a && a > today ? a : null))(groupAskOn(date, g!.ask_days)), answer: (reply?.answer as 'yes' | 'no' | null) || null,
+        paid: !!reply && demoTable('coach_charges').some(c => c.reply_id === reply.id && ['paid', 'processing'].includes(String(c.status))),
+        coveredByPlan: !!live && live.covers === 'group' && live.group_id === g!.id, placesLeft: week ? Math.max(0, (Number(g!.capacity) || 0) - yes) : null,
+        freeUntil: Date.now() < free ? momentWords(free) : null, cancelled: week?.status === 'cancelled' },
+    }
+  })
+  const pl = live || plans[0]
+  const method = demoTable('coach_pay_methods').find(x => String(x?.player_id) === id && x.status === 'active')
+  return {
+    lessons, groups,
+    account: {
+      plan: pl ? { name: String(pl.name), words: planWords(pl as never), covers: coversWords(pl as never), status: pl.status === 'active' && pl.agreed_at ? 'Running' : pl.agreed_at ? 'Agreed' : 'Waiting for you to agree', nextBill: null, agreed: !!pl.agreed_at } : null,
+      packs: packs.map(x => ({ name: String(x.item || 'Lesson pack'), used: Number(x.sessions_used || 0), total: Number(x.sessions_total), left: Number(x.sessions_total) - Number(x.sessions_used || 0), renews: x.renews_date ? whenWords(x.renews_date) : null })),
+      method: method ? `${method.kind === 'bacs_debit' ? 'Direct Debit' : String(method.brand || 'Card').replace(/^./, (c: string) => c.toUpperCase())} ending ${method.last4 || '••••'}` : null,
+      policy: policyShort(policyTerms(policy, academy)),
+      owed: [],
+    },
+    booking: { on: !((settings.sectionsOff?.student || []) as string[]).includes('booking'), ...bookingDurations(lessons[0]?.mins), type: 'Private' },
+  }
+}
+
 const studentPreview: Handler = async ({ url }) => {
   const playerId = url.searchParams.get('playerId')
   if (!playerId) return fail('Missing player')
@@ -2663,6 +2723,7 @@ const studentPreview: Handler = async ({ url }) => {
 
   return json({
     books, messages, nextSession, coaches, campThreads,
+    my: demoMyPage(player),
     adultLevel: studentAdultLevel(player.adult_level_id as string | null, demoTable('coach_adult_levels') as never, demoTable('coach_adult_passes').filter(x => String(x?.player_id) === playerId) as never),
     player: only(player, ['id', 'name', 'nickname', 'age', 'category', 'level', 'racket_stage', 'goal', 'avatar_url', 'parent_name', 'parent_email', 'xp_total']),
     // Clips and voice notes are files; the demo has none to play, and a tile

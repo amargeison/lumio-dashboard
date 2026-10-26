@@ -13,6 +13,8 @@ export type { StudentNextSession }
 /** Mirrors the coach's feature flags (see _lib/feature-flags.ts). */
 import type { StudentAdultLevel } from './adult-level'
 export type { StudentAdultLevel }
+import type { MyPage } from './my-account'
+export type { MyPage }
 export type StudentFeatures = { effort?: boolean; video?: boolean; audio?: boolean; racket?: boolean }
 
 export type StudentPlayer = {
@@ -217,6 +219,8 @@ export type StudentBundle = {
   awardThreshold: number
   /** Their adult level, its video and the checklist to pass it (migration 219). */
   adultLevel?: StudentAdultLevel | null
+  /** Their next lessons, weekly groups, plan and anything owed (migration 220). */
+  my?: MyPage | null
 }
 
 // ── Who is reading this page ────────────────────────────────────────────────

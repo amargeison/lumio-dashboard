@@ -8,6 +8,8 @@ import { resourceHref } from '@/lib/coach/resource-files'
 import { buildNextSession } from '@/lib/student/next-session'
 import { familyLesson } from '@/lib/student/family-lesson'
 import { loadStudentAdultLevel } from '@/lib/student/adult-level'
+import { loadMyPage } from '@/lib/student/my-account-server'
+import { publicSiteOrigin } from '@/lib/public-origin'
 import { nameIsUnique, coachSeats, pickSeat, requestedAcademy } from '@/lib/coach/membership'
 
 export const runtime = 'nodejs'
@@ -310,8 +312,10 @@ export async function GET(req: NextRequest) {
   }))
 
   const adultLevel = await loadStudentAdultLevel(admin, me.academyId, String(player.id))
+  // What the family's page shows of their lessons, groups and plan — read only here.
+  const my = await loadMyPage(admin, me.academyId, String(player.id), { origin: publicSiteOrigin(req.nextUrl.origin) })
   return NextResponse.json({
-    books, messages, nextSession, coaches, campThreads, adultLevel,
+    books, messages, nextSession, coaches, campThreads, adultLevel, my,
     player: {
       id: player.id, name: player.name, nickname: player.nickname, age: player.age,
       category: player.category, level: player.level, racket_stage: player.racket_stage,
