@@ -29,13 +29,22 @@ import { safeUrl } from '@/lib/coach/trip'
 // (every property optional), and TypeScript then refuses the real camp and
 // attendee rows that carry thirty other fields alongside these three.
 export type MoneyCamp = { price?: number | null; capacity?: number | null; [k: string]: unknown }
-export type MoneyAttendee = { paid?: boolean | null; amount_pennies?: number | null; paid_pennies?: number | null; status?: string | null; [k: string]: unknown }
+export type MoneyAttendee = { paid?: boolean | null; amount_pennies?: number | null; paid_pennies?: number | null; status?: string | null; extra_pennies?: number | null; [k: string]: unknown }
 
-const pricePennies = (camp: MoneyCamp) => Math.max(0, Math.round((Number(camp.price) || 0) * 100))
+/**
+ * What this place costs, in pennies: the camp's price, plus the supplement for
+ * the room they chose (migration 218). Without an attendee, the camp's price.
+ */
+export function duePennies(camp: MoneyCamp, a?: MoneyAttendee | null): number {
+  const price = Math.max(0, Math.round((Number(camp.price) || 0) * 100))
+  const extra = a ? Math.max(0, Math.round(Number(a.extra_pennies) || 0)) : 0
+  return price + extra
+}
+const pricePennies = duePennies
 
 /** What this attendee has actually handed over, in pennies. Never more than the place costs. */
 export function paidPennies(camp: MoneyCamp, a: MoneyAttendee): number {
-  const due = pricePennies(camp)
+  const due = pricePennies(camp, a)
   if (a.paid) return due
   const typed = a.paid_pennies
   const received = typed != null && !Number.isNaN(Number(typed))
@@ -46,7 +55,7 @@ export function paidPennies(camp: MoneyCamp, a: MoneyAttendee): number {
 
 /** What is still owed on this place, in pennies. Zero once they are ticked off. */
 export function owedPennies(camp: MoneyCamp, a: MoneyAttendee): number {
-  const due = pricePennies(camp)
+  const due = pricePennies(camp, a)
   if (!due || a.paid) return 0
   // To the penny. Everything here is whole pennies, so there is no rounding to
   // forgive — and a place 40p short used to read "Paid" on one screen while the
@@ -88,7 +97,8 @@ export function campMoney(camp: MoneyCamp, attendees: MoneyAttendee[]) {
   const live = attendees.filter(a => (a.status || '') !== 'cancelled')
   // Added in pennies: 33.33 + 59.60 added as pounds is 92.92999999999999.
   const collected = live.reduce((n, a) => n + paidPennies(camp, a), 0) / 100
-  const booked = (live.length * pricePennies(camp)) / 100
+  // Each place at what it costs, room supplement included.
+  const booked = live.reduce((n, a) => n + pricePennies(camp, a), 0) / 100
   return {
     per,
     seats: live.length,

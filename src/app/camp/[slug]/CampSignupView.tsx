@@ -17,6 +17,8 @@ export type CampPublic = {
   price: number | null; paymentMode: string; depositAmount: number | null
   /** Set when the balance can be taken from the deposit card on this date. */
   balanceDue?: string | null
+  /** Rooms to choose from, each with its supplement in pennies (0 = included). */
+  rooms?: { label: string; pennies: number }[]
   audience: 'junior' | 'adult' | 'mixed'
   note: string | null; spacesLeft: number | null
   intro: string | null; whatTheyWorkOn: string[]; whatToBring: string[]
@@ -28,14 +30,14 @@ export type CampPublic = {
 
 const ACCENT = '#3A8EE0'
 const fmt = (d: string | null) => d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : ''
-const money = (n: number) => `£${Number(n).toFixed(Number(n) % 1 ? 2 : 0)}`
+const money = (n: number) => `£${Number(n).toLocaleString('en-GB', { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })}`
 
 export default function CampSignupView({ camp }: { camp: CampPublic }) {
   // An adult camp is somebody booking their own place. Asking them for "your
   // name (parent or guardian)" above a box for their child's age is the moment
   // a £1,500 booking starts to feel like it was built for somebody else.
   const adult = camp.audience === 'adult'
-  const [f, setF] = useState({ player_name: '', player_age: '', parent_name: '', parent_email: '', parent_phone: '', emergency_contact: '', medical_notes: '', consent_photo: false, consent_medical: false, agree_balance: false })
+  const [f, setF] = useState({ player_name: '', player_age: '', parent_name: '', parent_email: '', parent_phone: '', emergency_contact: '', medical_notes: '', consent_photo: false, consent_medical: false, agree_balance: false, room: '' })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [done, setDone] = useState<null | { status: string; note?: string }>(null)
@@ -52,12 +54,18 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
 
   const set = (k: string, v: unknown) => setF(s => ({ ...s, [k]: v }))
   const full = camp.spacesLeft === 0
-  const due = camp.paymentMode === 'full' ? camp.price : camp.paymentMode === 'deposit' ? camp.depositAmount : null
+  const rooms = camp.rooms || []
+  const room = rooms.find(r => r.label === f.room) || null
+  // What this place costs: the price, plus the room's supplement once one is chosen.
+  const placePrice = (Number(camp.price) || 0) + (room ? room.pennies / 100 : 0)
+  const baseDue = camp.paymentMode === 'full' ? camp.price : camp.paymentMode === 'deposit' ? camp.depositAmount : null
+  const due = camp.paymentMode === 'full' && baseDue != null ? placePrice : baseDue
 
   const submit = async () => {
     if (busy) return
     if (!f.player_name.trim() || !f.parent_email.trim()) { setErr(adult ? 'Please add your name and email address.' : 'Please add the player’s name and your email address.'); return }
     if (f.player_age.trim() && !/^\d{1,3}$/.test(f.player_age.trim())) { setErr('Please give the age as a whole number of years, or leave it blank.'); return }
+    if (rooms.length && !room) { setErr('Please choose a room.'); return }
     setBusy(true); setErr('')
     try {
       const res = await fetch('/api/camp/signup', {
@@ -104,7 +112,7 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: camp.intro ? 14 : 0 }}>
             {camp.ages && <Chip>Ages {camp.ages}</Chip>}
             {camp.surface && <Chip>{camp.surface}</Chip>}
-            {due != null && <Chip>{camp.paymentMode === 'deposit' ? `${money(due)} deposit` : money(due)}</Chip>}
+            {baseDue != null && <Chip>{camp.paymentMode === 'deposit' ? `${money(baseDue)} deposit` : money(baseDue)}</Chip>}
             {/* What the camp costs, even when nothing is paid on this page — a
                 family signed up, and only then learned they owed the full price. */}
             {due == null && Number(camp.price) > 0 && <Chip>{money(Number(camp.price))} a place</Chip>}
@@ -196,24 +204,42 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
                 <Check checked={f.consent_photo} onChange={v => set('consent_photo', v)}>{adult ? 'I’m happy for photos or video of me to be used by the academy' : 'I’m happy for photos or video of my child to be used by the academy'}</Check>
                 <Check checked={f.consent_medical} onChange={v => set('consent_medical', v)}>I consent to the coaches holding the medical information above</Check>
 
+                {rooms.length > 0 && (
+                  <div role="radiogroup" aria-label="Room" data-testid="room-choice">
+                    <label style={lbl}>Room *</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                      {rooms.map(r => {
+                        const on = f.room === r.label
+                        return (
+                          <label key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 10, border: `1px solid ${on ? ACCENT : '#dfe3ec'}`, background: on ? '#f2f8fe' : '#fff', borderRadius: 10, padding: '11px 13px', cursor: 'pointer', fontSize: 14.5, color: '#374151' }}>
+                            <input type="radio" name="room" checked={on} onChange={() => set('room', r.label)} style={{ width: 17, height: 17, margin: 0, accentColor: ACCENT, flexShrink: 0 }} />
+                            <span style={{ flex: 1 }}>{r.label}</span>
+                            <span style={{ fontSize: 13.5, fontWeight: 600, color: r.pennies ? '#1a1d29' : '#6b7280', whiteSpace: 'nowrap' }}>{r.pennies ? `+${money(r.pennies / 100)}` : 'Included'}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {due != null && (
                   <div style={{ background: '#f6f8fb', border: '1px solid #e5e9f0', borderRadius: 10, padding: '11px 13px', fontSize: 14, color: '#374151' }}>
                     {camp.paymentMode === 'deposit'
-                      ? <>A <strong>{money(due)} deposit</strong> secures the place{camp.price ? <> — the balance of {money(Number(camp.price) - due)} is due {camp.balanceDue ? <>on {fmt(camp.balanceDue)}</> : 'before the camp starts'}.</> : '.'}</>
-                      : <>Places are <strong>{money(due)}</strong>, paid now to secure the spot.</>}
-                    {camp.paymentMode === 'deposit' && camp.balanceDue && Number(camp.price) > due && (
+                      ? <>A <strong>{money(due)} deposit</strong> secures the place{placePrice > due ? <> — the balance of {money(placePrice - due)}{room?.pennies ? ' (room included)' : ''} is due {camp.balanceDue ? <>on {fmt(camp.balanceDue)}</> : 'before the camp starts'}.</> : '.'}</>
+                      : room?.pennies ? <>This place is <strong>{money(due)}</strong>, room included, paid now to secure the spot.</> : <>Places are <strong>{money(due)}</strong>, paid now to secure the spot.</>}
+                    {camp.paymentMode === 'deposit' && camp.balanceDue && placePrice > due && (
                       <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', marginTop: 10, fontSize: 13.5, color: '#374151', lineHeight: 1.5, cursor: 'pointer' }}>
                         <input type="checkbox" checked={f.agree_balance} onChange={e => set('agree_balance', e.target.checked)} style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0 }} />
-                        <span>Take the balance of {money(Number(camp.price) - due)} from the same card on {fmt(camp.balanceDue)}. I’ll get a reminder a week before. <span style={{ color: '#6b7280' }}>(Leave this unticked to pay the balance yourself from a link we email you.)</span></span>
+                        <span>Take the balance of {money(placePrice - due)} from the same card on {fmt(camp.balanceDue)}. I’ll get a reminder a week before. <span style={{ color: '#6b7280' }}>(Leave this unticked to pay the balance yourself from a link we email you.)</span></span>
                       </label>
                     )}
                     <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 4 }}>You’ll be taken to a secure payment page next.</div>
                   </div>
                 )}
 
-                {due == null && Number(camp.price) > 0 && (
+                {due == null && placePrice > 0 && (
                   <div style={{ background: '#f6f8fb', border: '1px solid #e5e9f0', borderRadius: 10, padding: '11px 13px', fontSize: 14, color: '#374151' }}>
-                    Places are <strong>{money(Number(camp.price))}</strong>.
+                    {room?.pennies ? <>This place is <strong>{money(placePrice)}</strong>, room included.</> : <>Places are <strong>{money(placePrice)}</strong>.</>}
                     <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 4 }}>Nothing is paid on this page — the academy will be in touch about payment.</div>
                   </div>
                 )}

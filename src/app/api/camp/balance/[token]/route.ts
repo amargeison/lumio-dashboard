@@ -41,6 +41,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
     owed, due: g.camp.balance_due ? dayWords(g.camp.balance_due) : null, cancelled: g.a.status === 'cancelled',
     card: autoTakes(g.camp, g.a) && g.a.balance_status !== 'failed' ? cardWords(g.a) : null,
     ready: !!g.m.accountId && g.m.chargesEnabled,
+    room: g.a.extra_label && Number(g.a.extra_pennies) > 0 ? { label: String(g.a.extra_label), pennies: Number(g.a.extra_pennies) } : null,
   })
 }
 

@@ -19,7 +19,9 @@ import { RACKET_STAGES, dbInsert, rowsChanged } from '../_lib/coach-db'
 import { playerLabels } from '../_lib/tell-apart'
 import { stageWords } from '../_lib/stage-words'
 import { avatarSrc } from '@/lib/avatar'
-import { campMoney, paidSoFar, balanceOwed, payState, isCancelled, PAY_STATE_LABEL } from '@/lib/coach/camp-money'
+import { campMoney, paidSoFar, balanceOwed, payState, isCancelled, duePennies, PAY_STATE_LABEL } from '@/lib/coach/camp-money'
+import { tidyRooms, roomChoice, roomPatch, roomLocked, currentRoom, overpaidPennies } from '@/lib/coach/camp-rooms'
+import { withinAgreed } from '@/lib/coach/camp-balance'
 import { formatPounds, parseAmount } from '@/lib/coach/money'
 import {
   buildCampKit, foldLooseItems, kitReadyCount, nextKitStatus, KIT_STATUS_LABEL,
@@ -834,6 +836,7 @@ export function FinanceBoard({ T, accent, camp, attendees, editAtt, editCamp }: 
 
   const totalCost = costs.reduce((n, c) => n + (Number(c.amount) || 0), 0)
   const margin = m.booked - totalCost
+  const rooms = tidyRooms(camp.room_options)
 
   const save = async (v: Record<string, unknown>) => {
     setErr('')
@@ -869,10 +872,14 @@ export function FinanceBoard({ T, accent, camp, attendees, editAtt, editCamp }: 
         {/* ── Payment status ───────────────────────────────────────────── */}
         <div style={card(T)}>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, marginBottom: 4 }}>Payment status</div>
-          <div style={{ fontSize: 11, color: T.text3, marginBottom: 12 }}>Type what you have actually received. Ticking somebody off marks them settled and stops the reminders.</div>
+          <div style={{ fontSize: 11, color: T.text3, marginBottom: 12 }}>Type what you have actually received. Ticking somebody off marks them settled and stops the reminders.{rooms.length ? ' Each place’s price includes its room supplement.' : ''}</div>
           {attendees.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>No attendees yet.</div> : attendees.map(a => {
             const took = paidSoFar(camp, a)
             const state = payState(camp, a)
+            // What this place costs: the price plus its room supplement.
+            const due = duePennies(camp, a)
+            const refund = overpaidPennies(camp, a)
+            const inRoom = currentRoom(rooms, a)
             const gone = isCancelled(a)
             const tone = gone ? T.text3 : state === 'paid' ? T.good : state === 'deposit' ? T.warn : T.bad
             // Money the coach records against a place that was waiting for an
@@ -893,6 +900,19 @@ export function FinanceBoard({ T, accent, camp, attendees, editAtt, editCamp }: 
               <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderTop: `1px solid ${T.border}`, flexWrap: 'wrap', opacity: gone ? 0.6 : 1 }}>
                 <input type="checkbox" checked={!!a.paid} onChange={e => void saveAtt(a.id, { paid: e.target.checked, ...(e.target.checked ? tick : untick) })} title="Fully paid" />
                 <span style={{ flex: 1, minWidth: 110, fontSize: 12.5, color: T.text }}>{a.player_name}</span>
+                {rooms.length > 0 && !gone && (
+                  <select value={inRoom?.label ?? ''} disabled={roomLocked(a)} aria-label={`Room for ${a.player_name}`} data-testid="room-select"
+                    onChange={e => {
+                      const r = rooms.find(x => x.label === e.target.value) || null
+                      const now = Number(a.extra_pennies) || 0
+                      if ((r?.pennies ?? 0) > now && a.paid && !confirm(`${a.player_name} has paid in full. Moving them to ${r!.label} adds ${money(((r?.pennies ?? 0) - now) / 100)} to what they owe. Carry on?`)) return
+                      void saveAtt(a.id, { ...roomPatch(camp, a, r), ...(r && !a.room ? { room: r.label } : {}) })
+                    }}
+                    style={{ background: T.panel2, color: T.text2, border: `1px solid ${T.border}`, borderRadius: 7, padding: '3px 6px', fontSize: 11.5, fontFamily: FONT, maxWidth: 190 }}>
+                    <option value="">{a.extra_label && !inRoom ? `${a.extra_label} (not on the list)` : 'No room chosen'}</option>
+                    {rooms.map(r => <option key={r.label} value={r.label}>{roomChoice(r)}</option>)}
+                  </select>
+                )}
                 <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 3, fontSize: 12, fontFamily: FONT_MONO, color: T.text3 }}>
                   <span style={{ width: 74 }}>
                     <CellInput T={T} value={took ? (took % 1 ? took.toFixed(2) : String(took)) : ''} placeholder="0"
@@ -903,11 +923,12 @@ export function FinanceBoard({ T, accent, camp, attendees, editAtt, editCamp }: 
                         // with a message rather than guessed at. An empty box is £0.
                         const got = v.trim() ? parseAmount(v, { allowZero: true }) : { ok: true as const, pounds: 0, pennies: 0 }
                         if (!got.ok) { setErr(`${a.player_name}: ${got.error}`); return }
-                        void saveAtt(a.id, { paid_pennies: got.pennies, paid: m.per > 0 && got.pennies >= Math.round(m.per * 100), ...(got.pennies > 0 ? settle : {}) })
+                        void saveAtt(a.id, { paid_pennies: got.pennies, paid: due > 0 && got.pennies >= due, ...(got.pennies > 0 ? settle : {}) })
                       }} width={74} />
                   </span>
-                  <span>/ {money(m.per)}</span>
+                  <span>/ {money(due / 100)}</span>
                 </span>
+                {refund > 0 && <span style={{ fontSize: 10.5, color: T.warn, whiteSpace: 'nowrap' }} title="They paid more than the place now costs">{money(refund / 100)} to refund</span>}
                 <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.06em', fontFamily: FONT_MONO, textTransform: 'uppercase', color: tone, background: `${tone}1F`, borderRadius: 4, padding: '2px 6px', whiteSpace: 'nowrap' }}>
                   {gone ? 'Cancelled' : PAY_STATE_LABEL[state]}
                 </span>
@@ -989,7 +1010,7 @@ function BalancesCard({ T, accent, camp, attendees }: { T: ThemeTokens; accent: 
       <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, marginBottom: 4 }}>Balances · due {dueWords}</div>
       <div style={{ fontSize: 11, color: T.text3, marginBottom: 10 }}>{camp.auto_balance === false ? 'Families get a reminder with a link to pay.' : 'Families who agreed when paying the deposit have the balance taken from that card on the day, after a reminder. Everyone else gets the reminder with a link to pay.'}</div>
       {owing.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>Nobody owes a balance.</div> : owing.map(a => {
-        const card = a.stripe_payment_method_id && a.balance_agreed_at ? `${String(a.card_brand || 'card').replace(/^./, c => c.toUpperCase())} ending ${a.card_last4 || '••••'}` : null
+        const card = a.stripe_payment_method_id && a.balance_agreed_at && withinAgreed(camp, a) ? `${String(a.card_brand || 'card').replace(/^./, c => c.toUpperCase())} ending ${a.card_last4 || '••••'}` : null
         const st = a.balance_status === 'paid' ? ['Paid', T.good] : a.balance_status === 'failed' ? ['Failed · link sent', T.bad] : a.balance_status === 'charging' ? ['Taking…', T.warn]
           : a.balance_reminded_at ? [`Reminded ${new Date(String(a.balance_reminded_at)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`, T.text3] : ['Not reminded yet', T.text3]
         return (

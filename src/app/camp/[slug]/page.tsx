@@ -4,6 +4,7 @@ import { campAudience } from '@/lib/coach/camp-audience'
 import { createClient } from '@supabase/supabase-js'
 import CampSignupView, { type CampPublic } from './CampSignupView'
 import { londonToday } from '@/lib/coach/booking-slots'
+import { tidyRooms } from '@/lib/coach/camp-rooms'
 
 // ─── PUBLIC CAMP SIGN-UP PAGE ───────────────────────────────────────────────
 // URL: /camp/[slug] — a link a coach shares with parents.
@@ -41,6 +42,8 @@ function toPublic(camp: any, profile: any, taken: number): CampPublic {
     depositAmount: camp.deposit_amount ?? null,
     // The balance due date, when the family can agree to it being taken from their card.
     balanceDue: camp.payment_mode === 'deposit' && camp.balance_due && camp.auto_balance !== false ? camp.balance_due : null,
+    // The rooms to choose from, each with its supplement.
+    rooms: tidyRooms(camp.room_options),
     note: camp.signup_note || camp.description || null,
     spacesLeft: camp.capacity ? Math.max(0, camp.capacity - taken) : null,
     // Boris's parent brief is the sales copy — written for a parent, no jargon.

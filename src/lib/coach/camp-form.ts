@@ -5,6 +5,8 @@
 // No server-only imports here — the coach portal and the public page both
 // bundle this file.
 
+import { tidyRooms, roomChoice } from './camp-rooms'
+
 export type QType = 'short' | 'long' | 'choice' | 'checks' | 'dropdown' | 'date' | 'time'
 export const Q_TYPES: [QType, string][] = [
   ['short', 'Short answer'], ['long', 'Paragraph'], ['choice', 'Pick one'], ['checks', 'Tick any'],
@@ -31,7 +33,7 @@ export type InfoForm = {
   intro?: string
   sections: FormSection[]
 }
-export type FormCamp = { name?: string | null; audience?: string | null; overseas?: boolean | null; info_form?: unknown }
+export type FormCamp = { name?: string | null; audience?: string | null; overseas?: boolean | null; info_form?: unknown; room_options?: unknown }
 export type Answers = Record<string, string | string[]>
 
 const ADULT_SHIRTS = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
@@ -161,6 +163,18 @@ export function campForm(camp: FormCamp): InfoForm {
 export const formIsCustom = (camp: FormCamp) => !!tidyForm(camp.info_form)
 export const formEnabled = (camp: FormCamp) => campForm(camp).enabled !== false
 
+/**
+ * The room question, when the coach has listed rooms with supplements (Sign-up
+ * page → Rooms and upgrades): its options ARE that list, priced, so what a
+ * family picks is what they are charged for. Otherwise the coach's own wording.
+ */
+export const ROOM_HELP = 'Any supplement is added to what you owe for the place.'
+export function roomOptionsFor(camp: FormCamp, q: FormQuestion): string[] | null {
+  if (q.key !== 'room') return null
+  const rooms = tidyRooms(camp.room_options)
+  return rooms.length ? rooms.map(roomChoice) : null
+}
+
 /** What is actually ASKED on this camp: trip questions drop out unless it is overseas. */
 export function askedForm(camp: FormCamp): InfoForm {
   const f = campForm(camp)
@@ -168,7 +182,10 @@ export function askedForm(camp: FormCamp): InfoForm {
   return {
     ...f,
     sections: f.sections.filter(s => abroad || !s.trip)
-      .map(s => ({ ...s, questions: s.questions.filter(q => abroad || !q.trip) }))
+      .map(s => ({ ...s, questions: s.questions.filter(q => abroad || !q.trip).map(q => {
+        const rooms = roomOptionsFor(camp, q)
+        return rooms ? { ...q, type: 'choice' as QType, options: rooms, help: ROOM_HELP } : q
+      }) }))
       .filter(s => s.questions.length > 0),
   }
 }
