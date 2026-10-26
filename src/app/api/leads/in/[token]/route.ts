@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from '@/lib/rate-limit'
 import { readIncoming } from '@/lib/coach/leads'
+import { nudgeCoach } from '@/lib/app/push'
 
 export const runtime = 'nodejs'
 
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     }).select('id').single()
     if (error || !row) { skipped++; continue }
     await sb.from('coach_lead_events').insert({ coach_id: coachId, lead_id: row.id, kind: 'created', to_stage: 'Enquired', points: 0, text: `From ${source}` })
+    if (created < 3) await nudgeCoach(sb, coachId, { title: 'New lead', body: [lead.name, lead.forName ? `for ${lead.forName}` : '', lead.message ? `: ${lead.message}` : ''].filter(Boolean).join(' ').replace(' :', ':') })
     created++
   }
   await sb.from('coach_lead_hooks').update({ last_used_at: new Date().toISOString() }).eq('coach_id', coachId)

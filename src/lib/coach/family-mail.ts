@@ -8,6 +8,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { sendAsCoach } from './mail'
 import { sendEmail } from '@/lib/emails/send'
+import { createClient } from '@supabase/supabase-js'
+import { apnsConfigured } from '@/lib/app/apns'
+import { pushToEmail, academyTitle } from '@/lib/app/push'
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 
@@ -25,12 +28,30 @@ export function familyAddress(p: FamilyPlayer): { to: string; hello: string; toP
   return { to: to.toLowerCase(), hello, toParent }
 }
 
-/** Send one email as the coach. True when it went. */
-export async function sendFamilyEmail(senderId: string, o: { to: string; subject: string; html: string; replyTo?: string | null; context: string }): Promise<boolean> {
+/**
+ * Send one email as the coach. True when it went.
+ *
+ * If the family has the iPhone app, they also get a notification saying the
+ * same thing (the subject line), which opens `push.url` — or their own page.
+ * `push: false` for an email that answers something they just did themselves.
+ */
+export async function sendFamilyEmail(senderId: string, o: { to: string; subject: string; html: string; replyTo?: string | null; context: string; push?: { body?: string; url?: string } | false }): Promise<boolean> {
   const sent = await sendAsCoach(senderId, { to: o.to, subject: o.subject, html: o.html }).catch(() => ({ ok: false }))
-  if (sent.ok) return true
-  const fb = await sendEmail({ from: 'Lumio Tennis <noreply@lumiosports.com>', to: [o.to], subject: o.subject, html: o.html, replyTo: o.replyTo || undefined, context: o.context }).catch(() => null)
-  return !!fb && !fb.error
+  let ok = sent.ok
+  if (!ok) {
+    const fb = await sendEmail({ from: 'Lumio Tennis <noreply@lumiosports.com>', to: [o.to], subject: o.subject, html: o.html, replyTo: o.replyTo || undefined, context: o.context }).catch(() => null)
+    ok = !!fb && !fb.error
+  }
+  if (ok && o.push !== false) await nudgeFamily(senderId, o.to, { body: o.push?.body || o.subject, url: o.push?.url || '/portal' })
+  return ok
+}
+
+async function nudgeFamily(academyId: string, to: string, m: { body: string; url: string }) {
+  try {
+    if (!apnsConfigured()) return
+    const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
+    await pushToEmail(db, to, { title: await academyTitle(db, academyId), body: m.body, url: m.url, thread: academyId })
+  } catch { /* the email is what matters */ }
 }
 
 /** File the same words in the player's conversation, so the family sees them in the app. Never throws. */

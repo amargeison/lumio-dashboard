@@ -20,6 +20,7 @@ import { sendBookingConfirmation } from '@/lib/coach/booking-confirm'
 import { familyAddress, sendFamilyEmail, type FamilyPlayer } from '@/lib/coach/family-mail'
 import { freeSlots } from '@/lib/coach/booking-slots'
 import { cancelTerms, started, whenWords, type Cover } from './my-account'
+import { nudgeCoach } from '@/lib/app/push'
 
 type Db = SupabaseClient
 type Row = Record<string, any>   // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -46,6 +47,7 @@ async function tellCoach(db: Db, academyId: string, player: Row, body: string) {
     coach_id: academyId, player_id: player.id, direction: 'in', from_name: player.name, recipients: player.name, thread_key: player.name,
     body, channels: 'portal', status: 'received', read: false, created_at: new Date().toISOString(),
   }).then(({ error }) => { if (error) console.error('[lesson-actions] coach message', error.message) })
+  await nudgeCoach(db, academyId, { title: String(player.name || 'A client'), body })
 }
 
 /** Who pressed it, in words the coach recognises: the parent for a junior, the player for themselves. */
@@ -131,7 +133,7 @@ export async function cancelLesson(db: Db, academyId: string, playerId: string, 
       const childFirst = addr.toParent ? first(player.name) : null
       const subject = `${childFirst ? `${childFirst}’s ${lesson}` : `Your ${lesson}`} on ${when} is cancelled`
       const html = `<!doctype html><html><body style="margin:0;background:#eef0f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"><div style="max-width:520px;margin:0 auto;padding:26px 18px"><div style="background:#fff;border-radius:14px;padding:22px 24px;box-shadow:0 2px 12px rgba(20,25,40,.07)"><p style="font-size:16px;color:#1a1d29;margin:0 0 10px">${esc(addr.hello)}</p><p style="font-size:15.5px;color:#374151;margin:0 0 10px;line-height:1.6">${esc(`${childFirst ? `${childFirst}’s` : 'Your'} ${lesson} on ${when} is cancelled, as you asked.`)}</p><p style="font-size:15.5px;color:#374151;margin:0;line-height:1.6">${esc(terms.free ? 'There is nothing to pay.' : terms.words)}</p><p style="font-size:14px;color:#6b7280;margin:16px 0 0">${esc(m.coachName || m.academy)}</p></div><p style="font-size:12px;color:#9aa1ad;text-align:center;margin:14px 0 0">${esc(m.academy)} · sent through Lumio · reply to this email to reach your coach</p></div></body></html>`
-      await sendFamilyEmail(academyId, { to: addr.to, subject, html, replyTo: m.contactEmail, context: 'player app cancel' }).catch(() => false)
+      await sendFamilyEmail(academyId, { to: addr.to, subject, html, replyTo: m.contactEmail, context: 'player app cancel', push: false }).catch(() => false)
     }
   }
   return { ok: true, words: terms.free ? 'Cancelled. There is nothing to pay.' : `Cancelled. ${terms.words}` }

@@ -1,0 +1,34 @@
+{
+  "appId": "com.lumiosports.tenniscoach",
+  "appName": "Lumio Tennis Coach",
+  "webDir": "www",
+  "appendUserAgent": "LumioTennisCoachApp/1.0",
+  "backgroundColor": "#07080F",
+  "server": {
+    "url": "https://www.lumiosports.com/app",
+    "errorPath": "offline.html",
+    "allowNavigation": [
+      "www.lumiosports.com",
+      "lumiosports.com",
+      "*.stripe.com",
+      "*.stripe.network"
+    ]
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#07080F",
+    "preferredContentMode": "mobile",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 700,
+      "launchAutoHide": true,
+      "backgroundColor": "#07080F",
+      "showSpinner": false
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
+}

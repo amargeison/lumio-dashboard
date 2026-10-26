@@ -43,6 +43,8 @@ import { CoachProfileMenu } from './_components/CoachProfileMenu'
 import { CoachPwaInstaller } from './_components/CoachPwaInstaller'
 import { EmptyModule } from './_components/EmptyCoachDashboard'
 import { clearDemoSession, wipeDemoSurvivors, markDemoSignedOut } from '@/lib/demo-session/clear'
+import { isNativeApp } from '@/lib/app/native'
+import { useIsNativeApp } from '@/lib/app/use-native-app'
 import { formatPounds } from '@/lib/coach/money'
 import { MessagesUnreadBadge } from './_components/MessagesUnreadBadge'
 import { useCoachStats, RACKET_STAGES, dbList, setPreviewStaff, failedTables, cachedRows, invalidateCoachTable, LOAD_FAILED } from './_lib/coach-db'
@@ -138,7 +140,8 @@ async function signOutCoach(live: boolean) {
   if (!live) {
     clearDemoSession('coach')
     markDemoSignedOut('coach')
-    window.location.href = '/tennis/coach/demo'
+    // In the iPhone app, leaving the demo goes back to the app's sign-in page.
+    window.location.href = isNativeApp() ? '/app' : '/tennis/coach/demo'
     return
   }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -170,6 +173,7 @@ async function leaveToSignIn() {
 export default function CoachPortalPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
   const isEmpty = !DEMO_SLUGS.has(slug)
+  const inApp = useIsNativeApp()
   const slugClubName = clubNameFromSlug(slug)
   const [authChecked, setAuthChecked] = useState(false)
   const [authSession, setAuthSession] = useState<SportsDemoSession | null>(null)
@@ -501,8 +505,9 @@ export default function CoachPortalPage({ params }: { params: Promise<{ slug: st
       // Real academy slug → the gate is a LIVE sign-in, not a demo invitation.
       liveSignIn={isEmpty}
       // The gate has no navigation, so after "Exit demo" the logo is the only
-      // way back out — point it at the Tennis Coach marketing page.
-      logoHref="/tennis-coach"
+      // way back out — point it at the Tennis Coach marketing page (in the
+      // iPhone app, at the app's own start: the app never shows the shop window).
+      logoHref={inApp ? '/app' : '/tennis-coach'}
     >
       {(session) => <CoachPortalInner session={session} isEmpty={isEmpty} slugClubName={slugClubName} />}
     </SportsDemoGate>

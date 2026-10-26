@@ -7,6 +7,8 @@ import { sendBookingConfirmation } from '@/lib/coach/booking-confirm'
 import { syncBooking } from '@/lib/coach/calendar'
 import { bookingState, bookingPlace, type BookingRow } from '@/lib/coach/booking-email'
 import { matchVenue, type VenueRow } from '@/lib/coach/booking-venue'
+import { nudgeCoach } from '@/lib/app/push'
+import { whenWords } from '@/lib/student/my-account'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -296,6 +298,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
         description: note || undefined,
       })
     } catch (e) { console.error('[book] calendar sync', e) }
+
+    // …and a nudge on the coach's phone, if they have the app.
+    await nudgeCoach(sb, link.coach_id, { title: 'New booking', body: `${title || playerName || who} booked ${whenWords(date, time)} online.` })
 
     // Confirmations — the same ones a coach-made booking sends. The recipient is
     // the adult who filled the form in; see lib/coach/booking-confirm.ts. Not

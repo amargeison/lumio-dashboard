@@ -30,6 +30,7 @@ import { seedLumioEquipment, EQUIPMENT_KIT_CHOICES, EQUIPMENT_CATEGORY_CHOICES }
 import { seedLumioPackages, LUMIO_PACKAGES } from '../_lib/lumio-packages'
 import { V2_LABEL, V2_NOTES } from '@/lib/coach/v2'
 import { parseAmount, formatPounds } from '@/lib/coach/money'
+import { useIsNativeApp } from '@/lib/app/use-native-app'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -910,6 +911,9 @@ function PortalAddress({ T, accent, current }: { T: ThemeTokens; accent: AccentT
 // ════════════════════════════════════════════════════════════════════════════
 export function SettingsPanel({ T, accent, density, demo = false }: Common & { demo?: boolean }) {
   const s = useCoachSettings()
+  // The App Store app never shows what a Lumio plan costs: it is a free
+  // companion to the website, where plans are chosen.
+  const inApp = useIsNativeApp()
   // A link from elsewhere in the portal ("Connect", "Add it", "Settings →
   // Venues") can name the panel it wants, so the coach lands on it rather than
   // at the top of this page. Same one-shot pattern as lumio_open_player.
@@ -1031,7 +1035,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     { id: 'gdpr',        g: 'People & compliance', icon: 'shield', t: 'Players & data (GDPR)', d: `Retention ${gdpr.retentionYears}y · DPA ${gdpr.dpaAccepted ? 'accepted' : 'pending'}` },
     { id: 'staff',       g: 'People & compliance', icon: 'people', t: 'Staff & safeguarding',  d: `DSL ${staffCfg.dsl || 'not set'} · DBS reminders ${staffCfg.reminderDays}d` },
     { id: 'messaging',   g: 'People & compliance', icon: 'note',   t: 'Messaging',             d: `${[msg.email && 'Email', demo && msg.text && 'Text', msg.inapp && 'In-app'].filter(Boolean).join(' · ') || 'No channels'}` },
-    { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: demo ? 'Your plan: Coach £39/mo · order kit & rewards' : (s.ownRewards ? 'You supply your own rewards' : 'Lumio keyrings & dampeners · not on sale yet') },
+    { id: 'kit',         g: 'Rewards & system', icon: 'wrench',   t: 'Lumio Coach Kit & rewards', d: demo ? (inApp ? 'Order kit & rewards' : 'Your plan: Coach £39/mo · order kit & rewards') : (s.ownRewards ? 'You supply your own rewards' : 'Lumio keyrings & dampeners · not on sale yet') },
     { id: 'appearance',  g: 'Rewards & system', icon: 'settings', t: 'Appearance',          d: `${s.theme === 'white' ? 'White' : s.theme === 'light' ? 'Light' : 'Dark'} · ${ACCENT_PRESETS[s.accentKey]?.label ?? ''} · ${s.density}` },
     { id: 'menu',        g: 'Rewards & system', icon: 'eye',      t: 'Menu visibility',     d: `${shownCount} of ${COACH_SIDEBAR.length} menu items shown` },
     { id: 'help',        g: 'Rewards & system', icon: 'note',     t: 'Help & guidance',     d: `${[s.helpHints !== false && 'Page guides', s.gettingStarted !== false && 'Getting started'].filter(Boolean).join(' · ') || 'Both off'}` },
@@ -1334,7 +1338,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
           <div style={{ height: 14 }} />
           {/* Read-only plan line. Demo only: it is a sample, and on a real
               academy it contradicted Plan & features. */}
-          {demo && <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
+          {demo && !inApp && <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 10, padding: '10px 12px', marginBottom: 14 }}>
             <Icon name="shield" size={15} stroke={1.7} style={{ color: accent.hex }} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 10.5, color: accent.hex, textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Your Lumio plan</div>
