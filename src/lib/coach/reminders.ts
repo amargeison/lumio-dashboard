@@ -103,11 +103,15 @@ export function reminderMessage(i: ReminderInput): { subject: string; text: stri
 }
 
 /** The message when the coach calls a lesson off. */
-export function rainOffMessage(i: { hello: string; childFirst: string | null; academy: string; coachName: string | null; time: string; when: string; venue: string | null; reason: 'weather' | 'coach'; refunded: number | null; note?: string | null }): { subject: string; text: string; html: string } {
+export function rainOffMessage(i: { hello: string; childFirst: string | null; academy: string; coachName: string | null; time: string; when: string; venue: string | null; reason: 'weather' | 'coach'; refunded: number | null; credited?: number | null; onPack?: boolean; note?: string | null }): { subject: string; text: string; html: string } {
   const at = niceTime(i.time)
   const whose = i.childFirst ? `${i.childFirst}’s lesson` : 'your lesson'
   const why = i.reason === 'weather' ? 'because of the weather' : 'as I am unable to coach'
-  const money = i.refunded && i.refunded > 0 ? ` You have been refunded £${(i.refunded / 100).toFixed(i.refunded % 100 ? 2 : 0)} to the card or account you paid with.` : ' You will not be charged for it.'
+  const pounds = (p: number) => `£${(p / 100).toFixed(p % 100 ? 2 : 0)}`
+  const money = i.refunded && i.refunded > 0 ? ` You have been refunded ${pounds(i.refunded)} to the card or account you paid with.`
+    : i.credited && i.credited > 0 ? ` The ${pounds(i.credited)} you paid is kept as a credit, so your next lesson is already paid for.`
+    : i.onPack ? ' It does not come off your lesson pack.'
+    : ' You will not be charged for it.'
   const lines = [`I’m sorry, ${whose} at ${at} ${i.when}${i.venue ? ` at ${i.venue}` : ''} is off ${why}.${money}`]
   if (i.note?.trim()) lines.push(i.note.trim())
   lines.push('I will be in touch to rearrange.')

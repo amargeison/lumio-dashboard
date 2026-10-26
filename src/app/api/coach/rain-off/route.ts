@@ -6,6 +6,7 @@ import { rainOffMessage } from '@/lib/coach/reminders'
 import { familyAddress, fileInApp, sendFamilyEmail } from '@/lib/coach/family-mail'
 import { addDaysIso, ukDate } from '@/lib/coach/uk-date'
 import { academyMoney, refundCharge } from '../pay/_saved'
+import { packCover } from '@/lib/coach/packs-server'
 
 export const runtime = 'nodejs'
 
@@ -14,8 +15,9 @@ export const runtime = 'nodejs'
 // POST { bookingIds: string[], reason: 'weather' | 'coach', note?: string, tell?: boolean }
 //
 // For each lesson: it is cancelled and marked as the COACH's cancellation (so
-// it is never charged as a late cancellation), any card payment taken for it
-// is refunded in full, and — unless tell is false — the family is emailed and
+// it is never charged as a late cancellation, and never comes off a lesson
+// pack), any card payment taken for it is refunded in full — or, when the
+// policy says "a credit", kept as a one-lesson credit on the Payments page — and — unless tell is false — the family is emailed and
 // the message is filed in their conversation in the app. Each family is told
 // once per lesson, however many times this is pressed.
 
@@ -48,10 +50,12 @@ export async function POST(req: NextRequest) {
   const m = await academyMoney(db, academyId)
   const { data: venues } = await db.from('coach_venues').select('id, name, is_home').eq('coach_id', academyId)
   const home = (venues || []).find(v => v.is_home) || null
+  // Which of these lessons come off a pack, worked out before they are cancelled.
+  const { cover } = await packCover(db, academyId, (rows || []).map(r => r.player_id as string).filter(Boolean), m.policy)
 
-  const results: { bookingId: string; cancelled: boolean; refunded: number; told: string | null; problem?: string }[] = []
+  const results: { bookingId: string; cancelled: boolean; refunded: number; credited: number; told: string | null; problem?: string }[] = []
   for (const bk of rows || []) {
-    const r = { bookingId: bk.id as string, cancelled: false, refunded: 0, told: null as string | null, problem: undefined as string | undefined }
+    const r = { bookingId: bk.id as string, cancelled: false, refunded: 0, credited: 0, told: null as string | null, problem: undefined as string | undefined }
     if (bk.status !== 'cancelled') {
       const tag = reason === 'weather' ? 'Rained off' : 'Cancelled by coach'
       const { error } = await db.from('coach_bookings').update({
@@ -65,7 +69,26 @@ export async function POST(req: NextRequest) {
     // Give back what was taken for it.
     const { data: charges } = await db.from('coach_charges').select('*').eq('booking_id', bk.id).eq('coach_id', academyId)
     const backTo = new Map<string, number>()   // a weekly group: refunded per answer
+    let credited = 0
     for (const c of charges || []) {
+      // "A credit": a one-to-one lesson's payment stays, as one lesson on the
+      // Payments page that their next lesson comes off. Once per lesson, however
+      // many times this is pressed. A weekly-group place is always refunded.
+      if (m.policy.rainOff === 'credit' && c.kind !== 'group' && c.status === 'paid' && !c.refunded_pennies && bk.player_id) {
+        const tag = `[credit for ${bk.id}]`
+        const { data: had } = await db.from('coach_payments').select('id').eq('coach_id', academyId).eq('player_id', bk.player_id).like('notes', `%${tag}%`).limit(1)
+        if (!had?.length) {
+          const { data: pl } = await db.from('coach_players').select('name').eq('id', bk.player_id).maybeSingle()
+          await db.from('coach_payments').insert({
+            coach_id: academyId, player_id: bk.player_id, player_name: pl?.name || bk.player_name || null, item: 'Lesson credit', amount: 0, paid: true,
+            sessions_total: 1, status: 'active', renews_date: addDaysIso(ukDate(), 182),
+            notes: `${reason === 'weather' ? 'Rained off' : 'Called off'}: ${bk.booking_date} ${String(bk.start_time || '').slice(0, 5)}. £${(c.amount_pennies / 100).toFixed(2)} paid by card, kept as a credit. ${tag}`,
+          })
+        }
+        credited += c.amount_pennies
+        r.credited += c.amount_pennies
+        continue
+      }
       if (c.status === 'paid' && c.amount_pennies - (c.refunded_pennies || 0) > 0) {
         const rf = await refundCharge(db, m, academyId, c.id)
         if (rf.ok) { r.refunded += rf.refunded || 0; if (c.reply_id) backTo.set(c.reply_id, (backTo.get(c.reply_id) || 0) + (rf.refunded || 0)) }
@@ -119,7 +142,7 @@ export async function POST(req: NextRequest) {
           const msg = rainOffMessage({
             hello: addr.hello, childFirst: addr.toParent ? String(player.name).split(/\s+/)[0] : null,
             academy: m.academy, coachName: m.coachName || null, time: String(bk.start_time || '').slice(0, 5),
-            when: whenWords(bk.booking_date), venue: venue?.name || null, reason, refunded: r.refunded || null, note,
+            when: whenWords(bk.booking_date), venue: venue?.name || null, reason, refunded: r.refunded || null, credited: credited || null, onPack: cover.has(bk.id), note,
           })
           const ok = await sendFamilyEmail(who.userId, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/rain-off' })
           if (ok) {

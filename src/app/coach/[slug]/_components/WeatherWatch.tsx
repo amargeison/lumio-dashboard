@@ -79,7 +79,7 @@ export function WeatherWatch({ T, accent }: { T: ThemeTokens; accent: AccentToke
   )
 }
 
-type Result = { bookingId: string; cancelled: boolean; refunded: number; told: string | null; problem?: string }
+type Result = { bookingId: string; cancelled: boolean; refunded: number; credited?: number; told: string | null; problem?: string }
 
 export function RainOffModal({ T, accent, lessons, today, onClose, onDone }: {
   T: ThemeTokens; accent: AccentTokens; today?: string
@@ -121,7 +121,7 @@ export function RainOffModal({ T, accent, lessons, today, onClose, onDone }: {
               <div key={r.bookingId} style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.5 }}>
                 <strong style={{ color: r.cancelled ? T.text : T.bad }}>{name(r.bookingId)}</strong>
                 {' · '}{r.cancelled ? 'cancelled' : 'not cancelled'}
-                {r.refunded ? ` · ${formatPennies(r.refunded)} refunded` : ''}
+                {r.refunded ? ` · ${formatPennies(r.refunded)} refunded` : ''}{r.credited ? ` · ${formatPennies(r.credited)} kept as a lesson credit` : ''}
                 {r.told && r.told !== 'already told' ? ` · told ${r.told}` : r.told === 'already told' ? ' · family already told' : ''}
                 {r.problem && <div style={{ color: T.bad, fontSize: 11.5 }}>{r.problem}</div>}
               </div>
@@ -129,7 +129,7 @@ export function RainOffModal({ T, accent, lessons, today, onClose, onDone }: {
             <button onClick={onClose} style={{ ...btn, alignSelf: 'flex-end', marginTop: 8, background: accent.hex, color: T.btnText }}>Done</button>
           </div>
         ) : <>
-          <div style={{ fontSize: 12, color: T.text3, marginTop: 4, lineHeight: 1.5 }}>Each lesson is cancelled, any card payment for it is refunded in full, and the family is told by email and in the app. It never counts as a late cancellation.</div>
+          <div style={{ fontSize: 12, color: T.text3, marginTop: 4, lineHeight: 1.5 }}>Each lesson is cancelled, any card payment for it is refunded in full (or kept as a lesson credit, if that is your policy), and the family is told by email and in the app. It never counts as a late cancellation, and never comes off a lesson pack.</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 12, maxHeight: 260, overflowY: 'auto' }}>
             {lessons.map(l => (
               <label key={l.bookingId} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 10px', border: `1px solid ${picked.has(l.bookingId) ? accent.border : T.border}`, background: picked.has(l.bookingId) ? accent.dim : T.panel2, borderRadius: 9, cursor: 'pointer' }}>

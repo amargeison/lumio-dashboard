@@ -3,6 +3,7 @@ import { admin } from '@/app/api/coach/pay/_stripe'
 import { academyMoney, activeMethod, askStripe, chargeSaved, priceBooking } from '@/app/api/coach/pay/_saved'
 import { windowClosesAt, ukLocalToMs } from '@/lib/coach/cancel-policy'
 import { addDaysIso, ukDate } from '@/lib/coach/uk-date'
+import { packCover } from '@/lib/coach/packs-server'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -19,6 +20,7 @@ export const maxDuration = 300
 //     and which started no more than 12 hours ago (an older lesson is the
 //     coach's to charge from the Payments page, not a surprise from us);
 //   • a player with a card or Direct Debit on file;
+//   • a lesson that does not come off a lesson pack (see lib/coach/packs);
 //   • a lesson with no charge for it yet — not even a failed one. A charge
 //     that failed is shown to the coach; it is never retried on its own.
 // Safe to run twice: the database allows one live charge per lesson.
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
   }
   const db = admin()
   const now = Date.now()
-  const out = { resumed: 0, charged: 0, processing: 0, failed: 0, skipped: 0, academies: 0 }
+  const out = { resumed: 0, charged: 0, processing: 0, failed: 0, skipped: 0, onPack: 0, academies: 0 }
 
   // ── 1. Half-finished charges ──
   const stale = new Date(now - 5 * 60_000).toISOString()
@@ -62,8 +64,10 @@ export async function POST(req: NextRequest) {
     const { data: lessons } = await db.from('coach_bookings').select('*')
       .eq('coach_id', academyId).eq('status', 'confirmed').not('player_id', 'is', null)
       .gte('booking_date', addDaysIso(today, -1)).lte('booking_date', until)
+    const { cover } = await packCover(db, academyId, (lessons || []).map(l => l.player_id as string), m.policy)
     for (const b of lessons || []) {
       if (budget <= 0) break
+      if (cover.has(b.id)) { out.onPack++; continue }
       if (b.type === 'Block' || (b.headcount && b.headcount > 1)) continue
       const closes = windowClosesAt(b, m.policy)
       const starts = ukLocalToMs(b.booking_date, String(b.start_time || '00:00').slice(0, 5))

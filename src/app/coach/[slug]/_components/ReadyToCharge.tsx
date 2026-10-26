@@ -16,8 +16,9 @@ import { useWallet, reloadWallet, savedFor, methodLabel, chargeState } from '../
 import { priceFor } from '@/lib/coach/pricing'
 import { readPolicy, isLateCancel, feeFor, ukLocalToMs } from '@/lib/coach/cancel-policy'
 import { formatPennies } from '@/lib/coach/money'
+import { lessonUses, coverageByPlayer, type PackLine } from '@/lib/coach/packs'
 
-type Bk = { id: string; player_id?: string | null; player_name?: string | null; booking_date?: string | null; start_time?: string | null; type?: string | null; status?: string | null; venue_id?: string | null; duration_min?: number | null; price_pennies?: number | null; headcount?: number | null; cancelled_at?: string | null }
+type Bk = { id: string; player_id?: string | null; player_name?: string | null; booking_date?: string | null; start_time?: string | null; type?: string | null; status?: string | null; venue_id?: string | null; duration_min?: number | null; price_pennies?: number | null; headcount?: number | null; cancelled_at?: string | null; cancelled_by?: string | null; created_at?: string | null }
 type Player = { id: string; name: string; rate_pennies?: number | null; rate_reason?: string | null }
 type Line = { key: string; at: number; bookingId: string; playerId: string; who: string; when: string; kind: 'lesson' | 'late_cancel'; amount: number; card: string; failed?: string | null }
 
@@ -31,6 +32,10 @@ export function ReadyToCharge({ T, accent }: { T: ThemeTokens; accent: AccentTok
   const { wallet, loading } = useWallet({ fresh: true })
   const bookings = useCoachTable<Bk>('coach_bookings')
   const { rows: players } = useCoachTable<Player>('coach_players')
+  // Lessons that come off a pack are never charged to a card (see '@/lib/coach/packs').
+  const { rows: packs } = useCoachTable<PackLine>('coach_payments')
+  const { rows: attendance } = useCoachTable<{ player_id?: string | null; session_date?: string | null; present?: boolean | null }>('coach_attendance')
+  const { rows: writeUps } = useCoachTable<{ id: string; player_id?: string | null; session_date?: string | null; created_at?: string | null }>('coach_sessions')
   const [picked, setPicked] = useState<Set<string> | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ text: string; bad?: boolean } | null>(null)
@@ -40,8 +45,10 @@ export function ReadyToCharge({ T, accent }: { T: ThemeTokens; accent: AccentTok
     const now = Date.now()
     const since = now - 60 * 86_400_000
     const out: Line[] = []
+    const onPack = coverageByPlayer(packs, lessonUses({ bookings: bookings.rows, attendance, writeUps, policy, planned: true }))
     for (const b of bookings.rows) {
       if (!b.player_id || b.type === 'Block' || !b.booking_date) continue
+      if (onPack.has(b.id)) continue
       const card = savedFor(wallet, b.player_id)
       if (!card) continue
       const at = ukLocalToMs(b.booking_date, (b.start_time || '00:00').slice(0, 5))
@@ -63,7 +70,7 @@ export function ReadyToCharge({ T, accent }: { T: ThemeTokens; accent: AccentTok
     }
     // Oldest first: the longest-owed is the one to deal with.
     return out.sort((a, b) => a.at - b.at)
-  }, [bookings.rows, players, wallet, s.priceList, s.privateRate, policy.hours, policy.lateChargePct]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [bookings.rows, players, wallet, packs, attendance, writeUps, s.priceList, s.privateRate, policy.hours, policy.lateChargePct, policy.noShowPct]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading || !wallet.chargesEnabled) return null
   const recent = wallet.charges.filter(c => c.status !== 'pending').slice(0, 8)

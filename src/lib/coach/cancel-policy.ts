@@ -81,6 +81,12 @@ export function policyTerms(p: CancelPolicy, academy: string): { title: string; 
       : `If ${who} cancels because of the weather or because the coach cannot make it, you are not charged, or you are refunded in full if you have already paid.`,
   })
   terms.push({
+    title: 'Lesson packs',
+    text: (p.lateChargePct > 0 || p.noShowPct > 0)
+      ? `If you are on a lesson pack, ${p.lateChargePct > 0 && p.noShowPct > 0 ? 'a late cancellation or a missed lesson' : p.lateChargePct > 0 ? 'a late cancellation' : 'a missed lesson'} uses one lesson from your pack instead of being charged. A lesson ${who} cancels is never taken off your pack.`
+      : `If you are on a lesson pack, only lessons that take place come off it. A lesson ${who} cancels is never taken off your pack.`,
+  })
+  terms.push({
     title: 'Your card or bank details',
     text: `They are held securely by Stripe, the payment company, never by ${who} or Lumio. You can ask for them to be removed at any time; a lesson already inside the cancellation window is still charged.`,
   })

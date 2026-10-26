@@ -3,7 +3,7 @@ import { formLinkFor } from '@/lib/coach/camp-form-server'
 import { publicSiteOrigin } from '@/lib/public-origin'
 import { isAdult } from '@/lib/coach/camp-audience'
 import { stripe, admin } from '../_stripe'
-import { finishSetup } from '../_saved'
+import { finishSetup, settleInvoice } from '../_saved'
 import { sendCampSignupEmails } from '@/lib/coach/camp-signup-email'
 
 export const runtime = 'nodejs'
@@ -47,6 +47,8 @@ export async function POST(req: NextRequest) {
           ? { status: 'paid', paid_at: new Date().toISOString(), stripe_payment_intent_id: pi.id, failure_reason: null, updated_at: new Date().toISOString() }
           : { status: 'failed', failure_reason: pi.last_payment_error?.message ? `The payment failed: ${pi.last_payment_error.message}` : 'The payment failed.', updated_at: new Date().toISOString() })
           .eq('id', chargeId).in('status', ['charging', 'processing'])
+        // A pack bought by Direct Debit: ticked paid when the money arrives.
+        if (ok) await settleInvoice(db, chargeId)
       }
       return NextResponse.json({ received: true })
     }
