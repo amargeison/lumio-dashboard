@@ -476,6 +476,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
                   <div style={{ fontSize: 11, color: hl ? accent.hex : T.text3, width: 44, flexShrink: 0 }}>{b.start_time || '—'}</div>
                   <div style={{ position: 'absolute', left: 46, top: (TODAY_ROW - 7) / 2, width: 7, height: 7, borderRadius: '50%', background: hl ? accent.hex : T.panel, border: `1.5px solid ${hl ? accent.hex : T.border}` }} />
                   <div style={{ flex: 1, paddingLeft: 14, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {b.client_confirmed_at && <span title={`Confirmed by ${b.client_confirmed_by || 'them'}`} style={{ fontSize: 11, color: T.good, fontWeight: 800, marginRight: 5 }}>✓</span>}
                     <span style={{ fontSize: 12.5, color: T.text, fontWeight: hl ? 600 : 500 }}>{b.title || b.player_name || 'Session'}</span>
                     {sub && <span style={{ fontSize: 10.5, color: T.text3, marginLeft: 8 }}>{sub}</span>}
                   </div>

@@ -36,6 +36,10 @@ type Booking = {
   price_pennies?: number | null; headcount?: number | null
   // Set by the database when the status becomes cancelled (migration 210).
   cancelled_at?: string | null
+  // Who called it off: 'coach' (rain-off, illness) or 'client' (from their page, migration 220).
+  cancelled_by?: string | null
+  // The client pressed "I'll be there" (migration 220). Cleared when the lesson moves.
+  client_confirmed_at?: string | null; client_confirmed_by?: string | null
   booking_date: string | null; start_time: string | null; duration_min: number | null
   status: string | null; type: string | null; notes: string | null
   /** What the family was last told (set by the server). Read only here. */
@@ -459,7 +463,7 @@ function WeekGrid({ T, accent, days, today, bookings, busy, typeColour, camps, o
                         const showTime = room >= (showSecond ? 44 : 31)
                         return (
                           <>
-                            <div style={{ fontSize: 10.5, color: T.text, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }}>{who || t || 'Booking'}</div>
+                            <div style={{ fontSize: 10.5, color: T.text, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }}>{b.client_confirmed_at && b.status !== 'cancelled' ? <span title={`Confirmed by ${b.client_confirmed_by || 'them'}`} style={{ color: T.good }}>✓ </span> : null}{who || t || 'Booking'}</div>
                             {showSecond && (
                               <div style={{ fontSize: 9.5, color: T.text2, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.25 }}>{t}</div>
                             )}
@@ -927,6 +931,14 @@ function BookingFormModal({ T, accent, players, coaches, myName, headNames, type
           {booking?.player_id && <BookingCharge T={T} accent={accent} booking={booking} settings={cfg} client={rateOf(booking.player_id)} />}
           {booking && booking.status === 'cancelled' && onOfferSlot && booking.booking_date && booking.booking_date >= new Date().toISOString().slice(0, 10) && (
             <button type="button" onClick={() => onOfferSlot(booking)} style={{ appearance: 'none', alignSelf: 'flex-start', border: `1px dashed ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '0 14px', minHeight: 36, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>📣 Offer this slot to someone else</button>
+          )}
+          {/* What the client has said from their page or the reminder link (migration 220). */}
+          {booking && (booking.client_confirmed_at || (booking.status === 'cancelled' && booking.cancelled_by === 'client')) && (
+            <div data-testid="client-said" style={{ fontSize: 12.5, borderRadius: 9, padding: '8px 11px', border: `1px solid ${booking.status === 'cancelled' ? T.warn : T.good}55`, background: `${booking.status === 'cancelled' ? T.warn : T.good}14`, color: booking.status === 'cancelled' ? T.warn : T.good, fontWeight: 600 }}>
+              {booking.status === 'cancelled'
+                ? `Cancelled by the client${booking.cancelled_at ? `, ${new Date(booking.cancelled_at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}.`
+                : `✓ Confirmed by ${booking.client_confirmed_by || 'the client'}, ${new Date(String(booking.client_confirmed_at)).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}.`}
+            </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div><label style={lbl}>Status</label>

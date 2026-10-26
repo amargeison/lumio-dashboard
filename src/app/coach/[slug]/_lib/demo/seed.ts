@@ -1055,6 +1055,12 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
         : s.pending && !o.past ? (p && p.joined < 10 ? 'Weekly slot offered after the first lesson — waiting for confirmation.' : 'Waiting for the family to confirm.') : null,
       ...assign(s.coach),
     }, stamp(at(plus(o.date, -between(`bk:${o.key}`, 6, 16)), '12:00')))
+    // Most families tap "I'll be there" in the day-before reminder.
+    const ahead = (o.date.getTime() - today.getTime()) / DAY_MS
+    if (p && status === 'confirmed' && !o.past && ahead < 2 && s.type !== 'Group' && between(`cc:${o.key}`, 0, 3) > 0) {
+      r.client_confirmed_at = stamp(at(today, '07:30'))
+      r.client_confirmed_by = p.cat === 'Adult' ? p.name : `${p.name.split(' ')[0]}’s parent`
+    }
     bookingOf.set(o.key, r)
     return r
   })

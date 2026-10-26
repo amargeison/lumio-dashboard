@@ -125,8 +125,10 @@ const prettyDate = (iso?: string | null) => {
 }
 const bandLabel = (n: number) => (n >= 70 ? 'High' : n >= 40 ? 'Medium' : 'Low')
 
-export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }: {
+export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, actions }: {
   T: StudentTheme; bundle: StudentBundle; footnote?: string
+  /** The family's buttons (their lessons, booking, groups) — the portal only; the coach's preview is read-only. */
+  actions?: StudentActions
   /** Supplied by the portal only — the coach's preview is read-only. */
   onSendMessage?: (body: string, opts?: { toName?: string; replyTo?: string; campId?: string; channel?: string }) => Promise<void>
   /** Reacting is the family's, for the same reason. */
@@ -196,6 +198,9 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
     rewards: studentSectionOn('rewards', off, watch.length > 0 && xpTotal > 0, feat),
     racket: studentSectionOn('racket', off, hasRacket, feat),
     adultlevel: studentSectionOn('adultlevel', off, !!bundle.adultLevel, feat),
+    upcoming: studentSectionOn('upcoming', off, !!bundle.my && (bundle.my.lessons.length > 0 || (bundle.my.booking.on && !off.includes('booking'))), feat),
+    groups: studentSectionOn('groups', off, !!bundle.my && bundle.my.groups.length > 0, feat),
+    account: studentSectionOn('account', off, !!bundle.my && (!!bundle.my.account.plan || bundle.my.account.packs.length > 0 || !!bundle.my.account.method || bundle.my.account.owed.length > 0), feat),
     homework: studentSectionOn('homework', off, !!(guidance.homework || guidance.nextFocus), feat),
     lessons: studentSectionOn('lessons', off, lessons.length > 0, feat),
     resources: studentSectionOn('resources', off, resources.length > 0 || books.length > 0, feat),
@@ -268,6 +273,11 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact }:
       {show.nextsession && nextSession && (
         <NextSessionCard T={T} next={nextSession} first={f.first} adult={f.audience === 'adult'} />
       )}
+
+      {/* ── THEIR LESSONS, GROUPS AND PLAN — confirm, cancel, book, say yes ── */}
+      {show.upcoming && bundle.my && <MyLessonsCard T={T} my={bundle.my} you={f.audience === 'adult'} first={f.first} actions={actions} bookingOn={!off.includes('booking')} />}
+      {show.groups && bundle.my && <MyGroupsCard T={T} my={bundle.my} actions={actions} />}
+      {show.account && bundle.my && <MyAccountCard T={T} my={bundle.my} you={f.audience === 'adult'} />}
 
       {/* ── RECENT LESSONS — straight after the next session, because the two
            are one thought: what we just did, what we do next. ───────────── */}
@@ -1660,5 +1670,278 @@ function PlaceCard({ T, p }: { T: StudentTheme; p: { name?: string; kind?: strin
         {!!p.url && <a href={webUrl(p.url) || '#'} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, fontWeight: 700, color: T.accent, textDecoration: 'none' }}>🔗 Site</a>}
       </div>
     </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// THE FAMILY'S OWN ACTIONS — their lessons, booking, weekly groups and plan
+// (migration 220). The portal passes `actions`; the coach's preview does not,
+// so there every button is shown but disabled, with a line saying why.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type ActionResult = { ok: boolean; notice?: string; error?: string; url?: string }
+export type SlotDay = { date: string; label: string; slots: string[] }
+export type StudentActions = {
+  lesson: (bookingId: string, action: 'confirm' | 'cancel') => Promise<ActionResult>
+  slots: (mins: number) => Promise<{ days: SlotDay[]; error?: string }>
+  book: (date: string, time: string, mins: number) => Promise<ActionResult & { days?: SlotDay[] }>
+  group: (token: string, action: 'yes' | 'no' | 'pay') => Promise<ActionResult>
+}
+type My = NonNullable<StudentBundle['my']>
+
+const PREVIEW_NOTE = 'Families use these buttons on their own page.'
+function btnStyle(T: StudentTheme, kind: 'primary' | 'ghost' | 'danger' = 'ghost'): React.CSSProperties {
+  return {
+    appearance: 'none', cursor: 'pointer', fontFamily: FONT, fontSize: 13, fontWeight: 700, borderRadius: 10, padding: '0 14px', minHeight: 38,
+    border: kind === 'primary' ? 0 : `1px solid ${kind === 'danger' ? T.bad : T.border}`,
+    background: kind === 'primary' ? T.accent : 'transparent', color: kind === 'primary' ? T.btnText : kind === 'danger' ? T.bad : T.text,
+  }
+}
+function Chip({ T, tone, children }: { T: StudentTheme; tone: string; children: React.ReactNode }) {
+  return <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: tone, background: `${tone}1F`, border: `1px solid ${tone}44`, borderRadius: 999, padding: '2px 8px', whiteSpace: 'nowrap' }}>{children}</span>
+}
+const say = (r: ActionResult | null) => (r ? (r.error || r.notice || '') : '')
+
+export function MyLessonsCard({ T, my, you, first, actions, bookingOn }: { T: StudentTheme; my: My; you: boolean; first: string; actions?: StudentActions; bookingOn: boolean }) {
+  const [busy, setBusy] = useState('')
+  const [asking, setAsking] = useState<string | null>(null)
+  const [msg, setMsg] = useState<{ id: string; text: string; bad?: boolean } | null>(null)
+  const act = async (id: string, action: 'confirm' | 'cancel') => {
+    if (!actions || busy) return
+    setBusy(`${id}:${action}`); setMsg(null)
+    const r = await actions.lesson(id, action)
+    setBusy(''); setAsking(null); setMsg({ id, text: say(r) || (r.ok ? 'Done.' : 'That did not work.'), bad: !r.ok })
+  }
+  return (
+    <Card T={T}>
+      <div data-testid="my-lessons">
+        <Head T={T} icon="calendar" title={you ? 'Your lessons' : `${first}’s lessons`} sub={my.lessons.length ? 'Let your coach know you’ll be there, or cancel if you can’t make it' : undefined} />
+        {my.lessons.length === 0 && <div style={{ fontSize: 14, color: T.text2 }}>No lessons booked at the moment.</div>}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {my.lessons.map(l => {
+            const [day, time] = [l.date, l.time]
+            const d = new Date(`${day}T12:00:00Z`)
+            return (
+              <div key={l.id} data-testid="my-lesson" style={{ border: `1px solid ${l.confirmed ? T.good + '66' : T.border}`, borderRadius: 14, padding: '12px 14px', background: T.panel2 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ width: 50, textAlign: 'center', flexShrink: 0, background: T.accentDim, border: `1px solid ${T.accentBorder}`, borderRadius: 10, padding: '5px 0' }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: T.accent, textTransform: 'uppercase' }}>{d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' })}</div>
+                    <div className="lsv-num" style={{ fontSize: 18, fontWeight: 800, color: T.text, lineHeight: 1.1 }}>{d.getUTCDate()}</div>
+                    <div style={{ fontSize: 10, color: T.text3 }}>{d.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })}</div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 160 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{time || 'Time to be confirmed'} · {l.mins} min{l.type && !/^private$/i.test(l.type) ? ` · ${l.type}` : ''}</div>
+                    <div style={{ fontSize: 12.5, color: T.text2, marginTop: 2 }}>{[l.coach ? `With ${l.coach}` : '', l.court].filter(Boolean).join(' · ')}</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                      {l.confirmed && <Chip T={T} tone={T.good}>✓ You’ll be there</Chip>}
+                      {l.paid && <Chip T={T} tone={T.good}>Paid</Chip>}
+                      {l.cover === 'plan' && <Chip T={T} tone={T.accent}>On your plan</Chip>}
+                      {l.cover === 'pack' && <Chip T={T} tone={T.accent}>Off your pack</Chip>}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {!l.confirmed && <button disabled={!actions || !!busy} title={actions ? undefined : PREVIEW_NOTE} onClick={() => act(l.id, 'confirm')} style={{ ...btnStyle(T, 'primary'), opacity: actions ? 1 : 0.55 }}>{busy === `${l.id}:confirm` ? 'Saving…' : 'I’ll be there'}</button>}
+                    <button disabled={!actions || !!busy} title={actions ? undefined : PREVIEW_NOTE} onClick={() => setAsking(asking === l.id ? null : l.id)} style={{ ...btnStyle(T), opacity: actions ? 1 : 0.55 }}>Can’t make it</button>
+                  </div>
+                </div>
+                {asking === l.id && (
+                  <div role="dialog" aria-label="Cancel this lesson" style={{ marginTop: 10, borderTop: `1px solid ${T.border}`, paddingTop: 10 }}>
+                    <div style={{ fontSize: 13.5, color: l.cancel.free ? T.text : T.warn, lineHeight: 1.5 }}>{l.cancel.words}</div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                      <button disabled={!!busy} onClick={() => act(l.id, 'cancel')} style={btnStyle(T, 'danger')}>{busy === `${l.id}:cancel` ? 'Cancelling…' : l.cancel.free ? 'Cancel this lesson' : 'Cancel anyway'}</button>
+                      <button onClick={() => setAsking(null)} style={btnStyle(T)}>Keep it</button>
+                    </div>
+                  </div>
+                )}
+                {asking !== l.id && <div style={{ fontSize: 12, color: T.text3, marginTop: 8 }}>{l.cancel.words}</div>}
+                {msg?.id === l.id && <div role="status" style={{ fontSize: 13, color: msg.bad ? T.bad : T.good, marginTop: 6 }}>{msg.text}</div>}
+              </div>
+            )
+          })}
+        </div>
+        {msg && !my.lessons.some(l => l.id === msg.id) && <div role="status" style={{ fontSize: 13, color: msg.bad ? T.bad : T.good, marginTop: 8 }}>{msg.text}</div>}
+        {bookingOn && my.booking.on && <BookSession T={T} my={my} actions={actions} />}
+        {!actions && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10 }}>{PREVIEW_NOTE}</div>}
+      </div>
+    </Card>
+  )
+}
+
+function BookSession({ T, my, actions }: { T: StudentTheme; my: My; actions?: StudentActions }) {
+  const [open, setOpen] = useState(false)
+  const [mins, setMins] = useState(my.booking.duration)
+  const [days, setDays] = useState<SlotDay[] | null>(null)
+  const [day, setDay] = useState('')
+  const [time, setTime] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ text: string; bad?: boolean } | null>(null)
+  const load = async (m: number) => {
+    if (!actions) return
+    setDays(null); setTime(''); setMsg(null)
+    const r = await actions.slots(m)
+    setDays(r.days); setDay(r.days[0]?.date || '')
+    if (r.error) setMsg({ text: r.error, bad: true })
+  }
+  const book = async () => {
+    if (!actions || !day || !time || busy) return
+    setBusy(true); setMsg(null)
+    const r = await actions.book(day, time, mins)
+    setBusy(false)
+    if (r.ok) { setMsg({ text: r.notice || 'Booked.' }); setOpen(false); setTime('') }
+    else { setMsg({ text: r.error || 'That could not be booked.', bad: true }); if (r.days) { setDays(r.days); setTime('') } }
+  }
+  const today = days?.find(d => d.date === day)
+  return (
+    <div style={{ marginTop: 14, borderTop: `1px solid ${T.border}`, paddingTop: 12 }} data-testid="book-session">
+      {!open ? (
+        <button disabled={!actions} title={actions ? undefined : PREVIEW_NOTE} onClick={() => { setOpen(true); void load(mins) }} style={{ ...btnStyle(T, 'primary'), opacity: actions ? 1 : 0.55 }}>+ Book a session</button>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, color: T.text2, marginRight: 4 }}>How long?</span>
+            {my.booking.durations.map(d => (
+              <button key={d} onClick={() => { setMins(d); void load(d) }} aria-pressed={mins === d} style={{ ...btnStyle(T, mins === d ? 'primary' : 'ghost'), minHeight: 32, padding: '0 11px', fontSize: 12.5 }}>{d} min</button>
+            ))}
+            <button onClick={() => setOpen(false)} style={{ ...btnStyle(T), minHeight: 32, marginLeft: 'auto' }}>Close</button>
+          </div>
+          {days === null ? <div style={{ fontSize: 13, color: T.text3 }}>Finding free times…</div>
+            : days.length === 0 ? <div style={{ fontSize: 13.5, color: T.text2 }}>No free times in the next three weeks. Message your coach and they will find you one.</div>
+            : (
+              <>
+                <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+                  {days.map(dd => (
+                    <button key={dd.date} onClick={() => { setDay(dd.date); setTime('') }} aria-pressed={day === dd.date} style={{ ...btnStyle(T, day === dd.date ? 'primary' : 'ghost'), minHeight: 34, padding: '0 11px', fontSize: 12.5, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {new Date(`${dd.date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(76px, 1fr))', gap: 6 }}>
+                  {(today?.slots || []).map(s => (
+                    <button key={s} onClick={() => setTime(s)} aria-pressed={time === s} style={{ ...btnStyle(T, time === s ? 'primary' : 'ghost'), minHeight: 34, padding: 0, fontSize: 13 }}>{s}</button>
+                  ))}
+                </div>
+                {time && (
+                  <button onClick={book} disabled={busy} style={btnStyle(T, 'primary')}>{busy ? 'Booking…' : `Book ${today?.label || day} at ${time} (${mins} min)`}</button>
+                )}
+              </>
+            )}
+        </div>
+      )}
+      {msg && <div role="status" style={{ fontSize: 13, color: msg.bad ? T.bad : T.good, marginTop: 8 }}>{msg.text}</div>}
+    </div>
+  )
+}
+
+export function MyGroupsCard({ T, my, actions }: { T: StudentTheme; my: My; actions?: StudentActions }) {
+  const [busy, setBusy] = useState('')
+  const [msg, setMsg] = useState<{ id: string; text: string; bad?: boolean } | null>(null)
+  const go = async (gid: string, token: string, action: 'yes' | 'no' | 'pay') => {
+    if (!actions || busy) return
+    setBusy(`${gid}:${action}`); setMsg(null)
+    const r = await actions.group(token, action)
+    setBusy(''); if (!r.url) setMsg({ id: gid, text: say(r) || (r.ok ? 'Saved.' : 'That did not work.'), bad: !r.ok })
+  }
+  const money = (p: number) => `£${(p / 100).toFixed(p % 100 ? 2 : 0)}`
+  return (
+    <Card T={T}>
+      <div data-testid="my-groups">
+        <Head T={T} icon="people" title="Weekly groups" sub="Say whether you’re coming each week" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {my.groups.map(g => {
+            const n = g.next
+            const when = n ? `${new Date(`${n.date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })} at ${n.time}` : ''
+            return (
+              <div key={g.id} data-testid="my-group" style={{ border: `1px solid ${T.border}`, borderRadius: 14, padding: '12px 14px', background: T.panel2 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{g.name}</span>
+                  <span style={{ fontSize: 12.5, color: T.text2 }}>{[g.every, g.venue, g.price ? `${money(g.price)} a session` : ''].filter(Boolean).join(' · ')}</span>
+                </div>
+                {!n ? null : n.cancelled ? <div style={{ fontSize: 13.5, color: T.warn, marginTop: 8 }}>{when}: called off this week.</div> : (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 13.5, color: T.text }}>Next: {when}{n.placesLeft != null ? <span style={{ color: T.text3 }}> · {n.placesLeft === 0 ? 'full' : `${n.placesLeft} place${n.placesLeft === 1 ? '' : 's'} left`}</span> : null}</div>
+                    {!n.token ? (
+                      <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>{n.askOn ? `You’ll be asked on ${new Date(`${n.askOn}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'UTC' })} whether you’re coming.` : 'Your coach will ask you soon whether you’re coming.'}</div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                        {n.answer === 'yes' && <Chip T={T} tone={T.good}>✓ You’re coming</Chip>}
+                        {n.answer === 'yes' && (n.paid ? <Chip T={T} tone={T.good}>Paid</Chip> : n.coveredByPlan ? <Chip T={T} tone={T.accent}>On your plan</Chip> : null)}
+                        {n.answer === 'no' && <Chip T={T} tone={T.text3}>Not this week</Chip>}
+                        {n.answer !== 'yes' && <button disabled={!actions || !!busy || n.placesLeft === 0} title={actions ? undefined : PREVIEW_NOTE} onClick={() => go(g.id, n.token!, 'yes')} style={{ ...btnStyle(T, 'primary'), opacity: actions ? 1 : 0.55 }}>{busy === `${g.id}:yes` ? 'Saving…' : n.answer === 'no' ? 'Actually, I can come' : 'Yes, I’m coming'}</button>}
+                        {n.answer === 'yes' && !n.paid && !n.coveredByPlan && g.price >= 50 && <button disabled={!actions || !!busy} onClick={() => go(g.id, n.token!, 'pay')} style={{ ...btnStyle(T, 'primary'), opacity: actions ? 1 : 0.55 }}>Pay {money(g.price)}</button>}
+                        {n.answer !== 'no' && <button disabled={!actions || !!busy} title={actions ? undefined : PREVIEW_NOTE} onClick={() => go(g.id, n.token!, 'no')} style={{ ...btnStyle(T), opacity: actions ? 1 : 0.55 }}>{busy === `${g.id}:no` ? 'Saving…' : n.answer === 'yes' ? 'Can’t make it now' : 'Not this week'}</button>}
+                      </div>
+                    )}
+                    {n.token && n.answer === 'yes' && <div style={{ fontSize: 12, color: T.text3, marginTop: 6 }}>{n.freeUntil ? `Free to cancel until ${n.freeUntil}.` : 'Inside the cancellation window: the place stays paid if you cancel now.'}</div>}
+                  </div>
+                )}
+                {msg?.id === g.id && <div role="status" style={{ fontSize: 13, color: msg.bad ? T.bad : T.good, marginTop: 6 }}>{msg.text}</div>}
+              </div>
+            )
+          })}
+        </div>
+        {!actions && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10 }}>{PREVIEW_NOTE}</div>}
+      </div>
+    </Card>
+  )
+}
+
+export function MyAccountCard({ T, my, you }: { T: StudentTheme; my: My; you: boolean }) {
+  const a = my.account
+  const [policyOpen, setPolicyOpen] = useState(false)
+  const row: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 0', borderTop: `1px solid ${T.border}` }
+  const label: React.CSSProperties = { width: 110, flexShrink: 0, fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.text3, paddingTop: 2 }
+  return (
+    <Card T={T}>
+      <div data-testid="my-account">
+        <Head T={T} icon="pound" title={you ? 'Your plan & payments' : 'Plan & payments'} sub="What you’re on, and anything still to do" />
+        {a.owed.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+            {a.owed.map(o => (
+              <div key={o.url} style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', background: `${T.warn}14`, border: `1px solid ${T.warn}55`, borderRadius: 12, padding: '10px 12px' }}>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{o.title}</div>
+                  <div style={{ fontSize: 12.5, color: T.text2 }}>{o.detail}</div>
+                </div>
+                <a href={o.url} style={{ ...btnStyle(T, 'primary'), display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>{o.kind === 'welcome' ? 'Finish it' : 'Pay now'}</a>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={row}>
+          <span style={label}>Monthly plan</span>
+          <div style={{ flex: 1, fontSize: 14, color: T.text }}>
+            {a.plan ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><b>{a.plan.name}</b><Chip T={T} tone={a.plan.status === 'Running' ? T.good : T.warn}>{a.plan.status}</Chip></div>
+                <div style={{ color: T.text2, marginTop: 2 }}>{a.plan.words}{a.plan.nextBill ? ` · next payment ${a.plan.nextBill}` : ''}</div>
+                {a.plan.covers && <div style={{ color: T.text3, fontSize: 12.5, marginTop: 2 }}>{a.plan.covers}</div>}
+              </>
+            ) : <span style={{ color: T.text2 }}>No monthly plan. Lessons are paid one at a time.</span>}
+          </div>
+        </div>
+        <div style={row}>
+          <span style={label}>Lesson packs</span>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {a.packs.length ? a.packs.map((p, i) => (
+              <div key={i}>
+                <div style={{ fontSize: 14, color: T.text }}><b>{p.left}</b> of {p.total} left · <span style={{ color: T.text2 }}>{p.name}</span></div>
+                <div style={{ height: 6, borderRadius: 3, background: T.accentDim, overflow: 'hidden', marginTop: 4 }}><div style={{ height: '100%', width: `${p.total ? (p.left / p.total) * 100 : 0}%`, background: T.accent }} /></div>
+                {p.renews && <div style={{ fontSize: 12, color: T.text3, marginTop: 3 }}>Renews {p.renews}</div>}
+              </div>
+            )) : <span style={{ fontSize: 14, color: T.text2 }}>No lesson pack.</span>}
+          </div>
+        </div>
+        <div style={row}>
+          <span style={label}>Paying by</span>
+          <span style={{ flex: 1, fontSize: 14, color: a.method ? T.text : T.text2 }}>{a.method || 'Nothing saved yet. Your coach can send you a link to save a card or set up a Direct Debit.'}</span>
+        </div>
+        {a.policy.length > 0 && (
+          <div style={{ ...row, flexDirection: 'column', gap: 6 }}>
+            <button onClick={() => setPolicyOpen(!policyOpen)} aria-expanded={policyOpen} style={{ appearance: 'none', border: 0, background: 'transparent', padding: 0, cursor: 'pointer', color: T.accent, fontSize: 13.5, fontWeight: 700, fontFamily: FONT, textAlign: 'left' }}>{policyOpen ? '▾' : '▸'} Cancellation policy</button>
+            {policyOpen && a.policy.map(t => <div key={t.title} style={{ fontSize: 13, color: T.text2, lineHeight: 1.5 }}><b style={{ color: T.text }}>{t.title}.</b> {t.text}</div>)}
+          </div>
+        )}
+      </div>
+    </Card>
   )
 }

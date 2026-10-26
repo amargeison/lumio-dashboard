@@ -68,6 +68,8 @@ export type ReminderInput = {
   weather: LessonWeather | null
   /** e.g. "tomorrow" or "on Saturday" */
   when?: string
+  /** "I'll be there" / "I can't make it" — the lesson's own link (/lesson/<token>). */
+  links?: { yes: string; no: string } | null
 }
 
 const esc = (x: unknown) => String(x ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -89,12 +91,15 @@ export function reminderMessage(i: ReminderInput): { subject: string; text: stri
   lines.push(i.paid ? `${i.childFirst ? 'It' : `Your ${lesson}`} is confirmed and paid.` : `${i.childFirst ? 'It' : `Your ${lesson}`} is confirmed.`)
   const sign = i.coachName || i.academy
   const subject = `${i.childFirst ? `${i.childFirst}’s ${lesson}` : `Your ${lesson}`} ${when} at ${at}`
-  const text = `${i.hello}\n\n${lines.join(' ')}\n\n${sign}`
+  const text = `${i.hello}\n\n${lines.join(' ')}${i.links ? `\n\nI’ll be there: ${i.links.yes}\nI can’t make it: ${i.links.no}` : ''}\n\n${sign}`
+  const buttons = i.links
+    ? `<p style="margin:18px 0 0"><a href="${esc(i.links.yes)}" style="display:inline-block;background:#3A8EE0;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 20px;border-radius:11px;margin:0 8px 8px 0">I’ll be there</a><a href="${esc(i.links.no)}" style="display:inline-block;background:#fff;color:#1a1d29;text-decoration:none;font-weight:700;font-size:15px;padding:11px 19px;border-radius:11px;border:1px solid #d1d5db;margin:0 0 8px">I can’t make it</a></p>`
+    : ''
   const html = `<!doctype html><html><body style="margin:0;background:#eef0f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
   <div style="max-width:520px;margin:0 auto;padding:26px 18px">
     <div style="background:#fff;border-radius:14px;padding:22px 24px;box-shadow:0 2px 12px rgba(20,25,40,.07)">
       <p style="font-size:16px;color:#1a1d29;margin:0 0 10px">${esc(i.hello)}</p>
-      <p style="font-size:15.5px;color:#374151;margin:0;line-height:1.6">${lines.map(esc).join(' ')}</p>
+      <p style="font-size:15.5px;color:#374151;margin:0;line-height:1.6">${lines.map(esc).join(' ')}</p>${buttons}
       <p style="font-size:14px;color:#6b7280;margin:16px 0 0">${esc(sign)}</p>
     </div>
     <p style="font-size:12px;color:#9aa1ad;text-align:center;margin:14px 0 0">${esc(i.academy)} · sent through Lumio · reply to this email to reach your coach${i.weather ? ' · forecast powered by Met Office data' : ''}</p>
