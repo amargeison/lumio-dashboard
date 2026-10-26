@@ -3,25 +3,14 @@
 // GDPR / compliance panel — Data Processing Agreement acceptance + a privacy
 // notice template the coach can share with parents.
 
-import { useState } from 'react'
-import { useCoachProfile, saveCoachProfile, useCoachTable, dbList, dbInsert, dbUpdate } from '../_lib/coach-db'
+import { useEffect, useState } from 'react'
+import { useCoachProfile, useCoachTable, dbList, dbInsert, dbUpdate } from '../_lib/coach-db'
+import { privacyNotice, dpaSections, dpaText, SUB_PROCESSORS, COACH_CONNECTED, DPA_VERSION, PROCESSOR } from '@/lib/coach/dpa'
 
 type ThemeTokens = { text: string; text2: string; text3: string; panel: string; panel2: string; border: string; btnText: string; isDark: boolean }
 type AccentTokens = { hex: string; dim: string }
 
-const PRIVACY_TEMPLATE = (academy: string) => `PRIVACY NOTICE — ${academy || 'Tennis Academy'}
-
-What we collect: your child's name, age, contact details, parent/guardian details, coaching progress, attendance, payments and — with your consent — photos/video and medical/emergency information.
-
-Why: to coach your child, run sessions and camps, track progress, manage payments and keep them safe. Our lawful basis is your consent (and, where applicable, our agreement with you).
-
-Photos & video: we only capture footage of children whose parent/guardian has given photo/video consent. You can withdraw consent at any time.
-
-Who sees it: ${academy || 'the academy'} coaching staff. Our software is provided by Lumio, who process the data on our behalf under a data processing agreement and do not use it for anything else.
-
-Retention: we keep records only as long as your child trains with us, plus the period required by law, then delete them.
-
-Your rights: you can ask to see, correct, export or delete your child's data at any time — just contact us.`
+const PRIVACY_TEMPLATE = (academy: string, email?: string | null) => privacyNotice(academy, email)
 
 // Sample parent-consent submissions for the demo so the "pending submissions →
 // apply to roster" flow is visible without a database.
@@ -39,8 +28,19 @@ export function CoachCompliance({ T, accent, demo }: { T: ThemeTokens; accent: A
   const [applying, setApplying] = useState<string | null>(null)
   const [demoAccepted, setDemoAccepted] = useState(true)
   const [demoPending, setDemoPending] = useState(DEMO_SUBMISSIONS)
-  const accepted = demo ? demoAccepted : !!profile.dpa_accepted_at
-  const acceptedDate = demo ? '2026-06-01T00:00:00Z' : profile.dpa_accepted_at
+  // The agreement itself (see lib/coach/dpa.ts): read it, then accept it by
+  // name. What was accepted, and when, is kept on the server.
+  const [dpa, setDpa] = useState<{ current: boolean; accepted: { version: string; accepted_by: string; accepted_at: string } | null } | null>(null)
+  const [reading, setReading] = useState(false)
+  const [dpaName, setDpaName] = useState('')
+  const [dpaTick, setDpaTick] = useState(false)
+  const [dpaErr, setDpaErr] = useState('')
+  useEffect(() => {
+    if (demo) { setDpa({ current: true, accepted: { version: DPA_VERSION, accepted_by: 'Demo Coach', accepted_at: '2026-10-01T09:00:00Z' } }); return }
+    fetch('/api/coach/dpa').then(r => r.json()).then(d => setDpa(d.error ? { current: false, accepted: null } : d)).catch(() => setDpa({ current: false, accepted: null }))
+  }, [demo])
+  const accepted = !!dpa?.current
+  const academyName = demo ? 'Riverside Tennis Academy' : (profile.brand_name || profile.display_name || 'Your academy')
 
   // The shareable parent-consent link is /tennis/coach/{slug}/consent — derive
   // the slug + origin from the current URL.
@@ -70,11 +70,25 @@ export function CoachCompliance({ T, accent, demo }: { T: ThemeTokens; accent: A
   }
 
   const accept = async () => {
-    if (demo) { setDemoAccepted(true); return }
-    setSaving(true)
-    try { await saveCoachProfile({ dpa_accepted_at: new Date().toISOString() }); profile.reload() } finally { setSaving(false) }
+    if (!dpaTick) { setDpaErr('Tick the box to accept the agreement.'); return }
+    if (dpaName.trim().length < 2) { setDpaErr('Type your full name.'); return }
+    if (demo) { setDemoAccepted(true); setReading(false); return }
+    setSaving(true); setDpaErr('')
+    try {
+      const r = await fetch('/api/coach/dpa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: dpaName.trim(), agree: true }) })
+      const d = await r.json()
+      if (!r.ok) setDpaErr(d.error || 'That could not be saved.'); else { setDpa(d); setReading(false); profile.reload() }
+    } catch { setDpaErr('You appear to be offline.') } finally { setSaving(false) }
   }
-  const notice = PRIVACY_TEMPLATE(demo ? 'Riverside Tennis Academy' : (profile.brand_name || ''))
+  const printDpa = () => {
+    const w = window.open('', '_blank')
+    if (!w) return
+    const esc = (x: string) => x.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    w.document.write(`<!doctype html><meta charset="utf-8"><title>Data processing agreement</title><body style="font-family:Georgia,serif;max-width:720px;margin:40px auto;line-height:1.6;color:#111"><pre style="white-space:pre-wrap;font-family:inherit">${esc(dpaText(academyName))}${dpa?.accepted ? esc(`\n\nAccepted by ${dpa.accepted.accepted_by} on ${new Date(dpa.accepted.accepted_at).toLocaleDateString('en-GB')} (version ${dpa.accepted.version}).`) : ''}</pre></body>`)
+    w.document.close(); w.focus(); w.print()
+  }
+  void demoAccepted
+  const notice = PRIVACY_TEMPLATE(academyName, demo ? null : (profile.contact_email || null))
   const copy = () => { navigator.clipboard.writeText(notice).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500) }).catch(() => {}) }
 
   return (
@@ -107,15 +121,61 @@ export function CoachCompliance({ T, accent, demo }: { T: ThemeTokens; accent: A
       </div>
 
       {/* DPA */}
-      <div style={{ background: T.panel2, border: `1px solid ${accepted ? 'rgba(34,197,94,0.4)' : T.border}`, borderRadius: 10, padding: 14, marginBottom: 14 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Data Processing Agreement</div>
+      <div data-testid="dpa" style={{ background: T.panel2, border: `1px solid ${accepted ? 'rgba(34,197,94,0.4)' : T.border}`, borderRadius: 10, padding: 14, marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, flex: 1 }}>Data processing agreement</div>
+          <button onClick={printDpa} style={{ background: 'transparent', border: `1px solid ${T.border}`, color: T.text2, borderRadius: 8, padding: '5px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Print or save as PDF</button>
+        </div>
         <p style={{ fontSize: 12.5, color: T.text3, lineHeight: 1.5, margin: '6px 0 10px' }}>
-          You are the data controller; Lumio is your data processor and only processes this data to run your portal. Accepting confirms you agree to those terms.
+          You are the controller of your clients’ data; {PROCESSOR.name} is your processor. The agreement says what Lumio may do with the data, what it promises in return, and every other company that handles it, which you need for your privacy notice.
         </p>
-        {accepted ? (
-          <div style={{ fontSize: 12.5, color: '#22C55E', fontWeight: 600 }}>✓ Accepted {new Date(acceptedDate!).toLocaleDateString('en-GB')}</div>
-        ) : (
-          <button onClick={accept} disabled={saving} style={{ padding: '9px 16px', borderRadius: 9, border: 'none', background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>{saving ? 'Saving…' : 'Accept agreement'}</button>
+        {!dpa ? <div style={{ fontSize: 12.5, color: T.text3 }}>Loading…</div>
+          : accepted && !reading ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 12.5, color: '#22C55E', fontWeight: 600 }}>✓ Accepted by {dpa.accepted!.accepted_by} on {new Date(dpa.accepted!.accepted_at).toLocaleDateString('en-GB')} (version {dpa.accepted!.version})</div>
+            <button onClick={() => setReading(true)} style={{ background: 'transparent', border: 0, color: accent.hex, fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}>Read it again</button>
+          </div>
+        ) : !reading ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            {dpa.accepted && <span style={{ fontSize: 12.5, color: '#F59E0B' }}>The agreement has changed since you accepted version {dpa.accepted.version}. Please read and accept the new one.</span>}
+            <button onClick={() => setReading(true)} style={{ padding: '9px 16px', borderRadius: 9, border: 'none', background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>Read and accept</button>
+          </div>
+        ) : null}
+        {reading && (
+          <div style={{ marginTop: 10 }}>
+            <div style={{ maxHeight: 360, overflowY: 'auto', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 9, padding: '12px 14px' }}>
+              {dpaSections(academyName).map((sec, i) => (
+                <div key={sec.title} style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text }}>{i + 1}. {sec.title}</div>
+                  {sec.paras.map((p, j) => <p key={j} style={{ fontSize: 12, color: T.text2, lineHeight: 1.55, margin: '4px 0 0' }}>{p}</p>)}
+                </div>
+              ))}
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, margin: '6px 0 4px' }}>Sub-processors</div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'collapse', fontSize: 11.5, width: '100%', minWidth: 460 }}>
+                  <tbody>{SUB_PROCESSORS.map(sp => (
+                    <tr key={sp.name} style={{ borderTop: `1px solid ${T.border}` }}>
+                      <td style={{ padding: '5px 6px', color: T.text, fontWeight: 600, verticalAlign: 'top', whiteSpace: 'nowrap' }}>{sp.name}</td>
+                      <td style={{ padding: '5px 6px', color: T.text2, verticalAlign: 'top' }}>{sp.does}</td>
+                      <td style={{ padding: '5px 6px', color: T.text3, verticalAlign: 'top' }}>{sp.where}{sp.transfer ? ` · ${sp.transfer}` : ''}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+              <p style={{ fontSize: 11.5, color: T.text3, lineHeight: 1.5, margin: '8px 0 0' }}>{COACH_CONNECTED}</p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+              <input value={dpaName} onChange={e => setDpaName(e.target.value)} placeholder="Your full name" aria-label="Your full name" style={{ flex: '1 1 180px', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 10px', color: T.text, fontSize: 12.5 }} />
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12.5, color: T.text2, cursor: 'pointer', flex: '2 1 260px' }}>
+                <input type="checkbox" checked={dpaTick} onChange={e => setDpaTick(e.target.checked)} /> I accept this agreement on behalf of {academyName}.
+              </label>
+            </div>
+            {dpaErr && <div role="alert" style={{ fontSize: 12, color: '#EF4444', marginTop: 6 }}>{dpaErr}</div>}
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <button onClick={() => setReading(false)} style={{ background: 'transparent', border: `1px solid ${T.border}`, color: T.text2, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, cursor: 'pointer' }}>Close</button>
+              <button onClick={accept} disabled={saving} style={{ padding: '8px 16px', borderRadius: 9, border: 'none', background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>{saving ? 'Saving…' : 'Accept agreement'}</button>
+            </div>
+          </div>
         )}
       </div>
 

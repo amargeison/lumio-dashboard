@@ -14,6 +14,7 @@ type View = {
   academy: string; coachName: string | null; logoUrl: string | null; childFirst: string | null; playerFirst: string
   version: 'short' | 'long'; minutes: number; done: boolean
   sections: { id: string; title: string }[]; questions: Q[]; answered: boolean
+  recording: { ask: string; explain: string; answered: boolean; ok: boolean }
   card: { ready: boolean; directDebit: boolean; saved: string | null; terms: { title: string; text: string }[] }
   plan: { name: string; words: string; starts: string; covers: string; agreed: boolean; text: string } | null
   error?: string
@@ -83,6 +84,7 @@ export default function WelcomeView({ token }: { token: string }) {
   // Which steps there are, and which one is next.
   const steps = [
     { id: 'q', title: 'A few questions', done: v.answered },
+    { id: 'rec', title: 'Recording lessons', done: v.recording.answered },
     ...(v.plan ? [{ id: 'plan', title: 'Your monthly plan', done: v.plan.agreed }] : []),
     ...(v.card.ready ? [{ id: 'card', title: 'Payment details', done: !!v.card.saved }] : []),
   ]
@@ -180,6 +182,27 @@ export default function WelcomeView({ token }: { token: string }) {
         )}
         {errBox}
         <button onClick={send} disabled={busy} style={{ ...big, opacity: busy ? 0.7 : 1 }}>{busy ? 'Saving…' : 'Send my answers'}</button>
+      </div>
+    </>)
+  }
+
+  // ── Recording lessons ──
+  if (next.id === 'rec') {
+    const answer = async (ok: boolean) => {
+      if (busy) return
+      setBusy(true); setErr('')
+      try { const { ok: good, d } = await call({ action: 'record', ok }); if (!good) setErr(d.error || 'That could not be saved.'); else { setV(d); window.scrollTo({ top: 0 }) } }
+      catch { setErr('Something went wrong. Check your connection and try again.') }
+      finally { setBusy(false) }
+    }
+    return page('Recording lessons', <>
+      {progress}
+      <div style={card}>
+        <div style={{ fontSize: 18, fontWeight: 800, color: '#1a1d29', lineHeight: 1.35 }}>{v.recording.ask}</div>
+        <p style={{ fontSize: 14.5, color: '#374151', lineHeight: 1.6, margin: '10px 0 0' }}>{v.recording.explain}</p>
+        {errBox}
+        <button onClick={() => answer(true)} disabled={busy} style={{ ...big, opacity: busy ? 0.7 : 1 }}>Yes, that’s fine</button>
+        <button onClick={() => answer(false)} disabled={busy} style={{ ...big, marginTop: 8, background: '#fff', color: '#374151', border: '1px solid #dfe3ec', fontWeight: 700 }}>No, please don’t record</button>
       </div>
     </>)
   }

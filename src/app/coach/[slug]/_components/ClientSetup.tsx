@@ -18,6 +18,7 @@ import { readable, type Answers, type Version } from '@/lib/coach/questionnaire'
 import { planWords, monthWords, monthOf, nextMonth, nextBillDate, ordinal, type Plan, type Covers } from '@/lib/coach/memberships'
 import { ukDate } from '@/lib/coach/uk-date'
 import { formatPennies } from '@/lib/coach/money'
+import { consentWords, type RecordConsent } from '@/lib/coach/recording-consent'
 
 type Link = { id: string; player_id: string; version: Version; sent_at: string | null; sent_to: string | null; opened_at: string | null; completed_at: string | null; created_at: string }
 type Qn = { id: string; player_id: string; version: Version; answers: Answers & { health?: string }; health_consent: boolean; submitted_at: string }
@@ -29,7 +30,7 @@ const dayIso = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-
 
 export function ClientSetup({ T, accent, player, pad }: {
   T: ThemeTokens; accent: AccentTokens; pad: number
-  player: { id: string; name: string; email?: string | null; parent_email?: string | null; contact_email?: string | null }
+  player: { id: string; name: string; email?: string | null; parent_email?: string | null; contact_email?: string | null } & RecordConsent
 }) {
   const links = useCoachTable<Link>('coach_welcome_links')
   const qns = useCoachTable<Qn>('coach_questionnaires')
@@ -91,6 +92,14 @@ export function ClientSetup({ T, accent, player, pad }: {
     finally { setBusy('') }
   }
 
+  const setRecord = async (ok: boolean) => {
+    if (busy) return
+    if (!ok && !confirm(`Note that ${first} no longer agrees to lessons being recorded? Recordings already made stay until you delete them.`)) return
+    setBusy('rec'); setMsg(null)
+    try { await dbUpdate('coach_players', player.id, ok ? { consent_record: true, consent_record_at: new Date().toISOString(), consent_record_by: 'Agreed in person', consent_record_how: 'in_person' } : { consent_record: false, consent_record_at: new Date().toISOString(), consent_record_how: 'withdrawn' }) }
+    catch (e) { setMsg({ text: e instanceof Error ? e.message : 'That could not be saved.', bad: true }) }
+    finally { setBusy('') }
+  }
   const billState = (b: Bill) => {
     const c = b.charge_id ? wallet.charges.find(x => x.id === b.charge_id) : null
     if (c) { const st = chargeState(c); return { text: st.text, tone: st.tone === 'good' ? T.good : st.tone === 'bad' ? T.bad : st.tone === 'warn' ? T.warn : T.text3 } }
@@ -140,6 +149,18 @@ export function ClientSetup({ T, accent, player, pad }: {
           </div>
         )}
         {msg && <div role="status" style={{ fontSize: 11.5, color: msg.bad ? T.bad : T.good, overflowWrap: 'anywhere' }}>{msg.text}</div>}
+      </div>
+
+      <div data-testid="record-consent" style={wrap}>
+        {head('Recording lessons')}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
+          <span style={{ color: player.consent_record ? T.good : T.warn }}>{consentWords(player, first)}</span>
+          <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+            {!player.consent_record && <button onClick={() => setRecord(true)} disabled={!!busy} style={btn}>{busy === 'rec' ? 'Saving…' : 'They agreed in person'}</button>}
+            {player.consent_record && <button onClick={() => setRecord(false)} disabled={!!busy} style={{ ...btn, color: T.bad }}>{busy === 'rec' ? 'Saving…' : 'They withdrew it'}</button>}
+          </span>
+        </div>
+        <div style={{ fontSize: 11, color: T.text3 }}>Their welcome link asks them. Until they agree, their lessons cannot be recorded.</div>
       </div>
 
       <div data-testid="plan-strip" style={wrap}>

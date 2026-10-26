@@ -31,7 +31,6 @@ import { ukDate } from '@/lib/coach/uk-date'
 // The four tabs a coach uses once the camp is sold and has to be run. They live
 // in their own module because each is a screen in its own right, not a panel.
 import { KitChecklist, AttendeeTable, TargetsBoard, FinanceBoard, CampCoaches } from './CampTabs'
-import { V2_LABEL } from '@/lib/coach/v2'
 
 type Camp = {
   /** coach_staff ids working this camp — see migration 177. */
@@ -49,6 +48,9 @@ type Camp = {
   // Public sign-up page (/camp/[slug]). Closed until the coach opens it.
   signup_slug?: string | null; signup_open?: boolean | null
   payment_mode?: string | null; deposit_amount?: number | null; signup_note?: string | null
+  // The balance on a deposit booking (migration 217): when it is due, and whether
+  // it is taken from the card the deposit was paid with.
+  balance_due?: string | null; auto_balance?: boolean | null; balance_reminder_days?: number | null
   // The countdown emails (Emails tab). email_overrides is per-stage and per-camp:
   // rewriting the week-to-go email for a Portugal trip must not change it for
   // next summer's day camp.
@@ -452,6 +454,12 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
   const [mode, setMode] = useState(camp.payment_mode || 'none')
   const [dep, setDep] = useState(camp.deposit_amount != null ? String(camp.deposit_amount) : '')
   const [note, setNote] = useState(camp.signup_note || '')
+  const [due, setDue] = useState(camp.balance_due || '')
+  const [auto, setAuto] = useState(camp.auto_balance !== false)
+  const [remindDays, setRemindDays] = useState(camp.balance_reminder_days || 7)
+  // Card payments on the page need the coach's bank connected (Settings → Pricing & packages).
+  const [payOn, setPayOn] = useState<boolean | null>(null)
+  useEffect(() => { fetch('/api/coach/pay/status').then(r => r.json()).then(d => setPayOn(!!d.chargesEnabled)).catch(() => setPayOn(false)) }, [])
   const [origin, setOrigin] = useState('')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
@@ -464,6 +472,7 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
     setSlug(camp.signup_slug || ''); setMode(camp.payment_mode || 'none')
     setDep(camp.deposit_amount != null ? String(camp.deposit_amount) : '')
     setNote(camp.signup_note || ''); setMsg(''); setErr('')
+    setDue(camp.balance_due || ''); setAuto(camp.auto_balance !== false); setRemindDays(camp.balance_reminder_days || 7)
   }, [camp.id])
   useEffect(() => { setOrigin(window.location.origin) }, [])
 
@@ -476,6 +485,7 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
     || mode !== (camp.payment_mode || 'none')
     || depNum !== (Number(camp.deposit_amount) || 0)
     || note !== (camp.signup_note || '')
+    || (mode === 'deposit' && (due !== (camp.balance_due || '') || auto !== (camp.auto_balance !== false) || remindDays !== (camp.balance_reminder_days || 7)))
 
   const save = async (extra: Record<string, any> = {}) => {
     setErr(''); setMsg(''); setBusy(true)
@@ -483,7 +493,9 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
       await onSave({
         signup_slug: cleanSlug || null, payment_mode: mode,
         deposit_amount: mode === 'deposit' ? depNum || null : null,
-        signup_note: note || null, ...extra,
+        signup_note: note || null,
+        ...(mode === 'deposit' ? { balance_due: due || null, auto_balance: auto, balance_reminder_days: remindDays } : {}),
+        ...extra,
       })
       setMsg('Saved.')
     } catch (e) {
@@ -523,8 +535,7 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
       </div>}
       <p style={{ margin: '6px 0 14px', fontSize: 12, color: T.text3, lineHeight: 1.55, maxWidth: 640 }}>
         Share one link and people sign themselves up. Name, age, medical notes and consents land straight on your
-        Attendees list. Taking the money on the page arrives in V2 — for now the page reserves the place and you
-        collect payment the way you do today, then tick it off on the Finance tab.
+        Attendees list. {payOn ? 'Choose a deposit or the full amount and they pay by card on the page, straight into your bank.' : 'To take the money on the page, connect your bank in Settings → Pricing & packages. Until then the page reserves the place and you collect payment the way you do today.'}
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12 }}>
@@ -547,8 +558,8 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
               setting; it simply cannot be chosen fresh. */}
           <select value={mode} onChange={e => setMode(e.target.value)} style={{ ...inp, marginTop: 4 }}>
             <option value="none">No payment — just reserve a place</option>
-            <option value="deposit" disabled={(camp.payment_mode || 'none') !== 'deposit'}>Deposit now, balance later · {V2_LABEL}</option>
-            <option value="full" disabled={(camp.payment_mode || 'none') !== 'full'}>Full amount ({money(camp.price || 0)}) · {V2_LABEL}</option>
+            <option value="deposit" disabled={!payOn && (camp.payment_mode || 'none') !== 'deposit'}>Deposit now, balance later{payOn === false ? ' · connect your bank first' : ''}</option>
+            <option value="full" disabled={!payOn && (camp.payment_mode || 'none') !== 'full'}>Full amount ({money(camp.price || 0)}){payOn === false ? ' · connect your bank first' : ''}</option>
           </select>
         </div>
         {mode === 'deposit' && (
@@ -558,7 +569,26 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
             {depNum > 0 && (camp.price || 0) > 0 && <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>Balance of {money(Math.max(0, (camp.price || 0) - depNum))} still due to you.</div>}
           </div>
         )}
+        {mode === 'deposit' && (
+          <div>
+            <div style={lbl(T)}>Balance due on</div>
+            <input type="date" value={due} onChange={e => setDue(e.target.value)} style={{ ...inp, marginTop: 4 }} />
+            <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>Families get a reminder before, with a link to pay.</div>
+          </div>
+        )}
       </div>
+      {mode === 'deposit' && due && (
+        <div style={{ marginTop: 10, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', fontSize: 12.5, color: T.text2 }}>
+          <label style={{ display: 'flex', gap: 7, alignItems: 'center', cursor: 'pointer' }}>
+            <input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} /> Take the balance on that day from the card they paid the deposit with, if they tick to agree when they book
+          </label>
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>Reminder
+            <select value={remindDays} onChange={e => setRemindDays(Number(e.target.value))} style={{ ...inp, width: 'auto', padding: '5px 8px' }}>
+              {[3, 5, 7, 10, 14].map(n => <option key={n} value={n}>{n} days before</option>)}
+            </select>
+          </label>
+        </div>
+      )}
 
       <div style={{ marginTop: 12 }}>
         <div style={lbl(T)}>A line for whoever signs up (optional)</div>

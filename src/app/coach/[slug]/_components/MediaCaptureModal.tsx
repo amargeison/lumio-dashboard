@@ -8,7 +8,8 @@
 import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { ensureRosterPlayer, invalidateCoachTable, useCoachTable } from '../_lib/coach-db'
+import { ensureRosterPlayer, invalidateCoachTable, useCoachTable, dbUpdate } from '../_lib/coach-db'
+import { consentWords, type RecordConsent } from '@/lib/coach/recording-consent'
 import { uploadMedia, confirmAndProcess, pollMedia, processStageLabel, processStep, checkRecordings, type UploadPhase } from '../_lib/media-upload'
 import { getFlags, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
@@ -86,7 +87,30 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onDiscarded, 
   // pages that open this dialog pass only id and name, and what tells two
   // namesakes apart (age, parent, the day they were added) has to be the same
   // here as on every other screen.
-  const { rows: roster } = useCoachTable<Nameable & { id: string; name: string }>('coach_players')
+  const { rows: roster } = useCoachTable<Nameable & RecordConsent & { id: string; name: string }>('coach_players')
+  // Recording a client needs their agreement (see lib/coach/recording-consent).
+  // Asked here, BEFORE anything is recorded, so a whole lesson is never recorded
+  // and then refused. The server checks again before the upload.
+  const chosenRow = roster.find(r => r.id === playerSel) || null
+  const [newAgreed, setNewAgreed] = useState(false)
+  const [consentBusy, setConsentBusy] = useState('')
+  const [consentMsg, setConsentMsg] = useState('')
+  const needsConsent = !demo && (playerSel === '__new__' ? !newAgreed : !!chosenRow && chosenRow.consent_record === false)
+  const agreedInPerson = async () => {
+    if (!chosenRow) return
+    setConsentBusy('agree'); setConsentMsg('')
+    try { await dbUpdate('coach_players', chosenRow.id, { consent_record: true, consent_record_at: new Date().toISOString(), consent_record_by: 'Agreed in person', consent_record_how: 'in_person' }) }
+    catch { setConsentMsg('That could not be saved. Try again.') } finally { setConsentBusy('') }
+  }
+  const askByLink = async () => {
+    if (!chosenRow) return
+    setConsentBusy('ask'); setConsentMsg('')
+    try {
+      const r = await fetch('/api/coach/welcome', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerIds: [chosenRow.id], version: 'short', send: true }) })
+      const d = await r.json()
+      setConsentMsg(d.sent ? '✓ Their welcome link is on its way. It asks about recording.' : d.noEmail?.length ? 'There is no email address on their profile.' : d.error || 'It did not send.')
+    } catch { setConsentMsg('You appear to be offline.') } finally { setConsentBusy('') }
+  }
   const labelOf = playerLabels(roster.length ? roster : players)
   const [phase, setPhase] = useState<Phase>('choose')
   const [err, setErr] = useState('')
@@ -175,6 +199,7 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onDiscarded, 
       // early, or a name with a trailing space, silently created a second
       // profile for somebody who was already on the roster.
       const newId = !demo && who && !chosen ? await ensureRosterPlayer(who) : null
+      if (newId && newAgreed) await dbUpdate('coach_players', newId, { consent_record: true, consent_record_at: new Date().toISOString(), consent_record_by: 'Agreed in person', consent_record_how: 'in_person' }).catch(() => null)
       const uploaded = await uploadMedia(items, {
         kind, playerName: who || playerName || null,
         // A typed name that more than one player already has is left as a name
@@ -290,7 +315,23 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onDiscarded, 
                   <option value="__new__">+ New player…</option>
                 </select>
                 {playerSel === '__new__' && (
-                  <input value={newPlayer} onChange={e => setNewPlayer(e.target.value)} placeholder="New player's name" autoFocus style={{ ...fieldStyle, marginTop: 8 }} />
+                  <>
+                    <input value={newPlayer} onChange={e => setNewPlayer(e.target.value)} placeholder="New player's name" autoFocus style={{ ...fieldStyle, marginTop: 8 }} />
+                    <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 8, fontSize: 12.5, color: T.text2, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={newAgreed} onChange={e => setNewAgreed(e.target.checked)} /> They (or their parent) agreed to the lesson being recorded
+                    </label>
+                  </>
+                )}
+                {chosenRow && chosenRow.consent_record === false && !demo && (
+                  <div data-testid="needs-consent" style={{ marginTop: 10, border: `1px solid ${T.warn}66`, background: `${T.warn}14`, borderRadius: 9, padding: '10px 12px', fontSize: 12.5, color: T.text2, lineHeight: 1.5 }}>
+                    <div style={{ fontWeight: 700, color: T.text }}>Recording needs their agreement</div>
+                    <div>{consentWords(chosenRow, chosenRow.name.split(/\s+/)[0])}</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                      <button onClick={agreedInPerson} disabled={!!consentBusy} style={{ ...btn(accent.hex, T.btnText), padding: '7px 12px', fontSize: 12 }}>{consentBusy === 'agree' ? 'Saving…' : 'They agreed in person'}</button>
+                      <button onClick={askByLink} disabled={!!consentBusy} style={{ ...btn(T.panel2, T.text2), border: `1px solid ${T.border}`, padding: '7px 12px', fontSize: 12 }}>{consentBusy === 'ask' ? 'Sending…' : 'Ask them by email'}</button>
+                    </div>
+                    {consentMsg && <div style={{ marginTop: 6, fontSize: 12 }}>{consentMsg}</div>}
+                  </div>
                 )}
               </div>
               <div style={{ display: allowed.length > 1 ? 'flex' : 'none', gap: 8, background: T.hover, borderRadius: 9, padding: 3, width: 'fit-content' }}>
@@ -302,12 +343,12 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onDiscarded, 
                   button and recording is the alternative, rather than the coach
                   having to make the same choice twice. */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <button onClick={autoUpload ? () => who && fileRef.current?.click() : startRecording} disabled={!who}
-                  style={{ ...btn(accent.hex, T.btnText), padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: who ? 1 : 0.45, cursor: who ? 'pointer' : 'not-allowed' }}>
+                <button onClick={autoUpload ? () => who && fileRef.current?.click() : startRecording} disabled={!who || needsConsent}
+                  style={{ ...btn(accent.hex, T.btnText), padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: who && !needsConsent ? 1 : 0.45, cursor: who && !needsConsent ? 'pointer' : 'not-allowed' }}>
                   <span style={{ fontSize: 26 }}>{autoUpload ? '⬆' : '⏺'}</span> {autoUpload ? 'Choose file(s)' : 'Record now'}
                 </button>
-                <button onClick={autoUpload ? startRecording : () => who && fileRef.current?.click()} disabled={!who}
-                  style={{ ...btn(T.panel2, accent.hex), border: `1px dashed ${accent.border}`, padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: who ? 1 : 0.45, cursor: who ? 'pointer' : 'not-allowed' }}>
+                <button onClick={autoUpload ? startRecording : () => who && fileRef.current?.click()} disabled={!who || needsConsent}
+                  style={{ ...btn(T.panel2, accent.hex), border: `1px dashed ${accent.border}`, padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: who && !needsConsent ? 1 : 0.45, cursor: who && !needsConsent ? 'pointer' : 'not-allowed' }}>
                   <span style={{ fontSize: 26 }}>{autoUpload ? '⏺' : '⬆'}</span> {autoUpload ? 'Record now instead' : 'Upload file(s)'}
                 </button>
               </div>

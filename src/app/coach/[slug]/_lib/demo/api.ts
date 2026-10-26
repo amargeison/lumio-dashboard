@@ -2019,6 +2019,8 @@ const welcomePost: Handler = async ({ body }) => {
 }
 const MONTHLY_OFF = 'Taking a monthly payment is switched off in the demo. In your own portal it is taken from the client’s saved card or Direct Debit on the day you chose, and they get an email each time.'
 const membershipsPost: Handler = async () => { await sleep(400); return fail(MONTHLY_OFF) }
+const BALANCE_OFF = 'Taking a balance is switched off in the demo. In your own portal it is taken from the card the family paid the deposit with, on the due date, after a reminder — or they are emailed a link to pay.'
+const campBalancePost: Handler = async () => { await sleep(400); return fail(BALANCE_OFF) }
 
 // ── Leads ───────────────────────────────────────────────────────────────────
 // The private address is a real web address that Zapier or Make posts to, so
@@ -2700,6 +2702,7 @@ const ROUTES: Record<string, Handler> = {
   [`POST ${C}/groups`]: groupsPost,
   [`POST ${C}/welcome`]: welcomePost,
   [`POST ${C}/memberships`]: membershipsPost,
+  [`POST ${C}/camps/balance`]: campBalancePost,
   [`GET ${C}/calendar/availability`]: availability,
   [`POST ${C}/calendar/event`]: calendarEventPost,
   [`DELETE ${C}/calendar/event`]: calendarEventDelete,

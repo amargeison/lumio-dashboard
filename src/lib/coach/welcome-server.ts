@@ -13,7 +13,7 @@ import { planWords } from './memberships'
 type Db = ReturnType<typeof admin>
 type Row = Record<string, any>
 const first = (s: unknown) => String(s || '').trim().split(/\s+/)[0] || ''
-export const PLAYER_COLS = 'id, name, email, parent_email, parent_name, contact_email, staff_id'
+export const PLAYER_COLS = 'id, name, email, parent_email, parent_name, contact_email, staff_id, consent_record, consent_record_how, consent_medical, medical_notes'
 
 /** The player's open welcome link (one not finished yet), or a new one. */
 export async function linkFor(db: Db, academyId: string, player: Row, version: Version): Promise<Row | null> {
@@ -46,7 +46,7 @@ export async function sendWelcome(db: Db, senderId: string, m: AcademyMoney, pla
   const msg = welcomeMessage({
     hello: addr.hello, childFirst: addr.toParent ? first(player.name) : null, coachName: m.coachName || null, academy: m.academy, logoUrl: m.logoUrl,
     url: `${origin}/welcome/${link.token}`, minutes: minutesFor(link.version as Version),
-    askCard: m.chargesEnabled && !card, plan: plan && !plan.agreed_at ? planWords(plan as { amount_pennies: number; day_of_month: number }) : null,
+    askCard: m.chargesEnabled && !card, askRecording: !player.consent_record_how, plan: plan && !plan.agreed_at ? planWords(plan as { amount_pennies: number; day_of_month: number }) : null,
   })
   const ok = await sendFamilyEmail(senderId, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/welcome link' })
   if (ok) await db.from('coach_welcome_links').update({ sent_at: new Date().toISOString(), sent_to: addr.to, updated_at: new Date().toISOString() }).eq('id', link.id)
@@ -73,9 +73,9 @@ export async function loadWelcome(token: string): Promise<Welcome | null> {
   return { db, link, player, m, plan, card, answered: done, groupName: (g?.name as string) || null }
 }
 
-/** Finished when the questions are answered, a card is saved (if the coach takes cards) and any plan is agreed. */
+/** Finished when the questions are answered, recording has been asked about, a card is saved (if the coach takes cards) and any plan is agreed. */
 export async function markIfComplete(w: Welcome): Promise<boolean> {
-  const done = !!w.answered && (!!w.card || !w.m.chargesEnabled) && (!w.plan || !!w.plan.agreed_at)
+  const done = !!w.answered && !!w.player.consent_record_how && (!!w.card || !w.m.chargesEnabled) && (!w.plan || !!w.plan.agreed_at)
   if (done && !w.link.completed_at) {
     w.link.completed_at = new Date().toISOString()
     await w.db.from('coach_welcome_links').update({ completed_at: w.link.completed_at, updated_at: w.link.completed_at }).eq('id', w.link.id)

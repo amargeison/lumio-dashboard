@@ -16,6 +16,7 @@
 // This component only ever renders for a real signed-in coach portal (isEmpty in
 // coach/[slug]/page.tsx), so none of this can fire on the demo.
 
+import { RECORDING_NEEDS_CONSENT } from '@/lib/coach/recording-consent'
 import { useState, useRef, useEffect, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
@@ -30,7 +31,9 @@ const fmtDate = (d?: string) => { const t = d ? new Date(d) : null; return t && 
 
 export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { T: ThemeTokens; accent: AccentTokens; videoOn?: boolean; audioOn?: boolean }) {
   const media = useCoachTable<Media>('coach_media')
-  const { rows: players } = useCoachTable<Nameable & { id: string; name: string }>('coach_players')
+  const { rows: players } = useCoachTable<Nameable & { id: string; name: string; consent_record?: boolean | null }>('coach_players')
+  // A client's recordings need their agreement (lib/coach/recording-consent).
+  const noConsent = (p?: { name: string; consent_record?: boolean | null } | null) => !!p && p.consent_record === false
   // Two players can share a name; the lists below say which is which.
   const labelOf = playerLabels(players)
   const [tab, setTab] = useState<'video' | 'audio'>(videoOn ? 'video' : 'audio')
@@ -104,6 +107,7 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
   // `note` is anything the coach must still be told once the upload is under
   // way — the files in their selection that were refused.
   const runUploads = async (items: { blob: Blob; name: string; title: string; duration?: number }[], note = '') => {
+    if (noConsent(filterPlayer)) { setErr(RECORDING_NEEDS_CONSENT(filterPlayer!.name)); return }
     setPhase('uploading'); setErr(note)
     setUp({ index: 0, total: items.length, pct: 0, note: '' })
     const audioIds: string[] = []
@@ -162,6 +166,7 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
 
   const startRecording = async () => {
     setErr('')
+    if (noConsent(filterPlayer)) { setErr(RECORDING_NEEDS_CONSENT(filterPlayer!.name)); return }
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) { setErr('Recording is not supported in this browser.'); return }
     try {
       const stream = await navigator.mediaDevices.getUserMedia(recKind === 'video' ? { audio: true, video: true } : { audio: true })
@@ -203,6 +208,7 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
     const p = players.find(x => x.id === playerId)
     const patch = { player_id: p?.id ?? null, player_name: p?.name ?? null }
     setClipErr('')
+    if (noConsent(p)) { setClipErr(RECORDING_NEEDS_CONSENT(p!.name)); return }
     try {
       await dbUpdate('coach_media', m.id, patch)
       // A recording's highlight clips are of the same player.

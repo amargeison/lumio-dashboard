@@ -15,6 +15,8 @@ export type CampPublic = {
   startDate: string | null; endDate: string | null; location: string | null
   surface: string | null; ages: string | null
   price: number | null; paymentMode: string; depositAmount: number | null
+  /** Set when the balance can be taken from the deposit card on this date. */
+  balanceDue?: string | null
   audience: 'junior' | 'adult' | 'mixed'
   note: string | null; spacesLeft: number | null
   intro: string | null; whatTheyWorkOn: string[]; whatToBring: string[]
@@ -33,7 +35,7 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
   // name (parent or guardian)" above a box for their child's age is the moment
   // a £1,500 booking starts to feel like it was built for somebody else.
   const adult = camp.audience === 'adult'
-  const [f, setF] = useState({ player_name: '', player_age: '', parent_name: '', parent_email: '', parent_phone: '', emergency_contact: '', medical_notes: '', consent_photo: false, consent_medical: false })
+  const [f, setF] = useState({ player_name: '', player_age: '', parent_name: '', parent_email: '', parent_phone: '', emergency_contact: '', medical_notes: '', consent_photo: false, consent_medical: false, agree_balance: false })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [done, setDone] = useState<null | { status: string; note?: string }>(null)
@@ -197,8 +199,14 @@ export default function CampSignupView({ camp }: { camp: CampPublic }) {
                 {due != null && (
                   <div style={{ background: '#f6f8fb', border: '1px solid #e5e9f0', borderRadius: 10, padding: '11px 13px', fontSize: 14, color: '#374151' }}>
                     {camp.paymentMode === 'deposit'
-                      ? <>A <strong>{money(due)} deposit</strong> secures the place{camp.price ? <> — the balance of {money(Number(camp.price) - due)} is due before the camp starts.</> : '.'}</>
+                      ? <>A <strong>{money(due)} deposit</strong> secures the place{camp.price ? <> — the balance of {money(Number(camp.price) - due)} is due {camp.balanceDue ? <>on {fmt(camp.balanceDue)}</> : 'before the camp starts'}.</> : '.'}</>
                       : <>Places are <strong>{money(due)}</strong>, paid now to secure the spot.</>}
+                    {camp.paymentMode === 'deposit' && camp.balanceDue && Number(camp.price) > due && (
+                      <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', marginTop: 10, fontSize: 13.5, color: '#374151', lineHeight: 1.5, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={f.agree_balance} onChange={e => set('agree_balance', e.target.checked)} style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0 }} />
+                        <span>Take the balance of {money(Number(camp.price) - due)} from the same card on {fmt(camp.balanceDue)}. I’ll get a reminder a week before. <span style={{ color: '#6b7280' }}>(Leave this unticked to pay the balance yourself from a link we email you.)</span></span>
+                      </label>
+                    )}
                     <div style={{ fontSize: 12.5, color: '#6b7280', marginTop: 4 }}>You’ll be taken to a secure payment page next.</div>
                   </div>
                 )}
