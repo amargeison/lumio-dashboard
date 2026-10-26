@@ -22,6 +22,7 @@ import { CoachDevelopmentSettings } from './CoachDevelopmentSettings'
 import { TakePayments } from './TakePayments'
 import { PriceListEditor } from './PriceListEditor'
 import { CancelPolicyEditor } from './CancelPolicyEditor'
+import { RemindersSettings } from './RemindersSettings'
 import { CoachCompliance } from './CoachCompliance'
 import { CoachImport, ImportPendingDialog, type PendingImport } from './CoachImport'
 import { seedLumioResources, LUMIO_RESOURCES, isLumioResource } from '../_lib/lumio-resources'
@@ -1023,6 +1024,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     { id: 'availability',g: 'Academy',    icon: 'grid',      t: 'Availability & courts', d: `${s.bookableHours} · ${demo ? s.lessonTypes.length : (s.lessonTypes.filter(t => BOOKABLE_TYPES.includes(t)).length || BOOKABLE_TYPES.length)} lesson types` },
     { id: 'partnerlogin',g: 'Academy',    icon: 'shield',    t: 'Partner sign-in page', d: s.partnerLogin ? `On · lumiosports.com/login/${portalSlug}` : 'Off · families use the standard Lumio sign-in' },
     { id: 'pricing',     g: 'Academy',    icon: 'pound',     t: 'Pricing & packages',  d: [s.privateRate ? `Private ${formatPounds(s.privateRate)}/hr` : '', s.priceList?.length ? `${s.priceList.length} price${s.priceList.length === 1 ? '' : 's'}` : ''].filter(Boolean).concat('take payments').join(' · ').replace(/^take payments$/, 'Set your prices · take payments') },
+    { id: 'reminders',   g: 'Academy',    icon: 'calendar',  t: 'Reminders & summaries', d: (() => { const r = s.reminders || {}; const sm = s.summaries || {}; return [r.dayBefore ? `Day-before reminder ${r.at || '18:00'}` : 'No day-before reminder', sm.send === 'now' ? 'summaries sent on approval' : sm.send === 'time' ? `summaries at ${sm.at || '22:00'}` : 'you share summaries'].join(' · ') })() },
     { id: 'belts',       g: 'Coaching',   icon: 'trophy',    t: 'Racket criteria',     d: demo ? `Award racket at: ${s.awardThreshold === 4 ? 'Mastered' : 'Consistent'} or better` : `A skill shows as done to players at ${s.awardThreshold === 4 ? 'four bars (Consistent)' : 'three bars (Consolidating)'}` },
     { id: 'rewards',     g: 'Coaching',   icon: 'flag',      t: 'Effort & Rewards',    d: demo ? `Leaderboard ${rewards.leaderboard ? 'on' : 'off'} · watch consent default ${rewards.watchConsentDefault ? 'on' : 'off'}` : `Leaderboard ${leaderboardOn ? 'on' : 'off'} · ${effortToPlayers ? 'shown to players' : 'hidden from players'}` },
     { id: 'sharing',     g: 'Coaching',   icon: 'megaphone', t: 'Sharing a summary',      d: `Shares include: ${sharingList}` },
@@ -1610,6 +1612,12 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
               ))}
             </div>
           </Field>
+        </Modal>
+      )}
+
+      {open === 'reminders' && (
+        <Modal wide readOnly={demo} T={T} accent={accent} title="Reminders & summaries" sub="What Lumio sends families for you, and when" onClose={() => setOpen(null)}>
+          <RemindersSettings T={T} accent={accent} />
         </Modal>
       )}
 

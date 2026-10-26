@@ -15,11 +15,14 @@ import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { MediaCaptureModal } from './MediaCaptureModal'
-import { useCoachTable, dbInsert, dbUpdate, ensureRosterPlayer, SKILLS_BY_STAGE, logSessionAttendance } from '../_lib/coach-db'
+import { useCoachTable, dbInsert, dbUpdate, ensureRosterPlayer, SKILLS_BY_STAGE, logSessionAttendance, rowsChanged } from '../_lib/coach-db'
 import { playerLabels } from '../_lib/tell-apart'
 import { pollMedia, processStageShort } from '../_lib/media-upload'
 import { avatarSrc } from '@/lib/avatar'
 import { lessonRecap, sharedLessonText } from '@/lib/coach/lesson-recap'
+import { shareText as libShareText, type ShareSession } from '@/lib/coach/summary-share'
+import { readSummaries } from '@/lib/coach/reminders'
+import { useCoachSettings } from '../_lib/use-settings'
 import { ukDate, ukWeek, addDaysIso } from '@/lib/coach/uk-date'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
 import { getFlags, subscribe as subscribeFeatures, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
@@ -43,6 +46,8 @@ type Session = {
   id: string; player_name: string | null; player_id?: string | null; session_date: string | null
   focus: string | null; rating: number | null; summary: string | null
   ai_review: string | null; review_json: Review | null; created_at?: string
+  // Sent to the family by Lumio (migration 211): when, to whom, or when it is due to go.
+  shared_at?: string | null; shared_to?: string | null; share_due_at?: string | null; share_error?: string | null
 }
 
 const DAY_MS = 86400000
@@ -492,7 +497,7 @@ function DetailPane({ T, accent, s, avatarUrl, booking, onExport, onEdit, onDupl
       )}
 
       <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-        <button onClick={() => setShareOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>📣 Share it</button>
+        <button onClick={() => setShareOpen(true)} style={{ appearance: 'none', border: 0, padding: '8px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>📣 {s.shared_at ? 'Shared' : s.share_due_at ? 'Sending tonight' : 'Share it'}</button>
         <button onClick={onDuplicate} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Duplicate</button>
         <button onClick={() => setRecapOpen(true)} title="The short version — a 2-3 sentence recap of the session" style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Summary</button>
         <button onClick={onExport} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>Export PDF</button>
@@ -721,6 +726,27 @@ function ShareMenu({ T, accent, s, onClose }: { T: ThemeTokens; accent: AccentTo
   const who = s.player_id ? roster.find(p => String(p.id) === String(s.player_id)) : undefined
   const to = String(who?.parent_email || who?.email || '').trim()
   const [copied, setCopied] = useState(false)
+  // ── Lumio sends it (Settings → Reminders & summaries decides when) ──
+  const cfg = readSummaries(useCoachSettings().summaries)
+  const [state, setState] = useState({ sharedAt: s.shared_at || null, sharedTo: s.shared_to || null, dueAt: s.share_due_at || null, error: s.share_error || null })
+  const [busy, setBusy] = useState('')
+  const send = async (when: 'now' | 'schedule' | 'cancel') => {
+    if (busy) return
+    setBusy(when)
+    try {
+      const r = await fetch('/api/coach/lesson-summary/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: s.id, when }) })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) setState(x => ({ ...x, error: d.error || 'It could not be sent. Please try again.' }))
+      else if (when === 'cancel') setState(x => ({ ...x, dueAt: null, error: null }))
+      else if (d.scheduled) setState(x => ({ ...x, dueAt: d.scheduled, error: null }))
+      else setState({ sharedAt: d.sentAt, sharedTo: d.sentTo, dueAt: null, error: null })
+      rowsChanged('coach_sessions')
+    } catch { setState(x => ({ ...x, error: 'You appear to be offline. Nothing was sent.' })) }
+    finally { setBusy('') }
+  }
+  const clock = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })
+  const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' })
+  const canSend = !!s.player_id
   const opts: { label: string; icon: string; run: () => void }[] = [
     { label: copied ? 'Copied to clipboard ✓' : 'Copy summary', icon: '📋', run: () => navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600) }).catch(() => {}) },
     { label: 'Email it', icon: '✉️', run: () => { window.open(`mailto:${/^[^\s@,;?&]+@[^\s@,;?&]+$/.test(to) ? to : ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`); onClose() } },
@@ -731,6 +757,30 @@ function ShareMenu({ T, accent, s, onClose }: { T: ThemeTokens; accent: AccentTo
       <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 14, padding: 16, width: 340, maxWidth: '100%' }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 4 }}>Share this summary</div>
         <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 12 }}>The coach note stays private — only the lesson detail is shared.</div>
+        {canSend && (
+          <div data-testid="send-to-family" style={{ border: `1px solid ${accent.border}`, background: accent.dim, borderRadius: 10, padding: '10px 12px', marginBottom: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {state.sharedAt ? (
+              <div style={{ fontSize: 12.5, color: T.good, fontWeight: 600 }}>✓ Sent to {state.sharedTo} on {day(state.sharedAt)} at {clock(state.sharedAt)}</div>
+            ) : state.dueAt ? (
+              <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600 }}>Going to the family at {clock(state.dueAt)}{day(state.dueAt) !== day(new Date().toISOString()) ? ` on ${day(state.dueAt)}` : ' tonight'}</div>
+            ) : (
+              <div style={{ fontSize: 12, color: T.text2 }}>{to ? `Lumio emails it to ${to} and puts it in their messages in the app.` : 'Add an email address to the player’s profile to send it from here.'}</div>
+            )}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {!state.sharedAt && !state.dueAt && cfg.send === 'time' && (
+                <button onClick={() => send('schedule')} disabled={!!busy || !to} style={{ appearance: 'none', border: 0, borderRadius: 8, padding: '0 12px', minHeight: 34, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, opacity: to ? 1 : 0.5 }}>{busy === 'schedule' ? 'Saving…' : `Approve · send at ${cfg.at}`}</button>
+              )}
+              {!state.dueAt && (
+                <button onClick={() => send('now')} disabled={!!busy || !to} style={{ appearance: 'none', borderRadius: 8, padding: '0 12px', minHeight: 34, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT, opacity: to ? 1 : 0.5, ...(cfg.send === 'time' || state.sharedAt ? { background: 'transparent', color: T.text2, border: `1px solid ${T.border}` } : { background: accent.hex, color: T.btnText, border: 0 }) }}>{busy === 'now' ? 'Sending…' : state.sharedAt ? 'Send again' : 'Send to family now'}</button>
+              )}
+              {state.dueAt && <>
+                <button onClick={() => send('now')} disabled={!!busy} style={{ appearance: 'none', border: 0, borderRadius: 8, padding: '0 12px', minHeight: 34, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>{busy === 'now' ? 'Sending…' : 'Send it now'}</button>
+                <button onClick={() => send('cancel')} disabled={!!busy} style={{ appearance: 'none', borderRadius: 8, padding: '0 12px', minHeight: 34, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer', fontFamily: FONT }}>{busy === 'cancel' ? 'Stopping…' : 'Don’t send'}</button>
+              </>}
+            </div>
+            {state.error && <div role="alert" style={{ fontSize: 11.5, color: T.bad }}>{state.error}</div>}
+          </div>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {opts.map(o => (
             <button key={o.label} onClick={o.run} style={{ appearance: 'none', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', borderRadius: 10, background: T.panel2, border: `1px solid ${T.border}`, color: T.text, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: FONT, textAlign: 'left' }}><span style={{ fontSize: 16 }}>{o.icon}</span>{o.label}</button>
@@ -1067,22 +1117,10 @@ function RecapModal({ T, accent, s, onClose }: { T: ThemeTokens; accent: AccentT
 }
 
 // ── Share / export helpers ────────────────────────────────────────────────────
+// The family's copy of a summary. The same words as the email Lumio sends
+// (src/lib/coach/summary-share.ts), so a copied summary and a sent one match.
 function shareText(s: Session): string {
-  const r = s.review_json || {}
-  const out: string[] = [`Lesson summary — ${whoLabel(s)} (${fmtDate(s.session_date)})`, '']
-  if (s.focus || r.focus) out.push(`Focus: ${s.focus || r.focus}`, '')
-  if (r.assessment) out.push('Assessment:', r.assessment, '')
-  if (r.covered?.length) out.push('What we covered:', ...r.covered.map(c => `• ${c}`), '')
-  if (r.technique?.length) out.push('How we worked on it:', ...r.technique.map(t => `• ${t}`), '')
-  if (r.takeaways?.length) out.push('Key takeaways:', ...r.takeaways.map(t => `• ${t}`), '')
-  if (r.drills?.length) out.push(`Drills: ${r.drills.join(', ')}`, '')
-  if (r.homework) out.push(`Homework: ${r.homework}`, '')
-  if (r.nextFocus) out.push(`Next session: ${r.nextFocus}`, '')
-  if (r.playerNote) out.push(r.playerNote, '')
-  // Never the private note: sharedSummary() leaves out a summary line that is one.
-  const sum = sharedSummary(s)
-  if (!r.covered?.length && sum && flat(sum) !== flat(r.playerNote)) out.push(sum)
-  return out.join('\n').trim()
+  return libShareText(s as unknown as ShareSession)
 }
 
 function printSession(s: Session) {

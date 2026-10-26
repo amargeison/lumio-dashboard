@@ -5,6 +5,7 @@
 
 import { DEMO_PRICE_LIST, type PriceRule } from '@/lib/coach/pricing'
 import type { CancelPolicy } from '@/lib/coach/cancel-policy'
+import type { ReminderSettings, SummarySettings } from '@/lib/coach/reminders'
 import { COACH_ORG } from './coach-data'
 import { ls, isDemoPath } from './storage-scope'
 
@@ -117,6 +118,11 @@ export type CoachSettings = {
   // through readPolicy(): absent or partial means the defaults (24 hours, full
   // charge, no automatic charging).
   cancelPolicy?: Partial<CancelPolicy>
+  // The day-before reminder, the weather, and when lesson summaries go to the
+  // family (src/lib/coach/reminders.ts). Read through readReminders() /
+  // readSummaries(); absent means off and "share it yourself".
+  reminders?: Partial<ReminderSettings>
+  summaries?: Partial<SummarySettings>
   lessonTypes: string[]
   bookableHours: string
   // ── Per-area settings (the expanded Settings cards) ──
@@ -200,6 +206,9 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   shareCoachNote: false,
   privateRate: 38,
   priceList: DEMO_PRICE_LIST,
+  // The demo shows reminders and summaries switched on.
+  reminders: { dayBefore: true, at: '18:00', weather: true },
+  summaries: { send: 'time', at: '22:00' },
   lessonTypes: ['Private', 'Group', 'Cardio', 'Match play'],
   bookableHours: '08:00 – 20:00',
   profile: { role: 'Head Coach', email: 'hello@riversidetennis.example', phone: '+44 7700 900123', dbsNumber: '0012 3456 7890', dbsExpiry: '2027-09-02', safeguardingDate: '2025-10-14' },
@@ -255,6 +264,9 @@ export const LIVE_DEFAULT_SETTINGS: CoachSettings = {
   cert: '',
   privateRate: 0,
   priceList: [],
+  // Nothing goes to a family on its own until the coach switches it on.
+  reminders: {},
+  summaries: {},
   // The parent & player app is ON for a new academy: inviting a parent is one
   // of the first things a coach does, and it was refused until they found this
   // switch. Settings → Parent & player app switches it off.
@@ -287,6 +299,7 @@ export function activeDefaults(): CoachSettings {
 export const MODULE_SECTIONS: Record<string, { key: string; label: string }[]> = {
   dashboard: [
     { key: 'today',     label: 'Today timeline' },
+    { key: 'weather',   label: 'Weather warning' },
     { key: 'stats',     label: 'Stat cards' },
     { key: 'inbox',     label: 'Inbox' },
     { key: 'briefing',  label: 'Coach AI briefing' },

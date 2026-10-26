@@ -10,6 +10,7 @@ import type { ThemeTokens, AccentTokens, Density } from '@/app/cricket/[slug]/v2
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { dbInsert, dbUpdate, useCoachProfile, RACKET_STAGES, SKILLS_BY_STAGE, loadRows, cachedRows, latestRows, onRowsChanged, currentIdentity, type CoachTable } from '../_lib/coach-db'
 import { ModuleSkeleton } from './ModuleSkeleton'
+import { WeatherWatch } from './WeatherWatch'
 import { getSettings } from '../_lib/settings-store'
 import { campSpans, campsBetween, campsOn, campDayLabel, CAMP_COLOUR } from '@/lib/coach/camp-dates'
 import { campMoney } from '@/lib/coach/camp-money'
@@ -544,6 +545,8 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
       )}
 
       {/* Stat cards */}
+      {showSec('weather') && <WeatherWatch T={T} accent={accent} />}
+
       <div className="cm-md" style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(5, 1fr)', gap: density.gap }}>
         {([
           // Monday to Sunday — the same seven days the calendar opens on.
