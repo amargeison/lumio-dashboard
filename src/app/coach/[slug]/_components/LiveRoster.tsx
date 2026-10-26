@@ -665,6 +665,9 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
       // from the id that was still set, and the change was silently undone. Left
       // out when untouched so a new player added by an assistant coach is still
       // filed under that coach.
+      // Free-slot emails: only sent when it changed, so a player still saves on
+      // a database without migration 212.
+      if (d.free_slot_pings !== undefined && !!d.free_slot_pings !== !!initial?.free_slot_pings) row.free_slot_pings = !!d.free_slot_pings
       // Their own rate. Only sent when there is one, or there was one, so a
       // player still saves on a database without migration 209.
       const rate = rateText.trim() ? parseAmount(rateText, { max: 1000 }) : null
@@ -779,6 +782,13 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
         </div>
         <div style={{ marginTop: 12 }}>{field('goal', 'Goal', 'text', 'e.g. First serve over the net consistently')}</div>
         <div style={{ marginTop: 12 }}><label style={lbl}>Notes</label><textarea value={d.notes ?? ''} onChange={e => set('notes', e.target.value)} rows={2} style={{ ...input, resize: 'vertical' }} /></div>
+
+        {/* Free-slot pings: emails offering a slot the coach has free. Only
+            with the client's say-so, and every email has a way to stop them. */}
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 14, fontSize: 12.5, color: T.text, cursor: 'pointer' }}>
+          <input type="checkbox" checked={!!d.free_slot_pings} onChange={e => set('free_slot_pings', e.target.checked)} style={{ marginTop: 2 }} />
+          <span>Happy to hear about free slots<span style={{ display: 'block', fontSize: 11.5, color: T.text3 }}>They (or their parent) agreed to emails offering a slot you have free. Each email has a link to stop them.</span></span>
+        </label>
 
         {/* Consent & medical (GDPR) */}
         <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}` }}>

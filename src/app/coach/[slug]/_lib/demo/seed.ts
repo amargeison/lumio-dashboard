@@ -981,6 +981,8 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
       medical_notes: p.medical && !/^no known/i.test(p.medical) ? p.medical : null,
       payment_method: p.pays || null,
       // A few clients on their own rate, so the price list has something to give way to.
+      // About half the demo clients have asked to hear about free slots.
+      free_slot_pings: pi % 2 === 0,
       rate_pennies: [null, null, 3000, null, null, 3200, null, null, null][pi % 9] ?? null,
       rate_reason: [null, null, 'Legacy rate', null, null, 'Family', null, null, null][pi % 9] ?? null,
       xp_total: 0,                                   // filled in below from their effort sessions
