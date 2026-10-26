@@ -6,6 +6,8 @@ import { addDaysIso, ukDate } from '@/lib/coach/uk-date'
 import { packCover } from '@/lib/coach/packs-server'
 import { planCover, runMonthly } from '@/lib/coach/monthly-server'
 import { planCovering } from '@/lib/coach/memberships'
+import { runCampBalances } from '@/lib/coach/camp-balance-server'
+import { publicSiteOrigin } from '@/lib/public-origin'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -29,6 +31,7 @@ export const maxDuration = 300
 // Safe to run twice: the database allows one live charge per lesson.
 //
 // It also takes monthly plans on their billing day (lib/coach/monthly-server),
+// camp and holiday balances on their due date (lib/coach/camp-balance-server),
 // and finishes any charge left half-way ('charging' for over five
 // minutes) by asking Stripe again with the same key, which returns what
 // Stripe did the first time.
@@ -42,7 +45,7 @@ export async function POST(req: NextRequest) {
   }
   const db = admin()
   const now = Date.now()
-  const out = { resumed: 0, charged: 0, processing: 0, failed: 0, skipped: 0, onPack: 0, onPlan: 0, academies: 0, monthly: {} as Record<string, number> }
+  const out = { resumed: 0, charged: 0, processing: 0, failed: 0, skipped: 0, onPack: 0, onPlan: 0, academies: 0, monthly: {} as Record<string, number>, balances: {} as Record<string, number> }
 
   // ── 1. Half-finished charges ──
   const stale = new Date(now - 5 * 60_000).toISOString()
@@ -100,5 +103,7 @@ export async function POST(req: NextRequest) {
 
   // ── 3. Monthly plans whose billing day has come ──
   try { out.monthly = await runMonthly(db, Math.max(0, budget)) } catch (e) { console.error('[cron/lesson-charges] monthly', e) }
+  // ── 4. Camp and holiday balances: the reminder, then the balance on its due date ──
+  try { out.balances = await runCampBalances(db, publicSiteOrigin('https://www.lumiosports.com')) } catch (e) { console.error('[cron/lesson-charges] balances', e) }
   return NextResponse.json({ ok: true, ...out })
 }

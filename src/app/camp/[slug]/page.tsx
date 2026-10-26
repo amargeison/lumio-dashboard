@@ -39,6 +39,8 @@ function toPublic(camp: any, profile: any, taken: number): CampPublic {
     // consents about a child, or simply signs an adult up for their own place.
     audience: campAudience(camp),
     depositAmount: camp.deposit_amount ?? null,
+    // The balance due date, when the family can agree to it being taken from their card.
+    balanceDue: camp.payment_mode === 'deposit' && camp.balance_due && camp.auto_balance !== false ? camp.balance_due : null,
     note: camp.signup_note || camp.description || null,
     spacesLeft: camp.capacity ? Math.max(0, camp.capacity - taken) : null,
     // Boris's parent brief is the sales copy — written for a parent, no jargon.

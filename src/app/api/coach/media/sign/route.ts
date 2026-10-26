@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { serviceClient } from '@/lib/coach/oauth'
 import { isUuid, coachGate } from '@/lib/coach/membership'
+import { RECORDING_NEEDS_CONSENT } from '@/lib/coach/recording-consent'
 import { mediaNameProblem, mediaSwitchedOn, ownPlayerForRecording, MEDIA_SWITCHED_OFF, RECORDING_NEEDS_OWN_PLAYER, type MediaKind } from '@/lib/coach/media-rules'
 
 // Mints a one-time signed upload URL so the browser can PUT a (potentially large)
@@ -49,6 +50,13 @@ export async function POST(req: NextRequest) {
   if (mine) {
     player = await ownPlayerForRecording(sb, academyId, mine, player?.id, playerName)
     if (!player) return NextResponse.json({ error: RECORDING_NEEDS_OWN_PLAYER }, { status: 400 })
+  }
+
+  // A recording of a client needs their agreement (migration 217). Checked
+  // before anything is uploaded, so nothing of theirs is stored without it.
+  if (player) {
+    const { data: c, error: cErr } = await sb.from('coach_players').select('consent_record').eq('id', player.id).maybeSingle()
+    if (!cErr && c && !c.consent_record) return NextResponse.json({ error: RECORDING_NEEDS_CONSENT(player.name), needsConsent: true, playerId: player.id }, { status: 403 })
   }
 
   const ext = (/\.([a-z0-9]+)$/i.exec(fileName || '')?.[1] || '').toLowerCase()

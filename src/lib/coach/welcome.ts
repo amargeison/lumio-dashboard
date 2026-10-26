@@ -8,12 +8,13 @@ const esc = (x: unknown) => String(x ?? '').replace(/&/g, '&amp;').replace(/</g,
 
 export function welcomeMessage(o: {
   hello: string; childFirst: string | null; coachName: string | null; academy: string; logoUrl?: string | null
-  url: string; minutes: number; askCard: boolean; plan: string | null
+  url: string; minutes: number; askCard: boolean; plan: string | null; askRecording?: boolean
 }): { subject: string; text: string; html: string } {
   const who = o.coachName || o.academy
   const whose = o.childFirst ? `${o.childFirst}’s` : 'your'
   const asks = [
     `tells me where ${whose} tennis is now and where you’d like it to go`,
+    o.askRecording ? 'asks whether I can record lessons for your summaries' : '',
     o.askCard ? 'lets you save a card or Direct Debit for lessons' : '',
     o.plan ? `confirms ${whose} monthly plan (${o.plan})` : '',
   ].filter(Boolean)

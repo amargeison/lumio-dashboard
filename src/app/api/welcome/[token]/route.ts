@@ -8,6 +8,7 @@ import { questionsFor, wordsFor, cleanAnswers, missing, minutesFor, SECTIONS, ty
 import { planWords, coversWords, agreeText, monthWords } from '@/lib/coach/memberships'
 import { loadWelcome, markIfComplete, type Welcome } from '@/lib/coach/welcome-server'
 import { randomBytes } from 'crypto'
+import { recordQuestion } from '@/lib/coach/recording-consent'
 
 export const runtime = 'nodejs'
 
@@ -16,6 +17,7 @@ export const runtime = 'nodejs'
 //   GET   what is still to do: the questionnaire, a card or Direct Debit (with
 //         the cancellation policy), and agreeing to a monthly plan
 //   POST  { action: 'answers', answers, health?, healthConsent? }
+//         { action: 'record', ok }                   may lessons be recorded?
 //         { action: 'agree', name }                  the monthly plan
 //         { action: 'card', agree, name, method }    open Stripe's page
 //         { action: 'cardDone', sessionId }          back from Stripe's page
@@ -37,6 +39,7 @@ async function view(w: Welcome) {
     version: v, minutes: minutesFor(v), done,
     sections: SECTIONS, questions: questionsFor(v).map(q => ({ id: q.id, section: q.section, kind: q.kind, text: wordsFor(q, childFirst), options: q.options || null, optional: !!q.optional, hint: q.hint || null })),
     answered: !!w.answered,
+    recording: { ...recordQuestion({ coach: w.m.coachName || w.m.academy, childFirst }), answered: !!w.player.consent_record_how, ok: !!w.player.consent_record },
     card: { ready: !!w.m.accountId && w.m.chargesEnabled, directDebit: dd, saved: methodWords(w.card), terms: policyTerms(w.m.policy, w.m.academy) },
     plan: w.plan ? {
       name: w.plan.name, words: planWords(w.plan as { amount_pennies: number; day_of_month: number }), starts: monthWords(w.plan.starts_month),
@@ -70,11 +73,27 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     if (left.length) return NextResponse.json({ error: `Please answer: ${left.map(q => wordsFor(q, null)).slice(0, 3).join(' · ')}`, missing: left.map(q => q.id) }, { status: 400 })
     const health = String(b.health || '').trim().slice(0, 1000)
     const consent = b.healthConsent === true && !!health
+    // Health notes kept with consent are the player's medical notes too.
+    if (consent) {
+      await db.from('coach_players').update({ consent_medical: true, ...(!String(w.player.medical_notes || '').trim() ? { medical_notes: health } : {}) }).eq('id', w.player.id)
+    }
     const { error } = await db.from('coach_questionnaires').insert({
       coach_id: w.link.coach_id, staff_id: w.link.staff_id || null, player_id: w.player.id, link_id: w.link.id, version: v,
       answers: consent ? { ...answers, health } : answers, health_consent: consent,
     })
     if (error) return NextResponse.json({ error: 'Your answers could not be saved. Please try again.' }, { status: 500 })
+    const again = await loadWelcome(token)
+    return NextResponse.json(await view(again || w))
+  }
+
+  if (b.action === 'record') {
+    if (typeof b.ok !== 'boolean') return NextResponse.json({ error: 'Choose yes or no.' }, { status: 400 })
+    const toParent = !!familyAddress(w.player as FamilyPlayer)?.toParent
+    const by = (toParent ? w.player.parent_name : null) || w.player.name
+    const { error } = await db.from('coach_players').update({
+      consent_record: b.ok, consent_record_at: new Date().toISOString(), consent_record_by: String(by || '').slice(0, 80) || null, consent_record_how: b.ok ? 'welcome' : 'declined',
+    }).eq('id', w.player.id)
+    if (error) return NextResponse.json({ error: 'That could not be saved. Please try again.' }, { status: 500 })
     const again = await loadWelcome(token)
     return NextResponse.json(await view(again || w))
   }

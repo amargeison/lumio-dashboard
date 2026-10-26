@@ -5,6 +5,8 @@ import { isAdult } from '@/lib/coach/camp-audience'
 import { stripe, admin } from '../_stripe'
 import { finishSetup, settleInvoice } from '../_saved'
 import { sendCampSignupEmails } from '@/lib/coach/camp-signup-email'
+import { keepDepositCard } from '@/lib/coach/camp-balance-server'
+import { paidPennies } from '@/lib/coach/camp-money'
 
 export const runtime = 'nodejs'
 
@@ -80,6 +82,24 @@ export async function POST(req: NextRequest) {
       // well as the metadata, because the webhook is the only trustworthy signal —
       // never the browser redirect, which a parent can simply not follow.
       const attendeeId = s.metadata?.camp_attendee_id
+      // A camp balance paid from the family's link (/pay-balance/<token>):
+      // the place is paid in full. The status guard makes a redelivered event
+      // change nothing.
+      if (attendeeId && s.metadata?.camp_balance === '1') {
+        const { data: was } = await db.from('coach_camp_attendees').select('camp_id, paid_pennies, amount_pennies, status, paid').eq('id', attendeeId).maybeSingle()
+        const { data: itsCamp } = was?.camp_id ? await db.from('coach_camps').select('price').eq('id', was.camp_id).maybeSingle() : { data: null }
+        if (was && typeof s.amount_total === 'number') {
+          const price = Math.round((Number(itsCamp?.price) || 0) * 100)
+          const before = paidPennies({ price: itsCamp?.price }, was)
+          const total = before + s.amount_total
+          await db.from('coach_camp_attendees').update({ paid_pennies: total, paid: price > 0 && total >= price, balance_status: 'paid' })
+            .eq('id', attendeeId).or('balance_status.is.null,balance_status.neq.paid')
+        }
+        return NextResponse.json({ received: true })
+      }
+      // A deposit paid with the family's agreement to take the balance from the
+      // same card later: keep Stripe's reference to that card.
+      if (attendeeId && event.account && s.payment_intent) await keepDepositCard(db, event.account, attendeeId, s.payment_intent as string)
       if (attendeeId) {
         // "Paid" means paid in full. A deposit confirms the place and is
         // recorded as money received, but the balance is still owed — ticking

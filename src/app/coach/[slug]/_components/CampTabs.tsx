@@ -15,7 +15,7 @@
 import { Fragment, useState, useEffect, useRef, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
-import { RACKET_STAGES, dbInsert } from '../_lib/coach-db'
+import { RACKET_STAGES, dbInsert, rowsChanged } from '../_lib/coach-db'
 import { playerLabels } from '../_lib/tell-apart'
 import { stageWords } from '../_lib/stage-words'
 import { avatarSrc } from '@/lib/avatar'
@@ -951,8 +951,64 @@ export function FinanceBoard({ T, accent, camp, attendees, editAtt, editCamp }: 
         </div>
       </div>
 
+      {/* ── Balances (deposit bookings with a due date) ─────────────────── */}
+      {camp.payment_mode === 'deposit' && !!camp.balance_due && <BalancesCard T={T} accent={accent} camp={camp} attendees={attendees} />}
+
       {/* ── Payment plan ─────────────────────────────────────────────── */}
       <PaymentPlanCard T={T} accent={accent} camp={camp} plan={plan} perHead={m.per} open={planOpen} setOpen={setPlanOpen} onSave={save} />
+    </div>
+  )
+}
+
+// Who still owes a balance, and where it has got to: kept card and agreement,
+// the reminder, taken on the day, or failed (with the link sent). The timer
+// does all of this on its own; these buttons are for doing it now.
+function BalancesCard({ T, accent, camp, attendees }: { T: ThemeTokens; accent: AccentTokens; camp: TabCamp; attendees: TabAttendee[] }) {
+  const [busy, setBusy] = useState('')
+  const [msg, setMsg] = useState<{ text: string; bad?: boolean } | null>(null)
+  const owing = attendees.filter(a => !isCancelled(a) && (a.status || '') !== 'pending' && (balanceOwed(camp, a) > 0 || a.balance_status === 'paid'))
+  const due = String(camp.balance_due)
+  const dueWords = new Date(`${due}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+  const act = async (a: TabAttendee, action: 'take' | 'link' | 'copy') => {
+    if (busy) return
+    if (action === 'take' && !confirm(`Take ${money(balanceOwed(camp, a))} from ${a.player_name}’s kept card now?`)) return
+    setBusy(`${a.id}:${action}`); setMsg(null)
+    try {
+      const r = await fetch('/api/coach/camps/balance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ attendeeId: a.id, action }) })
+      const d = await r.json()
+      if (!r.ok) setMsg({ text: d.error || 'That did not work.', bad: true })
+      else if (action === 'copy') { try { await navigator.clipboard.writeText(d.url); setMsg({ text: 'Link copied.' }) } catch { setMsg({ text: d.url }) } }
+      else setMsg({ text: action === 'take' ? `✓ Balance taken for ${a.player_name}.` : `✓ Sent to ${d.to}.` })
+      rowsChanged('coach_camp_attendees')
+    } catch { setMsg({ text: 'You appear to be offline.', bad: true }) }
+    finally { setBusy('') }
+  }
+  const small: CSSProperties = { appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 7, padding: '0 9px', minHeight: 28, fontSize: 11.5, cursor: 'pointer', fontFamily: FONT }
+  return (
+    <div style={card(T)} data-testid="balances">
+      <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, marginBottom: 4 }}>Balances · due {dueWords}</div>
+      <div style={{ fontSize: 11, color: T.text3, marginBottom: 10 }}>{camp.auto_balance === false ? 'Families get a reminder with a link to pay.' : 'Families who agreed when paying the deposit have the balance taken from that card on the day, after a reminder. Everyone else gets the reminder with a link to pay.'}</div>
+      {owing.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>Nobody owes a balance.</div> : owing.map(a => {
+        const card = a.stripe_payment_method_id && a.balance_agreed_at ? `${String(a.card_brand || 'card').replace(/^./, c => c.toUpperCase())} ending ${a.card_last4 || '••••'}` : null
+        const st = a.balance_status === 'paid' ? ['Paid', T.good] : a.balance_status === 'failed' ? ['Failed · link sent', T.bad] : a.balance_status === 'charging' ? ['Taking…', T.warn]
+          : a.balance_reminded_at ? [`Reminded ${new Date(String(a.balance_reminded_at)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`, T.text3] : ['Not reminded yet', T.text3]
+        return (
+          <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderTop: `1px solid ${T.border}`, flexWrap: 'wrap' }}>
+            <span style={{ flex: '1 1 120px', fontSize: 12.5, color: T.text }}>{a.player_name}</span>
+            <span style={{ fontSize: 12, fontFamily: FONT_MONO, color: T.text2 }}>{a.balance_status === 'paid' ? '—' : money(balanceOwed(camp, a))}</span>
+            <span style={{ fontSize: 11, color: card ? T.good : T.text3 }}>{card ? `${card} · agreed` : 'Pays by link'}</span>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: st[1] as string }} title={String(a.balance_failed_reason || '')}>{st[0]}</span>
+            {a.balance_status !== 'paid' && (
+              <span style={{ marginLeft: 'auto', display: 'flex', gap: 5 }}>
+                {card && a.balance_status !== 'charging' && <button onClick={() => act(a, 'take')} disabled={!!busy} style={{ ...small, border: 0, background: accent.hex, color: T.btnText, fontWeight: 700 }}>{busy === `${a.id}:take` ? 'Taking…' : 'Take now'}</button>}
+                <button onClick={() => act(a, 'link')} disabled={!!busy || !a.parent_email} style={small}>{busy === `${a.id}:link` ? 'Sending…' : 'Email link'}</button>
+                <button onClick={() => act(a, 'copy')} disabled={!!busy} style={small}>Copy link</button>
+              </span>
+            )}
+          </div>
+        )
+      })}
+      {msg && <div role="status" style={{ fontSize: 12, color: msg.bad ? T.bad : T.good, marginTop: 8, overflowWrap: 'anywhere' }}>{msg.text}</div>}
     </div>
   )
 }

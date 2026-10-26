@@ -986,6 +986,8 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
       // A few clients on their own rate, so the price list has something to give way to.
       // About half the demo clients have asked to hear about free slots.
       free_slot_pings: pi % 2 === 0,
+      // Most clients have agreed to lessons being recorded; two have not been asked yet.
+      consent_record: pi % 7 !== 3, consent_record_at: pi % 7 !== 3 ? ago(30 + pi) : null, consent_record_by: pi % 7 !== 3 ? (p.parent || p.name) : null, consent_record_how: pi % 7 !== 3 ? 'welcome' : null,
       rate_pennies: [null, null, 3000, null, null, 3200, null, null, null][pi % 9] ?? null,
       rate_reason: [null, null, 'Legacy rate', null, null, 'Family', null, null, null][pi % 9] ?? null,
       xp_total: 0,                                   // filled in below from their effort sessions
@@ -1458,6 +1460,8 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     ages: 'Adults 18+', group_size: 16, intent: 'Adult improvers and club doubles players. Coaching in the mornings, match play in the late afternoon, a tournament to finish.',
     designed_at: ago(52, '21:10'),
     signup_slug: 'algarve-adult-tennis-week', signup_open: true, payment_mode: 'deposit', deposit_amount: 300,
+    // The balance is taken a month before the trip, from the deposit card of everyone who agreed.
+    balance_due: ymd(plus(aStart, -14)), auto_balance: true, balance_reminder_days: 7,
     signup_note: 'Flights are not included — book to arrive at Faro by mid-afternoon on the first day. Tell me your flight and I will add you to a transfer.',
     emails_paused: false, overseas: true, balance_link: null, email_overrides: null, audience: 'adult', info_form: null,
     trip: {
@@ -1787,6 +1791,11 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     room: seedOf[CAMP_D_PLAYERS[i % 2 === 0 ? Math.min(i + 1, CAMP_D_PLAYERS.length - 1) : i - 1]].name,
   })), { adult: false, airport: 'Málaga (AGP)', deposit: 350 })
   out.coach_camp_attendees = [...attA, ...attB, ...attC, ...attD]
+  // On the Algarve week, some families kept a card for the balance when they paid the deposit.
+  attA.forEach((x, i) => {
+    if (x.paid || i % 3 === 2) return
+    Object.assign(x, { stripe_customer_id: `cus_demo_${i}`, stripe_payment_method_id: `pm_demo_${i}`, card_brand: ['visa', 'mastercard'][i % 2], card_last4: String(4242 + i * 111).slice(-4), balance_agreed_at: x.signed_up_at || ago(40), balance_agreed_text: 'Agreed when paying the deposit.' })
+  })
   const collectedFor = (camp: Row, list: Row[]) => list.reduce((n, a) => n + (a.paid ? Number(camp.price) : Number(a.amount_pennies) / 100), 0)
   campA.collected = collectedFor(campA, attA); campB.collected = collectedFor(campB, attB)
   campC.collected = collectedFor(campC, attC); campD.collected = collectedFor(campD, attD)
