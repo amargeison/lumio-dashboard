@@ -5,6 +5,8 @@ import { feeFor, isLateCancel } from '@/lib/coach/cancel-policy'
 import { admin } from '../_stripe'
 import { academyMoney, chargeSaved, priceBooking, refundCharge, type ChargeKind } from '../_saved'
 import { packCover } from '@/lib/coach/packs-server'
+import { planCover } from '@/lib/coach/monthly-server'
+import { planCovering } from '@/lib/coach/memberships'
 
 export const runtime = 'nodejs'
 
@@ -88,6 +90,8 @@ export async function POST(req: NextRequest) {
       const { cover } = await packCover(db, academyId, [player.id], m.policy)
       const pack = cover.get(bk.id)
       if (pack) return NextResponse.json({ error: `This lesson comes off ${player.name}’s pack (${pack.item || 'lesson pack'}), so there is nothing to charge.` }, { status: 400 })
+      const plan = planCovering(await planCover(db, academyId, [player.id]), { playerId: player.id, type: bk.type })
+      if (plan) return NextResponse.json({ error: `${player.name}’s monthly plan (${plan.name}) covers this lesson, so there is nothing to charge.` }, { status: 400 })
     }
     if (amount == null) {
       const price = await priceBooking(db, academyId, m.settings, bk)

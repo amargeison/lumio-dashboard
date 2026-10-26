@@ -15,7 +15,7 @@ type View = {
   state: 'open' | 'past' | 'off'; answer: 'yes' | 'no' | null; late: boolean
   paid: 'paid' | 'processing' | 'refunded' | 'none'
   payWay: 'card' | 'link' | 'day'; card: string | null
-  freeUntil: string | null; free: boolean
+  freeUntil: string | null; free: boolean; onPlan?: boolean
   notice?: string | null; error?: string
 }
 
@@ -80,14 +80,14 @@ export default function GroupView({ token }: { token: string }) {
     </div>
   )
   const note = (v.notice || err) ? <div role={err ? 'alert' : 'status'} style={{ ...card, fontSize: 14.5, lineHeight: 1.55, color: err ? '#b42318' : '#374151' }}>{err || v.notice}</div> : null
-  const payBits = v.price <= 0 ? '' : v.payWay === 'card' ? `Saying yes pays ${p(v.price)} from your saved ${v.card || 'card'}.` : v.payWay === 'link' ? `It is ${p(v.price)}, paid by card when you say yes.` : `It is ${p(v.price)}, paid to ${who} on the day.`
+  const payBits = v.onPlan ? 'Your place is covered by your monthly plan.' : v.price <= 0 ? '' : v.payWay === 'card' ? `Saying yes pays ${p(v.price)} from your saved ${v.card || 'card'}.` : v.payWay === 'link' ? `It is ${p(v.price)}, paid by card when you say yes.` : `It is ${p(v.price)}, paid to ${who} on the day.`
   const freeBits = v.freeUntil ? (v.free ? `Free to cancel until ${v.freeUntil}.` : 'The free cancellation window has closed, so a yes now is final.') : ''
 
   if (v.state === 'off') return page('This week is off', <>{details}<div style={{ ...card, textAlign: 'center', color: '#374151', fontSize: 15, lineHeight: 1.6 }}>{who} has called this session off.{v.paid === 'refunded' ? ' Your money has been refunded.' : ''} See you next week.</div></>)
   if (v.state === 'past') return page(v.answer === 'yes' ? 'See you there' : 'This session has started', <>{details}<div style={{ ...card, textAlign: 'center', color: '#374151', fontSize: 15, lineHeight: 1.6 }}>{v.answer === 'yes' ? 'You’re in.' : 'Answers have closed for this week. Look out for next week’s email.'}</div></>)
 
   if (v.answer === 'yes') {
-    const unpaid = v.price > 0 && v.paid === 'none' && v.payWay !== 'day'
+    const unpaid = v.price > 0 && v.paid === 'none' && v.payWay !== 'day' && !v.onPlan
     return page(unpaid ? 'Your place is held' : 'You’re in', <>
       {details}
       {note}
@@ -95,7 +95,7 @@ export default function GroupView({ token }: { token: string }) {
         <div style={{ textAlign: 'center', fontSize: 36 }}>🎾</div>
         <p style={{ fontSize: 15.5, color: '#374151', lineHeight: 1.6, margin: '6px 0 0', textAlign: 'center' }}>
           {v.playerFirst ? `${v.playerFirst} is` : 'You’re'} in.{' '}
-          {v.paid === 'paid' ? 'Paid, thank you.' : v.paid === 'processing' ? 'Your Direct Debit is on its way.' : unpaid ? (paidBack ? 'Thanks, your payment is being confirmed. This page updates in a moment.' : `Please pay ${p(v.price)} to finish.`) : v.price > 0 ? `Pay ${who} ${p(v.price)} on the day.` : ''}
+          {v.onPlan ? 'Covered by your monthly plan.' : v.paid === 'paid' ? 'Paid, thank you.' : v.paid === 'processing' ? 'Your Direct Debit is on its way.' : unpaid ? (paidBack ? 'Thanks, your payment is being confirmed. This page updates in a moment.' : `Please pay ${p(v.price)} to finish.`) : v.price > 0 ? `Pay ${who} ${p(v.price)} on the day.` : ''}
         </p>
         {unpaid && !paidBack && <button onClick={() => act('pay')} disabled={!!busy} style={{ ...btn, marginTop: 14, background: ACCENT, color: '#fff', opacity: busy ? 0.7 : 1 }}>{busy === 'pay' ? 'Opening…' : `Pay ${p(v.price)} by card`}</button>}
         <p style={{ fontSize: 13.5, color: '#6b7280', textAlign: 'center', margin: '12px 0 0' }}>{v.free ? (v.freeUntil ? `Can’t come after all? Cancel free of charge until ${v.freeUntil}.` : 'Can’t come after all? Let us know below.') : 'The free cancellation window has closed. You can still tell us you’re not coming.'}</p>
@@ -117,7 +117,7 @@ export default function GroupView({ token }: { token: string }) {
         {[payBits, freeBits].filter(Boolean).join(' ')} {v.placesLeft <= 3 ? `${v.placesLeft} ${v.placesLeft === 1 ? 'place' : 'places'} left.` : ''}
       </p>
       <button onClick={() => act('yes')} disabled={!!busy} style={{ ...btn, background: ACCENT, color: '#fff', opacity: busy ? 0.7 : 1, boxShadow: hint === 'yes' ? `0 0 0 4px ${ACCENT}44` : 'none' }}>
-        {busy === 'yes' ? 'Saving…' : v.payWay === 'card' && v.price > 0 ? `Yes, I’m coming · pay ${p(v.price)}` : 'Yes, I’m coming'}
+        {busy === 'yes' ? 'Saving…' : v.payWay === 'card' && v.price > 0 && !v.onPlan ? `Yes, I’m coming · pay ${p(v.price)}` : 'Yes, I’m coming'}
       </button>
       {v.answer !== 'no' && <button onClick={() => act('no')} disabled={!!busy} style={{ ...quiet, boxShadow: hint === 'no' ? '0 0 0 4px #dfe3ec' : 'none' }}>{busy === 'no' ? '…' : 'Can’t make it this week'}</button>}
     </div>

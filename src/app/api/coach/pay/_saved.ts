@@ -9,6 +9,8 @@
 // rules about what may be charged, and how a result is recorded, live here once.
 
 import type Stripe from 'stripe'
+import { randomBytes } from 'crypto'
+import { policyText } from '@/lib/coach/cancel-policy'
 import { stripe, admin } from './_stripe'
 import { priceFor, type PriceRule } from '@/lib/coach/pricing'
 import { readPolicy, type CancelPolicy } from '@/lib/coach/cancel-policy'
@@ -117,12 +119,12 @@ export async function priceBooking(db: Db, academyId: string, settings: Record<s
 }
 
 // ── Charging ────────────────────────────────────────────────────────────────
-export type ChargeKind = 'lesson' | 'late_cancel' | 'no_show' | 'other' | 'group'
+export type ChargeKind = 'lesson' | 'late_cancel' | 'no_show' | 'other' | 'group' | 'membership'
 export type ChargeResult =
   | { ok: true; status: 'paid' | 'processing'; chargeId: string }
   | { ok: false; status: 'failed' | 'refused'; error: string; chargeId?: string; needsClient?: boolean }
 
-const KIND_WORDS: Record<ChargeKind, string> = { lesson: 'Lesson', late_cancel: 'Late cancellation', no_show: 'Missed lesson', other: 'Payment', group: 'Group place' }
+const KIND_WORDS: Record<ChargeKind, string> = { lesson: 'Lesson', late_cancel: 'Late cancellation', no_show: 'Missed lesson', other: 'Payment', group: 'Group place', membership: 'Monthly plan' }
 
 /**
  * Take money from a player's saved card or Direct Debit, off-session.
@@ -246,4 +248,54 @@ export async function settleInvoice(db: Db, chargeId: string): Promise<void> {
   if (!inv || inv.paid || Math.round(Number(inv.amount) * 100) !== c.amount_pennies) return
   await db.from('coach_payments').update({ paid: true, paid_at: new Date().toISOString(), ...(inv.status === 'overdue' ? { status: 'active' } : {}) })
     .eq('id', c.payment_id).eq('coach_id', c.coach_id)
+}
+
+/**
+ * The client has read the policy and said yes: open Stripe's page to save a
+ * card or Direct Debit against their coach's request (`row`, a
+ * coach_pay_methods invitation). Used by the card link and the welcome link;
+ * Stripe sends them back to `back` with ?done=<session>.
+ */
+export async function startCardSetup(db: Db, m: AcademyMoney, row: Record<string, any>, player: { id: string; name: string; email?: string | null; parent_email?: string | null; contact_email?: string | null },
+  o: { name: string; method: 'card' | 'bacs_debit'; back: string }): Promise<{ url?: string; error?: string }> {
+  const email = String(player.parent_email || player.email || player.contact_email || '').trim() || undefined
+  try {
+    // Saving a NEW card over one already saved is a fresh request, so the old
+    // card stays in use until the new one is safely in.
+    if (row.status === 'active') {
+      const { data: fresh, error } = await db.from('coach_pay_methods').insert({
+        coach_id: row.coach_id, player_id: row.player_id, link_token: randomBytes(15).toString('base64url'),
+        status: 'invited', stripe_customer_id: row.stripe_customer_id,
+      }).select('*').single()
+      if (error || !fresh) throw new Error('insert')
+      row = fresh
+    }
+    let customer = row.stripe_customer_id as string | null
+    if (!customer) {
+      // Any earlier card for this player was saved against a customer already: reuse it.
+      const { data: prev } = await db.from('coach_pay_methods').select('stripe_customer_id').eq('player_id', row.player_id)
+        .not('stripe_customer_id', 'is', null).order('created_at', { ascending: false }).limit(1)
+      customer = (prev?.[0]?.stripe_customer_id as string) || null
+    }
+    if (!customer) {
+      const c = await stripe.customers.create({ name: player.name, email, metadata: { lumio_player_id: player.id, lumio_coach_id: row.coach_id } }, { stripeAccount: m.accountId! })
+      customer = c.id
+    }
+    const session = await stripe.checkout.sessions.create({
+      mode: 'setup', currency: 'gbp', customer,
+      payment_method_types: [o.method],
+      success_url: `${o.back}?done={CHECKOUT_SESSION_ID}`,
+      cancel_url: o.back,
+      metadata: { lumio_card_link: row.id, coach_id: row.coach_id, player_id: row.player_id },
+    }, { stripeAccount: m.accountId! })
+    await db.from('coach_pay_methods').update({
+      stripe_customer_id: customer, stripe_setup_session_id: session.id,
+      policy_text: policyText(m.policy, m.academy), policy_agreed_at: new Date().toISOString(), agreed_by: o.name,
+      updated_at: new Date().toISOString(),
+    }).eq('id', row.id)
+    return { url: session.url || undefined }
+  } catch (e) {
+    console.error('[card] start', e instanceof Error ? e.message : e)
+    return { error: 'We could not open the secure card page. Please try again.' }
+  }
 }

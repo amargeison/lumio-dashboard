@@ -14,6 +14,7 @@ import { seedLumioPackages, PACKAGE_CHOICES } from '../_lib/lumio-packages'
 import { SetupWizard } from './SetupWizard'
 import { LessonEarnings } from './LessonEarnings'
 import { ReadyToCharge } from './ReadyToCharge'
+import { MonthlyPlans } from './MonthlyPlans'
 import { formatPounds, formatPennies, toPennies, sumPennies, parseAmount, isVoidPayment, paymentOwedPennies } from '@/lib/coach/money'
 import { ukDate, ukMonth, daysBetweenIso } from '@/lib/coach/uk-date'
 import { campMoney } from '@/lib/coach/camp-money'
@@ -315,6 +316,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
       )}
 
       {showSec('cards') && <ReadyToCharge T={T} accent={accent} />}
+      {showSec('monthly') && <MonthlyPlans T={T} accent={accent} />}
       {showSec('earnings') && <LessonEarnings T={T} accent={accent} />}
 
       {/* Packages on offer */}

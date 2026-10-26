@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { randomBytes } from 'crypto'
 import { publicSiteOrigin } from '@/lib/public-origin'
-import { policyTerms, policyText } from '@/lib/coach/cancel-policy'
-import { stripe, admin } from '../../coach/pay/_stripe'
-import { academyMoney, bacsReady } from '../../coach/pay/_saved'
+import { policyTerms } from '@/lib/coach/cancel-policy'
+import { admin } from '../../coach/pay/_stripe'
+import { academyMoney, bacsReady, startCardSetup } from '../../coach/pay/_saved'
 
 export const runtime = 'nodejs'
 
@@ -47,8 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const { token } = await params
   const got = await load(token)
   if (!got || !got.player) return NextResponse.json({ error: 'This link is not valid. Ask your coach to send a new one.' }, { status: 404 })
-  const { db, player, m } = got
-  let row = got.row
+  const { db, player, m, row } = got
   if (row.status === 'removed') return NextResponse.json({ error: 'This link is no longer in use. Ask your coach to send a new one.' }, { status: 410 })
   if (!m.accountId || !m.chargesEnabled) return NextResponse.json({ error: `${m.academy} cannot take card details just yet. Please try again later.` }, { status: 400 })
 
@@ -59,46 +57,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const wantsDd = b.method === 'bacs_debit'
   if (wantsDd && !(m.policy.directDebit && await bacsReady(m.accountId))) return NextResponse.json({ error: 'Direct Debit is not available. Please save a card instead.' }, { status: 400 })
 
-  const email = String(player.parent_email || player.email || player.contact_email || '').trim() || undefined
-  try {
-    // Saving a NEW card over one already saved is a fresh request, so the old
-    // card stays in use until the new one is safely in.
-    if (row.status === 'active') {
-      const { data: fresh, error } = await db.from('coach_pay_methods').insert({
-        coach_id: row.coach_id, player_id: row.player_id, link_token: randomBytes(15).toString('base64url'),
-        status: 'invited', stripe_customer_id: row.stripe_customer_id,
-      }).select('*').single()
-      if (error || !fresh) throw new Error('insert')
-      row = fresh
-    }
-    let customer = row.stripe_customer_id as string | null
-    if (!customer) {
-      // Any earlier card for this player was saved against a customer already: reuse it.
-      const { data: prev } = await db.from('coach_pay_methods').select('stripe_customer_id').eq('player_id', row.player_id)
-        .not('stripe_customer_id', 'is', null).order('created_at', { ascending: false }).limit(1)
-      customer = (prev?.[0]?.stripe_customer_id as string) || null
-    }
-    if (!customer) {
-      const c = await stripe.customers.create({ name: player.name, email, metadata: { lumio_player_id: player.id, lumio_coach_id: row.coach_id } }, { stripeAccount: m.accountId })
-      customer = c.id
-    }
-    const origin = publicSiteOrigin(new URL(req.url).origin)
-    const back = `${origin}/card/${encodeURIComponent(token)}`
-    const session = await stripe.checkout.sessions.create({
-      mode: 'setup', currency: 'gbp', customer,
-      payment_method_types: [wantsDd ? 'bacs_debit' : 'card'],
-      success_url: `${back}?done={CHECKOUT_SESSION_ID}`,
-      cancel_url: back,
-      metadata: { lumio_card_link: row.id, coach_id: row.coach_id, player_id: row.player_id },
-    }, { stripeAccount: m.accountId })
-    await db.from('coach_pay_methods').update({
-      stripe_customer_id: customer, stripe_setup_session_id: session.id,
-      policy_text: policyText(m.policy, m.academy), policy_agreed_at: new Date().toISOString(), agreed_by: name,
-      updated_at: new Date().toISOString(),
-    }).eq('id', row.id)
-    return NextResponse.json({ url: session.url })
-  } catch (e) {
-    console.error('[card] start', e instanceof Error ? e.message : e)
-    return NextResponse.json({ error: 'We could not open the secure card page. Please try again.' }, { status: 500 })
-  }
+  const origin = publicSiteOrigin(new URL(req.url).origin)
+  const r = await startCardSetup(db, m, row, player, { name, method: wantsDd ? 'bacs_debit' : 'card', back: `${origin}/card/${encodeURIComponent(token)}` })
+  return r.url ? NextResponse.json({ url: r.url }) : NextResponse.json({ error: r.error }, { status: 500 })
 }

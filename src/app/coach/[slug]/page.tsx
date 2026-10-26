@@ -571,7 +571,7 @@ const LIVE_MODULE_TABLES: Record<string, CoachTable[]> = {
   camps: ['coach_camps', 'coach_camp_attendees', 'coach_camp_channels', 'coach_players', 'coach_staff', 'coach_attendance', 'coach_player_skills'],
   payments: ['coach_payments', 'coach_packages', 'coach_players', 'coach_sessions'],
   leads: ['coach_leads', 'coach_lead_events', 'coach_players'],
-  groups: ['coach_groups', 'coach_group_members', 'coach_group_sessions', 'coach_group_replies', 'coach_players', 'coach_venues'],
+  groups: ['coach_groups', 'coach_group_members', 'coach_group_sessions', 'coach_group_replies', 'coach_players', 'coach_venues', 'coach_memberships'],
   gpsheatmaps: ['coach_players', 'coach_watch_sessions'],
   videoaudio: ['coach_media', 'coach_players'],
   planner: ['coach_bookings', 'coach_sessions', 'coach_session_plans', 'coach_players', 'coach_camps', 'coach_player_skills'],

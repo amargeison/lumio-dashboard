@@ -24,6 +24,7 @@ import { readPolicy } from '@/lib/coach/cancel-policy'
 import { formatPennies } from '@/lib/coach/money'
 import { niceTime } from '@/lib/coach/reminders'
 import { ukDate } from '@/lib/coach/uk-date'
+import { planCovering, type Plan } from '@/lib/coach/memberships'
 
 export type Group = {
   id: string; name: string; weekday: number; start_time: string; duration_min: number
@@ -43,6 +44,7 @@ export function LiveGroups({ T, accent, onNavigate }: { T: ThemeTokens; accent: 
   const replies = useCoachTable<Reply>('coach_group_replies')
   const { rows: players } = useCoachTable<Player>('coach_players')
   const { rows: venues } = useCoachTable<Venue>('coach_venues')
+  const { rows: plans } = useCoachTable<Plan>('coach_memberships')
   const { wallet, loading: walletLoading } = useWallet({ fresh: true })
   const s = useCoachSettings()
   const policy = readPolicy(s.cancelPolicy)
@@ -80,7 +82,7 @@ export function LiveGroups({ T, accent, onNavigate }: { T: ThemeTokens; accent: 
             venue={venues.find(v => v.id === g.venue_id) || null}
             memberIds={Array.from(new Set(members.rows.filter(m => m.group_id === g.id).map(m => m.player_id)))}
             weeks={weeks.rows.filter(w => w.group_id === g.id)} replies={replies.rows.filter(r => r.group_id === g.id)}
-            players={players} chargesEnabled={wallet.chargesEnabled} wallet={wallet} onEdit={() => setEdit(g)} />
+            players={players} chargesEnabled={wallet.chargesEnabled} wallet={wallet} plans={plans} onEdit={() => setEdit(g)} />
         ))}
       </div>
 
@@ -99,9 +101,9 @@ function defaultGroupPrice(list: unknown): number {
 }
 
 // ── One group ────────────────────────────────────────────────────────────────
-function GroupCard({ T, accent, g, venue, memberIds, weeks, replies, players, chargesEnabled, wallet, policyHours, onEdit }: {
+function GroupCard({ T, accent, g, venue, memberIds, weeks, replies, players, chargesEnabled, wallet, plans, policyHours, onEdit }: {
   T: ThemeTokens; accent: AccentTokens; g: Group; venue: Venue | null; memberIds: string[]; weeks: Week[]; replies: Reply[]
-  players: Player[]; chargesEnabled: boolean; wallet: ReturnType<typeof useWallet>['wallet']; policyHours: number; onEdit: () => void
+  players: Player[]; chargesEnabled: boolean; wallet: ReturnType<typeof useWallet>['wallet']; plans: Plan[]; policyHours: number; onEdit: () => void
 }) {
   const [busy, setBusy] = useState('')
   const [msg, setMsg] = useState<{ text: string; bad?: boolean } | null>(null)
@@ -193,6 +195,7 @@ function GroupCard({ T, accent, g, venue, memberIds, weeks, replies, players, ch
                   : paid ? pill(`Paid ${formatPennies(paid.amount_pennies)}`, T.good)
                   : dd ? pill('Direct Debit on its way', T.good)
                   : refunded ? pill('Refunded', T.text3)
+                  : planCovering(plans, { playerId, groupId: g.id }) ? pill('Monthly plan', T.good)
                   : r.answered_by === 'coach' ? pill('Paying you directly', T.text3)
                   : !chargesEnabled ? pill('Pays on the day', T.text3)
                   : failed ? pill('Card failed · link sent', T.warn)

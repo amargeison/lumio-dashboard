@@ -11,6 +11,7 @@ import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, currentIdentity, type CoachIdentity, dbInsert, dbUpdate, dbRemove, dbList, invalidateCoachTable, rowsChanged, PLAYER_TABLES, RACKET_STAGES, RACKET_SKILLS, SKILLS_BY_STAGE, SKILL_LEVELS, skillLevelColour, setSkillScore, useCoachProfile } from '../_lib/coach-db'
 import { WatchConnectPanel } from './WatchConnectPanel'
 import { CardOnFile } from './CardOnFile'
+import { ClientSetup } from './ClientSetup'
 import { fileToAvatarDataUrl, avatarSrc } from '@/lib/avatar'
 import { getSettings, setSettings, subscribe as subscribeSettings, PLAYER_LEVELS, PAYMENT_METHODS } from '../_lib/settings-store'
 import { stageWords } from '../_lib/stage-words'
@@ -1027,6 +1028,7 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
         )}
 
         <CardOnFile T={T} accent={accent} pad={density.pad} player={player} />
+        <ClientSetup T={T} accent={accent} pad={density.pad} player={player} />
 
         <div style={{ padding: `${density.pad}px ${density.pad + 4}px ${density.pad + 4}px` }}>
           {/* stat tiles */}

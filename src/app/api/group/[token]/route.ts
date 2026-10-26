@@ -7,6 +7,8 @@ import { activeMethod } from '@/app/api/coach/pay/_saved'
 import { cancelState, dayWords, untilWords, payWayFor } from '@/lib/coach/groups'
 import { niceTime } from '@/lib/coach/reminders'
 import { familyAddress, type FamilyPlayer } from '@/lib/coach/family-mail'
+import { planCover } from '@/lib/coach/monthly-server'
+import { planCovering } from '@/lib/coach/memberships'
 
 export const runtime = 'nodejs'
 
@@ -31,6 +33,7 @@ async function view(db: ReturnType<typeof admin>, L: Loaded) {
   const { count } = await db.from('coach_group_replies').select('id', { count: 'exact', head: true }).eq('session_id', session.id).eq('answer', 'yes')
   const card = reply.answer === 'yes' ? null : (m.chargesEnabled ? await activeMethod(db, reply.coach_id, reply.player_id) : null)
   const state = session.status !== 'open' ? 'off' : cs.started ? 'past' : 'open'
+  const onPlan = !!planCovering(await planCover(db, reply.coach_id, [reply.player_id]), { playerId: reply.player_id, groupId: group.id })
   return {
     academy: m.academy, coachName: m.coachName || null, logoUrl: m.logoUrl, playerFirst: familyAddress(player as FamilyPlayer)?.toParent ? first(player.name) : '',
     group: group.name, when: `${dayWords(session.session_date)} at ${niceTime(group.start_time)}`, durMin: group.duration_min,
@@ -39,7 +42,7 @@ async function view(db: ReturnType<typeof admin>, L: Loaded) {
     state, answer: reply.answer || null, late: !!reply.late,
     paid: live ? (live.status === 'processing' ? 'processing' : 'paid') : refunded ? 'refunded' : 'none',
     payWay: payWayFor(m.chargesEnabled, !!card || !!live), card: methodWords(card),
-    freeUntil: m.policy.hours > 0 ? untilWords(cs.freeUntil) : null, free: cs.free,
+    freeUntil: m.policy.hours > 0 ? untilWords(cs.freeUntil) : null, free: cs.free, onPlan,
   }
 }
 
