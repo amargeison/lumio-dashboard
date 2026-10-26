@@ -1730,7 +1730,7 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
   const isAdminImpersonating = typeof window !== 'undefined' && localStorage.getItem('lumio_impersonated_from_admin') === 'true'
   const ownerName = isAdminImpersonating
     ? (localStorage.getItem('lumio_impersonated_user_name') || localStorage.getItem(`lumio_school_${_slug}_owner`) || '')
-    : (localStorage.getItem(`lumio_school_${_slug}_owner`) || '')
+    : (typeof window !== 'undefined' ? localStorage.getItem(`lumio_school_${_slug}_owner`) || '' : '')
   const userEmail = typeof window !== 'undefined'
     ? (localStorage.getItem('lumio_user_email')
         || localStorage.getItem('demo_user_email')
@@ -1740,7 +1740,8 @@ export default function SchoolDashboard({ params }: { params: Promise<{ schoolSl
     : ''
   const userName = typeof window !== 'undefined' ? localStorage.getItem('lumio_user_name') || '' : ''
   const firstName = ownerName ? ownerName.split(' ')[0] : userName ? userName.split(' ')[0] : userEmail ? userEmail.split('@')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].slice(1) : undefined
-  const schoolName = schoolData?.name || localStorage.getItem(`lumio_school_${_slug}_name`) || ''
+  // Read on the server too (first render), where there is no localStorage.
+  const schoolName = schoolData?.name || (typeof window !== 'undefined' ? localStorage.getItem(`lumio_school_${_slug}_name`) : null) || ''
 
   const router = useRouter()
   // Schools demo defaults to Daniel (British male broadcaster) unless the user

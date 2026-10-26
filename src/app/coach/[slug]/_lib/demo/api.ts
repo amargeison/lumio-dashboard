@@ -1908,6 +1908,37 @@ const payCards: Handler = async () => {
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
   return json({ connected: true, chargesEnabled: true, methods, charges })
 }
+// The weather on the demo dashboard: today's and tomorrow's lessons with a
+// made-up forecast — dry in the morning, showers from mid-afternoon tomorrow —
+// so the warning and the rain-off can be seen. No forecast service is called.
+const demoWeather: Handler = async () => {
+  await beat()
+  const today = new Date().toISOString().slice(0, 10)
+  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
+  const venues = demoTable('coach_venues')
+  const home = venues.find(v => v.is_home) || venues[0]
+  const nowHM = new Date().toISOString().slice(11, 16)
+  const by = new Map<string, { venueId: string; name: string; lessons: Row[] }>()
+  for (const b of demoTable('coach_bookings')) {
+    if (!b || b.status === 'cancelled' || b.type === 'Block' || ![today, tomorrow].includes(b.booking_date)) continue
+    if (b.booking_date === today && String(b.start_time || '') < nowHM) continue
+    const v = venues.find(x => x.id === b.venue_id) || home
+    if (!v) continue
+    if (!by.has(v.id)) by.set(v.id, { venueId: v.id, name: v.name, lessons: [] })
+    const hour = Number(String(b.start_time || '12').slice(0, 2))
+    const wet = b.booking_date === tomorrow && hour >= 15
+    const rainPct = wet ? 70 + (hour % 3) * 5 : 10 + (hour % 4) * 5
+    by.get(v.id)!.lessons.push({
+      bookingId: b.id, date: b.booking_date, time: String(b.start_time || '').slice(0, 5), durMin: Number(b.duration_min) || 60,
+      player: b.player_name || b.title, type: b.type,
+      weather: { tempC: wet ? 9 : 13, windMph: wet ? 17 : 8, gustMph: wet ? 28 : 14, rainPct, bad: wet, why: wet ? [`${rainPct}% chance of rain`] : [], words: wet ? `rain likely (${rainPct}%) and cool, 9°C, breezy` : 'dry and mild, 13°C' },
+    })
+  }
+  for (const g of by.values()) g.lessons.sort((a, b) => String(a.date + a.time).localeCompare(String(b.date + b.time)))
+  return json({ on: true, credit: 'Powered by Met Office data', today, venues: Array.from(by.values()) })
+}
+const SEND_OFF = 'Sending to families is switched off in the demo. In your own portal Lumio emails it for you, from your own mailbox, and files it in their messages in the app.'
+const sendOff: Handler = async () => { await sleep(400); return fail(SEND_OFF) }
 const CARDS_OFF = 'Saved cards are switched off in the demo. In your own portal the client gets a link, agrees to your cancellation policy and saves their card with Stripe; you then charge lessons from it in one click.'
 const payCardsOff: Handler = async () => { await sleep(400); return fail(CARDS_OFF) }
 
@@ -2556,6 +2587,9 @@ const ROUTES: Record<string, Handler> = {
   [`POST ${C}/pay/cards`]: payCardsOff,
   [`DELETE ${C}/pay/cards`]: payCardsOff,
   [`POST ${C}/pay/charge`]: payCardsOff,
+  [`GET ${C}/weather`]: demoWeather,
+  [`POST ${C}/rain-off`]: sendOff,
+  [`POST ${C}/lesson-summary/send`]: sendOff,
   [`GET ${C}/calendar/availability`]: availability,
   [`POST ${C}/calendar/event`]: calendarEventPost,
   [`DELETE ${C}/calendar/event`]: calendarEventDelete,

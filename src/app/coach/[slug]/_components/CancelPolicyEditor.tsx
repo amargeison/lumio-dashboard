@@ -67,8 +67,8 @@ export function CancelPolicyEditor({ T, accent }: { T: ThemeTokens; accent: Acce
         </label>
         <label><span style={lbl}>You cancel (rain, illness)</span>
           <select value={p.rainOff} onChange={e => save({ rainOff: e.target.value === 'credit' ? 'credit' : 'refund' })} style={field}>
-            <option value="refund">They get their money back</option>
-            <option value="credit">They get a credit</option>
+            <option value="refund">Money back</option>
+            <option value="credit">A credit</option>
           </select>
         </label>
       </div>

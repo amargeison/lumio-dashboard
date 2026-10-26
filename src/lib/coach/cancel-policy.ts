@@ -114,8 +114,9 @@ export function windowClosesAt(b: { booking_date?: string | null; start_time?: s
 }
 
 /** A cancelled booking that was cancelled after its free window had closed. */
-export function isLateCancel(b: { status?: string | null; cancelled_at?: string | null; booking_date?: string | null; start_time?: string | null }, p: CancelPolicy): boolean {
-  if (b.status !== 'cancelled' || !b.cancelled_at || p.hours <= 0) return false
+export function isLateCancel(b: { status?: string | null; cancelled_at?: string | null; cancelled_by?: string | null; booking_date?: string | null; start_time?: string | null }, p: CancelPolicy): boolean {
+  // The coach calling it off (rain, illness) is never the client's late cancellation.
+  if (b.status !== 'cancelled' || !b.cancelled_at || b.cancelled_by === 'coach' || p.hours <= 0) return false
   const closes = windowClosesAt(b, p)
   const at = Date.parse(b.cancelled_at)
   return closes != null && Number.isFinite(at) && at >= closes
