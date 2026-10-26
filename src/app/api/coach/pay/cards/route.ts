@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       .select('id, player_id, status, kind, brand, last4, exp_month, exp_year, saved_at, link_token, link_sent_to, link_sent_at, policy_agreed_at, agreed_by, created_at')
       .eq('coach_id', g.academyId).neq('status', 'removed').order('created_at', { ascending: false }),
     db.from('coach_charges')
-      .select('id, player_id, player_name, booking_id, kind, description, amount_pennies, status, failure_reason, refunded_pennies, charged_by, created_at, paid_at')
+      .select('*')
       .eq('coach_id', g.academyId).gte('created_at', since).order('created_at', { ascending: false }).limit(400),
     academyMoney(db, g.academyId),
   ])
@@ -56,7 +56,8 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     connected: !!m.accountId, chargesEnabled: m.chargesEnabled,
     methods: mineOnly(methods || []).map(({ link_token, ...r }: any) => ({ ...r, url: `${origin}/card/${link_token}` })),
-    charges: mineOnly(charges || []),
+    // '*' so the list still loads before migration 214 adds reply_id; Stripe's own references stay on the server.
+    charges: mineOnly(charges || []).map(({ stripe_payment_intent_id, stripe_checkout_session_id, method_id, ...c }: any) => c),
   })
 }
 

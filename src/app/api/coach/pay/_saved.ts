@@ -117,12 +117,12 @@ export async function priceBooking(db: Db, academyId: string, settings: Record<s
 }
 
 // ── Charging ────────────────────────────────────────────────────────────────
-export type ChargeKind = 'lesson' | 'late_cancel' | 'no_show' | 'other'
+export type ChargeKind = 'lesson' | 'late_cancel' | 'no_show' | 'other' | 'group'
 export type ChargeResult =
   | { ok: true; status: 'paid' | 'processing'; chargeId: string }
   | { ok: false; status: 'failed' | 'refused'; error: string; chargeId?: string; needsClient?: boolean }
 
-const KIND_WORDS: Record<ChargeKind, string> = { lesson: 'Lesson', late_cancel: 'Late cancellation', no_show: 'Missed lesson', other: 'Payment' }
+const KIND_WORDS: Record<ChargeKind, string> = { lesson: 'Lesson', late_cancel: 'Late cancellation', no_show: 'Missed lesson', other: 'Payment', group: 'Group place' }
 
 /**
  * Take money from a player's saved card or Direct Debit, off-session.
@@ -136,6 +136,8 @@ const KIND_WORDS: Record<ChargeKind, string> = { lesson: 'Lesson', late_cancel: 
 export async function chargeSaved(db: Db, m: AcademyMoney, o: {
   academyId: string; playerId: string; playerName: string; amountPennies: number
   kind: ChargeKind; bookingId?: string | null; description?: string; by: 'coach' | 'auto'
+  /** A weekly-group answer (migration 214): one payment per answer, not per lesson. */
+  replyId?: string | null
 }): Promise<ChargeResult> {
   if (!m.accountId || !m.chargesEnabled) return { ok: false, status: 'refused', error: 'Card payments are not switched on yet. Connect your bank in Settings → Pricing & packages.' }
   const amount = Math.round(o.amountPennies)
@@ -149,6 +151,7 @@ export async function chargeSaved(db: Db, m: AcademyMoney, o: {
   const { data: row, error: insErr } = await db.from('coach_charges').insert({
     coach_id: o.academyId, player_id: o.playerId, player_name: o.playerName, booking_id: o.bookingId || null,
     kind: o.kind, method_id: method.id, description, amount_pennies: amount, status: 'charging', charged_by: o.by,
+    ...(o.replyId ? { reply_id: o.replyId } : {}),
   }).select('id').single()
   if (insErr || !row) {
     // 23505: the lesson already has a charge for this reason in hand or paid.

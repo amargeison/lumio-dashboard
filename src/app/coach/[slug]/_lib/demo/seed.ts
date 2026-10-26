@@ -22,6 +22,7 @@ import { buildCampKit, type KitCategory } from '@/lib/coach/camp-kit-template'
 import { STAGES as EMAIL_STAGES } from '@/lib/coach/camp-lifecycle'
 import { askedForm } from '@/lib/coach/camp-form'
 import { BOOKS } from '@/lib/coach/books'
+import { upcomingDate } from '@/lib/coach/groups'
 
 /**
  * The mini camp runs Monday to Friday of the CURRENT week, so on a weekday the
@@ -767,6 +768,7 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     session: '09', camp: '0a', attendee: '0b', email: '0c', payment: '0d', pkg: '0e', message: '0f', equipment: '10',
     kit: '11', resource: '12', playerResource: '13', media: '14', watch: '15', gps: '16', consent: '17',
     development: '18', staffVenue: '19', lead: '1a', leadEvent: '1b',
+    group: '1c', groupMember: '1d', groupWeek: '1e', groupReply: '1f', charge: '20',
   }
   /** A row with the columns every table shares. `created` doubles as updated_at
       unless a later one is given; `false` is for tables with no updated_at. */
@@ -2183,6 +2185,65 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
   }
   out.coach_leads = leadRows
   out.coach_lead_events = leadEvents
+
+  // ── Weekly groups ──────────────────────────────────────────────────────────
+  // Thursday Adults has been asked about this week and is filling up; Saturday
+  // Cardio has not been asked yet, so "Ask now" has something to do.
+  const players = out.coach_players
+  const adults = players.filter(p => p.category === 'Adult')
+  const cardio = players.filter(p => p.category === 'Adult' || p.category === 'Performance').slice(0, 6)
+  const home = out.coach_venues.find(v => v.is_home) || out.coach_venues[0]
+  const WEEKLY = [
+    { name: 'Thursday Adults', weekday: 3, start_time: '19:00', duration_min: 60, capacity: 8, price_pennies: 1500, who: adults, court: 'Court 2' },
+    { name: 'Saturday Cardio', weekday: 5, start_time: '09:00', duration_min: 60, capacity: 10, price_pennies: 1200, who: cardio, court: 'Court 1' },
+  ]
+  out.coach_groups = []; out.coach_group_members = []; out.coach_group_sessions = []; out.coach_group_replies = []
+  out.coach_charges = out.coach_charges || []
+  WEEKLY.forEach((G, gi) => {
+    const g = row(T.group, {
+      staff_id: null, name: G.name, weekday: G.weekday, start_time: G.start_time, duration_min: G.duration_min, venue_id: home?.id || null,
+      court: G.court, assigned_coach: null, capacity: G.capacity, price_pennies: G.price_pennies, ask_days: 6, active: true, notes: null,
+    }, ago(200 - gi * 30))
+    out.coach_groups.push(g)
+    for (const p of G.who) out.coach_group_members.push(row(T.groupMember, { staff_id: null, group_id: g.id, player_id: p.id }, ago(190 - gi * 30), false))
+    if (gi !== 0) return
+    // This week, and the two before it.
+    const next = upcomingDate(G)
+    const weekDates = [next, ymd(plus(new Date(`${next}T12:00:00`), -7)), ymd(plus(new Date(`${next}T12:00:00`), -14))]
+    weekDates.forEach((date, wi) => {
+      const answers: (['yes', string | null] | ['no', null] | [null, 'seen' | 'sent'])[] = wi === 0
+        ? [['yes', 'card'], ['yes', 'card'], ['yes', 'dd'], ['yes', 'card'], ['yes', 'coach'], ['no', null], [null, 'seen'], [null, 'sent']]
+        : wi === 1 ? [['yes', 'card'], ['yes', 'card'], ['yes', 'card'], ['yes', 'dd'], ['yes', 'card'], ['yes', 'coach'], ['yes', 'card'], ['no', null]]
+        : [['yes', 'card'], ['yes', 'card'], ['yes', 'card'], ['yes', 'dd'], ['yes', 'card'], ['yes', 'card'], ['no', null], ['no', null]]
+      const coming = answers.filter(a => a[0] === 'yes').length
+      const bk = row(T.booking, {
+        staff_id: null, assigned_coach: null, title: G.name, type: 'Group', status: 'confirmed', booking_date: date, start_time: G.start_time,
+        duration_min: G.duration_min, venue_id: home?.id || null, court: G.court, headcount: coming, price_pennies: coming * G.price_pennies,
+        player_id: null, player_name: null, notes: 'Weekly group. Places are taken from the group’s links.',
+      }, ago(7 * wi + 6))
+      out.coach_bookings.push(bk)
+      const week = row(T.groupWeek, { staff_id: null, group_id: g.id, session_date: date, booking_id: bk.id, status: 'open', asked_at: ago(7 * wi + 6, '09:15') }, ago(7 * wi + 6, '09:15'), false)
+      out.coach_group_sessions.push(week)
+      G.who.forEach((p, pi) => {
+        const [answer, how] = answers[pi] || [null, 'sent']
+        const sent = ago(7 * wi + 6, '09:15')
+        const r = row(T.groupReply, {
+          staff_id: null, session_id: week.id, group_id: g.id, player_id: p.id, token: `demo-group-${wi}-${pi}`, sent_to: p.parent_email || p.email || null, sent_at: sent,
+          opened_at: answer || how === 'seen' ? ago(7 * wi + 5, '12:00') : null, answer, answered_at: answer ? ago(7 * wi + 5, '12:30') : null,
+          answered_by: answer ? (how === 'coach' ? 'coach' : 'client') : null, late: false,
+        }, sent)
+        out.coach_group_replies.push(r)
+        if (answer === 'yes' && (how === 'card' || how === 'dd')) {
+          const paidAt = ago(7 * wi + 5, '12:30')
+          out.coach_charges.push(row(T.charge, {
+            player_id: p.id, player_name: p.name, booking_id: bk.id, reply_id: r.id, kind: 'group', description: `${G.name} · ${p.name}`,
+            amount_pennies: G.price_pennies, status: how === 'dd' && wi === 0 ? 'processing' : 'paid', failure_reason: null, refunded_pennies: null,
+            charged_by: 'auto', paid_at: how === 'dd' && wi === 0 ? null : paidAt,
+          }, paidAt))
+        }
+      })
+    })
+  })
 
   return out
 }
