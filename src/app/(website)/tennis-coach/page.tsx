@@ -14,30 +14,42 @@ const BORDER_ALT = '#1F2937'
 const TEXT = '#F9FAFB'
 const MUTED = '#9CA3AF'
 
-const STAT_PILLS = ['13 modules', 'AI powered', 'Effort & rewards', 'LTA racket pathway', 'Mobile app']
-
+// The modules, in the order a coach meets them: the AI and the planning first,
+// then the business side (money, reminders, leads, groups, new clients), then the
+// lesson tools, the ladders, camps and the team. Payments are built and switch on
+// for founding coaches once card payments go live — say so, never "live now".
 const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🧠', title: 'Lumio Coach AI', desc: 'One coaching brain behind everything — a world-class coach with 30 years developing elite juniors and tour-winning adults. Every plan, review, summary and message runs through the same coach, so the voice and standards never drift. And it remembers each player: it reads their history and last session’s focus on every call, so the guidance builds session to session instead of starting from scratch each time.' },
-  { icon: '📋', title: 'Session Planner', desc: 'Plan every session in minutes. Overview, Today, This week and This month views over one dated schedule synced from your booking calendar — a confirmed booking becomes a ready-to-build session in two clicks, with a timed run-sheet and kit list generated for you.' },
+  { icon: '📋', title: 'Session Planner', desc: 'Plan every session in minutes. Overview, Today, This week and This month views over one dated schedule synced from your booking calendar — a confirmed booking becomes a ready-to-build session in two clicks, with a timed run-sheet and kit list generated for you. Pick a client and you see what they told you they want, which parts of their game their lessons have and have not covered lately, and your own private notes about them — and the plan is built around it.' },
+  { icon: '💳', title: 'Payments & cancellations', desc: 'Your 24-hour policy, applied for you. Clients save a card or Direct Debit once and agree to your cancellation policy at the same moment. Then a lesson is charged in one tap, or automatically when the window closes. Late cancellations and no-shows follow your rules, rain-offs are refunded or credited back, lesson packs count down on their own, and regulars can go on a monthly plan. Straight to your own bank through Stripe — Lumio never sees a card number. Switching on for founding coaches.' },
+  { icon: '🌦️', title: 'Reminders, summaries & weather', desc: 'The day before, each client hears “See you tomorrow at 10 — confirmed and paid”, with the forecast for the venue. Lesson summaries go to the family the moment you approve them, or at a time you choose. Set your own rain and wind limits: Lumio warns you when a lesson crosses them, and one tap calls it off, refunds or credits everyone and tells them.' },
+  { icon: '📈', title: 'Leads', desc: 'Every enquiry on a board with your own stages — one for coaching, one for holidays — with notes, follow-up dates, and call, WhatsApp and email buttons. Leads from your ads and website forms arrive on their own, an old spreadsheet imports in minutes, waiting lists are one click from an email, and a weekly score keeps you following up. When they join, one tap puts them on your roster.' },
+  { icon: '🎟️', title: 'Weekly Groups', desc: 'Retire the WhatsApp poll. A few days before each session Lumio asks every member “Coming this week?”. A yes takes payment from their saved card, places are capped, cancelling is free until your cut-off, and a rained-off week is refunded in one tap. Members on a monthly plan are never charged twice.' },
+  { icon: '👋', title: 'Client welcome & questionnaires', desc: 'One link for every new client: a short or long questionnaire about where they are and where they want to be, what they enjoy in lessons and what else they would join, consent to record lessons, their monthly plan, then their card or Direct Debit with your policy. The answers sit on their profile and the session planner works from them.' },
   { icon: '🤖', title: 'AI Session Review', desc: 'Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player’s plan so the next session writes itself.' },
   { icon: '🎙️', title: 'AI Lesson Transcriber', desc: 'Just talk. Record the lesson on your phone — or upload a clip — and the AI transcribes it and writes the full summary for you: what you covered, the key takeaways, the drills used and the homework. No typing after a long day on court; every player — junior or adult — gets a proper write-up in seconds.' },
-  { icon: '🎾', title: 'Racket Progression reward system', desc: 'The reward system at the heart of Lumio Coach. A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds. At every level players earn a Lumio certificate and whatever reward you choose to give — or, from V2, Lumio’s coloured racket keyring and matching dampener, with a full trophy at Black — and parents fund the journey: your second revenue stream, built in.' },
+  { icon: '🗓️', title: 'Booking Calendar', desc: 'Your whole week across every court — private, group, cardio and match play. The single source of truth that feeds the Session Planner, so the schedule and the plans never drift apart. Prices follow your price list, each client’s own rate and how many are in the group, and a gap in the diary can be offered to the clients who want to hear about free slots — the first to say yes is booked.' },
+  { icon: '🎾', title: 'Racket Progression reward system', desc: 'The reward system at the heart of Lumio Coach. A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds. At every level players earn a Lumio certificate and whatever reward you choose to give — or, from V2, Lumio’s coloured racket keyring and matching dampener, with a full trophy at Black — and parents fund the journey: your second revenue stream, built in. And for adults, your own levels, each with a short video and a checklist to pass it, which players see on their own page.' },
   { icon: '⌚', title: 'Effort & Rewards', desc: 'Log training sessions and effort, movement and consistency become XP and effort levels — a motivation layer that keeps players training, kept separate from the technical racket pathway. Automatic smartwatch sync (Apple Watch & Wear OS) is coming soon; for now you log sessions in seconds and the XP works exactly the same.' },
   { icon: '🎬', title: 'Video & clips (BETA)', desc: 'Your recordings library — match and training footage saved to each player, by session, so you can review technique together. The raw room behind the AI highlights, with no third-party analysis stack.' },
   { icon: '🎞️', title: 'AI Shot Highlights (BETA)', desc: 'Record the session and the AI turns it into a highlights reel — automatically clipping the best serves, forehands, backhands, volleys and smashes, each tagged by shot, straight into the player’s app — for them, or for a parent, to watch. It reads both the video and what you say on court to get the shot right, and you approve each clip before it’s shared — so what families see is always spot on.' },
+  { icon: '🏕️', title: 'Training Camps & holidays', desc: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft and a per-player camp log that captures progress day by day. Families sign up and pay a deposit online, choose their room (with any upgrade added to what they owe), and the balance is taken on the due date after a reminder.' },
   { icon: '👥', title: 'Staff / Coaches', desc: 'Run a club of coaches, not just yourself. A directory with each coach’s calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team’s week.' },
-  { icon: '🏕️', title: 'Training Camps', desc: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft and a per-player camp log that captures progress day by day.' },
-  { icon: '🗓️', title: 'Booking Calendar', desc: 'Your whole week across every court — private, group, cardio and match play. The single source of truth that feeds the Session Planner, so the schedule and the plans never drift apart.' },
-  { icon: '💳', title: 'Payments — coming in V2', desc: 'Built and coming in V2: take card, Apple Pay and Google Pay payments straight to your own bank — no card reader needed. Sell lesson packages or charge per session, and hand over a QR code or link and they pay in seconds. Sessions will tick off automatically as booked lessons take place, and Lumio never sees a card number. Powered by Stripe. Founding coaches record payments by hand until it lands.' },
+  { icon: '🔒', title: 'Consent & data protection', desc: 'Built for coaches who take GDPR seriously. A data processing agreement you read and accept in Settings, listing every service involved and where it is, and a privacy notice to give your clients. Lessons are only recorded for clients who have agreed, health notes are only kept with explicit consent, and your private notes on each client are never shown to them.' },
   { icon: '📱', title: 'Mobile App', desc: 'An app-like experience on the phone — a bottom tab bar, your day at a glance, and the tools you actually reach for on court — wherever you’re coaching that day.' },
 ]
+
+const STAT_PILLS = [`${FEATURES.length} modules`, 'AI powered', 'Payments & cancellations', 'LTA racket pathway', 'Mobile app']
 
 const INTEGRATIONS = [
   { icon: '⌚', name: 'Apple Watch & Wear OS', desc: 'Coming soon — effort & XP from the player’s own watch' },
   { icon: '🎬', name: 'Lumio Vision', desc: 'Video clips and annotations (BETA)' },
   { icon: '🤖', name: 'Claude AI', desc: 'Session reviews and camp drafts' },
   { icon: '🏛️', name: 'LTA Youth Pathway', desc: 'Racket stage mapping' },
-  { icon: '💳', name: 'Stripe', desc: 'Coming in V2 — card, Apple Pay & Google Pay to your bank' },
+  { icon: '💳', name: 'Stripe', desc: 'Cards and Direct Debit straight to your bank — switching on for founding coaches' },
+  { icon: '📣', name: 'Lead ads & web forms', desc: 'New enquiries land in Leads on their own' },
+  { icon: '🌦️', name: 'Venue forecasts', desc: 'Rain and wind for each venue, for reminders and rain-offs' },
+  { icon: '▶️', name: 'YouTube & Vimeo', desc: 'Your adult level videos, played in the app' },
   { icon: '💰', name: 'Xero', desc: 'Academy finances' },
   { icon: '📧', name: 'Google (Gmail & Calendar)', desc: 'Send-as email, and your Lumio bookings land straight in Google Calendar' },
   { icon: '📧', name: 'Microsoft 365', desc: 'Send-as email, and your Lumio bookings land straight in Outlook' },
@@ -66,6 +78,7 @@ const PARENT_FEATURES = [
   'Effort rewards & XP',
   'Progress & racket journey',
   'Homework & lesson summaries',
+  'Adult levels: the video and what is left to pass',
 ]
 // Reward + capture kit. Effort is logged in the app (smartwatch sync is not
 // built yet — say "coming soon" wherever it comes up), so there is no tracking hardware — the bundle is the reward keyrings/dampeners/trophy
@@ -410,29 +423,114 @@ function VideoMockup() {
 }
 
 function PaymentsMockup() {
+  const rows: [string, string, string, string, string][] = [
+    ['Tue 10:00', 'Jo Smith · private', '£40', 'Charged', '#10B981'],
+    ['Tue 18:00', 'Sam Lee · late cancel', '£40', 'Policy fee', '#F59E0B'],
+    ['Wed 09:00', 'Ana Ruiz · pack', '£0', '7 of 10 left', PURPLE_LIGHT],
+    ['Thu 19:00', 'Thursday Adults × 6', '£90', 'Paid on yes', '#10B981'],
+  ]
   return (
     <MockupFrame>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>💳 Take a payment</div>
-        <Badge color="#10B981" bg="rgba(16,185,129,0.15)">Paid · instant</Badge>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>💳 Card payments</div>
+        <Badge color="#10B981" bg="rgba(16,185,129,0.15)">24-hour policy on</Badge>
       </div>
-      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Straight to your bank · no card reader</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
-        <KPI value="£45" label="U12 private × 6" color={PURPLE} />
-        <KPI value="£220" label="Term block" color="#10B981" />
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Charged when the 24 hours close · straight to your bank</div>
+      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${PURPLE}55`, borderRadius: 10, padding: '9px 11px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 16 }}>💳</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: TEXT }}>Visa •••• 4242</div>
+          <div style={{ fontSize: 8.5, color: MUTED }}>Cancellation policy agreed by Jo Smith · 12 Oct</div>
+        </div>
+        <Badge color={PURPLE_LIGHT} bg="rgba(58,142,224,0.15)">Direct Debit too</Badge>
       </div>
-      <div style={{ backgroundColor: '#0A0B10', border: `1px solid ${PURPLE}55`, borderRadius: 10, padding: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 56, height: 56, borderRadius: 8, background: '#fff', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-          <div style={{ width: 44, height: 44, display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 1 }}>
-            {Array.from({ length: 25 }).map((_, i) => <div key={i} style={{ background: [0, 2, 3, 6, 8, 10, 11, 14, 16, 18, 20, 22, 24, 1, 12, 7, 17].includes(i) ? '#0A0B10' : 'transparent' }} />)}
+      {rows.map(([when, who, amt, st, c]) => (
+        <div key={when} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: `1px solid ${BORDER_ALT}` }}>
+          <span style={{ fontSize: 8.5, color: MUTED, width: 52 }}>{when}</span>
+          <span style={{ flex: 1, fontSize: 9.5, color: TEXT }}>{who}</span>
+          <span style={{ fontSize: 9.5, fontWeight: 800, color: TEXT, width: 30, textAlign: 'right' }}>{amt}</span>
+          <span style={{ fontSize: 8, fontWeight: 800, color: c, width: 70, textAlign: 'right' }}>{st}</span>
+        </div>
+      ))}
+      <div style={{ fontSize: 8.5, color: MUTED, marginTop: 8, fontStyle: 'italic' }}>Powered by Stripe — Lumio never sees a card number. Switching on for founding coaches.</div>
+    </MockupFrame>
+  )
+}
+
+function LeadsMockup() {
+  const cols: [string, string[]][] = [['Enquired', ['Priya K.', 'Tom W.']], ['Trial', ['Helen M.']], ['Joined', ['Rob D.', 'Lena S.']]]
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>📈 Leads · UK coaching</div>
+        <Badge color="#F59E0B" bg="rgba(245,158,11,0.15)">7 pts · streak 3 wks</Badge>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>Your stages · from your ads, your website and your old spreadsheet</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+        {cols.map(([stage, names]) => (
+          <div key={stage} style={{ backgroundColor: '#0A0B10', border: `1px solid ${BORDER_ALT}`, borderRadius: 8, padding: 7 }}>
+            <div style={{ fontSize: 8, fontWeight: 800, color: PURPLE_LIGHT, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{stage}</div>
+            {names.map(n => (
+              <div key={n} style={{ background: CARD, border: `1px solid ${BORDER_ALT}`, borderRadius: 6, padding: '5px 6px', marginBottom: 5 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: TEXT }}>{n}</div>
+                <div style={{ fontSize: 7.5, color: MUTED }}>{stage === 'Enquired' ? 'From ads · call Thu' : stage === 'Trial' ? 'Trial Sat 10:00' : 'On the roster'}</div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div style={{ backgroundColor: 'rgba(31,111,204,0.12)', border: `1px solid ${PURPLE}55`, borderRadius: 8, padding: '7px 10px', fontSize: 9, color: TEXT, marginTop: 8 }}>
+        📋 Midweek evenings waiting list · 12 people · Copy their emails
+      </div>
+    </MockupFrame>
+  )
+}
+
+function GroupsMockup() {
+  const people: [string, string, string][] = [['Mia', 'Yes · paid', '#10B981'], ['Dev', 'Yes · paid', '#10B981'], ['Sue', 'Monthly plan', PURPLE_LIGHT], ['Rob', 'Not this week', MUTED], ['Kat', 'Asked · no reply', '#F59E0B']]
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>🎟️ Thursday Adults · 7pm</div>
+        <Badge color="#10B981" bg="rgba(16,185,129,0.15)">6 of 8 places</Badge>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>£15 a head · asked 6 days before · free to cancel until 24 hours</div>
+      {people.map(([n, st, c]) => (
+        <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderTop: `1px solid ${BORDER_ALT}` }}>
+          <span style={{ width: 20, height: 20, borderRadius: '50%', background: `${PURPLE}33`, color: PURPLE_LIGHT, fontSize: 8, fontWeight: 800, display: 'grid', placeItems: 'center' }}>{n[0]}</span>
+          <span style={{ flex: 1, fontSize: 9.5, color: TEXT }}>{n}</span>
+          <span style={{ fontSize: 8.5, fontWeight: 700, color: c }}>{st}</span>
+        </div>
+      ))}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 8 }}>
+        <KPI value="£90" label="Taken this week" color="#10B981" />
+        <KPI value="1 tap" label="Rained off" sub="Everyone refunded & told" color={PURPLE_LIGHT} />
+      </div>
+    </MockupFrame>
+  )
+}
+
+function WelcomeMockup() {
+  const steps: [string, string][] = [['A few questions', 'Short or long version'], ['Recording lessons', 'Yes, that’s fine'], ['Monthly plan', '£150 on the 1st · agreed'], ['Card or Direct Debit', 'Policy agreed · Visa •••• 4242']]
+  return (
+    <MockupFrame>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: TEXT }}>👋 Welcome to the academy</div>
+        <Badge color="#10B981" bg="rgba(16,185,129,0.15)">All done</Badge>
+      </div>
+      <div style={{ fontSize: 9, color: MUTED, marginBottom: 10 }}>One link · about five minutes · no account needed</div>
+      {steps.map(([t, sub]) => (
+        <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '6px 0', borderTop: `1px solid ${BORDER_ALT}` }}>
+          <span style={{ width: 18, height: 18, borderRadius: 5, background: '#10B981', color: '#fff', fontSize: 10, fontWeight: 900, display: 'grid', placeItems: 'center', flexShrink: 0 }}>✓</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: TEXT }}>{t}</div>
+            <div style={{ fontSize: 8, color: MUTED }}>{sub}</div>
           </div>
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: TEXT }}>Scan to pay £45</div>
-          <div style={{ fontSize: 9, color: MUTED, lineHeight: 1.5, marginTop: 2 }}>Card, Apple Pay &amp; Google Pay. Sessions tick off from your lesson summaries automatically.</div>
-        </div>
+      ))}
+      <div style={{ backgroundColor: 'rgba(31,111,204,0.12)', border: `1px solid ${PURPLE}55`, borderRadius: 8, padding: '8px 10px', fontSize: 9, color: TEXT, lineHeight: 1.5, marginTop: 8 }}>
+        In the planner: <strong>Wants</strong> a better serve · <strong>In 3 months</strong> a second serve they trust · <strong>Serve</strong> not covered for 5 weeks → use as focus
       </div>
-      <div style={{ fontSize: 8.5, color: MUTED, marginTop: 8, fontStyle: 'italic' }}>Coming in V2 · powered by Stripe — Lumio never sees a card number.</div>
     </MockupFrame>
   )
 }
@@ -471,15 +569,18 @@ function MobileAppMockup() {
 function SpotlightTabs() {
   const spots: { tab: string; eyebrow: string; title: string; body: string; bullets: string[]; mockup: React.ReactNode }[] = [
     { tab: 'Lumio Coach AI', eyebrow: 'SPOTLIGHT · LUMIO COACH AI', title: 'One AI coach behind everything.', body: 'Every plan, review, summary and message runs through the same coaching brain — a world-class coach with 30 years developing elite juniors and tour-winning adults — so the voice and standards never drift. And it remembers each player: it reads their history and last session’s focus on every call, so the guidance builds session to session instead of starting from scratch.', bullets: ['One coaching brain behind plans, reviews, summaries & messages', 'Remembers every player’s history and last session', 'Consistent LTA coaching voice and standards throughout', 'Builds session to session — never starts from scratch'], mockup: <AICoachMockup /> },
-    { tab: 'Session Planner', eyebrow: 'SPOTLIGHT · SESSION PLANNER', title: 'Plan your whole week in minutes.', body: 'Overview, Today, This week and This month views sit over one dated schedule synced from your booking calendar. A confirmed booking becomes a ready-to-build session in two clicks — with a timed run-sheet and kit list generated for you.', bullets: ['One schedule fed straight from your bookings', 'Booking → ready-to-build session in two clicks', 'Timed run-sheet and kit list auto-generated', 'Today / week / month views over the same data'], mockup: <SessionPlannerMockup /> },
+    { tab: 'Session Planner', eyebrow: 'SPOTLIGHT · SESSION PLANNER', title: 'Plan your whole week in minutes.', body: 'Overview, Today, This week and This month views sit over one dated schedule synced from your booking calendar. A confirmed booking becomes a ready-to-build session in two clicks — with a timed run-sheet and kit list generated for you.', bullets: ['One schedule fed straight from your bookings', 'Booking → ready-to-build session in two clicks', 'Timed run-sheet and kit list auto-generated', 'What each client wants, and what they have and have not covered lately'], mockup: <SessionPlannerMockup /> },
+    { tab: 'Payments', eyebrow: 'SPOTLIGHT · PAYMENTS · SWITCHING ON FOR FOUNDING COACHES', title: 'Your cancellation policy, applied for you.', body: 'Clients save a card or Direct Debit once and agree to your cancellation policy at the same moment, so the 24-hour rule stops being a personal conversation. Charge a lesson in one tap, or let Lumio charge it when the window closes. Late cancellations and no-shows follow your rules, rain-offs and your own cancellations are refunded or credited back, packs count down on their own, and regulars can go on a monthly plan.', bullets: ['Card or Direct Debit saved once, with your policy agreed', 'Charged in one tap, or automatically when the 24 hours close', 'Late cancellations, no-shows, packs and rain-offs handled by your rules', 'Monthly plans for regulars · money straight to your own bank via Stripe'], mockup: <PaymentsMockup /> },
+    { tab: 'Leads', eyebrow: 'SPOTLIGHT · LEADS', title: 'Every enquiry, followed up.', body: 'Your enquiries on a board with your own stages — one for coaching and one for holidays — instead of a spreadsheet. Leads from your ads and website forms arrive on their own, your existing spreadsheet imports in minutes, and every lead has notes, a follow-up date and call, WhatsApp and email buttons. A weekly score and streak make the follow-ups happen.', bullets: ['Your own stages, for coaching and for holidays', 'Ads and website forms straight in · spreadsheet import', 'Waiting lists with every email address in one click', 'One tap turns a lead into a client on your roster'], mockup: <LeadsMockup /> },
+    { tab: 'Weekly Groups', eyebrow: 'SPOTLIGHT · WEEKLY GROUPS', title: 'Retire the WhatsApp poll.', body: 'A few days before each session, Lumio asks every member “Coming this week?”. Saying yes takes their place and their payment from the card they saved, places are capped, and cancelling is free until your cut-off. Called off for rain? One tap refunds everyone and tells them.', bullets: ['“Coming this week?” sent for you, days ahead', 'Paid when they say yes · capped at your numbers', 'Free cancellation until your cut-off, then it stands', 'Monthly-plan members never charged twice'], mockup: <GroupsMockup /> },
+    { tab: 'Client welcome', eyebrow: 'SPOTLIGHT · CLIENT WELCOME & QUESTIONNAIRES', title: 'Know every client before the first lesson.', body: 'One link does the whole onboarding: a short or long questionnaire about where they are and where they want to be, what they enjoy in lessons and what else they would join, consent to record lessons, their monthly plan, then their card or Direct Debit with your policy. The session planner then shows what they told you next to what their lessons have and have not covered.', bullets: ['Questionnaire, consent, plan and card in one link', 'Health notes only kept with their consent', 'Answers on their profile and in the session planner', 'See who wants groups, camps or more lessons — copy their emails'], mockup: <WelcomeMockup /> },
     { tab: 'AI Session Review', eyebrow: 'SPOTLIGHT · AI SESSION REVIEW', title: 'The next session writes itself.', body: "Turn a finished lesson into a structured review. The AI reads the session and returns what went well, what to work on next, and the drills to get there — saved straight to the player's plan so you walk on court next week already prepared.", bullets: ['What went well · work on next · drills to get there', "Saved straight to the player's development plan", 'Auto-loaded into next week’s session', 'Written in an LTA coaching tone'], mockup: <SessionReviewMockup /> },
     { tab: 'Audio sessions', eyebrow: 'SPOTLIGHT · AI LESSON TRANSCRIBER', title: 'Just talk — the write-up does itself.', body: "Record the lesson on your phone, or upload a clip, and the AI transcribes it and writes the full summary for you: what you covered, the key takeaways, the drills used and the homework. No typing after a long day on court — every player gets a proper write-up in seconds.", bullets: ['Record on your phone or upload a clip', 'Auto transcript + a full structured summary', 'Covered · takeaways · drills · homework, written for you', 'Saved to the player, so an adult reads it themselves and a parent reads it for their child'], mockup: <AudioMockup /> },
     { tab: 'Video & Highlights', eyebrow: 'SPOTLIGHT · VIDEO & AI SHOT HIGHLIGHTS · BETA', title: 'Record once — highlights clip themselves.', body: "Your recordings library, plus AI that turns a session into a highlights reel — automatically clipping the best serves, forehands, backhands, volleys and smashes, each tagged by shot, straight into the player's app for parents to watch. It reads both the video and what you say on court, and you approve every clip before it's shared.", bullets: ['Match & training footage saved to each player, by session', 'AI auto-clips the best shots, tagged by type', 'Linked to the right player and pushed to their mobile app', 'You approve each clip before parents see it'], mockup: <VideoMockup /> },
-    { tab: 'Racket Progression', eyebrow: 'SPOTLIGHT · RACKET PROGRESSION REWARD SYSTEM', title: 'A reward system that pays you back.', body: "A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds, so players and parents always know exactly what's next. As players pass each level, you award a Lumio certificate with your own reward — or, from V2, Lumio's coloured racket keyring and matching dampener, with a full trophy at Black: a revenue stream built right into the product.", bullets: ['Nine stages — White, Yellow, Orange … to Black', 'Skills tracked: Learning → Developing → Consistent → Mastered', 'Award thresholds and progress bars per player', 'A certificate at every level — your own rewards now, Lumio reward sets in V2'], mockup: <RacketProgressionMockup /> },
+    { tab: 'Racket Progression', eyebrow: 'SPOTLIGHT · RACKET PROGRESSION REWARD SYSTEM', title: 'A reward system that pays you back.', body: "A clear nine-stage racket pathway — White to Black — tracked against its criteria with progress bars and award thresholds, so players and parents always know exactly what's next. As players pass each level, you award a Lumio certificate with your own reward — or, from V2, Lumio's coloured racket keyring and matching dampener, with a full trophy at Black: a revenue stream built right into the product.", bullets: ['Nine stages — White, Yellow, Orange … to Black', 'Skills tracked: Learning → Developing → Consistent → Mastered', 'Award thresholds and progress bars per player', 'A certificate at every level — your own rewards now, Lumio reward sets in V2', 'Adults: your own levels, each with a video and a pass checklist'], mockup: <RacketProgressionMockup /> },
     { tab: 'Effort & Rewards', eyebrow: 'SPOTLIGHT · EFFORT & REWARDS', title: 'Turn every session into XP — no hardware to buy.', body: "Log a session in seconds — effort, movement and consistency become scores, XP and effort levels, with a squad leaderboard to keep players coming back. It's a motivation layer that sits alongside the technical racket pathway, never replacing it, and it never tracks a player's position on court. Automatic smartwatch sync is coming soon.", bullets: ['Effort, movement & consistency scores from every session', 'XP, effort levels and a squad leaderboard', 'Smartwatch sync (Apple Watch & Wear OS) coming soon — manual logging now', 'Kept separate from the LTA-mapped Racket Progression pathway'], mockup: <EffortRewardsMockup /> },
     { tab: 'Staff & Coaches', eyebrow: 'SPOTLIGHT · STAFF & COACHES', title: 'Run a club of coaches, not just yourself.', body: "A directory with each coach's calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team's week. See who's busy, who has room, and which certifications are about to expire.", bullets: ['Per-coach calendar, specialisms and assigned players', 'Utilisation across the whole team at a glance', 'Accreditation and certification expiry alerts', 'The head-coach view of the academy week'], mockup: <StaffMockup /> },
-    { tab: 'Training Camps', eyebrow: 'SPOTLIGHT · TRAINING CAMPS', title: 'Day camps and tours, drafted by AI.', body: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft to get you started and a per-player camp log that captures progress day by day — and shows you the margin before you publish.', bullets: ['Itineraries, attendees, targets and finances in one place', 'One-click AI draft for the whole camp', 'Per-player camp log captures progress day by day', 'Revenue and margin visible before you publish'], mockup: <CampMockup /> },
-    { tab: 'Payments', eyebrow: 'SPOTLIGHT · PAYMENTS · COMING IN V2', title: 'Tap, scan, paid — straight to your bank.', body: "Coming in V2: take card, Apple Pay and Google Pay payments with no card reader needed. Sell lesson packages or charge per session, and hand over a QR code or link a parent pays in seconds. Sessions will tick off automatically as booked lessons take place, and Lumio never sees a card number. Founding coaches record payments by hand in the meantime — the money side of the portal works either way.", bullets: ['Coming in V2 — founding coaches record payments by hand for now', 'Card, Apple Pay & Google Pay — no reader needed', 'Sell packages or charge per session', 'Powered by Stripe · money lands in your own bank'], mockup: <PaymentsMockup /> },
+    { tab: 'Training Camps', eyebrow: 'SPOTLIGHT · TRAINING CAMPS', title: 'Day camps and tours, drafted by AI.', body: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft to get you started and a per-player camp log that captures progress day by day — and shows you the margin before you publish.', bullets: ['Itineraries, attendees, targets and finances in one place', 'One-click AI draft for the whole camp', 'Per-player camp log captures progress day by day', 'Revenue and margin visible before you publish', 'Deposits online, room upgrades, and the balance taken on the due date'], mockup: <CampMockup /> },
     { tab: 'Mobile App', eyebrow: 'SPOTLIGHT · MOBILE APP', title: 'The whole platform, on your phone.', body: "An app-like experience on the phone — a bottom tab bar, your day at a glance, and the tools you actually reach for on court, wherever you're coaching that day. Install it on any phone, no app store required.", bullets: ['Your day at a glance the moment you open it', 'Bottom tab bar — the tools you reach for on court', 'Works wherever you’re coaching that day', 'Installs on any phone as a PWA — no app store'], mockup: <MobileAppMockup /> },
   ]
   return <SpotlightTabsClient spots={spots} />
@@ -538,11 +639,11 @@ export default function TennisCoachPage() {
             Built for the coach, whoever you coach.
           </h2>
           <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 56, maxWidth: 780, marginLeft: 'auto', marginRight: 'auto' }}>
-            Thirteen modules that take you from the booking to the lesson to the write-up — and scale from one
-            coach with a diary full of adults to an academy with juniors, camps and staff. Turn on what you use;
-            the rest stays out of your way.
+            {FEATURES.length} modules that take you from the enquiry to the booking, the lesson, the write-up and the
+            payment — and scale from one coach with a diary full of adults to an academy with juniors, camps and
+            staff. Turn on what you use; the rest stays out of your way.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 20 }}>
             {FEATURES.map(f => {
               const featured = f.title === 'Racket Progression reward system'
               return (
@@ -566,7 +667,7 @@ export default function TennisCoachPage() {
           <h2 style={{ fontSize: 40, fontWeight: 900, color: TEXT, textAlign: 'center', marginBottom: 16, lineHeight: 1.1 }}>
             Who it&apos;s for.
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 56 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 24, marginTop: 56 }}>
             {TIERS.map(t => (
               <div key={t.name} style={{ backgroundColor: CARD, border: `1px solid ${PURPLE}`, borderRadius: 16, padding: 32 }}>
                 <div style={{ fontSize: 13, fontWeight: 800, color: PURPLE_LIGHT, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>ROLE</div>
@@ -587,7 +688,7 @@ export default function TennisCoachPage() {
           <p style={{ fontSize: 16, color: MUTED, textAlign: 'center', marginBottom: 8, maxWidth: 720, marginLeft: 'auto', marginRight: 'auto' }}>
             The capture, intelligence and admin you need — already wired into the portal.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginTop: 48 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 16, marginTop: 48 }}>
             {INTEGRATIONS.map(i => (
               <div key={i.name} style={{ display: 'flex', alignItems: 'center', gap: 14, backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
                 <div style={{ fontSize: 26 }}>{i.icon}</div>
@@ -619,7 +720,7 @@ export default function TennisCoachPage() {
             any time from Settings.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 20 }}>
             <div style={{ backgroundColor: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24 }}>
               <div style={{ fontSize: 28, marginBottom: 12 }}>📅</div>
               <h3 style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Your bookings, in your calendar</h3>
@@ -634,8 +735,8 @@ export default function TennisCoachPage() {
               <h3 style={{ fontSize: 18, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Emails that come from you</h3>
               <p style={{ fontSize: 14, color: MUTED, lineHeight: 1.7 }}>
                 Booking confirmations, camp information and lesson write-ups send from your own address, so a parent
-                recognises the sender and can simply hit reply. Lumio only ever sends the messages you or your
-                players trigger — it does not send anything on its own.
+                recognises the sender and can simply hit reply. Lumio only sends the messages you send, your players
+                trigger, or you switch on yourself (such as day-before reminders) — nothing else.
               </p>
             </div>
             <div style={{ backgroundColor: CARD, border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 24 }}>
@@ -662,7 +763,7 @@ export default function TennisCoachPage() {
       {/* ── REVENUE HIGHLIGHT PANEL ── */}
       <section style={{ padding: '96px 24px 48px' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #0a1628 50%, #061020 100%)', border: `1px solid ${PURPLE}30`, borderRadius: 24, padding: '64px 48px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ background: 'linear-gradient(135deg, #0c1a2e 0%, #0a1628 50%, #061020 100%)', border: `1px solid ${PURPLE}30`, borderRadius: 24, padding: 'clamp(32px, 6vw, 64px) clamp(20px, 5vw, 48px)', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, background: `radial-gradient(circle, ${PURPLE}22 0%, transparent 70%)`, pointerEvents: 'none' }} />
             <div style={{ position: 'relative' }}>
               <div style={{ marginBottom: 24 }}>
@@ -670,7 +771,7 @@ export default function TennisCoachPage() {
               </div>
               <h2 style={{ fontSize: 42, fontWeight: 800, color: '#fff', marginBottom: 16, maxWidth: 760, lineHeight: 1.2 }}>The software runs your tennis business.<br /><span style={{ color: PURPLE_LIGHT }}>The Racket Progression reward system pays you back.</span></h2>
               <p style={{ color: '#94a3b8', fontSize: 18, maxWidth: 720, lineHeight: 1.7, marginBottom: 48 }}>One simple subscription runs every part of your week. Then it earns its keep twice over — you reward players at every one of the nine stages — your own rewards with Lumio certificates today, or Lumio’s racket keyring and dampener sets when they arrive in V2 — and parents fund the journey, and you resell the player app to your families as recurring margin. You set the prices; you keep the upside.</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 48 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(320px, 100%), 1fr))', gap: 24, marginBottom: 48 }}>
                 {[
                   { icon: '🎾🏆', title: 'Stream 1 — Racket rewards', color: PURPLE_LIGHT, desc: 'Reward players at each of the 9 stages. Use your own rewards with a Lumio certificate at every level — or, coming in V2, buy Lumio’s coloured racket keyring + matching dampener sets, with a full trophy at Black. Parents pay for the journey.', price: 'Your own rewards + Lumio certificates now · Lumio sets £45 in V2' },
                   { icon: '📱', title: 'Stream 2 — Player app resale', color: '#06b6d4', desc: 'Give families the player & parent view of everything you capture. Resell it or bundle it into a package — you keep the margin, not Lumio.', price: 'Suggested £9.99/family · you set it' },
@@ -710,9 +811,9 @@ export default function TennisCoachPage() {
           {/* Plan tiers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 16, marginBottom: 20 }}>
             {[
-              { name: 'Standard', price: 9, popular: false, available: true, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Messages to players & parents', 'Mobile coach app'], off: ['No video or audio', 'No player & parent app', 'No training camps', 'No Racket Progression'] },
-              { name: 'Pro', price: 19, popular: false, available: true, tag: 'Adds video, audio & AI reviews', feats: ['Everything in Standard', 'Video & audio (BETA) + AI session reviews', 'Player & parent app to resell', 'Training camps'], off: ['No Racket Progression or Effort & Rewards'] },
-              { name: 'Academy', price: 29, popular: true, available: true, tag: 'The full system', feats: ['Everything in Pro', 'Racket Progression reward system', 'Effort & Rewards + squad leaderboard', 'Certificates at every level — your own rewards, or Lumio reward sets in V2'], off: [] },
+              { name: 'Standard', price: 9, popular: false, available: true, tag: 'Subscription only · no kit', feats: ['Session Planner & bookings', 'Player roster & lesson summaries', 'Payments, cancellations, packs & monthly plans (switching on soon)', 'Reminders, summaries & weather rain-offs', 'Leads, weekly groups & free-slot offers', 'Client welcome link & questionnaires', 'Messages to players & parents', 'Mobile coach app'], off: ['No video or audio', 'No player & parent app', 'No training camps', 'No Racket Progression'] },
+              { name: 'Pro', price: 19, popular: false, available: true, tag: 'Adds video, audio & AI reviews', feats: ['Everything in Standard', 'Video & audio (BETA) + AI session reviews', 'Player & parent app to resell', 'Training camps with deposits, balances & room upgrades'], off: ['No Racket Progression or Effort & Rewards'] },
+              { name: 'Academy', price: 29, popular: true, available: true, tag: 'The full system', feats: ['Everything in Pro', 'Racket Progression reward system', 'Adult levels with videos & pass checklists', 'Effort & Rewards + squad leaderboard', 'Certificates at every level — your own rewards, or Lumio reward sets in V2'], off: [] },
             ].map(t => (
               <div key={t.name} style={{ backgroundColor: CARD, border: `${t.popular ? 2 : 1}px solid ${t.popular ? PURPLE : BORDER}`, borderRadius: 16, padding: 24, position: 'relative', display: 'flex', flexDirection: 'column' }}>
                 {t.popular && <div style={{ position: 'absolute', top: -11, left: 24, background: PURPLE, color: '#fff', fontSize: 10, fontWeight: 800, padding: '3px 10px', borderRadius: 999, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Founders get all of this free</div>}
@@ -781,7 +882,7 @@ export default function TennisCoachPage() {
             </div>
             <div style={{ background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '8px 18px', marginBottom: 16 }}>
               {KIT_PARTS.map(p => (
-                <div key={p.name} style={{ display: 'flex', alignItems: 'baseline', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
+                <div key={p.name} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
                   <span style={{ color: PURPLE_LIGHT, fontWeight: 900, flexShrink: 0 }}>✓</span>
                   <span style={{ fontSize: 14.5, fontWeight: 700, color: TEXT, flexShrink: 0 }}>{p.name}</span>
                   <span style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.45 }}>{p.note}</span>

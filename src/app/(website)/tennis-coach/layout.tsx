@@ -7,7 +7,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   metadataBase: new URL('https://lumiosports.com'),
   title: 'Lumio Tennis Coach — the all-in-one platform for tennis coaches',
-  description: 'One platform, two revenue streams: session planning, AI session reviews, video & audio, and the Racket Progression reward system — everything a tennis coach or academy needs.',
+  description: 'One platform, two revenue streams: session planning, AI lesson write-ups, payments and your cancellation policy, reminders, leads, weekly groups and the Racket Progression reward system — everything a tennis coach or academy needs.',
   alternates: { canonical: '/tennis-coach' },
   openGraph: {
     title: 'Lumio Tennis Coach — the all-in-one platform for tennis coaches',
