@@ -19,6 +19,7 @@ import { getSettings } from '../_lib/settings-store'
 import { priceFor, courtCostFor, type ClientRate } from '@/lib/coach/pricing'
 import { parseAmount, formatPennies } from '@/lib/coach/money'
 import { BookingCharge } from './BookingCharge'
+import { OfferSlotModal, type SlotPrefill } from './OfferSlotModal'
 import { campSpans, campsOn, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 import { BookingLinkModal } from './BookingLinkModal'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
@@ -100,7 +101,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   T: ThemeTokens; accent: AccentTokens; onNavigate?: (section: string) => void
 }) {
   const { rows, add, edit, remove, reload } = useCoachTable<Booking>('coach_bookings')
-  const { rows: playerRows } = useCoachTable<{ id: string; name: string; email?: string | null; parent_email?: string | null; contact_email?: string | null; rate_pennies?: number | null; rate_reason?: string | null }>('coach_players')
+  const { rows: playerRows } = useCoachTable<{ id: string; name: string; email?: string | null; parent_email?: string | null; contact_email?: string | null; rate_pennies?: number | null; rate_reason?: string | null; free_slot_pings?: boolean | null }>('coach_players')
   const { rows: venueRows } = useCoachTable<{ id: string; name: string; is_home?: boolean | null; court_cost_pennies?: number | null; court_billing?: string | null }>('coach_venues')
   const { rows: courtRows } = useCoachTable<{ id: string; name: string; venue_id?: string | null }>('coach_courts')
   const isMobile = useIsMobile()
@@ -137,6 +138,8 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
   useEffect(() => { try { sessionStorage.removeItem('lumio_open_date') } catch { /* ignore */ } }, [])
   const [editing, setEditing] = useState<Booking | 'new' | null>(null)
   const [linkOpen, setLinkOpen] = useState(false)
+  // Offering a free slot to clients who asked to hear about them.
+  const [offer, setOffer] = useState<SlotPrefill | null>(null)
   const [connected, setConnected] = useState<string[] | null>(null)
   const [busy, setBusy] = useState<{ date: string; start: number; end: number }[]>([])
   // Set when the coach clicks an empty cell on the week grid, so the form opens
@@ -201,6 +204,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
     <BookingFormModal T={T} accent={accent} players={players} coaches={coaches} myName={myName} headNames={headNames} typeColour={TYPE_COLOUR}
       bookings={rows} camps={camps} venues={venueRows} courts={courtRows}
       rateOf={id => playerRows.find(p => String(p.id) === String(id)) || null}
+      onOfferSlot={editing !== 'new' ? (b => { setEditing(null); setOffer({ date: b.booking_date || undefined, time: String(b.start_time || '').slice(0, 5) || undefined, durMin: b.duration_min || 60, type: b.type || 'Private', venueId: b.venue_id || null, courtId: b.court_id || null }) }) : undefined}
       booking={editing === 'new' ? null : editing}
       defaultDate={newSlot?.date || iso(cursor)}
       defaultStart={newSlot?.start}
@@ -239,6 +243,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
               inbox, and the coach should not be the one checking the diary on
               their behalf. */}
           <button onClick={() => setLinkOpen(true)} style={{ appearance: 'none', border: `1px solid ${accent.border}`, padding: '9px 15px', borderRadius: 10, background: accent.dim, color: accent.hex, fontSize: 13, fontWeight: 700, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>🔗 Send a booking link</button>
+          <button onClick={() => setOffer({})} style={{ appearance: 'none', border: `1px solid ${accent.border}`, padding: '9px 15px', borderRadius: 10, background: accent.dim, color: accent.hex, fontSize: 13, fontWeight: 700, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>📣 Offer a free slot</button>
           <button onClick={() => setEditing('new')} style={{ appearance: 'none', border: 0, padding: '9px 15px', borderRadius: 10, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, fontFamily: FONT, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>＋ Add booking</button>
         </div>
       </div>
@@ -307,6 +312,7 @@ export function LiveBookingCalendar({ T, accent, onNavigate }: {
       </div>
 
       {modals}
+      {offer && <OfferSlotModal T={T} accent={accent} players={playerRows} venues={venueRows} courts={courtRows} prefill={offer} onClose={() => setOffer(null)} />}
       {linkOpen && <BookingLinkModal T={T} accent={accent} players={playerRows} venues={venueRows}
         onClose={() => { setLinkOpen(false); reload() }} />}
     </div>
@@ -566,7 +572,7 @@ function MonthGrid({ T, accent, cursor, today, bookingsOn, typeColour, camps, on
 }
 
 // ── Add / Edit booking modal ──────────────────────────────────────────────────
-function BookingFormModal({ T, accent, players, coaches, myName, headNames, typeColour, bookings, camps, venues, courts, rateOf, booking, defaultDate, defaultStart, onClose, onSave, onDelete }: {
+function BookingFormModal({ T, accent, players, coaches, myName, headNames, typeColour, bookings, camps, venues, courts, rateOf, booking, defaultDate, defaultStart, onClose, onSave, onDelete, onOfferSlot }: {
   T: ThemeTokens; accent: AccentTokens; players: { id: string; name: string; label?: string }[]; coaches: string[]
   /** The signed-in coach's own name when they are an invited coach; '' for the head coach. */
   myName: string
@@ -578,6 +584,8 @@ function BookingFormModal({ T, accent, players, coaches, myName, headNames, type
   courts: { id: string; name: string; venue_id?: string | null }[]
   /** A player's own rate, if they have one. */
   rateOf: (playerId: string) => ClientRate
+  /** Offer this (cancelled) lesson's slot to clients who want free slots. */
+  onOfferSlot?: (b: Booking) => void
   booking: Booking | null; defaultDate: string; defaultStart?: string
   onClose: () => void
   onSave: (vals: Record<string, any>, newPlayer: string | null) => Promise<void>
@@ -917,6 +925,9 @@ function BookingFormModal({ T, accent, players, coaches, myName, headNames, type
           {/* Taking the money for a lesson that is already saved — from the card
               the client saved, at the price the booking had when it was saved. */}
           {booking?.player_id && <BookingCharge T={T} accent={accent} booking={booking} settings={cfg} client={rateOf(booking.player_id)} />}
+          {booking && booking.status === 'cancelled' && onOfferSlot && booking.booking_date && booking.booking_date >= new Date().toISOString().slice(0, 10) && (
+            <button type="button" onClick={() => onOfferSlot(booking)} style={{ appearance: 'none', alignSelf: 'flex-start', border: `1px dashed ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '0 14px', minHeight: 36, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>📣 Offer this slot to someone else</button>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div><label style={lbl}>Status</label>
               <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...field, cursor: 'pointer' }}>

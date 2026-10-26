@@ -19,7 +19,7 @@ const RESERVED_SLUGS = new Set([
   // Supabase was slow the marketing site hung for 30 seconds per page.
   'sports', 'tennis-coach', 'sports-product', 'pricing-sports', 'womens-football',
   'lumio-crm', 'product', 'ai', 'data-deletion', 'coming-soon', 'impact', 'junior',
-  'fundraise', 'book', 'card', 'trip', 'offline', 'oxed', 'tenproject', 'portal', 'coach',
+  'fundraise', 'book', 'card', 'slot', 'trip', 'offline', 'oxed', 'tenproject', 'portal', 'coach',
   'guides', 'templates', 'sports-signup', 'dev-login', 'robots.txt', 'sitemap.xml',
 ])
 
