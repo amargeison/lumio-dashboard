@@ -10,17 +10,18 @@ import { stripe, admin } from '@/app/api/coach/pay/_stripe'
 import { academyMoney, type AcademyMoney } from '@/app/api/coach/pay/_saved'
 import { sendFamilyEmail } from './family-mail'
 import { owedPennies, paidPennies } from './camp-money'
-import { balanceStage, balanceReminder, balanceTaken, balanceFailed } from './camp-balance'
+import { balanceStage, balanceReminder, balanceTaken, balanceFailed, withinAgreed } from './camp-balance'
 import { ukDate } from './uk-date'
+import { formatPennies } from './money'
 
 type Db = ReturnType<typeof admin>
 type Row = Record<string, any>
 const first = (s: unknown) => String(s || '').trim().split(/\s+/)[0] || ''
-export const CAMP_COLS = 'id, coach_id, name, price, payment_mode, balance_due, auto_balance, balance_reminder_days, start_date, end_date'
+export const CAMP_COLS = 'id, coach_id, name, price, room_options, payment_mode, balance_due, auto_balance, balance_reminder_days, start_date, end_date'
 
 export const cardWords = (a: Row) => (a.stripe_payment_method_id ? `${a.card_brand ? a.card_brand.charAt(0).toUpperCase() + a.card_brand.slice(1) : 'card'} ending ${a.card_last4 || '••••'}` : null)
-/** Will the balance be taken from a kept card? Only with the family's agreement, and only if the coach left it on. */
-export const autoTakes = (camp: Row, a: Row) => !!camp.auto_balance && !!a.stripe_payment_method_id && !!a.stripe_customer_id && !!a.balance_agreed_at
+/** Will the balance be taken from a kept card? Only with the family's agreement, only up to the amount they agreed, and only if the coach left it on. */
+export const autoTakes = (camp: Row, a: Row) => !!camp.auto_balance && !!a.stripe_payment_method_id && !!a.stripe_customer_id && !!a.balance_agreed_at && withinAgreed(camp, a)
 
 const helloFor = (a: Row) => (a.parent_name ? `Hi ${first(a.parent_name)},` : 'Hi,')
 
@@ -63,6 +64,8 @@ export async function takeBalance(db: Db, m: AcademyMoney, camp: Row, a: Row, by
   if (!a.stripe_payment_method_id || !a.stripe_customer_id) return { ok: false, error: 'There is no card kept for this family. Send them the link to pay instead.' }
   const owed = owedPennies(camp, a)
   if (owed < 50) return { ok: false, error: 'Nothing is owed on this place.' }
+  if (!a.balance_agreed_at) return { ok: false, error: 'They did not agree to the balance being taken from their card. Send them the link to pay instead.' }
+  if (!withinAgreed(camp, a)) return { ok: false, error: `The balance is now ${formatPennies(owed)}, more than the ${formatPennies(Number(a.balance_agreed_pennies))} they agreed could be taken from their card. Send them the link to pay instead.` }
   let q = db.from('coach_camp_attendees').update({ balance_status: 'charging', balance_failed_reason: null }).eq('id', a.id)
   q = by === 'coach' ? q.or('balance_status.is.null,balance_status.eq.failed') : q.is('balance_status', null)
   const { data: claimed } = await q.select('id')

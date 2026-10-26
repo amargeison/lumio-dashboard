@@ -21,6 +21,7 @@ import { LUMIO_RESOURCES } from '@/lib/coach/lumio-resources-data'
 import { buildCampKit, type KitCategory } from '@/lib/coach/camp-kit-template'
 import { STAGES as EMAIL_STAGES } from '@/lib/coach/camp-lifecycle'
 import { askedForm } from '@/lib/coach/camp-form'
+import { tidyRooms, roomChoice } from '@/lib/coach/camp-rooms'
 import { BOOKS } from '@/lib/coach/books'
 import { upcomingDate } from '@/lib/coach/groups'
 
@@ -1462,6 +1463,8 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     signup_slug: 'algarve-adult-tennis-week', signup_open: true, payment_mode: 'deposit', deposit_amount: 300,
     // The balance is taken a month before the trip, from the deposit card of everyone who agreed.
     balance_due: ymd(plus(aStart, -14)), auto_balance: true, balance_reminder_days: 7,
+    // Rooms a family chooses when they book, each with its supplement.
+    room_options: [{ label: 'Twin room, shared', pennies: 0 }, { label: 'Single room', pennies: 22500 }, { label: 'Sea-view upgrade', pennies: 9000 }],
     signup_note: 'Flights are not included — book to arrive at Faro by mid-afternoon on the first day. Tell me your flight and I will add you to a transfer.',
     emails_paused: false, overseas: true, balance_link: null, email_overrides: null, audience: 'adult', info_form: null,
     trip: {
@@ -1665,7 +1668,7 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
 
   // ── Camp attendees ─────────────────────────────────────────────────────────
   type Pay = 'full' | 'deposit' | 'none'
-  type Place = { player?: string; guest?: Guest; pay: Pay; form: boolean; goal?: string; room?: string; single?: boolean; pending?: boolean; signed: number; source?: 'signup' | 'coach' }
+  type Place = { player?: string; guest?: Guest; pay: Pay; form: boolean; goal?: string; room?: string; single?: boolean; view?: boolean; pending?: boolean; signed: number; source?: 'signup' | 'coach' }
   const GUEST_GOALS_ADULT = ['A second serve I can trust', 'Stop being afraid of the net in doubles', 'More consistency from the back of the court', 'Play a full week of matches and enjoy it', 'A backhand that is not a liability']
   const GUEST_GOALS_JUNIOR = ['Rally with a friend', 'Learn to serve overarm', 'Play a real match', 'Hit the ball harder and still get it in', 'Win a game against my brother']
   const OUT_FLIGHTS = [{ airline: 'Crown Air', flight: 'CRN412', time: '11:05' }, { airline: 'Meridian Airways', flight: 'MRD2217', time: '13:40' }]
@@ -1687,7 +1690,11 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
       const medical = p ? (p.medical && !/^no known/i.test(p.medical) ? p.medical : null) : ((pl.guest as Guest).medical || null)
       const goal = pl.goal || (p ? cap(p.goal) : pick(`gg:${key}`, opts.adult ? GUEST_GOALS_ADULT : GUEST_GOALS_JUNIOR))
       const price = Number(camp.price) || 0
-      const pennies = pl.pay === 'full' ? price * 100 : pl.pay === 'deposit' ? (opts.deposit || 0) * 100 : 0
+      // The room chosen, when the camp prices its rooms: its supplement is part of the place.
+      const rooms = tidyRooms(camp.room_options)
+      const roomOpt = rooms.length ? (pl.single ? rooms.find(r => /single/i.test(r.label)) : pl.view ? rooms.find(r => /view/i.test(r.label)) : rooms[0]) || null : null
+      const extra = roomOpt ? roomOpt.pennies : 0
+      const pennies = pl.pay === 'full' ? price * 100 + extra : pl.pay === 'deposit' ? (opts.deposit || 0) * 100 : 0
       const out1 = OUT_FLIGHTS[hash(`of:${key}`) % OUT_FLIGHTS.length], ret1 = RET_FLIGHTS[hash(`of:${key}`) % RET_FLIGHTS.length]
       const overseas = !!camp.overseas
       const signedAt = ago(pl.signed, `${p2(8 + (hash(key) % 12))}:${p2(hash(`m:${key}`) % 60)}`)
@@ -1701,7 +1708,7 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
         pickup: contact.name ? `${contact.name} both ways. Not to leave on their own.` : '',
         out_airline: out1.airline, out_flight: out1.flight, out_airport: opts.airport || '', out_date: ymd(start), out_time: out1.time,
         ret_flight: ret1.flight, ret_date: ymd(end), ret_time: ret1.time, transfer: 'Both ways',
-        room: pl.single ? 'Single room (supplement applies)' : 'Standard room, included', room_share: pl.single ? '' : (pl.room || ''),
+        room: roomOpt ? roomChoice(roomOpt) : pl.single ? 'Single room (supplement applies)' : 'Standard room, included', room_share: pl.single ? '' : (pl.room || ''),
         level: opts.adult ? pick(`lv:${key}`, ['Club team player — doubles mostly, twice a week', 'Improver. Lessons for two years and social doubles at weekends', 'Played as a junior, back at it for three years. Box league singles', 'Regular club player, strong baseline game, weak at the net'])
           : pick(`lv:${key}`, ['Lessons once a week for about a year', 'New to tennis — a few sessions at school', 'Plays in the Saturday group and with family', 'Two terms of group coaching at the club']),
         frequency: pick(`fq:${key}`, ['Once a week', 'Two or three times a week', 'Two or three times a week', 'Less than once a week']),
@@ -1717,13 +1724,14 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
       return row(T.attendee, {
         camp_id: camp.id, player_id: p ? playerId[p.key] : null, player_name: name,
         paid: pl.pay === 'full', amount_pennies: pennies, paid_pennies: pennies,
+        extra_pennies: extra, extra_label: roomOpt ? roomOpt.label : null,
         // On an adult camp the contact details are the player's own.
         parent_name: opts.adult ? null : contact.name, parent_email: contact.email, parent_phone: contact.phone,
         player_age: opts.adult ? null : age, medical_notes: medical, emergency_contact: contact.emergency,
         consent_photo: !p?.noPhoto, consent_medical: true,
         status: pl.pending ? 'pending' : 'confirmed', stripe_session_id: null,
         source: pl.source || (p ? 'coach' : 'signup'), signed_up_at: signedAt,
-        room: overseas ? (pl.single ? 'Single (supplement)' : pl.room ? `Twin · with ${pl.room}` : 'Twin · to be confirmed') : null,
+        room: overseas ? (roomOpt && pl.view ? `Sea view · with ${pl.room}` : pl.single ? 'Single (supplement)' : pl.room ? `Twin · with ${pl.room}` : 'Twin · to be confirmed') : null,
         arrival: overseas && pl.form ? `${out1.flight} · ${shortDate(start)} · ${out1.time}` : null,
         camp_goal: goal,
         form_token: hex64(`form:${key}:${i}`), form_answers: answers, form_submitted_at: submitted,
@@ -1746,8 +1754,8 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     { guest: g('Graham Tolley', 55), pay: 'full', form: true, room: 'Martin Ashby', signed: 35 },
     { guest: g('Martin Ashby', 57), pay: 'full', form: false, room: 'Graham Tolley', signed: 35 },
     { player: 'greta', pay: 'deposit', form: false, single: true, goal: 'Doubles positioning — know where to stand', signed: 30, source: 'coach' },
-    { guest: g('Caroline Penn', 41), pay: 'deposit', form: true, room: 'Anita Rao', signed: 24 },
-    { guest: g('Anita Rao', 39), pay: 'deposit', form: false, room: 'Caroline Penn', signed: 24 },
+    { guest: g('Caroline Penn', 41), pay: 'deposit', form: true, room: 'Anita Rao', view: true, signed: 24 },
+    { guest: g('Anita Rao', 39), pay: 'deposit', form: false, room: 'Caroline Penn', view: true, signed: 24 },
     { guest: g('Dev Kapoor', 33), pay: 'none', form: false, room: 'Sam Doyle', pending: true, signed: 3 },
   ], { adult: true, airport: 'Faro (FAO)', deposit: 300 })
 
@@ -1794,9 +1802,9 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
   // On the Algarve week, some families kept a card for the balance when they paid the deposit.
   attA.forEach((x, i) => {
     if (x.paid || i % 3 === 2) return
-    Object.assign(x, { stripe_customer_id: `cus_demo_${i}`, stripe_payment_method_id: `pm_demo_${i}`, card_brand: ['visa', 'mastercard'][i % 2], card_last4: String(4242 + i * 111).slice(-4), balance_agreed_at: x.signed_up_at || ago(40), balance_agreed_text: 'Agreed when paying the deposit.' })
+    Object.assign(x, { stripe_customer_id: `cus_demo_${i}`, stripe_payment_method_id: `pm_demo_${i}`, card_brand: ['visa', 'mastercard'][i % 2], card_last4: String(4242 + i * 111).slice(-4), balance_agreed_at: x.signed_up_at || ago(40), balance_agreed_text: 'Agreed when paying the deposit.', balance_agreed_pennies: Number(campA.price) * 100 + (Number(x.extra_pennies) || 0) - (Number(x.paid_pennies) || 0) })
   })
-  const collectedFor = (camp: Row, list: Row[]) => list.reduce((n, a) => n + (a.paid ? Number(camp.price) : Number(a.amount_pennies) / 100), 0)
+  const collectedFor = (camp: Row, list: Row[]) => list.reduce((n, a) => n + (a.paid ? Number(camp.price) + (Number(a.extra_pennies) || 0) / 100 : Number(a.amount_pennies) / 100), 0)
   campA.collected = collectedFor(campA, attA); campB.collected = collectedFor(campB, attB)
   campC.collected = collectedFor(campC, attC); campD.collected = collectedFor(campD, attD)
 

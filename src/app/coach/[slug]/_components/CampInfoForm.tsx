@@ -15,7 +15,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import {
-  askedForm, campForm, defaultInfoForm, formDone, formIsCustom, formOutstanding, formUrl, Q_TYPES,
+  askedForm, campForm, defaultInfoForm, formDone, formIsCustom, formOutstanding, formUrl, Q_TYPES, roomOptionsFor,
   type Answers, type FormQuestion, type FormSection, type InfoForm, type QType,
 } from '@/lib/coach/camp-form'
 
@@ -219,7 +219,7 @@ export function CampInfoForm({ T, accent, camp, attendees, onSave }: {
                       <div key={q.id} style={{ display: 'flex', gap: 8, alignItems: 'baseline', padding: '6px 0', borderBottom: `1px solid ${T.border}`, opacity: off && !skipped ? 0.5 : 1 }}>
                         <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: T.text }}>
                           {q.label}{q.required ? <span style={{ color: T.bad }}> *</span> : null}
-                          {!!q.options?.length && <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{q.options.join(' · ')}</div>}
+                          {!!(roomOptionsFor(camp, q) || q.options)?.length && <div style={{ fontSize: 11, color: T.text3, marginTop: 2 }}>{(roomOptionsFor(camp, q) || q.options || []).join(' · ')}</div>}
                         </div>
                         <div style={{ fontSize: 10.5, color: T.text3, whiteSpace: 'nowrap' }}>{off && !skipped ? 'abroad only · ' : ''}{Q_TYPES.find(t => t[0] === q.type)?.[1]}</div>
                       </div>
@@ -257,7 +257,9 @@ export function CampInfoForm({ T, accent, camp, attendees, onSave }: {
                       </select>
                     </div>
                     <input value={q.help || ''} onChange={e => patchQ(si, qi, { help: e.target.value })} placeholder="Help text under the question (optional)" style={{ ...inp, marginTop: 6, background: T.panel }} />
-                    {HAS_OPTIONS.includes(q.type) && (
+                    {roomOptionsFor(camp, q) ? (
+                      <div style={{ fontSize: 11.5, color: T.text3, marginTop: 6, lineHeight: 1.5 }}>Families choose from your rooms list (Sign-up page → Rooms and upgrades), and any supplement is added to what they owe: {roomOptionsFor(camp, q)!.join(' · ')}</div>
+                    ) : HAS_OPTIONS.includes(q.type) && (
                       <textarea value={(q.options || []).join('\n')} onChange={e => patchQ(si, qi, { options: e.target.value.split('\n') })} onBlur={e => patchQ(si, qi, { options: e.target.value.split('\n').map(o => o.trim()).filter(Boolean) })}
                         rows={Math.min(8, Math.max(2, (q.options || []).length + 1))} placeholder="One option per line" style={{ ...inp, marginTop: 6, background: T.panel, resize: 'vertical' }} />
                     )}

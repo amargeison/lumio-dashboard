@@ -26,7 +26,8 @@ import { AUDIENCES, campAudience } from '@/lib/coach/camp-audience'
 import { formDone } from '@/lib/coach/camp-form'
 import { flagFor } from '@/lib/coach/country-flag'
 import { campMoney, paidSoFar } from '@/lib/coach/camp-money'
-import { formatPounds } from '@/lib/coach/money'
+import { formatPounds, parseAmount } from '@/lib/coach/money'
+import { tidyRooms, MAX_ROOMS } from '@/lib/coach/camp-rooms'
 import { ukDate } from '@/lib/coach/uk-date'
 // The four tabs a coach uses once the camp is sold and has to be run. They live
 // in their own module because each is a screen in its own right, not a panel.
@@ -51,6 +52,8 @@ type Camp = {
   // The balance on a deposit booking (migration 217): when it is due, and whether
   // it is taken from the card the deposit was paid with.
   balance_due?: string | null; auto_balance?: boolean | null; balance_reminder_days?: number | null
+  /** Rooms a family can choose, each with its supplement (migration 218). */
+  room_options?: unknown
   // The countdown emails (Emails tab). email_overrides is per-stage and per-camp:
   // rewriting the week-to-go email for a Portugal trip must not change it for
   // next summer's day camp.
@@ -288,7 +291,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
               </div>
             </div>
             <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}>
-              {[['Dates', plural(campDays(sel), 'day')], ['Booked', `${bookedCount}/${sel.capacity || '—'}`], ['Per head', money(sel.price || 0)], ['Booked value', money((sel.price || 0) * bookedCount)]].map(([l, v], i) => (
+              {[['Dates', plural(campDays(sel), 'day')], ['Booked', `${bookedCount}/${sel.capacity || '—'}`], ['Per head', money(sel.price || 0)], ['Booked value', money(campMoney(sel, campAttendees).booked)]].map(([l, v], i) => (
                 <div key={l}><div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{l}</div><div style={{ fontSize: 15, fontWeight: 700, color: i === 3 ? T.good : i === 2 ? accent.hex : T.text, marginTop: 3 }}>{v}</div></div>
               ))}
             </div>
@@ -457,6 +460,9 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
   const [due, setDue] = useState(camp.balance_due || '')
   const [auto, setAuto] = useState(camp.auto_balance !== false)
   const [remindDays, setRemindDays] = useState(camp.balance_reminder_days || 7)
+  // Rooms and upgrades, as typed: the supplement in pounds.
+  const roomsOf = (c: Camp) => tidyRooms(c.room_options).map(r => ({ label: r.label, price: r.pennies ? String(r.pennies / 100) : '' }))
+  const [rooms, setRooms] = useState(() => roomsOf(camp))
   // Card payments on the page need the coach's bank connected (Settings → Pricing & packages).
   const [payOn, setPayOn] = useState<boolean | null>(null)
   useEffect(() => { fetch('/api/coach/pay/status').then(r => r.json()).then(d => setPayOn(!!d.chargesEnabled)).catch(() => setPayOn(false)) }, [])
@@ -473,6 +479,7 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
     setDep(camp.deposit_amount != null ? String(camp.deposit_amount) : '')
     setNote(camp.signup_note || ''); setMsg(''); setErr('')
     setDue(camp.balance_due || ''); setAuto(camp.auto_balance !== false); setRemindDays(camp.balance_reminder_days || 7)
+    setRooms(roomsOf(camp))
   }, [camp.id])
   useEffect(() => { setOrigin(window.location.origin) }, [])
 
@@ -481,16 +488,24 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
   const cleanSlug = slugify(slug)
   const url = origin && cleanSlug ? origin + '/camp/' + cleanSlug : ''
   const depNum = Number(dep) || 0
-  const dirty = cleanSlug !== (camp.signup_slug || '')
+  // The rooms as they would be saved; a supplement that is not an amount is refused on Save.
+  const roomRows = rooms.map(r => ({ label: r.label.trim(), got: r.price.trim() ? parseAmount(r.price, { allowZero: true }) : { ok: true as const, pounds: 0, pennies: 0 } }))
+  const roomsClean = tidyRooms(roomRows.filter(r => r.label).map(r => ({ label: r.label, pennies: r.got.ok ? r.got.pennies : 0 })))
+  const roomsDirty = JSON.stringify(roomsClean) !== JSON.stringify(tidyRooms(camp.room_options))
+  const dirty = roomsDirty || cleanSlug !== (camp.signup_slug || '')
     || mode !== (camp.payment_mode || 'none')
     || depNum !== (Number(camp.deposit_amount) || 0)
     || note !== (camp.signup_note || '')
     || (mode === 'deposit' && (due !== (camp.balance_due || '') || auto !== (camp.auto_balance !== false) || remindDays !== (camp.balance_reminder_days || 7)))
 
   const save = async (extra: Record<string, any> = {}) => {
-    setErr(''); setMsg(''); setBusy(true)
+    setErr(''); setMsg('')
+    const badRoom = roomRows.find(r => r.label && !r.got.ok)
+    if (badRoom && !badRoom.got.ok) { setErr(`${badRoom.label}: ${badRoom.got.error}`); return }
+    setBusy(true)
     try {
       await onSave({
+        room_options: roomsClean,
         signup_slug: cleanSlug || null, payment_mode: mode,
         deposit_amount: mode === 'deposit' ? depNum || null : null,
         signup_note: note || null,
@@ -589,6 +604,25 @@ function SignupPanel({ T, accent, camp, booked, signups, onSave }: { T: ThemeTok
           </label>
         </div>
       )}
+
+      <div style={{ marginTop: 14 }} data-testid="rooms-editor">
+        <div style={lbl(T)}>Rooms and upgrades (optional)</div>
+        <div style={{ fontSize: 11.5, color: T.text3, marginTop: 3, lineHeight: 1.5, maxWidth: 640 }}>
+          Families choose one when they sign up{camp.overseas ? ', and on the player information form' : ''}. Any supplement is added to what that place costs, so the balance and the reminders include it.
+        </div>
+        {rooms.map((r, i) => (
+          <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 7 }}>
+            <input value={r.label} onChange={e => setRooms(rooms.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} placeholder={i === 0 ? 'Twin room, shared' : i === 1 ? 'Single room' : 'Sea-view upgrade'} aria-label="Room" style={{ ...inp, flex: 1 }} />
+            <span style={{ fontSize: 12, color: T.text3 }}>+£</span>
+            <input value={r.price} onChange={e => setRooms(rooms.map((x, j) => j === i ? { ...x, price: e.target.value } : x))} inputMode="decimal" placeholder="0" aria-label={`Supplement for ${r.label || 'this room'}`} style={{ ...inp, width: 90 }} />
+            <button onClick={() => setRooms(rooms.filter((_, j) => j !== i))} aria-label="Remove this room" style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 16, padding: '0 4px' }}>×</button>
+          </div>
+        ))}
+        {rooms.length < MAX_ROOMS && (
+          <button onClick={() => setRooms([...rooms, { label: '', price: '' }])} style={{ marginTop: 7, appearance: 'none', border: '1px dashed ' + T.border, background: 'transparent', color: accent.hex, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }}>+ Add a room</button>
+        )}
+        {rooms.length > 0 && <div style={{ fontSize: 11, color: T.text3, marginTop: 5 }}>Leave the supplement empty for a room that is included in the price.</div>}
+      </div>
 
       <div style={{ marginTop: 12 }}>
         <div style={lbl(T)}>A line for whoever signs up (optional)</div>

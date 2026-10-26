@@ -6,7 +6,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 
 const ACCENT = '#3A8EE0'
-type View = { academy: string; logoUrl: string | null; camp: string; player: string; owed: number; due: string | null; cancelled: boolean; card: string | null; ready: boolean; error?: string }
+type View = { academy: string; logoUrl: string | null; camp: string; player: string; owed: number; due: string | null; cancelled: boolean; card: string | null; ready: boolean; room?: { label: string; pennies: number } | null; error?: string }
 const card: CSSProperties = { background: '#fff', borderRadius: 14, padding: 18, marginTop: 14, boxShadow: '0 2px 12px rgba(20,25,40,.07)' }
 const p = (x: number) => `£${(x / 100).toLocaleString('en-GB', { minimumFractionDigits: x % 100 ? 2 : 0, maximumFractionDigits: 2 })}`
 
@@ -54,6 +54,7 @@ export default function BalanceView({ token }: { token: string }) {
       <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '.08em' }}>{v.camp}</div>
       <div style={{ fontSize: 26, fontWeight: 800, color: '#1a1d29', marginTop: 6 }}>{p(v.owed)}</div>
       <div style={{ fontSize: 15, color: '#374151', marginTop: 4 }}>The balance for {v.player}’s place{v.due ? `, due ${v.due}` : ''}.</div>
+      {v.room && <div style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>Includes {p(v.room.pennies)} for the room: {v.room.label}.</div>}
       {v.card && <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, margin: '10px 0 0' }}>As you agreed, it will be taken from your {v.card}{v.due ? ` on ${v.due}` : ''}. You only need to pay here if you would rather pay now or use a different card.</p>}
     </div>
     <div style={card}>

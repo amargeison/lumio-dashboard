@@ -11,6 +11,7 @@ import { isAdult } from '@/lib/coach/camp-audience'
 import { londonToday } from '@/lib/coach/booking-slots'
 import { balanceAgreeText, dayWords as balanceDayWords } from '@/lib/coach/camp-balance'
 import { formatPennies } from '@/lib/coach/money'
+import { tidyRooms, findRoom } from '@/lib/coach/camp-rooms'
 
 export const runtime = 'nodejs'
 
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
   const sb = db()
   try {
     const { data: camp, error: campErr } = await sb.from('coach_camps')
-      .select('id, coach_id, name, capacity, price, payment_mode, deposit_amount, signup_open, start_date, end_date, location, region, parent_brief, daily_rhythm, signup_note, overseas, audience, balance_due, auto_balance')
+      .select('id, coach_id, name, capacity, price, payment_mode, deposit_amount, signup_open, start_date, end_date, location, region, parent_brief, daily_rhythm, signup_note, overseas, audience, balance_due, auto_balance, room_options')
       .eq('signup_slug', SLUG_RE.test(slug) ? slug : '').maybeSingle()
 
     if (campErr) throw new Error(`camp lookup: ${campErr.message}`)
@@ -143,10 +144,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // The room, when the camp offers a choice (migration 218). Only a room on
+    // the coach's list is accepted, and its supplement is read from the camp —
+    // the request names a room, never a price.
+    const rooms = tidyRooms(camp.room_options)
+    const room = rooms.length ? findRoom(rooms, b.room) : null
+    if (rooms.length && !room) return NextResponse.json({ error: 'Please choose a room.' }, { status: 400 })
+    const extra = room ? room.pennies : 0
+
     // Money is decided HERE, from the camp record — never from the request.
     const mode = camp.payment_mode || 'none'
-    const due = mode === 'full' ? Number(camp.price) || 0 : mode === 'deposit' ? Number(camp.deposit_amount) || 0 : 0
-    const pennies = Math.round(due * 100)
+    const pricePennies = Math.round((Number(camp.price) || 0) * 100) + extra
+    const pennies = mode === 'full' ? pricePennies : mode === 'deposit' ? Math.round((Number(camp.deposit_amount) || 0) * 100) : 0
     const needsPayment = mode !== 'none' && pennies >= 50
 
     // An adult camp is somebody booking their own place; on a mixed camp their
@@ -225,6 +234,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'We could not save that sign-up. Please try again, or contact your coach.' }, { status: 500 })
     }
     const attendee = { id: saved.attendee_id }
+    // The room chosen goes on the place before any money moves, so the
+    // supplement is part of what it costs from the start.
+    if (room) {
+      const { error: roomErr } = await sb.from('coach_camp_attendees').update({ extra_pennies: room.pennies, extra_label: room.label, ...(!duplicate ? { room: room.label } : {}) }).eq('id', attendee.id)
+      if (roomErr) console.error('[camp/signup] could not save the room', roomErr)
+    }
 
     // ── The late sign-up ──────────────────────────────────────────────────────
     // Someone who books a fortnight after the "everything you need" email went
@@ -305,12 +320,13 @@ export async function POST(req: NextRequest) {
     // The balance taken from this card on the due date — only if the family
     // ticked to agree on the page (migration 217). Their words are kept with
     // the place; the card is kept by Stripe, never by Lumio.
-    const balancePennies = Math.max(0, Math.round((Number(camp.price) || 0) * 100) - pennies)
+    const balancePennies = Math.max(0, pricePennies - pennies)
     const agreedBalance = mode === 'deposit' && !!camp.balance_due && camp.auto_balance !== false && balancePennies >= 50
       && camp.balance_due >= londonToday() && b.agree_balance === true
     if (agreedBalance) {
       await sb.from('coach_camp_attendees').update({
         balance_agreed_at: new Date().toISOString(),
+        balance_agreed_pennies: balancePennies,
         balance_agreed_text: balanceAgreeText({ camp: camp.name, academy: prof?.brand_name || 'The academy', balance: balancePennies, due: camp.balance_due }),
       }).eq('id', attendee.id)
     }
@@ -322,7 +338,7 @@ export async function POST(req: NextRequest) {
         payment_intent_data: { setup_future_usage: 'off_session' as const },
         custom_text: { submit: { message: `The balance of ${formatPennies(balancePennies)} will be taken from this card on ${balanceDayWords(camp.balance_due)}, as you agreed. You will get a reminder a few days before.` } },
       } : {}),
-      line_items: [{ price_data: { currency: 'gbp', product_data: { name: `${camp.name} — ${mode === 'deposit' ? 'deposit' : 'full payment'} for ${playerName}` }, unit_amount: pennies }, quantity: 1 }],
+      line_items: [{ price_data: { currency: 'gbp', product_data: { name: `${camp.name} — ${mode === 'deposit' ? 'deposit' : 'full payment'} for ${playerName}${room ? ` · ${room.label}` : ''}`.slice(0, 250) }, unit_amount: pennies }, quantity: 1 }],
       success_url: `${origin}/camp/${slug}?signed_up=1`,
       cancel_url: `${origin}/camp/${slug}?cancelled=1`,
       metadata: { coach_id: camp.coach_id, camp_attendee_id: attendee.id, camp_id: camp.id },

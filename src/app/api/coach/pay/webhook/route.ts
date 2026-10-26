@@ -6,7 +6,7 @@ import { stripe, admin } from '../_stripe'
 import { finishSetup, settleInvoice } from '../_saved'
 import { sendCampSignupEmails } from '@/lib/coach/camp-signup-email'
 import { keepDepositCard } from '@/lib/coach/camp-balance-server'
-import { paidPennies } from '@/lib/coach/camp-money'
+import { paidPennies, duePennies } from '@/lib/coach/camp-money'
 
 export const runtime = 'nodejs'
 
@@ -86,10 +86,11 @@ export async function POST(req: NextRequest) {
       // the place is paid in full. The status guard makes a redelivered event
       // change nothing.
       if (attendeeId && s.metadata?.camp_balance === '1') {
-        const { data: was } = await db.from('coach_camp_attendees').select('camp_id, paid_pennies, amount_pennies, status, paid').eq('id', attendeeId).maybeSingle()
+        const { data: was } = await db.from('coach_camp_attendees').select('camp_id, paid_pennies, amount_pennies, status, paid, extra_pennies').eq('id', attendeeId).maybeSingle()
         const { data: itsCamp } = was?.camp_id ? await db.from('coach_camps').select('price').eq('id', was.camp_id).maybeSingle() : { data: null }
         if (was && typeof s.amount_total === 'number') {
-          const price = Math.round((Number(itsCamp?.price) || 0) * 100)
+          // What the place costs, room supplement included.
+          const price = duePennies({ price: itsCamp?.price }, was)
           const before = paidPennies({ price: itsCamp?.price }, was)
           const total = before + s.amount_total
           await db.from('coach_camp_attendees').update({ paid_pennies: total, paid: price > 0 && total >= price, balance_status: 'paid' })

@@ -10,6 +10,7 @@
 
 import { addDaysIso } from './uk-date'
 import { formatPennies } from './money'
+import { owedPennies, type MoneyCamp, type MoneyAttendee } from './camp-money'
 
 export type BalanceCamp = { name: string; balance_due?: string | null; auto_balance?: boolean | null; balance_reminder_days?: number | null; payment_mode?: string | null }
 
@@ -29,6 +30,17 @@ export function balanceStage(c: BalanceCamp, today: string): 'none' | 'early' | 
   if (today < c.balance_due) return 'remind'
   if (today <= addDaysIso(c.balance_due, BALANCE_GRACE_DAYS)) return 'due'
   return 'late'
+}
+
+/**
+ * The family agreed to a balance of a set amount being taken from their card.
+ * If the place now costs more (a room upgrade since), the card is not used:
+ * the reminder carries a link instead. Agreements from before amounts were
+ * kept have no amount, and stand as they are.
+ */
+export function withinAgreed(camp: MoneyCamp, a: MoneyAttendee & { balance_agreed_pennies?: unknown }): boolean {
+  if (a.balance_agreed_pennies == null) return true
+  return owedPennies(camp, a) <= Number(a.balance_agreed_pennies)
 }
 
 /** The words a family agrees to when paying the deposit. */
