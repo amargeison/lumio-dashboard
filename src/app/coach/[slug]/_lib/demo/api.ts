@@ -33,6 +33,7 @@ import { cleanTrip, type Trip } from '@/lib/coach/trip'
 import { buildNextSession } from '@/lib/student/next-session'
 import { bookById } from '@/lib/coach/books'
 import { priceFor, DEMO_PRICE_LIST } from '@/lib/coach/pricing'
+import { cleanImportRow, IMPORT_MAX } from '@/lib/coach/leads'
 import { isLumioResource } from '@/lib/coach/lumio-resources-data'
 import { resourceHref } from '@/lib/coach/resource-files'
 
@@ -1939,6 +1940,27 @@ const demoWeather: Handler = async () => {
 }
 const SEND_OFF = 'Sending to families is switched off in the demo. In your own portal Lumio emails it for you, from your own mailbox, and files it in their messages in the app.'
 const sendOff: Handler = async () => { await sleep(400); return fail(SEND_OFF) }
+
+// ── Leads ───────────────────────────────────────────────────────────────────
+// The private address is a real web address that Zapier or Make posts to, so
+// the demo cannot have one. Importing a spreadsheet works for real, into the
+// demo's own (in-memory) leads.
+const LEADS_HOOK_OFF = 'Leads from ads are switched off in the demo. In your own portal you get a private address to paste into Zapier or Make, and each new Meta lead lands here at Enquired on its own.'
+const leadsHookGet: Handler = async () => { await beat(); return json({ url: null, lastUsedAt: null }) }
+const leadsHookOff: Handler = async () => { await sleep(400); return fail(LEADS_HOOK_OFF) }
+const leadsImport: Handler = async ({ body }) => {
+  await sleep(500)
+  const b = (body || {}) as { pipeline?: string; rows?: Record<string, unknown>[] }
+  const pipeline = b.pipeline === 'holiday' ? 'holiday' : 'coaching'
+  const rows = Array.isArray(b.rows) ? b.rows.slice(0, IMPORT_MAX) : []
+  if (!rows.length) return fail('There are no rows to bring in.')
+  const now = new Date().toISOString()
+  const clean = rows.map(r => cleanImportRow(pipeline, r)).filter(Boolean)
+  if (!clean.length) return fail('None of the rows had a name, email or phone.')
+  const t = demoTable('coach_leads')
+  for (const r of clean) t.push({ id: demoId(), coach_id: DEMO_COACH_ID, staff_id: null, google_review: false, created_at: now, stage_changed_at: now, updated_at: now, ...r })
+  return json({ ok: true, added: clean.length, skipped: rows.length - clean.length })
+}
 const CARDS_OFF = 'Saved cards are switched off in the demo. In your own portal the client gets a link, agrees to your cancellation policy and saves their card with Stripe; you then charge lessons from it in one click.'
 const payCardsOff: Handler = async () => { await sleep(400); return fail(CARDS_OFF) }
 
@@ -2593,6 +2615,9 @@ const ROUTES: Record<string, Handler> = {
   [`GET ${C}/slot-offers`]: async () => { await beat(); return json({ offers: [] }) },
   [`POST ${C}/slot-offers`]: sendOff,
   [`DELETE ${C}/slot-offers`]: sendOff,
+  [`GET ${C}/leads/hook`]: leadsHookGet,
+  [`POST ${C}/leads/hook`]: leadsHookOff,
+  [`POST ${C}/leads/import`]: leadsImport,
   [`GET ${C}/calendar/availability`]: availability,
   [`POST ${C}/calendar/event`]: calendarEventPost,
   [`DELETE ${C}/calendar/event`]: calendarEventDelete,
