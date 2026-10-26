@@ -5,6 +5,7 @@ import { bookById } from '@/lib/coach/books'
 import { isLumioResource } from '@/lib/coach/lumio-resources-data'
 import { resourceHref } from '@/lib/coach/resource-files'
 import { buildNextSession } from '@/lib/student/next-session'
+import { loadStudentAdultLevel } from '@/lib/student/adult-level'
 
 export const runtime = 'nodejs'
 
@@ -270,6 +271,8 @@ export async function GET(req: NextRequest) {
   // The name is only passed where it identifies them — it is the fallback for
   // bookings and plans that carry no player id.
   const nextSession = await buildNextSession(db, m.academyId, m.scopePlayerId, soleName ? name : '')
+  // Their adult level, its video and the checklist (migration 219).
+  const adultLevel = await loadStudentAdultLevel(db, m.academyId, m.scopePlayerId)
 
   // ── Who they can write to, and the camp conversations they are in ────────
   // A family messaging "the academy" is fine when there is one coach. With eight
@@ -348,6 +351,6 @@ export async function GET(req: NextRequest) {
       xp_total: player.xp_total,
     },
     skills, lessons, messages, watch, highlights, nextSession,
-    media: mediaSigned, resources, books, camps, sectionsOff, awardThreshold, features,
+    media: mediaSigned, resources, books, camps, sectionsOff, awardThreshold, features, adultLevel,
   })
 }

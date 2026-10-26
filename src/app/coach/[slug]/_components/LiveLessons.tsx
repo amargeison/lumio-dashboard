@@ -26,6 +26,7 @@ import { useCoachSettings } from '../_lib/use-settings'
 import { ukDate, ukWeek, addDaysIso } from '@/lib/coach/uk-date'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
 import { getFlags, subscribe as subscribeFeatures, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
+import { PlayerKnowledge } from './PlayerKnowledge'
 
 type Review = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
@@ -506,6 +507,13 @@ function DetailPane({ T, accent, s, avatarUrl, booking, onExport, onEdit, onDupl
       </div>
 
       {hasStructured && <CoachAiBrief key={s.id} T={T} accent={accent} s={s} />}
+      {/* What this player told you, and what their lessons have and have not covered lately. */}
+      {s.player_id && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, marginBottom: 8 }}>{(s.player_name || 'This player').trim().split(/\s+/)[0]}’s picture</div>
+          <PlayerKnowledge T={T} accent={accent} playerId={s.player_id} firstName={(s.player_name || '').trim().split(/\s+/)[0] || undefined} />
+        </div>
+      )}
       {shareOpen && <ShareMenu T={T} accent={accent} s={s} onClose={() => setShareOpen(false)} />}
       {recapOpen && <RecapModal T={T} accent={accent} s={s} onClose={() => setRecapOpen(false)} />}
     </div>

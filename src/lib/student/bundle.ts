@@ -11,6 +11,8 @@ import type { StudentNextSession } from './next-session'
 export type { StudentNextSession }
 
 /** Mirrors the coach's feature flags (see _lib/feature-flags.ts). */
+import type { StudentAdultLevel } from './adult-level'
+export type { StudentAdultLevel }
 export type StudentFeatures = { effort?: boolean; video?: boolean; audio?: boolean; racket?: boolean }
 
 export type StudentPlayer = {
@@ -213,6 +215,8 @@ export type StudentBundle = {
   sectionsOff: string[]
   /** Mastery score that counts as "earned" (settings.awardThreshold, 3 or 4). */
   awardThreshold: number
+  /** Their adult level, its video and the checklist to pass it (migration 219). */
+  adultLevel?: StudentAdultLevel | null
 }
 
 // ── Who is reading this page ────────────────────────────────────────────────

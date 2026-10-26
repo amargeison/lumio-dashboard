@@ -7,6 +7,7 @@ import { isLumioResource } from '@/lib/coach/lumio-resources-data'
 import { resourceHref } from '@/lib/coach/resource-files'
 import { buildNextSession } from '@/lib/student/next-session'
 import { familyLesson } from '@/lib/student/family-lesson'
+import { loadStudentAdultLevel } from '@/lib/student/adult-level'
 import { nameIsUnique, coachSeats, pickSeat, requestedAcademy } from '@/lib/coach/membership'
 
 export const runtime = 'nodejs'
@@ -308,8 +309,9 @@ export async function GET(req: NextRequest) {
     return { campId: String(c.id), name: String(c.name || 'Camp'), people: (count ?? 0) + coachCount, messages: rows, channels: linkedNames }
   }))
 
+  const adultLevel = await loadStudentAdultLevel(admin, me.academyId, String(player.id))
   return NextResponse.json({
-    books, messages, nextSession, coaches, campThreads,
+    books, messages, nextSession, coaches, campThreads, adultLevel,
     player: {
       id: player.id, name: player.name, nickname: player.nickname, age: player.age,
       category: player.category, level: player.level, racket_stage: player.racket_stage,

@@ -22,6 +22,7 @@
 // Returning undefined lets fetch.ts answer { ok: true, demo: true } — the right
 // reply for fire-and-forget calls nobody reads.
 
+import { studentAdultLevel } from '@/lib/student/adult-level'
 import { demoTable, demoId, DEMO_COACH_ID, DEMO_EMAIL, type Row } from './store'
 import { demoClient } from './client'
 import { scoreManualSession, MANUAL_MIN_DURATION_MIN } from '@/lib/coach/effort-score'
@@ -2662,6 +2663,7 @@ const studentPreview: Handler = async ({ url }) => {
 
   return json({
     books, messages, nextSession, coaches, campThreads,
+    adultLevel: studentAdultLevel(player.adult_level_id as string | null, demoTable('coach_adult_levels') as never, demoTable('coach_adult_passes').filter(x => String(x?.player_id) === playerId) as never),
     player: only(player, ['id', 'name', 'nickname', 'age', 'category', 'level', 'racket_stage', 'goal', 'avatar_url', 'parent_name', 'parent_email', 'xp_total']),
     // Clips and voice notes are files; the demo has none to play, and a tile
     // that opens an empty player is worse than no tile.

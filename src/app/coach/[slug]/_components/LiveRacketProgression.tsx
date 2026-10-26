@@ -25,6 +25,7 @@ import { useCoachTable, useCoachProfile, sb, RACKET_STAGES, SKILLS_BY_STAGE, RAC
 import { getSettings } from '../_lib/settings-store'
 import { avatarSrc } from '@/lib/avatar'
 import { STAGE_META, LTA_MAP, ltaChip } from '@/lib/coach/colour-ladder'
+import { AdultLevels } from './AdultLevels'
 
 type Player = { id: string; name: string; level?: string | null; racket_stage?: string | null; avatar_url?: string | null }
 type SkillRow = { player_id: string; skill: string; score: number }
@@ -37,7 +38,30 @@ const initials = (n: string) => (n || '').trim().split(/\s+/).map(w => Array.fro
 const LAST = RACKET_STAGES.length - 1
 const TOTAL_SKILLS = RACKET_STAGES.reduce((n, s) => n + (SKILLS_BY_STAGE[s.id]?.length || 0), 0)
 
+// Two ladders on one page: Lumio's colour rackets for juniors, and the
+// academy's own adult levels (migration 219), each with a video and a checklist.
 export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+  const [view, setView] = useState<'junior' | 'adult'>('junior')
+  useEffect(() => { try { if (sessionStorage.getItem('lumio_ladder_view') === 'adult') setView('adult') } catch { /* fine */ } }, [])
+  const pick = (v: 'junior' | 'adult') => { setView(v); try { sessionStorage.setItem('lumio_ladder_view', v) } catch { /* fine */ } }
+  return (
+    <div style={{ fontFamily: FONT }}>
+      <div role="tablist" aria-label="Ladder" style={{ display: 'flex', gap: 4, marginBottom: 14, padding: 2, background: T.hover, borderRadius: 9, width: 'fit-content', maxWidth: '100%' }}>
+        {([['junior', 'Junior rackets'], ['adult', 'Adult levels']] as const).map(([id, l]) => (
+          <button key={id} role="tab" aria-selected={view === id} onClick={() => pick(id)} style={{ appearance: 'none', border: 0, padding: '7px 16px', borderRadius: 7, fontSize: 12.5, cursor: 'pointer', background: view === id ? T.panel : 'transparent', color: view === id ? T.text : T.text2, fontWeight: view === id ? 700 : 500, fontFamily: FONT }}>{l}</button>
+        ))}
+      </div>
+      {view === 'adult' ? (
+        <>
+          <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 700, color: T.text }}>Adult levels</h1>
+          <AdultLevels T={T} accent={accent} />
+        </>
+      ) : <JuniorLadder T={T} accent={accent} />}
+    </div>
+  )
+}
+
+function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const { rows: players, edit } = useCoachTable<Player>('coach_players')
   const { rows: skillRows } = useCoachTable<SkillRow>('coach_player_skills')
   // The coach whose name goes on the certificate.

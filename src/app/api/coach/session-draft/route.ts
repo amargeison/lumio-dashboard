@@ -5,6 +5,8 @@ import { cookies } from 'next/headers'
 import { runCoachAgent, extractJson, buildPlayerContext } from '@/lib/coach/agent'
 import { sessionPlanTask } from '@/lib/coach/agent-persona'
 import { sharedLessonText } from '@/lib/coach/lesson-recap'
+import { coverage, plannerBrief } from '@/lib/coach/coverage'
+import { ukDate, addDaysIso } from '@/lib/coach/uk-date'
 
 export const maxDuration = 120
 
@@ -106,9 +108,24 @@ export async function POST(req: NextRequest) {
     }
 
     const context = await buildPlayerContext(supabase, player, byId ? playerId : null)
+    // What they told the coach in their welcome questionnaire, and what their
+    // lessons have and have not covered lately. By id only: never somebody
+    // else's answers for a namesake. Health notes are never part of it.
+    let knowledge = ''
+    if (byId) {
+      try {
+        const today = ukDate()
+        const [{ data: qs }, { data: recent }] = await Promise.all([
+          supabase.from('coach_questionnaires').select('answers, submitted_at').eq('player_id', playerId).order('submitted_at', { ascending: false }).limit(1),
+          supabase.from('coach_sessions').select('session_date, focus, review_json').eq('player_id', playerId).gte('session_date', addDaysIso(today, -120)).order('session_date', { ascending: false }).limit(60),
+        ])
+        const answers = (qs?.[0]?.answers || null) as Record<string, never> | null
+        knowledge = plannerBrief(answers, coverage(recent || [], answers, today))
+      } catch { /* the plan is still built without it */ }
+    }
     const task = sessionPlanTask({
       type, focus, racket, standard, duration: mins, note, player, context,
-      lastCovered, lastHomework, lastNextFocus,
+      lastCovered, lastHomework, lastNextFocus, knowledge,
     })
     const { text } = await runCoachAgent({ apiKey, task, maxTokens: 2000 })
     const parsed = extractJson<Plan>(text, {})
@@ -138,6 +155,8 @@ export async function POST(req: NextRequest) {
       // So the UI can say honestly whether the plan is built on real history or
       // is Lumio Coach's best guess for a player it has never seen.
       built_on_history: !!(lastCovered || lastHomework || lastNextFocus),
+      // And whether it knew what they told the coach, and what they have covered.
+      built_on_answers: !!knowledge,
     })
   } catch (err) {
     console.error('[coach/session-draft]', err)

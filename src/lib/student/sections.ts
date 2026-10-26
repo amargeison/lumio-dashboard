@@ -11,7 +11,7 @@
 
 export type StudentSectionKey =
   | 'progress' | 'nextsession' | 'camp' | 'highlights' | 'report' | 'rewards'
-  | 'racket' | 'homework' | 'lessons' | 'resources' | 'messages'
+  | 'racket' | 'adultlevel' | 'homework' | 'lessons' | 'resources' | 'messages'
 
 export type StudentSection = {
   key: StudentSectionKey
@@ -40,6 +40,7 @@ export const STUDENT_SECTIONS: StudentSection[] = [
   { key: 'report',     label: 'Session report',        blurb: 'Distance, speed and heart rate from a tracked session.', module: 'effort' },
   { key: 'rewards',    label: 'Effort & rewards',      blurb: 'XP, effort level and the three session scores.', module: 'effort' },
   { key: 'racket',     label: 'Racket progression',    blurb: 'The racket ladder and how far through the current one they are.', module: 'racket' },
+  { key: 'adultlevel', label: 'Adult level',           blurb: 'Their adult level, its video and the checklist to pass it.', module: 'racket' },
   { key: 'homework',   label: "Homework & what's next", blurb: 'What to practise before the next lesson.' },
   { key: 'lessons',    label: 'Recent lessons',        blurb: 'Your lesson summaries and coach notes.' },
   { key: 'resources',  label: 'Recommended resources', blurb: 'Drills, guides and books you have recommended for them.' },

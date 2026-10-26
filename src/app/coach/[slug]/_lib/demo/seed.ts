@@ -22,6 +22,7 @@ import { buildCampKit, type KitCategory } from '@/lib/coach/camp-kit-template'
 import { STAGES as EMAIL_STAGES } from '@/lib/coach/camp-lifecycle'
 import { askedForm } from '@/lib/coach/camp-form'
 import { tidyRooms, roomChoice } from '@/lib/coach/camp-rooms'
+import { STARTER_LEVELS } from '@/lib/coach/adult-levels'
 import { BOOKS } from '@/lib/coach/books'
 import { upcomingDate } from '@/lib/coach/groups'
 
@@ -770,7 +771,7 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     kit: '11', resource: '12', playerResource: '13', media: '14', watch: '15', gps: '16', consent: '17',
     development: '18', staffVenue: '19', lead: '1a', leadEvent: '1b',
     group: '1c', groupMember: '1d', groupWeek: '1e', groupReply: '1f', charge: '20',
-    mplan: '21', bill: '22', welcome: '23', answers: '24',
+    mplan: '21', bill: '22', welcome: '23', answers: '24', note: '25', level: '26', pass: '27',
   }
   /** A row with the columns every table shares. `created` doubles as updated_at
       unless a later one is given; `false` is for tables with no updated_at. */
@@ -2297,7 +2298,8 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
   out.coach_welcome_links = []; out.coach_questionnaires = []
   const ANSWERS = [
     { level: 'Social or club player', years: '3 to 10 years', often: 'Once a week', game_now: 'Reliable from the back, but my second serve lets me down in matches.', goals: ['A better serve', 'Win more matches'], goal_3m: 'A second serve I trust under pressure.', likes: ['Match play and points', 'Technique'], interests: ['Match play nights', 'Doubles sessions'], when: ['Weekday evenings', 'Saturdays'] },
-    { level: 'Coming back after a break', years: 'More than 10 years', often: 'Less than once a week', game_now: 'Rusty. I used to play league tennis and want to get back to it.', goals: ['Get back to my level after a break or injury', 'Enjoy it and keep fit'], goal_3m: 'Play a full set without my shoulder aching.', likes: ['Fitness and movement', 'Drills and repetition'], interests: ['Cardio tennis', 'Adult group sessions'], when: ['Weekday mornings'] },
+    { level: 'Coming back after a break', years: 'More than 10 years', often: 'Less than once a week', game_now: 'Rusty. I used to play league tennis and want to get back to it.', goals: ['Get back to my level after a break or injury', 'Enjoy it and keep fit'], goal_3m: 'Play a full set without my shoulder aching.', goal_12m: 'Back in the club’s third team.', likes: ['Fitness and movement', 'Drills and repetition'], interests: ['Cardio tennis', 'Adult group sessions'], when: ['Weekday mornings'],
+      ratings: { Forehand: 4, Backhand: 3, Serve: 2, Return: 3, 'Volleys and net play': 2, Movement: 2, Fitness: 2, 'Match nerves': 3 }, best: 'My forehand still has some pace on it.', frustrates: 'Running out of puff in long rallies.', matches: 'Friendly matches', coached: 'Explain why', less_of: 'Long talks between drills.' },
     { level: 'League or team player', years: '3 to 10 years', often: '2 or 3 times a week', game_now: 'Strong forehand, weak at the net.', goals: ['Play doubles better'], goal_3m: 'Come forward and finish points at the net.', likes: ['Tactics', 'Video of my strokes'], interests: ['Doubles sessions', 'Tennis holidays and trips'], when: ['Sundays'] },
   ]
   adults.slice(0, 5).forEach((p, i) => {
@@ -2309,6 +2311,33 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     out.coach_welcome_links.push(link)
     if (done) out.coach_questionnaires.push({ ...row(T.answers, { staff_id: null, player_id: p.id, link_id: link.id, version: link.version, answers: ANSWERS[i], health_consent: false }, ago(18 - i), false), submitted_at: ago(18 - i) })
   })
+
+  // ── Coach's notes (private) ──────────────────────────────────────────────
+  const COACH_NOTES: [number, string, string, number, boolean?][] = [
+    [0, 'work', 'Nurse on rotating shifts — books lessons a week ahead, so offer slots early.', 40, true],
+    [0, 'family', 'Two children in the Saturday junior group; her partner plays socially.', 62],
+    [0, 'holidays', 'Away in Cornwall for the first fortnight of August.', 12],
+    [1, 'interests', 'Runs half-marathons and cycles at weekends. Loves a fitness finisher.', 30, true],
+    [1, 'health', 'Shoulder physio finished in September. Build the serve back gradually, no more than 20 serves a lesson for now.', 18],
+    [2, 'work', 'Teacher. Free from 4pm in term time, busy during exam season.', 55],
+    [2, 'interests', 'Follows county cricket; enjoys talking doubles tactics.', 25, true],
+  ]
+  out.coach_player_notes = COACH_NOTES.filter(([i, kind]) => adults[i] && (kind !== 'health' || adults[i].consent_medical))
+    .map(([i, kind, text, d, pinned]) => row(T.note, { staff_id: null, player_id: adults[i].id, kind, text, noted_on: ymd(plus(today, -d)), pinned: !!pinned }, ago(d)))
+
+  // ── Adult levels: the six starter levels, with players on them ───────────
+  out.coach_adult_levels = STARTER_LEVELS.map((l, i) => row(T.level, { position: i + 1, name: l.name, summary: l.summary, video_url: null, checklist: l.checklist }, ago(70)))
+  const lv = (name: string) => out.coach_adult_levels.find(l => l.name === name)!
+  out.coach_adult_passes = []
+  const ON: [number, string, number][] = [[0, 'Club', 3], [1, 'Improver', 2], [2, 'Club+', 5], [3, 'Club', 1], [5, 'Team', 2]]
+  for (const [i, name, n] of ON) {
+    const p = adults[i]; if (!p) continue
+    const level = lv(name)
+    p.adult_level_id = level.id
+    ;(level.checklist as { id: string }[]).slice(0, n).forEach((it, k) => {
+      out.coach_adult_passes.push(row(T.pass, { staff_id: null, player_id: p.id, level_id: level.id, item_id: it.id, passed_on: ymd(plus(today, -(30 - k * 6))) }, ago(30 - k * 6), false))
+    })
+  }
 
   return out
 }
