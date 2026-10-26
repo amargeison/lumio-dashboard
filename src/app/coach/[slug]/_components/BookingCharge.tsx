@@ -16,6 +16,7 @@ import { priceFor, type ClientRate, type PriceRule } from '@/lib/coach/pricing'
 import { formatPennies } from '@/lib/coach/money'
 import { useCoachTable } from '../_lib/coach-db'
 import { lessonUses, coverage, packWords, type PackLine, type BookingLite } from '@/lib/coach/packs'
+import { planCovering, planWords, type Plan } from '@/lib/coach/memberships'
 
 type Bk = { id: string; player_id?: string | null; player_name?: string | null; status?: string | null; type?: string | null; booking_date?: string | null; start_time?: string | null; duration_min?: number | null; venue_id?: string | null; price_pennies?: number | null; headcount?: number | null; cancelled_at?: string | null }
 
@@ -37,6 +38,8 @@ export function BookingCharge({ T, accent, booking, settings, client }: {
   const myPacks = mineOnly(payLines).filter(p => (p.sessions_total || 0) > 0)
   const uses = myPacks.length ? lessonUses({ bookings: mineOnly(allBookings).map(b => (b.id === booking.id ? { ...b, ...booking } as BookingLite : b)), attendance: mineOnly(attendance), writeUps: mineOnly(writeUps), policy: packPolicy, planned: true }) : []
   const pack = myPacks.length ? coverage(myPacks, uses).get(booking.id) || null : null
+  const { rows: plans } = useCoachTable<Plan>('coach_memberships')
+  const plan = planCovering(plans, { playerId: booking.player_id, type: booking.type })
   if (loading || !wallet.chargesEnabled || !booking.player_id || booking.type === 'Block') return null
 
   const policy = readPolicy(settings.cancelPolicy)
@@ -51,7 +54,7 @@ export function BookingCharge({ T, accent, booking, settings, client }: {
   const started = booking.booking_date ? ukLocalToMs(booking.booking_date, (booking.start_time || '00:00').slice(0, 5)) <= Date.now() : false
 
   const offers: { kind: 'lesson' | 'late_cancel' | 'no_show'; label: string; amount: number }[] = []
-  if (pack) { /* comes off the pack: nothing to charge */ } else {
+  if (pack || plan) { /* paid for by the pack or the monthly plan: nothing to charge */ } else {
   if (!cancelled && !live('lesson') && !live('no_show') && base > 0) offers.push({ kind: 'lesson', label: 'Charge for the lesson', amount: base })
   if (!cancelled && started && !live('lesson') && !live('no_show') && policy.noShowPct < 100 && feeFor(base, policy.noShowPct) > 0) offers.push({ kind: 'no_show', label: 'They did not turn up', amount: feeFor(base, policy.noShowPct) })
   if (late && !live('late_cancel') && feeFor(base, policy.lateChargePct) > 0) offers.push({ kind: 'late_cancel', label: 'Late cancellation fee', amount: feeFor(base, policy.lateChargePct) })
@@ -114,7 +117,9 @@ export function BookingCharge({ T, accent, booking, settings, client }: {
           </div>
         )
       })}
-      {pack ? (
+      {plan && !pack ? (
+        <div style={{ fontSize: 12, color: T.text2 }} data-testid="on-plan">Covered by {who}’s monthly plan ({plan.name}, {planWords(plan)}), so nothing is charged for this lesson.</div>
+      ) : pack ? (
         <div style={{ fontSize: 12, color: T.text2 }} data-testid="on-pack">
           {cancelled ? (late ? 'Cancelled late: one lesson is used from ' : 'Cancelled, so it is not taken off ') : 'Comes off '}{who}’s pack, so nothing is charged to their card. {packWords(pack, uses, myPacks)}.
         </div>

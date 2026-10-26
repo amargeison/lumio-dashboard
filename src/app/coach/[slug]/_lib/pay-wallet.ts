@@ -15,7 +15,7 @@ export type PayMethod = {
 }
 export type PayCharge = {
   id: string; player_id: string | null; player_name: string | null; booking_id: string | null
-  kind: 'lesson' | 'late_cancel' | 'no_show' | 'other' | 'group' | null; description: string | null
+  kind: 'lesson' | 'late_cancel' | 'no_show' | 'other' | 'group' | 'membership' | null; description: string | null
   /** A weekly-group answer this payment was for (migration 214). */
   reply_id?: string | null
   amount_pennies: number; status: 'pending' | 'charging' | 'processing' | 'paid' | 'failed' | 'refunded'

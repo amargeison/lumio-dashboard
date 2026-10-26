@@ -1996,6 +1996,30 @@ const groupsPost: Handler = async ({ body }) => {
   return fail('Unknown action.')
 }
 
+// ── Welcome links and monthly plans ──────────────────────────────────────────
+// Making a link works on the demo's own players (nothing is emailed); taking a
+// month from a card is switched off, like every other card payment here.
+const welcomePost: Handler = async ({ body }) => {
+  await sleep(450)
+  const b = obj(body)
+  const ids = Array.isArray(b.playerIds) ? (b.playerIds as unknown[]).map(String) : []
+  const now = new Date().toISOString()
+  let sent = 0; const noEmail: string[] = []; let url: string | null = null
+  for (const id of ids) {
+    const p = byId('coach_players', id)
+    if (!p) continue
+    let link = demoTable('coach_welcome_links').filter(l => l.player_id === id && !l.completed_at).sort((x, y) => String(y.created_at).localeCompare(String(x.created_at)))[0]
+    if (!link) { link = { id: demoId(), coach_id: DEMO_COACH_ID, staff_id: null, player_id: id, token: demoId(), version: b.version === 'long' ? 'long' : 'short', sent_at: null, sent_to: null, opened_at: null, completed_at: null, created_at: now, updated_at: now }; demoTable('coach_welcome_links').push(link) }
+    if (b.send === false) { url = `${typeof window !== 'undefined' ? window.location.origin : ''}/welcome/${link.token}`; continue }
+    const to = p.parent_email || p.email || p.contact_email
+    if (!to) { noEmail.push(String(p.name)); continue }
+    Object.assign(link, { sent_at: now, sent_to: to }); sent++
+  }
+  return json({ ok: true, sent, noEmail, failed: [], url })
+}
+const MONTHLY_OFF = 'Taking a monthly payment is switched off in the demo. In your own portal it is taken from the client’s saved card or Direct Debit on the day you chose, and they get an email each time.'
+const membershipsPost: Handler = async () => { await sleep(400); return fail(MONTHLY_OFF) }
+
 // ── Leads ───────────────────────────────────────────────────────────────────
 // The private address is a real web address that Zapier or Make posts to, so
 // the demo cannot have one. Importing a spreadsheet works for real, into the
@@ -2674,6 +2698,8 @@ const ROUTES: Record<string, Handler> = {
   [`POST ${C}/leads/hook`]: leadsHookOff,
   [`POST ${C}/leads/import`]: leadsImport,
   [`POST ${C}/groups`]: groupsPost,
+  [`POST ${C}/welcome`]: welcomePost,
+  [`POST ${C}/memberships`]: membershipsPost,
   [`GET ${C}/calendar/availability`]: availability,
   [`POST ${C}/calendar/event`]: calendarEventPost,
   [`DELETE ${C}/calendar/event`]: calendarEventDelete,

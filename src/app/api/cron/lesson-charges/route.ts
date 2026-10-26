@@ -4,6 +4,8 @@ import { academyMoney, activeMethod, askStripe, chargeSaved, priceBooking } from
 import { windowClosesAt, ukLocalToMs } from '@/lib/coach/cancel-policy'
 import { addDaysIso, ukDate } from '@/lib/coach/uk-date'
 import { packCover } from '@/lib/coach/packs-server'
+import { planCover, runMonthly } from '@/lib/coach/monthly-server'
+import { planCovering } from '@/lib/coach/memberships'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -20,12 +22,14 @@ export const maxDuration = 300
 //     and which started no more than 12 hours ago (an older lesson is the
 //     coach's to charge from the Payments page, not a surprise from us);
 //   • a player with a card or Direct Debit on file;
-//   • a lesson that does not come off a lesson pack (see lib/coach/packs);
+//   • a lesson that does not come off a lesson pack (see lib/coach/packs),
+//     and is not covered by the player's monthly plan;
 //   • a lesson with no charge for it yet — not even a failed one. A charge
 //     that failed is shown to the coach; it is never retried on its own.
 // Safe to run twice: the database allows one live charge per lesson.
 //
-// It also finishes any charge left half-way ('charging' for over five
+// It also takes monthly plans on their billing day (lib/coach/monthly-server),
+// and finishes any charge left half-way ('charging' for over five
 // minutes) by asking Stripe again with the same key, which returns what
 // Stripe did the first time.
 
@@ -38,7 +42,7 @@ export async function POST(req: NextRequest) {
   }
   const db = admin()
   const now = Date.now()
-  const out = { resumed: 0, charged: 0, processing: 0, failed: 0, skipped: 0, onPack: 0, academies: 0 }
+  const out = { resumed: 0, charged: 0, processing: 0, failed: 0, skipped: 0, onPack: 0, onPlan: 0, academies: 0, monthly: {} as Record<string, number> }
 
   // ── 1. Half-finished charges ──
   const stale = new Date(now - 5 * 60_000).toISOString()
@@ -65,9 +69,11 @@ export async function POST(req: NextRequest) {
       .eq('coach_id', academyId).eq('status', 'confirmed').not('player_id', 'is', null)
       .gte('booking_date', addDaysIso(today, -1)).lte('booking_date', until)
     const { cover } = await packCover(db, academyId, (lessons || []).map(l => l.player_id as string), m.policy)
+    const plans = await planCover(db, academyId, (lessons || []).map(l => l.player_id as string))
     for (const b of lessons || []) {
       if (budget <= 0) break
       if (cover.has(b.id)) { out.onPack++; continue }
+      if (planCovering(plans, { playerId: b.player_id, type: b.type })) { out.onPlan++; continue }
       if (b.type === 'Block' || (b.headcount && b.headcount > 1)) continue
       const closes = windowClosesAt(b, m.policy)
       const starts = ukLocalToMs(b.booking_date, String(b.start_time || '00:00').slice(0, 5))
@@ -91,5 +97,8 @@ export async function POST(req: NextRequest) {
       else out.skipped++
     }
   }
+
+  // ── 3. Monthly plans whose billing day has come ──
+  try { out.monthly = await runMonthly(db, Math.max(0, budget)) } catch (e) { console.error('[cron/lesson-charges] monthly', e) }
   return NextResponse.json({ ok: true, ...out })
 }

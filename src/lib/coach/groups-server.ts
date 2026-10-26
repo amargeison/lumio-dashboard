@@ -19,6 +19,8 @@ import { syncBooking } from './calendar'
 import { askMessage, yesMessage, cancelState, payWayFor, dayWords, upcomingDate, dueToAsk } from './groups'
 import { formatPennies } from './money'
 import { ukTime } from './uk-date'
+import { planCover } from './monthly-server'
+import { planCovering } from './memberships'
 
 type Db = ReturnType<typeof admin>
 type Row = Record<string, any>
@@ -199,6 +201,9 @@ export async function sayYes(db: Db, L: Loaded, by: 'client' | 'coach', origin: 
   const already = (await chargesOf(db, reply.id)).find(c => ['paid', 'processing', 'charging'].includes(c.status))
   let method: Row | null = null
   if (already) res = { state, paid: already.status === 'processing' ? 'processing' : 'paid' }
+  else if (price > 0 && planCovering(await planCover(db, reply.coach_id, [reply.player_id]), { playerId: reply.player_id, groupId: group.id })) {
+    res = { state, paid: 'none', payNote: 'Your place is covered by your monthly plan.' }
+  }
   else if (price > 0 && m.chargesEnabled) {
     method = await activeMethod(db, reply.coach_id, reply.player_id)
     if (method) {
@@ -218,7 +223,7 @@ export async function sayYes(db: Db, L: Loaded, by: 'client' | 'coach', origin: 
     const msg = yesMessage({
       hello: addr.hello, childFirst: addr.toParent ? first(player.name) : null, coachName: m.coachName || null, academy: m.academy, logoUrl: m.logoUrl,
       group: group.name, date: session.session_date, time: group.start_time, venue: L.venue?.name || null, court: group.court || null,
-      paid: res.payNote && res.paid !== 'none' ? res.payNote : (res.needsLink ? `Your place is held. Pay ${formatPennies(price)} by card from the link below.` : price > 0 && !m.chargesEnabled ? `It is ${formatPennies(price)}, paid on the day.` : null),
+      paid: res.payNote && !res.needsLink ? res.payNote : (res.needsLink ? `Your place is held. Pay ${formatPennies(price)} by card from the link below.` : price > 0 && !m.chargesEnabled ? `It is ${formatPennies(price)}, paid on the day.` : null),
       freeUntil: m.policy.hours > 0 ? cs.freeUntil : null, url: `${origin}/group/${reply.token}`,
     })
     await sendFamilyEmail(reply.coach_id, { to: addr.to, subject: msg.subject, html: msg.html, replyTo: m.contactEmail, context: 'coach/group yes' }).catch(() => false)

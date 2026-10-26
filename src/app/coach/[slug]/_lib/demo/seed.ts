@@ -769,6 +769,7 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     kit: '11', resource: '12', playerResource: '13', media: '14', watch: '15', gps: '16', consent: '17',
     development: '18', staffVenue: '19', lead: '1a', leadEvent: '1b',
     group: '1c', groupMember: '1d', groupWeek: '1e', groupReply: '1f', charge: '20',
+    mplan: '21', bill: '22', welcome: '23', answers: '24',
   }
   /** A row with the columns every table shares. `created` doubles as updated_at
       unless a later one is given; `false` is for tables with no updated_at. */
@@ -2243,6 +2244,53 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
         }
       })
     })
+  })
+
+  // ── Monthly plans and welcome links ────────────────────────────────────────
+  // One regular on £150 a month for their weekly private (three months taken),
+  // one group member waiting to agree, and a handful of questionnaires back.
+  const thisMonth = ymd(today).slice(0, 7)
+  const monthBack = (n: number) => { const d = new Date(today); d.setDate(1); d.setMonth(d.getMonth() - n); return ymd(d).slice(0, 7) }
+  const thursday = out.coach_groups.find(g => g.name === 'Thursday Adults')
+  const PLANS = [
+    { who: adults[2], name: 'Weekly private', amount: 15000, covers: 'lessons', group: null, agreed: true, starts: monthBack(2) },
+    { who: adults[3], name: 'Thursday Adults monthly', amount: 5500, covers: 'group', group: thursday?.id || null, agreed: false, starts: monthBack(-1) },
+  ]
+  out.coach_memberships = []; out.coach_membership_bills = []
+  PLANS.forEach(P => {
+    if (!P.who) return
+    const plan = row(T.mplan, {
+      staff_id: null, player_id: P.who.id, name: P.name, amount_pennies: P.amount, day_of_month: 1, starts_month: P.starts, covers: P.covers, group_id: P.group,
+      status: P.agreed ? 'active' : 'offered', agreed_at: P.agreed ? ago(70) : null, agreed_by: P.agreed ? P.who.name : null, agreed_text: null, notes: null,
+    }, ago(75))
+    out.coach_memberships.push(plan)
+    if (!P.agreed) return
+    ;[2, 1, 0].forEach(n => {
+      const period = monthBack(n)
+      const when = stamp(new Date(`${period}-01T08:05:00`))
+      const charge = row(T.charge, {
+        player_id: P.who.id, player_name: P.who.name, booking_id: null, reply_id: null, kind: 'membership', description: `${P.name} · ${P.who.name}`,
+        amount_pennies: P.amount, status: 'paid', failure_reason: null, refunded_pennies: null, charged_by: 'auto', paid_at: when,
+      }, when)
+      out.coach_charges.push(charge)
+      out.coach_membership_bills.push(row(T.bill, { staff_id: null, membership_id: plan.id, player_id: P.who.id, period, amount_pennies: P.amount, charge_id: charge.id, status: 'done', failure_reason: null }, when))
+    })
+  })
+  void thisMonth
+  out.coach_welcome_links = []; out.coach_questionnaires = []
+  const ANSWERS = [
+    { level: 'Social or club player', years: '3 to 10 years', often: 'Once a week', game_now: 'Reliable from the back, but my second serve lets me down in matches.', goals: ['A better serve', 'Win more matches'], goal_3m: 'A second serve I trust under pressure.', likes: ['Match play and points', 'Technique'], interests: ['Match play nights', 'Doubles sessions'], when: ['Weekday evenings', 'Saturdays'] },
+    { level: 'Coming back after a break', years: 'More than 10 years', often: 'Less than once a week', game_now: 'Rusty. I used to play league tennis and want to get back to it.', goals: ['Get back to my level after a break or injury', 'Enjoy it and keep fit'], goal_3m: 'Play a full set without my shoulder aching.', likes: ['Fitness and movement', 'Drills and repetition'], interests: ['Cardio tennis', 'Adult group sessions'], when: ['Weekday mornings'] },
+    { level: 'League or team player', years: '3 to 10 years', often: '2 or 3 times a week', game_now: 'Strong forehand, weak at the net.', goals: ['Play doubles better'], goal_3m: 'Come forward and finish points at the net.', likes: ['Tactics', 'Video of my strokes'], interests: ['Doubles sessions', 'Tennis holidays and trips'], when: ['Sundays'] },
+  ]
+  adults.slice(0, 5).forEach((p, i) => {
+    const done = i < 3
+    const link = row(T.welcome, {
+      staff_id: null, player_id: p.id, token: `demo-welcome-${i}`, version: i === 1 ? 'long' : 'short', sent_to: p.parent_email || p.email || null,
+      sent_at: ago(20 - i), opened_at: done || i === 3 ? ago(19 - i) : null, completed_at: done ? ago(18 - i) : null,
+    }, ago(20 - i))
+    out.coach_welcome_links.push(link)
+    if (done) out.coach_questionnaires.push({ ...row(T.answers, { staff_id: null, player_id: p.id, link_id: link.id, version: link.version, answers: ANSWERS[i], health_consent: false }, ago(18 - i), false), submitted_at: ago(18 - i) })
   })
 
   return out
