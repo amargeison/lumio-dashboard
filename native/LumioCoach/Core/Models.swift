@@ -535,3 +535,42 @@ struct CampCard: Decodable, Identifiable, Hashable {
         }
     }
 }
+
+// MARK: - The coach's dashboard (src/lib/app/coach-dashboard.ts)
+
+struct CoachDashboard: Decodable {
+    struct Figure: Decodable, Hashable { let label: String; let value: String; let tone: String }
+    struct Camp: Decodable {
+        let id: String; let name: String; let place: String; let running: Bool; let when: String; let whenTone: String; let fill: Double?; let figures: [Figure]; let note: String
+        enum CodingKeys: String, CodingKey { case id, name, place = "where", running, when, whenTone, fill, figures, note }
+    }
+    struct Next: Decodable { let label: String; let date: String }
+    struct Person: Decodable, Identifiable, Hashable { let id: String; let name: String }
+    struct Stats: Decodable { let thisWeek: Int; let next: Next?; let players: Int; let unbooked: [Person]; let paymentsDue: String; let paymentsLabel: String }
+    struct InboxItem: Decodable, Identifiable { let id: String; let who: String; let incoming: Bool; let tag: String; let text: String; let at: String?; let unread: Bool; let playerId: String?; let reaction: String? }
+    struct Need: Decodable, Identifiable { let id: String; let name: String; let reason: String; let avatar: String? }
+    struct Upcoming: Decodable, Identifiable { let id: String; let kind: String; let when: String; let date: String; let title: String; let sub: String }
+    struct Recent: Decodable, Identifiable { let id: String; let player: String; let when: String; let focus: String }
+    struct KitItem: Decodable, Identifiable { let id: String; let name: String; let state: String; let tone: String }
+    struct Kit: Decodable { let items: [KitItem]; let more: Int; let empty: String }
+    struct Signal: Codable, Hashable { let tag: String; let pri: String; let text: String }
+    struct Briefing: Decodable { let signals: [Signal]; let todayCount: Int; let role: String }
+
+    let greeting: String
+    let greetName: String
+    let clubName: String
+    let headline: String
+    let racketsDue: Int
+    let camp: Camp?
+    let stats: Stats
+    let inbox: [InboxItem]
+    let needs: [Need]
+    let needsMore: Int
+    let upcoming: [Upcoming]
+    let recent: [Recent]
+    let kit: Kit
+    let briefing: Briefing
+    let sectionsOff: [String]
+
+    func shows(_ section: String) -> Bool { !sectionsOff.contains(section) }
+}

@@ -9,7 +9,7 @@ struct CoachTabs: View {
         @Bindable var model = model
         TabView(selection: $model.coachTab) {
             NavigationStack { TodayView() }
-                .tabItem { Label("Today", systemImage: "sun.max") }
+                .tabItem { Label("Dashboard", systemImage: "house") }
                 .tag(CoachTab.today)
             NavigationStack { CalendarView() }
                 .tabItem { Label("Calendar", systemImage: "calendar") }
@@ -26,6 +26,10 @@ struct CoachTabs: View {
                 .tag(CoachTab.more)
         }
         .environment(store)
+        // The website's look: its theme and the academy's accent, everywhere.
+        .environment(\.portal, store.theme)
+        .tint(store.theme.cAccent)
+        .preferredColorScheme(store.theme.scheme)
         .task {
             await store.load()
             // The unread count for the tab badge, before the inbox is opened.
