@@ -77,7 +77,12 @@ export default function PortalSignIn() {
     const d = await r.json().catch(() => ({}))
     if (r.ok) {
       setMember(d)
-      try { setPicked(localStorage.getItem(PICK_KEY) || '') } catch { /* private mode */ }
+      // ?player=<id> (the iPhone app opens the page for the player it is showing)
+      // wins over the remembered choice. Still only a choice: the server checks.
+      let fromLink = ''
+      try { fromLink = new URLSearchParams(window.location.search).get('player') || '' } catch { /* old browser */ }
+      if (fromLink && (d.players || []).some((p: PortalPlayer) => p.playerId === fromLink)) choose(fromLink)
+      else { try { setPicked(localStorage.getItem(PICK_KEY) || '') } catch { /* private mode */ } }
       setStage('in')
     } else { setWhy({ code: d.code, academyName: d.academyName }); setStage('noaccess') }
   }

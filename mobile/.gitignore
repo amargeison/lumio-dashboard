@@ -7,3 +7,4 @@ ios/App/build/
 xcuserdata/
 *.xcuserstate
 .DS_Store
+build/

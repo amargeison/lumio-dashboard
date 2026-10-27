@@ -39,8 +39,66 @@ const SPORT_ROOTS = new Set([
   'football', 'nonleague', 'grassroots', 'womens',
 ])
 
+// ── The native iPhone app ────────────────────────────────────────────────
+// The Swift app keeps its Supabase session in the Keychain and sends the access
+// token as `Authorization: Bearer …` with `X-Lumio-App: 1`. Every /api route
+// reads the session from the cookie a browser sends, so here the token is put
+// into that same cookie for the request — and nothing else the app's network
+// stack may have kept is passed on. Nothing is trusted that a browser could not
+// already send: Supabase still checks the token on every request.
+//
+// The refresh token is deliberately NOT included. If a route ever tried to
+// refresh an expired token it would fail (and answer "signed out"), rather than
+// spend the app's refresh token and leave the app holding a dead one. The app
+// refreshes its own token before it runs out.
+const JWT_RE = /^Bearer\s+([A-Za-z0-9_-]+\.([A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+)$/
+
+function nativeAppHeaders(request: NextRequest): Headers | null {
+  if (request.headers.get('x-lumio-app') !== '1') return null
+  const m = JWT_RE.exec(request.headers.get('authorization') || '')
+  const out = new Headers(request.headers)
+  out.delete('cookie')
+  if (!m) return out                       // signed out: no cookie at all
+  let claims: { sub?: string; email?: string; exp?: number; aud?: string; role?: string }
+  try {
+    const b64 = m[2].replace(/-/g, '+').replace(/_/g, '/')
+    const bin = atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4))
+    claims = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0))))
+  } catch { return out }
+  if (!claims?.sub || !claims.exp) return out
+  let ref = 'local'
+  try { ref = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || '').hostname.split('.')[0] } catch { /* default */ }
+  const session = {
+    access_token: m[1], token_type: 'bearer', expires_at: claims.exp,
+    expires_in: Math.max(0, claims.exp - Math.floor(Date.now() / 1000)),
+    refresh_token: 'native-app',
+    user: { id: claims.sub, email: claims.email ?? null, aud: claims.aud ?? 'authenticated', role: claims.role ?? 'authenticated', app_metadata: {}, user_metadata: {} },
+  }
+  let value: string
+  try {
+    // UTF-8 first: btoa only takes single-byte characters.
+    const bytes = new TextEncoder().encode(JSON.stringify(session))
+    let bin = ''
+    for (const b of bytes) bin += String.fromCharCode(b)
+    value = 'base64-' + btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+  } catch { return out }
+  const name = `sb-${ref}-auth-token`
+  // Split the way @supabase/ssr does, so a long token still reads back whole.
+  const CHUNK = 3180
+  const pairs = value.length <= CHUNK
+    ? [`${name}=${value}`]
+    : Array.from({ length: Math.ceil(value.length / CHUNK) }, (_, i) => `${name}.${i}=${value.slice(i * CHUNK, (i + 1) * CHUNK)}`)
+  out.set('cookie', pairs.join('; '))
+  return out
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  if (pathname.startsWith('/api/')) {
+    const native = nativeAppHeaders(request)
+    if (native) return NextResponse.next({ request: { headers: native } })
+  }
 
   // ── One address, not two ──────────────────────────────────────────────
   // lumiosports.com and www.lumiosports.com both served the whole site, and a

@@ -17,9 +17,17 @@ function cap(): CapacitorGlobal | null {
   return ((window as unknown as { Capacitor?: CapacitorGlobal }).Capacitor) || null
 }
 
-/** True inside the App Store app, false in any browser (including a home-screen web app). */
+/**
+ * True inside the App Store app, false in any browser (including a home-screen
+ * web app). Two versions of the app exist: the first wraps the whole site
+ * (window.Capacitor), the native Swift app shows some pages in a web view and
+ * says so in its user agent.
+ */
 export function isNativeApp(): boolean {
-  try { return !!cap()?.isNativePlatform?.() } catch { return false }
+  try {
+    if (cap()?.isNativePlatform?.()) return true
+    return typeof navigator !== 'undefined' && /LumioTennisCoachApp\//.test(navigator.userAgent)
+  } catch { return false }
 }
 
 /** One of the shell's plugins, or null in a browser or an older app version without it. */
