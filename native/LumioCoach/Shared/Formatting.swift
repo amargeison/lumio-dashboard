@@ -91,7 +91,12 @@ enum Fmt {
         return parts.compactMap { $0.first }.map { String($0) }.joined().uppercased()
     }
 
-    static func mins(_ m: Int) -> String { m % 60 == 0 ? (m == 60 ? "1 hour" : "\(m / 60) hours") : "\(m) min" }
+    /// "45 min", "1 hour", "1 hr 30", "2 hours"
+    static func mins(_ m: Int) -> String {
+        if m < 60 { return "\(m) min" }
+        if m % 60 == 0 { return m == 60 ? "1 hour" : "\(m / 60) hours" }
+        return "\(m / 60) hr \(m % 60)"
+    }
 }
 
 // MARK: Times and money in forms

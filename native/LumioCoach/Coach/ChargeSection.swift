@@ -96,7 +96,7 @@ struct ChargeSection: View {
 
     private func chargeLine(_ c: PayCards.Charge) -> some View {
         let amount = Fmt.money((c.amountPennies ?? 0) - (c.refundedPennies ?? 0))
-        let what = Kind(rawValue: c.kind ?? "")?.title ?? "Payment"
+        let what: String = { switch c.kind { case "lesson": return "Lesson"; case "no_show": return "No-show fee"; case "late_cancel": return "Late cancellation fee"; default: return "Payment" } }()
         let (text, tint): (String, Color) = {
             switch c.status {
             case "paid": return ("Paid \(amount)", .green)

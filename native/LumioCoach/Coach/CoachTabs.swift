@@ -109,7 +109,8 @@ struct BookingDetailView: View {
                 }
                 .padding(.vertical, 4)
             }
-            Section("Client") {
+            // Only for a booking with a client on the roster.
+            if booking.playerId != nil { Section("Client") {
                 if let c = booking.clientConfirmed {
                     Label("Confirmed by \(c.by ?? "the client"), \(Fmt.moment(c.at))", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
                 } else if booking.cancelledByClient {
@@ -125,7 +126,7 @@ struct BookingDetailView: View {
                     // Keeps the layout still while the player loads.
                     Color.clear.frame(height: 62)
                 }
-            }
+            } }
             Section("Details") {
                 LabeledContent("Type", value: booking.type ?? "—")
                 if let court = booking.court { LabeledContent("Court", value: court) }
