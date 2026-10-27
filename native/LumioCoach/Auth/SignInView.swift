@@ -69,7 +69,7 @@ struct SignInView: View {
                 Text("Sign in").font(.title2.bold())
                 Text("Coaches, players and parents: enter your email and we'll send you a code.")
                     .font(.subheadline).foregroundStyle(.secondary)
-                TextField("you@example.com", text: $email)
+                TextField("Email", text: $email, prompt: Text("you@example.com").foregroundStyle(.white.opacity(0.4)))
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
@@ -80,8 +80,7 @@ struct SignInView: View {
                     .padding(14)
                     .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 errorLine
-                BusyButton(title: "Continue") { await start() }
-                    .disabled(!email.contains("@"))
+                BusyButton(title: "Continue", enabled: email.contains("@")) { await start() }
 
             case .code(let kind):
                 Text("Enter your code").font(.title2.bold())
@@ -90,7 +89,7 @@ struct SignInView: View {
                 if kind == "family" {
                     Text("It comes from your coach's academy, through Lumio.").font(.footnote).foregroundStyle(.secondary)
                 }
-                TextField("000000", text: $code)
+                TextField("Code", text: $code, prompt: Text("000000").foregroundStyle(.white.opacity(0.25)))
                     .textContentType(.oneTimeCode)
                     .keyboardType(.numberPad)
                     .font(.system(size: 34, weight: .bold, design: .monospaced))
@@ -104,8 +103,7 @@ struct SignInView: View {
                         if digits.count == 6 { Task { await verify() } }
                     }
                 errorLine
-                BusyButton(title: busy ? "Checking…" : "Sign in") { await verify() }
-                    .disabled(code.count != 6)
+                BusyButton(title: busy ? "Checking…" : "Sign in", enabled: code.count == 6) { await verify() }
                 HStack {
                     Button("Use a different email") { stage = .email; code = ""; error = nil; focus = .email }
                     Spacer()

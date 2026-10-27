@@ -3,6 +3,9 @@ import SwiftUI
 /// A week at a time: a strip of days, and the chosen day's bookings.
 struct CalendarView: View {
     @Environment(AppModel.self) private var model
+    @Environment(CoachStore.self) private var store
+    @State private var adding = false
+    @State private var toast: Toast?
     @State private var weekStart: Date = CalendarView.monday(of: Date())
     @State private var selected: String = Fmt.todayISO
     @State private var bookings: [AppBooking] = []
@@ -25,7 +28,11 @@ struct CalendarView: View {
                     Text(error).foregroundStyle(.red)
                 }
                 Section(Fmt.dayLong(selected)) {
-                    if dayBookings.isEmpty && !loading {
+                    if let camp = store.setup?.camp(on: selected) {
+                        Label(camp.name, systemImage: "tent").foregroundStyle(.orange)
+                            .font(.body.weight(.semibold))
+                    }
+                    if dayBookings.isEmpty && !loading && store.setup?.camp(on: selected) == nil {
                         Text("Nothing booked.").foregroundStyle(.secondary)
                     }
                     ForEach(dayBookings) { b in NavigationLink(value: b) { BookingRow(booking: b) } }
@@ -42,12 +49,18 @@ struct CalendarView: View {
                 Button("Today") { jump(to: Date()) }
             }
             ToolbarItem(placement: .topBarTrailing) {
-                Button { model.web = WebTarget(path: model.coachWebPath("calendar"), title: "Booking Calendar") } label: { Image(systemName: "plus") }
+                Button { adding = true } label: { Image(systemName: "plus") }
                     .accessibilityLabel("Add a booking")
             }
         }
         .navigationDestination(for: AppBooking.self) { BookingDetailView(booking: $0) }
         .task(id: weekStart) { await load() }
+        .onChange(of: store.changes) { _, _ in Task { await load() } }
+        .sheet(isPresented: $adding) {
+            BookingFormView(existing: nil, startDate: selected) { text in toast = Toast(text: text) }
+                .environment(store)
+        }
+        .toast($toast)
     }
 
     private var weekStrip: some View {
@@ -61,7 +74,10 @@ struct CalendarView: View {
                     VStack(spacing: 3) {
                         Text(d.formatted(.dateTime.weekday(.narrow))).font(.caption2).foregroundStyle(.secondary)
                         Text(d.formatted(.dateTime.day())).font(.callout.weight(iso == selected ? .bold : .regular)).monospacedDigit()
-                        Circle().fill(count > 0 ? Color.accentColor : .clear).frame(width: 5, height: 5)
+                        HStack(spacing: 2) {
+                            Circle().fill(count > 0 ? Color.accentColor : .clear).frame(width: 5, height: 5)
+                            if store.setup?.camp(on: iso) != nil { Circle().fill(Color.orange).frame(width: 5, height: 5) }
+                        }
                     }
                     .frame(maxWidth: .infinity, minHeight: 56)
                     .foregroundStyle(iso == selected ? Color.white : (iso == Fmt.todayISO ? Color.accentColor : Color.primary))
