@@ -31,6 +31,7 @@ import {
 import { venueMapUrl } from '@/lib/coach/booking-venue'
 import { lessonRecap } from '@/lib/coach/lesson-recap'
 import { studentSectionOn } from '@/lib/student/sections'
+import { campParts, mapsUrl, telUrl, webUrl } from '@/lib/student/camp-view'
 
 export type StudentTheme = {
   text: string; text2: string; text3: string; text4: string
@@ -1144,120 +1145,18 @@ function NextSessionCard({ T, next, first, adult }: {
 // tells a parent their coach has not sorted the hotel, which may be true and is
 // not this page's job to imply.
 
-type TripLike = {
-  intro?: string
-  stay?: Record<string, string | undefined>
-  venue?: Record<string, string | undefined>
-  travel?: Record<string, string | undefined>
-  practical?: Record<string, string | undefined>
-  transport?: { name?: string; kind?: string; address?: string; phone?: string; url?: string; note?: string }[]
-  eating?: { name?: string; kind?: string; address?: string; phone?: string; url?: string; note?: string }[]
-  contacts?: { name?: string; role?: string; phone?: string; note?: string }[]
-  bring?: string[]
-  sections?: { title?: string; body?: string; items?: string[] }[]
-}
-
-/** A day of the camp, however the coach's itinerary happens to be shaped. */
-type CampDayRow = { label: string; date?: string; focus?: string; detail?: string }
-
-function campDays(v: unknown): CampDayRow[] {
-  if (!Array.isArray(v)) return []
-  return v.map((x, i) => {
-    if (typeof x === 'string') return { label: `Day ${i + 1}`, focus: x }
-    if (!x || typeof x !== 'object') return null
-    const o = x as Record<string, unknown>
-    const str = (k: string) => { const s = String(o[k] ?? '').trim(); return s || undefined }
-    const label = str('day') || str('title') || `Day ${i + 1}`
-    const focus = str('focus') || str('theme') || str('label') || str('name')
-    const detail = [str('did'), str('detail'), str('description'), str('nextAction')].filter(Boolean).join(' ')
-    if (!focus && !detail && !str('date')) return null
-    return { label: /^\d+$/.test(label) ? `Day ${label}` : label, date: str('date'), focus, detail: detail || undefined }
-  }).filter(Boolean) as CampDayRow[]
-}
-
-/** This player's own targets for the week, already filtered to them by the API. */
-function campTargets(v: unknown): { goals: string[]; measure?: string; stage?: string } {
-  const row = Array.isArray(v) ? (v[0] as Record<string, unknown> | undefined) : undefined
-  if (!row) return { goals: [] }
-  return {
-    goals: asStringList(row.goals),
-    measure: String(row.measure ?? '').trim() || undefined,
-    stage: String(row.stage ?? '').trim() || undefined,
-  }
-}
-
-const mapsUrl = (q?: string) => q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null
-const telUrl = (p?: string) => p ? `tel:${p.replace(/[^\d+]/g, '')}` : null
-const webUrl = (u?: string) => !u ? null : /^https?:\/\//i.test(u) ? u : `https://${u}`
-
-/** Fields → visible rows, dropping the empty ones, in the coach's own words. */
-const rowsOf = (o: Record<string, string | undefined> | undefined, map: [string, string][]) =>
-  (map.map(([k, label]) => { const v = String(o?.[k] ?? '').trim(); return v ? { label, value: v } : null }).filter(Boolean) as { label: string; value: string }[])
-
 function CampCard({ T, camp, first }: { T: StudentTheme; camp: StudentCamp; first: string }) {
   const days = daysUntil(camp.start_date)
   const started = days !== null && days <= 0
   const adultCamp = (camp.audience || '').toLowerCase() === 'adult'
   const you = adultCamp ? 'you' : first
 
-  // camp.equipment is the COACH's kit list — 360 balls, ball baskets, a first
-  // aid kit, the stringing machine. It is what the academy packs, not what a
-  // family packs, and merging the two produced a "what to bring" telling a
-  // parent to bring twelve ball baskets. The family's list is the trip hub's
-  // own "What to bring" and nothing else.
-  const rhythm = asStringList(camp.daily_rhythm)
-  const brief = asStringList(camp.parent_brief)
-  const itinerary = campDays(camp.itinerary)
-  const objectives = asStringList(camp.objectives)
-  const targets = campTargets(camp.player_targets)
-  const trip = (camp.trip && typeof camp.trip === 'object' ? camp.trip : {}) as TripLike
-
-  const stay = rowsOf(trip.stay, [['checkIn', 'Check-in'], ['rooms', 'Rooms'], ['meals', 'Meals'], ['wifi', 'Wi-Fi'], ['notes', 'Also']])
-  const venue = rowsOf(trip.venue, [['courts', 'Courts'], ['facilities', 'Facilities'], ['notes', 'Also']])
-  const travel = rowsOf(trip.travel, [['airport', 'Airport'], ['flights', 'Flights'], ['transfers', 'Transfers'], ['arrival', 'Getting there'], ['departure', 'Coming home'], ['notes', 'Also']])
-  const practical = rowsOf(trip.practical, [['weather', 'Weather'], ['currency', 'Currency'], ['timeDifference', 'Time difference'], ['plugs', 'Plugs'], ['health', 'Health'], ['notes', 'Also']])
-  const eating = (trip.eating || []).filter(p => String(p?.name || '').trim())
-  const transport = (trip.transport || []).filter(p => String(p?.name || '').trim())
-  const contacts = (trip.contacts || []).filter(c => String(c?.name || '').trim())
-  const bring = asStringList(trip.bring)
-  // "Shape of the week" is the same subject as the itinerary and the daily
-  // rhythm: how the days run. As its own tab it split one answer across two
-  // places and left the main tab reading like a bare timetable — so its copy is
-  // folded into The week, where somebody looking for it actually is, and it
-  // stops being a tab of its own.
-  const allSections = (trip.sections || []).filter(s => String(s?.title || '').trim())
-  const isShape = (t: unknown) => /shape of (the )?week|how the (week|days) (run|work)/i.test(String(t || ''))
-  const shape = allSections.find(s => isShape(s.title)) || null
-  const extras = allSections.filter(s => !isShape(s.title))
-  const shapeBody = String(shape?.body || '').trim()
-  const shapeItems = asStringList(shape?.items)
-
-  // The rhythm lines and the shape paragraph are usually the SAME sentences —
-  // the coach writes "mornings on court, lunch, back out at four" once and both
-  // fields end up holding it. Printing both produced three boxes that repeated
-  // the paragraph above them, cut mid-sentence. So a line only earns a box if it
-  // reads like a timetable entry (it names a time or a part of the day) and is
-  // not already sitting in the paragraph.
-  const inBody = (x: string) => {
-    const a = x.trim().toLowerCase().replace(/[.,;:]+$/, '')
-    return a.length > 12 && shapeBody.toLowerCase().includes(a.slice(0, Math.min(40, a.length)))
-  }
-  const looksLikeTime = (x: string) =>
-    /^\s*(\d{1,2}[:.]\d{2}|\d{1,2}\s*(am|pm)|morning|afternoon|evening|night|breakfast|lunch|dinner|day\s*\d)/i.test(x)
-  const timetable = [...shapeItems, ...rhythm]
-    .map(x => String(x).trim())
-    .filter(Boolean)
-    .filter(x => looksLikeTime(x) && !inBody(x))
-    .filter((x, i, all) => all.findIndex(y => y.toLowerCase() === x.toLowerCase()) === i)
-    .slice(0, 12)
-
-  const goalsTab = targets.goals.length > 0 || !!camp.camp_goal || objectives.length > 0
-  const weekTab = itinerary.length > 0 || rhythm.length > 0 || !!shapeBody || shapeItems.length > 0
-  const stayTab = stay.length > 0 || venue.length > 0 || !!trip.stay?.name || !!trip.venue?.name || !!camp.room
-  const travelTab = travel.length > 0 || !!camp.arrival
-  const aboutTab = eating.length > 0 || transport.length > 0 || practical.length > 0
-  const bringTab = bring.length > 0 || brief.length > 0
-  const callTab = contacts.length > 0
+  // Worked out in lib/student/camp-view.ts, which the iPhone app's camp card
+  // reads too, so the two can never disagree about what a family sees.
+  const {
+    brief, itinerary, objectives, targets, trip, stay, venue, travel, practical, eating, transport,
+    contacts, bring, extras, shapeBody, timetable, goalsTab, weekTab, stayTab, travelTab, aboutTab, bringTab, callTab,
+  } = campParts(camp)
 
   const TABS: { id: string; label: string; icon: string; on: boolean }[] = [
     { id: 'week', label: 'The week', icon: 'calendar', on: weekTab },

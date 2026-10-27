@@ -8,6 +8,8 @@ import { buildNextSession } from '@/lib/student/next-session'
 import { loadStudentAdultLevel } from '@/lib/student/adult-level'
 import { loadMyPage } from '@/lib/student/my-account-server'
 import { publicSiteOrigin } from '@/lib/public-origin'
+import { activeCamps, studentFraming, type StudentCamp } from '@/lib/student/bundle'
+import { campCardForApp } from '@/lib/student/camp-view'
 
 export const runtime = 'nodejs'
 
@@ -345,8 +347,15 @@ export async function GET(req: NextRequest) {
     return { campId: String(c.id), name: String(c.name || 'Camp'), people: (count ?? 0) + coachCount, messages: rows, channels: linkedNames }
   }))
 
+  // The iPhone app draws the camp card from plain blocks (lib/student/camp-view.ts,
+  // the same rules as the website's card) instead of the raw camp columns.
+  const isApp = req.headers.get('x-lumio-app') === '1'
+  const campCards = isApp
+    ? activeCamps(camps as StudentCamp[]).map(c => campCardForApp(c, studentFraming({ id: String(player.id), name: String(player.name || ''), nickname: player.nickname, age: player.age, category: player.category }).first))
+    : undefined
+
   return NextResponse.json({
-    coaches, campThreads,
+    coaches, campThreads, ...(campCards ? { campCards } : {}),
     player: {
       id: player.id, name: player.name, nickname: player.nickname,
       racket_stage: player.racket_stage, level: player.level, goal: player.goal,

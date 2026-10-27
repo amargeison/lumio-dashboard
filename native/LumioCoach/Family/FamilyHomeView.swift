@@ -52,6 +52,16 @@ struct FamilyHomeView: View {
                 .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
             }
 
+            // A camp they're booked on, from booking until it ends — the same
+            // card the website shows, and the coach can hide it ("camp").
+            if b.shows("camp"), !b.campCards.isEmpty {
+                Section(b.campCards.count == 1 ? "Camp" : "Camps") {
+                    ForEach(b.campCards) { c in
+                        NavigationLink { FamilyCampView(camp: c) } label: { FamilyCampRow(camp: c) }
+                    }
+                }
+            }
+
             if let my = b.my {
                 Section {
                     if my.lessons.isEmpty {

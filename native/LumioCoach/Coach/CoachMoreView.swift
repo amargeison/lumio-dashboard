@@ -6,12 +6,27 @@ struct CoachMoreView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
 
-    private let sections: [(String, String, String)] = [
-        ("development", "Player Development", "chart.line.uptrend.xyaxis"),
-        ("belts", "Racket Progression", "medal"),
-        ("resources", "Resource Centre", "books.vertical"),
-        ("settings", "Settings", "gearshape"),
-    ]
+    @Environment(CoachStore.self) private var store
+
+    /// Every part of the website the app doesn't do itself, so nothing is
+    /// out of reach on the phone. Head-coach-only parts are left out for an
+    /// invited coach, as the website's own menu does (role-scope.ts).
+    private var sections: [(String, String, String)] {
+        let f = store.setup?.features
+        let head = model.coach?.isHead == true
+        var s: [(String, String, String)] = [
+            ("development", "Player Development", "chart.line.uptrend.xyaxis"),
+            ("belts", "Racket Progression", "medal"),
+        ]
+        if head { s.append(("venues", "Court Planner", "mappin.and.ellipse")) }
+        if f?.video == true || f?.audio == true { s.append(("videoaudio", "Video & Audio", "video")) }
+        if f?.effort != false { s.append(("gpsheatmaps", "Effort & Rewards", "flame")) }
+        s.append(("equipment", "Equipment & Kit", "backpack"))
+        s.append(("resources", "Resource Centre", "books.vertical"))
+        if head { s.append(("staff", "Coaches", "person.2")) }
+        s.append(("settings", "Settings", "gearshape"))
+        return s
+    }
 
     var body: some View {
         List {
@@ -40,11 +55,16 @@ struct CoachMoreView: View {
 
             Section {
                 NavigationLink { PaymentsView() } label: { Label("Payments & Packs", systemImage: "sterlingsign.circle") }
-                NavigationLink { CampsView() } label: { Label("Training Camps", systemImage: "tent") }
+                if model.coach?.isHead == true {
+                    NavigationLink { CampsView() } label: { Label("Training Camps", systemImage: "tent") }
+                }
                 NavigationLink { PlannerView() } label: { Label("Session Planner", systemImage: "list.clipboard") }
                 NavigationLink { SummariesView() } label: { Label("Lesson Summaries", systemImage: "doc.text") }
-                NavigationLink { GroupsView() } label: { Label("Weekly Groups", systemImage: "person.3") }
-                NavigationLink { LeadsView() } label: { Label("Leads", systemImage: "person.badge.plus") }
+                // Camps, groups and leads are the head coach's, as on the website.
+                if model.coach?.isHead == true {
+                    NavigationLink { GroupsView() } label: { Label("Weekly Groups", systemImage: "person.3") }
+                    NavigationLink { LeadsView() } label: { Label("Leads", systemImage: "person.badge.plus") }
+                }
             }
 
             Section("On the website") {

@@ -238,10 +238,12 @@ struct FamilyBundle: Decodable {
     let sectionsOff: [String]
     let awardThreshold: Int
     let adultLevel: AdultLevel?
+    /// Camps they hold a place on, already laid out by the server (camp-view.ts).
+    let campCards: [CampCard]
 
     enum CodingKeys: String, CodingKey {
         case player, lessons, messages, my, skills, watch, highlights, media, resources, books
-        case nextSession, features, sectionsOff, awardThreshold, adultLevel
+        case nextSession, features, sectionsOff, awardThreshold, adultLevel, campCards
     }
 
     init(from d: Decoder) throws {
@@ -261,6 +263,7 @@ struct FamilyBundle: Decodable {
         sectionsOff = (try? c.decodeIfPresent([String].self, forKey: .sectionsOff)) ?? []
         awardThreshold = (try? c.decodeIfPresent(Int.self, forKey: .awardThreshold)) ?? 3
         adultLevel = try? c.decodeIfPresent(AdultLevel.self, forKey: .adultLevel)
+        campCards = (try? c.decodeIfPresent([CampCard].self, forKey: .campCards)) ?? []
     }
 
     /// A module is shown when it's on (no flags means everything on) and the coach hasn't hidden its section.
@@ -466,3 +469,69 @@ struct FamilyMessage: Decodable, Identifiable {
 /// POST /api/group/<token> answers with the week as it now stands, plus a notice.
 struct GroupAnswer: Decodable { let notice: String?; let error: String?; let url: String? }
 struct WebSessionResponse: Decodable { let url: String }
+
+
+// MARK: - A family's camp
+
+/// One camp, as the website's camp card shows it, in plain blocks
+/// (src/lib/student/camp-view.ts → campCardForApp).
+struct CampCard: Decodable, Identifiable, Hashable {
+    let id: String
+    let name: String
+    let place: String
+    let startDate: String?
+    let endDate: String?
+    let daysUntil: Int?
+    let dayOf: String?
+    let intro: [String]
+    let balanceLink: String?
+    let tabs: [Tab]
+
+    struct Tab: Decodable, Identifiable, Hashable {
+        let id: String
+        let label: String
+        let icon: String
+        let blocks: [Block]
+    }
+
+    struct Fact: Decodable, Hashable { let label: String; let value: String }
+    struct Day: Decodable, Hashable { let label: String; let date: String?; let focus: String?; let detail: String? }
+    struct TimeRow: Decodable, Hashable { let when: String; let what: String }
+    struct Place: Decodable, Hashable { let name: String; let kind: String?; let address: String?; let phone: String?; let note: String?; let map: String?; let web: String? }
+    struct Person: Decodable, Hashable { let name: String; let role: String?; let phone: String?; let note: String? }
+
+    /// One piece of a tab. Anything this version of the app doesn't know is skipped.
+    enum Block: Decodable, Hashable {
+        case highlight(label: String, text: String)
+        case text(String)
+        case timetable(title: String, rows: [TimeRow])
+        case days(title: String, days: [Day])
+        case list(title: String, icon: String, style: String, items: [String], note: String?, measure: String?)
+        case facts(title: String, icon: String, address: String?, rows: [Fact], map: String?, web: String?)
+        case places(title: String, icon: String, places: [Place])
+        case contacts([Person])
+        case link(label: String, url: String)
+        case unknown
+
+        enum K: String, CodingKey { case kind, label, text, title, rows, days, icon, style, items, note, measure, address, map, web, places, people, url }
+
+        init(from d: Decoder) throws {
+            let c = try d.container(keyedBy: K.self)
+            func s(_ k: K) -> String? { (try? c.decodeIfPresent(String.self, forKey: k)) ?? nil }
+            switch s(.kind) {
+            case "highlight": self = .highlight(label: s(.label) ?? "", text: s(.text) ?? "")
+            case "text": self = .text(s(.text) ?? "")
+            case "timetable": self = .timetable(title: s(.title) ?? "", rows: (try? c.decode([TimeRow].self, forKey: .rows)) ?? [])
+            case "days": self = .days(title: s(.title) ?? "", days: (try? c.decode([Day].self, forKey: .days)) ?? [])
+            case "list": self = .list(title: s(.title) ?? "", icon: s(.icon) ?? "", style: s(.style) ?? "bullet",
+                                      items: (try? c.decode([String].self, forKey: .items)) ?? [], note: s(.note), measure: s(.measure))
+            case "facts": self = .facts(title: s(.title) ?? "", icon: s(.icon) ?? "", address: s(.address),
+                                        rows: (try? c.decode([Fact].self, forKey: .rows)) ?? [], map: s(.map), web: s(.web))
+            case "places": self = .places(title: s(.title) ?? "", icon: s(.icon) ?? "", places: (try? c.decode([Place].self, forKey: .places)) ?? [])
+            case "contacts": self = .contacts((try? c.decode([Person].self, forKey: .people)) ?? [])
+            case "link": self = .link(label: s(.label) ?? "", url: s(.url) ?? "")
+            default: self = .unknown
+            }
+        }
+    }
+}
