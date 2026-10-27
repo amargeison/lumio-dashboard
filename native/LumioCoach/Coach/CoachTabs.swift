@@ -97,6 +97,9 @@ struct BookingDetailView: View {
     @State private var toast: Toast?
     @State private var working = false
     @State private var summarising = false
+    @State private var plan: PlanRecord?
+    @State private var planLoaded = false
+    @State private var buildingPlan: BookingRecord?
 
     var body: some View {
         List {
@@ -136,6 +139,23 @@ struct BookingDetailView: View {
                 if let notes = booking.notes { Text(notes).font(.callout).foregroundStyle(.secondary) }
             }
 
+            if booking.type != "Block" && !booking.isCancelled {
+                Section("Session plan") {
+                    if let plan {
+                        NavigationLink {
+                            RunSheetView(plan: plan) { await loadPlan() }
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Label(plan.finished ? "Finished — view the plan" : "Open the plan", systemImage: "list.clipboard")
+                                if let f = plan.focus { Text(f).font(.subheadline).foregroundStyle(.secondary).lineLimit(1) }
+                            }
+                        }
+                    } else if planLoaded {
+                        Button { Task { await openPlanBuilder() } } label: { Label("Build a session plan", systemImage: "sparkles") }
+                    }
+                }
+            }
+
             ChargeSection(pay: pay, booking: booking, playerName: player?.name ?? booking.playerName ?? booking.title, toast: $toast) {
                 store.saved()
             }
@@ -170,6 +190,10 @@ struct BookingDetailView: View {
                     .environment(store)
             }
         }
+        .sheet(item: $buildingPlan) { b in
+            PlanEditorView(plan: nil, booking: b) { text in toast = Toast(text: text); Task { await loadPlan() } }
+                .environment(store)
+        }
         .sheet(isPresented: $summarising) {
             NavigationStack {
                 SummaryFormView(existing: nil, presetPlayerId: booking.playerId, presetDate: booking.date) { text in toast = Toast(text: text) }
@@ -177,13 +201,28 @@ struct BookingDetailView: View {
             .environment(store)
         }
         .task {
+            async let plans: Void = loadPlan()
             async let pays: Void = pay.load()
             if let id = booking.playerId, let d: PlayerDetail = try? await API.shared.get("/api/app/v1/coach/players/\(id)") { player = d.player }
             _ = await pays
+            _ = await plans
         }
     }
 
     private var isPast: Bool { (Fmt.at(booking.date, booking.time) ?? .distantFuture) < Date() }
+
+    private func loadPlan() async {
+        let rows: [PlanRecord] = (try? await Rows.list("coach_session_plans", [("booking_id", "eq.\(booking.id)")], limit: 1)) ?? []
+        plan = rows.first
+        planLoaded = true
+    }
+
+    private func openPlanBuilder() async {
+        guard let rows: [BookingRecord] = try? await Rows.list("coach_bookings", [("id", booking.id)]), let b = rows.first else {
+            toast = Toast(text: "That booking has gone.", isError: true); return
+        }
+        buildingPlan = b
+    }
 
     private var deletePrompt: String {
         var p = "Delete this booking?"
