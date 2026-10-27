@@ -2,8 +2,10 @@ import SwiftUI
 
 /// The roster, searchable, A–Z.
 struct PlayersView: View {
+    @Environment(CoachStore.self) private var store
     @State private var state: Loadable<[AppPlayer]> = .loading
     @State private var query = ""
+    @State private var adding = false
 
     var body: some View {
         Group {
@@ -34,7 +36,16 @@ struct PlayersView: View {
         .navigationTitle("Players")
         .searchable(text: $query, prompt: "Search players")
         .navigationDestination(for: AppPlayer.self) { PlayerDetailView(player: $0) }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { adding = true } label: { Image(systemName: "plus") }.accessibilityLabel("Add a player")
+            }
+        }
+        .sheet(isPresented: $adding) {
+            PlayerEditView(player: nil) { _ in Task { await load() } }.environment(store)
+        }
         .task { if state.value == nil { await load() } }
+        .onChange(of: store.changes) { Task { await load() } }
         .refreshable { await load() }
     }
 
@@ -55,38 +66,69 @@ struct PlayersView: View {
     }
 }
 
-/// One player: how to reach them, their next lessons and groups, and their plan,
-/// packs, card and anything owed — what their family sees in their own app.
+/// One player: how to reach them, their next lessons and groups, their plan,
+/// packs, card and anything owed, and everything about them as a player —
+/// profile, development, recordings, notes, attendance and their family's app.
 struct PlayerDetailView: View {
-    @Environment(AppModel.self) private var model
     @Environment(CoachStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
     let player: AppPlayer
     @State private var detail: PlayerDetail?
+    @State private var profile: PlayerProfile?
     @State private var error: String?
     @State private var sheet: Sheet?
     @State private var toast: Toast?
+    @State private var pay = PayModel()
 
-    enum Sheet: String, Identifiable { case book, message, summary; var id: String { rawValue } }
+    enum Sheet: String, Identifiable { case book, message, summary, edit; var id: String { rawValue } }
+
+    private var name: String { profile?.name ?? player.name }
+    private var mediaOn: Bool { store.setup?.features?.video == true || store.setup?.features?.audio == true }
 
     var body: some View {
         List {
             Section {
                 HStack(spacing: 14) {
-                    Avatar(name: player.name, size: 56)
+                    PlayerPhoto(name: name, path: Avatars.path(profile?.avatarUrl), size: 64)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(player.name).font(.title2.bold())
+                        Text(name).font(.title2.bold())
                         if !player.subtitle.isEmpty { Text(player.subtitle).foregroundStyle(.secondary) }
-                        if let parent = player.parentName { Text("Parent: \(parent)").font(.subheadline).foregroundStyle(.secondary) }
+                        if let parent = profile?.parentName ?? player.parentName, !parent.isEmpty {
+                            Text("Parent: \(parent)").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        if let id = profile?.racketStage, let s = Racket.stage(id) {
+                            HStack(spacing: 5) {
+                                Circle().fill(Color(hex: s.hex)).frame(width: 10, height: 10).overlay(Circle().stroke(.secondary.opacity(0.4)))
+                                Text(store.setup?.stageWords(s.name) ?? s.name).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                            }
+                        }
                     }
                 }
                 .padding(.vertical, 4)
                 ContactButtons(player: player)
+                PhotoChanger(playerId: player.id) { await loadProfile(); store.saved() }
             }
 
             Section {
                 Button { sheet = .book } label: { Label("Book a lesson", systemImage: "calendar.badge.plus") }
                 Button { sheet = .message } label: { Label("Send a message", systemImage: "bubble.left") }
                 Button { sheet = .summary } label: { Label("Write a lesson summary", systemImage: "square.and.pencil") }
+            }
+
+            if let profile {
+                Section {
+                    NavigationLink { DevelopmentView(player: profile) { await loadProfile() } } label: {
+                        Label("Development", systemImage: "chart.line.uptrend.xyaxis")
+                    }
+                    if mediaOn {
+                        NavigationLink { PlayerMediaView(player: profile) { await loadProfile() } } label: {
+                            Label("Videos & voice notes", systemImage: "video")
+                        }
+                    }
+                    NavigationLink { NotesView(player: profile) } label: { Label("Notes", systemImage: "note.text") }
+                    NavigationLink { AttendanceView(player: profile) } label: { Label("Attendance", systemImage: "checklist") }
+                    NavigationLink { FamilyAccessView(player: profile) } label: { Label("Their family’s app", systemImage: "iphone") }
+                } header: { Text("Player") }
             }
 
             if let error { Section { Text(error).foregroundStyle(.red) } }
@@ -118,18 +160,18 @@ struct PlayerDetailView: View {
                     }
                 }
                 AccountSections(account: page.account, showPolicy: false)
+                CardOnFileSection(playerId: player.id, pay: pay)
             } else if error == nil {
                 Section { HStack { Spacer(); ProgressView(); Spacer() } }
             }
-
-            Section {
-                Button { model.web = WebTarget(path: model.coachWebPath("roster"), title: "Player Roster") } label: {
-                    Label("Full profile, notes and progress", systemImage: "person.text.rectangle")
-                }
+        }
+        .navigationTitle(name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if profile != nil {
+                ToolbarItem(placement: .primaryAction) { Button("Edit") { sheet = .edit } }
             }
         }
-        .navigationTitle(player.name)
-        .navigationBarTitleDisplayMode(.inline)
         .toast($toast)
         .sheet(item: $sheet) { which in
             Group {
@@ -137,6 +179,10 @@ struct PlayerDetailView: View {
                 case .book: BookingFormView(existing: nil, presetPlayerId: player.id) { text in toast = Toast(text: text); Task { await load() } }
                 case .message: ComposeView(preset: [player.id]) { text in toast = Toast(text: text) }
                 case .summary: NavigationStack { SummaryFormView(existing: nil, presetPlayerId: player.id) { text in toast = Toast(text: text) } }
+                case .edit:
+                    PlayerEditView(player: profile) { result in
+                        if result == "deleted" { dismiss() } else { toast = Toast(text: "Saved."); Task { await load() } }
+                    }
                 }
             }
             .environment(store)
@@ -152,7 +198,14 @@ struct PlayerDetailView: View {
     }
 
     private func load() async {
+        async let p: Void = loadProfile()
+        async let c: Void = pay.load()
         do { detail = try await API.shared.get("/api/app/v1/coach/players/\(player.id)"); error = nil }
         catch { self.error = error.localizedDescription }
+        await p; await c
+    }
+
+    private func loadProfile() async {
+        if let rows: [PlayerProfile] = try? await Rows.list("coach_players", [("id", player.id)]), let p = rows.first { profile = p }
     }
 }

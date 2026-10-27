@@ -14,7 +14,8 @@ final class FamilyModel {
         if playerId != self.playerId { self.playerId = playerId; bundle = .loading }
         guard !playerId.isEmpty else { return }
         do {
-            let b: FamilyBundle = try await API.shared.get("/api/portal/player", query: ["playerId": playerId])
+            // The page reads ?player= (not playerId, which the booking and lesson routes use).
+            let b: FamilyBundle = try await API.shared.get("/api/portal/player", query: ["player": playerId])
             bundle = .loaded(b)
         } catch {
             // Keep showing what we had on a failed refresh; only an empty screen shows the error.
@@ -36,6 +37,9 @@ struct FamilyTabs: View {
             NavigationStack { FamilyHomeView() }
                 .tabItem { Label("Lessons", systemImage: "tennisball") }
                 .tag(FamilyTab.home)
+            NavigationStack { ProgressTabView() }
+                .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }
+                .tag(FamilyTab.progress)
             NavigationStack { PlanView() }
                 .tabItem { Label("Plan", systemImage: "creditcard") }
                 .tag(FamilyTab.plan)

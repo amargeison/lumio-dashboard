@@ -7,8 +7,6 @@ struct CoachMoreView: View {
     @Environment(\.openURL) private var openURL
 
     private let sections: [(String, String, String)] = [
-        ("payments", "Payments & Packs", "sterlingsign.circle"),
-        ("camps", "Training Camps", "tent"),
         ("development", "Player Development", "chart.line.uptrend.xyaxis"),
         ("belts", "Racket Progression", "medal"),
         ("resources", "Resource Centre", "books.vertical"),
@@ -41,6 +39,8 @@ struct CoachMoreView: View {
             }
 
             Section {
+                NavigationLink { PaymentsView() } label: { Label("Payments & Packs", systemImage: "sterlingsign.circle") }
+                NavigationLink { CampsView() } label: { Label("Training Camps", systemImage: "tent") }
                 NavigationLink { PlannerView() } label: { Label("Session Planner", systemImage: "list.clipboard") }
                 NavigationLink { SummariesView() } label: { Label("Lesson Summaries", systemImage: "doc.text") }
                 NavigationLink { GroupsView() } label: { Label("Weekly Groups", systemImage: "person.3") }

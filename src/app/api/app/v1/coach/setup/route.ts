@@ -47,5 +47,16 @@ export async function GET() {
       .filter(r => r.start_date)
       .map(r => ({ id: String(r.id), name: String(r.name || 'Camp'), start: String(r.start_date).slice(0, 10), end: String(r.end_date || r.start_date).slice(0, 10) })),
     summaries: { send: ['manual', 'now', 'time'].includes(String(summaries.send)) ? String(summaries.send) : 'manual', at: typeof summaries.at === 'string' ? summaries.at : '22:00' },
+    // Which modules are on (feature-flags.ts defaults: effort on; video, audio, racket off unless stored).
+    features: {
+      effort: (s.features as Row | undefined)?.effort !== false,
+      video: (s.features as Row | undefined)?.video === true,
+      audio: (s.features as Row | undefined)?.audio === true,
+      racket: (s.features as Row | undefined)?.racket === true,
+    },
+    awardThreshold: Number(s.awardThreshold) === 4 ? 4 : 3,
+    // Recordings go straight to storage with a signed upload address; storage asks
+    // for the project's public key with it (the same key every browser has).
+    upload: { anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '' },
   }, noStore)
 }

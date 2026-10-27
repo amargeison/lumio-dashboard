@@ -225,6 +225,50 @@ struct FamilyBundle: Decodable {
     let lessons: [LessonSummary]?
     let messages: [FamilyMessage]?
     let my: MyPage?
+    // Progress, videos and rewards. Each is read on its own, so one odd field
+    // never stops the rest of the page showing.
+    let skills: [Skill]
+    let watch: [WatchSession]
+    let highlights: [Clip]
+    let media: [VoiceNote]
+    let resources: [Resource]
+    let books: [Book]
+    let nextSession: NextSession?
+    let features: Features?
+    let sectionsOff: [String]
+    let awardThreshold: Int
+    let adultLevel: AdultLevel?
+
+    enum CodingKeys: String, CodingKey {
+        case player, lessons, messages, my, skills, watch, highlights, media, resources, books
+        case nextSession, features, sectionsOff, awardThreshold, adultLevel
+    }
+
+    init(from d: Decoder) throws {
+        let c = try d.container(keyedBy: CodingKeys.self)
+        player = try c.decode(Player.self, forKey: .player)
+        lessons = try? c.decodeIfPresent([LessonSummary].self, forKey: .lessons)
+        messages = try? c.decodeIfPresent([FamilyMessage].self, forKey: .messages)
+        my = try? c.decodeIfPresent(MyPage.self, forKey: .my)
+        skills = (try? c.decodeIfPresent([Skill].self, forKey: .skills)) ?? []
+        watch = (try? c.decodeIfPresent([WatchSession].self, forKey: .watch)) ?? []
+        highlights = (try? c.decodeIfPresent([Clip].self, forKey: .highlights)) ?? []
+        media = (try? c.decodeIfPresent([VoiceNote].self, forKey: .media)) ?? []
+        resources = (try? c.decodeIfPresent([Resource].self, forKey: .resources)) ?? []
+        books = (try? c.decodeIfPresent([Book].self, forKey: .books)) ?? []
+        nextSession = try? c.decodeIfPresent(NextSession.self, forKey: .nextSession)
+        features = try? c.decodeIfPresent(Features.self, forKey: .features)
+        sectionsOff = (try? c.decodeIfPresent([String].self, forKey: .sectionsOff)) ?? []
+        awardThreshold = (try? c.decodeIfPresent(Int.self, forKey: .awardThreshold)) ?? 3
+        adultLevel = try? c.decodeIfPresent(AdultLevel.self, forKey: .adultLevel)
+    }
+
+    /// A module is shown when it's on (no flags means everything on) and the coach hasn't hidden its section.
+    func shows(_ section: String, module: KeyPath<Features, Bool?>? = nil) -> Bool {
+        if sectionsOff.contains(section) { return false }
+        guard let module, let f = features else { return true }
+        return f[keyPath: module] != false
+    }
 
     struct Player: Decodable {
         let id: String
@@ -234,10 +278,17 @@ struct FamilyBundle: Decodable {
         let category: String?
         let age: Int?
         let parentName: String?
+        let racketStage: String?
+        let goal: String?
+        let xpTotal: Int?
+        let avatarUrl: String?
 
         enum CodingKeys: String, CodingKey {
-            case id, name, nickname, level, category, age
+            case id, name, nickname, level, category, age, goal
             case parentName = "parent_name"
+            case racketStage = "racket_stage"
+            case xpTotal = "xp_total"
+            case avatarUrl = "avatar_url"
         }
 
         init(from d: Decoder) throws {
@@ -252,7 +303,118 @@ struct FamilyBundle: Decodable {
             else if let s = try? c.decodeIfPresent(String.self, forKey: .age) { age = Int(s) }
             else { age = nil }
             parentName = try? c.decodeIfPresent(String.self, forKey: .parentName)
+            racketStage = try? c.decodeIfPresent(String.self, forKey: .racketStage)
+            goal = try? c.decodeIfPresent(String.self, forKey: .goal)
+            if let n = try? c.decodeIfPresent(Int.self, forKey: .xpTotal) { xpTotal = n }
+            else if let x = try? c.decodeIfPresent(Double.self, forKey: .xpTotal) { xpTotal = Int(x) }
+            else { xpTotal = nil }
+            avatarUrl = try? c.decodeIfPresent(String.self, forKey: .avatarUrl)
         }
+    }
+
+    struct Skill: Decodable, Hashable { let skill: String; let score: Int }
+
+    struct WatchSession: Decodable, Hashable, Identifiable {
+        let startedAt: String?
+        let durationMin: Double?
+        let avgHr: Double?
+        let maxHr: Double?
+        let distanceM: Double?
+        let effortScore: Double?
+        let movementScore: Double?
+        let consistencyScore: Double?
+        let xpAwarded: Double?
+        var id: String { (startedAt ?? "") + String(durationMin ?? 0) }
+        enum CodingKeys: String, CodingKey {
+            case startedAt = "started_at", durationMin = "duration_min", avgHr = "avg_hr", maxHr = "max_hr"
+            case distanceM = "distance_m", effortScore = "effort_score", movementScore = "movement_score"
+            case consistencyScore = "consistency_score", xpAwarded = "xp_awarded"
+        }
+    }
+
+    struct Clip: Decodable, Hashable, Identifiable {
+        let id: String
+        let title: String?
+        let shotType: String?
+        let durationSeconds: Double?
+        let createdAt: String?
+        let url: String?
+        enum CodingKeys: String, CodingKey {
+            case id, title, url
+            case shotType = "shot_type", durationSeconds = "duration_seconds", createdAt = "created_at"
+        }
+    }
+
+    struct VoiceNote: Decodable, Hashable, Identifiable {
+        let id: String
+        let title: String?
+        let durationSeconds: Double?
+        let createdAt: String?
+        let url: String?
+        enum CodingKeys: String, CodingKey {
+            case id, title, url
+            case durationSeconds = "duration_seconds", createdAt = "created_at"
+        }
+    }
+
+    struct Resource: Decodable, Hashable, Identifiable {
+        let id: String
+        let title: String?
+        let category: String?
+        let format: String?
+        let notes: String?
+        let url: String?
+    }
+
+    struct Book: Decodable, Hashable, Identifiable {
+        let id: String
+        let title: String?
+        let author: String?
+        let note: String?
+    }
+
+    struct NextSession: Decodable {
+        let date: String?
+        let startTime: String?
+        let durationMin: Int?
+        let type: String?
+        let court: String?
+        let coach: String?
+        let plan: Plan?
+        struct Plan: Decodable {
+            let title: String?
+            let focus: String?
+            let runSheet: [Phase]?
+            let drills: [String]?
+        }
+        enum CodingKeys: String, CodingKey {
+            case date, type, court, coach, plan
+            case startTime = "start_time", durationMin = "duration_min"
+        }
+        init(from d: Decoder) throws {
+            let c = try d.container(keyedBy: CodingKeys.self)
+            date = try? c.decodeIfPresent(String.self, forKey: .date)
+            startTime = try? c.decodeIfPresent(String.self, forKey: .startTime)
+            durationMin = try? c.decodeIfPresent(Int.self, forKey: .durationMin)
+            type = try? c.decodeIfPresent(String.self, forKey: .type)
+            court = try? c.decodeIfPresent(String.self, forKey: .court)
+            coach = try? c.decodeIfPresent(String.self, forKey: .coach)
+            plan = try? c.decodeIfPresent(Plan.self, forKey: .plan)
+        }
+    }
+
+    struct Features: Decodable { let effort: Bool?; let video: Bool?; let audio: Bool?; let racket: Bool? }
+
+    struct AdultLevel: Decodable {
+        let name: String?
+        let summary: String?
+        let number: Int?
+        let of: Int?
+        let next: String?
+        let checklist: [Item]?
+        let done: Int?
+        let total: Int?
+        struct Item: Decodable, Hashable { let text: String; let passed: Bool }
     }
 }
 

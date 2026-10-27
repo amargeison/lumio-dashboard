@@ -26,6 +26,8 @@ export const READABLE = new Set([
   'coach_messages', 'coach_charges', 'coach_group_sessions', 'coach_group_replies',
   'coach_membership_bills', 'coach_welcome_links', 'coach_venues', 'coach_courts', 'coach_staff',
   'coach_adult_levels', 'coach_resources', 'coach_questionnaires',
+  // Racket history: written by the database when a player's racket changes.
+  'coach_racket_awards',
 ])
 
 /** Tables where an assistant coach's rows carry their staff id (coach-db.ts ASSIGNABLE). */

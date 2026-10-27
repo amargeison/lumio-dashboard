@@ -13,7 +13,7 @@ struct MeView: View {
             if let p = model.selectedPlayer {
                 Section {
                     HStack(spacing: 14) {
-                        Avatar(name: p.name, size: 56)
+                        PlayerPhoto(name: p.name, path: family.bundle.value?.player.avatarUrl, size: 56)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(p.name).font(.title3.bold())
                             Text(p.academyName).foregroundStyle(.secondary)
@@ -23,6 +23,7 @@ struct MeView: View {
                         }
                     }
                     .padding(.vertical, 4)
+                    PhotoChanger(playerId: p.playerId, endpoint: "/api/portal/avatar") { await family.reload() }
                 }
             }
 
@@ -39,8 +40,8 @@ struct MeView: View {
             }
 
             Section("More in Lumio") {
-                Button { model.web = WebTarget(path: portalPath, title: "Progress & videos") } label: {
-                    Label("Progress, videos and badges", systemImage: "star.circle")
+                Button { model.web = WebTarget(path: portalPath, title: model.selectedPlayer?.name ?? "Lumio") } label: {
+                    Label("Everything on the website", systemImage: "safari")
                 }
                 if model.isBoth {
                     Button { model.side = .coach } label: { Label("Switch to coaching", systemImage: "figure.tennis") }

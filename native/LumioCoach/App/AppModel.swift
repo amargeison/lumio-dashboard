@@ -135,4 +135,4 @@ final class AppModel {
 }
 
 enum CoachTab: Hashable { case today, calendar, players, messages, more }
-enum FamilyTab: Hashable { case home, plan, messages, me }
+enum FamilyTab: Hashable { case home, progress, plan, messages, me }
