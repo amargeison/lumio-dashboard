@@ -132,7 +132,8 @@ function wireLinks() {
     try { url = new URL(String(u), location.href) } catch { return open(u as string, target, features) }
     if (url.protocol === 'http:' || url.protocol === 'https:') {
       if (staysInside(url.host)) { window.location.href = url.href; return null }
-      void openInBrowserSheet(url.href)
+      // The Swift app has no browser plugin: navigating hands the link to it.
+      void openInBrowserSheet(url.href).then(ok => { if (!ok) window.location.href = url.href })
       return null
     }
     return open(u as string, target, features)

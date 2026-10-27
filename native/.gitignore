@@ -1,0 +1,7 @@
+*.xcodeproj/
+build/
+DerivedData/
+xcuserdata/
+.DS_Store
+LumioCoach/Info.plist
+LumioCoach/LumioCoach.entitlements
