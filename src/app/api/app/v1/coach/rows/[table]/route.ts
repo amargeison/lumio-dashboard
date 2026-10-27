@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { coachContext, noStore } from '@/lib/app/coach-context'
-import { READABLE, WRITABLE, UUID, cleanRow, insertStamp, parseFilters, calendarEvent } from '@/lib/app/coach-rows'
+import { READABLE, WRITABLE, UUID, REFERENCES, cleanRow, insertStamp, parseFilters, calendarEvent, referencesIn, saveMessage } from '@/lib/app/coach-rows'
+import type { CoachCtx } from '@/lib/app/coach-context'
 import { POST as confirmBooking } from '@/app/api/coach/bookings/confirm/route'
 import { POST as pushCalendar, DELETE as dropCalendar } from '@/app/api/coach/calendar/event/route'
 import { POST as pushCamp, DELETE as dropCamp } from '@/app/api/coach/camps/sync/route'
@@ -30,6 +31,17 @@ async function open(p: Params, write: boolean) {
 }
 
 const saveError = (message: string) => NextResponse.json({ error: message || 'That was not saved. Please try again.' }, { status: 400 })
+
+/** Every row a save points at (player, booking, group…) must be this academy's. */
+async function foreignReference(ctx: CoachCtx, row: Row): Promise<string | null> {
+  for (const [col, id] of referencesIn(row)) {
+    const ref = REFERENCES[col]
+    if (!UUID.test(id)) return ref.what
+    const { data } = await ctx.db.from(ref.table).select('id').eq('id', id).eq('coach_id', ctx.seat.academyId).maybeSingle()
+    if (!data) return ref.what
+  }
+  return null
+}
 
 export async function GET(req: NextRequest, p: Params) {
   const o = await open(p, false)
@@ -64,9 +76,11 @@ export async function POST(req: NextRequest, p: Params) {
   const b = (await req.json().catch(() => null)) as { row?: unknown } | null
   const row = cleanRow(b?.row)
   if (!row) return NextResponse.json({ error: 'Nothing to save.' }, { status: 400 })
+  const foreign = await foreignReference(o.ctx, row)
+  if (foreign) return NextResponse.json({ error: foreign }, { status: 400 })
   const { data, error } = await o.ctx.db.from(o.table)
     .insert({ ...row, ...insertStamp(o.table, row, o.ctx.seat) }).select().single()
-  if (error) { console.error('[app/rows] insert', o.table, error.message); return saveError(error.message) }
+  if (error) { console.error('[app/rows] insert', o.table, error.message); return saveError(saveMessage(o.table, error.message)) }
   await afterSave(req, o.table, data as Row)
   return NextResponse.json({ row: data }, noStore)
 }
@@ -79,6 +93,8 @@ export async function PATCH(req: NextRequest, p: Params) {
   const b = (await req.json().catch(() => null)) as { row?: unknown } | null
   const patch = cleanRow(b?.row)
   if (!patch || !Object.keys(patch).length) return NextResponse.json({ error: 'Nothing to save.' }, { status: 400 })
+  const foreign = await foreignReference(o.ctx, patch)
+  if (foreign) return NextResponse.json({ error: foreign }, { status: 400 })
 
   const run = (fields: Row) => o.ctx.db.from(o.table).update(fields)
     .eq('id', id).eq('coach_id', o.ctx.seat.academyId).select().maybeSingle()
@@ -86,7 +102,7 @@ export async function PATCH(req: NextRequest, p: Params) {
   // such column rather than refuse the whole edit.
   let { data, error } = await run({ ...patch, updated_at: new Date().toISOString() })
   if (error && /updated_at/i.test(error.message)) ({ data, error } = await run(patch))
-  if (error) { console.error('[app/rows] update', o.table, error.message); return saveError(error.message) }
+  if (error) { console.error('[app/rows] update', o.table, error.message); return saveError(saveMessage(o.table, error.message)) }
   if (!data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   await afterSave(req, o.table, data as Row)
   return NextResponse.json({ row: data }, noStore)

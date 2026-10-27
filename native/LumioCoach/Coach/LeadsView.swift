@@ -140,14 +140,14 @@ struct LeadDetailView: View {
                     if let s = lead.source { Text([s, lead.campaign].compactMap { $0 }.joined(separator: " · ")).font(.subheadline).foregroundStyle(.secondary) }
                 }
                 .padding(.vertical, 4)
-                HStack(spacing: 10) {
+                if !(lead.phone ?? "").isEmpty || !(lead.email ?? "").isEmpty { HStack(spacing: 10) {
                     if let phone = lead.phone, !phone.isEmpty {
                         contact("Call", "phone.fill") { Contact.call(phone) }
                         contact("WhatsApp", "message.fill") { openWhatsApp(phone) }
                     }
                     if let email = lead.email, !email.isEmpty { contact("Email", "envelope.fill") { Contact.email(email) } }
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(.borderless) }
             }
 
             if let m = lead.message, !m.isEmpty {

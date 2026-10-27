@@ -49,6 +49,7 @@ struct PlayerPicker: View {
     @Binding var newName: String
     var allowNew = true
     @State private var typing = false
+    @State private var started = false
 
     var body: some View {
         NavigationLink {
@@ -59,7 +60,8 @@ struct PlayerPicker: View {
         } label: {
             LabeledContent("Player", value: typing ? "New player" : (store.player(playerId)?.name ?? "Choose…"))
         }
-        .onAppear { typing = playerId == nil && !newName.isEmpty }
+        // Once only: coming back from the chooser must not undo "New player".
+        .onAppear { if !started { started = true; typing = playerId == nil && !newName.isEmpty } }
         if typing {
             TextField("New player's name", text: $newName)
                 .textInputAutocapitalization(.words)

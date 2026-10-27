@@ -16,6 +16,8 @@ export const WRITABLE = new Set([
   'coach_payments', 'coach_packages', 'coach_development', 'coach_attendance', 'coach_player_skills',
   'coach_watch_sessions', 'coach_leads', 'coach_lead_events', 'coach_groups', 'coach_group_members',
   'coach_memberships', 'coach_player_notes', 'coach_adult_passes', 'coach_media',
+  // The session planner (the app builds, edits and assigns plans like the website).
+  'coach_session_plans',
 ])
 
 /** Read-only here: their changes go through the server routes that own them. */
@@ -23,7 +25,7 @@ export const READABLE = new Set([
   ...WRITABLE,
   'coach_messages', 'coach_charges', 'coach_group_sessions', 'coach_group_replies',
   'coach_membership_bills', 'coach_welcome_links', 'coach_venues', 'coach_courts', 'coach_staff',
-  'coach_adult_levels', 'coach_session_plans', 'coach_resources', 'coach_questionnaires',
+  'coach_adult_levels', 'coach_resources', 'coach_questionnaires',
 ])
 
 /** Tables where an assistant coach's rows carry their staff id (coach-db.ts ASSIGNABLE). */
@@ -116,4 +118,33 @@ export function calendarEvent(row: Record<string, unknown>): { bookingId: string
     location: row.court ? String(row.court) : undefined,
     description: row.notes ? String(row.notes) : undefined,
   }
+}
+
+/**
+ * Columns that point at another of the academy's rows. Some have no foreign key
+ * (coach_session_plans.booking_id) or no academy check in the database, so a
+ * save from the app is refused when one names a row of another academy.
+ */
+export const REFERENCES: Record<string, { table: string; what: string }> = {
+  player_id: { table: 'coach_players', what: 'That player isn’t on your roster.' },
+  booking_id: { table: 'coach_bookings', what: 'That booking isn’t in your calendar.' },
+  group_id: { table: 'coach_groups', what: 'That group isn’t one of yours.' },
+  lead_id: { table: 'coach_leads', what: 'That lead isn’t one of yours.' },
+  venue_id: { table: 'coach_venues', what: 'That venue isn’t one of yours.' },
+  court_id: { table: 'coach_courts', what: 'That court isn’t one of yours.' },
+}
+
+/** The references a row sets (non-null), as [column, id]. Ids that aren't uuids are returned too, to be refused. */
+export function referencesIn(row: Record<string, unknown>): [string, string][] {
+  return Object.entries(row)
+    .filter(([k, v]) => k in REFERENCES && v !== null && v !== undefined)
+    .map(([k, v]) => [k, String(v)])
+}
+
+/** Plain words for a save the database refused. */
+export function saveMessage(table: string, message: string): string {
+  if (table === 'coach_session_plans' && /uniq_session_plans_booking|duplicate key/i.test(message)) return 'This booking already has a session plan.'
+  if (/duplicate key/i.test(message)) return 'That has already been saved.'
+  if (/row-level security|permission denied/i.test(message)) return 'You can’t change that.'
+  return message
 }
