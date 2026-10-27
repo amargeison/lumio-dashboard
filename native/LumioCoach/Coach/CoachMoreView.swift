@@ -19,7 +19,6 @@ struct CoachMoreView: View {
             ("belts", "Racket Progression", "medal"),
         ]
         if head { s.append(("venues", "Court Planner", "mappin.and.ellipse")) }
-        if f?.video == true || f?.audio == true { s.append(("videoaudio", "Video & Audio", "video")) }
         if f?.effort != false { s.append(("gpsheatmaps", "Effort & Rewards", "flame")) }
         s.append(("equipment", "Equipment & Kit", "backpack"))
         s.append(("resources", "Resource Centre", "books.vertical"))
@@ -57,6 +56,9 @@ struct CoachMoreView: View {
                 NavigationLink { PaymentsView() } label: { Label("Payments & Packs", systemImage: "sterlingsign.circle") }
                 if model.coach?.isHead == true {
                     NavigationLink { CampsView() } label: { Label("Training Camps", systemImage: "tent") }
+                }
+                if store.setup?.features?.video == true || store.setup?.features?.audio == true {
+                    NavigationLink { MediaLibraryView(fixed: nil) } label: { Label("Video & Audio", systemImage: "video") }
                 }
                 NavigationLink { PlannerView() } label: { Label("Session Planner", systemImage: "list.clipboard") }
                 NavigationLink { SummariesView() } label: { Label("Lesson Summaries", systemImage: "doc.text") }

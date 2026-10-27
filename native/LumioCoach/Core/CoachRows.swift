@@ -535,6 +535,8 @@ struct AdultPassRecord: Decodable, Identifiable, Hashable { let id: String; let 
 struct MediaRecord: Decodable, Identifiable, Hashable {
     let id: String
     let kind: String?
+    let playerId: String?
+    let playerName: String?
     let title: String?
     let status: String?
     let durationSeconds: Double?

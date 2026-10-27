@@ -86,6 +86,11 @@ struct TodayView: View {
                 NavigationLink { PlannerView() } label: {
                     Label("Session planner", systemImage: "list.clipboard")
                 }
+                if store.setup?.features?.video == true || store.setup?.features?.audio == true {
+                    NavigationLink { MediaLibraryView(fixed: nil) } label: {
+                        Label("Record a lesson", systemImage: "record.circle")
+                    }
+                }
                 Button { writing = true } label: {
                     Label("Write a lesson summary", systemImage: "square.and.pencil")
                 }
