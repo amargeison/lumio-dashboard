@@ -1314,7 +1314,7 @@ function CoachPortalInner({ session, isEmpty: realAccount = false, slugClubName 
           position: 'sticky', top: 0, height: '100vh', flexShrink: 0, zIndex: 40,
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
-        <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${line}`, minHeight: 56, padding: expanded ? '12px 12px' : '12px 4px', gap: expanded ? 8 : 0, justifyContent: expanded ? 'flex-start' : 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', borderBottom: `1px solid ${line}`, height: 57, flexShrink: 0, padding: expanded ? '0 12px' : '0 4px', gap: expanded ? 8 : 0, justifyContent: expanded ? 'flex-start' : 'center' }}>
           <div style={{ width: 32, height: 32, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0, overflow: 'hidden' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={isDemo ? '/tennis_coach_logo.png' : (settings.brandLogo || session?.logoDataUrl || '/tennis_transparent_logo.png')} alt={clubName || 'Lumio'} style={{ width: 26, height: 26, objectFit: 'contain' }} />
@@ -1338,7 +1338,15 @@ function CoachPortalInner({ session, isEmpty: realAccount = false, slugClubName 
             if (!items.length) return null
             return (
               <div key={group} style={{ marginBottom: 2 }}>
-                {expanded && <div style={{ fontSize: 9, fontWeight: 700, color: '#4B5563', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '0 8px', marginTop: 10, marginBottom: 3 }}>{group}</div>}
+                {/* The menu opens when the pointer reaches it, so nothing may
+                    move when it does: the group heading's space is kept when
+                    the menu is closed (a short rule stands in for the words),
+                    and every row is a fixed height. It used to appear only on
+                    opening, pushing each item down — a coach aiming at the
+                    sun (Training Camps) landed on a different item. */}
+                <div aria-hidden={!expanded} style={{ height: 12, lineHeight: '12px', fontSize: 9, fontWeight: 700, color: '#4B5563', textTransform: 'uppercase', letterSpacing: '0.12em', padding: expanded ? '0 8px' : 0, marginTop: 10, marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: expanded ? 'flex-start' : 'center' }}>
+                  {expanded ? group : <span style={{ width: 16, height: 1, background: line }} />}
+                </div>
                 {items.map(item => {
                   const on = active === item.id
                   return (
@@ -1348,8 +1356,9 @@ function CoachPortalInner({ session, isEmpty: realAccount = false, slugClubName 
                         background: on ? accent.dim : 'transparent',
                         color: on ? accent.hex : T.text3,
                         border: 0, borderLeftWidth: 2, borderLeftStyle: 'solid', borderLeftColor: on ? accent.hex : 'transparent',
-                        borderRadius: 7, padding: expanded ? '6px 10px' : '6px 0', justifyContent: expanded ? 'flex-start' : 'center',
-                        fontSize: 12, cursor: 'pointer', marginBottom: 1,
+                        borderRadius: 7, // 21px on the left: the icon stays exactly where it sat in the closed menu.
+                        padding: expanded ? '0 10px 0 21px' : 0, justifyContent: expanded ? 'flex-start' : 'center',
+                        height: 28, lineHeight: '16px', fontSize: 12, cursor: 'pointer', marginBottom: 1,
                       }}>
                       <Icon name={item.icon} size={16} stroke={1.7} />
                       {expanded && <span style={{ fontWeight: on ? 600 : 500, whiteSpace: 'nowrap', flex: 1 }}>{navLabel(item)}</span>}
