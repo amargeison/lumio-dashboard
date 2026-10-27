@@ -59,6 +59,18 @@ final class API {
         return URLSession(configuration: c)
     }()
 
+    /// Lumio Coach's writing (session plans, summaries, messages) takes 20–60 seconds
+    /// with nothing sent until it's done, so those calls wait up to three minutes.
+    private let slowSession: URLSession = {
+        let c = URLSessionConfiguration.ephemeral
+        c.httpShouldSetCookies = false
+        c.httpCookieAcceptPolicy = .never
+        c.timeoutIntervalForRequest = 180
+        c.waitsForConnectivity = false
+        return URLSession(configuration: c)
+    }()
+    private static let slowPaths = ["/api/coach/session-draft", "/api/coach/session-complete", "/api/coach/lesson-summary", "/api/coach/message-draft", "/api/coach/media/process"]
+
     private let decoder: JSONDecoder = JSONDecoder()
 
     init() {
@@ -105,8 +117,13 @@ final class API {
         }
 
         let data: Data, response: URLResponse
-        do { (data, response) = try await urlSession.data(for: req) }
-        catch { throw APIError.network(error.localizedDescription) }
+        let slow = Self.slowPaths.contains { path.hasPrefix($0) }
+        if slow { req.timeoutInterval = 180 }
+        do { (data, response) = try await (slow ? slowSession : urlSession).data(for: req) }
+        catch {
+            if (error as? URLError)?.code == .timedOut { throw APIError.server("That took too long to answer. Please try again.", 0) }
+            throw APIError.network(error.localizedDescription)
+        }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
 
         if status == 401, session != nil {

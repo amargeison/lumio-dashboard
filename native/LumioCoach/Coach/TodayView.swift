@@ -80,8 +80,8 @@ struct TodayView: View {
                 }
             }
             Section {
-                Button { model.web = WebTarget(path: model.coachWebPath("payments"), title: "Payments & Packs") } label: {
-                    Label("Take a payment", systemImage: "sterlingsign.circle")
+                NavigationLink { PaymentsView() } label: {
+                    Label("Payments & packs", systemImage: "sterlingsign.circle")
                 }
                 NavigationLink { PlannerView() } label: {
                     Label("Session planner", systemImage: "list.clipboard")

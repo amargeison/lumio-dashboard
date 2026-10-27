@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 // Rows of the coach portal's tables, as /api/app/v1/coach/rows returns them
 // (decoded with Rows.decoder: snake_case → camelCase). Only the columns the app
@@ -21,6 +21,15 @@ struct CoachSetup: Decodable {
     let me: Me
     let camps: [Camp]
     let summaries: Summaries
+    let features: Features?
+    let awardThreshold: Int?
+    let upload: Upload?
+
+    struct Features: Decodable { let effort: Bool; let video: Bool; let audio: Bool; let racket: Bool }
+    struct Upload: Decodable { let anonKey: String }
+
+    /// "Purple racket" with racket progression on, else just "Purple".
+    func stageWords(_ name: String) -> String { features?.racket == true ? "\(name) racket" : name }
 
     /// The camp running on a day, if any (no lessons can be booked then).
     func camp(on iso: String) -> Camp? { camps.first { $0.start <= iso && iso <= $0.end } }
@@ -345,4 +354,294 @@ struct SessionDraft: Decodable {
 enum RacketStages {
     static let ids = ["white", "yellow", "orange", "green", "blue", "purple", "brown", "red", "black"]
     static func name(_ id: String?) -> String? { id.flatMap { ids.contains($0) ? $0.capitalized : nil } }
+}
+
+// MARK: - Round 3: payments, camps, profiles, development, media
+
+/// GET /api/app/v1/coach/payments
+struct PaymentsOverview: Decodable {
+    struct Totals: Decodable { let earnedPennies: Int; let outstandingPennies: Int; let activePacks: Int; let expiringPacks: Int; let monthlyPennies: Int; let waitingToAgree: Int }
+    struct Line: Decodable, Identifiable, Hashable {
+        let id: String
+        let playerId: String?
+        let playerName: String
+        let item: String
+        let amountPennies: Int?
+        let paid: Bool
+        let paidAt: String?
+        let dueDate: String?
+        let renewsDate: String?
+        let pack: Bool
+        let sessionsTotal: Int?
+        let used: Int
+        let status: String
+        let statusLabel: String
+        let owedPennies: Int
+        let storedStatus: String?
+    }
+    struct Membership: Decodable, Identifiable, Hashable {
+        let id: String
+        let playerId: String?
+        let playerName: String
+        let name: String
+        let amountPennies: Int
+        let dayOfMonth: Int
+        let startsMonth: String?
+        let covers: String?
+        let groupId: String?
+        let status: String
+        let agreed: Bool
+        let words: String
+        let coversWords: String
+        let label: String
+        let thisMonth: String
+        let canTakeNow: Bool
+        let hasCard: Bool
+        let nextBill: String?
+    }
+    struct Package: Decodable, Identifiable, Hashable { let id: String; let name: String; let kind: String?; let pricePennies: Int?; let sessions: Int?; let period: String?; let description: String? }
+
+    let month: String
+    let canPrice: Bool
+    let totals: Totals
+    let lines: [Line]
+    let memberships: [Membership]
+    let packages: [Package]
+}
+
+/// coach_players, every column the profile shows and edits.
+struct PlayerProfile: Decodable, Identifiable, Hashable {
+    let id: String
+    var name: String
+    var category: String?
+    var age: Int?
+    var parentName: String?
+    var parentEmail: String?
+    var email: String?
+    var phone: String?
+    var racketStage: String?
+    var level: String?
+    var paymentMethod: String?
+    var goal: String?
+    var notes: String?
+    var medicalNotes: String?
+    var consentData: Bool?
+    var consentPhoto: Bool?
+    var consentMedical: Bool?
+    var consentWearable: Bool?
+    var consentRecord: Bool?
+    var consentBy: String?
+    var consentDate: String?
+    var rateReason: String?
+    var ratePennies: Int?
+    var avatarUrl: String?
+    var xpTotal: Int?
+    var staffId: String?
+    var adultLevelId: String?
+    var targets: [Target]?
+    var targetsNote: String?
+
+    struct Target: Codable, Hashable { var target: String; var why: String?; var measure: String?; var by: String? }
+
+    var isAdult: Bool { (category ?? "").lowercased().contains("adult") || (age ?? 0) >= 18 || adultLevelId != nil }
+    /// Who the family app invite goes to (lib/student/bundle.ts studentAudience).
+    var invitee: (email: String?, role: String, name: String) {
+        let adult = (category ?? "").lowercased() == "adult" || (age ?? 0) >= 18
+        return adult ? (email ?? parentEmail, "student", name) : (parentEmail ?? email, "parent", parentName ?? name)
+    }
+
+    init(from d: Decoder) throws {
+        enum K: String, CodingKey {
+            case id, name, category, age, parentName, parentEmail, email, phone, racketStage, level, paymentMethod, goal, notes, medicalNotes
+            case consentData, consentPhoto, consentMedical, consentWearable, consentRecord, consentBy, consentDate, rateReason, ratePennies
+            case avatarUrl, xpTotal, staffId, adultLevelId, targets, targetsNote
+        }
+        let c = try d.container(keyedBy: K.self)
+        func s(_ k: K) -> String? { try? c.decodeIfPresent(String.self, forKey: k) }
+        func b(_ k: K) -> Bool? { try? c.decodeIfPresent(Bool.self, forKey: k) }
+        func i(_ k: K) -> Int? {
+            if let v = try? c.decodeIfPresent(Int.self, forKey: k) { return v }
+            if let v = try? c.decodeIfPresent(Double.self, forKey: k) { return Int(v) }
+            if let v = try? c.decodeIfPresent(String.self, forKey: k) { return Int(v) }
+            return nil
+        }
+        id = try c.decode(String.self, forKey: .id)
+        name = s(.name) ?? "Player"
+        category = s(.category); age = i(.age); parentName = s(.parentName); parentEmail = s(.parentEmail)
+        email = s(.email); phone = s(.phone); racketStage = s(.racketStage); level = s(.level); paymentMethod = s(.paymentMethod)
+        goal = s(.goal); notes = s(.notes); medicalNotes = s(.medicalNotes)
+        consentData = b(.consentData); consentPhoto = b(.consentPhoto); consentMedical = b(.consentMedical)
+        consentWearable = b(.consentWearable); consentRecord = b(.consentRecord); consentBy = s(.consentBy); consentDate = s(.consentDate)
+        rateReason = s(.rateReason); ratePennies = i(.ratePennies); avatarUrl = s(.avatarUrl); xpTotal = i(.xpTotal)
+        staffId = s(.staffId); adultLevelId = s(.adultLevelId)
+        targets = try? c.decodeIfPresent([Target].self, forKey: .targets)
+        targetsNote = s(.targetsNote)
+    }
+}
+
+/// coach_player_notes — private notes about a player.
+struct NoteRecord: Decodable, Identifiable, Hashable {
+    let id: String
+    let playerId: String?
+    let kind: String?
+    let text: String
+    let notedOn: String?
+    let pinned: Bool?
+    let createdAt: String?
+
+    static let kinds: [(String, String, String)] = [
+        ("family", "Family", "Who's at home, siblings, who brings them"),
+        ("work", "School or work", "What fills their week"),
+        ("interests", "Interests", "Other sports, what they love"),
+        ("holidays", "Holidays", "Trips and time away"),
+        ("health", "Health", "Only with medical consent"),
+        ("other", "Other", "Anything else worth remembering"),
+    ]
+    static func label(_ k: String?) -> String { kinds.first { $0.0 == k }?.1 ?? "Note" }
+}
+
+/// coach_attendance
+struct AttendanceRecord: Decodable, Identifiable, Hashable { let id: String; let playerId: String?; let sessionDate: String?; let present: Bool? }
+
+/// coach_player_skills
+struct SkillRecord: Decodable, Identifiable, Hashable { let id: String; let playerId: String?; let skill: String; let score: Int? }
+
+/// coach_racket_awards (written by the database)
+struct RacketAwardRecord: Decodable, Identifiable, Hashable { let id: String; let fromStage: String?; let toStage: String?; let createdAt: String? }
+
+/// coach_watch_sessions
+struct WatchRecord: Decodable, Identifiable, Hashable {
+    let id: String
+    let source: String?
+    let startedAt: String?
+    let durationMin: Double?
+    let effortScore: Double?
+    let xpAwarded: Double?
+    let voided: Bool?
+}
+
+/// coach_adult_levels / coach_adult_passes
+struct AdultLevelRecord: Decodable, Identifiable, Hashable {
+    let id: String
+    let position: Int?
+    let name: String
+    let summary: String?
+    let checklist: [Item]?
+    struct Item: Decodable, Hashable { let id: String; let text: String }
+}
+struct AdultPassRecord: Decodable, Identifiable, Hashable { let id: String; let levelId: String?; let itemId: String?; let passedOn: String? }
+
+/// coach_media
+struct MediaRecord: Decodable, Identifiable, Hashable {
+    let id: String
+    let kind: String?
+    let title: String?
+    let status: String?
+    let durationSeconds: Double?
+    let clipOf: String?
+    let shotType: String?
+    let shotConfirmed: Bool?
+    let sessionId: String?
+    let error: String?
+    let createdAt: String?
+}
+
+/// coach_camps
+struct CampRecord: Decodable, Identifiable, Hashable {
+    let id: String
+    let name: String
+    let startDate: String?
+    let endDate: String?
+    let location: String?
+    let region: String?
+    let capacity: Int?
+    let price: Double?
+    let description: String?
+    let paymentMode: String?
+    let depositAmount: Double?
+    let balanceDue: String?
+    let tripSlug: String?
+    let tripOpen: Bool?
+    let trip: Trip?
+
+    var past: Bool { (endDate ?? startDate ?? "9999") < Fmt.todayISO }
+    var pricePennies: Int { Int(((price ?? 0) * 100).rounded()) }
+
+    struct Trip: Decodable, Hashable {
+        let intro: String?
+        let stay: Place?
+        let venue: Place?
+        let travel: Travel?
+        let contacts: [Contact]?
+        let bring: [String]?
+        struct Place: Decodable, Hashable { let name: String?; let address: String?; let url: String?; let notes: String?; let checkIn: String? }
+        struct Travel: Decodable, Hashable { let airport: String?; let flights: String?; let transfers: String?; let arrival: String?; let departure: String?; let notes: String? }
+        struct Contact: Decodable, Hashable { let name: String?; let role: String?; let phone: String?; let note: String? }
+    }
+
+    init(from d: Decoder) throws {
+        enum K: String, CodingKey { case id, name, startDate, endDate, location, region, capacity, price, description, paymentMode, depositAmount, balanceDue, tripSlug, tripOpen, trip }
+        let c = try d.container(keyedBy: K.self)
+        func s(_ k: K) -> String? { try? c.decodeIfPresent(String.self, forKey: k) }
+        func n(_ k: K) -> Double? {
+            if let v = try? c.decodeIfPresent(Double.self, forKey: k) { return v }
+            if let v = try? c.decodeIfPresent(String.self, forKey: k) { return Double(v) }
+            return nil
+        }
+        id = try c.decode(String.self, forKey: .id)
+        name = s(.name) ?? "Camp"
+        startDate = s(.startDate); endDate = s(.endDate); location = s(.location); region = s(.region)
+        capacity = n(.capacity).map { Int($0) }; price = n(.price); description = s(.description)
+        paymentMode = s(.paymentMode); depositAmount = n(.depositAmount); balanceDue = s(.balanceDue)
+        tripSlug = s(.tripSlug); tripOpen = try? c.decodeIfPresent(Bool.self, forKey: .tripOpen)
+        trip = try? c.decodeIfPresent(Trip.self, forKey: .trip)
+    }
+}
+
+/// coach_camp_attendees
+struct AttendeeRecord: Decodable, Identifiable, Hashable {
+    let id: String
+    let campId: String
+    let playerId: String?
+    let playerName: String
+    let paid: Bool?
+    let paidPennies: Int?
+    let amountPennies: Int?
+    let extraPennies: Int?
+    let extraLabel: String?
+    let status: String?
+    let source: String?
+    let parentName: String?
+    let parentEmail: String?
+    let parentPhone: String?
+    let playerAge: Int?
+    let medicalNotes: String?
+    let emergencyContact: String?
+    let consentPhoto: Bool?
+    let consentMedical: Bool?
+    let room: String?
+    let arrival: String?
+    let campGoal: String?
+    let formSubmittedAt: String?
+    let formSentAt: String?
+    let balanceStatus: String?
+
+    var cancelled: Bool { status == "cancelled" }
+
+    // camp-money.ts, in pennies.
+    func due(_ camp: CampRecord) -> Int { camp.pricePennies + (extraPennies ?? 0) }
+    func received(_ camp: CampRecord) -> Int {
+        let d = due(camp)
+        let r: Int
+        if paid == true { r = d } else if let p = paidPennies { r = p } else if status == "pending" { r = 0 } else { r = amountPennies ?? 0 }
+        return max(0, min(r, d))
+    }
+    func owed(_ camp: CampRecord) -> Int { cancelled || paid == true ? 0 : max(0, due(camp) - received(camp)) }
+    func payState(_ camp: CampRecord) -> (String, Color) {
+        if cancelled { return ("Cancelled", .secondary) }
+        if paid == true || owed(camp) == 0 { return ("Paid", .green) }
+        if received(camp) > 0 { return ("Part paid", .orange) }
+        if status == "pending" { return ("Awaiting payment", .orange) }
+        return ("Unpaid", .red)
+    }
 }

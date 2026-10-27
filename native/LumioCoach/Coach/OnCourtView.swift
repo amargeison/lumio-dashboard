@@ -40,12 +40,21 @@ struct OnCourtView: View {
                     .font(.system(size: 88, weight: .bold, design: .rounded)).monospacedDigit()
                     .foregroundStyle(left <= 0 ? Color.orange : (left < 60 ? Color.yellow : Color.primary))
                     .contentTransition(.numericText())
-                if !phase.detail.isEmpty {
-                    Text(phase.detail).font(.title3).multilineTextAlignment(.center).padding(.horizontal)
+                // Long blocks scroll rather than being cut off.
+                ScrollView {
+                    VStack(spacing: 12) {
+                        if !phase.detail.isEmpty {
+                            Text(phase.detail).font(.title3).multilineTextAlignment(.center)
+                        }
+                        if let cue = phase.cue, !cue.isEmpty {
+                            Label(cue, systemImage: "quote.bubble").font(.headline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity)
                 }
-                if let cue = phase.cue, !cue.isEmpty {
-                    Label(cue, systemImage: "quote.bubble").font(.headline).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                }
+                .frame(maxHeight: 260)
+                .scrollBounceBehavior(.basedOnSize)
                 Spacer(minLength: 0)
 
                 if !isLast {

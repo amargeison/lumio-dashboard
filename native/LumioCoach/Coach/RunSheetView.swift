@@ -36,7 +36,11 @@ struct RunSheetView: View {
                 }
                 .padding(.vertical, 4)
                 if let f = plan.focus, !f.isEmpty {
-                    LabeledContent("Focus") { Text(f).multilineTextAlignment(.trailing) }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Focus").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        Text(f)
+                    }
+                    .padding(.vertical, 2)
                 }
             }
 
