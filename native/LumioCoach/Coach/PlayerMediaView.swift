@@ -24,6 +24,8 @@ struct PlayerMediaView: View {
     @State private var reviewing: [String: String] = [:]
     @State private var pending: Pending?
     @State private var toast: Toast?
+    /// A written-up recording being deleted: ask about its lesson summary too.
+    @State private var deleting: MediaRecord?
 
     struct Pending: Identifiable { let id = UUID(); let file: URL; let kind: String; let seconds: Int? }
 
@@ -110,6 +112,14 @@ struct PlayerMediaView: View {
             VoiceRecorderView { url, seconds in start(url, kind: "audio", seconds: seconds) }
         }
         .sheet(item: $playing) { MediaPlayerView(url: $0.url, title: $0.title) }
+        .confirmationDialog("Delete this recording?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+                            titleVisibility: .visible, presenting: deleting) { m in
+            Button("Delete the recording and its write-up", role: .destructive) { deleting = nil; Task { await remove(m, discard: true) } }
+            Button("Delete the recording only", role: .destructive) { deleting = nil; Task { await remove(m) } }
+            Button("Keep it", role: .cancel) { deleting = nil }
+        } message: { _ in
+            Text("Lumio Coach wrote a lesson summary from it. Deleting the write-up also removes that summary and the attendance mark it added.")
+        }
         .confirmationDialog(pending.map { _ in "\(player.name) hasn’t agreed to being recorded." } ?? "",
                             isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
                             titleVisibility: .visible, presenting: pending) { p in
@@ -144,7 +154,9 @@ struct PlayerMediaView: View {
             }
         }
         .swipeActions(edge: .trailing) {
-            Button(role: .destructive) { Task { await remove(m) } } label: { Label("Delete", systemImage: "trash") }
+            // Not role: .destructive — that removes the row before the
+            // question about the write-up is answered.
+            Button { askRemove(m) } label: { Label("Delete", systemImage: "trash") }.tint(.red)
         }
         .swipeActions(edge: .leading) {
             if m.clipOf == nil, m.sessionId == nil, !Self.working(stage) {
@@ -155,7 +167,7 @@ struct PlayerMediaView: View {
             if m.clipOf == nil, m.sessionId == nil, !Self.working(stage) {
                 Button { Task { await review(m.id) } } label: { Label(stage == "error" ? "Try the write-up again" : "Write it up with Lumio Coach", systemImage: "sparkles") }
             }
-            Button(role: .destructive) { Task { await remove(m) } } label: { Label("Delete", systemImage: "trash") }
+            Button(role: .destructive) { askRemove(m) } label: { Label("Delete", systemImage: "trash") }
         }
     }
 
@@ -219,7 +231,7 @@ struct PlayerMediaView: View {
     private func upload(_ p: Pending) async {
         uploading = 0
         defer { uploading = nil; try? FileManager.default.removeItem(at: p.file) }
-        let day = Date().formatted(.dateTime.day().month(.abbreviated).year())
+        let day = Date().formatted(.dateTime.day().month(.abbreviated).year().locale(Locale(identifier: "en_GB")))
         let title = p.kind == "audio" ? "Voice note · \(day)" : "Lesson video · \(day)"
         do {
             let id = try await MediaUpload.upload(file: p.file, kind: p.kind, playerId: player.id, playerName: player.name, title: title,
@@ -299,9 +311,18 @@ struct PlayerMediaView: View {
 
     // MARK: Deleting
 
-    private func remove(_ m: MediaRecord) async {
+    private func askRemove(_ m: MediaRecord) {
+        if m.clipOf == nil, m.sessionId != nil { deleting = m } else { Task { await remove(m) } }
+    }
+
+    /// `discard` is the website's "Discard" on a review: the summary and the
+    /// attendance mark it made go too (?discard=1).
+    private func remove(_ m: MediaRecord, discard: Bool = false) async {
         do {
-            let _: Empty = try await API.shared.request("DELETE", "/api/coach/media/\(m.id)", body: Optional<Empty>.none)
+            let _: Empty = try await API.shared.request("DELETE", "/api/coach/media/\(m.id)",
+                                                        items: discard ? [URLQueryItem(name: "discard", value: "1")] : [],
+                                                        body: Optional<Empty>.none)
+            if discard { store.saved() }
             items.removeAll { $0.id == m.id || $0.clipOf == m.id }
             toast = Toast(text: m.clipOf == nil ? "Recording deleted." : "Highlight deleted.")
         } catch { toast = Toast(text: error.localizedDescription, isError: true) }

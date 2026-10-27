@@ -201,6 +201,7 @@ struct PlayerDetailView: View {
         async let p: Void = loadProfile()
         async let c: Void = pay.load()
         do { detail = try await API.shared.get("/api/app/v1/coach/players/\(player.id)"); error = nil }
+        catch is CancellationError {}
         catch { self.error = error.localizedDescription }
         await p; await c
     }
