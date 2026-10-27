@@ -202,14 +202,19 @@ struct AttendeeView: View {
                     Text([a.playerAge.map { "Age \($0)" }, a.parentName.map { "Parent: \($0)" }].compactMap { $0 }.joined(separator: " · ")).foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
-                HStack(spacing: 10) {
-                    if let phone = a.parentPhone, !phone.isEmpty {
-                        contact("Call", "phone.fill") { Contact.call(phone) }
-                        contact("Text", "message.fill") { Contact.text(phone) }
+                let phone = a.parentPhone ?? "", email = a.parentEmail ?? ""
+                if !phone.isEmpty || !email.isEmpty {
+                    HStack(spacing: 10) {
+                        if !phone.isEmpty {
+                            contact("Call", "phone.fill") { Contact.call(phone) }
+                            contact("Text", "message.fill") { Contact.text(phone) }
+                        }
+                        if !email.isEmpty { contact("Email", "envelope.fill") { Contact.email(email) } }
                     }
-                    if let email = a.parentEmail, !email.isEmpty { contact("Email", "envelope.fill") { Contact.email(email) } }
+                    .buttonStyle(.borderless)
+                } else {
+                    Text("No contact details on their booking.").font(.subheadline).foregroundStyle(.secondary)
                 }
-                .buttonStyle(.borderless)
             }
 
             Section("Health and emergencies") {

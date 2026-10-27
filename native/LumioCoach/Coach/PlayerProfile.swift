@@ -300,18 +300,29 @@ struct AttendanceView: View {
                         Spacer()
                         Text(r.present == false ? "Absent" : "Present").foregroundStyle(r.present == false ? Color.red : Color.green)
                     }
-                    .swipeActions { Button("Delete", role: .destructive) { Task { try? await Rows.delete("coach_attendance", id: r.id); await load() } } }
+                    .swipeActions { Button("Delete", role: .destructive) { Task { await remove(r) } } }
                 }
             } header: {
-                if !rows.isEmpty {
-                    let present = rows.filter { $0.present != false }.count
-                    Text("\(present) of \(rows.count) present · \(Int((Double(present) / Double(rows.count) * 100).rounded()))%")
-                }
+                Text(summary)
             }
         }
         .navigationTitle("Attendance")
         .toast($toast)
         .task { await load() }
+    }
+
+    /// Always a Text (never an empty header), so it redraws when the last day goes.
+    private var summary: String {
+        guard !rows.isEmpty else { return "No days marked yet" }
+        let present = rows.filter { $0.present != false }.count
+        return "\(present) of \(rows.count) present · \(Int((Double(present) / Double(rows.count) * 100).rounded()))%"
+    }
+
+    private func remove(_ r: AttendanceRecord) async {
+        rows.removeAll { $0.id == r.id }
+        do { try await Rows.delete("coach_attendance", id: r.id) }
+        catch { toast = Toast(text: error.localizedDescription, isError: true) }
+        await load()
     }
 
     private func load() async {

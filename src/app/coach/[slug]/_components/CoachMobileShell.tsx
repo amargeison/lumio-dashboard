@@ -31,7 +31,7 @@ const NAV_EMOJI: Record<string, string> = {
   dashboard: '🏠', planner: '🗓️', lessons: '📝', development: '📈', belts: '🎾',
   staff: '🧑‍🏫', calendar: '📅', venues: '📍', camps: '☀️', roster: '👥',
   messages: '💬', videoaudio: '🎥', gpsheatmaps: '🔥', resources: '📚',
-  equipment: '🎒', payments: '💷', settings: '⚙️',
+  equipment: '🎒', payments: '💷', settings: '⚙️', groups: '🎟️', leads: '💼',
 }
 
 function MoreGlyph() {

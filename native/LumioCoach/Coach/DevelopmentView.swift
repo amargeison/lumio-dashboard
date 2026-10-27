@@ -18,10 +18,12 @@ struct DevelopmentView: View {
     @State private var logging = false
     @State private var toast: Toast?
     @State private var lastStage: String?
+    /// A score shown straight away while it saves.
+    @State private var saving: [String: Int] = [:]
 
     private var racketOn: Bool { store.setup?.features?.racket == true }
     private var stage: Racket.Stage { Racket.stage(player.racketStage) ?? Racket.stages[0] }
-    private func score(_ name: String) -> Int { skills.first { $0.skill == name }?.score ?? 0 }
+    private func score(_ name: String) -> Int { saving[name] ?? skills.first { $0.skill == name }?.score ?? 0 }
     private var mastered: Int { stage.skills.filter { score($0.name) >= 4 }.count }
 
     var body: some View {
@@ -170,6 +172,8 @@ struct DevelopmentView: View {
 
     private func setScore(_ skill: String, _ value: Int) async {
         let v = max(0, min(4, value))
+        saving[skill] = v
+        defer { saving[skill] = nil }
         do {
             if let existing = skills.first(where: { $0.skill == skill }) {
                 let _: SkillRecord = try await Rows.update("coach_player_skills", id: existing.id, ["score": .int(v)])

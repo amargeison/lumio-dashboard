@@ -121,6 +121,9 @@ final class API {
         if slow { req.timeoutInterval = 180 }
         do { (data, response) = try await (slow ? slowSession : urlSession).data(for: req) }
         catch {
+            // The screen that asked went away (a .task is cancelled when it
+            // disappears) — not being offline, so not said as that.
+            if (error as? URLError)?.code == .cancelled || Task.isCancelled { throw CancellationError() }
             if (error as? URLError)?.code == .timedOut { throw APIError.server("That took too long to answer. Please try again.", 0) }
             throw APIError.network(error.localizedDescription)
         }
@@ -193,3 +196,9 @@ final class API {
 struct Empty: Codable {}
 struct ServerError: Decodable { let error: String?; let notice: String?; let code: String? }
 struct OkNotice: Decodable { let ok: Bool?; let notice: String?; let error: String?; let url: String? }
+
+/// A request stopped because its screen closed. Usually never shown (the
+/// screen has gone); if it is, it says what to do rather than "offline".
+extension CancellationError: @retroactive LocalizedError {
+    public var errorDescription: String? { "That was interrupted. Pull down to try again." }
+}
