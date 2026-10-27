@@ -199,6 +199,6 @@ struct OkNotice: Decodable { let ok: Bool?; let notice: String?; let error: Stri
 
 /// A request stopped because its screen closed. Usually never shown (the
 /// screen has gone); if it is, it says what to do rather than "offline".
-extension CancellationError: LocalizedError {
+extension CancellationError: @retroactive LocalizedError {
     public var errorDescription: String? { "That was interrupted. Pull down to try again." }
 }
