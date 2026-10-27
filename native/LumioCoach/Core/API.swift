@@ -73,20 +73,26 @@ final class API {
     // MARK: Requests
 
     func get<T: Decodable>(_ path: String, query: [String: String] = [:], as type: T.Type = T.self) async throws -> T {
-        try await send("GET", path, query: query, body: Optional<Empty>.none)
+        try await send("GET", path, items: query.map { URLQueryItem(name: $0.key, value: $0.value) }, body: Optional<Empty>.none)
     }
 
     func post<T: Decodable, B: Encodable>(_ path: String, body: B, as type: T.Type = T.self) async throws -> T {
-        try await send("POST", path, query: [:], body: body)
+        try await send("POST", path, items: [], body: body)
     }
 
     func delete<B: Encodable>(_ path: String, body: B) async throws {
-        let _: Empty = try await send("DELETE", path, query: [:], body: body)
+        let _: Empty = try await send("DELETE", path, items: [], body: body)
     }
 
-    private func send<T: Decodable, B: Encodable>(_ method: String, _ path: String, query: [String: String], body: B?, retried: Bool = false) async throws -> T {
+    /// Any method, repeated query keys allowed (?booking_date=gte.…&booking_date=lte.…),
+    /// and a choice of decoder (the portal's tables come back in snake_case).
+    func request<T: Decodable, B: Encodable>(_ method: String, _ path: String, items: [URLQueryItem] = [], body: B?, decoder: JSONDecoder? = nil, lenient: Bool = false) async throws -> T {
+        try await send(method, path, items: items, body: body, decoder: decoder, lenient: lenient)
+    }
+
+    private func send<T: Decodable, B: Encodable>(_ method: String, _ path: String, items: [URLQueryItem], body: B?, decoder custom: JSONDecoder? = nil, lenient: Bool = false, retried: Bool = false) async throws -> T {
         var comps = URLComponents(url: Config.url(path), resolvingAgainstBaseURL: false)!
-        if !query.isEmpty { comps.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) } }
+        if !items.isEmpty { comps.queryItems = items }
         var req = URLRequest(url: comps.url!)
         req.httpMethod = method
         req.setValue("1", forHTTPHeaderField: "X-Lumio-App")
@@ -105,18 +111,21 @@ final class API {
 
         if status == 401, session != nil {
             if !retried, (try? await refresh(force: true)) != nil {
-                return try await send(method, path, query: query, body: body, retried: true)
+                return try await send(method, path, items: items, body: body, decoder: custom, lenient: lenient, retried: true)
             }
             signOutLocally()
             throw APIError.signedOut
         }
+        // Lenient: a refusal that still carries an answer (a card charge that needs
+        // the client) is decoded like a success; the caller reads its fields.
+        if lenient, (400..<500).contains(status), let t = try? (custom ?? decoder).decode(T.self, from: data) { return t }
         guard (200..<300).contains(status) else {
             let failed = try? decoder.decode(ServerError.self, from: data)
             let message = failed?.error ?? failed?.notice
             throw APIError.server(message ?? "That did not work (\(status)). Please try again.", status)
         }
         if T.self == Empty.self { return Empty() as! T }
-        do { return try decoder.decode(T.self, from: data) }
+        do { return try (custom ?? decoder).decode(T.self, from: data) }
         catch { throw APIError.decoding(String(describing: error)) }
     }
 

@@ -8,11 +8,8 @@ struct CoachMoreView: View {
 
     private let sections: [(String, String, String)] = [
         ("planner", "Session Planner", "list.clipboard"),
-        ("lessons", "Lesson Summaries", "doc.text"),
         ("payments", "Payments & Packs", "sterlingsign.circle"),
-        ("groups", "Weekly Groups", "person.3"),
         ("camps", "Training Camps", "tent"),
-        ("leads", "Leads", "person.badge.plus"),
         ("development", "Player Development", "chart.line.uptrend.xyaxis"),
         ("belts", "Racket Progression", "medal"),
         ("resources", "Resource Centre", "books.vertical"),
@@ -44,7 +41,13 @@ struct CoachMoreView: View {
                 }
             }
 
-            Section("Open in Lumio") {
+            Section {
+                NavigationLink { SummariesView() } label: { Label("Lesson Summaries", systemImage: "doc.text") }
+                NavigationLink { GroupsView() } label: { Label("Weekly Groups", systemImage: "person.3") }
+                NavigationLink { LeadsView() } label: { Label("Leads", systemImage: "person.badge.plus") }
+            }
+
+            Section("On the website") {
                 ForEach(sections, id: \.0) { s in
                     Button { model.web = WebTarget(path: model.coachWebPath(s.0), title: s.1) } label: {
                         Label(s.1, systemImage: s.2)

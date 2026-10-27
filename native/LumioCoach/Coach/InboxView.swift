@@ -3,8 +3,11 @@ import SwiftUI
 /// Every conversation — players, camps, contacts — newest first.
 struct InboxView: View {
     @Environment(AppModel.self) private var model
+    @Environment(CoachStore.self) private var store
     @Binding var unread: Int
     @State private var state: Loadable<[Conversation]> = .loading
+    @State private var composing = false
+    @State private var toast: Toast?
 
     var body: some View {
         Group {
@@ -25,7 +28,7 @@ struct InboxView: View {
         .navigationTitle("Messages")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { model.web = WebTarget(path: model.coachWebPath("messages"), title: "New message") } label: { Image(systemName: "square.and.pencil") }
+                Button { composing = true } label: { Image(systemName: "square.and.pencil") }
                     .accessibilityLabel("New message")
             }
         }
@@ -34,6 +37,11 @@ struct InboxView: View {
         }
         .task { await load() }
         .refreshable { await load() }
+        .onChange(of: store.changes) { _, _ in Task { await load() } }
+        .sheet(isPresented: $composing) {
+            ComposeView { text in toast = Toast(text: text) }.environment(store)
+        }
+        .toast($toast)
     }
 
     private func row(_ c: Conversation) -> some View {
@@ -159,8 +167,9 @@ struct Bubble: View {
                 if let subject = message.subject, !subject.isEmpty {
                     Text(subject).font(.caption.weight(.semibold)).foregroundStyle(mine ? Color.white.opacity(0.85) : Color.secondary)
                 }
-                Text(message.body.isEmpty ? " " : message.body)
+                Text(Self.rich(message.body))
                     .foregroundStyle(mine ? Color.white : Color.primary)
+                    .tint(mine ? Color.white : Color.accentColor)
                     .textSelection(.enabled)
                 Text([message.fromThem ? message.from : nil, Fmt.when(message.at)].compactMap { $0 }.joined(separator: " · "))
                     .font(.caption2).foregroundStyle(mine ? Color.white.opacity(0.75) : Color.secondary)
@@ -169,6 +178,20 @@ struct Bubble: View {
             .background(mine ? Color.accentColor : Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             if !mine { Spacer(minLength: 48) }
         }
+    }
+}
+
+extension Bubble {
+    /// Messages can carry Markdown links ("[Google Calendar](https://…)"): show
+    /// them as tappable words, not the raw address.
+    static func rich(_ body: String) -> AttributedString {
+        let text = body.isEmpty ? " " : body
+        let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        if var a = try? AttributedString(markdown: text, options: options) {
+            for run in a.runs where run.link != nil { a[run.range].underlineStyle = .single }
+            return a
+        }
+        return AttributedString(text)
     }
 }
 

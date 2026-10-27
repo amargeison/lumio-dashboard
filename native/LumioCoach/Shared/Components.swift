@@ -120,12 +120,15 @@ struct BusyButton: View {
     var systemImage: String? = nil
     var role: ButtonRole? = nil
     var prominent = true
+    /// Not ready yet (e.g. no email typed). Shown faded rather than `.disabled`,
+    /// which turns a prominent button near-black on a dark background.
+    var enabled = true
     let action: () async -> Void
     @State private var busy = false
 
     var body: some View {
         Button(role: role) {
-            guard !busy else { return }
+            guard !busy, enabled else { return }
             busy = true
             Task { await action(); busy = false }
         } label: {
@@ -138,7 +141,9 @@ struct BusyButton: View {
         }
         .modifier(ProminentIf(prominent: prominent))
         .controlSize(.large)
-        .disabled(busy)
+        .opacity(enabled || busy ? 1 : 0.45)
+        .allowsHitTesting(enabled && !busy)
+        .accessibilityAddTraits(enabled ? [] : .isStaticText)
     }
 }
 

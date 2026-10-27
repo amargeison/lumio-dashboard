@@ -59,9 +59,14 @@ struct PlayersView: View {
 /// packs, card and anything owed — what their family sees in their own app.
 struct PlayerDetailView: View {
     @Environment(AppModel.self) private var model
+    @Environment(CoachStore.self) private var store
     let player: AppPlayer
     @State private var detail: PlayerDetail?
     @State private var error: String?
+    @State private var sheet: Sheet?
+    @State private var toast: Toast?
+
+    enum Sheet: String, Identifiable { case book, message, summary; var id: String { rawValue } }
 
     var body: some View {
         List {
@@ -76,6 +81,12 @@ struct PlayerDetailView: View {
                 }
                 .padding(.vertical, 4)
                 ContactButtons(player: player)
+            }
+
+            Section {
+                Button { sheet = .book } label: { Label("Book a lesson", systemImage: "calendar.badge.plus") }
+                Button { sheet = .message } label: { Label("Send a message", systemImage: "bubble.left") }
+                Button { sheet = .summary } label: { Label("Write a lesson summary", systemImage: "square.and.pencil") }
             }
 
             if let error { Section { Text(error).foregroundStyle(.red) } }
@@ -119,6 +130,17 @@ struct PlayerDetailView: View {
         }
         .navigationTitle(player.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toast($toast)
+        .sheet(item: $sheet) { which in
+            Group {
+                switch which {
+                case .book: BookingFormView(existing: nil, presetPlayerId: player.id) { text in toast = Toast(text: text); Task { await load() } }
+                case .message: ComposeView(preset: [player.id]) { text in toast = Toast(text: text) }
+                case .summary: NavigationStack { SummaryFormView(existing: nil, presetPlayerId: player.id) { text in toast = Toast(text: text) } }
+                }
+            }
+            .environment(store)
+        }
         .task { await load() }
         .refreshable { await load() }
     }

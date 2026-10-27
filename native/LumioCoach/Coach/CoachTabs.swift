@@ -3,6 +3,7 @@ import SwiftUI
 struct CoachTabs: View {
     @Environment(AppModel.self) private var model
     @State private var unread = 0
+    @State private var store = CoachStore()
 
     var body: some View {
         @Bindable var model = model
@@ -24,7 +25,9 @@ struct CoachTabs: View {
                 .tabItem { Label("More", systemImage: "ellipsis.circle") }
                 .tag(CoachTab.more)
         }
+        .environment(store)
         .task {
+            await store.load()
             // The unread count for the tab badge, before the inbox is opened.
             if let r: ConversationsResponse = try? await API.shared.get("/api/app/v1/coach/messages") {
                 unread = r.conversations.reduce(0) { $0 + $1.unread }
@@ -80,19 +83,29 @@ struct BookingRow: View {
     }
 }
 
-/// A booking, opened.
+/// A booking, opened: who and when, what the client has said, and the
+/// coach's actions — edit or move, cancel, delete, and take payment.
 struct BookingDetailView: View {
     @Environment(AppModel.self) private var model
+    @Environment(CoachStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
     let booking: AppBooking
     @State private var player: AppPlayer?
+    @State private var record: BookingRecord?
+    @State private var editing = false
+    @State private var pay = PayModel()
+    @State private var toast: Toast?
+    @State private var working = false
+    @State private var summarising = false
 
     var body: some View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(booking.title).font(.title2.bold())
+                    Text(booking.title).font(.title2.bold()).strikethrough(booking.isCancelled)
                     Text("\(Fmt.dayLong(booking.date)) · \(Fmt.time(booking.time))–\(Fmt.endTime(booking.time, mins: booking.mins))")
                         .foregroundStyle(.secondary)
+                    if booking.isCancelled { Pill(text: booking.cancelledByClient ? "Cancelled by the client" : "Cancelled", tint: .red) }
                 }
                 .padding(.vertical, 4)
             }
@@ -103,11 +116,14 @@ struct BookingDetailView: View {
                     Label("Cancelled by the client", systemImage: "xmark.circle.fill").foregroundStyle(.red)
                 } else if booking.isPending {
                     Label("Waiting for them to confirm", systemImage: "clock").foregroundStyle(.orange)
-                } else {
-                    Label("Not confirmed yet", systemImage: "circle.dashed").foregroundStyle(.secondary)
+                } else if !booking.isCancelled {
+                    Label(isPast ? "They didn't confirm" : "Not confirmed yet", systemImage: "circle.dashed").foregroundStyle(.secondary)
                 }
                 if let p = player {
                     ContactButtons(player: p)
+                } else if booking.playerId != nil {
+                    // Keeps the layout still while the player loads.
+                    Color.clear.frame(height: 62)
                 }
             }
             Section("Details") {
@@ -118,11 +134,27 @@ struct BookingDetailView: View {
                 LabeledContent("Payment", value: booking.paid ? "Paid" : "Not paid yet")
                 if let notes = booking.notes { Text(notes).font(.callout).foregroundStyle(.secondary) }
             }
+
+            ChargeSection(pay: pay, booking: booking, playerName: player?.name ?? booking.playerName ?? booking.title, toast: $toast) {
+                store.saved()
+            }
+
             Section {
-                Button {
-                    model.web = WebTarget(path: model.coachWebPath("calendar"), title: "Booking Calendar")
-                } label: { Label("Edit, move or charge in the calendar", systemImage: "calendar.badge.clock") }
-                if let p = player {
+                if isPast && !booking.isCancelled && booking.type != "Block" {
+                    Button { summarising = true } label: { Label("Write a lesson summary", systemImage: "square.and.pencil") }
+                }
+                Button { Task { await openEditor() } } label: { Label("Edit or move", systemImage: "calendar.badge.clock") }
+                    .disabled(working)
+                if !booking.isCancelled {
+                    CancelBookingButton { by in await cancel(by: by) }
+                }
+                ConfirmButton(title: "Delete booking", icon: "trash", prompt: deletePrompt, confirm: "Delete", destructive: true) {
+                    await remove()
+                }
+            }
+
+            if let p = player {
+                Section {
                     NavigationLink(value: p) { Label("Open \(p.name)'s profile", systemImage: "person.crop.circle") }
                 }
             }
@@ -130,10 +162,80 @@ struct BookingDetailView: View {
         .navigationTitle(Fmt.dayShort(booking.date))
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(for: AppPlayer.self) { PlayerDetailView(player: $0) }
-        .task {
-            guard let id = booking.playerId else { return }
-            if let d: PlayerDetail = try? await API.shared.get("/api/app/v1/coach/players/\(id)") { player = d.player }
+        .toast($toast)
+        .sheet(isPresented: $editing) {
+            if let record {
+                BookingFormView(existing: record) { _ in dismiss() }
+                    .environment(store)
+            }
         }
+        .sheet(isPresented: $summarising) {
+            NavigationStack {
+                SummaryFormView(existing: nil, presetPlayerId: booking.playerId, presetDate: booking.date) { text in toast = Toast(text: text) }
+            }
+            .environment(store)
+        }
+        .task {
+            async let pays: Void = pay.load()
+            if let id = booking.playerId, let d: PlayerDetail = try? await API.shared.get("/api/app/v1/coach/players/\(id)") { player = d.player }
+            _ = await pays
+        }
+    }
+
+    private var isPast: Bool { (Fmt.at(booking.date, booking.time) ?? .distantFuture) < Date() }
+
+    private var deletePrompt: String {
+        var p = "Delete this booking?"
+        if booking.date >= Fmt.todayISO && !booking.isCancelled && booking.playerId != nil {
+            p += " If the family has been told about it, they'll be sent a note that it's cancelled."
+        }
+        return p
+    }
+
+    private func openEditor() async {
+        working = true
+        defer { working = false }
+        do {
+            let rows: [BookingRecord] = try await Rows.list("coach_bookings", [("id", booking.id)])
+            guard let r = rows.first else { toast = Toast(text: "That booking has gone.", isError: true); return }
+            record = r
+            editing = true
+        } catch { toast = Toast(text: error.localizedDescription, isError: true) }
+    }
+
+    private func cancel(by: String) async {
+        do {
+            let _: BookingRecord = try await Rows.update("coach_bookings", id: booking.id, ["status": .string("cancelled"), "cancelled_by": .string(by)])
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            store.saved()
+            dismiss()
+        } catch { toast = Toast(text: error.localizedDescription, isError: true) }
+    }
+
+    private func remove() async {
+        do {
+            try await Rows.delete("coach_bookings", id: booking.id)
+            store.saved()
+            dismiss()
+        } catch { toast = Toast(text: error.localizedDescription, isError: true) }
+    }
+}
+
+/// "Cancel lesson", asking who called it off: the coach (nothing to pay) or
+/// the client (the cancellation policy applies).
+struct CancelBookingButton: View {
+    let cancel: (String) async -> Void
+    @State private var asking = false
+
+    var body: some View {
+        Button(role: .destructive) { asking = true } label: { Label("Cancel lesson", systemImage: "xmark.circle") }
+            .confirmationDialog("Who is cancelling?", isPresented: $asking, titleVisibility: .visible) {
+                Button("I'm calling it off") { Task { await cancel("coach") } }
+                Button("They cancelled") { Task { await cancel("client") } }
+                Button("Keep it", role: .cancel) {}
+            } message: {
+                Text("The family is told straight away. If they cancelled late, a fee can then be charged under your cancellation policy.")
+            }
     }
 }
 

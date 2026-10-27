@@ -4,7 +4,11 @@ import SwiftUI
 /// and what's coming tomorrow.
 struct TodayView: View {
     @Environment(AppModel.self) private var model
+    @Environment(CoachStore.self) private var store
     @State private var state: Loadable<CoachToday> = .loading
+    @State private var adding = false
+    @State private var writing = false
+    @State private var toast: Toast?
 
     var body: some View {
         Group {
@@ -17,14 +21,22 @@ struct TodayView: View {
         .navigationTitle("Today")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    model.web = WebTarget(path: model.coachWebPath("calendar"), title: "Add a booking")
-                } label: { Image(systemName: "plus") }
+                Button { adding = true } label: { Image(systemName: "plus") }
                 .accessibilityLabel("Add a booking")
             }
         }
         .navigationDestination(for: AppBooking.self) { BookingDetailView(booking: $0) }
         .task { if state.value == nil { await load() } }
+        .onChange(of: store.changes) { _, _ in Task { await load() } }
+        .sheet(isPresented: $adding) {
+            BookingFormView(existing: nil) { text in toast = Toast(text: text) }
+                .environment(store)
+        }
+        .sheet(isPresented: $writing) {
+            NavigationStack { SummaryFormView(existing: nil) { text in toast = Toast(text: text) } }
+                .environment(store)
+        }
+        .toast($toast)
         .refreshable { await load() }
     }
 
@@ -38,7 +50,8 @@ struct TodayView: View {
                 }
                 .padding(.vertical, 6)
                 .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 8, trailing: 4))
 
                 HStack(spacing: 10) {
                     stat("\(t.counts.today)", "Today")
@@ -47,10 +60,14 @@ struct TodayView: View {
                     if t.counts.pending > 0 { stat("\(t.counts.pending)", "Waiting", tint: .orange) }
                 }
                 .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets())
             }
 
             Section("Today") {
+                if let camp = store.setup?.camp(on: t.date) {
+                    Label("\(camp.name) is on", systemImage: "tent").foregroundStyle(.orange).font(.body.weight(.semibold))
+                }
                 if t.sessions.isEmpty {
                     Text("Nothing booked today.").foregroundStyle(.secondary)
                 } else {
@@ -66,7 +83,7 @@ struct TodayView: View {
                 Button { model.web = WebTarget(path: model.coachWebPath("payments"), title: "Payments & Packs") } label: {
                     Label("Take a payment", systemImage: "sterlingsign.circle")
                 }
-                Button { model.web = WebTarget(path: model.coachWebPath("lessons"), title: "Lesson Summaries") } label: {
+                Button { writing = true } label: {
                     Label("Write a lesson summary", systemImage: "square.and.pencil")
                 }
             }

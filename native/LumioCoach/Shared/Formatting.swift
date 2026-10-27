@@ -93,3 +93,51 @@ enum Fmt {
 
     static func mins(_ m: Int) -> String { m % 60 == 0 ? (m == 60 ? "1 hour" : "\(m / 60) hours") : "\(m) min" }
 }
+
+// MARK: Times and money in forms
+
+extension Fmt {
+    private static let hhmmFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_GB_POSIX")
+        f.timeZone = london
+        f.dateFormat = "HH:mm"
+        return f
+    }()
+    private static let dayAndTime: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_GB_POSIX")
+        f.timeZone = london
+        f.dateFormat = "yyyy-MM-dd HH:mm"
+        return f
+    }()
+
+    /// "17:30", UK time.
+    static func hhmm(_ date: Date) -> String { hhmmFormatter.string(from: date) }
+
+    /// The moment "17:30" on "2026-11-03" happens, UK time.
+    static func at(_ iso: String, _ time: String?) -> Date? {
+        dayAndTime.date(from: "\(iso.prefix(10)) \(Fmt.time(time ?? "00:00"))")
+    }
+
+    /// Minutes past midnight for "17:30".
+    static func minutes(_ t: String?) -> Int? {
+        guard let t, t.count >= 4 else { return nil }
+        let p = t.split(separator: ":")
+        guard p.count >= 2, let h = Int(p[0]), let m = Int(p[1].prefix(2)) else { return nil }
+        return h * 60 + m
+    }
+
+    /// "45" or "45.50" for a price box.
+    static func poundsText(_ pennies: Int?) -> String {
+        guard let p = pennies else { return "" }
+        return p % 100 == 0 ? String(p / 100) : String(format: "%.2f", Double(p) / 100)
+    }
+
+    /// Pennies from "£45", "45.5", "1,200". Nil for anything else.
+    static func pennies(_ text: String) -> Int? {
+        let t = text.replacingOccurrences(of: "£", with: "").replacingOccurrences(of: ",", with: "").trimmingCharacters(in: .whitespaces)
+        guard !t.isEmpty, t.range(of: #"^\d+(\.\d{1,2})?$"#, options: .regularExpression) != nil, let v = Double(t) else { return nil }
+        return Int((v * 100).rounded())
+    }
+}

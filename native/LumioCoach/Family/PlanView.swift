@@ -35,18 +35,13 @@ struct AccountSections: View {
 
     var body: some View {
         if !account.owed.isEmpty {
-            Section("To pay") {
+            // The family pays; the coach only sees what is still outstanding.
+            Section(showPolicy ? "To pay" : "Still to do on their side") {
                 ForEach(account.owed) { o in
-                    Button { model.web = WebTarget(path: o.url, title: o.title) } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: icon(o.kind)).font(.title3).foregroundStyle(.orange).frame(width: 28)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(o.title).font(.body.weight(.semibold)).foregroundStyle(.primary)
-                                Text(o.detail).font(.subheadline).foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
-                        }
+                    if showPolicy {
+                        Button { model.web = WebTarget(path: o.url, title: o.title) } label: { owedRow(o, chevron: true) }
+                    } else {
+                        owedRow(o, chevron: false)
                     }
                 }
             }
@@ -102,6 +97,18 @@ struct AccountSections: View {
                     }
                 }
             }
+        }
+    }
+
+    private func owedRow(_ o: MyAccount.Owed, chevron: Bool) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon(o.kind)).font(.title3).foregroundStyle(.orange).frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(o.title).font(.body.weight(.semibold)).foregroundStyle(.primary)
+                Text(o.detail).font(.subheadline).foregroundStyle(.secondary)
+            }
+            Spacer()
+            if chevron { Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary) }
         }
     }
 
