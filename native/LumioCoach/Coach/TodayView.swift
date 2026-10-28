@@ -36,10 +36,6 @@ struct TodayView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(T.cBg, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Text(dash?.clubName.isEmpty == false ? dash!.clubName : (model.coach?.academyName ?? "Lumio Coach"))
-                    .font(.subheadline.weight(.bold)).foregroundStyle(T.cText).lineLimit(1)
-            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button { adding = true } label: { Image(systemName: "plus") }
                     .accessibilityLabel("Add a booking")

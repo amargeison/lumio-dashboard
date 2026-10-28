@@ -60,6 +60,8 @@ struct CampDetailView: View {
     @State private var people: [AttendeeRecord] = []
     @State private var loaded = false
     @State private var adding = false
+    /// A player waiting to be added to a camp that is already full.
+    @State private var overfull: String?
     @State private var messaging = false
     @State private var toast: Toast?
 
@@ -111,13 +113,20 @@ struct CampDetailView: View {
         .refreshable { await load() }
         .sheet(isPresented: $adding) {
             NavigationStack {
-                PlayerChooser(allowNew: false, selected: nil) { id in if let id { Task { await add(id) } } }
+                PlayerChooser(allowNew: false, selected: nil) { id in if let id { ask(id) } }
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { adding = false } } }
             }
             .environment(store)
         }
         .sheet(isPresented: $messaging) {
             CampMessageView(camp: camp, people: live) { t in toast = Toast(text: t) }
+        }
+        .confirmationDialog("\(camp.name) is full", isPresented: Binding(get: { overfull != nil }, set: { if !$0 { overfull = nil } }),
+                            titleVisibility: .visible, presenting: overfull) { id in
+            Button("Add them anyway") { overfull = nil; Task { await add(id) } }
+            Button("Don’t add", role: .cancel) { overfull = nil }
+        } message: { _ in
+            Text("\(live.count) of \(camp.capacity ?? 0) places are taken. The sign-up page has stopped taking bookings.")
         }
     }
 
@@ -151,6 +160,16 @@ struct CampDetailView: View {
     private func load() async {
         people = (try? await Rows.list("coach_camp_attendees", [("camp_id", "eq.\(camp.id)")], order: "player_name.asc")) ?? people
         loaded = true
+    }
+
+    /// The sign-up page stops at capacity; adding by hand past it is asked first.
+    private func ask(_ playerId: String) {
+        adding = false
+        if let cap = camp.capacity, cap > 0, live.count >= cap {
+            // Asked once the player list has closed; a question raised while a
+            // sheet is still going away is never shown.
+            Task { try? await Task.sleep(for: .milliseconds(450)); overfull = playerId }
+        } else { Task { await add(playerId) } }
     }
 
     private func add(_ playerId: String) async {
