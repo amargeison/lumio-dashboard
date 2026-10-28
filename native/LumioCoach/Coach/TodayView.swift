@@ -12,6 +12,8 @@ struct TodayView: View {
     @Environment(\.portal) private var T
     @State private var state: Loadable<CoachToday> = .loading
     @State private var dash: CoachDashboard?
+    /// Why the rest of the dashboard didn't load, said instead of a spinner that never stops.
+    @State private var dashProblem: String?
     @State private var adding = false
     @State private var writing = false
     @State private var composing = false
@@ -79,7 +81,15 @@ struct TodayView: View {
                     if d.shows("summaries") { recent(d) }
                     if d.shows("kit") { kit(d) }
                 } else {
-                    HStack { Spacer(); ProgressView(); Spacer() }.padding(.vertical, 20)
+                    if let dashProblem {
+                        PortalCard {
+                            Text("The rest of your dashboard didn’t load.").font(.system(size: 15, weight: .semibold)).foregroundStyle(T.cText)
+                            Text(dashProblem).font(.system(size: 12)).foregroundStyle(T.cText3).padding(.top, 4)
+                            Button("Try again") { Task { await load() } }.font(.system(size: 14, weight: .bold)).foregroundStyle(T.cAccentText).padding(.top, 10)
+                        }
+                    } else {
+                        HStack { Spacer(); ProgressView(); Spacer() }.padding(.vertical, 20)
+                    }
                 }
             }
             .padding(.horizontal, 16)
@@ -481,11 +491,25 @@ struct TodayView: View {
     }
 
     private func load() async {
-        async let board: CoachDashboard? = try? await API.shared.get("/api/app/v1/coach/dashboard")
+        async let board = Self.fetchBoard()
         do { state = .loaded(try await API.shared.get("/api/app/v1/coach/today")) }
         catch is CancellationError {}
         catch { if state.value == nil { state = .failed(error.localizedDescription) } }
-        if let b = await board { dash = b }
+        switch await board {
+        case .success(let b): dash = b; dashProblem = nil
+        case .failure(let e):
+            if e is CancellationError { return }
+            if dash == nil {
+                // The detail matters here: it says which part of the reply didn't fit.
+                if case APIError.decoding(let detail) = e { dashProblem = "\(e.localizedDescription) (\(detail.prefix(300)))" }
+                else { dashProblem = e.localizedDescription }
+            }
+        }
+    }
+
+    private static func fetchBoard() async -> Result<CoachDashboard, Error> {
+        do { return .success(try await API.shared.get("/api/app/v1/coach/dashboard")) }
+        catch { return .failure(error) }
     }
 }
 
