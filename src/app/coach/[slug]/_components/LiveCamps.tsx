@@ -319,6 +319,10 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
           <AttendeeTable T={T} accent={accent} camp={sel} attendees={campAttendees} players={players}
             coaches={staffRows.filter(st => (Array.isArray(sel.coach_ids) ? (sel.coach_ids as string[]) : []).map(String).includes(String(st.id)))}
             addPlayer={async (name, playerId) => {
+              // The sign-up page stops at capacity; a coach adding by hand is
+              // asked first, so a camp is only ever over full on purpose.
+              if (sel.capacity && bookedCount >= sel.capacity
+                && !confirm(`${sel.name} is full — ${bookedCount} of ${sel.capacity} places taken. Add ${name} anyway?`)) return
               const row = await dbInsert('coach_camp_attendees', { camp_id: sel.id, player_id: playerId, player_name: name }) as { id?: string } | null
               // Awaited, so "+ Add" stays locked until the new place is on screen.
               await attendees.reload()

@@ -151,7 +151,7 @@ struct MediaLibraryView: View {
                                     Button { filter = p.id } label: { if filter == p.id { Label(p.name, systemImage: "checkmark") } else { Text(p.name) } }
                                 }
                             } label: {
-                                Label(people.first { $0.id == filter }?.name ?? "Everyone", systemImage: "line.3.horizontal.decrease.circle")
+                                Label(people.first { $0.id == filter }?.name ?? (filter != nil && filter == who?.id ? who?.name ?? "Everyone" : "Everyone"), systemImage: "line.3.horizontal.decrease.circle")
                                     .font(.caption.weight(.semibold)).textCase(nil)
                             }
                         }
@@ -424,6 +424,8 @@ struct MediaLibraryView: View {
             await load(); return
         }
         sending = nil
+        // Show the library tab the new recordings are on.
+        if let k = batch.first?.kind { kindTab = k }
         if writeUp {
             await load()
             toast = Toast(text: "Uploaded. Lumio Coach is writing up the lesson.")
