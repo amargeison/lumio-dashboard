@@ -24,6 +24,8 @@ struct CoachSetup: Decodable {
     let features: Features?
     let awardThreshold: Int?
     let upload: Upload?
+    /// The portal's colours (Settings → Appearance).
+    let theme: PortalTheme?
 
     struct Features: Decodable { let effort: Bool; let video: Bool; let audio: Bool; let racket: Bool }
     struct Upload: Decodable { let anonKey: String }
@@ -535,6 +537,8 @@ struct AdultPassRecord: Decodable, Identifiable, Hashable { let id: String; let 
 struct MediaRecord: Decodable, Identifiable, Hashable {
     let id: String
     let kind: String?
+    let playerId: String?
+    let playerName: String?
     let title: String?
     let status: String?
     let durationSeconds: Double?

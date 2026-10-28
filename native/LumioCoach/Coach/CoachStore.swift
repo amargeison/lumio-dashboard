@@ -18,6 +18,9 @@ final class CoachStore {
 
     func saved() { changes += 1 }
 
+    /// The academy's look, as on the website; the portal's dark default until loaded.
+    var theme: PortalTheme { setup?.theme ?? .standard }
+
     func player(_ id: String?) -> PlayerRecord? { players.first { $0.id == id } }
 
     enum PlayerProblem: LocalizedError {

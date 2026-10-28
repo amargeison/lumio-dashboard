@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { coachContext, noStore } from '@/lib/app/coach-context'
 import { ukDate } from '@/lib/coach/uk-date'
+import { coachTheme } from '@/app/coach/[slug]/_lib/theme'
+import { THEMES } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { ACCENT_PRESETS } from '@/app/coach/[slug]/_lib/settings-store'
 
 export const runtime = 'nodejs'
 
@@ -55,6 +58,18 @@ export async function GET() {
       racket: (s.features as Row | undefined)?.racket === true,
     },
     awardThreshold: Number(s.awardThreshold) === 4 ? 4 : 3,
+    // The portal's look (Settings → Appearance): the theme's colours and the
+    // academy's accent, made readable together exactly as the website does.
+    theme: (() => {
+      const themeKey = (typeof s.theme === 'string' && s.theme in THEMES ? s.theme : 'dark') as keyof typeof THEMES
+      const accentKey = (typeof s.accentKey === 'string' && s.accentKey in ACCENT_PRESETS ? s.accentKey : 'blue') as keyof typeof ACCENT_PRESETS
+      const { T, accent } = coachTheme(themeKey, accentKey)
+      return {
+        isDark: T.isDark, bg: T.bg, panel: T.panel, panel2: T.panel2, border: T.border,
+        text: T.text, text2: T.text2, text3: T.text3, good: T.good, bad: T.bad, warn: T.warn, btnText: T.btnText,
+        accent: accent.hex, accentDim: accent.dim, accentBorder: accent.border, accentText: accent.text,
+      }
+    })(),
     // Recordings go straight to storage with a signed upload address; storage asks
     // for the project's public key with it (the same key every browser has).
     upload: { anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '' },

@@ -19,6 +19,7 @@ import { EmptyCoachDashboard } from './EmptyCoachDashboard'
 import { EmptyCoachHome } from './EmptyCoachHome'
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 import { PayModal } from './LivePayments'
+import { MediaCaptureModal } from './MediaCaptureModal'
 import { avatarSrc } from '@/lib/avatar'
 import { V2_NOTES } from '@/lib/coach/v2'
 import { GettingStarted, type StartStep } from './GettingStarted'
@@ -78,6 +79,8 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
   const [weather, setWeather] = useState<{ temp: number; desc: string; wind: number } | null>(null)
   const [booking, setBooking] = useState(false)
   const [composer, setComposer] = useState<{ recipient?: string; playerId?: string; body?: string } | null>(null)
+  // "Record a session": straight from the banner into recording a lesson.
+  const [recording, setRecording] = useState(false)
   const [inboxOpen, setInboxOpen] = useState<string | null>(null)
   // "Nothing booked" opens the list of exactly those players, here on the page.
   const [showUnbooked, setShowUnbooked] = useState(false)
@@ -446,6 +449,13 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
           <h1 style={{ margin: '10px 0 0', fontSize: 24, fontWeight: 800, color: T.text }}>{myTodays.length} session{myTodays.length === 1 ? '' : 's'} today{racketsReady.length ? `, ${racketsReady.length} racket assessment${racketsReady.length === 1 ? '' : 's'} due` : ''}</h1>
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
             <button onClick={() => setBooking(true)} style={btn(accent, T)}>+ Add booking</button>
+            {/* The coach's most-used job on court: open, press, record. Shown when
+                the academy has video or audio switched on (Plan & features). */}
+            {(feat.video || feat.audio) && (
+              <button onClick={() => setRecording(true)} style={{ ...btn(accent, T), background: '#DC3333', color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <span aria-hidden style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFFFFF' }} />Record a session
+              </button>
+            )}
             {/* Card payments are V2; the dashboard's shortcut says so rather than
                 opening a modal that explains itself only once you are in it. */}
             <button onClick={() => setPay({})} style={btnGhost(T)} title={V2_NOTES.payments}>Take a payment</button>
@@ -754,6 +764,7 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
         </div>
       </div>
 
+      {recording && <MediaCaptureModal T={T} accent={accent} players={d.players} onClose={() => setRecording(false)} onSummary={() => setRecording(false)} onDiscarded={() => setRecording(false)} />}
       {booking && <QuickBookingModal T={T} accent={accent} players={d.players} onClose={() => setBooking(false)} onSaved={() => { setBooking(false); reloadBookings() }} />}
       {composer && <LiveCoachSendMessage T={T} accent={accent} players={d.players} coachName={profile.display_name || clubName} clubName={clubName} init={composer} onClose={() => setComposer(null)} onSent={() => { setComposer(null); reloadMessages() }} />}
       {pay && <PayModal T={T} accent={accent} connected={payConnected} init={pay} onClose={() => setPay(null)} />}

@@ -69,7 +69,7 @@ final class API {
         c.waitsForConnectivity = false
         return URLSession(configuration: c)
     }()
-    private static let slowPaths = ["/api/coach/session-draft", "/api/coach/session-complete", "/api/coach/lesson-summary", "/api/coach/message-draft", "/api/coach/media/process"]
+    private static let slowPaths = ["/api/coach/session-draft", "/api/coach/session-complete", "/api/coach/lesson-summary", "/api/coach/message-draft", "/api/coach/media/process", "/api/coach/briefing"]
 
     private let decoder: JSONDecoder = JSONDecoder()
 
