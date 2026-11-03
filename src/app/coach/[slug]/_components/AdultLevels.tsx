@@ -5,18 +5,33 @@
 // ticks items off as a player shows them, and moves the player up when the
 // checklist is complete. Families see their level, its video and the checklist
 // on their page. See lib/coach/adult-levels.ts.
+//
+// Laid out like the junior rackets beside it (LiveRacketProgression.tsx): the
+// ladder as coloured cards, the chosen level opened underneath with its
+// checklist as cards, then every adult on a matrix of the levels. The colours
+// come from the level's place on the ladder (adultColour), never the junior
+// colours, so an adult never looks like a junior on Blue.
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, currentIdentity, rowsChanged } from '../_lib/coach-db'
-import { STARTER_LEVELS, checklistFrom, tidyChecklist, videoEmbed, VIDEO_HELP, levelProgress, ordered, isAdultPlayer, type AdultLevel, type AdultPass } from '@/lib/coach/adult-levels'
+import { STARTER_LEVELS, checklistFrom, tidyChecklist, videoEmbed, VIDEO_HELP, levelProgress, ordered, isAdultPlayer, adultColour, type AdultLevel, type AdultPass } from '@/lib/coach/adult-levels'
 import { ukDate } from '@/lib/coach/uk-date'
+import { avatarSrc } from '@/lib/avatar'
 import { askConfirm } from '../_lib/ask'
 
 type LevelRow = AdultLevel & { checklist: unknown }
-type Player = { id: string; name: string; category?: string | null; age?: number | null; adult_level_id?: string | null; staff_id?: string | null }
+type Player = { id: string; name: string; category?: string | null; age?: number | null; adult_level_id?: string | null; staff_id?: string | null; avatar_url?: string | null }
 type PassRow = AdultPass & { id: string }
+
+const initials = (n: string) => (n || '').trim().split(/\s+/).map(w => Array.from(w).find(ch => /[\p{L}\p{N}]/u.test(ch)) || '').filter(Boolean).slice(0, 2).join('').toUpperCase() || '?'
+const shortDay = (d?: string | null) => d ? new Date(`${String(d).slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }) : ''
+
+/** A level's colour as a small bar, the way a racket colour is drawn. */
+export function LevelSwatch({ colour, w = 20, h = 12, T }: { colour: string | null; w?: number; h?: number; T: ThemeTokens }) {
+  return <span aria-hidden style={{ display: 'inline-block', width: w, height: h, borderRadius: Math.min(5, h / 3), background: colour || 'transparent', border: `1px solid ${colour ? 'rgba(128,128,128,0.4)' : T.border}`, flexShrink: 0 }} />
+}
 
 export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const levelsT = useCoachTable<LevelRow>('coach_adult_levels')
@@ -32,11 +47,20 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [show, setShow] = useState<'all' | 'on' | 'none'>('all')
+  const [openId, setOpenId] = useState<string | null>(null)
+  const openIdx = Math.max(0, levels.findIndex(l => l.id === openId))
+  const openLevel = levels[openIdx] || null
 
   const card: CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 14 }
   const btn: CSSProperties = { appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: FONT }
   const primary: CSSProperties = { ...btn, border: 0, background: accent.hex, color: T.btnText }
   const fail = (e: unknown, what: string) => setErr(e instanceof Error && e.message ? e.message : what)
+  const sectionHead = (title: string, right?: ReactNode) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{title}</div>
+      {right && <div style={{ marginLeft: 'auto', fontSize: 11, color: T.text3, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>{right}</div>}
+    </div>
+  )
 
   const useStarter = async () => {
     if (busy) return
@@ -46,7 +70,7 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
     setBusy(false)
   }
 
-  const levelOf = (p: Player) => levels.find(l => l.id === p.adult_level_id) || null
+  const idxOf = (p: Player) => levels.findIndex(l => l.id === p.adult_level_id)
   const owner = (p: Player) => (p.staff_id ? { staff_id: p.staff_id } : {})
   const toggle = async (p: Player, level: AdultLevel, itemId: string, on: boolean) => {
     setErr('')
@@ -55,13 +79,25 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
       else for (const x of passesT.rows.filter(r => r.player_id === p.id && r.level_id === level.id && r.item_id === itemId)) await dbRemove('coach_adult_passes', x.id)
     } catch (e) { fail(e, 'That was not saved.') }
   }
-  const setLevel = async (p: Player, levelId: string | null, ask?: string) => {
-    if (ask && !(await askConfirm(ask, { yes: 'Move up' }))) return
+  const setLevel = async (p: Player, levelId: string | null) => {
     setErr('')
     try { await dbUpdate('coach_players', p.id, { adult_level_id: levelId }) } catch (e) { fail(e, 'That was not saved.') }
   }
+  /** Moving up one level is asked once; moving down or skipping levels says so. Ticks are kept either way. */
+  const moveTo = async (p: Player, to: number) => {
+    const from = idxOf(p)
+    if (to === from) return
+    const target = levels[to]
+    if (!target) return
+    const question = from < 0 ? `Put ${p.name} on ${to + 1}. ${target.name}?`
+      : to < from ? `Move ${p.name} back down from ${levels[from].name} to ${target.name}?\n\nTheir ticks are kept.`
+      : to > from + 1 ? `Move ${p.name} from ${levels[from].name} straight to ${target.name}, skipping ${levels.slice(from + 1, to).map(l => l.name).join(', ')}?`
+      : `Move ${p.name} up from ${levels[from].name} to ${target.name}?`
+    if (await askConfirm(question, { yes: from < 0 ? 'Start' : 'Move' })) await setLevel(p, target.id)
+  }
 
-  const visible = adults.filter(p => show === 'all' || (show === 'on' ? !!levelOf(p) : !levelOf(p)))
+  const visible = adults.filter(p => show === 'all' || (show === 'on' ? idxOf(p) >= 0 : idxOf(p) < 0))
+  const totalItems = levels.reduce((n, l) => n + l.checklist.length, 0)
 
   return (
     <div data-testid="adult-levels" style={{ fontFamily: FONT }}>
@@ -73,7 +109,10 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
       {levels.length === 0 ? (
         <div style={card}>
           <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Set up your adult levels</div>
-          <div style={{ fontSize: 12.5, color: T.text2, marginTop: 4, lineHeight: 1.55, maxWidth: 640 }}>
+          <div style={{ display: 'flex', gap: 5, marginTop: 10 }}>
+            {STARTER_LEVELS.map((l, i) => <span key={l.name} title={l.name} style={{ flex: '0 0 34px', height: 12, borderRadius: 3, background: adultColour(i), border: '1px solid rgba(128,128,128,0.4)' }} />)}
+          </div>
+          <div style={{ fontSize: 12.5, color: T.text2, marginTop: 10, lineHeight: 1.55, maxWidth: 640 }}>
             Start from six levels (Starter, Improver, Club, Club+, Team and Advanced), each with a five-item checklist, and change anything to match how you coach. Or start with one level and build your own.
           </div>
           {isHead ? (
@@ -86,103 +125,98 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
         </div>
       ) : (
         <>
-          {/* ── Players ─────────────────────────────────────────────────── */}
+          {/* ── The ladder ──────────────────────────────────────────────── */}
           <div style={card}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Adult players</div>
-              <span style={{ fontSize: 11, color: T.text3 }}>{adults.filter(p => levelOf(p)).length} of {adults.length} on a level</span>
-              <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
-                {([['all', 'Everyone'], ['on', 'On a level'], ['none', 'No level yet']] as const).map(([k, l]) => (
-                  <button key={k} onClick={() => setShow(k)} style={{ ...btn, padding: '3px 9px', fontSize: 11, borderColor: show === k ? accent.hex : T.border, color: show === k ? accent.hex : T.text3, background: show === k ? accent.dim : 'transparent' }}>{l}</button>
-                ))}
-              </span>
+            {sectionHead('The ladder', <span style={{ fontFamily: FONT_MONO }}>{levels[0].name} → {levels[levels.length - 1].name} · {totalItems} to pass</span>)}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {levels.map((l, i) => {
+                const on = openLevel?.id === l.id && editing !== 'new'
+                const count = adults.filter(p => p.adult_level_id === l.id).length
+                const c = adultColour(i)
+                return (
+                  <button key={l.id} data-testid="adult-level" onClick={() => { setOpenId(l.id); if (editing && editing !== l.id) setEditing(null) }} aria-pressed={on}
+                    style={{ appearance: 'none', fontFamily: FONT, flex: '1 1 110px', cursor: 'pointer', padding: '10px 8px', borderRadius: 8, background: on ? accent.dim : T.panel2, border: `1px solid ${on ? accent.border : T.border}`, textAlign: 'center', minWidth: 0 }}>
+                    <div style={{ height: 22, borderRadius: 4, background: c, border: '1px solid rgba(128,128,128,0.4)', marginBottom: 6 }} />
+                    <div style={{ fontSize: 11.5, fontWeight: 700, color: T.text, overflowWrap: 'anywhere' }}>{i + 1}. {l.name}</div>
+                    <div style={{ fontSize: 9.5, color: T.text3, marginTop: 1, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: 26 }}>{l.summary || `${l.checklist.length} to pass`}</div>
+                    <div style={{ marginTop: 5, display: 'inline-block', fontSize: 9, fontWeight: 700, color: c, background: `${c}1f`, border: `1px solid ${c}44`, padding: '2px 7px', borderRadius: 999, lineHeight: 1.3 }}>{count} player{count === 1 ? '' : 's'}</div>
+                  </button>
+                )
+              })}
+              {isHead && (
+                <button onClick={() => setEditing('new')} aria-pressed={editing === 'new'}
+                  style={{ appearance: 'none', fontFamily: FONT, flex: '1 1 110px', cursor: 'pointer', padding: '10px 8px', borderRadius: 8, background: editing === 'new' ? accent.dim : 'transparent', border: `1px dashed ${editing === 'new' ? accent.hex : T.border}`, color: accent.hex, fontSize: 12, fontWeight: 700, minHeight: 96 }}>
+                  + Add a level
+                </button>
+              )}
             </div>
-            {visible.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>{adults.length ? 'Nobody here.' : 'No adult players on your roster yet. A player counts as an adult when their category is Adult or they are 18 or over.'}</div> : visible.map(p => {
-              const lv = levelOf(p)
-              const idx = lv ? levels.findIndex(l => l.id === lv.id) : -1
-              const next = idx >= 0 ? levels[idx + 1] : undefined
-              const pr = lv ? levelProgress(lv, passesT.rows, p.id) : null
-              const open = openPlayer === p.id
-              return (
-                <div key={p.id} data-testid="adult-player" style={{ borderTop: `1px solid ${T.border}`, padding: '9px 0' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <span style={{ flex: '1 1 140px', fontSize: 13, color: T.text, fontWeight: 600 }}>{p.name}</span>
-                    <select value={lv?.id || ''} aria-label={`Level for ${p.name}`} onChange={e => void setLevel(p, e.target.value || null)} style={{ background: T.panel2, color: T.text2, border: `1px solid ${T.border}`, borderRadius: 7, padding: '4px 8px', fontSize: 12, fontFamily: FONT }}>
-                      <option value="">No level yet</option>
-                      {levels.map((l, i) => <option key={l.id} value={l.id}>{i + 1}. {l.name}</option>)}
-                    </select>
-                    {pr && (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 6, width: 130 }}>
-                        <span style={{ flex: 1, height: 6, borderRadius: 3, background: T.hover, overflow: 'hidden' }}><span style={{ display: 'block', height: '100%', width: `${pr.total ? (pr.done / pr.total) * 100 : 0}%`, background: pr.ready ? T.good : accent.hex }} /></span>
-                        <span style={{ fontSize: 11, fontFamily: FONT_MONO, color: pr.ready ? T.good : T.text3 }}>{pr.done}/{pr.total}</span>
-                      </span>
-                    )}
-                    {lv && <button onClick={() => setOpenPlayer(open ? null : p.id)} aria-expanded={open} style={btn}>{open ? 'Close' : 'Checklist'}</button>}
-                  </div>
-                  {open && lv && pr && (
-                    <div style={{ marginTop: 9, background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px' }}>
-                      <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 6 }}>{lv.name}{lv.summary ? ` · ${lv.summary}` : ''}</div>
-                      {lv.checklist.length === 0 ? <div style={{ fontSize: 12, color: T.text3 }}>This level has no checklist yet. Add one under Levels below.</div> : lv.checklist.map(it => {
-                        const on = pr.passed.has(it.id)
-                        const when = passesT.rows.find(r => r.player_id === p.id && r.level_id === lv.id && r.item_id === it.id)?.passed_on
-                        return (
-                          <label key={it.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '5px 0', fontSize: 12.5, color: on ? T.text : T.text2, cursor: 'pointer' }}>
-                            <input type="checkbox" checked={on} onChange={e => void toggle(p, lv, it.id, e.target.checked)} style={{ marginTop: 2 }} />
-                            <span style={{ flex: 1 }}>{it.text}</span>
-                            {on && when && <span style={{ fontSize: 10.5, color: T.text3, whiteSpace: 'nowrap' }}>{new Date(`${when}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })}</span>}
-                          </label>
-                        )
-                      })}
-                      {pr.ready && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 12.5, color: T.good, fontWeight: 700 }}>✓ {lv.name} passed</span>
-                          {next
-                            ? <button onClick={() => void setLevel(p, next.id, `Move ${p.name} up to ${next.name}?`)} style={primary}>Move up to {next.name}</button>
-                            : <span style={{ fontSize: 12, color: T.text3 }}>That is the top level.</span>}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+            {!isHead && <div style={{ fontSize: 11, color: T.text3, marginTop: 10 }}>Your head coach changes the levels.</div>}
           </div>
 
-          {/* ── Levels ──────────────────────────────────────────────────── */}
+          {/* ── The chosen level, opened ────────────────────────────────── */}
           <div style={card}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Levels</div>
-              {!isHead && <span style={{ fontSize: 11, color: T.text3 }}>Your head coach changes these.</span>}
-            </div>
-            {levels.map((l, i) => {
+            {editing === 'new' ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <LevelSwatch colour={adultColour(levels.length)} w={40} h={26} T={T} />
+                  <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>New level · {levels.length + 1}</div>
+                </div>
+                <LevelEditor T={T} accent={accent} position={(levels[levels.length - 1]?.position || 0) + 1} onDone={() => setEditing(null)} onError={setErr} />
+              </>
+            ) : openLevel && (() => {
+              const l = openLevel, i = openIdx
               const vid = videoEmbed(l.video_url)
-              const count = adults.filter(p => p.adult_level_id === l.id).length
+              const onIt = adults.filter(p => p.adult_level_id === l.id)
               return (
-                <div key={l.id} data-testid="adult-level" style={{ borderTop: `1px solid ${T.border}`, padding: '11px 0' }}>
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+                    <LevelSwatch colour={adultColour(i)} w={40} h={26} T={T} />
+                    <div style={{ minWidth: 0, flex: '1 1 220px' }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: T.text, overflowWrap: 'anywhere' }}>{i + 1}. {l.name}</div>
+                      <div style={{ fontSize: 11.5, color: T.text3 }}>Level {i + 1} of {levels.length}{l.summary ? ` · ${l.summary}` : ''}</div>
+                    </div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '4px 10px' }}>{l.checklist.length} to pass</div>
+                  </div>
                   {editing === l.id ? (
                     <LevelEditor T={T} accent={accent} level={l} position={l.position} onDone={() => setEditing(null)} onError={setErr} />
                   ) : (
                     <>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 11, fontFamily: FONT_MONO, color: accent.hex, fontWeight: 700 }}>{i + 1}</span>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{l.name}</span>
-                        <span style={{ fontSize: 11.5, color: T.text3 }}>{count} player{count === 1 ? '' : 's'} · {l.checklist.length} to pass</span>
-                        {isHead && (
-                          <span style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
-                            <button onClick={() => setEditing(l.id)} style={btn}>Edit</button>
-                            <button disabled={i === 0} aria-label={`Move ${l.name} up`} onClick={() => void swap(levels, i, i - 1).catch(e => fail(e, 'The order was not saved.'))} style={{ ...btn, opacity: i === 0 ? 0.4 : 1 }}>↑</button>
-                            <button disabled={i === levels.length - 1} aria-label={`Move ${l.name} down`} onClick={() => void swap(levels, i, i + 1).catch(e => fail(e, 'The order was not saved.'))} style={{ ...btn, opacity: i === levels.length - 1 ? 0.4 : 1 }}>↓</button>
-                            <button onClick={async () => { if (await askConfirm(`Delete the ${l.name} level?${count ? ` The ${count} player${count === 1 ? '' : 's'} on it will have no level, and their ticks for it are deleted.` : ''}`)) void dbRemove('coach_adult_levels', l.id).then(() => rowsChanged('coach_players', 'coach_adult_passes')).catch(e => fail(e, 'The level was not deleted.')) }} style={{ ...btn, color: T.bad }}>Delete</button>
-                          </span>
+                      {isHead && (
+                        <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+                          <button onClick={() => setEditing(l.id)} style={btn}>Edit level</button>
+                          <button disabled={i === 0} aria-label={`Move ${l.name} earlier`} onClick={() => void swap(levels, i, i - 1).catch(e => fail(e, 'The order was not saved.'))} style={{ ...btn, opacity: i === 0 ? 0.4 : 1 }}>← Earlier</button>
+                          <button disabled={i === levels.length - 1} aria-label={`Move ${l.name} later`} onClick={() => void swap(levels, i, i + 1).catch(e => fail(e, 'The order was not saved.'))} style={{ ...btn, opacity: i === levels.length - 1 ? 0.4 : 1 }}>Later →</button>
+                          <button onClick={async () => { const count = onIt.length; if (await askConfirm(`Delete the ${l.name} level?${count ? ` The ${count} player${count === 1 ? '' : 's'} on it will have no level, and their ticks for it are deleted.` : ''}`, { yes: 'Delete' })) { setOpenId(null); void dbRemove('coach_adult_levels', l.id).then(() => rowsChanged('coach_players', 'coach_adult_passes')).catch(e => fail(e, 'The level was not deleted.')) } }} style={{ ...btn, color: T.bad, marginLeft: 'auto' }}>Delete</button>
+                        </div>
+                      )}
+                      {l.checklist.length === 0
+                        ? <div style={{ fontSize: 12.5, color: T.text3, marginBottom: 12 }}>No checklist yet.{isHead ? ' Edit the level to add one.' : ''}</div>
+                        : (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, max(160px, 40%)), 1fr))', gap: 10, marginBottom: 12 }}>
+                            {l.checklist.map(it => {
+                              const passedBy = onIt.filter(p => passesT.rows.some(r => r.player_id === p.id && r.level_id === l.id && r.item_id === it.id)).length
+                              return (
+                                <div key={it.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '10px 12px' }}>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text, lineHeight: 1.4 }}>{it.text}</div>
+                                  <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>{onIt.length ? `${passedBy} of ${onIt.length} on this level passed` : 'Nobody on this level yet'}</div>
+                                </div>
+                              )
+                            })}
+                          </div>
                         )}
-                      </div>
-                      {l.summary && <div style={{ fontSize: 12.5, color: T.text2, marginTop: 4 }}>{l.summary}</div>}
-                      <div style={{ display: 'flex', gap: 14, marginTop: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                        <ul style={{ margin: 0, paddingLeft: 18, flex: '1 1 260px' }}>
-                          {l.checklist.map(it => <li key={it.id} style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.6 }}>{it.text}</li>)}
-                          {l.checklist.length === 0 && <li style={{ fontSize: 12.5, color: T.text3, listStyle: 'none', marginLeft: -18 }}>No checklist yet.</li>}
-                        </ul>
-                        <div style={{ flex: '0 1 300px', minWidth: 0 }}>
+                      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                        <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.text3, marginBottom: 6 }}>On this level</div>
+                          {onIt.length === 0 ? <div style={{ fontSize: 12, color: T.text3 }}>Nobody yet.</div> : (
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              {onIt.map(p => {
+                                const pr = levelProgress(l, passesT.rows, p.id)
+                                return <span key={p.id} style={{ fontSize: 11.5, color: T.text, background: T.panel2, border: `1px solid ${pr.ready ? `${T.good}66` : T.border}`, borderRadius: 999, padding: '3px 10px' }}>{p.name} <span style={{ fontFamily: FONT_MONO, color: pr.ready ? T.good : T.text3 }}>{pr.done}/{pr.total}</span></span>
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ flex: '0 1 320px', minWidth: 0 }}>
                           {vid ? (
                             watching === l.id ? (
                               <div>
@@ -197,12 +231,122 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
                       </div>
                     </>
                   )}
-                </div>
+                </>
               )
-            })}
-            {isHead && (editing === 'new'
-              ? <LevelEditor T={T} accent={accent} position={(levels[levels.length - 1]?.position || 0) + 1} onDone={() => setEditing(null)} onError={setErr} />
-              : <button onClick={() => setEditing('new')} style={{ ...btn, marginTop: 10, borderStyle: 'dashed', color: accent.hex }}>+ Add a level</button>)}
+            })()}
+          </div>
+
+          {/* ── Adult players, on a matrix of the levels ────────────────── */}
+          <div style={card}>
+            {sectionHead('Adult players', (
+              <>
+                <span>{adults.filter(p => idxOf(p) >= 0).length} of {adults.length} on a level</span>
+                {([['all', 'Everyone'], ['on', 'On a level'], ['none', 'No level yet']] as const).map(([k, l]) => (
+                  <button key={k} onClick={() => setShow(k)} style={{ ...btn, padding: '3px 9px', fontSize: 11, borderColor: show === k ? accent.hex : T.border, color: show === k ? accent.hex : T.text3, background: show === k ? accent.dim : 'transparent' }}>{l}</button>
+                ))}
+              </>
+            ))}
+            {visible.length === 0 ? <div style={{ fontSize: 12.5, color: T.text3 }}>{adults.length ? 'Nobody here.' : 'No adult players on your roster yet. A player counts as an adult when their category is Adult or they are 18 or over.'}</div> : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 300 + levels.length * 38 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', fontSize: 10.5, color: T.text3, fontWeight: 600, padding: '6px 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Player</th>
+                      {levels.map((l, i) => <th key={l.id} style={{ padding: '6px 4px' }}><div title={`${i + 1}. ${l.name}`} style={{ width: 20, height: 12, borderRadius: 2, background: adultColour(i), border: '1px solid rgba(128,128,128,0.4)', margin: '0 auto' }} /></th>)}
+                      <th style={{ fontSize: 10.5, color: T.text3, fontWeight: 600, padding: '6px 10px', textTransform: 'uppercase', textAlign: 'left' }}>Now</th>
+                      <th style={{ fontSize: 10.5, color: T.text3, fontWeight: 600, padding: '6px 8px', textTransform: 'uppercase', textAlign: 'right' }}>Checklist</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visible.map(p => {
+                      const cur = idxOf(p)
+                      const lv = cur >= 0 ? levels[cur] : null
+                      const pr = lv ? levelProgress(lv, passesT.rows, p.id) : null
+                      const next = cur >= 0 ? levels[cur + 1] : undefined
+                      const open = openPlayer === p.id && !!lv
+                      return [
+                        <tr key={p.id} data-testid="adult-player" style={{ borderTop: `1px solid ${T.border}` }}>
+                          <td style={{ padding: '8px 10px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              {p.avatar_url
+                                // eslint-disable-next-line @next/next/no-img-element
+                                ? <img src={avatarSrc(p.avatar_url)} alt="" style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                                : <span style={{ width: 24, height: 24, borderRadius: '50%', background: accent.dim, color: accent.hex, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 700, border: `1px solid ${accent.border}`, flexShrink: 0 }}>{initials(p.name)}</span>}
+                              <span style={{ fontSize: 12, color: T.text, fontWeight: 500 }}>{p.name}</span>
+                            </div>
+                          </td>
+                          {levels.map((l, bi) => {
+                            const isDone = cur >= 0 && bi < cur
+                            const isNow = bi === cur
+                            return (
+                              <td key={l.id} style={{ textAlign: 'center', padding: '4px 2px' }}>
+                                <button className="cm-tap" onClick={() => void moveTo(p, bi)}
+                                  title={isNow ? `${p.name} is on ${l.name} — ${pr?.done}/${pr?.total} passed` : `Move ${p.name} to ${l.name}`}
+                                  aria-label={isNow ? `${p.name} is on ${l.name}` : `Move ${p.name} to ${l.name}`}
+                                  style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, width: 34, height: 26, borderRadius: 7, display: 'grid', placeItems: 'center', margin: '0 auto',
+                                    border: `1px solid ${isNow ? accent.hex : isDone ? `${T.good}44` : 'transparent'}`,
+                                    background: isNow ? accent.dim : isDone ? `${T.good}14` : 'transparent',
+                                    color: isNow ? accent.hex : isDone ? T.good : T.text4, fontSize: isNow ? 9.5 : 12, fontWeight: 800 }}>
+                                  {isDone ? '✓' : isNow ? <span style={{ fontFamily: FONT_MONO }}>{pr?.done}/{pr?.total}</span> : '·'}
+                                </button>
+                              </td>
+                            )
+                          })}
+                          <td style={{ padding: '8px 10px' }}>
+                            {lv ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                <LevelSwatch colour={adultColour(cur)} w={14} h={14} T={T} />{lv.name}
+                              </span>
+                            ) : <span style={{ fontSize: 11.5, color: T.text3, whiteSpace: 'nowrap' }}>No level yet</span>}
+                          </td>
+                          <td style={{ padding: '8px 8px', textAlign: 'right' }}>
+                            {lv ? (
+                              <button onClick={() => setOpenPlayer(open ? null : p.id)} aria-expanded={open}
+                                style={{ ...btn, padding: '4px 9px', fontSize: 11, whiteSpace: 'nowrap', border: `1px solid ${pr?.ready ? accent.hex : T.border}`, background: pr?.ready ? accent.hex : 'transparent', color: pr?.ready ? T.btnText : accent.hex }}>
+                                {open ? 'Close' : pr?.ready ? '✓ Ready to move up' : 'Tick off'}
+                              </button>
+                            ) : <button onClick={() => void moveTo(p, 0)} style={{ ...btn, padding: '4px 9px', fontSize: 11, whiteSpace: 'nowrap', color: accent.hex }}>▶ Start on {levels[0].name}</button>}
+                          </td>
+                        </tr>,
+                        open && lv && pr ? (
+                          <tr key={`${p.id}-list`}>
+                            <td colSpan={levels.length + 3} style={{ padding: '0 10px 10px' }}>
+                              <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderLeft: `3px solid ${adultColour(cur)}`, borderRadius: 10, padding: '10px 12px' }}>
+                                <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 6 }}>{cur + 1}. {lv.name}{lv.summary ? ` · ${lv.summary}` : ''}</div>
+                                {lv.checklist.length === 0 ? <div style={{ fontSize: 12, color: T.text3 }}>This level has no checklist yet.</div> : lv.checklist.map(it => {
+                                  const on = pr.passed.has(it.id)
+                                  const when = passesT.rows.find(r => r.player_id === p.id && r.level_id === lv.id && r.item_id === it.id)?.passed_on
+                                  return (
+                                    <label key={it.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '5px 0', fontSize: 12.5, color: on ? T.text : T.text2, cursor: 'pointer' }}>
+                                      <input type="checkbox" checked={on} onChange={e => void toggle(p, lv, it.id, e.target.checked)} style={{ marginTop: 2, accentColor: accent.hex }} />
+                                      <span style={{ flex: 1 }}>{it.text}</span>
+                                      {on && when && <span style={{ fontSize: 10.5, color: T.text3, whiteSpace: 'nowrap' }}>{shortDay(when)}</span>}
+                                    </label>
+                                  )
+                                })}
+                                {pr.ready && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+                                    <span style={{ fontSize: 12.5, color: T.good, fontWeight: 700 }}>✓ {lv.name} passed</span>
+                                    {next
+                                      ? <button onClick={async () => { if (await askConfirm(`Move ${p.name} up to ${next.name}?`, { yes: 'Move up' })) await setLevel(p, next.id) }} style={primary}>Move up to {next.name}</button>
+                                      : <span style={{ fontSize: 12, color: T.text3 }}>That is the top level.</span>}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null,
+                      ]
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', fontSize: 10.5, color: T.text3 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: T.good, fontWeight: 800 }}>✓</span> level passed</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>3/5</span> checklist on the level they are on</span>
+              <span>Tap any level in a player&rsquo;s row to move them onto it — you are asked first</span>
+            </div>
           </div>
         </>
       )}

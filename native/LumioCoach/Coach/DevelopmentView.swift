@@ -28,6 +28,11 @@ struct DevelopmentView: View {
 
     var body: some View {
         List {
+            // Adults are on the academy's adult levels, not the junior colour
+            // ladder (lib/coach/adult-levels.ts isAdultPlayer: Adult category,
+            // 18 or over, or already on a level) — as on the website's card.
+            if player.isAdult { adultSection }
+            if !player.isAdult {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -65,7 +70,9 @@ struct DevelopmentView: View {
                 Text("Tap a bar to set the level; tap the current level to step it back. Their family sees this in their app.")
             }
 
-            if !awards.isEmpty {
+            }
+
+            if !player.isAdult, !awards.isEmpty {
                 Section("History") {
                     ForEach(awards.prefix(6)) { a in
                         HStack {
@@ -121,7 +128,6 @@ struct DevelopmentView: View {
                 } header: { Text("Effort & rewards") }
             }
 
-            if player.isAdult, !levels.isEmpty { adultSection }
         }
         .navigationTitle("Development")
         .navigationBarTitleDisplayMode(.inline)
@@ -134,24 +140,72 @@ struct DevelopmentView: View {
         .onAppear { goal = player.goal ?? "" }
     }
 
+    @State private var pick: String = ""
+
+    private var ladder: [AdultLevelRecord] { AdultStanding.ordered(levels) }
+    private var standing: AdultStanding? { AdultStanding.of(player, levels: levels, passes: passes) }
+
     @ViewBuilder private var adultSection: some View {
-        let current = levels.first { $0.id == player.adultLevelId }
+        let a = standing
         Section {
-            Picker("Level", selection: Binding(get: { player.adultLevelId ?? "" }, set: { v in Task { await setAdultLevel(v.isEmpty ? nil : v) } })) {
-                Text("None").tag("")
-                ForEach(levels) { Text($0.name).tag($0.id) }
-            }
-            if let current {
-                if let s = current.summary, !s.isEmpty { Text(s).font(.subheadline).foregroundStyle(.secondary) }
-                ForEach(current.checklist ?? [], id: \.id) { item in
-                    let passed = passes.contains { $0.levelId == current.id && $0.itemId == item.id }
-                    Button { Task { await toggle(item.id, level: current.id, passed: passed) } } label: {
-                        Label(item.text, systemImage: passed ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(passed ? Color.green : Color.primary)
+            if let a, let level = a.level {
+                HStack {
+                    RoundedRectangle(cornerRadius: 3).fill(a.colour ?? .clear).frame(width: 18, height: 12).overlay(RoundedRectangle(cornerRadius: 3).stroke(.secondary.opacity(0.4)))
+                    Text("Working on · \(a.short)").font(.headline)
+                    Spacer()
+                    if a.total > 0 { Text("\(a.done)/\(a.total)").font(.subheadline.weight(.semibold)).foregroundStyle(a.done == a.total ? Color.green : Color.accentColor) }
+                }
+                if let s = level.summary, !s.isEmpty { Text(s).font(.subheadline).foregroundStyle(.secondary) }
+                if (level.checklist ?? []).isEmpty { Text("This level has no checklist yet. Add one on the website, under Adult levels.").foregroundStyle(.secondary) }
+                ForEach(level.checklist ?? [], id: \.id) { item in
+                    let on = a.passed.contains(item.id)
+                    let when = passes.first { $0.levelId == level.id && $0.itemId == item.id }?.passedOn
+                    Button { Task { await toggle(item.id, level: level.id, passed: on) } } label: {
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? Color.green : Color.secondary)
+                            Text(item.text).foregroundStyle(on ? Color.primary : Color.secondary)
+                            Spacer(minLength: 4)
+                            if on, let when { Text(Fmt.day(when)?.formatted(.dateTime.day().month(.abbreviated).locale(Locale(identifier: "en_GB"))) ?? "").font(.caption).foregroundStyle(.secondary) }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+                if a.total > 0 && a.done == a.total {
+                    Label("\(level.name) passed", systemImage: "checkmark.seal.fill").foregroundStyle(.green).font(.subheadline.weight(.semibold))
+                    if a.number < ladder.count {
+                        let next = ladder[a.number]
+                        ConfirmButton(title: "Move up to \(next.name)", icon: "arrow.up.circle.fill",
+                                      prompt: "Move \(player.name) up to \(next.name)?", confirm: "Move up") { await setAdultLevel(next.id) }
+                    } else {
+                        Text("That is the top level.").font(.caption).foregroundStyle(.secondary)
                     }
                 }
+            } else if ladder.isEmpty {
+                Text("No adult levels set up yet. Set them up on the website: Racket Progression → Adult levels.").foregroundStyle(.secondary)
+            } else {
+                Text("No adult level yet").font(.headline)
+                Picker("Level", selection: $pick) {
+                    ForEach(Array(ladder.enumerated()), id: \.element.id) { i, l in Text("\(i + 1). \(l.name)").tag(l.id) }
+                }
+                Button { Task { await setAdultLevel(pick.isEmpty ? ladder.first?.id : pick) } } label: { Label("Set level", systemImage: "checkmark.circle") }
             }
         } header: { Text("Adult level") }
+
+        if !ladder.isEmpty {
+            Section("Adult levels") {
+                ForEach(Array(ladder.enumerated()), id: \.element.id) { i, l in
+                    let n = a?.number ?? 0
+                    HStack {
+                        RoundedRectangle(cornerRadius: 3).fill(AdultStanding.colour(i)).frame(width: 20, height: 12).overlay(RoundedRectangle(cornerRadius: 3).stroke(.secondary.opacity(0.4)))
+                        Text("\(i + 1). \(l.name)").fontWeight(i + 1 == n ? .bold : .regular)
+                        Spacer()
+                        if n > 0 && i + 1 < n { Image(systemName: "checkmark").foregroundStyle(.green) }
+                        if i + 1 == n { Text("NOW").font(.caption2.weight(.bold)).foregroundStyle(Color.accentColor) }
+                    }
+                    .opacity(n == 0 || i + 1 > n ? 0.45 : 1)
+                }
+            }
+        }
     }
 
     // MARK: Loading and saving
@@ -163,6 +217,7 @@ struct DevelopmentView: View {
         async let l: [AdultLevelRecord] = (try? Rows.list("coach_adult_levels", order: "position.asc")) ?? []
         async let p: [AdultPassRecord] = (try? Rows.list("coach_adult_passes", [("player_id", "eq.\(player.id)")])) ?? []
         (skills, awards, sessions, levels, passes) = await (s, a, w, l, p)
+        if pick.isEmpty { pick = AdultStanding.ordered(levels).first?.id ?? "" }
     }
 
     private func reloadPlayer() async {

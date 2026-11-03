@@ -434,6 +434,10 @@ struct PlayerProfile: Decodable, Identifiable, Hashable {
     var consentRecord: Bool?
     var consentBy: String?
     var consentDate: String?
+    var consentRecordAt: String?
+    var consentRecordBy: String?
+    var consentRecordHow: String?
+    var contactEmail: String?
     var rateReason: String?
     var ratePennies: Int?
     var avatarUrl: String?
@@ -457,6 +461,7 @@ struct PlayerProfile: Decodable, Identifiable, Hashable {
             case id, name, category, age, parentName, parentEmail, email, phone, racketStage, level, paymentMethod, goal, notes, medicalNotes
             case consentData, consentPhoto, consentMedical, consentWearable, consentRecord, consentBy, consentDate, rateReason, ratePennies
             case avatarUrl, xpTotal, staffId, adultLevelId, targets, targetsNote
+            case consentRecordAt, consentRecordBy, consentRecordHow, contactEmail
         }
         let c = try d.container(keyedBy: K.self)
         func s(_ k: K) -> String? { try? c.decodeIfPresent(String.self, forKey: k) }
@@ -478,6 +483,21 @@ struct PlayerProfile: Decodable, Identifiable, Hashable {
         staffId = s(.staffId); adultLevelId = s(.adultLevelId)
         targets = try? c.decodeIfPresent([Target].self, forKey: .targets)
         targetsNote = s(.targetsNote)
+        consentRecordAt = s(.consentRecordAt); consentRecordBy = s(.consentRecordBy)
+        consentRecordHow = s(.consentRecordHow); contactEmail = s(.contactEmail)
+    }
+
+    private var first: String { name.split(separator: " ").first.map(String.init) ?? name }
+
+    /// The recording line, as the website says it (lib/coach/recording-consent.ts consentWords).
+    var consentWords: String {
+        let when = Fmt.stamp(consentRecordAt).map { $0.formatted(.dateTime.day().month(.abbreviated).year().locale(Locale(identifier: "en_GB"))) } ?? ""
+        if consentRecord == true && consentRecordHow == "in_person" { return "Agreed in person (noted by you)\(when.isEmpty ? "" : ", \(when)")." }
+        if consentRecord == true {
+            return "Agreed\(consentRecordBy.map { " by \($0)" } ?? "")\(consentRecordHow == "welcome" ? " on their welcome link" : "")\(when.isEmpty ? "" : ", \(when)")."
+        }
+        if consentRecordHow == "withdrawn" || consentRecordHow == "declined" { return "\(first) said no\(when.isEmpty ? "" : " (\(when))"). Their lessons cannot be recorded." }
+        return "Not asked yet. \(first)’s lessons cannot be recorded until they agree."
     }
 }
 
@@ -531,7 +551,50 @@ struct AdultLevelRecord: Decodable, Identifiable, Hashable {
     let checklist: [Item]?
     struct Item: Decodable, Hashable { let id: String; let text: String }
 }
-struct AdultPassRecord: Decodable, Identifiable, Hashable { let id: String; let levelId: String?; let itemId: String?; let passedOn: String? }
+struct AdultPassRecord: Decodable, Identifiable, Hashable { let id: String; let playerId: String?; let levelId: String?; let itemId: String?; let passedOn: String? }
+
+/// Where an adult stands on the academy's own adult levels — lib/coach/adult-levels.ts
+/// adultStanding, so the app and the website say the same ("3. Club · 3/5").
+/// Nil for a junior, who keeps their racket colour.
+struct AdultStanding {
+    let level: AdultLevelRecord?
+    let number: Int
+    let done: Int
+    let total: Int
+    let passed: Set<String>
+    var short: String { level.map { "\(number). \($0.name)" } ?? "No level yet" }
+    /// The level's colour on the adult ladder (nil with no level yet).
+    var colour: Color? { level == nil ? nil : AdultStanding.colour(number - 1) }
+
+    /// The adult ladder's colours by place, the same list as the website
+    /// (lib/coach/adult-levels.ts ADULT_COLOURS) — none of the junior colours.
+    static let palette = ["#5EC8B8", "#2FA4D9", "#3F5FD0", "#7B4FD0", "#C2408A", "#C99A2E", "#1F3A5F", "#8C2F39", "#2E6B4F", "#4A4A4A"]
+    static func colour(_ index: Int) -> Color { Color(hex: palette[((max(0, index) % palette.count) + palette.count) % palette.count]) }
+    var label: String { level == nil ? "Adult · no level yet" : (total > 0 ? "\(short) · \(done)/\(total)" : short) }
+
+    static func ordered(_ levels: [AdultLevelRecord]) -> [AdultLevelRecord] {
+        levels.sorted { ($0.position ?? 0, $0.name) < ($1.position ?? 0, $1.name) }
+    }
+
+    static func of(_ p: PlayerProfile, levels: [AdultLevelRecord], passes: [AdultPassRecord]) -> AdultStanding? {
+        guard p.isAdult else { return nil }
+        let list = ordered(levels)
+        guard let i = list.firstIndex(where: { $0.id == p.adultLevelId }) else {
+            return AdultStanding(level: nil, number: 0, done: 0, total: 0, passed: [])
+        }
+        let level = list[i]
+        let items = level.checklist ?? []
+        let passed = Set(passes.filter { $0.levelId == level.id && ($0.playerId == nil || $0.playerId == p.id) }.compactMap(\.itemId))
+        return AdultStanding(level: level, number: i + 1, done: items.filter { passed.contains($0.id) }.count, total: items.count, passed: passed)
+    }
+}
+
+/// coach_welcome_links — the welcome link and questionnaire sent to a family.
+struct WelcomeLinkRecord: Decodable, Identifiable, Hashable { let id: String; let playerId: String?; let sentAt: String?; let openedAt: String?; let completedAt: String?; let createdAt: String? }
+/// coach_questionnaires — their answers (the app shows when; the website shows what).
+struct QuestionnaireRecord: Decodable, Identifiable, Hashable { let id: String; let playerId: String?; let submittedAt: String? }
+/// coach_memberships, just enough to know whether a plan is waiting on them.
+struct MembershipRow: Decodable, Identifiable, Hashable { let id: String; let playerId: String?; let status: String?; let createdAt: String? }
 
 /// coach_media
 struct MediaRecord: Decodable, Identifiable, Hashable {
