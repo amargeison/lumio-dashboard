@@ -149,6 +149,11 @@ export function CoachMobileShell({
           .cm-md{ grid-template-columns:minmax(0,1fr) !important }
           .cm-2{ grid-template-columns:minmax(0,1fr) !important }
           .cm-3{ grid-template-columns:minmax(0,1fr) !important }
+          .cm-stats{ grid-template-columns:repeat(3,minmax(0,1fr)) !important; gap:8px !important }
+          .cm-stats > *{ padding:10px 11px !important; border-radius:11px !important; min-width:0 }
+          .cm-stats .cm-stat-l{ font-size:11px !important; line-height:1.3 }
+          .cm-stats .cm-stat-v{ font-size:20px !important; margin-top:3px !important }
+          .cm-stats .cm-stat-s{ font-size:13px !important }
           /* collapsed to one column → stop children spanning multiple tracks,
              which would otherwise spawn implicit auto columns and overflow */
           .cm-12 > *, .cm-md > *, .cm-2 > *, .cm-3 > *{ grid-column:auto !important }

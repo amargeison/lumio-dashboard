@@ -558,7 +558,9 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
       {/* Stat cards */}
       {showSec('weather') && <WeatherWatch T={T} accent={accent} />}
 
-      <div className="cm-md" style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(5, 1fr)', gap: density.gap }}>
+      {/* cm-stats: five across on a computer, three to a row on a phone (smaller
+          tiles), rather than one huge tile per row. CoachMobileShell / page.tsx. */}
+      <div className="cm-stats" style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: density.gap }}>
         {([
           // Monday to Sunday — the same seven days the calendar opens on.
           { l: 'This week', sub: 'Mon–Sun', v: thisWeek.length, nav: 'calendar' },
@@ -575,8 +577,8 @@ export function LiveCoachDashboard({ T, accent, density, clubName, onNavigate, o
         ] as { l: string; sub?: string; v: string | number; nav?: string; small?: boolean; toggle?: boolean; date?: string | null }[]).map(s => (
           <button key={s.l} onClick={() => { if (s.toggle) setShowUnbooked(!showUnbooked); else if (s.date) openCalendarAt(s.date); else if (s.nav) onNavigate(s.nav) }} aria-expanded={s.toggle ? showUnbooked : undefined}
             style={{ ...card, textAlign: 'left', cursor: 'pointer', appearance: 'none', ...(s.toggle && showUnbooked ? { borderColor: accent.border } : {}) }}>
-            <div style={{ fontSize: 11.5, color: T.text3 }}>{s.l}{s.sub ? <span style={{ opacity: 0.75 }}> · {s.sub}</span> : null}</div>
-            <div style={{ fontSize: s.small || String(s.v).length > 9 ? 15 : 24, fontWeight: 800, color: T.text, marginTop: 4, overflowWrap: 'anywhere' }}>{s.v}</div>
+            <div className="cm-stat-l" style={{ fontSize: 11.5, color: T.text3 }}>{s.l}{s.sub ? <span style={{ opacity: 0.75, whiteSpace: 'nowrap' }}> · {s.sub}</span> : null}</div>
+            <div className={s.small || String(s.v).length > 9 ? 'cm-stat-v cm-stat-s' : 'cm-stat-v'} style={{ fontSize: s.small || String(s.v).length > 9 ? 15 : 24, fontWeight: 800, color: T.text, marginTop: 4, overflowWrap: 'anywhere' }}>{s.v}</div>
           </button>
         ))}
       </div>

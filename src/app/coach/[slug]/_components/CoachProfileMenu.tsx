@@ -71,6 +71,7 @@ export function CoachProfileMenu({
   const [open, setOpen] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const [anchor, setAnchor] = useState<{ top: number; bottom: number; left: number; right: number } | null>(null)
 
   const isSidebar = variant === 'sidebar'
@@ -94,7 +95,10 @@ export function CoachProfileMenu({
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    const close = () => setOpen(false)
+    // Scrolling the page closes the menu (it would be left at a stale place),
+    // but scrolling the menu itself must not: with a long list of coaches the
+    // menu scrolls, and closing it on that scroll made the rest unreachable.
+    const close = (e: Event) => { if (menuRef.current && e.target instanceof Node && menuRef.current.contains(e.target)) return; setOpen(false) }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
     window.addEventListener('resize', close)
@@ -112,6 +116,7 @@ export function CoachProfileMenu({
 
   const menu = anchor && (
     <div
+      ref={menuRef}
       role="menu"
       style={{
         position: 'fixed',
@@ -125,7 +130,12 @@ export function CoachProfileMenu({
         // out. A mis-tap there switches the whole portal to another coach's view.
         lineHeight: 1.35,
         background: T.panel, border: `1px solid ${T.border}`, borderRadius: 11,
-        boxShadow: '0 12px 32px -12px rgba(0,0,0,0.65)', overflow: 'hidden',
+        boxShadow: '0 12px 32px -12px rgba(0,0,0,0.65)',
+        // Never taller than the room on screen: a head coach with a dozen
+        // coaches had the list (and Player view, and Log out) running off the
+        // bottom of the phone. The menu scrolls instead, on its own.
+        maxHeight: isSidebar ? Math.max(160, anchor.top - 14) : Math.max(160, window.innerHeight - anchor.bottom - 8 - 96),
+        overflowX: 'hidden', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch',
       }}>
       <div style={{ padding: '9px 12px', borderBottom: `1px solid ${T.border}` }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: T.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{coachName || 'Coach'}</div>

@@ -241,7 +241,8 @@ struct TodayView: View {
 
     private func stats(_ d: CoachDashboard) -> some View {
         VStack(spacing: 12) {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+            // Three to a row, smaller — the same as the website on a phone.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8, alignment: .top), count: 3), spacing: 8) {
                 statTile("This week", sub: "Mon–Sun", value: "\(d.stats.thisWeek)") { model.coachTab = .calendar }
                 statTile("Next session", value: d.stats.next?.label ?? "—", small: true) { model.coachTab = .calendar }
                 statTile("Players", value: "\(d.stats.players)") { model.coachTab = .players }
@@ -279,18 +280,16 @@ struct TodayView: View {
     }
 
     private func tileBody(_ label: String, sub: String?, value: String, small: Bool, on: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 3) {
-                Text(label).foregroundStyle(T.cText3)
-                if let sub { Text("· \(sub)").foregroundStyle(T.cText3.opacity(0.75)) }
-            }
-            .font(.system(size: 13)).lineLimit(1)
-            Text(value).font(.system(size: small ? 17 : 28, weight: .heavy)).foregroundStyle(T.cText).lineLimit(2).minimumScaleFactor(0.7)
+        VStack(alignment: .leading, spacing: 4) {
+            (Text(label).foregroundColor(T.cText3) + Text(sub.map { " · \($0)" } ?? "").foregroundColor(T.cText3.opacity(0.75)))
+                .font(.system(size: 11.5)).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Text(value).font(.system(size: small ? 14 : 22, weight: .heavy)).foregroundStyle(T.cText).lineLimit(2).minimumScaleFactor(0.6)
         }
-        .frame(maxWidth: .infinity, minHeight: 88, alignment: .topLeading)
-        .padding(16)
-        .background(T.cPanel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(on ? T.cAccentBorder : T.cBorder, lineWidth: 1))
+        .frame(maxWidth: .infinity, minHeight: 74, alignment: .topLeading)
+        .padding(11)
+        .background(T.cPanel, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(on ? T.cAccentBorder : T.cBorder, lineWidth: 1))
     }
 
     // MARK: Inbox
