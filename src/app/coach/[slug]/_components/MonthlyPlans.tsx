@@ -13,6 +13,8 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, rowsChanged } from '../_lib/coach-db'
 import { useWallet, savedFor, chargeState } from '../_lib/pay-wallet'
+import { tell } from '../_lib/ask'
+import { openPlayerCard } from '../_lib/open-player'
 import { planWords, monthOf, monthWords, ordinal, type Plan } from '@/lib/coach/memberships'
 import { interestsOf, type Answers, type Version } from '@/lib/coach/questionnaire'
 import { ukDate } from '@/lib/coach/uk-date'
@@ -67,8 +69,8 @@ export function MonthlyPlans({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const small: CSSProperties = { appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '0 10px', minHeight: 30, fontSize: 12, cursor: 'pointer', fontFamily: FONT }
   const copy = async (ids: string[], what: string) => {
     const emails = Array.from(new Set(ids.map(id => players.find(p => p.id === id)).filter(Boolean).map(p => emailOf(p as Player)).filter(Boolean)))
-    try { await navigator.clipboard.writeText(emails.join(', ')); alert(`${emails.length} email address${emails.length === 1 ? '' : 'es'} for “${what}” copied. Paste them into the Bcc box of your email.`) }
-    catch { alert(emails.join(', ')) }
+    try { await navigator.clipboard.writeText(emails.join(', ')); void tell(`${emails.length} email address${emails.length === 1 ? '' : 'es'} for “${what}” copied. Paste them into the Bcc box of your email.`) }
+    catch { void tell(emails.join(', ')) }
   }
 
   return (
@@ -101,9 +103,13 @@ export function MonthlyPlans({ T, accent }: { T: ThemeTokens; accent: AccentToke
                   : p.status !== 'active' || period < p.starts_month ? ['—', T.text3] : day < p.day_of_month ? [`Due on the ${ordinal(p.day_of_month)}`, T.text3] : ['Not taken', T.warn]
                 return (
                   <tr key={p.id} style={{ borderTop: `1px solid ${T.border}` }}>
-                    <td style={{ padding: 8, fontSize: 12.5, color: T.text, fontWeight: 600 }}>{nameOf(p.player_id)}</td>
+                    {/* Opens their card on Setup, at what needs doing: the welcome link
+                        while they have not agreed, the card while there is none. */}
+                    <td style={{ padding: 8, fontSize: 12.5, color: T.text, fontWeight: 600 }}><button onClick={() => openPlayerCard(p.player_id, p.status === 'offered' ? 'welcome' : !card ? 'card' : 'plan')} title="Open their card" style={{ appearance: 'none', border: 0, background: 'transparent', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2, color: T.text, fontWeight: 600 }}>{nameOf(p.player_id)}</button></td>
                     <td style={{ padding: 8, fontSize: 12, color: T.text2 }}>{p.name} · {planWords(p)}</td>
-                    <td style={{ padding: 8, fontSize: 11.5, color: status[1], fontWeight: 700 }}>{status[0]}</td>
+                    <td style={{ padding: 8, fontSize: 11.5, color: status[1], fontWeight: 700 }}>{p.status === 'offered' || !card
+                      ? <button onClick={() => openPlayerCard(p.player_id, p.status === 'offered' ? 'welcome' : 'card')} title={p.status === 'offered' ? 'Send them their welcome link' : 'Card on file'} style={{ appearance: 'none', border: 0, background: 'transparent', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2, color: status[1], fontWeight: 700 }}>{status[0]}</button>
+                      : status[0]}</td>
                     <td style={{ padding: 8, fontSize: 11.5, color: month[1], fontWeight: 700 }} title={b?.failure_reason || ''}>{month[0]}</td>
                   </tr>
                 )

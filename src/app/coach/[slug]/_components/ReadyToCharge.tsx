@@ -13,6 +13,8 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable } from '../_lib/coach-db'
 import { useCoachSettings } from '../_lib/use-settings'
 import { useWallet, reloadWallet, savedFor, methodLabel, chargeState } from '../_lib/pay-wallet'
+import { askConfirm } from '../_lib/ask'
+import { openPlayerCard } from '../_lib/open-player'
 import { priceFor } from '@/lib/coach/pricing'
 import { readPolicy, isLateCancel, feeFor, ukLocalToMs } from '@/lib/coach/cancel-policy'
 import { formatPennies } from '@/lib/coach/money'
@@ -86,7 +88,7 @@ export function ReadyToCharge({ T, accent }: { T: ThemeTokens; accent: AccentTok
 
   const run = async () => {
     if (busy || !chosen.length) return
-    if (!confirm(`Take ${formatPennies(total)} for ${chosen.length} ${chosen.length === 1 ? 'payment' : 'payments'} from the saved cards and Direct Debits?`)) return
+    if (!(await askConfirm(`Take ${formatPennies(total)} for ${chosen.length} ${chosen.length === 1 ? 'payment' : 'payments'} from the saved cards and Direct Debits?`, { yes: chosen.length === 1 ? 'Take payment' : 'Take payments' }))) return
     setBusy(true); setMsg(null)
     let ok = 0, failed = 0, firstError = ''
     for (const l of chosen) {
@@ -129,7 +131,7 @@ export function ReadyToCharge({ T, accent }: { T: ThemeTokens; accent: AccentTok
                   <td style={td}>{l.when}</td>
                   <td style={td}>{l.kind === 'late_cancel' ? 'Late cancellation' : 'Lesson'}{l.failed && <div style={{ fontSize: 11, color: T.bad, whiteSpace: 'normal', maxWidth: 260 }}>Last try failed: {l.failed}</div>}</td>
                   <td style={{ ...td, color: T.text }}>{formatPennies(l.amount)}</td>
-                  <td style={{ ...td, color: T.text3, whiteSpace: 'nowrap' }}>{l.card}</td>
+                  <td style={{ ...td, color: T.text3, whiteSpace: 'nowrap' }}><button onClick={() => openPlayerCard(l.playerId, 'card')} title="Card on file — open their card" style={{ appearance: 'none', border: 0, background: 'transparent', padding: 0, font: 'inherit', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2, color: T.text3 }}>{l.card}</button></td>
                 </tr>
               ))}
             </tbody>

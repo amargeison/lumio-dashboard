@@ -23,11 +23,13 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, useCoachProfile, sb, RACKET_STAGES, SKILLS_BY_STAGE, RACKET_SKILLS } from '../_lib/coach-db'
 import { getSettings } from '../_lib/settings-store'
+import { askConfirm, tell } from '../_lib/ask'
+import { isAdultPlayer } from '@/lib/coach/adult-levels'
 import { avatarSrc } from '@/lib/avatar'
 import { STAGE_META, LTA_MAP, ltaChip } from '@/lib/coach/colour-ladder'
 import { AdultLevels } from './AdultLevels'
 
-type Player = { id: string; name: string; level?: string | null; racket_stage?: string | null; avatar_url?: string | null }
+type Player = { id: string; name: string; level?: string | null; racket_stage?: string | null; avatar_url?: string | null; category?: string | null; age?: number | null; adult_level_id?: string | null }
 type SkillRow = { player_id: string; skill: string; score: number }
 
 // Ladder data lives in @/lib/coach/colour-ladder — the same nine stages are
@@ -62,7 +64,9 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
 }
 
 function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
-  const { rows: players, edit } = useCoachTable<Player>('coach_players')
+  const { rows: everyone, edit } = useCoachTable<Player>('coach_players')
+  // Adults have their own levels (Adult levels); this ladder is for juniors.
+  const players = everyone.filter(p => !isAdultPlayer(p))
   const { rows: skillRows } = useCoachTable<SkillRow>('coach_player_skills')
   // The coach whose name goes on the certificate.
   const profile = useCoachProfile()
@@ -111,9 +115,9 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const move = (p: Player, to: string) => { setMoved({ id: p.id, name: p.name, from: p.racket_stage ?? null, to }); void edit(p.id, { racket_stage: to }) }
   const nameOf = (id: string | null) => RACKET_STAGES.find(s => s.id === id)?.name ?? 'Not started'
 
-  const award = (p: Player) => {
+  const award = async (p: Player) => {
     const raw = rawIdxOf(p)
-    if (raw < 0) { if (confirm(`Start ${p.name} on the White racket?`)) move(p, 'white'); return }
+    if (raw < 0) { if (await askConfirm(`Start ${p.name} on the White racket?`, { yes: 'Start' })) move(p, 'white'); return }
     const completed = RACKET_STAGES[raw]
     const all = SKILLS_BY_STAGE[completed.id] || []
     const done = masteredAt(p, raw)
@@ -122,12 +126,12 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
     const question = done.length >= all.length
       ? `Award ${p.name} the ${completed.name} racket${then}?\n\nA certificate opens to print.`
       : `${p.name} has mastered ${done.length} of the ${all.length} ${completed.name} skills.\n\nAward the ${completed.name} racket anyway${then}? The certificate will list only the skills that are mastered.`
-    if (!confirm(question)) return
+    if (!(await askConfirm(question, { yes: 'Award' }))) return
     printRacketCertificate(p.name, completed, done, certOrg(profile))
     if (next) move(p, next.id)
   }
 
-  const moveTo = (p: Player, to: number) => {
+  const moveTo = async (p: Player, to: number) => {
     const from = rawIdxOf(p)
     if (to === from) return
     const target = RACKET_STAGES[to]
@@ -135,7 +139,7 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
       : to < from ? `Move ${p.name} back down from ${RACKET_STAGES[from].name} to ${target.name}?\n\nTheir skill grades are kept. The rackets above ${target.name} will no longer show as earned.`
       : to > from + 1 ? `Move ${p.name} from ${RACKET_STAGES[from].name} straight to ${target.name}, skipping ${RACKET_STAGES.slice(from + 1, to).map(s => s.name).join(', ')}?`
       : `Move ${p.name} from ${RACKET_STAGES[from].name} up to ${target.name}?\n\nNo certificate is printed — use “Award reward” for that.`
-    if (confirm(question)) move(p, target.id)
+    if (await askConfirm(question, { yes: 'Move' })) move(p, target.id)
   }
 
   const card: React.CSSProperties = { background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 16, marginBottom: 14 }
@@ -447,7 +451,7 @@ export function printRacketCertificate(playerName: string, stage: { name: string
     </div>
   </div></body></html>`
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to print the certificate.'); return }
+  if (!w) { void tell('Please allow pop-ups to print the certificate.'); return }
   w.document.write(html); w.document.close(); w.focus()
   setTimeout(() => { try { w.print() } catch { /* manual */ } }, 350)
 }

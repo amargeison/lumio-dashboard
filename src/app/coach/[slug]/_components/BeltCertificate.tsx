@@ -5,6 +5,7 @@
 
 import { BELTS, COACH_ORG, type Player } from '../_lib/coach-data'
 import { getSettings } from '../_lib/settings-store'
+import { tell } from '../_lib/ask'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -64,7 +65,7 @@ export function printBeltCertificate(player: Player, beltIndex: number) {
   </body></html>`
 
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to print the certificate.'); return }
+  if (!w) { void tell('Please allow pop-ups to print the certificate.'); return }
   w.document.write(html)
   w.document.close()
   w.focus()

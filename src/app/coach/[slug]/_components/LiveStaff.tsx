@@ -15,6 +15,7 @@ import { getHeadProfile, setHeadProfile, subscribe, ACCREDITATIONS, getSettings 
 import { COACH_ORG } from '../_lib/coach-data'
 import { fileToAvatarDataUrl, uploadAvatar, avatarSrc } from '@/lib/avatar'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { askConfirm } from '../_lib/ask'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 const DAY = 86400000
@@ -98,7 +99,7 @@ export function LiveStaff({ T, accent }: Common) {
   const inviteMsg = inviteNote && inviteNote.id === selStaffId ? inviteNote.text : ''
   const removeAccess = async (c: any, m: Login) => {
     if (removing) return
-    if (!confirm(`Remove ${c.name}’s portal access?\n\nThey will no longer be able to sign in to your academy with ${m.email}. You can invite them again at any time.`)) return
+    if (!(await askConfirm(`Remove ${c.name}’s portal access?\n\nThey will no longer be able to sign in to your academy with ${m.email}. You can invite them again at any time.`, { yes: 'Remove access' }))) return
     const setInviteMsg = (text: string) => setInviteNote({ id: String(c.id), text })
     setRemoving(m.id); setInviteMsg('')
     try {
@@ -450,7 +451,7 @@ export function LiveStaff({ T, accent }: Common) {
               ) })()}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.border}` }}>
                 <button onClick={() => setEditing(s)} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '0 11px', minHeight: 36, color: T.text2, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>{s.isHead ? 'Edit your details' : 'Edit'}</button>
-                {!s.isHead && <button onClick={() => { if (confirm(`Delete ${s.name}?`)) { dbRemove('coach_staff', s.id).then(() => staff.reload()) } }} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '0 11px', minHeight: 36, color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Delete</button>}
+                {!s.isHead && <button onClick={async () => { if (await askConfirm(`Delete ${s.name}?`, { yes: 'Delete' })) { dbRemove('coach_staff', s.id).then(() => staff.reload()) } }} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '0 11px', minHeight: 36, color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Delete</button>}
                 <button onClick={() => setSel(s)} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 12, fontWeight: 700, cursor: 'pointer', minHeight: 36, padding: '0 6px' }}>View →</button>
               </div>
             </div>

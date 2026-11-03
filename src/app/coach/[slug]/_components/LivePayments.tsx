@@ -15,11 +15,12 @@ import { SetupWizard } from './SetupWizard'
 import { LessonEarnings } from './LessonEarnings'
 import { ReadyToCharge } from './ReadyToCharge'
 import { MonthlyPlans } from './MonthlyPlans'
-import { formatPounds, formatPennies, toPennies, sumPennies, parseAmount, isVoidPayment, paymentOwedPennies } from '@/lib/coach/money'
+import { formatPounds, formatPennies, toPennies, parseAmount, isVoidPayment, paymentOwedPennies, earnedInMonthPennies } from '@/lib/coach/money'
 import { ukDate, ukMonth, daysBetweenIso } from '@/lib/coach/uk-date'
 import { campMoney } from '@/lib/coach/camp-money'
 import { tellApartHints } from '../_lib/tell-apart'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { askConfirm, tell } from '../_lib/ask'
 import { lessonUses, allocate, soldOn as packSoldOn, type Use } from '@/lib/coach/packs'
 import { readPolicy } from '@/lib/coach/cancel-policy'
 import { useWallet, savedFor, methodLabel, reloadWallet } from '../_lib/pay-wallet'
@@ -114,6 +115,8 @@ const allocateLessons = (packs: Pay[], lessons: Sess[]) => allocate(packs, lesso
 export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const packages = useCoachTable<Pkg>('coach_packages')
   const payments = useCoachTable<Pay>('coach_payments')
+  // Card and Direct Debit charges: part of what was earned this month.
+  const { wallet } = useWallet()
   const sessions = useCoachTable<WriteUpRow>('coach_sessions')
   const bookings = useCoachTable<Bk>('coach_bookings')
   const attendance = useCoachTable<{ player_id?: string | null; session_date?: string | null; present?: boolean | null }>('coach_attendance')
@@ -238,13 +241,14 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
   const payRows = lessonRows.filter(r => r.assign) as (RosterRow & { assign: Pay })[]
 
   const statusColour = (s: PayStatus) => s === 'overdue' || s === 'expired' ? T.bad : s === 'expiring' || s === 'due' ? T.warn : s === 'none' || s === 'used' || s === 'void' ? T.text3 : T.good
-  // Earned = money that came in THIS calendar month (UK time), by the day it was
-  // marked paid. It used to be every payment ever ticked, under the same label.
+  // Earned = money that came in THIS calendar month (UK time): payment lines by
+  // the day they were marked paid, plus card and Direct Debit charges (lessons,
+  // groups, monthly plans) by the day they went through. It used to count the
+  // lines alone, so a month of card payments listed under Recent read £0.
   // A refunded or cancelled invoice is ticked off but is not income.
   const month = ukMonth()
   const monthName = new Date(`${month}-15T12:00:00Z`).toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' })
-  const earnedRows = payments.rows.filter(p => p.paid && !isVoid(p) && !!p.paid_at && ukMonth(p.paid_at) === month)
-  const earned = sumPennies(earnedRows.map(p => p.amount))
+  const earned = earnedInMonthPennies(month, payments.rows, wallet.charges, ukMonth)
   // Ticked paid with no date: real money, but there is no knowing which month.
   const undated = payments.rows.filter(p => p.paid && !isVoid(p) && !p.paid_at && toPennies(p.amount) > 0).length
   const outstanding = payments.rows.reduce((n, p) => n + owedPennies(p), 0)
@@ -330,7 +334,7 @@ export function LivePayments({ T, accent }: { T: ThemeTokens; accent: AccentToke
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }}>
             {packages.rows.map(pk => (
               <div key={pk.id} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 10, padding: 14, position: 'relative' }}>
-                {canPrice && <button className="cm-tap" aria-label={`Remove ${pk.name}`} onClick={async () => { if (confirm(`Remove ${pk.name}?`)) packages.remove(pk.id) }} style={{ position: 'absolute', top: 8, right: 8, appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15 }}>×</button>}
+                {canPrice && <button className="cm-tap" aria-label={`Remove ${pk.name}`} onClick={async () => { if (await askConfirm(`Remove ${pk.name}?`, { yes: 'Remove' })) packages.remove(pk.id) }} style={{ position: 'absolute', top: 8, right: 8, appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15 }}>×</button>}
                 {pk.kind && <span style={{ fontSize: 8.5, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '2px 7px', borderRadius: 4, textTransform: 'uppercase' }}>{pk.kind}</span>}
                 <div onClick={() => { if (canPrice) setEditPkg(pk) }} style={{ cursor: canPrice ? 'pointer' : 'default' }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginTop: 8 }}>{pk.name}</div>
@@ -596,7 +600,7 @@ function AssignForm({ T, accent, players, packages, pay, prefillPlayerId, onClos
   return (
     <Shell T={T} title={pay ? (isInvoice ? 'Edit invoice' : 'Update package') : 'Assign package'} onClose={onClose} snapshot={JSON.stringify(d)}
       footer={<>
-        {onDelete && <button onClick={async () => { if (confirm(isInvoice ? 'Delete this invoice?' : 'Remove this package?')) await onDelete() }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
+        {onDelete && <button onClick={async () => { if (await askConfirm(isInvoice ? 'Delete this invoice?' : 'Remove this package?', { yes: isInvoice ? 'Delete' : 'Remove' })) await onDelete() }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
         <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
         <button onClick={save} disabled={saving} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.5 : 1, fontFamily: FONT }}>{saving ? 'Saving…' : 'Save'}</button>
       </>}>
@@ -781,7 +785,7 @@ export function PayModal({ T, accent, connected, init, onClose, onPaid }: { T: T
           <img src={qr} alt="Payment QR" width={200} height={200} style={{ borderRadius: 12, background: '#fff', padding: 8 }} />
           <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
             <a href={url} target="_blank" rel="noopener noreferrer" style={{ flex: 1, textAlign: 'center', textDecoration: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 9, padding: '8px', fontSize: 12.5, fontWeight: 700 }}>Open checkout ↗</a>
-            <button onClick={() => { navigator.clipboard?.writeText(url).then(() => alert('Payment link copied — send it to the player or parent.')).catch(() => {}) }} style={{ flex: 1, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 9, padding: '8px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Copy link</button>
+            <button onClick={() => { navigator.clipboard?.writeText(url).then(() => tell('Payment link copied — send it to the player or parent.')).catch(() => {}) }} style={{ flex: 1, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 9, padding: '8px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Copy link</button>
           </div>
         </div>
       </Shell>

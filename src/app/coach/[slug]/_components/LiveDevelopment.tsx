@@ -27,6 +27,8 @@ import {
 import { goalPresets } from '@/lib/coach/colour-ladder'
 import { printRacketCertificate, certOrg } from './LiveRacketProgression'
 import { getSettings } from '../_lib/settings-store'
+import { useAdultStanding } from '../_lib/adult-standing'
+import { askConfirm } from '../_lib/ask'
 import { getFlags, subscribe as subscribeFlags } from '../_lib/feature-flags'
 import { avatarSrc } from '@/lib/avatar'
 import { ColourLadder } from './ColourLadder'
@@ -35,6 +37,7 @@ type Target = { target: string; why?: string; measure?: string; by?: string }
 type Player = {
   id: string; name: string; age?: number | null; level?: string | null; category?: string | null
   parent_name?: string | null; goal?: string | null; racket_stage?: string | null; avatar_url?: string | null
+  adult_level_id?: string | null
   // Set by Lumio Coach, persisted so they are still there next week.
   targets?: Target[] | null; targets_note?: string | null; targets_by?: string | null; targets_set_at?: string | null
 }
@@ -62,6 +65,7 @@ export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentT
   const { rows: skillRows, reload: reloadSkills } = useCoachTable<{ player_id: string; skill: string; score: number }>('coach_player_skills')
   const { rows: attRows } = useCoachTable<{ player_id: string; present: boolean }>('coach_attendance')
   const { rows: sessionRows } = useCoachTable<{ player_id?: string | null; player_name: string | null; session_date: string | null; focus: string | null; summary: string | null }>('coach_sessions')
+  const { standingOf } = useAdultStanding()
   const { rows: gpsRows } = useCoachTable<{ player_name: string | null; distance_m: number | null; top_speed_kmh: number | null; avg_hr: number | null }>('coach_gps_sessions')
 
   const [selId, setSelIdState] = useState<string | null>(lastSelected)
@@ -102,7 +106,8 @@ export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentT
         <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 8, alignSelf: 'start' }}>
           {players.map(p => {
             const active = p.id === sel?.id
-            const st = RACKET_STAGES.find(s => s.id === p.racket_stage)
+            const a = standingOf(p)
+            const st = a ? undefined : RACKET_STAGES.find(s => s.id === p.racket_stage)
             return (
               <div key={p.id} onClick={() => setSelId(p.id)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px', borderRadius: 8, cursor: 'pointer', background: active ? accent.dim : 'transparent', border: `1px solid ${active ? accent.border : 'transparent'}`, marginBottom: 4 }}>
                 {p.avatar_url
@@ -112,8 +117,8 @@ export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentT
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                    <span style={{ width: 10, height: 10, borderRadius: 3, background: st?.colour ?? T.border, border: '1px solid rgba(128,128,128,0.4)' }} />
-                    <span style={{ fontSize: 10.5, color: T.text3 }}>{st ? st.name : 'Not started'}{p.category || p.level ? ` · ${p.category || p.level}` : ''}</span>
+                    {!a && <span style={{ width: 10, height: 10, borderRadius: 3, background: st?.colour ?? T.border, border: '1px solid rgba(128,128,128,0.4)' }} />}
+                    <span style={{ fontSize: 10.5, color: T.text3 }}>{a ? a.label : st ? st.name : 'Not started'}{p.category || p.level ? ` · ${p.category || p.level}` : ''}</span>
                   </div>
                 </div>
               </div>
@@ -154,6 +159,9 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
   // certificate must not be signed differently depending on which tab printed it.
   const profile = useCoachProfile()
   const racketOn = useRacketModule()
+  // An adult is on the academy's own levels, not the junior colours.
+  const { standingOf, levels: adultLevels } = useAdultStanding()
+  const adult = standingOf(p)
   const rawIdx = RACKET_STAGES.findIndex(s => s.id === p.racket_stage)
   const hasStage = rawIdx >= 0
   const cur = hasStage ? rawIdx : 0
@@ -195,10 +203,10 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
     if (to === from) return
     if (to < from) {
       const what = to < 0 ? `Take ${p.name} off ${curStage.name} and set them to “Not started”?` : `Move ${p.name} back down from ${curStage.name} to ${RACKET_STAGES[to].name}?`
-      if (!confirm(`${what}\n\nTheir skill grades are kept.`)) return
+      if (!(await askConfirm(`${what}\n\nTheir skill grades are kept.`, { yes: 'Move down' }))) return
     } else if (from >= 0 && to > from + 1) {
       const skipped = RACKET_STAGES.slice(from + 1, to).map(s => s.name)
-      if (!confirm(`Move ${p.name} from ${curStage.name} straight to ${RACKET_STAGES[to].name}, skipping ${skipped.join(', ')}?`)) return
+      if (!(await askConfirm(`Move ${p.name} from ${curStage.name} straight to ${RACKET_STAGES[to].name}, skipping ${skipped.join(', ')}?`, { yes: 'Move' }))) return
     }
     await write(stageId)
   }
@@ -215,11 +223,16 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
     // being sent to the roster to change it. Setting it here updates the player
     // record, so Racket Progression, the roster card, the certificate and the
     // family's own app all move with it.
-    { label: 'Current colour', value: <ColourPicker T={T} accent={accent} stageId={hasStage ? curStage.id : ''} onPick={setColour} /> },
-    // No colour yet is "not started", not "25% of the top colour".
-    { label: 'Colour progress', value: hasStage ? `${progress}%` : '—', sub: !hasStage ? 'not started' : nextStage ? `to ${nextStage.name}` : 'top colour', colour: hasStage ? accent.hex : T.text3 },
+    ...(adult ? [
+      { label: 'Adult level', value: adult.level ? adult.short : '—', sub: adult.level ? undefined : 'no level yet', colour: adult.level ? undefined : T.text3 },
+      { label: 'Checklist', value: adult.total ? `${adult.done}/${adult.total}` : '—', sub: adult.total ? 'passed' : undefined, colour: adult.total ? accent.hex : T.text3 },
+    ] : [
+      { label: 'Current colour', value: <ColourPicker T={T} accent={accent} stageId={hasStage ? curStage.id : ''} onPick={setColour} /> },
+      // No colour yet is "not started", not "25% of the top colour".
+      { label: 'Colour progress', value: hasStage ? `${progress}%` : '—', sub: !hasStage ? 'not started' : nextStage ? `to ${nextStage.name}` : 'top colour', colour: hasStage ? accent.hex : T.text3 },
+    ]),
     { label: 'Attendance', value: attPct === null ? '—' : `${attPct}%`, sub: attPct === null ? 'no data' : `${attRows.length} logged`, colour: attPct === null ? T.text3 : attPct >= 90 ? T.good : attPct >= 80 ? T.warn : T.bad },
-    { label: 'Skills mastered', value: `${skillsEarned}/${TOTAL_SKILLS}`, sub: 'all colours' },
+    ...(adult ? [] : [{ label: 'Skills mastered', value: `${skillsEarned}/${TOTAL_SKILLS}`, sub: 'all colours' }]),
     { label: 'Lessons', value: String(lessons.length), sub: 'logged' },
     { label: 'Distance', value: distanceKm === null ? '—' : `${distanceKm.toFixed(1)} km`, sub: 'GPS · all sessions' },
     { label: 'Effort (avg HR)', value: avgHr ? `${avgHr} bpm` : '—', sub: 'GPS watch' },
@@ -245,13 +258,13 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
           </div>
           {/* A certificate is a reward, and rewards belong to the racket ladder.
               An academy that does not run it has nothing to print here. */}
-          {racketOn && (
-            <button onClick={() => {
+          {racketOn && !adult && (
+            <button onClick={async () => {
                 if (!hasStage) return
                 // The certificate says what was mastered, so it lists only what
                 // was — it used to print all four skills for a player on 75%.
                 const done = curSkills.filter(s => mastered(s.name)).map(s => s.name)
-                if (done.length < curSkills.length && !confirm(`${p.name} has mastered ${done.length} of the ${curSkills.length} ${curStage.name} skills.\n\nPrint the ${curStage.name} certificate anyway? It will list only the skills that are mastered.`)) return
+                if (done.length < curSkills.length && !(await askConfirm(`${p.name} has mastered ${done.length} of the ${curSkills.length} ${curStage.name} skills.\n\nPrint the ${curStage.name} certificate anyway? It will list only the skills that are mastered.`, { yes: 'Print anyway' }))) return
                 printRacketCertificate(p.name, curStage, done, certOrg(profile))
               }}
               disabled={!hasStage}
@@ -261,7 +274,7 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
         <PlayerTargets T={T} accent={accent} p={p} onSaved={onSaved} />
 
         {/* Goal */}
-        {showSec('goal') && <GoalBox T={T} accent={accent} p={p} stageId={hasStage ? curStage.id : ''} onSaved={onSaved} />}
+        {showSec('goal') && <GoalBox T={T} accent={accent} p={p} stageId={hasStage && !adult ? curStage.id : ''} onSaved={onSaved} />}
         {/* Stats */}
         <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 14 }}>
           {tiles.map(t => (
@@ -276,7 +289,28 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
 
       {/* The colour they are working on — live grading, and the source of
           truth for Racket Progression. */}
-      <div style={{ ...card, display: showSec('racket') ? undefined : 'none' }}>
+      {adult && (
+        <div style={{ ...card, display: showSec('racket') ? undefined : 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>{adult.level ? `Working on · ${adult.short}` : 'No adult level yet'}</div>
+            {adult.total > 0 && <div style={{ marginLeft: 'auto', fontSize: 11, color: accent.hex, fontWeight: 700 }}>{adult.done}/{adult.total} passed</div>}
+          </div>
+          {adult.level?.checklist.map(item => {
+            const done = adult.passed.has(item.id)
+            return (
+              <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8, fontSize: 12.5, color: done ? T.text : T.text2 }}>
+                <span style={{ color: done ? T.good : T.text3, fontWeight: 700, width: 14, flexShrink: 0 }}>{done ? '✓' : '○'}</span>
+                <span>{item.text}</span>
+              </div>
+            )
+          })}
+          <p style={{ fontSize: 10.5, color: T.text3, marginTop: 4, lineHeight: 1.55 }}>
+            {adult.level ? 'Tick items off and move them up on Adult levels.' : 'Put them on one of your levels on Adult levels.'}
+            {adultLevels.length ? ` Your levels: ${adultLevels.map((l, i) => `${i + 1}. ${l.name}`).join(', ')}.` : ''}
+          </p>
+        </div>
+      )}
+      <div style={{ ...card, display: showSec('racket') && !adult ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
           <span style={{ width: 14, height: 14, borderRadius: 4, background: curStage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
           <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>{hasStage ? 'Working on' : 'Not started · first colour'} · {curStage.name} — {THEME[curStage.id]}</div>
@@ -310,11 +344,11 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
       {/* What the colours actually mean. A coach who does not run the reward
           ladder has never seen it explained anywhere, and neither has the
           assistant they just hired — so the key lives on this page too. */}
-      <ColourLadder T={T} accent={accent} currentStageId={hasStage ? curStage.id : null} />
+      {!adult && <ColourLadder T={T} accent={accent} currentStageId={hasStage ? curStage.id : null} />}
 
       {/* Colour journey + recent lessons */}
       <div className="cm-2" style={{ display: showSec('journey') ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-        <div style={card}>
+        <div style={{ ...card, display: adult ? 'none' : undefined }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Colour journey</div>
             {/* The colour is set HERE (or on the roster) — Racket Progression only
@@ -546,7 +580,7 @@ function PlayerTargets({ T, accent, p, onSaved }: { T: ThemeTokens; accent: Acce
     const next = (draft || []).map(t => ({ ...t, target: (t.target || '').trim(), measure: (t.measure || '').trim(), by: (t.by || '').trim() })).filter(t => t.target)
     void store(next, note)
   }
-  const clear = () => { if (confirm(`Clear ${(p.name || 'this player').trim().split(/\s+/)[0]}’s development targets?`)) void store([], '') }
+  const clear = async () => { if (await askConfirm(`Clear ${(p.name || 'this player').trim().split(/\s+/)[0]}’s development targets?`, { yes: 'Clear' })) void store([], '') }
   const editInput: CSSProperties = { width: '100%', boxSizing: 'border-box', background: T.panel, border: `1px solid ${T.border}`, borderRadius: 7, padding: '6px 9px', fontSize: 12, color: T.text, fontFamily: FONT, outline: 'none' }
 
   const when = p.targets_set_at ? new Date(p.targets_set_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : ''

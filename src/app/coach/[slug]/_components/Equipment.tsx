@@ -13,6 +13,7 @@ import {
 import { getOffers, subscribe as subscribePackages } from '../_lib/packages-store'
 import { AddEquipmentModal } from './AddEquipmentModal'
 import { getFlags as getFeatureFlags, subscribe as subscribeFeatures, type FeatureFlags, type FeatureKey } from '../_lib/feature-flags'
+import { tell } from '../_lib/ask'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -291,7 +292,7 @@ function openKitList() {
     <div class="foot"><span>${esc(COACH_ORG.academy)} · ${esc(COACH_ORG.cert)}</span><span>Checked by ____________________</span></div>
   </div></body></html>`
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to print the kit list.'); return }
+  if (!w) { void tell('Please allow pop-ups to print the kit list.'); return }
   w.document.write(html); w.document.close(); w.focus()
   setTimeout(() => { try { w.print() } catch { /* manual */ } }, 350)
 }

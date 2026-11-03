@@ -16,6 +16,7 @@ import { installDemoFetch } from './demo/fetch'
 import { createBrowserClient } from '@supabase/ssr'
 import { ukDate, ukWeek } from '@/lib/coach/uk-date'
 import { paymentOwedPennies } from '@/lib/coach/money'
+import { isAdultPlayer } from '@/lib/coach/adult-levels'
 
 export type CoachTable =
   | 'coach_players'
@@ -882,7 +883,9 @@ export function useCoachStats(enabled = true, scope: string | null = null): Coac
       // 4 = Consistent on every skill: the rule the Racket Progression page uses
       // for "100%" and its award button, so this count and that page agree.
       const awardThreshold = 4
-      const racketsReady = prows.filter((p: any) => {
+      // Adults are on the academy's own levels: not counted on the junior ladder.
+      const juniors = prows.filter((p: any) => !isAdultPlayer(p))
+      const racketsReady = juniors.filter((p: any) => {
         const list = SKILLS_BY_STAGE[p.racket_stage] || []
         if (!list.length) return false
         const m: any = skillFor(p.id)
@@ -915,7 +918,7 @@ export function useCoachStats(enabled = true, scope: string | null = null): Coac
         outstandingPayments: pays.reduce((t: number, p: any) => t + paymentOwedPennies(p), 0) / 100,
         newPlayers: prows.filter((p: any) => inWeek(p.created_at)).length,
         summariesDue,
-        racketCounts: RACKET_STAGES.map(st => prows.filter((p: any) => p.racket_stage === st.id).length),
+        racketCounts: RACKET_STAGES.map(st => juniors.filter((p: any) => p.racket_stage === st.id).length),
         loading: false,
       })
     }

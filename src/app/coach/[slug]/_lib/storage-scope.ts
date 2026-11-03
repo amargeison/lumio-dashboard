@@ -1,7 +1,7 @@
 // One browser, two portals: the public demo (/tennis/coach/demo) and a coach's
 // real academy. Every coach store used the same localStorage keys for both, so
 // whatever a real academy saved on this browser leaked into the demo — its
-// White theme and orange accent, "PG Tennis" and its head coach, its logo, and
+// White theme and orange accent, its academy name and head coach, its logo, and
 // a "Penrith Tennis Club" venue added once per onboarding run (nine times, in
 // the end) sitting in the demo's Court Planner.
 //

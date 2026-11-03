@@ -14,7 +14,7 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable } from '../_lib/coach-db'
 import { useCoachSettings } from '../_lib/use-settings'
-import { priceFor, courtCostFor, BILLING_LABEL, type CourtBilling } from '@/lib/coach/pricing'
+import { priceFor, courtCostForMinutes, billedMinutes, BILLING_LABEL, type CourtBilling } from '@/lib/coach/pricing'
 import { formatPennies } from '@/lib/coach/money'
 import { ukDate, ukMonth } from '@/lib/coach/uk-date'
 
@@ -43,20 +43,23 @@ export function LessonEarnings({ T, accent }: { T: ThemeTokens; accent: AccentTo
     const today = ukDate()
     const venueOf = (id?: string | null) => venues.find(v => v.id === id) || null
     const rows = bookings.rows.filter(b => (b.booking_date || '').slice(0, 7) === month && b.status !== 'cancelled' && b.type !== 'Block')
-    let value = 0, court = 0, unpriced = 0, upcoming = 0
-    const per = new Map<string, { name: string; lessons: number; mins: number; court: number; value: number; billing: string }>()
+    let value = 0, unpriced = 0, upcoming = 0
+    // Court cost is worked out from each venue's total minutes and rounded once,
+    // so it matches the venue's invoice to the penny (see courtCostForMinutes).
+    const per = new Map<string, { name: string; lessons: number; mins: number; court: number; value: number; billing: string; venue: Venue | null }>()
     for (const b of rows) {
       const p = priceFor(b, { rules: s.priceList || [], client: players.find(x => x.id === b.player_id) || null, defaultHourly: s.privateRate })
       const v = venueOf(b.venue_id)
-      const c = courtCostFor(b, v)
-      value += p.total; court += c
+      value += p.total
       if (!p.total && p.source !== 'booking') unpriced++
       if ((b.booking_date || '') > today) upcoming++
       const key = v?.id || ''
-      const row = per.get(key) || { name: v?.name || 'No venue set', lessons: 0, mins: 0, court: 0, value: 0, billing: v?.court_billing || '' }
-      row.lessons++; row.mins += Math.max(5, Math.min(600, Number(b.duration_min) || 60)); row.court += c; row.value += p.total
+      const row = per.get(key) || { name: v?.name || 'No venue set', lessons: 0, mins: 0, court: 0, value: 0, billing: v?.court_billing || '', venue: v }
+      row.lessons++; row.mins += billedMinutes(b.duration_min); row.value += p.total
       per.set(key, row)
     }
+    let court = 0
+    for (const row of per.values()) { row.court = courtCostForMinutes(row.mins, row.venue); court += row.court }
     return { count: rows.length, value, court, unpriced, upcoming, venues: Array.from(per.values()).sort((a, b) => b.lessons - a.lessons) }
   }, [bookings.rows, venues, players, s.priceList, s.privateRate, month])
 

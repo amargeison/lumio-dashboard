@@ -133,3 +133,65 @@ export const ordered = <L extends Pick<AdultLevel, 'position' | 'name'>>(levels:
 /** Is this an adult player? Their category, or their age. */
 export const isAdultPlayer = (p: { category?: string | null; age?: number | null; adult_level_id?: string | null }) =>
   !!p.adult_level_id || /adult/i.test(String(p.category || '')) || (Number(p.age) || 0) >= 18
+
+export type AdultStanding = { level: AdultLevel | null; number: number; done: number; total: number; passed: Set<string>; label: string; short: string }
+
+/**
+ * Where an adult stands on the academy's levels, for the places that would
+ * otherwise show the junior colour ladder ("3. Club · 3/5"). Null for a junior,
+ * who keeps their racket colour. An adult with no level yet still gets a
+ * standing, so they are never drawn on the junior ladder by default.
+ */
+export function adultStanding(p: { id: string; category?: string | null; age?: number | null; adult_level_id?: string | null },
+  levels: Pick<AdultLevel, 'id' | 'position' | 'name' | 'checklist'>[], passes: AdultPass[]): AdultStanding | null {
+  if (!isAdultPlayer(p)) return null
+  const list = ordered(levels)
+  const i = list.findIndex(l => l.id === p.adult_level_id)
+  if (i < 0) return { level: null, number: 0, done: 0, total: 0, passed: new Set(), label: 'Adult · no level yet', short: 'No level yet' }
+  const level = list[i]
+  const { done, total, passed } = levelProgress(level, passes, p.id)
+  const short = `${i + 1}. ${level.name}`
+  return { level: { ...level, checklist: tidyChecklist(level.checklist) }, number: i + 1, done, total, passed, label: total ? `${short} · ${done}/${total}` : short, short }
+}
+
+const shortDate = (iso?: string | null) => {
+  const t = iso ? new Date(`${String(iso).slice(0, 10)}T12:00:00Z`) : null
+  return t && !isNaN(t.getTime()) ? t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : ''
+}
+
+/**
+ * What Lumio Coach is told about an adult's level when it plans a session:
+ * the line that stands where a junior's racket would ("Adult level: 3. Club ·
+ * 3/5 passed"), and a brief with the level's description and each checklist
+ * item marked passed (with the day) or still to pass. Null for a junior, who
+ * keeps their racket. An adult with no level yet gets the line and no brief.
+ */
+export function adultLevelBrief(p: Parameters<typeof adultStanding>[0],
+  levels: (Pick<AdultLevel, 'id' | 'position' | 'name' | 'checklist'> & { summary?: string | null })[], passes: AdultPass[]): { line: string; brief: string } | null {
+  const a = adultStanding(p, levels, passes)
+  if (!a) return null
+  if (!a.level) return { line: 'Adult · no adult level yet', brief: '' }
+  const list = ordered(levels)
+  const next = list[a.number] || null
+  const summary = list[a.number - 1]?.summary?.trim()
+  const on = new Map(passes.filter(x => x.player_id === p.id && x.level_id === a.level!.id).map(x => [x.item_id, x.passed_on || null]))
+  const items = a.level.checklist.map(i => {
+    if (!on.has(i.id)) return `- Still to pass: ${i.text}`
+    const d = shortDate(on.get(i.id))
+    return `- Passed${d ? ` ${d}` : ''}: ${i.text}`
+  })
+  const toPass = a.total - a.done
+  return {
+    line: `Adult level: ${a.short} · ${a.done}/${a.total} passed`,
+    brief: [
+      `Adult level: ${a.short} (level ${a.number} of ${list.length} in this academy's adult levels)${summary ? ` — ${summary}` : ''}`,
+      `Checklist to pass ${a.level.name}:`,
+      ...items,
+      next ? `Next level: ${next.name}.` : 'This is the top level.',
+      toPass > 0
+        ? `Aim this session at the ${toPass === 1 ? 'item' : `${toPass} items`} still to pass on ${a.level.name}, within the coach's intended focus. Pitch the drills, targets and the way you explain things at a ${a.level.name}-level adult.`
+        : `They have passed every item on ${a.level.name}: consolidate under pressure and start them on what ${next ? next.name : 'the top level'} asks for.`,
+      `The level adds to what you already know about them; it does not replace it. Match the plan to this player's actual ability as their questionnaire answers, ratings and recent lessons show it — if those put them ahead of or behind the level, plan for the player in front of you, not their age or the label.`,
+    ].join('\n'),
+  }
+}

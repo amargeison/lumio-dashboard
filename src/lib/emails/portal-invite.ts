@@ -23,7 +23,7 @@ const DEMO_URL = 'https://www.lumiosports.com/tennis/coach/demo'
 const lumioLogoHtml = `<img src="${LOGO}" alt="Lumio Tennis Coach" width="96" style="display:block;height:auto;border:0;margin:0 0 24px;" />`
 
 // An academy with its own sign-in page is a brand in its own right to the
-// families it invites — "PG Tennis", not "Lumio". So the email leads with the
+// families it invites — their academy, not "Lumio". So the email leads with the
 // club's badge and name, with Lumio as the line underneath, exactly as their
 // sign-in page does.
 function headerHtml(partner?: { name: string; logoUrl: string | null } | null) {

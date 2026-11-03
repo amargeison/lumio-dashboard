@@ -9,6 +9,8 @@
 // for a trial or a new client, and for doing a follow-up on the day you said
 // you would. A week with five points or more keeps the streak going.
 
+import { ukDate } from './uk-date'
+
 export type Pipeline = 'coaching' | 'holiday'
 
 export const PIPELINES: Record<Pipeline, { label: string; stages: string[]; closed: string[] }> = {
@@ -32,6 +34,18 @@ export function stagePoints(pipeline: string, from: string | null, to: string): 
   if (to === 'Not keen') return 1        // closing a lead off is progress too
   return 1
 }
+/**
+ * Lead notes as they are shown. Each note is saved with the day it was written
+ * in front, "[2026-11-03] Called back"; on screen that reads "3 Nov · Called
+ * back", the same as the History list. The saved text is not changed.
+ */
+export function notesForDisplay(notes: string): string {
+  return notes.replace(/^\[(\d{4})-(\d{2})-(\d{2})\]\s*/gm, (whole, y: string, m: string, d: string) => {
+    const t = new Date(`${y}-${m}-${d}T12:00:00Z`)
+    return isNaN(t.getTime()) ? whole : `${t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })} · `
+  })
+}
+
 export const FOLLOWUP_POINTS = 1
 export const STREAK_POINTS = 5
 
@@ -47,7 +61,7 @@ export function weekOf(iso: string): string {
 export function scoreOf(events: { created_at: string; points?: number | null }[], today: string): { week: number; streak: number } {
   const byWeek = new Map<string, number>()
   for (const e of events) {
-    const w = weekOf(new Date(e.created_at).toISOString())
+    const w = weekOf(ukDate(e.created_at))
     byWeek.set(w, (byWeek.get(w) || 0) + (Number(e.points) || 0))
   }
   const thisWeek = weekOf(today)

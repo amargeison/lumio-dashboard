@@ -23,6 +23,7 @@ import { OfferSlotModal, type SlotPrefill } from './OfferSlotModal'
 import { campSpans, campsOn, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
 import { BookingLinkModal } from './BookingLinkModal'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { askConfirm } from '../_lib/ask'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { ukDate } from '@/lib/coach/uk-date'
 
@@ -961,7 +962,7 @@ function BookingFormModal({ T, accent, players, coaches, myName, headNames, type
         </div>
         {err && <div role="alert" style={{ fontSize: 12, color: T.bad, marginTop: 12 }}>{err}</div>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: err ? 10 : 18 }}>
-          {onDelete && <button onClick={async () => { if (confirm(`Delete this booking?${/\|booked(\||$)/.test(String(booking?.told_state || '')) && String(booking?.booking_date || '').slice(0, 10) >= ukDate() ? '\n\nThe family has been told about this session, so they will be sent a note that it is cancelled.' : ''}`)) await onDelete() }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
+          {onDelete && <button onClick={async () => { if (await askConfirm(`Delete this booking?${/\|booked(\||$)/.test(String(booking?.told_state || '')) && String(booking?.booking_date || '').slice(0, 10) >= ukDate() ? '\n\nThe family has been told about this session, so they will be sent a note that it is cancelled.' : ''}`, { yes: 'Delete' })) await onDelete() }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
           <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
           <button onClick={save} disabled={!canSave} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: canSave ? 'pointer' : 'not-allowed', opacity: canSave ? 1 : 0.5, fontFamily: FONT }}>{saving ? 'Saving…' : 'Save'}</button>
         </div>

@@ -5,6 +5,7 @@
 // content; anything else gets a sensible generic document.
 
 import { BELTS, COACH_ORG, type Resource } from '../_lib/coach-data'
+import { tell } from '../_lib/ask'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const beltName = (id?: string) => id ? (BELTS.find(b => b.id === id)?.name ?? '') : ''
@@ -191,7 +192,7 @@ export function openResource(r: Resource) {
   </body></html>`
 
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to open this resource.'); return }
+  if (!w) { void tell('Please allow pop-ups to open this resource.'); return }
   w.document.write(html)
   w.document.close()
   w.focus()

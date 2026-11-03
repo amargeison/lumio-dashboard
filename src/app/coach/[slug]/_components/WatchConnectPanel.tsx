@@ -12,6 +12,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { askConfirm } from '../_lib/ask'
 
 let _qrLoad: Promise<void> | null = null
 function loadQrLib(): Promise<void> {
@@ -82,7 +83,7 @@ export function WatchConnectPanel({
 
   const reset = async () => {
     if (!onReset) return
-    if (!window.confirm('Reset this watch token? The old QR and link will stop working and the player will need the new one.')) return
+    if (!(await askConfirm('Reset this watch token? The old QR and link will stop working and the player will need the new one.', { yes: 'Reset' }))) return
     setResetting(true)
     try { const nt = await onReset(); if (typeof nt === 'string' && nt) setTok(nt) }
     finally { setResetting(false) }

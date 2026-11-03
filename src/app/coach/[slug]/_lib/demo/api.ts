@@ -40,6 +40,8 @@ import { buildNextSession } from '@/lib/student/next-session'
 import { bookById } from '@/lib/coach/books'
 import { priceFor, DEMO_PRICE_LIST } from '@/lib/coach/pricing'
 import { cleanImportRow, IMPORT_MAX } from '@/lib/coach/leads'
+import { isAdultPlayer, adultLevelBrief, type AdultLevel, type AdultPass } from '@/lib/coach/adult-levels'
+import { sessionStageLine } from '@/lib/coach/agent-persona'
 import { upcomingDate } from '@/lib/coach/groups'
 import { isLumioResource } from '@/lib/coach/lumio-resources-data'
 import { resourceHref } from '@/lib/coach/resource-files'
@@ -165,7 +167,9 @@ function levelOf(stage: unknown, standard: unknown): Level {
 function ctxFor(playerName?: unknown, racket?: unknown, standard?: unknown): Ctx {
   const p = playerNamed(playerName) || null
   const age = p && Number(p.age) > 0 ? Number(p.age) : null
-  const stage = lc(racket || p?.racket_stage).replace(/\s*racket$/, '')
+  // An adult is on the academy's own levels: never a junior racket, even one
+  // still stored on their record.
+  const stage = p && isAdultPlayer(p) ? '' : lc(racket || p?.racket_stage).replace(/\s*racket$/, '')
   const adultCategory = lc(p?.category) === 'adult'
   return {
     name: str(playerName) || str(p?.name),
@@ -605,15 +609,19 @@ const sessionDraft: Handler = async ({ body }) => {
     `Keep ${who} on ${theme.label} even when something else looks worth fixing — the real job is ${theme.aim}, and the thing to watch is ${theme.fault}.`,
   ], seed >> 5)
 
+  // The same level brief the live planner sends Lumio Coach (adult-levels.ts).
+  const adultWho = (str(b.playerId) && demoTable('coach_players').find(p => p.id === b.playerId)) || c.player
+  const level = adultWho ? adultLevelBrief(adultWho as any, demoTable('coach_adult_levels') as unknown as AdultLevel[], demoTable('coach_adult_passes') as unknown as AdultPass[]) : null
+  const toPass = level?.brief ? level.brief.split('\n').filter(l => l.startsWith('- Still to pass: ')).map(l => l.slice('- Still to pass: '.length).replace(/\.$/, '')) : []
+  const followOn = history && last?.nextFocus ? ` It follows on from last time, when the next focus was set as “${last.nextFocus.replace(/\.$/, '')}”.` : ''
   return json({
     focus_points: points,
     drills: drills.map(d => drillLine(d, c)),
     run_sheet: sheet,
     kit: theme.kit.slice(0, 6),
-    coach_note: history && last?.nextFocus
-      ? `${note} It follows on from last time, when the next focus was set as “${last.nextFocus.replace(/\.$/, '')}”.`
-      : note,
+    coach_note: `${note}${followOn}${toPass.length ? ` Still to pass on their level: ${toPass.slice(0, 2).join('; ')}.` : ''}`,
     built_on_history: history,
+    stage_line: sessionStageLine({ racket: level ? undefined : str(b.racket), standard: str(b.standard), adultLevel: level }),
   })
 }
 
@@ -2342,6 +2350,24 @@ const campFormSend: Handler = async ({ body }) => {
   return json({ ok: true, sent, failed: 0, noAddress })
 }
 
+// GET /api/portal/access — who can sign in to a player's page (or a coach's).
+const portalAccessGet: Handler = ({ url }) => {
+  const playerId = url.searchParams.get('playerId'), staffId = url.searchParams.get('staffId')
+  if (!playerId && !staffId) return fail('Choose a player or a coach.')
+  const rows = demoTable('coach_members').filter(m => playerId
+    ? m.scope_player_id === playerId && (m.role === 'parent' || m.role === 'student')
+    : m.staff_id === staffId && m.role === 'coach')
+  return json({ members: rows.map(m => ({ id: m.id, email: m.email, role: m.role, status: m.status, signedIn: !!m.member_user_id, invitedAt: m.invite_sent_at || m.created_at })) })
+}
+
+// DELETE /api/portal/access — take a login's access away.
+const portalAccessDelete: Handler = ({ body }) => {
+  const m = demoTable('coach_members').find(x => x.id === obj(body).memberId)
+  if (!m) return fail('Choose whose access to remove.')
+  Object.assign(m, { status: 'revoked', updated_at: nowISO() })
+  return json({ ok: true })
+}
+
 // POST /api/portal/invite — a portal login for a parent, a player or a coach.
 const portalInvite: Handler = async ({ body }) => {
   const b = obj(body)
@@ -2802,6 +2828,8 @@ const ROUTES: Record<string, Handler> = {
   [`POST ${C}/camp-blast`]: campBlast,
   [`POST ${C}/camps/form-send`]: campFormSend,
   ['POST /api/portal/invite']: portalInvite,
+  ['GET /api/portal/access']: portalAccessGet,
+  ['DELETE /api/portal/access']: portalAccessDelete,
   // Roster, kit, effort
   [`POST ${C}/players/merge`]: playersMerge,
   [`POST ${C}/equipment-setup`]: equipmentSetup,

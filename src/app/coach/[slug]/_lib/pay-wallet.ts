@@ -18,6 +18,8 @@ export type PayCharge = {
   kind: 'lesson' | 'late_cancel' | 'no_show' | 'other' | 'group' | 'membership' | null; description: string | null
   /** A weekly-group answer this payment was for (migration 214). */
   reply_id?: string | null
+  /** The payment line (invoice or pack) this charge paid. Paying it ticks that line paid. */
+  payment_id?: string | null
   amount_pennies: number; status: 'pending' | 'charging' | 'processing' | 'paid' | 'failed' | 'refunded'
   failure_reason: string | null; refunded_pennies: number | null; charged_by: string | null
   created_at: string; paid_at: string | null

@@ -21,7 +21,7 @@ export async function GET() {
   const rows = async (q: PromiseLike<{ data: unknown }>) => ((await q).data || []) as Row[]
 
   const [players, bookings, lessons, payments, attendance, skills, messages, equipment, staff, venues, camps, campAttendees, settingsRow, profile] = await Promise.all([
-    rows(db.from('coach_players').select('id, name, parent_name, racket_stage, avatar_url, staff_id').eq('coach_id', academy)),
+    rows(db.from('coach_players').select('id, name, parent_name, racket_stage, category, age, adult_level_id, avatar_url, staff_id').eq('coach_id', academy)),
     // From the start of this week: "this week", today, next and upcoming all start there.
     rows(db.from('coach_bookings').select('id, booking_date, start_time, status, title, player_name, player_id, court, type, staff_id').eq('coach_id', academy).gte('booking_date', week.start).order('booking_date').limit(2000)),
     rows(db.from('coach_sessions').select('id, session_date, player_name, focus, staff_id').eq('coach_id', academy).order('session_date', { ascending: false }).limit(300)),

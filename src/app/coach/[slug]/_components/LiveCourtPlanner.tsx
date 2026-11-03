@@ -13,6 +13,7 @@ import { useCoachTable, useCoachProfile, sb, currentIdentity, type CoachIdentity
 import { getSettings } from '../_lib/settings-store'
 import { ukDate, ukTime } from '@/lib/coach/uk-date'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { tell } from '../_lib/ask'
 
 type Venue = { id: string; name: string; address?: string | null; contact_name?: string | null; contact_phone?: string | null; contact_email?: string | null; facilities?: string | null; access_note?: string | null; is_home?: boolean | null }
 type Court = { id: string; venue_id?: string | null; name: string; surface?: string | null; status?: string | null; notes?: string | null }
@@ -245,7 +246,7 @@ function VenueCard({ T, accent, venue, courts, lessonsOn, isMine, coaches, onReq
             return (
               <div style={{ display: 'flex', gap: 12, marginTop: 6, flexWrap: 'wrap' }}>
                 <a href={mapUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11.5, fontWeight: 600, color: accent.hex, textDecoration: 'none' }}>🗺️ Directions ↗</a>
-                <button onClick={() => { navigator.clipboard?.writeText(mapUrl).then(() => alert('Map link copied — paste it to players or parents.')).catch(() => {}) }} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>🔗 Copy link to share</button>
+                <button onClick={() => { navigator.clipboard?.writeText(mapUrl).then(() => tell('Map link copied — paste it to players or parents.')).catch(() => {}) }} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 11.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>🔗 Copy link to share</button>
               </div>
             )
           })()}

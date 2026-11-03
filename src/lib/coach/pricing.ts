@@ -129,12 +129,25 @@ export function priceFor(b: PricedBooking, ctx: {
 export type CourtBilling = 'invoice' | 'pay' | 'free'
 export type VenueCost = { id?: string; court_cost_pennies?: number | null; court_billing?: string | null } | null | undefined
 
+/** The length of a booking as it is charged, in whole minutes (5 to 600, 60 if unset). */
+export const billedMinutes = (mins: number | null | undefined) => Math.round(hours(mins) * 60)
+
+/**
+ * What a venue's courts cost for a number of minutes, in pennies, rounded once.
+ * Totals add up minutes and call this at the end: rounding each lesson first
+ * gave 2.5 hours at £13.50 as £33.76 (a 45-minute lesson is 1012.5p, rounded
+ * up every time) when the venue's invoice says £33.75.
+ */
+export function courtCostForMinutes(mins: number, venue: VenueCost): number {
+  if (!venue || venue.court_billing === 'free') return 0
+  const per = Math.round(Number(venue.court_cost_pennies) || 0)
+  if (per <= 0 || !(mins > 0)) return 0
+  return Math.round(per * mins / 60)
+}
+
 /** What the court costs for this booking, in pennies (one court for its length). */
 export function courtCostFor(b: PricedBooking, venue: VenueCost): number {
-  if (!venue || venue.court_billing === 'free') return 0
-  const per = Number(venue.court_cost_pennies) || 0
-  if (per <= 0) return 0
-  return Math.round(per * hours(b.duration_min))
+  return courtCostForMinutes(billedMinutes(b.duration_min), venue)
 }
 
 export const BILLING_LABEL: Record<CourtBilling, string> = {

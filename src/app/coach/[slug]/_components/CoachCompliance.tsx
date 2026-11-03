@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import { useCoachProfile, useCoachTable, dbList, dbInsert, dbUpdate } from '../_lib/coach-db'
+import { COACH_ORG } from '../_lib/coach-data'
 import { privacyNotice, dpaSections, dpaText, SUB_PROCESSORS, COACH_CONNECTED, DPA_VERSION, PROCESSOR } from '@/lib/coach/dpa'
 
 type ThemeTokens = { text: string; text2: string; text3: string; panel: string; panel2: string; border: string; btnText: string; isDark: boolean }
@@ -40,7 +41,7 @@ export function CoachCompliance({ T, accent, demo }: { T: ThemeTokens; accent: A
     fetch('/api/coach/dpa').then(r => r.json()).then(d => setDpa(d.error ? { current: false, accepted: null } : d)).catch(() => setDpa({ current: false, accepted: null }))
   }, [demo])
   const accepted = !!dpa?.current
-  const academyName = demo ? 'Riverside Tennis Academy' : (profile.brand_name || profile.display_name || 'Your academy')
+  const academyName = demo ? COACH_ORG.academy : (profile.brand_name || profile.display_name || 'Your academy')
 
   // The shareable parent-consent link is /tennis/coach/{slug}/consent — derive
   // the slug + origin from the current URL.

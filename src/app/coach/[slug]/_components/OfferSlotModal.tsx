@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { askConfirm } from '../_lib/ask'
 import { slotWords } from '@/lib/coach/slot-offer'
 
 type Player = { id: string; name: string; free_slot_pings?: boolean | null; email?: string | null; parent_email?: string | null; contact_email?: string | null }
@@ -55,7 +56,7 @@ export function OfferSlotModal({ T, accent, players, venues, courts, prefill, on
     finally { setBusy(false) }
   }
   const withdraw = async (id: string) => {
-    if (!confirm('Take this offer back? Anyone who opens their link will be told it has closed.')) return
+    if (!(await askConfirm('Take this offer back? Anyone who opens their link will be told it has closed.', { yes: 'Take it back' }))) return
     await fetch(`/api/coach/slot-offers?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => null)
     void loadOffers()
   }

@@ -26,6 +26,7 @@ import { useCoachSettings } from '../_lib/use-settings'
 import { ukDate, ukWeek, addDaysIso } from '@/lib/coach/uk-date'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
 import { getFlags, subscribe as subscribeFeatures, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
+import { askConfirm } from '../_lib/ask'
 import { PlayerKnowledge } from './PlayerKnowledge'
 
 type Review = {
@@ -310,7 +311,7 @@ export function LiveLessons({ T, accent }: { T: ThemeTokens; accent: AccentToken
           onExport={() => printSession(sel)}
           onEdit={() => setEditing(sel)}
           onDuplicate={async () => { await add({ player_name: sel.player_name, player_id: sel.player_id ?? null, session_date: ukDate(), focus: sel.focus, rating: sel.rating, summary: sharedLessonText(sel).summary, ai_review: sharedLessonText(sel).aiReview, review_json: sel.review_json }); setSelId(null) }}
-          onDelete={async () => { if (confirm('Delete this lesson summary?')) { await remove(sel.id); setSelId(null) } }} />}
+          onDelete={async () => { if (await askConfirm('Delete this lesson summary?', { yes: 'Delete' })) { await remove(sel.id); setSelId(null) } }} />}
       </div>
       {modals}
     </div>

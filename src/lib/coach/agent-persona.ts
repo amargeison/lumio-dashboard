@@ -77,6 +77,11 @@ export const SESSION_PLAN_STANDARD = `How you plan a single session.
 // Builds the task block for a single session plan. Returns a full run-sheet and
 // kit list, not just focus points — the coach's promise is a plan they can walk
 // onto court with.
+/** The "Stage / standard" line: a junior's racket, or an adult's level instead. */
+export function sessionStageLine(p: { racket?: string; standard?: string; adultLevel?: { line: string } | null }): string {
+  return [p.adultLevel ? p.adultLevel.line : p.racket, p.standard].filter(Boolean).join(' · ') || 'unspecified'
+}
+
 export function sessionPlanTask(p: {
   type?: string; player?: string; duration?: string | number
   racket?: string; standard?: string; focus?: string; note?: string
@@ -84,6 +89,8 @@ export function sessionPlanTask(p: {
   lastCovered?: string; lastHomework?: string; lastNextFocus?: string
   /** What the client said in their welcome questionnaire, and what has and has not been covered lately (coverage.ts). */
   knowledge?: string
+  /** An adult's level in place of a junior's racket (adultLevelBrief in adult-levels.ts). */
+  adultLevel?: { line: string; brief: string } | null
 }): string {
   const mins = Number(p.duration) || 60
   const last = [
@@ -95,10 +102,11 @@ export function sessionPlanTask(p: {
   return `${p.context ? `${p.context}\n\n` : ''}Plan the next session.
 Session type: ${p.type || 'lesson'}${p.player ? ` for ${p.player}` : ''}
 Length: ${mins} minutes
-Stage / standard: ${[p.racket, p.standard].filter(Boolean).join(' · ') || 'unspecified'}
+Stage / standard: ${sessionStageLine(p)}
 Coach's intended focus: ${p.focus || 'general technical work'}
 ${p.note ? `Coach note: ${p.note}` : ''}
 ${last}
+${p.adultLevel?.brief ? `\n${p.adultLevel.brief}\n` : ''}
 ${p.knowledge ? `\n${p.knowledge}\n\nUse this: keep to the coach's intended focus, but choose drills, games and the way you explain things to suit what they told you (their goals, what they enjoy, how they like to be coached), and where it fits naturally, link today's focus to a part of the game they want that has not been covered lately. Do not mention the questionnaire by name.\n` : ''}
 ${SESSION_PLAN_STANDARD}
 
@@ -344,12 +352,14 @@ export function welcomePlanTask(p: {
   playerName: string; age: number | null; stage: string | null; standard: string | null
   goal: string | null; notes: string | null
   academy: string; coachName: string; context?: string
+  /** An adult's level in place of a junior's racket (adultLevelBrief in adult-levels.ts). */
+  adultLevel?: { line: string; brief: string } | null
 }): string {
   const first = (p.playerName || '').split(' ')[0] || 'the player'
   const facts = [
     `Player: ${p.playerName}`,
     p.age ? `Age: ${p.age}` : '',
-    p.stage ? `Starting racket stage: ${p.stage}` : '',
+    p.adultLevel ? (p.adultLevel.brief || p.adultLevel.line) : p.stage ? `Starting racket stage: ${p.stage}` : '',
     p.standard ? `Standard: ${p.standard}` : '',
     p.goal ? `Their stated goal: ${p.goal}` : '',
     p.notes ? `Coach's notes: ${p.notes}` : '',

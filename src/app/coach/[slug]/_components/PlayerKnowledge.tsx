@@ -7,7 +7,7 @@
 import { useMemo, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable } from '../_lib/coach-db'
-import { coverage, nextUp, whatTheySaid, whenWords, RECENT_DAYS, type AreaStat } from '@/lib/coach/coverage'
+import { coverage, nextUp, whatTheySaid, whenWords, lastCoveredWords, RECENT_DAYS, type AreaStat } from '@/lib/coach/coverage'
 import type { Answers } from '@/lib/coach/questionnaire'
 import { ukDate } from '@/lib/coach/uk-date'
 import { sortNotes, kindLabel, type PlayerNote } from '@/lib/coach/player-notes'
@@ -92,7 +92,7 @@ export function PlayerKnowledge({ T, accent, playerId, firstName, compact = fals
             {up.map(s => (
               <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12, color: T.text2 }}>
                 <b style={{ color: T.text }}>{s.name}</b>
-                <span style={{ color: T.text3 }}>{s.wants.join(', ')} · last {whenWords(s)}</span>
+                <span style={{ color: T.text3 }}>{s.wants.join(', ')} · {lastCoveredWords(s)}</span>
                 {onPick && <button onClick={() => onPick(s.name)} style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${accent.hex}66`, background: accent.dim, color: accent.hex, borderRadius: 7, padding: '3px 9px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Use as focus</button>}
               </div>
             ))}

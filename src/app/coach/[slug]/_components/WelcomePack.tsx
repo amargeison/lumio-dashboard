@@ -6,6 +6,7 @@
 
 import { BELTS, COACH_ORG, type Player } from '../_lib/coach-data'
 import { getSettings } from '../_lib/settings-store'
+import { tell } from '../_lib/ask'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const fill = (w = '100%') => `<span style="display:inline-block;border-bottom:1px dashed #b9bdca;min-width:${w};height:15px"></span>`
@@ -123,7 +124,7 @@ export function printWelcomePack(player: Player) {
   </body></html>`
 
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to open the welcome pack.'); return }
+  if (!w) { void tell('Please allow pop-ups to open the welcome pack.'); return }
   w.document.write(html)
   w.document.close()
   w.focus()

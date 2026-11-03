@@ -115,3 +115,7 @@ __pycache__/
 # being promoted into src/. Duplicates of committed code plus multi-MB PNGs —
 # never source, and a stray `git add .` would drag the lot into history.
 /Claude outputs/
+
+# Local drop folder of source tarballs and checksum lists (backups, ~77 MB).
+# Kept on disk, never committed.
+/.lumio-drop/

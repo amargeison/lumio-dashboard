@@ -7,6 +7,7 @@
 import { useState, type ReactNode } from 'react'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { useCoachTable, RACKET_STAGES, type CoachTable } from '../_lib/coach-db'
+import { askConfirm } from '../_lib/ask'
 
 type ThemeTokens = {
   text: string; text2: string; text3: string; panel: string; panel2: string
@@ -188,7 +189,7 @@ export function LiveModule({ config, T, accent, headerExtra, tabs }: { config: M
                       <button onClick={() => setEditing(row)} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: T.text3, cursor: 'pointer', marginRight: 6, fontSize: 12, fontWeight: 600 }}>
                         Edit
                       </button>
-                      <button onClick={() => { if (confirm(`Delete this ${config.singular.toLowerCase()}?`)) remove(row.id) }} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                      <button onClick={async () => { if (await askConfirm(`Delete this ${config.singular.toLowerCase()}?`, { yes: 'Delete' })) remove(row.id) }} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, padding: '5px 11px', color: '#EF4444', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
                         Delete
                       </button>
                     </td>

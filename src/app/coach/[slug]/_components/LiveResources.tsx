@@ -18,6 +18,7 @@ import { isLumioResource } from '../_lib/lumio-resources'
 import { resourceHref, resourceFileName, isResourceFile, normaliseWebLink, RESOURCE_FILE_ACCEPT, RESOURCE_FILE_MAX_MB, RESOURCE_FILE_TOO_BIG, RESOURCE_FILE_PREFIX } from '@/lib/coach/resource-files'
 import { invalidateCoachTable, sb } from '../_lib/coach-db'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { askConfirm } from '../_lib/ask'
 
 // Upload a file for a resource. With an id it is attached to that resource
 // straight away; without one (a resource still being written) the caller keeps
@@ -371,7 +372,7 @@ function ResourceForm({ T, accent, res, canUpload, onClose, onSave, onDelete }: 
         </div>
         {err && <div role="alert" style={{ fontSize: 12, color: T.bad, marginTop: 12 }}>{err}</div>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 18 }}>
-          {onDelete && <button onClick={async () => { if (confirm('Delete this resource?')) { try { await onDelete(); tidy() } catch { setErr('That was not deleted. Try again.') } } }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
+          {onDelete && <button onClick={async () => { if (await askConfirm('Delete this resource?', { yes: 'Delete' })) { try { await onDelete(); tidy() } catch { setErr('That was not deleted. Try again.') } } }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
           <button onClick={cancel} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
           <button onClick={save} disabled={!String(d.title).trim() || saving} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: String(d.title).trim() && !saving ? 1 : 0.5, fontFamily: FONT }}>{saving ? 'Saving…' : 'Save'}</button>
         </div>
