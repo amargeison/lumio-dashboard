@@ -32,12 +32,14 @@ import { askConfirm } from '../_lib/ask'
 import { getFlags, subscribe as subscribeFlags } from '../_lib/feature-flags'
 import { avatarSrc } from '@/lib/avatar'
 import { ColourLadder } from './ColourLadder'
+import { LevelSwatch } from './AdultLevels'
+import { AdultLevelPicker, AdultWorkingOn, AdultJourney, useAdultMove } from './AdultPathway'
 
 type Target = { target: string; why?: string; measure?: string; by?: string }
 type Player = {
   id: string; name: string; age?: number | null; level?: string | null; category?: string | null
   parent_name?: string | null; goal?: string | null; racket_stage?: string | null; avatar_url?: string | null
-  adult_level_id?: string | null
+  adult_level_id?: string | null; staff_id?: string | null
   // Set by Lumio Coach, persisted so they are still there next week.
   targets?: Target[] | null; targets_note?: string | null; targets_by?: string | null; targets_set_at?: string | null
 }
@@ -117,8 +119,9 @@ export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentT
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12.5, color: T.text, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                    {!a && <span style={{ width: 10, height: 10, borderRadius: 3, background: st?.colour ?? T.border, border: '1px solid rgba(128,128,128,0.4)' }} />}
-                    <span style={{ fontSize: 10.5, color: T.text3 }}>{a ? a.label : st ? st.name : 'Not started'}{p.category || p.level ? ` · ${p.category || p.level}` : ''}</span>
+                    {a ? <LevelSwatch colour={a.colour} w={10} h={10} T={T} />
+                      : <span style={{ width: 10, height: 10, borderRadius: 3, background: st?.colour ?? T.border, border: '1px solid rgba(128,128,128,0.4)' }} />}
+                    <span style={{ fontSize: 10.5, color: T.text3 }}>{a ? a.label : st ? st.name : 'Not started'}{(p.category || p.level) && !(a && /adult/i.test(String(p.category || p.level))) ? ` · ${p.category || p.level}` : ''}</span>
                   </div>
                 </div>
               </div>
@@ -141,7 +144,7 @@ function Head({ T }: { T: ThemeTokens }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Player Development</h1>
-      <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Every player’s journey — the colour they’re on, skill mastery, goals and trajectory.</p>
+      <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Every player’s journey — the colour they’re on (or, for adults, their adult level), skill mastery, goals and trajectory.</p>
     </div>
   )
 }
@@ -159,9 +162,11 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
   // certificate must not be signed differently depending on which tab printed it.
   const profile = useCoachProfile()
   const racketOn = useRacketModule()
-  // An adult is on the academy's own levels, not the junior colours.
-  const { standingOf, levels: adultLevels } = useAdultStanding()
+  // Adults (18+, an Adult category, or already on a level) get the adult
+  // pathway in place of every junior colour panel below — AdultPathway.tsx.
+  const { standingOf, levels: adultLevels, passes: adultPasses } = useAdultStanding()
   const adult = standingOf(p)
+  const adultMove = useAdultMove(p, adultLevels, adult, onSaved)
   const rawIdx = RACKET_STAGES.findIndex(s => s.id === p.racket_stage)
   const hasStage = rawIdx >= 0
   const cur = hasStage ? rawIdx : 0
@@ -224,8 +229,8 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
     // record, so Racket Progression, the roster card, the certificate and the
     // family's own app all move with it.
     ...(adult ? [
-      { label: 'Adult level', value: adult.level ? adult.short : '—', sub: adult.level ? undefined : 'no level yet', colour: adult.level ? undefined : T.text3 },
-      { label: 'Checklist', value: adult.total ? `${adult.done}/${adult.total}` : '—', sub: adult.total ? 'passed' : undefined, colour: adult.total ? accent.hex : T.text3 },
+      { label: 'Adult level', value: <AdultLevelPicker T={T} accent={accent} levels={adultLevels} levelId={p.adult_level_id || null} onPick={id => void adultMove.set(id)} /> },
+      { label: 'Checklist', value: adult.total ? `${adult.done}/${adult.total}` : '—', sub: !adult.level ? 'no level yet' : adult.total ? (adult.done === adult.total ? 'all passed' : 'passed') : 'nothing to pass', colour: adult.total ? (adult.done === adult.total ? T.good : accent.hex) : T.text3 },
     ] : [
       { label: 'Current colour', value: <ColourPicker T={T} accent={accent} stageId={hasStage ? curStage.id : ''} onPick={setColour} /> },
       // No colour yet is "not started", not "25% of the top colour".
@@ -274,7 +279,7 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
         <PlayerTargets T={T} accent={accent} p={p} onSaved={onSaved} />
 
         {/* Goal */}
-        {showSec('goal') && <GoalBox T={T} accent={accent} p={p} stageId={hasStage && !adult ? curStage.id : ''} onSaved={onSaved} />}
+        {showSec('goal') && <GoalBox T={T} accent={accent} p={p} stageId={hasStage && !adult ? curStage.id : ''} presets={adult ? adultGoals(adult, adultLevels) : undefined} onSaved={onSaved} />}
         {/* Stats */}
         <div style={{ display: showSec('stats') ? 'grid' : 'none', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 14 }}>
           {tiles.map(t => (
@@ -289,26 +294,8 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
 
       {/* The colour they are working on — live grading, and the source of
           truth for Racket Progression. */}
-      {adult && (
-        <div style={{ ...card, display: showSec('racket') ? undefined : 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
-            <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>{adult.level ? `Working on · ${adult.short}` : 'No adult level yet'}</div>
-            {adult.total > 0 && <div style={{ marginLeft: 'auto', fontSize: 11, color: accent.hex, fontWeight: 700 }}>{adult.done}/{adult.total} passed</div>}
-          </div>
-          {adult.level?.checklist.map(item => {
-            const done = adult.passed.has(item.id)
-            return (
-              <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8, fontSize: 12.5, color: done ? T.text : T.text2 }}>
-                <span style={{ color: done ? T.good : T.text3, fontWeight: 700, width: 14, flexShrink: 0 }}>{done ? '✓' : '○'}</span>
-                <span>{item.text}</span>
-              </div>
-            )
-          })}
-          <p style={{ fontSize: 10.5, color: T.text3, marginTop: 4, lineHeight: 1.55 }}>
-            {adult.level ? 'Tick items off and move them up on Adult levels.' : 'Put them on one of your levels on Adult levels.'}
-            {adultLevels.length ? ` Your levels: ${adultLevels.map((l, i) => `${i + 1}. ${l.name}`).join(', ')}.` : ''}
-          </p>
-        </div>
+      {adult && showSec('racket') && (
+        <AdultWorkingOn T={T} accent={accent} p={p} a={adult} levels={adultLevels} passes={adultPasses} onSet={id => void adultMove.set(id)} />
       )}
       <div style={{ ...card, display: showSec('racket') && !adult ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
@@ -348,6 +335,7 @@ function Detail({ T, accent, p, skillScores, attRows, lessons, gps, onGrade, onS
 
       {/* Colour journey + recent lessons */}
       <div className="cm-2" style={{ display: showSec('journey') ? 'grid' : 'none', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        {adult && <AdultJourney T={T} accent={accent} p={p} a={adult} levels={adultLevels} move={adultMove} />}
         <div style={{ ...card, display: adult ? 'none' : undefined }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 10 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Colour journey</div>
@@ -448,8 +436,20 @@ function ColourPicker({ T, accent, stageId, onPick }: {
 // of what the goal should be, so the three that fit this rung are offered right
 // here, one tap each — with their own words still a click away for the player
 // that none of them describes.
-function GoalBox({ T, accent, p, stageId, onSaved }: {
-  T: ThemeTokens; accent: AccentTokens; p: Player; stageId: string; onSaved?: () => void
+// An adult's goals come from their own level, never the junior colours.
+function adultGoals(a: NonNullable<ReturnType<ReturnType<typeof useAdultStanding>['standingOf']>>, levels: { name: string }[]): string[] {
+  if (!a.level) return ['Rally ten in a row from the baseline', 'A second serve they can rely on', 'Play club doubles with confidence']
+  const next = levels[a.number]
+  const todo = a.level.checklist.find(i => !a.passed.has(i.id))
+  return [
+    `Pass ${a.level.name} this term`,
+    next ? `Move up to ${next.name}` : `Hold ${a.level.name} in match play`,
+    ...(todo ? [todo.text] : []),
+  ]
+}
+
+function GoalBox({ T, accent, p, stageId, presets: given, onSaved }: {
+  T: ThemeTokens; accent: AccentTokens; p: Player; stageId: string; presets?: string[]; onSaved?: () => void
 }) {
   // Everything here is keyed to the player rather than reset by an effect, so
   // switching player can never leave the last one's goal (or a half-typed one)
@@ -470,7 +470,7 @@ function GoalBox({ T, accent, p, stageId, onSaved }: {
     setBusy(false)
   }
 
-  const presets = goalPresets(stageId)
+  const presets = given || goalPresets(stageId)
 
   return (
     <div style={{ background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 8, padding: '10px 12px', marginTop: 14 }}>

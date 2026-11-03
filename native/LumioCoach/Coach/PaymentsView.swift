@@ -509,6 +509,8 @@ struct MembershipForm: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(CoachStore.self) private var store
     let plan: PaymentsOverview.Membership?
+    /// Opened from a player's Setup: the plan is for them.
+    var presetPlayerId: String? = nil
     let saved: (String) -> Void
 
     @State private var playerId: String?
@@ -572,6 +574,7 @@ struct MembershipForm: View {
                     name = p.name; amount = Fmt.poundsText(p.amountPennies); day = p.dayOfMonth
                     starts = p.startsMonth ?? months[0]; covers = p.covers ?? "lessons"; groupId = p.groupId
                 } else if starts.isEmpty { starts = months.count > 1 ? months[1] : months[0] }
+                if plan == nil, playerId == nil, let presetPlayerId { playerId = presetPlayerId }
             }
         }
     }

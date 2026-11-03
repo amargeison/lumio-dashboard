@@ -127,6 +127,20 @@ export function levelProgress(level: Pick<AdultLevel, 'id' | 'checklist'>, passe
   return { done, total: items.length, ready: items.length > 0 && done === items.length, passed }
 }
 
+/**
+ * The adult ladder's colours, by place on the ladder (1st level, 2nd, …), so
+ * adult levels read as a coloured ladder like the junior rackets. Deliberately
+ * none of the nine junior colours: an adult on "Club" should never look like a
+ * junior on Blue. They run cool to warm and finish on gold. A coach who adds or
+ * reorders levels gets the colours in order, so the ladder always reads upward.
+ * The iPhone app has the same list (CoachRows.swift AdultStanding.palette).
+ */
+export const ADULT_COLOURS = ['#5EC8B8', '#2FA4D9', '#3F5FD0', '#7B4FD0', '#C2408A', '#C99A2E', '#1F3A5F', '#8C2F39', '#2E6B4F', '#4A4A4A'] as const
+
+/** The colour of the level at this place on the ladder (0 = the first level). */
+export const adultColour = (index: number): string =>
+  ADULT_COLOURS[((Math.max(0, Math.floor(Number(index) || 0)) % ADULT_COLOURS.length) + ADULT_COLOURS.length) % ADULT_COLOURS.length]
+
 export const ordered = <L extends Pick<AdultLevel, 'position' | 'name'>>(levels: L[]): L[] =>
   [...levels].sort((a, b) => a.position - b.position || a.name.localeCompare(b.name))
 
@@ -134,7 +148,7 @@ export const ordered = <L extends Pick<AdultLevel, 'position' | 'name'>>(levels:
 export const isAdultPlayer = (p: { category?: string | null; age?: number | null; adult_level_id?: string | null }) =>
   !!p.adult_level_id || /adult/i.test(String(p.category || '')) || (Number(p.age) || 0) >= 18
 
-export type AdultStanding = { level: AdultLevel | null; number: number; done: number; total: number; passed: Set<string>; label: string; short: string }
+export type AdultStanding = { level: AdultLevel | null; number: number; done: number; total: number; passed: Set<string>; label: string; short: string; colour: string | null }
 
 /**
  * Where an adult stands on the academy's levels, for the places that would
@@ -147,11 +161,11 @@ export function adultStanding(p: { id: string; category?: string | null; age?: n
   if (!isAdultPlayer(p)) return null
   const list = ordered(levels)
   const i = list.findIndex(l => l.id === p.adult_level_id)
-  if (i < 0) return { level: null, number: 0, done: 0, total: 0, passed: new Set(), label: 'Adult · no level yet', short: 'No level yet' }
+  if (i < 0) return { level: null, number: 0, done: 0, total: 0, passed: new Set(), label: 'Adult · no level yet', short: 'No level yet', colour: null }
   const level = list[i]
   const { done, total, passed } = levelProgress(level, passes, p.id)
   const short = `${i + 1}. ${level.name}`
-  return { level: { ...level, checklist: tidyChecklist(level.checklist) }, number: i + 1, done, total, passed, label: total ? `${short} · ${done}/${total}` : short, short }
+  return { level: { ...level, checklist: tidyChecklist(level.checklist) }, number: i + 1, done, total, passed, label: total ? `${short} · ${done}/${total}` : short, short, colour: adultColour(i) }
 }
 
 const shortDate = (iso?: string | null) => {

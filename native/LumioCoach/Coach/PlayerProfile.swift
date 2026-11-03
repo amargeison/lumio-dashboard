@@ -31,6 +31,14 @@ struct PlayerEditView: View {
         var consentData = false, consentPhoto = false, consentMedical = false, consentWearable = false
         var consentBy = "", hasConsentDate = false, consentDate = Date()
         var rate = "", rateReason = ""
+        var adultLevel = ""
+    }
+
+    @State private var adultLevels: [AdultLevelRecord] = []
+    /// An adult (Adult category, 18 or over, or on a level) is on the academy's
+    /// adult levels and has no colour — lib/coach/adult-levels.ts isAdultPlayer.
+    private var draftAdult: Bool {
+        p.category.lowercased().contains("adult") || (Int(p.age) ?? 0) >= 18 || !p.adultLevel.isEmpty
     }
 
     var body: some View {
@@ -44,9 +52,16 @@ struct PlayerEditView: View {
                         Text("—").tag("")
                         ForEach(levelChoices, id: \.self) { Text($0).tag($0) }
                     }
-                    Picker(store.setup?.features?.racket == true ? "Racket" : "Colour", selection: $p.stage) {
-                        Text("Not started").tag("")
-                        ForEach(Racket.stages) { Text($0.name).tag($0.id) }
+                    if draftAdult {
+                        Picker("Adult level", selection: $p.adultLevel) {
+                            Text("No level yet").tag("")
+                            ForEach(Array(AdultStanding.ordered(adultLevels).enumerated()), id: \.element.id) { i, l in Text("\(i + 1). \(l.name)").tag(l.id) }
+                        }
+                    } else {
+                        Picker(store.setup?.features?.racket == true ? "Racket" : "Colour", selection: $p.stage) {
+                            Text("Not started").tag("")
+                            ForEach(Racket.stages) { Text($0.name).tag($0.id) }
+                        }
                     }
                 }
                 Section("Contact") {
@@ -98,6 +113,7 @@ struct PlayerEditView: View {
                 Button("Keep them", role: .cancel) {}
             } message: { Text(deleteInfo ?? "") }
             .onAppear { fill() }
+            .task { adultLevels = (try? await Rows.list("coach_adult_levels", order: "position.asc")) ?? [] }
         }
     }
 
@@ -111,6 +127,7 @@ struct PlayerEditView: View {
         p.name = x.name; p.category = x.category ?? ""; p.age = x.age.map(String.init) ?? ""
         p.parentName = x.parentName ?? ""; p.parentEmail = x.parentEmail ?? ""; p.email = x.email ?? ""; p.phone = x.phone ?? ""
         p.stage = x.racketStage ?? ""; p.level = x.level ?? ""; p.paymentMethod = x.paymentMethod ?? ""
+        p.adultLevel = x.adultLevelId ?? ""
         p.goal = x.goal ?? ""; p.notes = x.notes ?? ""; p.medical = x.medicalNotes ?? ""
         p.consentData = x.consentData ?? false; p.consentPhoto = x.consentPhoto ?? false
         p.consentMedical = x.consentMedical ?? false; p.consentWearable = x.consentWearable ?? false
@@ -142,7 +159,7 @@ struct PlayerEditView: View {
         saving = true
         defer { saving = false }
         let rate = p.rate.isEmpty ? nil : Fmt.pennies(p.rate)
-        let row: RowValues = [
+        var row: RowValues = [
             "name": .string(p.name.split(whereSeparator: \.isWhitespace).joined(separator: " ")),
             "category": .text(p.category), "age": .number(Int(p.age)),
             "parent_name": .text(p.parentName), "parent_email": .text(p.parentEmail.lowercased()),
@@ -154,6 +171,8 @@ struct PlayerEditView: View {
             "consent_by": .text(p.consentBy), "consent_date": p.hasConsentDate ? .string(Fmt.iso(p.consentDate)) : .null,
             "rate_pennies": .number(rate), "rate_reason": rate == nil ? .null : .text(p.rateReason),
         ]
+        // An adult's level is saved and their colour left as it was; a junior's colour is saved.
+        if draftAdult { row["racket_stage"] = nil; row["adult_level_id"] = p.adultLevel.isEmpty ? .null : .string(p.adultLevel) }
         do {
             if let x = player {
                 let _: IdRow = try await Rows.update("coach_players", id: x.id, row)

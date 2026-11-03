@@ -18,10 +18,11 @@ import { fileToAvatarDataUrl, avatarSrc } from '@/lib/avatar'
 import { getSettings, setSettings, subscribe as subscribeSettings, PLAYER_LEVELS, PAYMENT_METHODS } from '../_lib/settings-store'
 import { stageWords } from '../_lib/stage-words'
 import { useAdultStanding } from '../_lib/adult-standing'
+import { LevelSwatch } from './AdultLevels'
 import { askConfirm, tell } from '../_lib/ask'
 import { takeOpenPlayer, OPEN_PLAYER, type SetupSection } from '../_lib/open-player'
 import { useWallet, savedFor } from '../_lib/pay-wallet'
-import { tidyChecklist, videoEmbed, isAdultPlayer, type AdultLevel, type AdultPass, type AdultStanding } from '@/lib/coach/adult-levels'
+import { tidyChecklist, videoEmbed, isAdultPlayer, adultColour, type AdultLevel, type AdultPass, type AdultStanding } from '@/lib/coach/adult-levels'
 import { studentAudience } from '@/lib/student/bundle'
 import { formatPounds, parseAmount, formatPennies } from '@/lib/coach/money'
 import { RATE_REASONS } from '@/lib/coach/pricing'
@@ -295,7 +296,7 @@ function Avatar({ accent, name, size = 40, url }: { accent: AccentTokens; name: 
 }
 // An adult's own level in place of a junior colour: "3. Club · 3/5".
 function AdultChip({ a, T }: { a: AdultStanding; T: ThemeTokens }) {
-  return <span style={{ fontSize: 11.5, color: a.level ? T.text : T.text3, fontWeight: a.level ? 600 : 400 }}>{a.label}</span>
+  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: a.level ? T.text : T.text3, fontWeight: a.level ? 600 : 400 }}>{a.level && <LevelSwatch colour={a.colour} w={18} h={11} T={T} />}{a.label}</span>
 }
 // The Development tab for an adult: their level's checklist, ticked in place
 // with the day each item was passed, "Move up to …" once it is complete, the
@@ -336,7 +337,7 @@ function AdultDevelopment({ T, accent, player, a, levels, passes }: { T: ThemeTo
           <>
             <div style={{ ...head, marginBottom: 10 }}>No adult level yet</div>
             {levels.length === 0
-              ? <p style={{ fontSize: 12, color: T.text3 }}>Set up your adult levels on Player Development → Adult levels first.</p>
+              ? <p style={{ fontSize: 12, color: T.text3 }}>Set up your adult levels under Racket Progression → Adult levels first.</p>
               : <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   <select value={pick} aria-label={`Level for ${player.name}`} onChange={e => setPick(e.target.value)} style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 10px', fontSize: 12.5 }}>
                     {levels.map((l, i) => <option key={l.id} value={l.id}>{i + 1}. {l.name}</option>)}
@@ -393,6 +394,7 @@ function AdultDevelopment({ T, accent, player, a, levels, passes }: { T: ThemeTo
             const state = !a.number ? 'locked' : i + 1 < a.number ? 'done' : i + 1 === a.number ? 'current' : 'locked'
             return (
               <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 9, opacity: state === 'locked' ? 0.4 : 1 }}>
+                <LevelSwatch colour={adultColour(i)} w={18} h={11} T={T} />
                 <span style={{ fontSize: 11.5, color: T.text, fontWeight: state === 'current' ? 700 : 500, flex: 1 }}>{i + 1}. {l.name}</span>
                 {state === 'done' && <Icon name="check" size={12} stroke={2.2} style={{ color: T.good }} />}
                 {state === 'current' && <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>now</span>}

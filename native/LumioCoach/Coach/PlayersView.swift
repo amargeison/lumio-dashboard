@@ -79,6 +79,9 @@ struct PlayerDetailView: View {
     @State private var sheet: Sheet?
     @State private var toast: Toast?
     @State private var pay = PayModel()
+    @State private var setup = SetupFacts()
+    @State private var adultLevels: [AdultLevelRecord] = []
+    @State private var adultPasses: [AdultPassRecord] = []
 
     enum Sheet: String, Identifiable { case book, message, summary, edit; var id: String { rawValue } }
 
@@ -96,7 +99,15 @@ struct PlayerDetailView: View {
                         if let parent = profile?.parentName ?? player.parentName, !parent.isEmpty {
                             Text("Parent: \(parent)").font(.subheadline).foregroundStyle(.secondary)
                         }
-                        if let id = profile?.racketStage, let s = Racket.stage(id) {
+                        if let profile, let a = AdultStanding.of(profile, levels: adultLevels, passes: adultPasses) {
+                            // Adults are on the academy's adult levels, not a racket colour.
+                            HStack(spacing: 5) {
+                                if let c = a.colour { RoundedRectangle(cornerRadius: 2).fill(c).frame(width: 14, height: 10).overlay(RoundedRectangle(cornerRadius: 2).stroke(.secondary.opacity(0.4))) }
+                                else { Image(systemName: "figure.tennis") }
+                                Text(a.label)
+                            }
+                            .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        } else if let id = profile?.racketStage, let s = Racket.stage(id) {
                             HStack(spacing: 5) {
                                 Circle().fill(Color(hex: s.hex)).frame(width: 10, height: 10).overlay(Circle().stroke(.secondary.opacity(0.4)))
                                 Text(store.setup?.stageWords(s.name) ?? s.name).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
@@ -117,6 +128,18 @@ struct PlayerDetailView: View {
 
             if let profile {
                 Section {
+                    // The website card's Setup tab: what still needs doing, with the count.
+                    NavigationLink { PlayerSetupView(player: profile, pay: pay, isHead: store.setup?.me.isHead ?? true) { await loadProfile() } } label: {
+                        HStack {
+                            Label("Setup", systemImage: "checklist.unchecked")
+                            Spacer()
+                            let n = setup.todo(profile, isHead: store.setup?.me.isHead ?? true, pay: pay)
+                            if n > 0 {
+                                Text("\(n) to do").font(.caption.weight(.bold)).foregroundStyle(.white)
+                                    .padding(.horizontal, 8).padding(.vertical, 3).background(Color.orange, in: Capsule())
+                            }
+                        }
+                    }
                     NavigationLink { DevelopmentView(player: profile) { await loadProfile() } } label: {
                         Label("Development", systemImage: "chart.line.uptrend.xyaxis")
                     }
@@ -207,6 +230,14 @@ struct PlayerDetailView: View {
     }
 
     private func loadProfile() async {
-        if let rows: [PlayerProfile] = try? await Rows.list("coach_players", [("id", player.id)]), let p = rows.first { profile = p }
+        if let rows: [PlayerProfile] = try? await Rows.list("coach_players", [("id", player.id)]), let p = rows.first {
+            profile = p
+            if p.isAdult {
+                async let l: [AdultLevelRecord] = (try? Rows.list("coach_adult_levels", order: "position.asc")) ?? []
+                async let x: [AdultPassRecord] = (try? Rows.list("coach_adult_passes", [("player_id", "eq.\(p.id)")])) ?? []
+                (adultLevels, adultPasses) = await (l, x)
+            }
+        }
+        setup = await SetupFacts.load(player.id, isHead: store.setup?.me.isHead ?? true)
     }
 }
