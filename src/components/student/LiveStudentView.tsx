@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { RACKET_STAGES, SKILLS_BY_STAGE, SKILL_LEVELS } from '@/app/coach/[slug]/_lib/coach-db'
 import { avatarSrc } from '@/lib/avatar'
+import { isAdultPlayer, adultColour } from '@/lib/coach/adult-levels'
 import {
   studentFraming, latestGuidance, activeCamps, daysUntil, asStringList,
   type StudentBundle, type StudentCamp, type StudentClip, type StudentWatchSession,
@@ -52,6 +53,12 @@ function AdultLevelCard({ T, level, you, first }: { T: StudentTheme; level: NonN
   return (
     <Card T={T}>
       <Head T={T} icon="trophy" title={`${level.name} · level ${level.number} of ${level.of}`} sub={level.summary || undefined} />
+      {/* The academy's adult levels as a coloured ladder, the same colours the coach sees. */}
+      <div aria-hidden style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+        {Array.from({ length: level.of }, (_, i) => (
+          <span key={i} style={{ flex: 1, height: 8, borderRadius: 3, background: adultColour(i), opacity: i + 1 <= level.number ? 1 : 0.28, outline: i + 1 === level.number ? `2px solid ${T.text}` : 'none', outlineOffset: 1 }} />
+        ))}
+      </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
         <div style={{ flex: 1, height: 8, borderRadius: 4, background: T.accentDim, overflow: 'hidden' }}>
           <div style={{ height: '100%', width: `${level.total ? (level.done / level.total) * 100 : 0}%`, background: T.accent }} />
@@ -165,7 +172,11 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
   // racket" and "25%" while the coach's page said 0% and offered no award.
   const remaining = stageSkills.filter(s => scoreOf(s) < 4).length
   const pct = stageSkills.length ? Math.round(((stageSkills.length - remaining) / stageSkills.length) * 100) : 0
-  const hasRacket = !!player.racket_stage && stageSkills.length > 0
+  // An adult is on the academy's adult levels, never the junior rackets — even
+  // when an old racket colour is still saved on their record. Same rule as the
+  // coach's pages (isAdultPlayer): an Adult category, 18 or over, or on a level.
+  const isAdult = !!bundle.adultLevel || isAdultPlayer(player)
+  const hasRacket = !isAdult && !!player.racket_stage && stageSkills.length > 0
   const racketModule = !bundle.features || bundle.features.racket !== false
 
   // ── effort & session report ───────────────────────────────────────────────
@@ -228,6 +239,12 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
             <div style={{ fontSize: 12.5, color: T.text2, marginTop: 6, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               {!!(player.category || player.level) && <span>{[player.category, player.level].filter(Boolean).join(' · ')}</span>}
               {typeof player.age === 'number' && player.age > 0 && <span>Age {player.age}</span>}
+              {isAdult && bundle.adultLevel && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 18, height: 11, borderRadius: 3, background: adultColour(bundle.adultLevel.number - 1), border: '1px solid rgba(128,128,128,0.4)' }} />
+                  {bundle.adultLevel.number}. {bundle.adultLevel.name}
+                </span>
+              )}
               {hasRacket && (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 18, height: 11, borderRadius: 3, background: stage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
@@ -544,7 +561,7 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
         <Card T={T}>
           <div style={{ fontSize: 13, color: T.text2, lineHeight: 1.6 }}>
             {f.audience === 'adult'
-              ? 'Your page fills up as the coaching starts — lesson summaries, what to practise, and racket progress all appear here after your next session.'
+              ? 'Your page fills up as the coaching starts — lesson summaries, what to practise and your level all appear here after your next session.'
               : `${f.first}’s page fills up as the coaching starts — lesson summaries, what to practise at home, and racket progress all appear here after the next session.`}
           </div>
         </Card>
