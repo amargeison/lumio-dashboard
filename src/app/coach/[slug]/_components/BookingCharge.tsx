@@ -15,6 +15,7 @@ import { readPolicy, isLateCancel, feeFor, ukLocalToMs } from '@/lib/coach/cance
 import { priceFor, type ClientRate, type PriceRule } from '@/lib/coach/pricing'
 import { formatPennies } from '@/lib/coach/money'
 import { useCoachTable } from '../_lib/coach-db'
+import { askConfirm } from '../_lib/ask'
 import { lessonUses, coverage, packWords, type PackLine, type BookingLite } from '@/lib/coach/packs'
 import { planCovering, planWords, type Plan } from '@/lib/coach/memberships'
 
@@ -62,7 +63,7 @@ export function BookingCharge({ T, accent, booking, settings, client }: {
 
   const charge = async (kind: string, amount: number) => {
     if (busy || !card) return
-    if (!confirm(`Take ${formatPennies(amount)} from ${who}’s ${methodLabel(card)}?`)) return
+    if (!(await askConfirm(`Take ${formatPennies(amount)} from ${who}’s ${methodLabel(card)}?`, { yes: 'Take payment' }))) return
     setBusy(kind); setMsg(null)
     try {
       const r = await fetch('/api/coach/pay/charge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerId: booking.player_id, bookingId: booking.id, kind, amountPennies: amount }) })
@@ -87,7 +88,7 @@ export function BookingCharge({ T, accent, booking, settings, client }: {
   }
   const refund = async (c: PayCharge) => {
     const left = c.amount_pennies - (c.refunded_pennies || 0)
-    if (busy || !confirm(`Give ${who} back ${formatPennies(left)}? It goes back to the card or account it came from.`)) return
+    if (busy || !(await askConfirm(`Give ${who} back ${formatPennies(left)}? It goes back to the card or account it came from.`, { yes: 'Refund', danger: true }))) return
     setBusy(`refund-${c.id}`); setMsg(null)
     try {
       const r = await fetch('/api/coach/pay/charge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refund: c.id }) })

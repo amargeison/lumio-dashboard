@@ -13,6 +13,7 @@ import { seedLumioEquipment, EQUIPMENT_KIT_CHOICES, EQUIPMENT_CATEGORY_CHOICES, 
 import { SetupWizard } from './SetupWizard'
 import { getSettings, setSettings, isDemoPortal } from '../_lib/settings-store'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { askConfirm } from '../_lib/ask'
 
 type Item = { id: string; item: string; category?: string | null; quantity?: number | null; status?: string | null; notes?: string | null; low_at?: number | null }
 type Kit = { id: string; session_type: string; label: string }
@@ -490,7 +491,7 @@ function ItemForm({ T, accent, item, onClose, onSave, onDelete }: { T: ThemeToke
         </div>
         {err && <div role="alert" style={{ fontSize: 12, color: T.bad, marginTop: 12 }}>{err}</div>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 18 }}>
-          {onDelete && <button onClick={async () => { if (confirm('Delete this item?')) { try { await onDelete() } catch { setErr('That was not deleted. Try again.') } } }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
+          {onDelete && <button onClick={async () => { if (await askConfirm('Delete this item?', { yes: 'Delete' })) { try { await onDelete() } catch { setErr('That was not deleted. Try again.') } } }} style={{ appearance: 'none', padding: '8px 12px', borderRadius: 9, background: 'transparent', color: T.bad, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Delete</button>}
           <button onClick={onClose} style={{ marginLeft: 'auto', appearance: 'none', padding: '8px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 13, cursor: 'pointer', fontFamily: FONT }}>Cancel</button>
           <button onClick={save} disabled={!String(d.item).trim() || saving} style={{ appearance: 'none', border: 0, padding: '8px 16px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: String(d.item).trim() && !saving ? 1 : 0.5, fontFamily: FONT }}>{saving ? 'Saving…' : 'Save'}</button>
         </div>

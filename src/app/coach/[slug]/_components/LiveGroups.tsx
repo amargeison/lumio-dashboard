@@ -19,6 +19,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, rowsChanged } from '../_lib/coach-db'
 import { useCoachSettings } from '../_lib/use-settings'
 import { useWallet, reloadWallet, savedFor } from '../_lib/pay-wallet'
+import { askConfirm } from '../_lib/ask'
 import { WEEKDAYS, upcomingDate, askOn, dayWords, everyWords, cancelState, untilWords } from '@/lib/coach/groups'
 import { readPolicy } from '@/lib/coach/cancel-policy'
 import { formatPennies } from '@/lib/coach/money'
@@ -292,7 +293,7 @@ function GroupEditor({ T, accent, group, players, venues, memberRows, defaultPri
     finally { setBusy(false) }
   }
   const remove = async () => {
-    if (!group || !confirm(`Delete ${group.name}? Its weeks and answers go too. Payments already taken stay in Payments.`)) return
+    if (!group || !(await askConfirm(`Delete ${group.name}? Its weeks and answers go too. Payments already taken stay in Payments.`, { yes: 'Delete' }))) return
     try { await dbRemove('coach_groups', group.id); rowsChanged('coach_group_members', 'coach_group_sessions', 'coach_group_replies'); onClose() }
     catch (e) { setErr(e instanceof Error ? e.message : 'It could not be deleted.') }
   }

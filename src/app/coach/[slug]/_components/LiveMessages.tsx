@@ -13,6 +13,7 @@ import { useState, useEffect, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, useCoachProfile, dbUpdate, dbRemove, currentIdentity } from '../_lib/coach-db'
+import { askConfirm } from '../_lib/ask'
 import { LiveCoachSendMessage } from './LiveCoachSendMessage'
 import { avatarSrc } from '@/lib/avatar'
 
@@ -326,7 +327,7 @@ export function LiveMessages({ T, accent }: { T: ThemeTokens; accent: AccentToke
                       <button key={r} className="cm-tap" onClick={() => { dbUpdate('coach_messages', m.id, { reaction: m.reaction === r ? null : r }).then(() => history.reload()) }} title="React"
                         style={{ appearance: 'none', border: m.reaction === r ? `1px solid ${accent.hex}` : `1px solid transparent`, background: m.reaction === r ? accent.dim : 'transparent', borderRadius: 6, padding: '2px 5px', fontSize: 13, cursor: 'pointer', opacity: m.reaction && m.reaction !== r ? 0.4 : 1 }}>{r}</button>
                     ))}
-                    {canDelete && <button className="cm-tap" onClick={() => { if (confirm('Delete this message?')) dbRemove('coach_messages', m.id).then(() => history.reload()) }} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 11, cursor: 'pointer' }}>Delete</button>}
+                    {canDelete && <button className="cm-tap" onClick={async () => { if (await askConfirm('Delete this message?', { yes: 'Delete' })) dbRemove('coach_messages', m.id).then(() => history.reload()) }} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: T.text3, fontSize: 11, cursor: 'pointer' }}>Delete</button>}
                   </div>
                 </div>
               ))}

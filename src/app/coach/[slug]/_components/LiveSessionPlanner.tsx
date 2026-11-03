@@ -18,6 +18,9 @@ import { MediaCaptureModal } from './MediaCaptureModal'
 import { pollMedia } from '../_lib/media-upload'
 import { getSettings } from '../_lib/settings-store'
 import { stageWords } from '../_lib/stage-words'
+import { useAdultStanding } from '../_lib/adult-standing'
+import { askConfirm, tell } from '../_lib/ask'
+import { isAdultPlayer } from '@/lib/coach/adult-levels'
 import { playerLabels } from '../_lib/tell-apart'
 import { avatarSrc } from '@/lib/avatar'
 import { campSpans, campsOn, campsBetween, campDayLabel, CAMP_COLOUR, type CampDay, type CampRow } from '@/lib/coach/camp-dates'
@@ -225,6 +228,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
   // no racket to be "due", and the tile shows the roster size instead.
   const racketOn = stageWords().racket
   const racketsDue = !racketOn ? 0 : players.rows.filter(p => {
+    if (isAdultPlayer(p)) return false
     const st = RACKET_STAGES.find(s => s.id === p.racket_stage); if (!st) return false
     const sk = RACKET_SKILLS[st.id] || []; if (!sk.length) return false
     const sm = skillMap[p.id] || {}
@@ -328,7 +332,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
               onCompleted={() => { setSel(null); plans.reload() }}
               onEdit={() => editSaved(sel)}
               onClose={() => setSel(null)}
-              onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />
+              onDelete={async () => { if (await askConfirm('Delete this session?', { yes: 'Delete' })) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />
             </div>
           )}
 
@@ -435,7 +439,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
             onEdit={() => editSaved(selPlan)}
             onCompleted={() => { setSel(null); plans.reload() }}
             onClose={() => setSel(null)}
-            onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', selPlan.id); setSel(null); plans.reload() } }} />}
+            onDelete={async () => { if (await askConfirm('Delete this session?', { yes: 'Delete' })) { await dbRemove('coach_session_plans', selPlan.id); setSel(null); plans.reload() } }} />}
         </div>
         )
       })()}
@@ -457,7 +461,7 @@ export function LiveSessionPlanner({ T, accent, density, onNavigate }: Common & 
         onEdit={() => editSaved(sel)}
         onCompleted={() => { setSel(null); plans.reload() }}
         onClose={() => setSel(null)}
-        onDelete={async () => { if (confirm('Delete this session?')) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />}
+        onDelete={async () => { if (await askConfirm('Delete this session?', { yes: 'Delete' })) { await dbRemove('coach_session_plans', sel.id); setSel(null); plans.reload() } }} />}
     </div>
   )
 }
@@ -769,7 +773,7 @@ function FinishSessionModal({ T, accent, plan, sheet, onClose, onDone, onRecord 
 function printRunSheets(todayPlans: any[], heading: string) {
   if (typeof window === 'undefined') return
   const esc = (s: string) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]!))
-  if (!todayPlans.length) { alert('There are no planned sessions today to print.'); return }
+  if (!todayPlans.length) { void tell('There are no planned sessions today to print.'); return }
   const blocks = todayPlans.map(p => {
     // Print what Lumio Coach designed. The template is only a fallback for plans
     // saved before he built them — a printed sheet that disagrees with the one on
@@ -823,7 +827,10 @@ function NewSession({ T, accent, density, players, prefill, edit, onClose, onSav
   // is not carried into it.
   const [time, setTime] = useState(() => { const m = toMins(src.time || null); return m == null ? '' : hhmm(m) })
   const [duration, setDuration] = useState(String(Number(src.mins) || 60))
-  const [racket, setRacket] = useState(edit?.racket_stage || players.find(p => String(p.id) === pfId)?.racket_stage || '')
+  // An adult is on the academy's own levels, so no junior racket is filled in.
+  const { standingOf } = useAdultStanding()
+  const pfP = players.find(p => String(p.id) === pfId)
+  const [racket, setRacket] = useState((pfP && isAdultPlayer(pfP) ? '' : edit?.racket_stage || pfP?.racket_stage) || '')
   const [standard, setStandard] = useState(edit?.standard || '')
   const [focus, setFocus] = useState(edit?.focus || '')
   const [note, setNote] = useState(edit?.notes || '')
@@ -843,6 +850,7 @@ function NewSession({ T, accent, density, players, prefill, edit, onClose, onSav
   const [rebuilt, setRebuilt] = useState(false)
   const [onHistory, setOnHistory] = useState(false)
   const [onAnswers, setOnAnswers] = useState(false)
+  const [stageLine, setStageLine] = useState('')
   const [manual, setManual] = useState(!!edit && !(edit.built_by === 'lumio-coach' && editSheet.length > 0))
   // A saved plan is never rebuilt behind the coach's back — only when asked.
   const autoRan = useRef(!!edit)
@@ -877,7 +885,7 @@ function NewSession({ T, accent, density, players, prefill, edit, onClose, onSav
   }, [sessions.rows])
 
   // Prefill racket + last-session focus from the chosen roster player.
-  const onPickPlayer = (id: string) => { const p = players.find(x => String(x.id) === id); const name = p?.name || ''; setPlayerSel(p ? id : ''); setPlayer(name); if (p?.racket_stage) setRacket(p.racket_stage); const f = lastFocusFor(name, p ? id : undefined); if (f) setFocus(f) }
+  const onPickPlayer = (id: string) => { const p = players.find(x => String(x.id) === id); const name = p?.name || ''; setPlayerSel(p ? id : ''); setPlayer(name); if (p && isAdultPlayer(p)) setRacket(''); else if (p?.racket_stage) setRacket(p.racket_stage); const f = lastFocusFor(name, p ? id : undefined); if (f) setFocus(f) }
 
   const build = async () => {
     if (drafting) return
@@ -902,6 +910,7 @@ function NewSession({ T, accent, density, players, prefill, edit, onClose, onSav
       setCoachNote(data.coach_note || '')
       setOnHistory(!!data.built_on_history)
       setOnAnswers(!!data.built_on_answers)
+      setStageLine(typeof data.stage_line === 'string' ? data.stage_line : '')
       setBuilt(true); setRebuilt(true); setManual(false)
     } catch (e) { setErr(e instanceof Error ? e.message : 'Lumio Coach could not build the plan just now. Try again, or choose “Write it myself”.') }
     setDrafting(false)
@@ -1031,7 +1040,9 @@ function NewSession({ T, accent, density, players, prefill, edit, onClose, onSav
               <div style={{ minWidth: 0 }}><label style={lbl}>Date</label><input type="date" value={date} disabled={tiedToBooking} onChange={e => setDate(e.target.value)} style={{ ...input, ...locked }} /></div>
               <div style={{ minWidth: 0 }}><label style={lbl}>Start time</label><input type="time" aria-label="Start time" value={time} disabled={tiedToBooking} onChange={e => setTime(e.target.value)} style={{ ...input, ...locked }} /></div>
               <div style={{ minWidth: 0 }}><label style={lbl}>Duration (mins)</label><input type="number" inputMode="numeric" min={5} max={600} step={5} aria-label="Duration in minutes" value={duration} onChange={e => setDuration(e.target.value)} style={input} /></div>
-              <div style={{ minWidth: 0 }}><label style={lbl}>Racket</label><select value={racket} onChange={e => setRacket(e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+              {(() => { const a = mode === 'roster' && playerSel ? standingOf(players.find(p => String(p.id) === playerSel)) : null; return a
+                ? <div style={{ minWidth: 0 }}><label style={lbl}>Level</label><div style={{ ...input, color: a.level ? T.text : T.text3 }}>{a.label}</div></div>
+                : null })() ?? <div style={{ minWidth: 0 }}><label style={lbl}>Racket</label><select value={racket} onChange={e => setRacket(e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>}
             </div>
             {!minsOk && <div style={{ fontSize: 11, color: T.bad, marginTop: 5 }}>Enter the length in whole minutes, between 5 and 600.</div>}
             <div style={{ marginTop: 12 }}><label style={lbl}>Standard</label><input value={standard} onChange={e => setStandard(e.target.value)} placeholder="e.g. LTA Youth · Orange" style={input} /></div>
@@ -1055,6 +1066,13 @@ function NewSession({ T, accent, density, players, prefill, edit, onClose, onSav
                   <button onMouseDown={e => e.preventDefault()} onClick={() => { autoRan.current = true; setManual(true) }} style={{ padding: '8px 12px', borderRadius: 9, border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Write it myself</button>
                 )}
               </div>
+              {/* What it planned from — the racket, or an adult's own level — so
+                  the coach can see the level was used. */}
+              {built && rebuilt && stageLine && (
+                <div style={{ fontSize: 11.5, color: T.text2, marginTop: 8 }}>
+                  <span style={{ color: T.text3 }}>{/^Adult/.test(stageLine) ? 'Planned for' : 'Racket'}:</span> {stageLine}
+                </div>
+              )}
               {built && rebuilt && (
                 <div style={{ fontSize: 11, color: T.text3, marginTop: 8, lineHeight: 1.5 }}>
                   {onHistory
@@ -1164,7 +1182,9 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
   const named = who ? players.filter((p: any) => sameName(p.name, who)) : []
   const player = (booking?.player_id && players.find((p: any) => String(p.id) === String(booking.player_id)))
     || (named.length === 1 ? named[0] : null)
-  const stage = player?.racket_stage ? RACKET_STAGES.find(s => s.id === player.racket_stage) : null
+  const { standingOf } = useAdultStanding()
+  const adult = standingOf(player)
+  const stage = !adult && player?.racket_stage ? RACKET_STAGES.find(s => s.id === player.racket_stage) : null
   // Finished = the session has been written up (completed_at). It stays here to
   // look back at, but it is not something to finish a second time.
   const finished = !!plan.completed_at
@@ -1196,6 +1216,7 @@ function SessionRunSheet({ T, accent, plan, players, lessons, onNavigate, onComp
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap' }}>
               <h3 style={{ color: T.text, fontSize: 19, fontWeight: 700, margin: 0, letterSpacing: '-0.01em' }}>{who || plan.title}</h3>
+              {adult && <span style={{ fontSize: 11.5, color: T.text2, fontWeight: 600 }}>{adult.label}</span>}
               {stage && (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: T.text2, fontWeight: 600 }}>
                   <span style={{ width: 16, height: 10, borderRadius: 3, background: stage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />{stage.name}

@@ -771,7 +771,7 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     kit: '11', resource: '12', playerResource: '13', media: '14', watch: '15', gps: '16', consent: '17',
     development: '18', staffVenue: '19', lead: '1a', leadEvent: '1b',
     group: '1c', groupMember: '1d', groupWeek: '1e', groupReply: '1f', charge: '20',
-    mplan: '21', bill: '22', welcome: '23', answers: '24', note: '25', level: '26', pass: '27',
+    mplan: '21', bill: '22', welcome: '23', answers: '24', note: '25', level: '26', pass: '27', member: '28',
   }
   /** A row with the columns every table shares. `created` doubles as updated_at
       unless a later one is given; `false` is for tables with no updated_at. */
@@ -2316,6 +2316,18 @@ export function buildDemoSeed(now: Date): Record<string, Row[]> {
     }, ago(20 - i))
     out.coach_welcome_links.push(link)
     if (done) out.coach_questionnaires.push({ ...row(T.answers, { staff_id: null, player_id: p.id, link_id: link.id, version: link.version, answers: ANSWERS[i], health_consent: false }, ago(18 - i), false), submitted_at: ago(18 - i) })
+  })
+
+  // ── Who has signed in to their own page ──────────────────────────────────
+  // The three adults who finished their welcome link, and the parents of two
+  // juniors. Everyone else has not been invited yet — one of the things a
+  // player card's Setup tab asks about.
+  ;[...adults.slice(0, 3), ...players.filter(p => p.parent_email && !adults.includes(p)).slice(0, 2)].forEach((p, i) => {
+    const parent = !adults.includes(p)
+    out.coach_members.push(row(T.member, {
+      academy_id: COACH, email: parent ? p.parent_email : p.email, role: parent ? 'parent' : 'student', scope_player_id: p.id,
+      status: 'active', member_user_id: id(T.member), invite_sent_at: ago(16 - i),
+    }, ago(16 - i)))
   })
 
   // ── Coach's notes (private) ──────────────────────────────────────────────

@@ -14,6 +14,7 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
+import { askConfirm } from '../_lib/ask'
 import {
   askedForm, campForm, defaultInfoForm, formDone, formIsCustom, formOutstanding, formUrl, Q_TYPES, roomOptionsFor,
   type Answers, type FormQuestion, type FormSection, type InfoForm, type QType,
@@ -73,7 +74,7 @@ export function CampInfoForm({ T, accent, camp, attendees, onSave }: {
   }
   const send = async (attendeeId?: string) => {
     const n = attendeeId ? 1 : waiting.length
-    if (!attendeeId && !window.confirm(`Email the form to the ${n} ${n === 1 ? 'person' : 'people'} who have not filled it in?`)) return
+    if (!attendeeId && !(await askConfirm(`Email the form to the ${n} ${n === 1 ? 'person' : 'people'} who have not filled it in?`, { yes: 'Send' }))) return
     setBusy(attendeeId || 'send'); setNote('')
     try {
       const res = await fetch('/api/coach/camps/form-send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ campId: camp.id, attendeeId }) })
@@ -199,7 +200,7 @@ export function CampInfoForm({ T, accent, camp, attendees, onSave }: {
           ) : (
             <>
               {custom && <button disabled={!!busy} style={btn(false, !!busy)}
-                onClick={() => { if (window.confirm('Go back to the standard form for this camp? Your own questions will be removed. Answers already given are kept.')) void save('reset', { info_form: enabled ? null : { ...defaultInfoForm(camp), enabled: false } }, 'Back to the standard form.') }}>Back to the standard form</button>}
+                onClick={async () => { if (await askConfirm('Go back to the standard form for this camp? Your own questions will be removed. Answers already given are kept.', { yes: 'Go back' })) void save('reset', { info_form: enabled ? null : { ...defaultInfoForm(camp), enabled: false } }, 'Back to the standard form.') }}>Back to the standard form</button>}
               <button onClick={() => setDraft(JSON.parse(JSON.stringify(form)) as InfoForm)} style={btn(true)}>Edit the questions</button>
             </>
           )}
@@ -244,7 +245,7 @@ export function CampInfoForm({ T, accent, camp, attendees, onSave }: {
                   </label>
                   <button onClick={() => setDraft({ ...draft, sections: move(draft.sections, si, -1) })} disabled={si === 0} style={mini} aria-label="Move section up">↑</button>
                   <button onClick={() => setDraft({ ...draft, sections: move(draft.sections, si, 1) })} disabled={si === draft.sections.length - 1} style={mini} aria-label="Move section down">↓</button>
-                  <button onClick={() => { if (window.confirm(`Remove the “${s.title}” section and its ${s.questions.length} questions?`)) setDraft({ ...draft, sections: draft.sections.filter((_, i) => i !== si) }) }} style={{ ...mini, color: T.bad }}>Remove section</button>
+                  <button onClick={async () => { if (await askConfirm(`Remove the “${s.title}” section and its ${s.questions.length} questions?`, { yes: 'Remove' })) setDraft({ ...draft, sections: draft.sections.filter((_, i) => i !== si) }) }} style={{ ...mini, color: T.bad }}>Remove section</button>
                 </div>
                 <input value={s.help || ''} onChange={e => patchSection(si, { help: e.target.value })} placeholder="A line under the section title (optional)" style={{ ...inp, marginTop: 6 }} />
 

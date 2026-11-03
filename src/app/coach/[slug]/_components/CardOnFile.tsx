@@ -11,6 +11,7 @@ import { useState, type CSSProperties } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useWallet, reloadWallet, savedFor, invitedFor, methodLabel } from '../_lib/pay-wallet'
+import { askConfirm } from '../_lib/ask'
 
 const day = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' }) : '')
 
@@ -45,7 +46,7 @@ export function CardOnFile({ T, accent, player, pad }: {
   }
   const remove = async () => {
     if (!saved || busy) return
-    if (!confirm(`Take ${methodLabel(saved)} off file for ${player.name}?\n\nNothing already charged changes. To take payments from them again, they will need to save their details again.`)) return
+    if (!(await askConfirm(`Take ${methodLabel(saved)} off file for ${player.name}?\n\nNothing already charged changes. To take payments from them again, they will need to save their details again.`, { yes: 'Take off file' }))) return
     setBusy('remove'); setMsg(null)
     try {
       const r = await fetch(`/api/coach/pay/cards?id=${encodeURIComponent(saved.id)}`, { method: 'DELETE' })

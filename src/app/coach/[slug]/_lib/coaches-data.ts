@@ -1,6 +1,6 @@
 // Multi-coach staff model (Staff feature, Phase A — data only, no UI).
 //
-// The portal was single-coach (COACH_ORG = Pete Griffiths). This file introduces
+// The portal was single-coach (COACH_ORG, one head coach). This file introduces
 // the wider coaching team, their bookings and their players, WITHOUT touching any
 // of Pete's existing views: Pete's own data still lives in coach-data.ts
 // (BOOKINGS / PLAYERS, now tagged coachId:'pete') and is unchanged. Everything

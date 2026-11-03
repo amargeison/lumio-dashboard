@@ -15,10 +15,12 @@
 // what it was when the form opened.
 
 import { useRef } from 'react'
+import { askConfirm } from './ask'
 
 export function useAskBeforeClose(snapshot: string, onClose: () => void): () => void {
   const opened = useRef(snapshot)
   return () => {
-    if (opened.current === snapshot || window.confirm('Close without saving? What you have typed will be lost.')) onClose()
+    if (opened.current === snapshot) onClose()
+    else void askConfirm('Close without saving? What you have typed will be lost.', { yes: 'Close' }).then(ok => { if (ok) onClose() })
   }
 }

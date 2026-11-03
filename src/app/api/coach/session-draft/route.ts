@@ -3,7 +3,8 @@ import { isAcademyUser, notAnAcademy } from '@/lib/coach/academy-guard'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { runCoachAgent, extractJson, buildPlayerContext } from '@/lib/coach/agent'
-import { sessionPlanTask } from '@/lib/coach/agent-persona'
+import { adultLevelBrief, isAdultPlayer, type AdultLevel, type AdultPass } from '@/lib/coach/adult-levels'
+import { sessionPlanTask, sessionStageLine } from '@/lib/coach/agent-persona'
 import { sharedLessonText } from '@/lib/coach/lesson-recap'
 import { coverage, plannerBrief } from '@/lib/coach/coverage'
 import { ukDate, addDaysIso } from '@/lib/coach/uk-date'
@@ -123,9 +124,25 @@ export async function POST(req: NextRequest) {
         knowledge = plannerBrief(answers, coverage(recent || [], answers, today))
       } catch { /* the plan is still built without it */ }
     }
+    // An adult is planned from their own level and its checklist, never a
+    // junior racket (the planner sends none for them; any that arrives is
+    // ignored). By id only, like the questionnaire above.
+    let adultLevel: { line: string; brief: string } | null = null
+    if (byId) {
+      try {
+        const { data: who } = await supabase.from('coach_players').select('id, category, age, adult_level_id').eq('id', playerId).maybeSingle()
+        if (who && isAdultPlayer(who)) {
+          const [{ data: levels }, { data: passes }] = await Promise.all([
+            supabase.from('coach_adult_levels').select('id, position, name, summary, checklist'),
+            supabase.from('coach_adult_passes').select('player_id, level_id, item_id, passed_on').eq('player_id', playerId),
+          ])
+          adultLevel = adultLevelBrief(who, (levels || []) as (AdultLevel & { summary?: string | null })[], (passes || []) as AdultPass[])
+        }
+      } catch { /* the plan is still built without it */ }
+    }
     const task = sessionPlanTask({
-      type, focus, racket, standard, duration: mins, note, player, context,
-      lastCovered, lastHomework, lastNextFocus, knowledge,
+      type, focus, racket: adultLevel ? undefined : racket, standard, duration: mins, note, player, context,
+      lastCovered, lastHomework, lastNextFocus, knowledge, adultLevel,
     })
     const { text } = await runCoachAgent({ apiKey, task, maxTokens: 2000 })
     const parsed = extractJson<Plan>(text, {})
@@ -157,6 +174,8 @@ export async function POST(req: NextRequest) {
       built_on_history: !!(lastCovered || lastHomework || lastNextFocus),
       // And whether it knew what they told the coach, and what they have covered.
       built_on_answers: !!knowledge,
+      // The stage line Lumio Coach planned from: the racket, or an adult's level.
+      stage_line: sessionStageLine({ racket: adultLevel ? undefined : racket, standard, adultLevel }),
     })
   } catch (err) {
     console.error('[coach/session-draft]', err)

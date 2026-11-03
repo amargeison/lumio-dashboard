@@ -5,6 +5,7 @@
 // levels, a coaching cue and belt/level/tags. Mirrors the ResourceDocs look.
 
 import { BELTS, COACH_ORG, drillLevel, type Drill, type DrillCourt } from '../_lib/coach-data'
+import { tell } from '../_lib/ask'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 const belt = (id: string) => BELTS.find(b => b.id === id)
@@ -124,7 +125,7 @@ export function openDrill(d: Drill) {
   </body></html>`
 
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to open this drill.'); return }
+  if (!w) { void tell('Please allow pop-ups to open this drill.'); return }
   w.document.write(html)
   w.document.close()
   w.focus()

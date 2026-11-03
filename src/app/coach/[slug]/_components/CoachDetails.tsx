@@ -18,6 +18,7 @@ import { addPlan, hasPlan } from '../_lib/session-plan'
 import { getSettings } from '../_lib/settings-store'
 import { requestOpenLesson } from '../_lib/lessons-store'
 import { currentBeltOf, skillScoreFor, beltProgressFor, skillsEarnedFor, setGrade, setBelt, subscribe as subscribeGrades } from '../_lib/racket-grade-store'
+import { tell } from '../_lib/ask'
 import { WatchConnectPanel } from './WatchConnectPanel'
 
 // v1: Effort & Rewards is manual-only — smartwatch QR pairing is hidden until v2.
@@ -485,7 +486,7 @@ export function printLessonReport(lesson: Lesson) {
   </body></html>`
 
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to export the report.'); return }
+  if (!w) { void tell('Please allow pop-ups to export the report.'); return }
   w.document.write(html)
   w.document.close()
   w.focus()

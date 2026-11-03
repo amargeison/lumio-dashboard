@@ -12,6 +12,7 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, currentIdentity, rowsChanged } from '../_lib/coach-db'
 import { STARTER_LEVELS, checklistFrom, tidyChecklist, videoEmbed, VIDEO_HELP, levelProgress, ordered, isAdultPlayer, type AdultLevel, type AdultPass } from '@/lib/coach/adult-levels'
 import { ukDate } from '@/lib/coach/uk-date'
+import { askConfirm } from '../_lib/ask'
 
 type LevelRow = AdultLevel & { checklist: unknown }
 type Player = { id: string; name: string; category?: string | null; age?: number | null; adult_level_id?: string | null; staff_id?: string | null }
@@ -55,7 +56,7 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
     } catch (e) { fail(e, 'That was not saved.') }
   }
   const setLevel = async (p: Player, levelId: string | null, ask?: string) => {
-    if (ask && !confirm(ask)) return
+    if (ask && !(await askConfirm(ask, { yes: 'Move up' }))) return
     setErr('')
     try { await dbUpdate('coach_players', p.id, { adult_level_id: levelId }) } catch (e) { fail(e, 'That was not saved.') }
   }
@@ -171,7 +172,7 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
                             <button onClick={() => setEditing(l.id)} style={btn}>Edit</button>
                             <button disabled={i === 0} aria-label={`Move ${l.name} up`} onClick={() => void swap(levels, i, i - 1).catch(e => fail(e, 'The order was not saved.'))} style={{ ...btn, opacity: i === 0 ? 0.4 : 1 }}>↑</button>
                             <button disabled={i === levels.length - 1} aria-label={`Move ${l.name} down`} onClick={() => void swap(levels, i, i + 1).catch(e => fail(e, 'The order was not saved.'))} style={{ ...btn, opacity: i === levels.length - 1 ? 0.4 : 1 }}>↓</button>
-                            <button onClick={() => { if (confirm(`Delete the ${l.name} level?${count ? ` The ${count} player${count === 1 ? '' : 's'} on it will have no level, and their ticks for it are deleted.` : ''}`)) void dbRemove('coach_adult_levels', l.id).then(() => rowsChanged('coach_players', 'coach_adult_passes')).catch(e => fail(e, 'The level was not deleted.')) }} style={{ ...btn, color: T.bad }}>Delete</button>
+                            <button onClick={async () => { if (await askConfirm(`Delete the ${l.name} level?${count ? ` The ${count} player${count === 1 ? '' : 's'} on it will have no level, and their ticks for it are deleted.` : ''}`)) void dbRemove('coach_adult_levels', l.id).then(() => rowsChanged('coach_players', 'coach_adult_passes')).catch(e => fail(e, 'The level was not deleted.')) }} style={{ ...btn, color: T.bad }}>Delete</button>
                           </span>
                         )}
                       </div>

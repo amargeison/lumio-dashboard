@@ -21,6 +21,7 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { getSettings } from '../_lib/settings-store'
 import { useCoachTable, currentIdentity } from '../_lib/coach-db'
+import { askConfirm } from '../_lib/ask'
 import { V2_LABEL, V2_NOTES } from '@/lib/coach/v2'
 import { campSpans, campsBetween } from '@/lib/coach/camp-dates'
 
@@ -366,7 +367,8 @@ export function LiveCoachSendMessage({ T, accent, players, coachName, clubName, 
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       const written = (messageText + aiDraft).trim()
-      if (step === 'sent' || !written || window.confirm('Close without sending? What you have written will be lost.')) onClose()
+      if (step === 'sent' || !written) onClose()
+      else void askConfirm('Close without sending? What you have written will be lost.', { yes: 'Close' }).then(ok => { if (ok) onClose() })
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

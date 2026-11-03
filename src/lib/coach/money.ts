@@ -33,6 +33,24 @@ export const isVoidPayment = (p: OwedLine): boolean =>
 export const paymentOwedPennies = (p: OwedLine): number =>
   !p.paid && !isVoidPayment(p) ? Math.max(0, toPennies(p.amount)) : 0
 
+// Money that came in during one London calendar month ('YYYY-MM'), in pennies.
+// Two places hold it. A payment line (an invoice, a pack) counts on the day it
+// was ticked paid. A card or Direct Debit charge (a lesson, a group week, a
+// monthly plan) counts on the day it went through, less anything given back.
+// A charge made against a payment line also ticks that line paid, so it is left
+// out here to be counted once, as the line. Camp fees live on each camp and are
+// not in either list.
+type EarnedLine = OwedLine & { paid_at?: string | null }
+type EarnedCharge = { status?: string | null; amount_pennies?: number | null; refunded_pennies?: number | null; paid_at?: string | null; created_at?: string | null; payment_id?: string | null }
+export function earnedInMonthPennies(month: string, lines: EarnedLine[], charges: EarnedCharge[], monthOf: (at: string) => string): number {
+  const fromLines = lines.filter(p => p.paid && !isVoidPayment(p) && !!p.paid_at && monthOf(p.paid_at) === month)
+    .reduce((t, p) => t + toPennies(p.amount), 0)
+  const fromCharges = charges.filter(c => !c.payment_id && (c.status === 'paid' || c.status === 'refunded'))
+    .filter(c => { const at = c.paid_at || c.created_at; return !!at && monthOf(at) === month })
+    .reduce((t, c) => t + Math.max(0, Math.round(Number(c.amount_pennies) || 0) - Math.round(Number(c.refunded_pennies) || 0)), 0)
+  return fromLines + fromCharges
+}
+
 /** Pennies → "£40", "£12.50", "£2,042.50". Pence appear only when there are some. */
 export function formatPennies(pennies: number): string {
   const p = Number.isFinite(pennies) ? Math.round(pennies) : 0

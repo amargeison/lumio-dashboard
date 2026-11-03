@@ -32,7 +32,7 @@ function contactPreset(c: Coach): PresetRecipient {
   return {
     name: c.name,
     role: `${c.role} Coach`,
-    email: c.email || `${first}@riversidetennis.example`,
+    email: c.email || `${first}@lumiotennisclub.example`,
     phone: c.phone || `+44 7700 900${n}`,
   }
 }

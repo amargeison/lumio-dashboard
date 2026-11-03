@@ -29,6 +29,7 @@ import { NewSessionModal } from './NewSession'
 import { getCalendarItems, getNeedsPlan, dayIndexForDate, mapBookingType, type CalItem } from '../_lib/schedule'
 import { WeekCalendarGrid, bookingTypeColour, MonthAgenda, agendaDayLabel } from './WeekCalendar'
 import { getAddedBookings, subscribe as subscribeBookings } from '../_lib/bookings-store'
+import { tell } from '../_lib/ask'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -567,7 +568,7 @@ function printRunSheet(s: TodaySession, sheet: Phase[], kit: string[]) {
     <div style="position:absolute;bottom:12mm;left:16mm;right:16mm;display:flex;justify-content:space-between;font-size:9px;color:#aab;border-top:1px solid #eee;padding-top:8px"><span>${esc(COACH_ORG.academy)} · ${esc(COACH_ORG.coach)}</span><span>Lumio Coach · Session Planner</span></div>
   </div></body></html>`
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to print the run-sheet.'); return }
+  if (!w) { void tell('Please allow pop-ups to print the run-sheet.'); return }
   w.document.write(html); w.document.close(); w.focus()
   setTimeout(() => { try { w.print() } catch { /* manual */ } }, 350)
 }

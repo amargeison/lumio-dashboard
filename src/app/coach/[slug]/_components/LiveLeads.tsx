@@ -15,8 +15,9 @@ import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, rowsChanged } from '../_lib/coach-db'
-import { PIPELINES, SOURCES, CONTACT_METHODS, stagesOf, isClosed, stagePoints, scoreOf, FOLLOWUP_POINTS, STREAK_POINTS, guessColumn, matchStage, type Pipeline, type ImportColumn } from '@/lib/coach/leads'
+import { PIPELINES, SOURCES, CONTACT_METHODS, stagesOf, isClosed, stagePoints, scoreOf, weekOf, notesForDisplay, FOLLOWUP_POINTS, STREAK_POINTS, guessColumn, matchStage, type Pipeline, type ImportColumn } from '@/lib/coach/leads'
 import { ukDate } from '@/lib/coach/uk-date'
+import { askConfirm, tell } from '../_lib/ask'
 
 export type Lead = {
   id: string; pipeline: Pipeline; stage: string; name: string; for_name?: string | null; email?: string | null; phone?: string | null
@@ -61,8 +62,8 @@ export function LiveLeads({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
 
   const copyEmails = async () => {
     const emails = shown.map(l => l.email).filter(Boolean) as string[]
-    try { await navigator.clipboard.writeText(emails.join(', ')); alert(`${emails.length} email address${emails.length === 1 ? '' : 'es'} copied. Paste them into your email (in the Bcc box) or Mailchimp.`) }
-    catch { alert(emails.join(', ')) }
+    try { await navigator.clipboard.writeText(emails.join(', ')); void tell(`${emails.length} email address${emails.length === 1 ? '' : 'es'} copied. Paste them into your email (in the Bcc box) or Mailchimp.`) }
+    catch { void tell(emails.join(', ')) }
   }
 
   return (
@@ -84,14 +85,16 @@ export function LiveLeads({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
         <Tile T={T} label="This week" value={`${score.week} point${score.week === 1 ? '' : 's'}`} sub={score.week >= STREAK_POINTS ? 'Streak kept for this week ✓' : `${STREAK_POINTS - score.week} more to keep the streak`} tone={score.week >= STREAK_POINTS ? T.good : T.text} />
         <Tile T={T} label="Streak" value={`${score.streak} week${score.streak === 1 ? '' : 's'}`} sub={`Weeks with ${STREAK_POINTS}+ points`} tone={score.streak ? accent.hex : T.text} />
         <Tile T={T} label="Follow-ups due" value={String(due.length)} sub={due.length ? 'Today or overdue' : 'All caught up'} tone={due.length ? T.warn : T.good} onClick={due.length ? () => setDueOnly(v => !v) : undefined} />
-        <Tile T={T} label="New this week" value={String(leads.rows.filter(l => Date.now() - Date.parse(l.created_at) < 7 * 86_400_000).length)} sub="Across both pipelines" tone={T.text} />
+        {/* Monday to Sunday (UK), the same week the points and streak count. */}
+        <Tile T={T} label="New this week" value={String(leads.rows.filter(l => !!l.created_at && weekOf(ukDate(l.created_at)) === weekOf(today)).length)} sub="Across both pipelines" tone={T.text} />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
         <div style={{ display: 'flex', padding: 2, background: T.hover, borderRadius: 9 }}>
           {(Object.keys(PIPELINES) as Pipeline[]).map(p => (
             <button key={p} onClick={() => setPipe(p)} style={{ appearance: 'none', border: 0, padding: '9px 14px', borderRadius: 7, fontSize: 12.5, cursor: 'pointer', fontFamily: FONT, background: pipe === p ? T.panel : 'transparent', color: pipe === p ? T.text : T.text2, fontWeight: pipe === p ? 700 : 500, boxShadow: pipe === p ? `0 0 0 1px ${T.border}` : 'none' }}>
-              {PIPELINES[p].label} · {leads.rows.filter(l => l.pipeline === p && !isClosed(p, l.stage)).length}
+              {/* Open leads only; the closed stages are on the board too, so it says so. */}
+              {PIPELINES[p].label} · {leads.rows.filter(l => l.pipeline === p && !isClosed(p, l.stage)).length} open
             </button>
           ))}
         </div>
@@ -272,7 +275,7 @@ function LeadPanel({ T, accent, lead, pipeline, lists, events, onClose, onChange
     finally { setBusy('') }
   }
   const remove = async () => {
-    if (!lead || !confirm(`Delete ${lead.name} from your leads? Their notes go too.`)) return
+    if (!lead || !(await askConfirm(`Delete ${lead.name} from your leads? Their notes go too.`, { yes: 'Delete' }))) return
     try { await dbRemove('coach_leads', lead.id); onChanged(null); onClose() } catch (e) { setErr(e instanceof Error ? e.message : 'It could not be deleted.') }
   }
 
@@ -325,7 +328,7 @@ function LeadPanel({ T, accent, lead, pipeline, lists, events, onClose, onChange
 
       <div style={{ marginTop: 12 }}>
         <div style={lbl}>Notes</div>
-        {lead?.notes && <div style={{ fontSize: 12.5, color: T.text2, whiteSpace: 'pre-wrap', lineHeight: 1.55, marginBottom: 6, maxHeight: 160, overflowY: 'auto' }}>{lead.notes}</div>}
+        {lead?.notes && <div style={{ fontSize: 12.5, color: T.text2, whiteSpace: 'pre-wrap', lineHeight: 1.55, marginBottom: 6, maxHeight: 160, overflowY: 'auto' }}>{notesForDisplay(lead.notes)}</div>}
         <div style={{ display: 'flex', gap: 6 }}>
           <input value={note} onChange={e => setNote(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && lead) void addNote() }} placeholder="e.g. Injured, wants to restart soon" style={field} />
           {lead && <button onClick={addNote} disabled={!note.trim() || !!busy} style={{ ...small, flexShrink: 0 }}>{busy === 'note' ? '…' : 'Add note'}</button>}
@@ -452,7 +455,7 @@ function AdsLeads({ T, accent, onClose, onTest }: { T: ThemeTokens; accent: Acce
     return () => { live = false }
   }, [])
   const make = async (rotate = false) => {
-    if (rotate && !confirm('Make a new address? The old one stops working, so update it in Zapier or Make straight away.')) return
+    if (rotate && !(await askConfirm('Make a new address? The old one stops working, so update it in Zapier or Make straight away.', { yes: 'Make a new address' }))) return
     setBusy('make'); setMsg(null)
     try { const r = await fetch('/api/coach/leads/hook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rotate }) }); const d = await r.json(); if (!r.ok) setMsg({ text: d.error || 'It could not be made.', bad: true }); else setHook(d) }
     catch { setMsg({ text: 'You appear to be offline.', bad: true }) } finally { setBusy('') }

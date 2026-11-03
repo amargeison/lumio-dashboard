@@ -17,9 +17,15 @@ import { ClientSetup } from './ClientSetup'
 import { fileToAvatarDataUrl, avatarSrc } from '@/lib/avatar'
 import { getSettings, setSettings, subscribe as subscribeSettings, PLAYER_LEVELS, PAYMENT_METHODS } from '../_lib/settings-store'
 import { stageWords } from '../_lib/stage-words'
+import { useAdultStanding } from '../_lib/adult-standing'
+import { askConfirm, tell } from '../_lib/ask'
+import { takeOpenPlayer, OPEN_PLAYER, type SetupSection } from '../_lib/open-player'
+import { useWallet, savedFor } from '../_lib/pay-wallet'
+import { tidyChecklist, videoEmbed, isAdultPlayer, type AdultLevel, type AdultPass, type AdultStanding } from '@/lib/coach/adult-levels'
 import { studentAudience } from '@/lib/student/bundle'
 import { formatPounds, parseAmount, formatPennies } from '@/lib/coach/money'
 import { RATE_REASONS } from '@/lib/coach/pricing'
+import { ukDate } from '@/lib/coach/uk-date'
 
 // v1: Effort & Rewards is manual-only — smartwatch QR pairing is hidden until v2.
 const SHOW_WATCH_PAIRING: boolean = false
@@ -154,7 +160,7 @@ function DuplicatePlayers({ T, accent, players, skills, attendance, onMerged, on
     if (busy || all) return
     const todo = dupes.map(([, group]) => group)
     const extra = todo.reduce((n, g) => n + g.length - 1, 0)
-    if (!confirm(`Merge all ${todo.length} names? For each one the fullest profile is kept and the other${extra === 1 ? '' : 's'} (${extra} in total) merged into it.\n\nIf two different people share a name, press Cancel and mark them "Different people" first. This cannot be undone.`)) return
+    if (!(await askConfirm(`Merge all ${todo.length} names? For each one the fullest profile is kept and the other${extra === 1 ? '' : 's'} (${extra} in total) merged into it.\n\nIf two different people share a name, press Cancel and mark them "Different people" first. This cannot be undone.`, { yes: 'Merge' }))) return
     setBusy(true); setErr(''); setAllErr(''); setOpenName(null)
     let done = 0
     try {
@@ -287,6 +293,118 @@ function Avatar({ accent, name, size = 40, url }: { accent: AccentTokens; name: 
     </div>
   )
 }
+// An adult's own level in place of a junior colour: "3. Club · 3/5".
+function AdultChip({ a, T }: { a: AdultStanding; T: ThemeTokens }) {
+  return <span style={{ fontSize: 11.5, color: a.level ? T.text : T.text3, fontWeight: a.level ? 600 : 400 }}>{a.label}</span>
+}
+// The Development tab for an adult: their level's checklist, ticked in place
+// with the day each item was passed, "Move up to …" once it is complete, the
+// level's video, and the academy's levels as a journey — the same as the Adult
+// levels page, so a coach never has to leave the card. No level yet: a picker
+// to put them on one (Starter first). Nothing about junior rackets.
+function AdultDevelopment({ T, accent, player, a, levels, passes }: { T: ThemeTokens; accent: AccentTokens; player: any; a: AdultStanding; levels: AdultLevel[]; passes: (AdultPass & { id: string })[] }) {
+  const head = { fontSize: 11, fontWeight: 700, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em' } as const
+  const btn = { appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' } as const
+  const primary = { ...btn, border: 0, background: accent.hex, color: T.btnText, fontWeight: 700 } as const
+  const [pick, setPick] = useState(levels[0]?.id || '')
+  const [watching, setWatching] = useState(false)
+  const [err, setErr] = useState('')
+  const level = a.level ? levels.find(l => l.id === a.level!.id) || null : null
+  const next = a.number ? levels[a.number] || null : null
+  const vid = level ? videoEmbed(level.video_url) : null
+  const owner = player.staff_id ? { staff_id: player.staff_id } : {}
+  const fail = (e: unknown, why: string) => setErr(e instanceof Error && e.message ? e.message : why)
+  const toggle = async (itemId: string, on: boolean) => {
+    if (!level) return
+    setErr('')
+    try {
+      if (on) await dbInsert('coach_adult_passes', { player_id: player.id, level_id: level.id, item_id: itemId, passed_on: ukDate(), ...owner })
+      else for (const x of passes.filter(r => r.player_id === player.id && r.level_id === level.id && r.item_id === itemId)) await dbRemove('coach_adult_passes', x.id)
+    } catch (e) { fail(e, 'That was not saved.') }
+  }
+  const setLevel = async (levelId: string, ask?: string) => {
+    if (ask && !(await askConfirm(ask, { yes: 'Move up' }))) return
+    setErr('')
+    try { await dbUpdate('coach_players', player.id, { adult_level_id: levelId || null }); rowsChanged('coach_players') } catch (e) { fail(e, 'That was not saved.') }
+  }
+  useEffect(() => { if (!pick && levels[0]) setPick(levels[0].id) }, [levels, pick])
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
+      <div>
+        {err && <div role="alert" style={{ fontSize: 12, color: T.bad, marginBottom: 8 }}>{err}</div>}
+        {!level ? (
+          <>
+            <div style={{ ...head, marginBottom: 10 }}>No adult level yet</div>
+            {levels.length === 0
+              ? <p style={{ fontSize: 12, color: T.text3 }}>Set up your adult levels on Player Development → Adult levels first.</p>
+              : <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <select value={pick} aria-label={`Level for ${player.name}`} onChange={e => setPick(e.target.value)} style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 10px', fontSize: 12.5 }}>
+                    {levels.map((l, i) => <option key={l.id} value={l.id}>{i + 1}. {l.name}</option>)}
+                  </select>
+                  <button onClick={() => void setLevel(pick)} disabled={!pick} style={primary}>Set level</button>
+                </div>}
+          </>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+              <span style={head}>Working on · {a.short}</span>
+              {a.total > 0 && <span style={{ fontSize: 11, color: a.done === a.total ? T.good : accent.hex, fontWeight: 600 }}>{a.done}/{a.total}</span>}
+            </div>
+            {level.summary && <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 6 }}>{level.summary}</div>}
+            {level.checklist.length === 0 && <p style={{ fontSize: 12, color: T.text3 }}>This level has no checklist yet. Add one on Adult levels.</p>}
+            {level.checklist.map(item => {
+              const on = a.passed.has(item.id)
+              const when = passes.find(r => r.player_id === player.id && r.level_id === level.id && r.item_id === item.id)?.passed_on
+              return (
+                <label key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, padding: '5px 0', fontSize: 12.5, color: on ? T.text : T.text2, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={on} onChange={e => void toggle(item.id, e.target.checked)} style={{ marginTop: 2 }} />
+                  <span style={{ flex: 1 }}>{item.text}</span>
+                  {on && when && <span style={{ fontSize: 10.5, color: T.text3, whiteSpace: 'nowrap' }}>{new Date(`${when}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })}</span>}
+                </label>
+              )
+            })}
+            {a.total > 0 && a.done === a.total && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 12.5, color: T.good, fontWeight: 700 }}>✓ {level.name} passed</span>
+                {next
+                  ? <button onClick={() => void setLevel(next.id, `Move ${player.name} up to ${next.name}?`)} style={primary}>Move up to {next.name}</button>
+                  : <span style={{ fontSize: 12, color: T.text3 }}>That is the top level.</span>}
+              </div>
+            )}
+            {vid && (
+              <div style={{ marginTop: 10 }}>
+                {watching ? (
+                  <div>
+                    <div style={{ position: 'relative', paddingTop: '56.25%', borderRadius: 9, overflow: 'hidden', background: '#000' }}>
+                      <iframe src={vid.embed} title={`${level.name} video`} allow="encrypted-media; picture-in-picture; fullscreen" allowFullScreen style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
+                    </div>
+                    <button onClick={() => setWatching(false)} style={{ ...btn, marginTop: 6 }}>Close video</button>
+                  </div>
+                ) : <button onClick={() => setWatching(true)} style={btn}>▶ Watch the {vid.provider === 'youtube' ? 'YouTube' : 'Vimeo'} video</button>}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      <div>
+        <div style={{ ...head, marginBottom: 10 }}>Adult levels</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          {levels.map((l, i) => {
+            const state = !a.number ? 'locked' : i + 1 < a.number ? 'done' : i + 1 === a.number ? 'current' : 'locked'
+            return (
+              <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 9, opacity: state === 'locked' ? 0.4 : 1 }}>
+                <span style={{ fontSize: 11.5, color: T.text, fontWeight: state === 'current' ? 700 : 500, flex: 1 }}>{i + 1}. {l.name}</span>
+                {state === 'done' && <Icon name="check" size={12} stroke={2.2} style={{ color: T.good }} />}
+                {state === 'current' && <span style={{ fontSize: 9, fontWeight: 700, color: accent.hex, background: accent.dim, padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase' }}>now</span>}
+              </div>
+            )
+          })}
+          {levels.length === 0 && <span style={{ fontSize: 12, color: T.text3 }}>No adult levels set up yet.</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
 function RacketChip({ stage, T }: { stage: { name: string; colour: string } | null; T: ThemeTokens }) {
   if (!stage) return <span style={{ fontSize: 11, color: T.text3 }}>No stage</span>
   return (
@@ -301,6 +419,7 @@ export function LiveRoster({ T, accent, density }: Common) {
   const players = useCoachTable<any>('coach_players')
   const skills = useCoachTable<any>('coach_player_skills')
   const attendance = useCoachTable<any>('coach_attendance')
+  const { standingOf, levels: adultLevels } = useAdultStanding()
   const wpProfile = useCoachProfile()
   // Logo priority: the academy logo uploaded at onboarding (DB), then any logo set
   // in Settings (localStorage), then the Lumio tennis mark so a pack is never
@@ -325,15 +444,20 @@ export function LiveRoster({ T, accent, density }: Common) {
 
   // Deep-link: another screen (e.g. dashboard "Needs attention") can ask the roster
   // to open straight onto a specific player's card.
+  // It can also name a part of the card's Setup tab to open on (open-player.ts).
+  const [selSection, setSelSection] = useState<SetupSection | null>(null)
+  const rowsRef = useRef(players.rows)
+  useEffect(() => { rowsRef.current = players.rows })
   useEffect(() => {
     if (players.loading) return
-    let id: string | null = null
-    try { id = sessionStorage.getItem('lumio_open_player') } catch { /* ignore */ }
-    if (!id) return
-    try { sessionStorage.removeItem('lumio_open_player') } catch { /* ignore */ }
-    const p = players.rows.find(x => x.id === id)
-    if (p) setSel(p)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const take = () => {
+      const req = takeOpenPlayer()
+      const p = req && rowsRef.current.find(x => x.id === req.id)
+      if (p) { setSelSection(req!.section); setSel(p) }
+    }
+    take()
+    window.addEventListener(OPEN_PLAYER, take)
+    return () => window.removeEventListener(OPEN_PLAYER, take)
   }, [players.loading])
 
   // A player with no category used to appear under "All" and nowhere else.
@@ -446,10 +570,11 @@ export function LiveRoster({ T, accent, density }: Common) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(260px, 100%), 1fr))', gap: density.gap }}>
           {list.map(p => {
             const s = stageOf(p.racket_stage)
-            const prog = progressFor(p)
+            const a = standingOf(p)
+            const prog = a ? (a.total ? Math.round(a.done / a.total * 100) : 0) : progressFor(p)
             const att = attendanceFor(p.id)
             return (
-              <div key={p.id} onClick={() => setSel(p)} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad, cursor: 'pointer' }}>
+              <div key={p.id} onClick={() => { setSelSection(null); setSel(p) }} style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: density.radius, padding: density.pad, cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Avatar accent={accent} name={p.name} size={40} url={p.avatar_url} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -459,15 +584,17 @@ export function LiveRoster({ T, accent, density }: Common) {
                   <div style={{ width: 9, height: 9, borderRadius: '50%', background: accent.hex }} />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}>
-                  <RacketChip stage={s.stage} T={T} />
-                  <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>{prog}% to next</span>
+                  {a ? <AdultChip a={a} T={T} /> : <RacketChip stage={s.stage} T={T} />}
+                  <span style={{ marginLeft: 'auto', fontSize: 10.5, color: T.text3 }}>{a ? (a.total ? `${a.done} of ${a.total} passed` : '') : `${prog}% to next`}</span>
                 </div>
                 <div style={{ height: 5, borderRadius: 3, background: T.hover, marginTop: 6, overflow: 'hidden' }}>
                   <div style={{ width: `${prog}%`, height: '100%', background: accent.hex }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 11, color: T.text2 }}>
                   <span><span style={{ color: T.text3 }}>Attendance</span> {att !== null ? `${att}%` : '—'}</span>
-                  <span><span style={{ color: T.text3 }}>Stage</span> {s.idx >= 0 ? `${s.idx + 1}/${RACKET_STAGES.length}` : '—'}</span>
+                  {a
+                    ? <span><span style={{ color: T.text3 }}>Level</span> {a.number ? `${a.number}/${adultLevels.length}` : '—'}</span>
+                    : <span><span style={{ color: T.text3 }}>Stage</span> {s.idx >= 0 ? `${s.idx + 1}/${RACKET_STAGES.length}` : '—'}</span>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: T.text3, marginTop: 8, paddingTop: 8, borderTop: `1px solid ${T.border}` }}>
                   <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎯 {p.goal || 'No goal set'}</span>
@@ -476,7 +603,7 @@ export function LiveRoster({ T, accent, density }: Common) {
                 {p.rate_pennies > 0 && <div title="Their one-to-one lessons are priced at this rate" style={{ fontSize: 10.5, color: T.text2, marginTop: 6 }}>Own rate {formatPennies(p.rate_pennies)} an hour{p.rate_reason ? ` · ${p.rate_reason}` : ''}</div>}
                 {!p.consent_photo && <div style={{ fontSize: 10.5, color: '#EF4444', marginTop: 6 }}>⚠ No photo/video consent</div>}
                 <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                <button onClick={e => { e.stopPropagation(); printWelcomePack(p, wpOrg) }} style={{ flex: 1, minWidth: 0, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '7px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <button onClick={e => { e.stopPropagation(); printWelcomePack(p, wpOrg, { a: standingOf(p), levels: adultLevels }) }} style={{ flex: 1, minWidth: 0, appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '7px 10px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                     <Icon name="note" size={13} stroke={1.8} style={{ color: accent.hex }} /> Welcome pack
                   </button>
                   {/* Delete from the card itself — it used to be only on the
@@ -494,7 +621,7 @@ export function LiveRoster({ T, accent, density }: Common) {
       )}
 
       {sel && (
-        <PlayerDetail key={sel.id} T={T} accent={accent} density={density} player={sel}
+        <PlayerDetail key={`${sel.id}:${selSection || ''}`} T={T} accent={accent} density={density} player={sel} openSection={selSection}
           nameShared={nameShared(sel)} isHead={!!me?.isHead}
           skillMap={skillMapFor(sel.id)}
           attendanceRows={attendance.rows.filter(a => a.player_id === sel.id)}
@@ -531,13 +658,13 @@ async function deletePlayerFlow(p: { id: string; name?: string | null }): Promis
   const first = String(p.name || 'This player').trim().split(/\s+/)[0]
   let has: DeleteImpact | null = null
   try { const r = await fetch(`/api/coach/players/delete?id=${encodeURIComponent(p.id)}`); if (r.ok) has = (await r.json()).has } catch { /* handled below */ }
-  if (!has) { alert(`We could not check what ${first} has on record, so nothing was deleted. Please try again.`); return false }
-  if (!confirm(deleteQuestion(String(p.name || 'this player').trim(), has))) return false
+  if (!has) { await tell(`We could not check what ${first} has on record, so nothing was deleted. Please try again.`); return false }
+  if (!(await askConfirm(deleteQuestion(String(p.name || 'this player').trim(), has), { yes: 'Delete', danger: true }))) return false
   try {
     const r = await fetch('/api/coach/players/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: p.id }) })
     const d = await r.json().catch(() => ({}))
-    if (!r.ok) { alert(d.error || 'The player could not be deleted, so nothing was changed. Please try again.'); return false }
-  } catch { alert('The player could not be deleted — you appear to be offline. Nothing was changed.'); return false }
+    if (!r.ok) { await tell(d.error || 'The player could not be deleted, so nothing was changed. Please try again.'); return false }
+  } catch { await tell('The player could not be deleted — you appear to be offline. Nothing was changed.'); return false }
   return true
 }
 
@@ -590,6 +717,7 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
   const rateText: string = d.rate_pounds !== undefined ? String(d.rate_pounds) : (d.rate_pennies ? String(d.rate_pennies / 100) : '')
   const { rows: staffRows } = useCoachTable<{ id: string; name: string; role?: string | null; email?: string | null; is_head?: boolean | null }>('coach_staff')
   const { rows: rosterRows } = useCoachTable<any>('coach_players')
+  const { levels: adultLevels } = useAdultStanding()
   // The coach is chosen by who they are, not by their name: two coaches can
   // share a name, and the database follows the id (migration 165).
   const staffLabel = (c: { id: string; name: string; role?: string | null; email?: string | null }) =>
@@ -622,8 +750,8 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
   const dirty = !!photo || dropPhoto || Object.keys({ ...(initial ?? {}), ...d }).some(k => String(d[k] ?? '') !== String((initial ?? {})[k] ?? ''))
   const close = () => {
     if (saving) return
-    if (dirty && !confirm('Close without saving? What you have typed will be lost.')) return
-    onClose()
+    if (!dirty) { onClose(); return }
+    void askConfirm('Close without saving? What you have typed will be lost.', { yes: 'Close' }).then(ok => { if (ok) onClose() })
   }
   const closeRef = useRef(close)
   useEffect(() => { closeRef.current = close })
@@ -663,6 +791,8 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
         name: String(d.name).trim().replace(/\s+/g, ' '), category: d.category || null, age: d.age === '' || d.age == null ? null : Number(d.age), parent_name: text('parent_name'), parent_email: text('parent_email')?.toLowerCase() ?? null, racket_stage: d.racket_stage || null, goal: text('goal'), level: d.level || null, email: text('email')?.toLowerCase() ?? null, phone: text('phone'), notes: text('notes'), payment_method: d.payment_method || null,
         consent_data: !!d.consent_data, consent_photo: !!d.consent_photo, consent_medical: !!d.consent_medical, consent_wearable: !!d.consent_wearable, consent_by: text('consent_by'), consent_date: d.consent_date || null, medical_notes: text('medical_notes'),
       }
+      // An adult's level is set here instead of a colour; a junior's is left alone.
+      if (isAdultPlayer({ category: row.category, age: row.age, adult_level_id: d.adult_level_id })) row.adult_level_id = d.adult_level_id || null
       // The coach is sent only when it was changed. Sent as the id AND the name:
       // the form used to send the name alone, the database re-derived the name
       // from the id that was still set, and the change was silently undone. Left
@@ -692,7 +822,7 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
         const r = await fetch('/api/coach/avatar', { method: photo ? 'POST' : 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(photo ? { playerId, dataUrl: photo } : { playerId }) }).catch(() => null)
         if (!r?.ok) {
           const why = r ? ((await r.json().catch(() => ({}))).error as string | undefined) : undefined
-          alert(`The player was saved, but the photo was not ${photo ? 'saved' : 'removed'}. ${why || 'Please try again from the player’s card.'}`)
+          void tell(`The player was saved, but the photo was not ${photo ? 'saved' : 'removed'}. ${why || 'Please try again from the player’s card.'}`)
         }
       }
       onSaved()
@@ -750,7 +880,10 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
           {/* Where a junior's invite goes. There was no field for it, so the
               parent's address had to be typed in as the child's own. */}
           {field('parent_email', 'Parent email', 'email', 'For the parent’s invite')}
-          <div><label style={lbl}>Colour</label><select value={d.racket_stage ?? ''} onChange={e => set('racket_stage', e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+          {/* An adult is on the academy's own levels, never a junior colour. */}
+          {isAdultPlayer({ category: d.category, age: d.age === '' || d.age == null ? null : Number(d.age), adult_level_id: d.adult_level_id })
+            ? <div><label style={lbl}>Adult level</label><select value={d.adult_level_id ?? ''} onChange={e => set('adult_level_id', e.target.value)} style={input}><option value="">No level yet</option>{adultLevels.map((l, i) => <option key={l.id} value={l.id}>{i + 1}. {l.name}</option>)}</select></div>
+            : <div><label style={lbl}>Colour</label><select value={d.racket_stage ?? ''} onChange={e => set('racket_stage', e.target.value)} style={input}><option value="">—</option>{RACKET_STAGES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>}
           {me && !me.isHead
             ? <div><label style={lbl}>Coach</label><input value={me.displayName || 'You'} readOnly disabled aria-label="Coach" style={input} /></div>
             : <div><label style={lbl}>Coach</label><select value={staffValue} onChange={e => set('staff_id', e.target.value || null)} style={input}><option value="">Head coach</option>{staffRows.filter(c => !c.is_head).map(c => <option key={c.id} value={c.id}>{staffLabel(c)}</option>)}</select></div>}
@@ -822,7 +955,9 @@ function PlayerForm({ T, accent, initial, onClose, onSaved }: { T: ThemeTokens; 
 // ── Player detail modal ──────────────────────────────────────────────────────
 type PortalLogin = { id: string; email: string; role: string; status: string; signedIn: boolean }
 
-function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap, attendanceRows, onSkillChange, onAttendanceSet, onAttendanceRemove, onChanged, onClose, onEdit, onDelete }: Common & {
+function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap, attendanceRows, onSkillChange, onAttendanceSet, onAttendanceRemove, onChanged, onClose, onEdit, onDelete, openSection }: Common & {
+  /** Open on the Setup tab, scrolled to this part (open-player.ts). */
+  openSection?: SetupSection | null
   player: any; nameShared: boolean; isHead: boolean; skillMap: Record<string, number>; attendanceRows: any[]
   onSkillChange: (skill: string, score: number) => Promise<void>
   onAttendanceSet: (date: string, present: boolean) => Promise<void>
@@ -830,7 +965,9 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
   onChanged: () => void
   onClose: () => void; onEdit: () => void; onDelete: () => void | Promise<void>
 }) {
-  const [tab, setTab] = useState<'dev' | 'contact' | 'lessons' | 'about' | 'attendance' | 'consent'>('dev')
+  // Null until the coach picks a tab: then the card opens on Setup while
+  // anything there still needs doing, and on Development once it is all done.
+  const [tab, setTab] = useState<'setup' | 'dev' | 'contact' | 'lessons' | 'about' | 'attendance' | 'consent' | null>(openSection ? 'setup' : null)
   const [lessons, setLessons] = useState<any[]>([])
   const [nextSession, setNextSession] = useState<string>('—')
   // Starts on today: a register is nearly always taken on the day, and a
@@ -859,7 +996,7 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
     } catch { setPhotoMsg('That file is not a photo we can use. Choose a JPG or PNG.') } finally { setPhotoBusy(false) }
   }
   const removePhoto = async () => {
-    if (photoBusy || !confirm(`Remove ${player.name}’s photo? It is deleted, not just hidden.`)) return
+    if (photoBusy || !(await askConfirm(`Remove ${player.name}’s photo? It is deleted, not just hidden.`))) return
     setPhotoBusy(true); setPhotoMsg('')
     try {
       const r = await fetch('/api/coach/avatar', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ playerId: player.id }) })
@@ -888,8 +1025,32 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
     } catch { /* the list is left as it was */ }
   }, [player.id, isHead])
   useEffect(() => { void loadLogins() }, [loadLogins])
+
+  // What on the Setup tab still needs doing — the badge on the tab, and which
+  // tab the card opens on.
+  const { wallet } = useWallet()
+  const { rows: welcomeLinks } = useCoachTable<{ player_id: string; completed_at: string | null; created_at: string }>('coach_welcome_links')
+  const { rows: memberships } = useCoachTable<{ player_id: string; status: string; created_at: string }>('coach_memberships')
+  const latest = <R extends { player_id: string; created_at: string }>(rows: R[], keep: (r: R) => boolean = () => true) =>
+    rows.filter(r => r.player_id === player.id && keep(r)).sort((a, b) => b.created_at.localeCompare(a.created_at))[0] || null
+  const setupTodo = [
+    isHead && !logins.some(m => m.status === 'active' && m.signedIn),     // nobody signed in to their page yet
+    !savedFor(wallet, player.id),                                         // no card or Direct Debit
+    !latest(welcomeLinks)?.completed_at,                                  // welcome link not finished
+    !player.consent_record,                                               // recording not asked, or refused
+    latest(memberships, m => m.status !== 'ended')?.status === 'offered', // a plan waiting to be agreed
+  ].filter(Boolean).length
+  const shownTab = tab ?? (setupTodo > 0 ? 'setup' : 'dev')
+
+  // Opened from a link to one part of Setup: bring that part into view.
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!openSection) return
+    const t = setTimeout(() => dialogRef.current?.querySelector(`[data-setup="${openSection}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350)
+    return () => clearTimeout(t)
+  }, [openSection])
   const removeAccess = async (m: PortalLogin) => {
-    if (!confirm(`Remove ${m.email}’s access to ${player.name}’s page?\n\nThey are signed out straight away. You can invite them again later.`)) return
+    if (!(await askConfirm(`Remove ${m.email}’s access to ${player.name}’s page?\n\nThey are signed out straight away. You can invite them again later.`, { yes: 'Remove access', danger: true }))) return
     try {
       const r = await fetch('/api/portal/access', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ memberId: m.id }) })
       const d = await r.json().catch(() => ({}))
@@ -915,6 +1076,11 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
     void loadLogins()
   }
   const s = stageOf(player.racket_stage)
+  const { standingOf, levels: adultLevels, passes: adultPasses } = useAdultStanding()
+  // The roster's own copy, so a level set or moved up from this card shows at once.
+  const { rows: liveRows } = useCoachTable<any>('coach_players')
+  const livePlayer = liveRows.find(r => r.id === player.id) || player
+  const adult = standingOf(livePlayer)
   const stageSkills = s.stage ? (SKILLS_BY_STAGE[s.stage.id] || []) : []
   const racketProgress = stageSkills.length ? Math.round(stageSkills.filter(sk => (skillMap[sk] || 0) >= 4).length / stageSkills.length * 100) : 0
   const attPct = attendanceRows.length ? Math.round(attendanceRows.filter(a => a.present).length / attendanceRows.length * 100) : null
@@ -984,7 +1150,7 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
   const showSec = (k: string) => !sectOff.includes(k)
   return (
     <div onMouseDown={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.82)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
-      <div role="dialog" aria-modal="true" aria-label={player.name} style={{ width: '100%', maxWidth: 780, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16 }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={player.name} style={{ width: '100%', maxWidth: 780, background: T.panel, border: `1px solid ${T.border}`, borderRadius: 16 }}>
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', padding: `${density.pad + 2}px ${density.pad + 4}px`, borderBottom: `1px solid ${T.border}` }}>
           <label title="Change photo" style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
@@ -1008,29 +1174,6 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
           </div>
         </div>
 
-        {/* Who can sign in to this player's page. There was no way to take
-            access away again — not after a separation, not when a family left. */}
-        {logins.length > 0 && (
-          <div style={{ padding: `8px ${density.pad + 4}px`, borderBottom: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Portal access</div>
-            {logins.map(m => {
-              const state = m.status === 'revoked' ? 'Access removed' : m.status === 'active' && m.signedIn ? 'Signed in' : 'Invited, not signed in yet'
-              return (
-                <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
-                  <span style={{ color: T.text, overflowWrap: 'anywhere' }}>{m.email}</span>
-                  <span style={{ color: T.text3 }}>· {m.role === 'student' ? 'Player' : 'Parent'} · </span>
-                  <span style={{ color: m.status === 'revoked' ? T.bad : m.signedIn ? T.good : T.text3, fontWeight: 600 }}>{state}</span>
-                  {m.status !== 'revoked' && (
-                    <button onClick={() => { void removeAccess(m) }} style={{ marginLeft: 'auto', appearance: 'none', background: 'transparent', border: `1px solid rgba(239,68,68,0.4)`, color: '#EF4444', borderRadius: 7, padding: '3px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Remove access</button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        <CardOnFile T={T} accent={accent} pad={density.pad} player={player} />
-        <ClientSetup T={T} accent={accent} pad={density.pad} player={player} />
 
         <div style={{ padding: `${density.pad}px ${density.pad + 4}px ${density.pad + 4}px` }}>
           {/* stat tiles */}
@@ -1038,8 +1181,13 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
             {/* Colour, not racket. The roster belongs to every academy; only
                 the ones running the reward ladder have rackets. Same rule as
                 Player Development — see LiveDevelopment.tsx. */}
-            {tile('Current colour', <RacketChip stage={s.stage} T={T} />)}
-            {tile('Colour progress', `${racketProgress}%`, accent.hex)}
+            {adult ? <>
+              {tile('Adult level', <AdultChip a={{ ...adult, label: adult.short }} T={T} />)}
+              {tile('Level progress', adult.total ? `${adult.done}/${adult.total}` : '—', accent.hex, !adult.total)}
+            </> : <>
+              {tile('Current colour', <RacketChip stage={s.stage} T={T} />)}
+              {tile('Colour progress', `${racketProgress}%`, accent.hex)}
+            </>}
             {tile('Attendance', attPct !== null ? `${attPct}%` : '—', attPct === null ? T.text3 : attPct >= 90 ? T.good : attPct >= 80 ? T.warn : T.bad, attPct === null)}
             {tile('Lessons', String(lessons.length))}
             {tile('Next session', nextSession, undefined, true)}
@@ -1052,14 +1200,43 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
             <span style={{ fontSize: 12.5, color: T.text }}>{player.goal || 'No goal set yet — add one when you edit this player.'}</span>
           </div>
 
-          {/* tabs */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 14, padding: 2, background: T.hover, borderRadius: 9, width: 'fit-content', maxWidth: '100%' }}>
-            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${lessons.length}`], ['about', 'About them'], ['attendance', `Attendance · ${attendanceRows.length}`], ['consent', 'Consent']] as const).map(([id, l]) => (
-              <button key={id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', background: tab === id ? T.panel : 'transparent', color: tab === id ? T.text : T.text2, fontWeight: tab === id ? 600 : 400 }}>{l}</button>
+          {/* tabs — one row that scrolls sideways on a phone rather than wrapping */}
+          <div role="tablist" style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', gap: 4, marginBottom: 14, padding: 2, background: T.hover, borderRadius: 9, width: 'fit-content', maxWidth: '100%' }}>
+            {([['setup', setupTodo ? `Setup · ${setupTodo}` : 'Setup'], ['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${lessons.length}`], ['about', 'About them'], ['attendance', `Attendance · ${attendanceRows.length}`], ['consent', 'Consent']] as const).map(([id, l]) => (
+              <button key={id} role="tab" aria-selected={shownTab === id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', background: shownTab === id ? T.panel : 'transparent', color: shownTab === id ? T.text : id === 'setup' && setupTodo ? T.warn : T.text2, fontWeight: shownTab === id ? 600 : 400 }}>{l}</button>
             ))}
           </div>
 
-          {tab === 'dev' && (
+          {shownTab === 'setup' && (
+            <div data-testid="setup-tab" style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
+            {/* Who can sign in to this player's page. There was no way to take
+                access away again — not after a separation, not when a family left. */}
+            {isHead && (
+              <div data-setup="access" style={{ padding: `8px ${density.pad + 4}px`, borderBottom: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div style={{ fontSize: 9.5, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Portal access</div>
+                {logins.length === 0 && <div style={{ fontSize: 12, color: T.text3 }}>Nobody has been invited to {String(player.name || 'their').trim().split(/\s+/)[0]}’s page yet — use Invite player above.</div>}
+                {logins.map(m => {
+                  const state = m.status === 'revoked' ? 'Access removed' : m.status === 'active' && m.signedIn ? 'Signed in' : 'Invited, not signed in yet'
+                  return (
+                    <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
+                      <span style={{ color: T.text, overflowWrap: 'anywhere' }}>{m.email}</span>
+                      <span style={{ color: T.text3 }}>· {m.role === 'student' ? 'Player' : 'Parent'} · </span>
+                      <span style={{ color: m.status === 'revoked' ? T.bad : m.signedIn ? T.good : T.text3, fontWeight: 600 }}>{state}</span>
+                      {m.status !== 'revoked' && (
+                        <button onClick={() => { void removeAccess(m) }} style={{ marginLeft: 'auto', appearance: 'none', background: 'transparent', border: `1px solid rgba(239,68,68,0.4)`, color: '#EF4444', borderRadius: 7, padding: '3px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Remove access</button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <div data-setup="card"><CardOnFile T={T} accent={accent} pad={density.pad} player={player} /></div>
+            <ClientSetup T={T} accent={accent} pad={density.pad} player={player} />
+            </div>
+          )}
+          {shownTab === 'dev' && adult && <AdultDevelopment T={T} accent={accent} player={livePlayer} a={adult} levels={adultLevels} passes={adultPasses} />}
+          {shownTab === 'dev' && !adult && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -1106,7 +1283,7 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
             </div>
           )}
 
-          {tab === 'contact' && (
+          {shownTab === 'contact' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {[['Email', player.email], ['Phone', player.phone], ['Parent / guardian', player.parent_name], ['Parent email', player.parent_email], ['Level', player.level]].map(([l, v]) => (
                 <div key={l as string} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '9px 11px' }}>
@@ -1121,8 +1298,8 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
             </div>
           )}
 
-          {tab === 'about' && <CoachNotes T={T} accent={accent} player={player} />}
-          {tab === 'lessons' && (
+          {shownTab === 'about' && <CoachNotes T={T} accent={accent} player={player} />}
+          {shownTab === 'lessons' && (
             <div>
               {/* What they told you, and what their lessons have and have not covered lately. */}
               <div style={{ marginBottom: 12 }}><PlayerKnowledge T={T} accent={accent} playerId={player.id} firstName={String(player.name || '').trim().split(/\s+/)[0] || undefined} /></div>
@@ -1140,7 +1317,7 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
             </div>
           )}
 
-          {tab === 'attendance' && (
+          {shownTab === 'attendance' && (
             <div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 14 }}>
                 <input type="date" aria-label="Session date" value={attDate} max={todayIso()} onChange={e => { setAttDate(e.target.value); setAttMsg('') }} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 10px', color: T.text, fontSize: 12.5 }} />
@@ -1162,7 +1339,7 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
             </div>
           )}
 
-          {tab === 'consent' && (
+          {shownTab === 'consent' && (
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 14 }}>
                 {([['Data processing', player.consent_data], ['Photo / video', player.consent_photo], ['Medical info', player.consent_medical], ['Wearable / heart-rate', player.consent_wearable]] as const).map(([l, ok]) => (
@@ -1179,7 +1356,7 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
               {!player.consent_photo && <div style={{ fontSize: 12, color: '#EF4444', marginBottom: 12 }}>⚠ No photo/video consent — do not capture footage of this player.{avatarUrl && <> This player has a profile photo: <button onClick={removePhoto} style={{ appearance: 'none', border: 0, background: 'transparent', padding: 0, color: '#EF4444', fontSize: 12, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer' }}>remove it</button>.</>}</div>}
               {!player.consent_wearable && <div style={{ fontSize: 12, color: '#F59E0B', marginBottom: 12 }}>⚠ No wearable/heart-rate consent — smartwatch effort tracking is blocked for this player.</div>}
               <p style={{ fontSize: 11.5, color: T.text3, margin: '0 0 12px', lineHeight: 1.55 }}>Record or change consent using <b style={{ color: T.text2 }}>Edit</b>. Use Export to fulfil a data-access request: the file holds everything recorded about this player. For a right-to-erasure request use Delete (Contact tab): it erases the profile, photo, bookings, lesson summaries, messages and recordings. Payment records are kept, as a business must, with the name removed.</p>
-              <button disabled={exporting} onClick={async () => { if (exporting) return; setExporting(true); try { await exportPlayerData(player, nameShared, skillMap, attendanceRows, logins) } catch { alert('The export could not be put together. Please try again.') } setExporting(false) }} style={{ background: 'transparent', border: `1px solid ${T.border}`, color: T.text2, borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: exporting ? 'wait' : 'pointer', opacity: exporting ? 0.6 : 1 }}>{exporting ? 'Preparing…' : <>⬇ Export this player&apos;s data</>}</button>
+              <button disabled={exporting} onClick={async () => { if (exporting) return; setExporting(true); try { await exportPlayerData(player, nameShared, skillMap, attendanceRows, logins) } catch { void tell('The export could not be put together. Please try again.') } setExporting(false) }} style={{ background: 'transparent', border: `1px solid ${T.border}`, color: T.text2, borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600, cursor: exporting ? 'wait' : 'pointer', opacity: exporting ? 0.6 : 1 }}>{exporting ? 'Preparing…' : <>⬇ Export this player&apos;s data</>}</button>
 
               {SHOW_WATCH_PAIRING && (
                 <div style={{ marginTop: 16 }}>
@@ -1259,11 +1436,14 @@ const WP_THEME: Record<string, string> = { white: 'Foundations', yellow: 'Rallyi
 
 // Rich 3-page printable welcome pack — welcome letter, starting action plan, and
 // an onboarding questionnaire (mirrors the demo, over live data).
-async function printWelcomePack(p: any, org?: { academy: string; coach: string; logo?: string }) {
+// `adult` carries an adult's standing and the academy's levels: their pack shows
+// their own level, its checklist and video, and what comes next, in place of the
+// junior racket ladder. A junior (standing null) gets the pack as it always was.
+async function printWelcomePack(p: any, org?: { academy: string; coach: string; logo?: string }, adult?: { a: AdultStanding | null; levels: AdultLevel[] }) {
   // The window is opened synchronously, before the await. Open it after and
   // every browser blocks it as a non-gesture pop-up.
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to open the welcome pack.'); return }
+  if (!w) { void tell('Please allow pop-ups to open the welcome pack.'); return }
   w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Welcome Pack</title></head><body style="font-family:-apple-system,Segoe UI,Arial,sans-serif;padding:60px;text-align:center;color:#555">Lumio Coach is writing the welcome pack…</body></html>')
   w.document.close()
 
@@ -1301,6 +1481,22 @@ async function printWelcomePack(p: any, org?: { academy: string; coach: string; 
   // has colours and nothing to hand over, so its pack talks about colours.
   const sw = stageWords()
 
+  // An adult's level. No level yet: the first level is where they will start.
+  const ad = adult?.a ? { a: adult.a, levels: adult.levels } : null
+  const adLevel = ad ? (ad.a.level ? ad.levels.find(l => l.id === ad.a.level!.id) || null : ad.levels[0] || null) : null
+  const adNum = ad ? (ad.a.level ? ad.a.number : adLevel ? 1 : 0) : 0
+  const adNext = ad && adLevel ? ad.levels[adNum] || null : null
+  const adItems = adLevel ? tidyChecklist(adLevel.checklist) : []
+  const adVideo = adLevel ? videoEmbed(adLevel.video_url) : null
+  const unit = ad ? 'level' : sw.noun
+  const juniorPlan = `<div class="accentbox" style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:25px;border-radius:5px;background:${stage.colour};border:1px solid rgba(0,0,0,.25)"></span><div><div style="font-size:16px;font-weight:700">${esc(sw.stage(stage.name))} — ${esc(theme)}</div><div style="font-size:11px;color:#6b7280">Your suggested starting point — confirmed after your first session</div></div></div>
+    <h2>Skills you'll work on first</h2><ul>${skills}</ul>`
+  const adultPlan = !ad ? '' : `
+    <div class="accentbox"><div style="font-size:16px;font-weight:700">${adLevel ? (ad.a.level ? `Your level: ${adNum}. ${esc(adLevel.name)}` : `No level yet — you'll start on ${adNum}. ${esc(adLevel.name)}`) : 'No level yet'}</div><div style="font-size:11px;color:#6b7280">${adLevel ? (ad.a.level ? `${ad.a.done} of ${ad.a.total} on the checklist passed` : 'Your suggested starting point — confirmed after your first session') : 'Your coach will place you on one of our levels after your first session'}</div>${adLevel?.summary ? `<div style="font-size:12px;color:#374151;margin-top:4px">${esc(adLevel.summary)}</div>` : ''}</div>
+    ${adItems.length ? `<h2>${ad.a.level ? `The ${esc(adLevel!.name)} checklist` : `The ${esc(adLevel!.name)} checklist — where you'll start`}</h2><ul style="list-style:none;padding-left:0">${adItems.map(i => { const done = ad.a.level && ad.a.passed.has(i.id); return `<li>${done ? '<strong style="color:#15803d">✓ Passed</strong>' : '<span style="color:#9099ad">○ To pass</span>'} — ${esc(i.text)}</li>` }).join('')}</ul>` : ''}
+    ${adVideo ? `<p>Watch the ${esc(adLevel!.name)} video: <a href="${esc(adVideo.watch)}">${esc(adVideo.watch)}</a></p>` : ''}
+    ${adLevel ? `<h2>What comes next</h2><p>${adNext ? `<strong>${adNum + 1}. ${esc(adNext.name)}</strong>${adNext.summary ? ` — ${esc(adNext.summary)}` : ''}` : `${esc(adLevel.name)} is our top level — your coach will set your next goals with you.`}</p>` : ''}`
+
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Welcome Pack — ${esc(p.name)}</title>
   <style>*{box-sizing:border-box}body{margin:0;font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1d29;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .page{width:210mm;min-height:296mm;padding:18mm 16mm;margin:0 auto;position:relative;page-break-after:always}.page:last-child{page-break-after:auto}
@@ -1323,11 +1519,13 @@ async function printWelcomePack(p: any, org?: { academy: string; coach: string; 
     </div>
     <p style="margin-top:18px">Hi ${esc(first)},</p>
     <p>A warm welcome to ${esc(academy)} — we're really pleased to have you on board. Whether you're brand new to tennis or coming back to it, our job is to help you improve, enjoy your tennis and hit some clear goals along the way.</p>
-    <p>${sw.racket
+    <p>${ad
+      ? `We coach adults on our own <strong>levels</strong>. Each one has a short video and a checklist of things to show your coach — pass them all and you move up to the next level, so you always know what you're working towards.`
+      : sw.racket
       ? `We coach using a <strong>racket progression system</strong> (like martial arts) — you'll work through clear skills at each racket, earn certificates as you progress, and always know what you're working towards. It keeps things fun, structured and motivating.`
       : `We coach in <strong>colour stages</strong> — you'll work through a clear set of skills at each colour, and always know what you're working towards. It keeps things fun, structured and motivating.`}</p>
     <h2>What happens next</h2>
-    <ol><li><strong>Complete the onboarding questions</strong> (page 3) and bring them to your first session — this helps us place you at exactly the right ${sw.noun}.</li><li><strong>First session = assessment &amp; a hit</strong> — relaxed, no pressure, just so we can see your game.</li><li><strong>We agree your goals</strong> and set your starting ${sw.noun} and a simple plan.</li></ol>
+    <ol><li><strong>Complete the onboarding questions</strong> (page 3) and bring them to your first session — this helps us place you at exactly the right ${unit}.</li><li><strong>First session = assessment &amp; a hit</strong> — relaxed, no pressure, just so we can see your game.</li><li><strong>We agree your goals</strong> and set your starting ${unit} and a simple plan.</li></ol>
     <h2>Handy to know</h2>
     <ul><li>Bring: trainers/tennis shoes, water, and a racket if you have one (we can lend one).</li><li>Wear comfortable sports clothing for the weather.</li><li>Lessons, progress and homework are shared through the Lumio Coach app.</li></ul>
     <p style="margin-top:14px">See you on court,<br/><strong style="font-family:Georgia,serif;font-style:italic;font-size:15px">${esc(coach)}</strong></p>
@@ -1336,18 +1534,17 @@ async function printWelcomePack(p: any, org?: { academy: string; coach: string; 
 
   <div class="page">
     <h2 style="margin-top:0">Your starting action plan</h2>
-    <div class="accentbox" style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:25px;border-radius:5px;background:${stage.colour};border:1px solid rgba(0,0,0,.25)"></span><div><div style="font-size:16px;font-weight:700">${esc(sw.stage(stage.name))} — ${esc(theme)}</div><div style="font-size:11px;color:#6b7280">Your suggested starting point — confirmed after your first session</div></div></div>
-    <h2>Skills you'll work on first</h2><ul>${skills}</ul>
+    ${ad ? adultPlan : juniorPlan}
     ${p.goal ? `<h2>Your goal</h2><p>${esc(p.goal)}</p>` : ''}
     ${plan?.welcome ? `<p style="font-size:13px;line-height:1.65">${esc(plan.welcome)}</p>` : ''}
     <h2>First four weeks</h2>
     <table><thead><tr><th style="width:70px">Week</th><th>Focus</th></tr></thead><tbody>
       ${plan?.weeks?.length
         ? plan.weeks.slice(0, 4).map(wk => `<tr><td>${esc(wk.week)}</td><td>${esc(wk.focus)}</td></tr>`).join('')
-        : `<tr><td>Week 1</td><td>Assessment &amp; getting to know your game — set your ${sw.noun} and goal</td></tr>
-           <tr><td>Week 2</td><td>Foundations of ${esc(theme.toLowerCase())}</td></tr>
+        : `<tr><td>Week 1</td><td>Assessment &amp; getting to know your game — set your ${unit} and goal</td></tr>
+           <tr><td>Week 2</td><td>${ad && adLevel ? `Working on the ${esc(adLevel.name)} checklist` : `Foundations of ${esc(theme.toLowerCase())}`}</td></tr>
            <tr><td>Week 3</td><td>Build &amp; repeat — take the new skills into rallies and games</td></tr>
-           <tr><td>Week 4</td><td>First progress check — celebrate the wins and set the next target (${esc(next.name)})</td></tr>`}
+           <tr><td>Week 4</td><td>First progress check — celebrate the wins and set the next target (${esc(ad ? (adNext?.name || 'your next goals') : next.name)})</td></tr>`}
     </tbody></table>
     ${plan?.first_session ? `<h2>Your first session</h2><p style="font-size:13px;line-height:1.65">${esc(plan.first_session)}</p>` : ''}
     ${plan?.parent_note ? `<div class="accentbox" style="margin-top:12px"><strong>For parents:</strong> ${esc(plan.parent_note)}</div>` : ''}
@@ -1357,7 +1554,7 @@ async function printWelcomePack(p: any, org?: { academy: string; coach: string; 
 
   <div class="page">
     <h2 style="margin-top:0">Onboarding — tell us about your tennis</h2>
-    <p style="margin-top:0">Please complete and bring to your first session. This helps us place you at the right ${sw.noun} from day one.</p>
+    <p style="margin-top:0">Please complete and bring to your first session. This helps us place you at the right ${unit} from day one.</p>
     <table><tbody><tr><td style="width:50%">Player name: ${fill('120px')}</td><td>Date of birth: ${fill('110px')}</td></tr><tr><td>Parent/guardian (if junior): ${fill('100px')}</td><td>Best contact number: ${fill('110px')}</td></tr></tbody></table>
     <h2>Your tennis history</h2>
     <div class="q"><div class="lbl">How long have you been playing tennis?</div>${fill('200px')} years / months</div>
@@ -1370,7 +1567,7 @@ async function printWelcomePack(p: any, org?: { academy: string; coach: string; 
     <h2>Practical</h2>
     <div class="q"><div class="lbl">Which days / times generally suit you?</div>${line}</div>
     <div class="q"><div class="lbl">Any injuries, medical conditions or things we should know?</div>${line}${line}</div>
-    <div class="accentbox" style="margin-top:14px"><strong>For the coach:</strong> suggested starting ${sw.noun} after review: ${fill('150px')} &nbsp; Date: ${fill('90px')}</div>
+    <div class="accentbox" style="margin-top:14px"><strong>For the coach:</strong> suggested starting ${unit} after review: ${fill('150px')} &nbsp; Date: ${fill('90px')}</div>
     <div class="foot"><span>${esc(academy)}</span><span>Onboarding · ${esc(p.name)}</span></div>
   </div>
   </body></html>`

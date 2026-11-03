@@ -14,6 +14,7 @@ import { isAdult } from '@/lib/coach/camp-audience'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { dbUpdate } from '../_lib/coach-db'
+import { askConfirm } from '../_lib/ask'
 
 type Promo = {
   email?: { subject?: string; preheader?: string; paragraphs?: string[]; cta?: string }
@@ -105,7 +106,7 @@ export function CampPromote({ T, accent, campId, campName, players, attendees = 
   const setStopped = async (email: string, stop: boolean) => {
     if (listBusy) return
     const who = players.filter(p => [norm(p.email), norm(p.parent_email)].includes(email) && !!p.no_camp_emails !== stop)
-    if (stop && !confirm(`Stop sending camp announcements to ${email}?\n\nThey will be left out of every announcement from now on. Emails about a camp they are booked on still go.`)) return
+    if (stop && !(await askConfirm(`Stop sending camp announcements to ${email}?\n\nThey will be left out of every announcement from now on. Emails about a camp they are booked on still go.`, { yes: 'Stop sending' }))) return
     setListBusy(email); setErr(''); setMsg('')
     try {
       for (const p of who) await dbUpdate('coach_players', p.id, { no_camp_emails: stop })
@@ -150,7 +151,7 @@ export function CampPromote({ T, accent, campId, campName, players, attendees = 
     if (!testOnly) {
       const n = picked.size
       if (!n) { setErr('Nobody is selected.'); return }
-      if (!confirm(`Send this to ${n} ${n === 1 ? 'person' : 'people'}? It goes out immediately and cannot be recalled.`)) return
+      if (!(await askConfirm(`Send this to ${n} ${n === 1 ? 'person' : 'people'}? It goes out immediately and cannot be recalled.`, { yes: 'Send' }))) return
     }
     setSending(true); setErr(''); setMsg('')
     try {

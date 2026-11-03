@@ -113,6 +113,7 @@ import { MobileSportHome } from '@/components/mobile/MobileSportHome'
 import { MobileSportTraining } from '@/components/mobile/MobileSportTraining'
 import { MobileSportLayout } from '@/components/mobile/MobileSportLayout'
 import { tennisMobileConfig } from '@/lib/mobile/configs/tennis'
+import { tell } from '@/app/coach/[slug]/_lib/ask'
 
 // ─── PROFILE SYNC HOOKS — re-read on 'lumio-profile-updated' events ──────────
 function useTennisProfileName(): string | null {
@@ -12281,7 +12282,7 @@ function MatchReportsView({ player, session }: { player: TennisPlayer; session: 
                       Copy
                     </button>
                     <button
-                      onClick={() => alert('Sent to coach & physio ✓')}
+                      onClick={() => { void tell('Sent to coach & physio ✓') }}
                       className="px-3 py-1.5 rounded-lg text-xs font-medium bg-teal-600/20 text-teal-400 border border-teal-600/30 hover:bg-teal-600/30 transition-colors"
                     >
                       Share with team

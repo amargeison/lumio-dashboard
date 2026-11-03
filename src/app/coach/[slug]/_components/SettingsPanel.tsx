@@ -28,6 +28,7 @@ import { CoachImport, ImportPendingDialog, type PendingImport } from './CoachImp
 import { seedLumioResources, LUMIO_RESOURCES, isLumioResource } from '../_lib/lumio-resources'
 import { seedLumioEquipment, EQUIPMENT_KIT_CHOICES, EQUIPMENT_CATEGORY_CHOICES } from '../_lib/lumio-equipment'
 import { seedLumioPackages, LUMIO_PACKAGES } from '../_lib/lumio-packages'
+import { askConfirm } from '../_lib/ask'
 import { V2_LABEL, V2_NOTES } from '@/lib/coach/v2'
 import { parseAmount, formatPounds } from '@/lib/coach/money'
 import { useIsNativeApp } from '@/lib/app/use-native-app'
@@ -451,7 +452,7 @@ function ResourceCentreSettings({ T, accent }: { T: ThemeTokens; accent: AccentT
 
   const clearAll = async () => {
     if (seed === 'busy' || wipe === 'busy') return
-    if (!confirm('Delete every resource in your Resource Centre? That includes the Lumio library and anything you have added yourself. This cannot be undone.')) return
+    if (!(await askConfirm('Delete every resource in your Resource Centre? That includes the Lumio library and anything you have added yourself. This cannot be undone.', { yes: 'Delete all' }))) return
     setWipe('busy')
     try {
       const uid = await currentCoachId()
@@ -597,7 +598,7 @@ function EquipmentKitSettings({ T, accent }: { T: ThemeTokens; accent: AccentTok
 
   const clearAll = async () => {
     if (seed === 'busy' || wipe === 'busy') return
-    if (!confirm('Delete every kit checklist item and every piece of inventory? That includes Lumio’s starter kit and anything you have added yourself. This cannot be undone.')) return
+    if (!(await askConfirm('Delete every kit checklist item and every piece of inventory? That includes Lumio’s starter kit and anything you have added yourself. This cannot be undone.', { yes: 'Delete all' }))) return
     setWipe('busy')
     try {
       const uid = await currentCoachId()
@@ -690,7 +691,7 @@ function PaymentsPackagesSettings({ T, accent }: { T: ThemeTokens; accent: Accen
 
   const clearAll = async () => {
     if (seed === 'busy' || wipe === 'busy') return
-    if (!confirm('Delete every package in your price list? That includes Lumio’s starter packages and any you have priced yourself. Player payments are not affected. This cannot be undone.')) return
+    if (!(await askConfirm('Delete every package in your price list? That includes Lumio’s starter packages and any you have priced yourself. Player payments are not affected. This cannot be undone.', { yes: 'Delete all' }))) return
     setWipe('busy')
     try {
       const uid = await currentCoachId()
@@ -870,7 +871,7 @@ function PortalAddress({ T, accent, current }: { T: ThemeTokens; accent: AccentT
   const canSave = !!check?.available && check.slug === want && !busy
   const save = async () => {
     if (!canSave) return
-    if (!confirm(`Change your portal address to lumiosports.com/tennis/coach/${want}?\n\nYour old address (${current}) stops working straight away. You will need to update anything that uses it: bookmarks, the link on your website, your sign-in page link, the parent consent form link, and the Lumio app if you have added it to a phone's home screen (remove it and add it again from the new address).\n\nBooking links and camp sign-up links you have already sent keep working.`)) return
+    if (!(await askConfirm(`Change your portal address to lumiosports.com/tennis/coach/${want}?\n\nYour old address (${current}) stops working straight away. You will need to update anything that uses it: bookmarks, the link on your website, your sign-in page link, the parent consent form link, and the Lumio app if you have added it to a phone's home screen (remove it and add it again from the new address).\n\nBooking links and camp sign-up links you have already sent keep working.`, { yes: 'Change address' }))) return
     setBusy(true); setErr('')
     try {
       await saveCoachProfile({ portal_slug: want })
@@ -970,7 +971,7 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
     try { await saveBrandLogo(await fileToLogoDataUrl(f)); realProfile.reload() } catch { setLogoErr(LOGO_NOT_IMAGE) }
   }
   useEffect(() => {
-    if (realProfile.loading || !realProfile.display_name) return
+    if (demo || realProfile.loading || !realProfile.display_name) return
     const patch: Record<string, any> = {}
     if (!s.coach || s.coach === COACH_ORG.coach) patch.coach = realProfile.display_name
     // Same for the academy name — it comes from onboarding as brand_name.
@@ -1064,8 +1065,8 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
         </div>
         {/* Asks first, and only ever touches how the portal looks — see
             resetSettings. It used to wipe every setting on one click. */}
-        {!demo && <button onClick={() => {
-          if (!confirm('Reset how your portal looks?\n\nThis puts back the theme, accent colour, density, help hints, hidden menu items and hidden page sections as they were when you started.\n\nNothing else changes. Your academy and head coach details, DBS and safeguarding records, prices, booking and messaging settings and the player app all stay as they are.')) return
+        {!demo && <button onClick={async () => {
+          if (!(await askConfirm('Reset how your portal looks?\n\nThis puts back the theme, accent colour, density, help hints, hidden menu items and hidden page sections as they were when you started.\n\nNothing else changes. Your academy and head coach details, DBS and safeguarding records, prices, booking and messaging settings and the player app all stay as they are.', { yes: 'Reset' }))) return
           resetSettings()
           for (const id of getHidden()) setMenuHidden(id, false)
         }} style={{ marginLeft: 'auto', appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 9, padding: '7px 12px', fontSize: 11.5, cursor: 'pointer' }}>Reset appearance</button>}
@@ -1210,17 +1211,17 @@ export function SettingsPanel({ T, accent, density, demo = false }: Common & { d
               and the sidebar all read. Editing only the first is how "PG
               Tennis" could be typed here while every other screen still said
               "Penrith Tennis Club". Both are written, on blur, every time. */}
-          <Field T={T} label="Academy name"><input style={input(T)} placeholder="Your academy name" value={s.academy}
+          <Field T={T} label="Academy name"><input style={input(T)} readOnly={demo} title={demo ? 'The demo academy’s name is fixed' : undefined} placeholder="Your academy name" value={s.academy}
             onChange={e => setSettings({ academy: e.target.value })}
             onBlur={e => { const v = e.target.value.trim(); if (!demo && v && v !== realProfile.brand_name) saveCoachProfile({ brand_name: v }).then(() => realProfile.reload()).catch(() => {}) }} /></Field>
-          <Field T={T} label="Head coach name"><input style={input(T)} placeholder="Your name" value={s.coach}
+          <Field T={T} label="Head coach name"><input style={input(T)} readOnly={demo} title={demo ? 'The demo coach’s name is fixed' : undefined} placeholder="Your name" value={s.coach}
             onChange={e => setSettings({ coach: e.target.value })}
             onBlur={e => { const v = e.target.value.trim(); if (demo) return; if (v !== e.target.value || !v) setSettings({ coach: v || realProfile.display_name || '' }); if (v && v !== realProfile.display_name) saveCoachProfile({ display_name: v }).then(() => realProfile.reload()).catch(() => {}) }} /></Field>
           {/* This box and Head coach profile → Accreditation were one stored
               value under two labels, so each overwrote the other. It is the
               coach's accreditation everywhere it is shown, so a real academy
               edits it in one place: Head coach profile. */}
-          {demo && <Field T={T} label="Certification / tagline"><input style={input(T)} placeholder="e.g. LTA Accredited Coach" value={s.cert} onChange={e => setSettings({ cert: e.target.value })} /></Field>}
+          {demo && <Field T={T} label="Certification / tagline"><input style={input(T)} readOnly={demo} placeholder="e.g. LTA Accredited Coach" value={s.cert} onChange={e => setSettings({ cert: e.target.value })} /></Field>}
           <Field T={T} label="Club logo" hint="Top-left of your portal, and on packs, certificates and the player app.">
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               {(s.brandLogo || realProfile.brand_logo_url)

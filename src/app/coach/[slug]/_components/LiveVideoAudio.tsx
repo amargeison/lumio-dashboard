@@ -23,6 +23,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbUpdate, invalidateCoachTable, sb } from '../_lib/coach-db'
 import { playerLabels, type Nameable } from '../_lib/tell-apart'
 import { uploadMedia, confirmAndProcess, pollMedia, isProcessingStatus, processStageShort, checkRecordings } from '../_lib/media-upload'
+import { askConfirm } from '../_lib/ask'
 
 type Media = { id: string; kind?: string | null; title?: string | null; player_id?: string | null; player_name?: string | null; duration_seconds?: number | null; created_at?: string; clip_of?: string | null; shot_type?: string | null; shot_confirmed?: boolean | null; status?: string | null; review?: unknown }
 const SHOT_OPTIONS = ['serve', 'forehand', 'backhand', 'volley', 'smash'] as const
@@ -222,7 +223,7 @@ export function LiveVideoAudio({ T, accent, videoOn = true, audioOn = true }: { 
 
   const removeClip = async (m: Media) => {
     const cuts = media.rows.filter(x => x.clip_of === m.id).length
-    if (!confirm(cuts ? `Delete this recording and the ${cuts} highlight clip${cuts === 1 ? '' : 's'} cut from it?` : 'Delete this clip?')) return
+    if (!(await askConfirm(cuts ? `Delete this recording and the ${cuts} highlight clip${cuts === 1 ? '' : 's'} cut from it?` : 'Delete this clip?', { yes: 'Delete' }))) return
     setClipErr('')
     try {
       const r = await fetch(`/api/coach/media/${m.id}`, { method: 'DELETE' })

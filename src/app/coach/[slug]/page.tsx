@@ -702,7 +702,7 @@ function CoachPortalInner({ session, isEmpty: realAccount = false, slugClubName 
   const coachPhoto = isDemo ? demoAvatarUrl(coachName) : (settings.head?.avatarUrl || session?.photoDataUrl || null)
   // The name the head coach typed in Settings wins over the one captured when
   // they signed in. session.clubName is a snapshot from sign-in, so while it
-  // came first, renaming the academy to "PG Tennis" changed nothing on screen —
+  // came first, renaming the academy changed nothing on screen —
   // the sidebar and the dashboard banner kept "Penrith Tennis Club" until the
   // next login. Same rule the coach's own name already follows just above.
   const customClubName = realAccount && session?.role === 'head' && settings.academy?.trim() && settings.academy !== COACH_ORG.academy ? settings.academy.trim() : ''

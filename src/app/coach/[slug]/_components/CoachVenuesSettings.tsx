@@ -10,6 +10,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, sb } from '../_lib/coach-db'
 import { ukDate } from '@/lib/coach/uk-date'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
+import { askConfirm } from '../_lib/ask'
 import { BILLING_LABEL, type CourtBilling } from '@/lib/coach/pricing'
 import { parseAmount, formatPennies } from '@/lib/coach/money'
 
@@ -74,7 +75,7 @@ export function CoachVenuesSettings({ T, accent, addNew }: { T: ThemeTokens; acc
       coaches ? `• ${n(coaches, 'coach', 'coaches')} will no longer be assigned here` : '',
       booked ? `• ${n(booked, 'upcoming booking')} here will keep ${booked === 1 ? 'its' : 'their'} court name but lose the venue` : '',
     ].filter(Boolean)
-    if (!confirm(`Delete ${v.name}?${lines.length ? `\n\n${lines.join('\n')}` : ''}\n\nThis cannot be undone.`)) return
+    if (!(await askConfirm(`Delete ${v.name}?${lines.length ? `\n\n${lines.join('\n')}` : ''}\n\nThis cannot be undone.`, { yes: 'Delete' }))) return
     try {
       // Courts first, then the venue — so nothing is left without a venue even
       // on a database where migration 198 (courts go with their venue) has not run.
@@ -170,7 +171,7 @@ function CourtManager({ T, accent, venue, courts, add, edit, remove, bookedOn }:
   const removeCourt = async (c: Court) => {
     const booked = bookedOn(c.id)
     const extra = booked ? `\n\n${n(booked, 'upcoming booking')} on it will keep the court name but no longer be linked to this court.` : ''
-    if (!confirm(`Delete ${c.name} at ${venue.name}?${extra}`)) return
+    if (!(await askConfirm(`Delete ${c.name} at ${venue.name}?${extra}`, { yes: 'Delete' }))) return
     setErr('')
     try { await remove(c.id) } catch { setErr('The court could not be deleted. Please try again.') }
   }

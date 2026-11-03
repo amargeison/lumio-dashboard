@@ -12,6 +12,7 @@ import { campSpans, campsBetween, campsOn, campDayLabel, type CampRow } from '@/
 import { campMoney } from '@/lib/coach/camp-money'
 import { formatPennies, formatPounds, paymentOwedPennies } from '@/lib/coach/money'
 import { RACKET_STAGES, SKILLS_BY_STAGE } from '@/lib/coach/racket-framework'
+import { isAdultPlayer } from '@/lib/coach/adult-levels'
 import { stockState, stockNeedsAttention, STOCK_LABEL } from '@/lib/coach/stock'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -99,7 +100,9 @@ export function buildDashboard(raw: DashboardRows, o: {
   const duePlayers = new Set(due.map(p => p.player_id ? `id:${p.player_id}` : `name:${String(p.player_name || '').trim().toLowerCase()}`)).size
 
   const skillFor = (pid: string) => Object.fromEntries(d.skills.filter(s => s.player_id === pid).map(s => [s.skill, s.score]))
+  // Adults are on the academy's own levels, never the junior rackets.
   const racketsReady = !o.features.racket ? [] : d.players.filter(p => {
+    if (isAdultPlayer(p)) return false
     const st = RACKET_STAGES.findIndex(s => s.id === p.racket_stage)
     if (st < 0) return false
     const list = SKILLS_BY_STAGE[RACKET_STAGES[st].id] || []

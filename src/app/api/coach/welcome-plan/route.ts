@@ -6,6 +6,7 @@ import { runCoachAgent, extractJson, buildPlayerContext } from '@/lib/coach/agen
 import { welcomePlanTask } from '@/lib/coach/agent-persona'
 import { rateLimit } from '@/lib/rate-limit'
 import { studentAudience } from '@/lib/student/bundle'
+import { adultLevelBrief, isAdultPlayer, type AdultLevel, type AdultPass } from '@/lib/coach/adult-levels'
 
 export const maxDuration = 60
 
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
       // table. Asking for a column that is not there makes the whole read fail,
       // so every request answered "Player not found" and the pack always fell
       // back to the generic plan. (player-targets had the same fault.)
-      .select('name, age, racket_stage, goal, level, category, parent_name, parent_email')
+      .select('id, name, age, racket_stage, goal, level, category, adult_level_id, parent_name, parent_email')
       .eq('id', playerId).maybeSingle()
     if (!player) return NextResponse.json({ error: 'Player not found' }, { status: 404 })
 
@@ -74,10 +75,23 @@ export async function POST(req: NextRequest) {
     // a returning junior) does have history, and it gets used.
     const context = await buildPlayerContext(supabase, player.name, playerId)
 
+    // An adult starts on the academy's own levels, not a junior racket.
+    let adultLevel: { line: string; brief: string } | null = null
+    if (isAdultPlayer(player)) {
+      try {
+        const [{ data: levels }, { data: passes }] = await Promise.all([
+          supabase.from('coach_adult_levels').select('id, position, name, summary, checklist'),
+          supabase.from('coach_adult_passes').select('player_id, level_id, item_id, passed_on').eq('player_id', playerId),
+        ])
+        adultLevel = adultLevelBrief(player, (levels || []) as (AdultLevel & { summary?: string | null })[], (passes || []) as AdultPass[])
+      } catch { /* written without it */ }
+    }
+
     const task = welcomePlanTask({
       playerName: player.name,
       age: player.age ?? null,
-      stage: player.racket_stage ?? null,
+      stage: adultLevel ? null : player.racket_stage ?? null,
+      adultLevel,
       standard: player.level ?? player.category ?? null,
       goal: player.goal ?? null,
       // The coach's private roster note is never sent: the family reads this pack.

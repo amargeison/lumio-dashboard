@@ -22,6 +22,7 @@ import { CampDiscord } from './CampDiscord'
 import { getSettings, setSettings } from '../_lib/settings-store'
 import { useCoachSettings } from '../_lib/use-settings'
 import { stageWords } from '../_lib/stage-words'
+import { askConfirm, tell } from '../_lib/ask'
 import { AUDIENCES, campAudience } from '@/lib/coach/camp-audience'
 import { formDone } from '@/lib/coach/camp-form'
 import { flagFor } from '@/lib/coach/country-flag'
@@ -223,9 +224,9 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
     const msg = `Delete “${sel.name}” for good?\n\n`
       + (lines.length ? `This will also delete:\n${lines.join('\n')}\n\n` : '')
       + `${sel.signup_slug || campAttendees.length ? 'The sign-up page and every family’s form link will stop working. ' : ''}Your roster players are kept. This cannot be undone.`
-    if (!confirm(msg)) return
+    if (!(await askConfirm(msg, { yes: 'Delete' }))) return
     try { await camps.remove(sel.id); await attendees.reload(); setSelId(null) }
-    catch (e) { alert(e instanceof Error ? e.message : 'That camp could not be deleted. Try again.') }
+    catch (e) { void tell(e instanceof Error ? e.message : 'That camp could not be deleted. Try again.') }
   }
 
   const skillMap = useMemo(() => { const m: Record<string, Record<string, number>> = {}; for (const r of skillRows) { (m[r.player_id] ||= {})[r.skill] = r.score } return m }, [skillRows])
@@ -319,10 +320,7 @@ export function LiveCamps({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
           <AttendeeTable T={T} accent={accent} camp={sel} attendees={campAttendees} players={players}
             coaches={staffRows.filter(st => (Array.isArray(sel.coach_ids) ? (sel.coach_ids as string[]) : []).map(String).includes(String(st.id)))}
             addPlayer={async (name, playerId) => {
-              // The sign-up page stops at capacity; a coach adding by hand is
-              // asked first, so a camp is only ever over full on purpose.
-              if (sel.capacity && bookedCount >= sel.capacity
-                && !confirm(`${sel.name} is full — ${bookedCount} of ${sel.capacity} places taken. Add ${name} anyway?`)) return
+              // A full camp is asked about in AttendeeTable before this runs.
               const row = await dbInsert('coach_camp_attendees', { camp_id: sel.id, player_id: playerId, player_name: name }) as { id?: string } | null
               // Awaited, so "+ Add" stays locked until the new place is on screen.
               await attendees.reload()
@@ -884,7 +882,7 @@ function Packs({ T, accent, camp, attendees, players, skillMap, skillDates, attR
           <div style={{ fontSize: 11.5, color: T.text3 }}>{camp.name} · {fmtD(camp.start_date)}–{fmtD(camp.end_date)}</div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <ReportButton T={T} accent={accent} camp={camp} playerName={sel.player_name} stage={st?.name} stageColour={(st as any)?.colour} achievement={achievement} noun={W.noun} />
-            <button onClick={() => { if (!printCampPack(camp as any, campOrg(profile), { playerName: sel.player_name, attendancePct: attPct, stage: st?.name, stageColour: (st as any)?.colour, mastered: curMastered, achievement, stageNoun: W.Noun, campDays: campDays(camp) })) alert('Your browser blocked the print window — allow pop-ups for this site.') }} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>🏆 Print camp pack</button>
+            <button onClick={() => { if (!printCampPack(camp as any, campOrg(profile), { playerName: sel.player_name, attendancePct: attPct, stage: st?.name, stageColour: (st as any)?.colour, mastered: curMastered, achievement, stageNoun: W.Noun, campDays: campDays(camp) })) void tell('Your browser blocked the print window — allow pop-ups for this site.') }} style={{ appearance: 'none', border: 0, background: accent.hex, color: T.btnText, borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>🏆 Print camp pack</button>
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginTop: 14 }}>

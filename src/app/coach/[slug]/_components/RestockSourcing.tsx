@@ -15,6 +15,7 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { Icon } from '@/app/cricket/[slug]/v2/_components/Icon'
 import { COACH_ORG } from '../_lib/coach-data'
 import { markOrdered } from '../_lib/equipment-store'
+import { tell } from '../_lib/ask'
 
 export type SrcItem = { name: string; qty: string; category: string }
 
@@ -234,7 +235,7 @@ function printPO(rows: Row[]) {
     <div class="foot"><span>${esc(COACH_ORG.academy)} · Indicative prices — confirm at checkout</span><span>Lumio Smart Sourcing</span></div>
   </div></body></html>`
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to print the purchase order.'); return }
+  if (!w) { void tell('Please allow pop-ups to print the purchase order.'); return }
   w.document.write(html); w.document.close(); w.focus()
   setTimeout(() => { try { w.print() } catch { /* manual */ } }, 350)
 }

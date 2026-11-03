@@ -30,7 +30,7 @@ export const ACCENT_PRESETS: Record<AccentKey, { hex: string; dim: string; borde
   pink:     accent('#D9467D', 'Rose'),
   magenta:  accent('#C2359E', 'Magenta'),
   coral:    accent('#F06A5A', 'Coral'),
-  // Sampled straight from the PG Tennis logo (#EE5A22), so the portal and the
+  // Sampled straight from a coach's logo (#EE5A22), so the portal and the
   // badge on the kit are the same orange rather than two near-misses.
   pgorange: accent('#EE5A22', 'Clay orange'),
   amber:    accent('#F59E0B', 'Amber'),
@@ -211,12 +211,12 @@ export const DEFAULT_SETTINGS: CoachSettings = {
   summaries: { send: 'time', at: '22:00' },
   lessonTypes: ['Private', 'Group', 'Cardio', 'Match play'],
   bookableHours: '08:00 – 20:00',
-  profile: { role: 'Head Coach', email: 'hello@riversidetennis.example', phone: '+44 7700 900123', dbsNumber: '0012 3456 7890', dbsExpiry: '2027-09-02', safeguardingDate: '2025-10-14' },
+  profile: { role: 'Head Coach', email: 'hello@lumiotennisclub.example', phone: '+44 7700 900123', dbsNumber: '0012 3456 7890', dbsExpiry: '2027-09-02', safeguardingDate: '2025-10-14' },
   conn: { emailProvider: 'google', calendarSync: true },
   booking: { google: true, outlook: false, ical: '', defaultDuration: 60, buffer: 10, autoConfirm: true },
   gdpr: { data: true, photo: false, medical: false, wearable: false, retentionYears: 3, dpaAccepted: true },
   staff: { dsl: COACH_ORG.coach, reminderDays: 90, policyOn: true },
-  messaging: { senderEmail: 'hello@riversidetennis.example', senderPhone: '+44 7863 765950', email: true, text: true, inapp: true },
+  messaging: { senderEmail: 'hello@lumiotennisclub.example', senderPhone: '+44 7863 765950', email: true, text: true, inapp: true },
   rewards: { leaderboard: true, levelsVisible: true, watchConsentDefault: false },
   primaryVenueId: '',
   syncedVenues: ['riverside'],
@@ -411,18 +411,31 @@ export function rawSettings(): Partial<CoachSettings> {
   try { const raw = ls.getItem(KEY); return raw ? JSON.parse(raw) : {} } catch { return {} }
 }
 
+// Who the demo academy is. The demo is one fictional academy whoever looks at
+// it, but these were saved like any other setting — and a visitor's own name,
+// club and email (from the demo sign-in, or typed into Settings) ended up in
+// them, so Settings named a real coach while the dashboard named Vincent Jones.
+// On the demo they always come from the seed and are never saved.
+const DEMO_IDENTITY = ['academy', 'coach', 'cert', 'profile'] as const
+const withDemoIdentity = (s: CoachSettings): CoachSettings => {
+  if (!isDemoPortal()) return s
+  const fixed = { ...s }
+  for (const k of DEMO_IDENTITY) (fixed as any)[k] = DEFAULT_SETTINGS[k]
+  return fixed
+}
+
 export function getSettings(): CoachSettings {
   // Server render keeps the static seed so the first client render matches it —
   // useCoachSettings starts from DEFAULT_SETTINGS for exactly that reason and
   // swaps to the real values (below) on mount.
   if (typeof window === 'undefined') return DEFAULT_SETTINGS
   const base = activeDefaults()
-  try { const raw = ls.getItem(KEY); return raw ? { ...base, ...JSON.parse(raw) } : base } catch { return base }
+  try { const raw = ls.getItem(KEY); return withDemoIdentity(raw ? { ...base, ...JSON.parse(raw) } : base) } catch { return base }
 }
 
 export function setSettings(patch: Partial<CoachSettings>) {
   if (typeof window === 'undefined') return
-  const next = { ...getSettings(), ...patch }
+  const next = withDemoIdentity({ ...getSettings(), ...patch })
   try { ls.setItem(KEY, JSON.stringify(next)) } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(EVT))
   // Mirror to the server (debounced inside the hook). Never awaited: a slow or

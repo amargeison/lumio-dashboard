@@ -116,6 +116,9 @@ export function nextUp(stats: AreaStat[]): AreaStat[] {
 export const whenWords = (s: AreaStat) =>
   s.daysAgo == null ? 'not yet' : s.daysAgo === 0 ? 'today' : s.daysAgo === 1 ? 'yesterday' : s.daysAgo < 14 ? `${s.daysAgo} days ago` : `${Math.round(s.daysAgo / 7)} weeks ago`
 
+/** "last covered 3 weeks ago", or "not covered yet" for an area no lesson has touched. */
+export const lastCoveredWords = (s: AreaStat) => (s.daysAgo == null ? 'not covered yet' : `last covered ${whenWords(s)}`)
+
 const list = (v: unknown) => (Array.isArray(v) ? (v as string[]).join(', ') : typeof v === 'string' ? v : '')
 
 /** What they told the coach, in short lines, for the screen. Never health notes. */
@@ -151,6 +154,6 @@ export function plannerBrief(answers: Answers | null | undefined, stats: AreaSta
     lines.push(`Covered in the last ${RECENT_DAYS / 7} weeks: ${covered.length ? covered.map(s => `${s.name} (${s.lessons} lesson${s.lessons === 1 ? '' : 's'}, last ${whenWords(s)})`).join('; ') : 'nothing recorded'}.`)
     if (gaps.length) lines.push(`Not covered in the last ${RECENT_DAYS / 7} weeks: ${gaps.map(s => s.name).join(', ')}.`)
   }
-  if (up.length) lines.push(`Worth bringing in soon: ${up.map(s => `${s.name} (${s.wants.join(', ')}; last ${whenWords(s)})`).join('; ')}.`)
+  if (up.length) lines.push(`Worth bringing in soon: ${up.map(s => `${s.name} (${s.wants.join(', ')}; ${lastCoveredWords(s)})`).join('; ')}.`)
   return lines.join('\n')
 }

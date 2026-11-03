@@ -14,6 +14,7 @@ import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/the
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbUpdate, rowsChanged } from '../_lib/coach-db'
 import { useWallet, reloadWallet, savedFor, chargeState } from '../_lib/pay-wallet'
+import { askConfirm } from '../_lib/ask'
 import { readable, type Answers, type Version } from '@/lib/coach/questionnaire'
 import { planWords, monthWords, monthOf, nextMonth, nextBillDate, ordinal, type Plan, type Covers } from '@/lib/coach/memberships'
 import { ukDate } from '@/lib/coach/uk-date'
@@ -73,7 +74,7 @@ export function ClientSetup({ T, accent, player, pad }: {
   }
   const setStatus = async (status: Plan['status']) => {
     if (!plan || busy) return
-    if (status === 'ended' && !confirm(`End ${first}’s monthly plan? No more monthly payments are taken. Anything already taken stays as it is.`)) return
+    if (status === 'ended' && !(await askConfirm(`End ${first}’s monthly plan? No more monthly payments are taken. Anything already taken stays as it is.`, { yes: 'End plan', danger: true }))) return
     setBusy(status); setMsg(null)
     try { await dbUpdate('coach_memberships', plan.id, { status }); setMsg({ text: status === 'ended' ? 'Plan ended.' : status === 'paused' ? 'Paused. Nothing is taken until you resume it.' : 'Resumed.' }) }
     catch (e) { setMsg({ text: e instanceof Error ? e.message : 'That could not be saved.', bad: true }) }
@@ -81,7 +82,7 @@ export function ClientSetup({ T, accent, player, pad }: {
   }
   const chargeNow = async () => {
     if (!plan || busy) return
-    if (!confirm(`Take ${formatPennies(plan.amount_pennies)} for ${monthWords(monthOf(ukDate()))} from ${first}’s saved card or Direct Debit now?`)) return
+    if (!(await askConfirm(`Take ${formatPennies(plan.amount_pennies)} for ${monthWords(monthOf(ukDate()))} from ${first}’s saved card or Direct Debit now?`, { yes: 'Take payment' }))) return
     setBusy('charge'); setMsg(null)
     try {
       const r = await fetch('/api/coach/memberships', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'charge-now', id: plan.id }) })
@@ -94,7 +95,7 @@ export function ClientSetup({ T, accent, player, pad }: {
 
   const setRecord = async (ok: boolean) => {
     if (busy) return
-    if (!ok && !confirm(`Note that ${first} no longer agrees to lessons being recorded? Recordings already made stay until you delete them.`)) return
+    if (!ok && !(await askConfirm(`Note that ${first} no longer agrees to lessons being recorded? Recordings already made stay until you delete them.`))) return
     setBusy('rec'); setMsg(null)
     try { await dbUpdate('coach_players', player.id, ok ? { consent_record: true, consent_record_at: new Date().toISOString(), consent_record_by: 'Agreed in person', consent_record_how: 'in_person' } : { consent_record: false, consent_record_at: new Date().toISOString(), consent_record_how: 'withdrawn' }) }
     catch (e) { setMsg({ text: e instanceof Error ? e.message : 'That could not be saved.', bad: true }) }
@@ -112,7 +113,7 @@ export function ClientSetup({ T, accent, player, pad }: {
 
   return (
     <>
-      <div data-testid="welcome-strip" style={wrap}>
+      <div data-testid="welcome-strip" data-setup="welcome" style={wrap}>
         {head('Welcome link & questionnaire')}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
           <span style={{ color: link?.completed_at ? T.good : link?.sent_at ? T.warn : T.text3 }}>
@@ -151,7 +152,7 @@ export function ClientSetup({ T, accent, player, pad }: {
         {msg && <div role="status" style={{ fontSize: 11.5, color: msg.bad ? T.bad : T.good, overflowWrap: 'anywhere' }}>{msg.text}</div>}
       </div>
 
-      <div data-testid="record-consent" style={wrap}>
+      <div data-testid="record-consent" data-setup="record" style={wrap}>
         {head('Recording lessons')}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
           <span style={{ color: player.consent_record ? T.good : T.warn }}>{consentWords(player, first)}</span>
@@ -163,7 +164,7 @@ export function ClientSetup({ T, accent, player, pad }: {
         <div style={{ fontSize: 11, color: T.text3 }}>Their welcome link asks them. Until they agree, their lessons cannot be recorded.</div>
       </div>
 
-      <div data-testid="plan-strip" style={wrap}>
+      <div data-testid="plan-strip" data-setup="plan" style={wrap}>
         {head('Monthly plan')}
         {!plan && !editing && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
@@ -229,7 +230,7 @@ function PlanForm({ T, accent, playerId, plan, groups, onDone }: {
     try {
       if (plan) {
         const reagree = !!plan.agreed_at && (pennies !== plan.amount_pennies || Number(d.day) !== plan.day_of_month)
-        if (reagree && !confirm('Changing the amount or the day means they need to agree again before the next payment is taken. Send them their welcome link afterwards. Carry on?')) { setBusy(false); return }
+        if (reagree && !(await askConfirm('Changing the amount or the day means they need to agree again before the next payment is taken. Send them their welcome link afterwards. Carry on?', { yes: 'Carry on' }))) { setBusy(false); return }
         await dbUpdate('coach_memberships', plan.id, row)
         onDone(reagree ? 'Saved. They need to agree to the new amount: send their welcome link.' : 'Saved.')
       } else {

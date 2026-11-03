@@ -18,6 +18,7 @@ import { FONT, FONT_MONO } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { RACKET_STAGES, dbInsert, rowsChanged } from '../_lib/coach-db'
 import { playerLabels } from '../_lib/tell-apart'
 import { stageWords } from '../_lib/stage-words'
+import { askConfirm, tell } from '../_lib/ask'
 import { avatarSrc } from '@/lib/avatar'
 import { campMoney, paidSoFar, balanceOwed, payState, isCancelled, duePennies, PAY_STATE_LABEL } from '@/lib/coach/camp-money'
 import { tidyRooms, roomChoice, roomPatch, roomLocked, currentRoom, overpaidPennies } from '@/lib/coach/camp-rooms'
@@ -223,7 +224,7 @@ export function KitChecklist({ T, accent, camp, attendeeCount, onSave }: {
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={() => printKit(camp, kit)} style={btn(T, accent, true)}>Print kit list</button>
-          <button onClick={() => { if (confirm('Rebuild the list from this camp’s size? Anything you have changed will be lost.')) void write(buildCampKit(shape)) }} style={btn(T, accent)}>↻ Rebuild</button>
+          <button onClick={async () => { if (await askConfirm('Rebuild the list from this camp’s size? Anything you have changed will be lost.', { yes: 'Rebuild' })) void write(buildCampKit(shape)) }} style={btn(T, accent)}>↻ Rebuild</button>
         </div>
       </div>
       {!!err && <div style={{ fontSize: 12, color: T.bad }}>{err}</div>}
@@ -279,7 +280,7 @@ function AddRow({ T, accent, placeholder, onAdd }: { T: ThemeTokens; accent: Acc
 
 function printKit(camp: TabCamp, kit: KitCategory[]) {
   const w = window.open('', '_blank')
-  if (!w) { alert('Pop-up blocked — allow pop-ups for this site.'); return }
+  if (!w) { void tell('Pop-up blocked — allow pop-ups for this site.'); return }
   const esc = (s: string) => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c] as string))
   const cats = kit.map(c => `
     <section><h2>${esc(c.category)}</h2><table>
@@ -367,7 +368,7 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
     const p = players.find(x => x.id === pick)
     if (!p || adding) return
     if (cap && live.length >= cap
-      && !confirm(`This camp is full — ${live.length} of ${cap} places are taken.\n\nAdd ${p.name} anyway? They will be place ${live.length + 1}, over the limit you set.`)) return
+      && !(await askConfirm(`This camp is full — ${live.length} of ${cap} places are taken.\n\nAdd ${p.name} anyway? They will be place ${live.length + 1}, over the limit you set.`, { yes: 'Add anyway' }))) return
     setAdding(true); setErr('')
     try { await addPlayer(p.name, p.id); setPick('') }
     catch (e) { setErr(e instanceof Error ? e.message : 'They could not be added. Try again.') }
@@ -539,7 +540,7 @@ export function AttendeeTable({ T, accent, camp, attendees, players, coaches = [
                         {details.length > 0 && (
                           <button onClick={() => setOpenId(showing ? null : a.id)} style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 7, padding: '3px 9px', fontSize: 11, cursor: 'pointer', fontFamily: FONT }}>{showing ? 'Hide' : 'Details'}</button>
                         )}
-                        <button onClick={() => { if (confirm(`Remove ${a.player_name} from this camp?`)) void remove(a.id) }} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15, marginLeft: 4 }}>×</button>
+                        <button onClick={async () => { if (await askConfirm(`Remove ${a.player_name} from this camp?`, { yes: 'Remove' })) void remove(a.id) }} style={{ appearance: 'none', border: 0, background: 'transparent', color: T.text3, cursor: 'pointer', fontSize: 15, marginLeft: 4 }}>×</button>
                       </td>
                     </tr>
                     {unmatched && (
@@ -902,10 +903,10 @@ export function FinanceBoard({ T, accent, camp, attendees, editAtt, editCamp }: 
                 <span style={{ flex: 1, minWidth: 110, fontSize: 12.5, color: T.text }}>{a.player_name}</span>
                 {rooms.length > 0 && !gone && (
                   <select value={inRoom?.label ?? ''} disabled={roomLocked(a)} aria-label={`Room for ${a.player_name}`} data-testid="room-select"
-                    onChange={e => {
+                    onChange={async e => {
                       const r = rooms.find(x => x.label === e.target.value) || null
                       const now = Number(a.extra_pennies) || 0
-                      if ((r?.pennies ?? 0) > now && a.paid && !confirm(`${a.player_name} has paid in full. Moving them to ${r!.label} adds ${money(((r?.pennies ?? 0) - now) / 100)} to what they owe. Carry on?`)) return
+                      if ((r?.pennies ?? 0) > now && a.paid && !(await askConfirm(`${a.player_name} has paid in full. Moving them to ${r!.label} adds ${money(((r?.pennies ?? 0) - now) / 100)} to what they owe. Carry on?`, { yes: 'Carry on' }))) return
                       void saveAtt(a.id, { ...roomPatch(camp, a, r), ...(r && !a.room ? { room: r.label } : {}) })
                     }}
                     style={{ background: T.panel2, color: T.text2, border: `1px solid ${T.border}`, borderRadius: 7, padding: '3px 6px', fontSize: 11.5, fontFamily: FONT, maxWidth: 190 }}>
@@ -992,7 +993,7 @@ function BalancesCard({ T, accent, camp, attendees }: { T: ThemeTokens; accent: 
   const dueWords = new Date(`${due}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' })
   const act = async (a: TabAttendee, action: 'take' | 'link' | 'copy') => {
     if (busy) return
-    if (action === 'take' && !confirm(`Take ${money(balanceOwed(camp, a))} from ${a.player_name}’s kept card now?`)) return
+    if (action === 'take' && !(await askConfirm(`Take ${money(balanceOwed(camp, a))} from ${a.player_name}’s kept card now?`, { yes: 'Take payment' }))) return
     setBusy(`${a.id}:${action}`); setMsg(null)
     try {
       const r = await fetch('/api/coach/camps/balance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ attendeeId: a.id, action }) })
@@ -1069,7 +1070,7 @@ function PaymentPlanCard({ T, accent, camp, plan, perHead, open, setOpen, onSave
     <div style={card(T)}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text, flex: 1 }}>Payment plan</div>
-        <button onClick={() => { if (confirm('Remove the payment plan?')) { set(null); setOpen(false) } }} style={{ ...btn(T, accent), padding: '4px 10px', fontSize: 11.5 }}>Remove</button>
+        <button onClick={async () => { if (await askConfirm('Remove the payment plan?', { yes: 'Remove' })) { set(null); setOpen(false) } }} style={{ ...btn(T, accent), padding: '4px 10px', fontSize: 11.5 }}>Remove</button>
       </div>
       <div style={{ fontSize: 11, color: T.text3, marginBottom: 12 }}>What a player owes, and when. Money still arrives however you take it today — this is the schedule, not a card machine.</div>
 

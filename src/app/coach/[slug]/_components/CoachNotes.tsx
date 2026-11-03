@@ -10,6 +10,7 @@ import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove } from '../_lib/coach-db'
 import { NOTE_KINDS, kindLabel, sortNotes, noteProblem, type PlayerNote, type NoteKind } from '@/lib/coach/player-notes'
 import { ukDate } from '@/lib/coach/uk-date'
+import { askConfirm } from '../_lib/ask'
 
 type P = { id: string; name: string; staff_id?: string | null; consent_medical?: boolean | null }
 const fmt = (d: string) => { const t = new Date(`${d}T12:00:00Z`); return isNaN(t.getTime()) ? d : t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) }
@@ -47,7 +48,7 @@ export function CoachNotes({ T, accent, player }: { T: ThemeTokens; accent: Acce
     catch (e) { setErr(e instanceof Error ? e.message : 'That change was not saved.') }
   }
   const remove = async (n: PlayerNote) => {
-    if (!confirm('Delete this note? It cannot be brought back.')) return
+    if (!(await askConfirm('Delete this note? It cannot be brought back.', { yes: 'Delete' }))) return
     try { await dbRemove('coach_player_notes', n.id) } catch (e) { setErr(e instanceof Error ? e.message : 'That note was not deleted.') }
   }
   const pin = async (n: PlayerNote) => { try { await dbUpdate('coach_player_notes', n.id, { pinned: !n.pinned }) } catch { /* the list stays as it was */ } }

@@ -15,6 +15,7 @@ import {
   type Camp, type CampAttendee,
 } from '../_lib/coach-data'
 import { getSettings } from '../_lib/settings-store'
+import { tell } from '../_lib/ask'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 
@@ -190,7 +191,7 @@ export function CampPlayerPacks({ T, accent, density, camp, attendees }: Common 
 function openPrint(html: string) {
   if (typeof window === 'undefined') return
   const w = window.open('', '_blank', 'width=920,height=1040')
-  if (!w) { alert('Please allow pop-ups to print the pack.'); return }
+  if (!w) { void tell('Please allow pop-ups to print the pack.'); return }
   w.document.write(html)
   w.document.close()
   w.focus()

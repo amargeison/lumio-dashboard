@@ -16,6 +16,7 @@ import { getSettings } from '../_lib/settings-store'
 import { GpsLineChart } from './CoachHeatmaps'
 import { avatarSrc } from '@/lib/avatar'
 import { stageWords } from '../_lib/stage-words'
+import { askConfirm, tell } from '../_lib/ask'
 
 type Common = { T: ThemeTokens; accent: AccentTokens; density: Density }
 // First letters by whole character, letters and digits only — half an emoji
@@ -46,7 +47,7 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
   const logDirty = logDist !== '' || logNote !== '' || logDur !== '45' || logRpe !== 6
   const closeLog = () => {
     if (logBusy) return
-    if (logXp == null && logDirty && !confirm('Close without saving? What you have typed will be lost.')) return
+    if (logXp == null && logDirty) { void askConfirm('Close without saving? What you have typed will be lost.', { yes: 'Close' }).then(ok => { if (ok) setLogOpen(false) }); return }
     setLogOpen(false)
   }
   const closeLogRef = useRef(closeLog)
@@ -305,10 +306,10 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
                 control. The session stops counting and its XP comes off the
                 player's total (the server does both in one step). */}
             <button onClick={async () => {
-              if (!confirm(`Void this session? It stops counting and its ${Number(s.xp_awarded) || 0} XP is taken off ${sel.p.name}'s total.`)) return
+              if (!(await askConfirm(`Void this session? It stops counting and its ${Number(s.xp_awarded) || 0} XP is taken off ${sel.p.name}'s total.`, { yes: 'Void' }))) return
               const r = await fetch('/api/coach/watch/void', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, voided: true }) })
               if (r.ok) { sessions.reload(); players.reload() }
-              else alert('That session could not be voided. Please try again.')
+              else void tell('That session could not be voided. Please try again.')
             }} title="Void this session"
               style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text3, borderRadius: 8, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Void</button>
           </div>
@@ -321,10 +322,10 @@ export function LiveEffortRewards({ T, accent, density }: Common) {
             <div style={{ flex: 1, minWidth: 0, fontSize: 11.5, color: T.text3 }}>Voided — not counted</div>
             <span className="tnum" style={{ fontSize: 13, fontWeight: 700, color: T.text3, flexShrink: 0, textDecoration: 'line-through' }}>+{Number(s.xp_awarded) || 0} XP</span>
             <button onClick={async () => {
-              if (!confirm(`Put this session back? It counts again and its ${Number(s.xp_awarded) || 0} XP returns to ${sel.p.name}'s total.`)) return
+              if (!(await askConfirm(`Put this session back? It counts again and its ${Number(s.xp_awarded) || 0} XP returns to ${sel.p.name}'s total.`, { yes: 'Put back' }))) return
               const r = await fetch('/api/coach/watch/void', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: s.id, voided: false }) })
               if (r.ok) { sessions.reload(); players.reload() }
-              else alert('That session could not be put back. Please try again.')
+              else void tell('That session could not be put back. Please try again.')
             }} title="Count this session again"
               style={{ appearance: 'none', border: `1px solid ${T.border}`, background: 'transparent', color: T.text2, borderRadius: 8, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>Put back</button>
           </div>

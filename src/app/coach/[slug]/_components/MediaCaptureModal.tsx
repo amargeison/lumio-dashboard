@@ -14,6 +14,8 @@ import { uploadMedia, confirmAndProcess, pollMedia, processStageLabel, processSt
 import { getFlags, NEW_ACCOUNT_TIER } from '../_lib/feature-flags'
 import { useAskBeforeClose } from '../_lib/ask-before-close'
 import { playerLabels, type Nameable } from '../_lib/tell-apart'
+import { askConfirm } from '../_lib/ask'
+import { openPlayerCard } from '../_lib/open-player'
 
 export type LessonReview = {
   focus?: string; covered?: string[]; takeaways?: string[]; drills?: string[]
@@ -242,7 +244,7 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onDiscarded, 
   // review added. (It used to do nothing but close the window.)
   const discard = async () => {
     if (demo || !idsRef.current.length) { onClose(); return }
-    if (!confirm('Discard this recording? The recording, its lesson summary and the attendance mark it added will be deleted.')) return
+    if (!(await askConfirm('Discard this recording? The recording, its lesson summary and the attendance mark it added will be deleted.', { yes: 'Discard' }))) return
     setDiscarding(true); setErr('')
     try {
       for (const id of idsRef.current) {
@@ -329,6 +331,8 @@ export function MediaCaptureModal({ T, accent, onClose, onSummary, onDiscarded, 
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
                       <button onClick={agreedInPerson} disabled={!!consentBusy} style={{ ...btn(accent.hex, T.btnText), padding: '7px 12px', fontSize: 12 }}>{consentBusy === 'agree' ? 'Saving…' : 'They agreed in person'}</button>
                       <button onClick={askByLink} disabled={!!consentBusy} style={{ ...btn(T.panel2, T.text2), border: `1px solid ${T.border}`, padding: '7px 12px', fontSize: 12 }}>{consentBusy === 'ask' ? 'Sending…' : 'Ask them by email'}</button>
+                      {/* Their card's Setup tab, at the recording part. */}
+                      <button onClick={() => { const id = chosenRow.id; onClose(); openPlayerCard(id, 'record') }} disabled={!!consentBusy} style={{ ...btn('transparent', T.text2), padding: '7px 4px', fontSize: 12, textDecoration: 'underline' }}>Open their card</button>
                     </div>
                     {consentMsg && <div style={{ marginTop: 6, fontSize: 12 }}>{consentMsg}</div>}
                   </div>
