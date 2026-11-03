@@ -61,14 +61,28 @@ export function useAdultMove(p: Who, levels: AdultLevel[], a: AdultStanding | nu
   return { set, moved: moved && moved.player === p.id ? moved : null, undo, nameOf, err }
 }
 
-/** The "Adult level" tile: a level picker drawn like the junior colour picker. */
+/**
+ * The "Adult level" tile: a level picker drawn like the junior colour picker.
+ * The words are ordinary text that can wrap, with the real (invisible) select
+ * laid over them — a select cannot wrap, so in a narrow tile it used to cut
+ * "No level yet" down to "No level …" and a long level name the same way.
+ */
 export function AdultLevelPicker({ T, accent, levels, levelId, onPick }: { T: ThemeTokens; accent: AccentTokens; levels: AdultLevel[]; levelId: string | null; onPick: (id: string | null) => void }) {
   const i = levels.findIndex(l => l.id === levelId)
+  const words = i >= 0 ? `${i + 1}. ${levels[i].name}` : 'No level yet'
+  const cut = words.lastIndexOf(' ')
+  const head = cut > 0 ? words.slice(0, cut) : ''
+  const last = cut > 0 ? words.slice(cut + 1) : words
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7, maxWidth: '100%' }}>
-      <LevelSwatch colour={i >= 0 ? adultColour(i) : null} w={14} h={14} T={T} />
-      <select value={i >= 0 ? levelId || '' : ''} onChange={e => onPick(e.target.value || null)} title="Set this player's adult level" aria-label="Adult level"
-        style={{ appearance: 'none', background: 'transparent', border: 0, color: i >= 0 ? T.text : T.text3, fontSize: 15, fontWeight: 600, fontFamily: FONT, cursor: 'pointer', outline: 'none', padding: '0 14px 0 0', minWidth: 0, maxWidth: '100%', textOverflow: 'ellipsis', backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='${encodeURIComponent(accent.hex)}' stroke-width='3'><polyline points='6 9 12 15 18 9'/></svg>")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right center' }}>
+    <span style={{ position: 'relative', display: 'flex', alignItems: 'flex-start', gap: 7, maxWidth: '100%', cursor: 'pointer' }}>
+      <span style={{ marginTop: 3, display: 'inline-flex' }}><LevelSwatch colour={i >= 0 ? adultColour(i) : null} w={14} h={14} T={T} /></span>
+      <span aria-hidden style={{ minWidth: 0, overflowWrap: 'anywhere', color: i >= 0 ? T.text : T.text3, fontSize: i >= 0 ? 15 : 13.5, fontWeight: 600, lineHeight: 1.3 }}>
+        {head}{head ? ' ' : ''}
+        {/* The arrow stays on the line with the last word, never alone. */}
+        <span style={{ whiteSpace: 'nowrap' }}>{last}<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={accent.hex} strokeWidth="3" style={{ marginLeft: 4, verticalAlign: 'middle' }}><polyline points="6 9 12 15 18 9" /></svg></span>
+      </span>
+      <select value={i >= 0 ? levelId || '' : ''} onChange={e => onPick(e.target.value || null)} title="Set this player's adult level" aria-label={`Adult level: ${words}`}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', fontSize: 15, fontFamily: FONT, border: 0, background: 'transparent', color: T.text }}>
         <option value="">No level yet</option>
         {levels.map((l, n) => <option key={l.id} value={l.id}>{n + 1}. {l.name}</option>)}
       </select>
