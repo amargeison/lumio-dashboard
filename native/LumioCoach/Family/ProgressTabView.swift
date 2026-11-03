@@ -25,7 +25,9 @@ struct ProgressTabView: View {
         List {
             header(b)
             if let n = b.nextSession, b.shows("nextsession") { nextSession(n) }
-            if b.shows("racket", module: \.racket), b.player.racketStage != nil { racket(b) }
+            // Adults are on the academy's adult levels, never the junior rackets,
+            // even when an old racket colour is still saved on their record.
+            if !isAdult(b), b.shows("racket", module: \.racket), b.player.racketStage != nil { racket(b) }
             if let level = b.adultLevel, b.shows("adultlevel", module: \.racket) { adult(level) }
             if b.shows("rewards", module: \.effort) { effort(b) }
             if b.shows("highlights", module: \.video), !b.highlights.isEmpty { highlights(b) }
@@ -43,7 +45,12 @@ struct ProgressTabView: View {
                 PlayerPhoto(name: b.player.name ?? "", path: b.player.avatarUrl, size: 64)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(b.player.nickname?.isEmpty == false ? b.player.nickname! : (b.player.name ?? "")).font(.title2.bold())
-                    if let s = Racket.stage(b.player.racketStage) {
+                    if isAdult(b), let l = b.adultLevel, let n = l.number {
+                        HStack(spacing: 6) {
+                            RoundedRectangle(cornerRadius: 3).fill(AdultStanding.colour(n - 1)).frame(width: 18, height: 11).overlay(RoundedRectangle(cornerRadius: 3).stroke(.secondary.opacity(0.4)))
+                            Text("\(n). \(l.name ?? "Level")").font(.subheadline.weight(.semibold))
+                        }
+                    } else if !isAdult(b), let s = Racket.stage(b.player.racketStage) {
                         HStack(spacing: 6) {
                             Circle().fill(Color(hex: s.hex)).frame(width: 12, height: 12).overlay(Circle().stroke(.secondary.opacity(0.4)))
                             Text(stageWords(s.name, b)).font(.subheadline.weight(.semibold))
@@ -57,6 +64,12 @@ struct ProgressTabView: View {
                     .font(.subheadline)
             }
         }
+    }
+
+    /// The website's rule (lib/coach/adult-levels.ts isAdultPlayer): on an adult
+    /// level, an Adult category, or 18 or over.
+    private func isAdult(_ b: FamilyBundle) -> Bool {
+        b.adultLevel != nil || (b.player.category ?? "").localizedCaseInsensitiveContains("adult") || (b.player.age ?? 0) >= 18
     }
 
     private func stageWords(_ name: String, _ b: FamilyBundle) -> String {
@@ -122,7 +135,17 @@ struct ProgressTabView: View {
         Section("Your level") {
             VStack(alignment: .leading, spacing: 4) {
                 Text(l.name ?? "Level").font(.headline)
-                if let n = l.number, let of = l.of { Text("Level \(n) of \(of)").font(.caption).foregroundStyle(.secondary) }
+                if let n = l.number, let of = l.of {
+                    Text("Level \(n) of \(of)").font(.caption).foregroundStyle(.secondary)
+                    // The adult ladder in its colours, the same ones the coach sees.
+                    HStack(spacing: 4) {
+                        ForEach(0..<max(of, 1), id: \.self) { i in
+                            RoundedRectangle(cornerRadius: 3).fill(AdultStanding.colour(i)).frame(height: 8).opacity(i + 1 <= n ? 1 : 0.28)
+                                .overlay(RoundedRectangle(cornerRadius: 3).stroke(i + 1 == n ? Color.primary : .clear, lineWidth: 1.5))
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
                 if let s = l.summary, !s.isEmpty { Text(s).font(.subheadline) }
                 if let done = l.done, let total = l.total, total > 0 {
                     ProgressView(value: Double(done), total: Double(total)).tint(.green)
