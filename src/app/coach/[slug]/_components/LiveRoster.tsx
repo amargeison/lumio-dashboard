@@ -967,9 +967,11 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
   onChanged: () => void
   onClose: () => void; onEdit: () => void; onDelete: () => void | Promise<void>
 }) {
-  // Null until the coach picks a tab: then the card opens on Setup while
-  // anything there still needs doing, and on Development once it is all done.
-  const [tab, setTab] = useState<'setup' | 'dev' | 'contact' | 'lessons' | 'about' | 'attendance' | 'consent' | null>(openSection ? 'setup' : null)
+  // The card always opens on Development. Setup is its own button at the top
+  // (with what is left to do on it), not the first tab — it used to open on
+  // Setup whenever anything was outstanding, which was nearly every player.
+  // A link straight to one part of Setup still opens it there.
+  const [tab, setTab] = useState<'setup' | 'dev' | 'contact' | 'lessons' | 'about' | 'attendance' | 'consent'>(openSection ? 'setup' : 'dev')
   const [lessons, setLessons] = useState<any[]>([])
   const [nextSession, setNextSession] = useState<string>('—')
   // Starts on today: a register is nearly always taken on the day, and a
@@ -1042,7 +1044,7 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
     !player.consent_record,                                               // recording not asked, or refused
     latest(memberships, m => m.status !== 'ended')?.status === 'offered', // a plan waiting to be agreed
   ].filter(Boolean).length
-  const shownTab = tab ?? (setupTodo > 0 ? 'setup' : 'dev')
+  const shownTab = tab
 
   // Opened from a link to one part of Setup: bring that part into view.
   const dialogRef = useRef<HTMLDivElement>(null)
@@ -1170,6 +1172,14 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
           </div>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             {inviteMsg && <span role="status" style={{ fontSize: 11, color: inviteMsg.startsWith('✓') ? T.good : T.text3, maxWidth: 220 }}>{inviteMsg}</span>}
+            <button data-testid="setup-button" onClick={() => setTab(shownTab === 'setup' ? 'dev' : 'setup')} aria-pressed={shownTab === 'setup'}
+              title={setupTodo ? `${setupTodo} thing${setupTodo === 1 ? '' : 's'} still to set up for ${player.name}` : `${player.name} is all set up`}
+              style={{ appearance: 'none', cursor: 'pointer', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap',
+                border: `1px solid ${shownTab === 'setup' ? accent.hex : setupTodo ? `${T.warn}66` : T.border}`,
+                background: shownTab === 'setup' ? accent.dim : setupTodo ? `${T.warn}14` : 'transparent',
+                color: shownTab === 'setup' ? accent.hex : setupTodo ? T.warn : T.good }}>
+              {setupTodo ? `⚑ Setup · ${setupTodo} to do` : '✓ Set up'}
+            </button>
             <button onClick={invitePortal} disabled={inviteBusy} title={invitesPlayer ? 'Invite this player to their own portal' : 'Invite the parent to a portal for this player'} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: inviteBusy ? 'wait' : 'pointer', opacity: inviteBusy ? 0.6 : 1, padding: '6px 12px', fontSize: 12, fontWeight: 600 }}>🔑 {inviteBusy ? 'Sending…' : inviteLabel}</button>
             <button onClick={onEdit} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text2, cursor: 'pointer', padding: '6px 12px', fontSize: 12, fontWeight: 600 }}>Edit</button>
             <button onClick={onClose} aria-label="Close" style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 8, color: T.text3, cursor: 'pointer', width: 32, height: 32, fontSize: 18, lineHeight: 1 }}>×</button>
@@ -1204,11 +1214,18 @@ function PlayerDetail({ T, accent, density, player, nameShared, isHead, skillMap
 
           {/* tabs — one row that scrolls sideways on a phone rather than wrapping */}
           <div role="tablist" style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', gap: 4, marginBottom: 14, padding: 2, background: T.hover, borderRadius: 9, width: 'fit-content', maxWidth: '100%' }}>
-            {([['setup', setupTodo ? `Setup · ${setupTodo}` : 'Setup'], ['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${lessons.length}`], ['about', 'About them'], ['attendance', `Attendance · ${attendanceRows.length}`], ['consent', 'Consent']] as const).map(([id, l]) => (
-              <button key={id} role="tab" aria-selected={shownTab === id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', background: shownTab === id ? T.panel : 'transparent', color: shownTab === id ? T.text : id === 'setup' && setupTodo ? T.warn : T.text2, fontWeight: shownTab === id ? 600 : 400 }}>{l}</button>
+            {([['dev', 'Development'], ['contact', 'Contact'], ['lessons', `Lessons · ${lessons.length}`], ['about', 'About them'], ['attendance', `Attendance · ${attendanceRows.length}`], ['consent', 'Consent']] as const).map(([id, l]) => (
+              <button key={id} role="tab" aria-selected={shownTab === id} onClick={() => setTab(id)} style={{ appearance: 'none', border: 0, padding: '6px 16px', borderRadius: 7, fontSize: 12, cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', background: shownTab === id ? T.panel : 'transparent', color: shownTab === id ? T.text : T.text2, fontWeight: shownTab === id ? 600 : 400 }}>{l}</button>
             ))}
           </div>
 
+          {shownTab === 'setup' && (
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>Setup</span>
+              <span style={{ fontSize: 11.5, color: setupTodo ? T.warn : T.good }}>{setupTodo ? `${setupTodo} still to do` : 'All done'}</span>
+              <button onClick={() => setTab('dev')} style={{ marginLeft: 'auto', appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: 0 }}>Back to Development</button>
+            </div>
+          )}
           {shownTab === 'setup' && (
             <div data-testid="setup-tab" style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
             {/* Who can sign in to this player's page. There was no way to take
