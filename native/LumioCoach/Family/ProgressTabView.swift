@@ -27,8 +27,10 @@ struct ProgressTabView: View {
             if let n = b.nextSession, b.shows("nextsession") { nextSession(n) }
             // Adults are on the academy's adult levels, never the junior rackets,
             // even when an old racket colour is still saved on their record.
-            if !isAdult(b), b.shows("racket", module: \.racket), b.player.racketStage != nil { racket(b) }
-            if let level = b.adultLevel, b.shows("adultlevel", module: \.racket) { adult(level) }
+            if !isAdult(b), b.shows("racket"), b.player.racketStage != nil { racket(b) }
+            // Colours and adult levels are set in Player Development, which every
+            // academy has, so they do not wait on the Racket Progression module.
+            if let level = b.adultLevel, b.shows("adultlevel") { adult(level) }
             if b.shows("rewards", module: \.effort) { effort(b) }
             if b.shows("highlights", module: \.video), !b.highlights.isEmpty { highlights(b) }
             if b.shows("highlights", module: \.audio), !b.media.isEmpty { voiceNotes(b) }

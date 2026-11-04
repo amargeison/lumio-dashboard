@@ -412,17 +412,17 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
       {/* ── RACKET PROGRESSION ─────────────────────────────────────────────── */}
       {show.racket && (
         <Card T={T}>
-          <Head T={T} icon="trophy" title="Racket progression" sub="Earn the next racket by mastering every skill" />
+          <Head T={T} icon="trophy" title={racketModule ? 'Racket progression' : 'Colour progression'} sub={racketModule ? 'Earn the next racket by mastering every skill' : 'Master every skill to move on to the next colour'} />
           {!isTop ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 14, background: T.accentDim, border: `1px solid ${T.accentBorder}`, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 30 }}>🏆</span>
               <div style={{ flex: 1, minWidth: 180 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>
                   {remaining === 0
-                    ? `${f.audience === 'adult' ? 'You are' : `${f.first} is`} ready for the ${nextStage.name} racket!`
-                    : `${f.audience === 'adult' ? 'You are' : `${f.first} is`} ${remaining} skill${remaining === 1 ? '' : 's'} from the ${nextStage.name} racket`}
+                    ? `${f.audience === 'adult' ? 'You are' : `${f.first} is`} ready for ${nextStage.name}${racketModule ? ' racket' : ''}!`
+                    : `${f.audience === 'adult' ? 'You are' : `${f.first} is`} ${remaining} skill${remaining === 1 ? '' : 's'} from ${nextStage.name}${racketModule ? ' racket' : ''}`}
                 </div>
-                <div style={{ fontSize: 11.5, color: T.text2, marginTop: 2 }}>Master every {stage.name} skill to earn the next racket — and a certificate to keep.</div>
+                <div style={{ fontSize: 11.5, color: T.text2, marginTop: 2 }}>{racketModule ? <>Master every {stage.name} skill to earn the next racket — and a certificate to keep.</> : <>Master every {stage.name} skill to move on to the next colour.</>}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ width: 26, height: 16, borderRadius: 4, background: stage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
@@ -432,13 +432,13 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
             </div>
           ) : (
             <div style={{ padding: '14px 16px', borderRadius: 14, background: T.accentDim, border: `1px solid ${T.accentBorder}`, fontSize: 14, fontWeight: 700, color: T.text }}>
-              🏆 {f.audience === 'adult' ? 'You have' : `${f.first} has`} reached {stage.name} — the top racket.
+              🏆 {f.audience === 'adult' ? 'You have' : `${f.first} has`} reached {stage.name} — the top {racketModule ? 'racket' : 'colour'}.
             </div>
           )}
 
           <div style={{ marginTop: 14 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 11.5, color: T.text2, fontWeight: 600 }}>{stage.name} racket</span>
+              <span style={{ fontSize: 11.5, color: T.text2, fontWeight: 600 }}>{stage.name}{racketModule ? ' racket' : ''}</span>
               <span className="lsv-num" style={{ fontSize: 11.5, color: T.accent, fontFamily: MONO, fontWeight: 700 }}>{pct}% mastered</span>
             </div>
             <div style={{ height: 8, borderRadius: 4, background: T.hover, overflow: 'hidden' }}>

@@ -28,6 +28,7 @@ import { isAdultPlayer } from '@/lib/coach/adult-levels'
 import { avatarSrc } from '@/lib/avatar'
 import { STAGE_META, LTA_MAP, ltaChip } from '@/lib/coach/colour-ladder'
 import { AdultLevels } from './AdultLevels'
+import { getFlags, subscribe as subscribeFlags } from '../_lib/feature-flags'
 
 type Player = { id: string; name: string; level?: string | null; racket_stage?: string | null; avatar_url?: string | null; category?: string | null; age?: number | null; adult_level_id?: string | null }
 type SkillRow = { player_id: string; skill: string; score: number }
@@ -42,7 +43,14 @@ const TOTAL_SKILLS = RACKET_STAGES.reduce((n, s) => n + (SKILLS_BY_STAGE[s.id]?.
 
 // Two ladders on one page: Lumio's colour rackets for juniors, and the
 // academy's own adult levels (migration 219), each with a video and a checklist.
-export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+//
+// Both are SET in Player Development — that is the source of truth, and it is
+// there whether or not an academy has this module. This page is the reward
+// layer on top: it reads the same colours, grades, levels and ticks, and adds
+// the reward, the certificate and the award history. It moves a junior up only
+// by awarding them; everything else (setting a colour, the adult levels and
+// their checklists) is done in Player Development, which a button here opens.
+export function LiveRacketProgression({ T, accent, onNavigate }: { T: ThemeTokens; accent: AccentTokens; onNavigate?: (id: string) => void }) {
   const [view, setView] = useState<'junior' | 'adult'>('junior')
   useEffect(() => { try { if (sessionStorage.getItem('lumio_ladder_view') === 'adult') setView('adult') } catch { /* fine */ } }, [])
   const pick = (v: 'junior' | 'adult') => { setView(v); try { sessionStorage.setItem('lumio_ladder_view', v) } catch { /* fine */ } }
@@ -56,14 +64,35 @@ export function LiveRacketProgression({ T, accent }: { T: ThemeTokens; accent: A
       {view === 'adult' ? (
         <>
           <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 700, color: T.text }}>Adult levels</h1>
-          <AdultLevels T={T} accent={accent} />
+          <AdultLevels T={T} accent={accent} readOnly onOpenDevelopment={onNavigate ? () => openDevelopment(onNavigate, 'adult') : undefined} />
         </>
-      ) : <JuniorLadder T={T} accent={accent} />}
+      ) : <JuniorLadder T={T} accent={accent} mode="rewards" onOpenDevelopment={onNavigate ? () => openDevelopment(onNavigate, 'junior') : undefined} />}
     </div>
   )
 }
 
-function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+/** Opens Player Development on its junior colours or adult levels view. */
+export function openDevelopment(onNavigate: (id: string) => void, view: 'junior' | 'adult' | 'players') {
+  try { sessionStorage.setItem(DEV_VIEW_KEY, view) } catch { /* fine */ }
+  onNavigate('development')
+}
+export const DEV_VIEW_KEY = 'lumio_development_view'
+
+/**
+ * The junior colour ladder over every junior.
+ *   mode "development" — Player Development's Junior colours view, the source
+ *     of truth: the ladder, what each colour asks for, and every junior on a
+ *     matrix where a tap on a colour puts them on it (asked first, with Undo).
+ *   mode "rewards" — Racket Progression: the same ladder and matrix read-only,
+ *     plus the reward system, "Award reward" with its certificate, and the
+ *     history. Nothing here sets a colour except an award.
+ */
+export function JuniorLadder({ T, accent, mode, onOpenDevelopment }: { T: ThemeTokens; accent: AccentTokens; mode: 'development' | 'rewards'; onOpenDevelopment?: () => void }) {
+  const dev = mode === 'development'
+  const word = dev ? 'colour' : 'racket'
+  // Is the reward module on? Only changes a word or two in Player Development.
+  const [racketOn, setRacketOn] = useState(() => getFlags().racket)
+  useEffect(() => { const r = () => setRacketOn(getFlags().racket); r(); return subscribeFlags(r) }, [])
   const { rows: everyone, edit } = useCoachTable<Player>('coach_players')
   // Adults have their own levels (Adult levels); this ladder is for juniors.
   const players = everyone.filter(p => !isAdultPlayer(p))
@@ -135,10 +164,10 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
     const from = rawIdxOf(p)
     if (to === from) return
     const target = RACKET_STAGES[to]
-    const question = from < 0 ? `Put ${p.name} on the ${target.name} racket?`
-      : to < from ? `Move ${p.name} back down from ${RACKET_STAGES[from].name} to ${target.name}?\n\nTheir skill grades are kept. The rackets above ${target.name} will no longer show as earned.`
+    const question = from < 0 ? `Put ${p.name} on ${target.name}?`
+      : to < from ? `Move ${p.name} back down from ${RACKET_STAGES[from].name} to ${target.name}?\n\nTheir skill grades are kept. The ${word}s above ${target.name} will no longer show as done.`
       : to > from + 1 ? `Move ${p.name} from ${RACKET_STAGES[from].name} straight to ${target.name}, skipping ${RACKET_STAGES.slice(from + 1, to).map(s => s.name).join(', ')}?`
-      : `Move ${p.name} from ${RACKET_STAGES[from].name} up to ${target.name}?\n\nNo certificate is printed — use “Award reward” for that.`
+      : `Move ${p.name} from ${RACKET_STAGES[from].name} up to ${target.name}?${racketOn ? '\n\nNo certificate is printed — award the racket in Racket Progression for that.' : ''}`
     if (await askConfirm(question, { yes: 'Move' })) move(p, target.id)
   }
 
@@ -153,21 +182,31 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const sectOff = getSettings().sectionsOff?.belts || []
   // Lumio's kit, or the coach's own. The ladder does not change either way.
   const ownRewards = !!getSettings().ownRewards
-  const showSec = (k: string) => !sectOff.includes(k)
+  // The Racket Progression page's own section switches do not reach Player
+  // Development: the ladder and the matrix there are the source of truth.
+  const showSec = (k: string) => dev || !sectOff.includes(k)
 
   return (
     <div style={{ fontFamily: FONT }}>
-      <div style={{ marginBottom: 14 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Racket Progression System</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>A Kyu-Dan style ranking adapted for tennis. Nine rackets, each unlocking a cluster of skills — earn a racket when every skill is Consistent or better. Grading happens in Player Development; this is where it turns into a reward.</p>
-      </div>
+      {dev ? (
+        <div style={{ marginBottom: 14 }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: T.text }}>Junior colours</h2>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3, maxWidth: 820 }}>Nine colours, four skills each, mapped to the LTA Youth pathway. Put a junior on a colour by tapping it in their row below; grade their skills on the Players view. This is the colour the roster, the player&rsquo;s own page{racketOn ? ', Racket Progression' : ''} and the app all read.</p>
+        </div>
+      ) : (
+        <div style={{ marginBottom: 14 }}>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Racket Progression System</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>A Kyu-Dan style ranking adapted for tennis. Nine rackets, each unlocking a cluster of skills — earn a racket when every skill is Consistent or better. Colours and grading are set in Player Development; this is where they turn into a reward.</p>
+          {onOpenDevelopment && <button onClick={onOpenDevelopment} style={{ marginTop: 8, appearance: 'none', border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Set colours and grade skills in Player Development →</button>}
+        </div>
+      )}
 
       {/* LTA alignment */}
       <div style={{ ...card, borderColor: accent.border, background: accent.dim, display: showSec('lta') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <span style={{ color: accent.hex, flexShrink: 0 }}>🛡️</span>
           <div style={{ fontSize: 12.5, color: T.text, lineHeight: 1.5 }}>
-            <strong>Mapped to the LTA Youth pathway.</strong> Each racket maps to a stage of the LTA Youth programme — the five official ball-colour stages <span style={{ color: T.text2 }}>Blue → Red → Orange → Green → Yellow</span>, then the LTA Youth Compete grades and the performance pathway. The racket is your academy ladder; the LTA stage shown on each racket is the national-framework equivalent.
+            <strong>Mapped to the LTA Youth pathway.</strong> Each {word} maps to a stage of the LTA Youth programme — the five official ball-colour stages <span style={{ color: T.text2 }}>Blue → Red → Orange → Green → Yellow</span>, then the LTA Youth Compete grades and the performance pathway. The {word} is your academy ladder; the LTA stage shown on each {word} is the national-framework equivalent.
             <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8, fontStyle: 'italic' }}>Lumio is independent and is not affiliated with, endorsed by, or approved by the LTA. “LTA Youth” is a trademark of the Lawn Tennis Association, used here only to describe the equivalent national stage.</div>
           </div>
         </div>
@@ -177,7 +216,7 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
           runs Lumio's kit or supplies their own — the ladder is identical
           either way, and a coach who bought nothing should not be reading
           about keyrings they do not have. Settings → Lumio Coach Kit. */}
-      <div style={{ ...card, display: showSec('rewards') ? undefined : 'none' }}>
+      <div style={{ ...card, display: !dev && showSec('rewards') ? undefined : 'none' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
           <span style={{ width: 34, height: 34, borderRadius: 9, display: 'grid', placeItems: 'center', background: accent.dim, border: `1px solid ${accent.border}`, flexShrink: 0, fontSize: 17 }}>🏆</span>
           <div style={{ flex: 1, minWidth: 'min(240px, 100%)' }}>
@@ -242,7 +281,7 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
           <span style={{ width: 40, height: 26, borderRadius: 5, background: openStage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{openStage.name} racket — {STAGE_META[openStage.id]?.theme}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{openStage.name}{dev ? '' : ' racket'} — {STAGE_META[openStage.id]?.theme}</div>
             <div style={{ fontSize: 11.5, color: T.text3 }}>{STAGE_META[openStage.id]?.age}</div>
           </div>
           <div style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: accent.hex, background: accent.dim, border: `1px solid ${accent.border}`, borderRadius: 999, padding: '4px 10px' }}>{(SKILLS_BY_STAGE[openStage.id] || []).length} skills to master</div>
@@ -267,9 +306,9 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
 
       {/* Squad racket matrix */}
       <div style={{ ...card, display: showSec('squad') ? undefined : 'none' }}>
-        {sectionHead('Squad racket matrix', `${players.length} players`)}
+        {sectionHead(dev ? 'Juniors by colour' : 'Squad racket matrix', `${players.length} players`)}
         {players.length === 0 ? (
-          <p style={{ fontSize: 12.5, color: T.text3, padding: '8px 0' }}>No players yet — add players in the Player Roster, then set their racket and grade skills to see progress here.</p>
+          <p style={{ fontSize: 12.5, color: T.text3, padding: '8px 0' }}>{dev ? 'No juniors yet — add players in the Player Roster, then put them on a colour here.' : 'No juniors yet — add players in the Player Roster, then set their colour and grade skills in Player Development to see progress here.'}</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
@@ -278,7 +317,7 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
                   <th style={{ textAlign: 'left', fontSize: 10.5, color: T.text3, fontWeight: 600, padding: '6px 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Player</th>
                   {RACKET_STAGES.map(s => <th key={s.id} style={{ padding: '6px 4px' }}><div title={s.name} style={{ width: 20, height: 12, borderRadius: 2, background: s.colour, border: '1px solid rgba(128,128,128,0.4)', margin: '0 auto' }} /></th>)}
                   <th style={{ fontSize: 10.5, color: T.text3, fontWeight: 600, padding: '6px 10px', textTransform: 'uppercase' }}>Now</th>
-                  <th style={{ fontSize: 10.5, color: T.text3, fontWeight: 600, padding: '6px 8px', textTransform: 'uppercase', textAlign: 'right' }}>Award</th>
+                  {!dev && <th style={{ fontSize: 10.5, color: T.text3, fontWeight: 600, padding: '6px 8px', textTransform: 'uppercase', textAlign: 'right' }}>Award</th>}
                 </tr>
               </thead>
               <tbody>
@@ -311,11 +350,14 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
                         const isNow = hasStage && bi === curIdx
                         return (
                           <td key={st.id} style={{ textAlign: 'center', padding: '4px 2px' }}>
+                            {/* Racket Progression shows where they are; only Player
+                                Development sets it (and an award moves them on). */}
                             <button className="cm-tap"
-                              onClick={() => moveTo(p, bi)}
-                              title={isNow ? `${p.name} is on ${st.name} — ${curProg}% of the skills mastered` : `Move ${p.name} to the ${st.name} racket`}
+                              onClick={dev ? () => moveTo(p, bi) : undefined}
+                              disabled={!dev}
+                              title={isNow ? `${p.name} is on ${st.name} — ${curProg}% of the skills mastered` : dev ? `Put ${p.name} on ${st.name}` : `${st.name}`}
                               style={{
-                                appearance: 'none', cursor: 'pointer', fontFamily: FONT,
+                                appearance: 'none', cursor: dev ? 'pointer' : 'default', fontFamily: FONT, margin: '0 auto',
                                 width: 32, height: 26, borderRadius: 7, display: 'grid', placeItems: 'center',
                                 border: `1px solid ${isNow ? accent.hex : isDone ? `${T.good}44` : 'transparent'}`,
                                 background: isNow ? accent.dim : isDone ? `${T.good}14` : 'transparent',
@@ -334,13 +376,13 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
                           </span>
                         ) : <span style={{ fontSize: 11.5, color: T.text3 }}>Not started</span>}
                       </td>
-                      <td style={{ padding: '8px 8px', textAlign: 'right' }}>
-                        <button onClick={() => award(p)}
+                      {!dev && <td style={{ padding: '8px 8px', textAlign: 'right' }}>
+                        {!hasStage ? <span style={{ fontSize: 11, color: T.text3, whiteSpace: 'nowrap' }}>No colour yet</span> : <button onClick={() => award(p)}
                           title={!hasStage ? `Start ${p.name} on the White racket` : ready ? `Award the ${curStage.name} reward${ownRewards ? '' : ' (keyring + dampener)'} + certificate${curIdx === LAST ? '' : `, and advance ${p.name} to the next racket`}` : `${p.name} is ${curProg}% through this racket — you are asked before anything is awarded`}
                           style={{ appearance: 'none', border: `1px solid ${ready ? accent.hex : T.border}`, background: ready ? accent.hex : 'transparent', color: ready ? T.btnText : accent.hex, borderRadius: 7, padding: '4px 9px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap', fontFamily: FONT }}>
-                          {!hasStage ? '▶ Start on White' : curIdx === LAST ? '🏆 Award reward' : '🏆 Award reward'}
-                        </button>
-                      </td>
+                          🏆 Award reward
+                        </button>}
+                      </td>}
                     </tr>
                   )
                 })}
@@ -348,24 +390,24 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
             </table>
           </div>
         )}
-        {moved && (
+        {dev && moved && (
           <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, padding: '7px 10px', borderRadius: 8, background: T.panel2, border: `1px solid ${T.border}`, fontSize: 12, color: T.text2 }}>
             <span style={{ flex: 1 }}>{moved.name} moved from {nameOf(moved.from)} to {nameOf(moved.to)}.</span>
             <button onClick={() => { void edit(moved.id, { racket_stage: moved.from }); setMoved(null) }} style={{ appearance: 'none', border: 0, background: 'transparent', color: accent.hex, fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: FONT }}>Undo</button>
           </div>
         )}
         <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', fontSize: 10.5, color: T.text3 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: T.good, fontWeight: 800 }}>✓</span> racket earned</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on current racket (skills graded Consistent in Player Development)</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>🏆 award = {ownRewards ? 'your reward' : 'keyring + dampener'} + certificate, then advance to the next racket</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>Tap any colour in a player&rsquo;s row to move them onto it — you are asked first</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: T.good, fontWeight: 800 }}>✓</span> {word} done</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>%</span> progress on the {word} they are on (skills graded Consistent)</span>
+          {!dev && <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>🏆 award = {ownRewards ? 'your reward' : 'keyring + dampener'} + certificate, then advance to the next racket</span>}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>{dev ? 'Tap any colour in a player’s row to move them onto it — you are asked first' : 'Colours are set in Player Development'}</span>
         </div>
       </div>
 
       {/* Racket history — when each player moved, and from what. */}
       {history.length > 0 && (
         <div style={card}>
-          {sectionHead('Racket history', `last ${history.length}`)}
+          {sectionHead(dev ? 'Colour history' : 'Racket history', `last ${history.length}`)}
           {history.map((h, i) => {
             const who = players.find(p => p.id === h.player_id)?.name || 'A player'
             const up = RACKET_STAGES.findIndex(s => s.id === h.to_stage) > RACKET_STAGES.findIndex(s => s.id === h.from_stage)
@@ -376,7 +418,7 @@ function JuniorLadder({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
               </div>
             )
           })}
-          <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8 }}>Every change of racket is recorded here with its date, wherever it was made.</div>
+          <div style={{ fontSize: 10.5, color: T.text3, marginTop: 8 }}>Every change of {word} is recorded here with its date, wherever it was made.</div>
         </div>
       )}
     </div>

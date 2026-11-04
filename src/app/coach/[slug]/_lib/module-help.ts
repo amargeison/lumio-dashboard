@@ -63,15 +63,17 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
     ],
   },
   development: {
-    what: 'Where each player is, what they are working on, and how they are moving.',
+    what: 'Where each player is, what they are working on, and how they are moving — and where the junior colours and your adult levels are set.',
     how: [
-      'Pick a player. The colour is set here — that is what drives their pathway everywhere else.',
+      'Players: pick a player. Their colour (or, for an adult, their level) is set here — that is what drives their pathway everywhere else.',
+      'Junior colours: the nine colours, what each asks for, and every junior on them. Tap a colour in a row to move them.',
+      'Adult levels: set up your own levels, each with a video and a checklist, tick items off and move adults up.',
       'Tap the skill bars to grade: four bars is mastered.',
       'Set targets lets Lumio Coach pick the three things worth working on next.',
       'The goal can be chosen from the suggestions for their colour, or written yourself.',
     ],
     worth: [
-      'Grading here is what makes Racket Progression work — that module only reads what you set.',
+      'This is the source of truth, whatever plan you are on. Racket Progression, the roster, the player’s own page and the app all read it.',
       'The colour ladder maps to the LTA Youth pathway, so a parent can place their child against something they know.',
       'Attendance and lessons on this page come from the rest of the portal — nothing to type twice.',
     ],
@@ -79,7 +81,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
   belts: {
     what: 'The reward ladder: nine colours, four skills each, and a certificate at every level.',
     how: [
-      'Players appear here once they have a colour set in Player Development.',
+      'Colours, grading and adult levels are all set in Player Development. This page reads them.',
       '“Ready to award” means every skill at that level is mastered.',
       'Award the racket, print the certificate, and they move up.',
       'Choose in Settings whether you supply the rewards yourself or use Lumio’s kit.',
@@ -87,7 +89,7 @@ export const MODULE_HELP: Record<string, ModuleHelp> = {
     worth: [
       'This is a second income as much as a reward system — parents fund the junior journey.',
       'It is optional: switch the module off and the rest of the portal carries on without it.',
-      'Grading happens in Player Development. This page only reads it, so the two can never disagree.',
+      'Grading happens in Player Development. This page only reads it — and awarding moves the player on there too — so the two can never disagree.',
     ],
   },
   calendar: {

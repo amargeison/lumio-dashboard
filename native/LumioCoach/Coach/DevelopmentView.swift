@@ -156,7 +156,7 @@ struct DevelopmentView: View {
                     if a.total > 0 { Text("\(a.done)/\(a.total)").font(.subheadline.weight(.semibold)).foregroundStyle(a.done == a.total ? Color.green : Color.accentColor) }
                 }
                 if let s = level.summary, !s.isEmpty { Text(s).font(.subheadline).foregroundStyle(.secondary) }
-                if (level.checklist ?? []).isEmpty { Text("This level has no checklist yet. Add one on the website, under Adult levels.").foregroundStyle(.secondary) }
+                if (level.checklist ?? []).isEmpty { Text("This level has no checklist yet. Add one on the website, in Player Development → Adult levels.").foregroundStyle(.secondary) }
                 ForEach(level.checklist ?? [], id: \.id) { item in
                     let on = a.passed.contains(item.id)
                     let when = passes.first { $0.levelId == level.id && $0.itemId == item.id }?.passedOn
@@ -181,7 +181,7 @@ struct DevelopmentView: View {
                     }
                 }
             } else if ladder.isEmpty {
-                Text("No adult levels set up yet. Set them up on the website: Racket Progression → Adult levels.").foregroundStyle(.secondary)
+                Text("No adult levels set up yet. Set them up on the website: Player Development → Adult levels.").foregroundStyle(.secondary)
             } else {
                 Text("No adult level yet").font(.headline)
                 Picker("Level", selection: $pick) {

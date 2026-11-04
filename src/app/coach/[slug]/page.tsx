@@ -581,7 +581,7 @@ const LIVE_MODULE_TABLES: Record<string, CoachTable[]> = {
   videoaudio: ['coach_media', 'coach_players'],
   planner: ['coach_bookings', 'coach_sessions', 'coach_session_plans', 'coach_players', 'coach_camps', 'coach_player_skills'],
   venues: ['coach_venues', 'coach_courts', 'coach_bookings', 'coach_staff'],
-  development: ['coach_players', 'coach_player_skills', 'coach_attendance', 'coach_sessions', 'coach_gps_sessions'],
+  development: ['coach_players', 'coach_player_skills', 'coach_attendance', 'coach_sessions', 'coach_gps_sessions', 'coach_adult_levels', 'coach_adult_passes'],
   equipment: ['coach_equipment', 'coach_kit_items'],
   resources: ['coach_resources'],
   messages: ['coach_messages', 'coach_players', 'coach_staff', 'coach_venues', 'coach_camp_channels'],
@@ -1163,7 +1163,7 @@ function CoachPortalInner({ session, isEmpty: realAccount = false, slugClubName 
         case 'roster':   return <LiveRoster T={T} accent={accent} density={density} />
         case 'staff':    return <LiveStaff T={T} accent={accent} density={density} />
         case 'calendar': return <LiveBookingCalendar T={T} accent={accent} onNavigate={setActive} />
-        case 'belts':       return <LiveRacketProgression T={T} accent={accent} />
+        case 'belts':       return <LiveRacketProgression T={T} accent={accent} onNavigate={setActive} />
         case 'lessons':     return <LiveLessons T={T} accent={accent} />
         case 'camps':       return <LiveCamps T={T} accent={accent} />
         case 'payments':    return <LivePayments T={T} accent={accent} />

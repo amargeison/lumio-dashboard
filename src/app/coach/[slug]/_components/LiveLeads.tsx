@@ -8,14 +8,15 @@
 // on, and buttons to move them on. Leads arrive by hand, from a spreadsheet,
 // or straight from Meta lead ads through the academy's private address.
 //
-// The weekly score is light on purpose: points for moving leads on and for
-// following up on the day you said, and a streak for weeks with five or more.
+// At the top: how many came in this week, and the follow-ups due. (There used
+// to be a weekly points score and a streak; coaches did not find them useful,
+// so they are gone from the page. Points are still written with each event.)
 
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { FONT } from '@/app/cricket/[slug]/v2/_lib/theme'
 import { useCoachTable, dbInsert, dbUpdate, dbRemove, rowsChanged } from '../_lib/coach-db'
-import { PIPELINES, SOURCES, CONTACT_METHODS, stagesOf, isClosed, stagePoints, scoreOf, weekOf, notesForDisplay, FOLLOWUP_POINTS, STREAK_POINTS, guessColumn, matchStage, type Pipeline, type ImportColumn } from '@/lib/coach/leads'
+import { PIPELINES, SOURCES, CONTACT_METHODS, stagesOf, isClosed, stagePoints, weekOf, notesForDisplay, FOLLOWUP_POINTS, guessColumn, matchStage, type Pipeline, type ImportColumn } from '@/lib/coach/leads'
 import { ukDate } from '@/lib/coach/uk-date'
 import { askConfirm, tell } from '../_lib/ask'
 
@@ -45,7 +46,6 @@ export function LiveLeads({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
   const [modal, setModal] = useState<'import' | 'ads' | null>(null)
   const today = ukDate()
 
-  const score = useMemo(() => scoreOf(events.rows, today), [events.rows, today])
   const lists = useMemo(() => {
     const m = new Map<string, number>()
     for (const l of leads.rows) if (l.list?.trim()) m.set(l.list.trim(), (m.get(l.list.trim()) || 0) + 1)
@@ -80,13 +80,11 @@ export function LiveLeads({ T, accent }: { T: ThemeTokens; accent: AccentTokens 
         </div>
       </div>
 
-      {/* Score and what needs doing */}
+      {/* What came in, and what needs doing */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginBottom: 14 }}>
-        <Tile T={T} label="This week" value={`${score.week} point${score.week === 1 ? '' : 's'}`} sub={score.week >= STREAK_POINTS ? 'Streak kept for this week ✓' : `${STREAK_POINTS - score.week} more to keep the streak`} tone={score.week >= STREAK_POINTS ? T.good : T.text} />
-        <Tile T={T} label="Streak" value={`${score.streak} week${score.streak === 1 ? '' : 's'}`} sub={`Weeks with ${STREAK_POINTS}+ points`} tone={score.streak ? accent.hex : T.text} />
-        <Tile T={T} label="Follow-ups due" value={String(due.length)} sub={due.length ? 'Today or overdue' : 'All caught up'} tone={due.length ? T.warn : T.good} onClick={due.length ? () => setDueOnly(v => !v) : undefined} />
-        {/* Monday to Sunday (UK), the same week the points and streak count. */}
+        {/* Monday to Sunday (UK). */}
         <Tile T={T} label="New this week" value={String(leads.rows.filter(l => !!l.created_at && weekOf(ukDate(l.created_at)) === weekOf(today)).length)} sub="Across both pipelines" tone={T.text} />
+        <Tile T={T} label="Follow-ups due" value={String(due.length)} sub={due.length ? 'Today or overdue — tap to show them' : 'All caught up'} tone={due.length ? T.warn : T.good} onClick={due.length ? () => setDueOnly(v => !v) : undefined} />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
@@ -342,7 +340,6 @@ function LeadPanel({ T, accent, lead, pipeline, lists, events, onClose, onChange
             {events.slice().sort((a, b) => b.created_at.localeCompare(a.created_at)).map(e => (
               <div key={e.id} style={{ fontSize: 11.5, color: T.text3 }}>
                 {new Date(e.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Europe/London' })} · {e.kind === 'stage' ? `${e.from_stage} → ${e.to_stage}` : e.kind === 'created' ? `Added${e.text ? ` (${e.text})` : ''}` : e.text}
-                {e.points ? <span style={{ color: accent.hex }}> +{e.points}</span> : null}
               </div>
             ))}
           </div>
