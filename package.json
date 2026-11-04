@@ -8,6 +8,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --test \"tests/**/*.test.mjs\"",
     "golive": "bash scripts/golive.sh",
     "golive:vps-build": "git checkout main && git merge dev && git push origin main && ssh -i ~/.ssh/lumio_vps lumio@46.224.227.190 '/home/lumio/deploy.sh' && git checkout dev",
     "golive-schools": "git checkout schools-dev && git merge dev && git push origin schools-dev && git checkout dev",

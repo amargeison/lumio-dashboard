@@ -11,6 +11,7 @@ import { draftWithImpactAI } from '@/lib/impact/ai'
 import { TP_RED, TP_DARK, type CommsCampaign } from '@/data/tenproject/demo-data'
 import { openNewsletter } from '../_lib/newsletter-docs'
 import { useImpact, type ImpactDataset } from './ImpactDataContext'
+import { LiveSendWizard } from './LiveSendWizard'
 
 const CHANNEL_META: Record<string, { label: string; icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }> }> = {
   email: { label: 'EMAIL', icon: Mail },
@@ -20,7 +21,14 @@ const CHANNEL_META: Record<string, { label: string; icon: React.ComponentType<{ 
 }
 
 // ─── Send Message wizard (shared) ───────────────────────────────────────────
+// Live portals send for real through LiveSendWizard. Demo keeps the canned flow.
 export function SendMessageWizard({ onClose, defaultRecipient, defaultMessage }: { onClose: () => void; defaultRecipient?: string; defaultMessage?: string }) {
+  const { mode } = useImpact()
+  if (mode === 'live') return <LiveSendWizard onClose={onClose} defaultMessage={defaultMessage} />
+  return <DemoSendWizard onClose={onClose} defaultRecipient={defaultRecipient} defaultMessage={defaultMessage} />
+}
+
+function DemoSendWizard({ onClose, defaultRecipient, defaultMessage }: { onClose: () => void; defaultRecipient?: string; defaultMessage?: string }) {
   const { copy, data, brand, mode } = useImpact()
   const { COMMS_RECIPIENTS } = data
   const [step, setStep] = useState(1)
