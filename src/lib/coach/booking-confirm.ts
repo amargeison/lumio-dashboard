@@ -28,6 +28,7 @@ import {
 import { calendarButtonsHtml, googleCalendarUrl, icsUrl, type CalendarEvent } from './calendar-links'
 import { notifyBooked } from './booking-notify'
 import { partnerBrandByCoach, STANDARD_SIGN_IN } from './partner-login'
+import { nudgeFamily } from './family-mail'
 
 export type ConfirmInput = {
   coachId: string
@@ -128,6 +129,8 @@ export async function sendBookingConfirmation(
       }).catch(() => null)
       results.playerSent = !!fb && !fb.error; results.via = 'lumio-fallback'
     } else { results.playerSent = true; results.via = sent.provider }
+    // And on their phone, if they have the app: the lesson is on their Home screen.
+    if (results.playerSent) await nudgeFamily(coachId, rec.to, { body: subject, url: '/portal' })
   } else {
     results.playerSent = false
   }

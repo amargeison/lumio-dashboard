@@ -11,6 +11,7 @@ import { calendarButtonsHtml, googleCalendarUrl, icsUrl, type CalendarEvent } fr
 import { notifyBooked } from '@/lib/coach/booking-notify'
 import { recipientFor } from '@/lib/coach/camp-email-build'
 import { logCampConfirmation } from '@/lib/coach/camp-signup-email'
+import { nudgeFamily } from '@/lib/coach/family-mail'
 
 export const runtime = 'nodejs'
 
@@ -161,6 +162,7 @@ export async function POST(req: NextRequest) {
         }).catch(() => null)
         if (fb && !fb.error) sentTo = to
       } else sentTo = to
+      if (sentTo) await nudgeFamily(coachId, sentTo, { body: subject, url: '/portal' })
       // On the camp's Emails tab, so "You're in" does not read "Not yet" for a
       // family who has it — and so a confirmation that did not go is visible.
       await logCampConfirmation(coachId, { campId: camp.id, attendeeId: a.id }, sentTo

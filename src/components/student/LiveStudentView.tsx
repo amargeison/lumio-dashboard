@@ -31,6 +31,7 @@ import {
 } from '@/lib/student/bundle'
 import { venueMapUrl } from '@/lib/coach/booking-venue'
 import { lessonRecap } from '@/lib/coach/lesson-recap'
+import { whenWords as whenLine } from '@/lib/student/my-account'
 import { studentSectionOn } from '@/lib/student/sections'
 import { campParts, mapsUrl, telUrl, webUrl } from '@/lib/student/camp-view'
 
@@ -212,6 +213,8 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
     adultlevel: studentSectionOn('adultlevel', off, !!bundle.adultLevel, feat),
     upcoming: studentSectionOn('upcoming', off, !!bundle.my && (bundle.my.lessons.length > 0 || (bundle.my.booking.on && !off.includes('booking'))), feat),
     groups: studentSectionOn('groups', off, !!bundle.my && bundle.my.groups.length > 0, feat),
+    // Free slots the coach offered by email, to take here instead.
+    offers: studentSectionOn('upcoming', off, !!bundle.my?.offers?.length, feat),
     account: studentSectionOn('account', off, !!bundle.my && (!!bundle.my.account.plan || bundle.my.account.packs.length > 0 || !!bundle.my.account.method || bundle.my.account.owed.length > 0), feat),
     homework: studentSectionOn('homework', off, !!(guidance.homework || guidance.nextFocus), feat),
     lessons: studentSectionOn('lessons', off, lessons.length > 0, feat),
@@ -294,8 +297,10 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
 
       {/* ── THEIR LESSONS, GROUPS AND PLAN — confirm, cancel, book, say yes ── */}
       {show.upcoming && bundle.my && <MyLessonsCard T={T} my={bundle.my} you={f.audience === 'adult'} first={f.first} actions={actions} bookingOn={!off.includes('booking')} />}
+      {show.offers && bundle.my && <MyOffersCard T={T} my={bundle.my} actions={actions} />}
       {show.groups && bundle.my && <MyGroupsCard T={T} my={bundle.my} actions={actions} />}
       {show.account && bundle.my && <MyAccountCard T={T} my={bundle.my} you={f.audience === 'adult'} />}
+      {bundle.my?.prefs && <MyChoicesCard T={T} prefs={bundle.my.prefs} actions={actions} />}
 
       {/* ── RECENT LESSONS — straight after the next session, because the two
            are one thought: what we just did, what we do next. ───────────── */}
@@ -1602,6 +1607,10 @@ export type StudentActions = {
   slots: (mins: number) => Promise<{ days: SlotDay[]; error?: string }>
   book: (date: string, time: string, mins: number) => Promise<ActionResult & { days?: SlotDay[] }>
   group: (token: string, action: 'yes' | 'no' | 'pay') => Promise<ActionResult>
+  /** A free slot the coach offered: take it, or say no thanks (the email's own link does the work). */
+  slot?: (token: string, action: 'accept' | 'decline') => Promise<ActionResult>
+  /** Their own choices: free-slot messages, and lessons being recorded. */
+  prefs?: (p: { freeSlots?: boolean; recording?: boolean }) => Promise<ActionResult>
 }
 type My = NonNullable<StudentBundle['my']>
 
@@ -1801,6 +1810,94 @@ export function MyGroupsCard({ T, my, actions }: { T: StudentTheme; my: My; acti
   )
 }
 
+// Free slots the coach offered (the free-slot email). The first to take one
+// gets it; the offer's own link does the booking, exactly as the email does.
+export function MyOffersCard({ T, my, actions }: { T: StudentTheme; my: My; actions?: StudentActions }) {
+  const [busy, setBusy] = useState('')
+  const [msg, setMsg] = useState<{ token: string; text: string; bad?: boolean } | null>(null)
+  const go = async (token: string, action: 'accept' | 'decline') => {
+    if (!actions?.slot || busy) return
+    setBusy(token + action); setMsg(null)
+    const r = await actions.slot(token, action)
+    setBusy('')
+    setMsg({ token, text: say(r) || (r.ok ? (action === 'accept' ? 'Booked — it is in your lessons.' : 'No problem.') : 'That did not work. Please try again.'), bad: !r.ok })
+  }
+  return (
+    <Card T={T}>
+      <div data-testid="my-offers">
+        <Head T={T} icon="calendar" title="Free slots from your coach" sub="The first to take one gets it" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {(my.offers || []).map(o => (
+            <div key={o.token} style={{ background: T.panel2, border: `1px solid ${T.border}`, borderRadius: 12, padding: '10px 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 180 }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 700, color: T.text }}>{whenLine(o.date, o.time)} · {o.mins} min</div>
+                  <div style={{ fontSize: 12.5, color: T.text2 }}>{[o.type, o.where, o.coach ? `with ${o.coach}` : null].filter(Boolean).join(' · ')}</div>
+                  <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>Open until {o.closes}</div>
+                </div>
+                <button onClick={() => void go(o.token, 'accept')} disabled={!actions?.slot || !!busy} style={{ ...btnStyle(T, 'primary'), opacity: actions?.slot ? 1 : 0.5 }}>{busy === o.token + 'accept' ? 'Booking…' : 'Book it'}</button>
+                <button onClick={() => void go(o.token, 'decline')} disabled={!actions?.slot || !!busy} style={{ ...btnStyle(T), opacity: actions?.slot ? 1 : 0.5 }}>No thanks</button>
+              </div>
+              {msg?.token === o.token && <div role="status" style={{ fontSize: 12.5, marginTop: 6, color: msg.bad ? T.bad : T.good }}>{msg.text}</div>}
+            </div>
+          ))}
+        </div>
+        {!actions?.slot && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 8 }}>{PREVIEW_NOTE}</div>}
+      </div>
+    </Card>
+  )
+}
+
+// Their own choices, which used to need an email link: free-slot messages,
+// and whether lessons may be recorded (asked on the welcome link).
+export function MyChoicesCard({ T, prefs, actions }: { T: StudentTheme; prefs: NonNullable<My['prefs']>; actions?: StudentActions }) {
+  const [busy, setBusy] = useState('')
+  const [msg, setMsg] = useState<{ text: string; bad?: boolean } | null>(null)
+  const [why, setWhy] = useState(false)
+  const [stopping, setStopping] = useState(false)
+  const set = async (key: string, p: { freeSlots?: boolean; recording?: boolean }) => {
+    if (!actions?.prefs || busy) return
+    setBusy(key); setMsg(null); setStopping(false)
+    const r = await actions.prefs(p)
+    setBusy('')
+    setMsg({ text: say(r) || (r.ok ? 'Saved.' : 'That was not saved. Please try again.'), bad: !r.ok })
+  }
+  const row: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 0', borderTop: `1px solid ${T.border}`, flexWrap: 'wrap' }
+  const off = !actions?.prefs
+  return (
+    <Card T={T}>
+      <div data-testid="my-choices">
+        <Head T={T} icon="settings" title="Your choices" sub="Change these at any time" />
+        <div style={row}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Free slots</div>
+            <div style={{ fontSize: 12.5, color: T.text2 }}>{prefs.freeSlots ? 'You hear when your coach has a gap you could take.' : 'Turn this on to hear when your coach has a gap you could take.'}</div>
+          </div>
+          <button onClick={() => void set('slots', { freeSlots: !prefs.freeSlots })} disabled={off || !!busy} style={{ ...btnStyle(T, prefs.freeSlots ? 'ghost' : 'primary'), opacity: off ? 0.5 : 1 }}>{busy === 'slots' ? 'Saving…' : prefs.freeSlots ? 'Turn off' : 'Turn on'}</button>
+        </div>
+        <div style={row}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{prefs.recording.ask}</div>
+            <div style={{ fontSize: 12.5, color: prefs.recording.agreed ? T.good : T.text2 }}>{prefs.recording.words}</div>
+            <button onClick={() => setWhy(!why)} aria-expanded={why} style={{ appearance: 'none', border: 0, background: 'transparent', padding: 0, marginTop: 4, cursor: 'pointer', color: T.accent, fontSize: 12.5, fontWeight: 700, fontFamily: FONT }}>{why ? '▾' : '▸'} What this means</button>
+            {why && <div style={{ fontSize: 12.5, color: T.text2, lineHeight: 1.55, marginTop: 4 }}>{prefs.recording.explain}</div>}
+          </div>
+          {prefs.recording.agreed ? (
+            stopping
+              ? <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button onClick={() => void set('rec', { recording: false })} disabled={off || !!busy} style={btnStyle(T, 'danger')}>{busy === 'rec' ? 'Saving…' : 'Yes, stop recording'}</button>
+                  <button onClick={() => setStopping(false)} style={btnStyle(T)}>Keep it</button>
+                </span>
+              : <button onClick={() => setStopping(true)} disabled={off || !!busy} style={{ ...btnStyle(T), opacity: off ? 0.5 : 1 }}>Change my mind</button>
+          ) : <button onClick={() => void set('rec', { recording: true })} disabled={off || !!busy} style={{ ...btnStyle(T, 'primary'), opacity: off ? 0.5 : 1 }}>{busy === 'rec' ? 'Saving…' : 'Yes, that’s fine'}</button>}
+        </div>
+        {msg && <div role="status" style={{ fontSize: 12.5, color: msg.bad ? T.bad : T.good }}>{msg.text}</div>}
+        {off && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 8 }}>{PREVIEW_NOTE}</div>}
+      </div>
+    </Card>
+  )
+}
+
 export function MyAccountCard({ T, my, you }: { T: StudentTheme; my: My; you: boolean }) {
   const a = my.account
   const [policyOpen, setPolicyOpen] = useState(false)
@@ -1818,7 +1915,7 @@ export function MyAccountCard({ T, my, you }: { T: StudentTheme; my: My; you: bo
                   <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{o.title}</div>
                   <div style={{ fontSize: 12.5, color: T.text2 }}>{o.detail}</div>
                 </div>
-                <a href={o.url} style={{ ...btnStyle(T, 'primary'), display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>{o.kind === 'welcome' ? 'Finish it' : 'Pay now'}</a>
+                <a href={o.url} style={{ ...btnStyle(T, 'primary'), display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>{o.kind === 'welcome' ? 'Finish it' : o.kind === 'card' ? 'Save it' : o.kind === 'form' ? 'Fill it in' : 'Pay now'}</a>
               </div>
             ))}
           </div>
@@ -1849,7 +1946,7 @@ export function MyAccountCard({ T, my, you }: { T: StudentTheme; my: My; you: bo
         </div>
         <div style={row}>
           <span style={label}>Paying by</span>
-          <span style={{ flex: 1, fontSize: 14, color: a.method ? T.text : T.text2 }}>{a.method || 'Nothing saved yet. Your coach can send you a link to save a card or set up a Direct Debit.'}</span>
+          <span style={{ flex: 1, fontSize: 14, color: a.method ? T.text : T.text2 }}>{a.method || (a.owed.some(o => o.kind === 'card') ? 'Nothing saved yet — use Save it above.' : 'Nothing saved yet. Your coach can send you a link to save a card or set up a Direct Debit.')}</span>
         </div>
         {a.policy.length > 0 && (
           <div style={{ ...row, flexDirection: 'column', gap: 6 }}>

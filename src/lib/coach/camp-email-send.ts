@@ -13,6 +13,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { runCoachAgent, extractJson } from '@/lib/coach/agent'
 import { sendAsCoach } from '@/lib/coach/mail'
 import { sendEmail } from '@/lib/emails/send'
+import { nudgeFamily } from '@/lib/coach/family-mail'
 import type { Stage } from '@/lib/coach/camp-lifecycle'
 import {
   recipientFor, chaseReasons, buildTask, renderCampEmail, usableDraft,
@@ -94,6 +95,7 @@ export async function sendCampStage(opts: {
       // as delivered.
       if (fb.error) return { ok: false, error: `the email could not be delivered (${String(fb.error.message || 'refused').slice(0, 200)})` }
     }
+    await nudgeFamily(camp.coach_id, rec.to, { body: subject, url: '/portal' })
     return { ok: true, to: rec.to, subject }
   } catch (e) {
     return { ok: false, error: (e instanceof Error ? e.message : 'unknown error').slice(0, 300) }

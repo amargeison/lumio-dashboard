@@ -46,7 +46,11 @@ export async function sendFamilyEmail(senderId: string, o: { to: string; subject
   return ok
 }
 
-async function nudgeFamily(academyId: string, to: string, m: { body: string; url: string }) {
+/**
+ * A notification on the family's iPhone app (if they have it) for an email
+ * sent some other way. Never throws; does nothing without push set up.
+ */
+export async function nudgeFamily(academyId: string, to: string, m: { body: string; url: string }) {
   try {
     if (!apnsConfigured()) return
     const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })

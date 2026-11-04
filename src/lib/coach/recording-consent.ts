@@ -22,7 +22,7 @@ export const hasRecordConsent = (p: RecordConsent | null | undefined) => !!p?.co
 export function consentWords(p: RecordConsent, first: string): string {
   const when = p.consent_record_at ? new Date(p.consent_record_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' }) : ''
   if (p.consent_record && p.consent_record_how === 'in_person') return `Agreed in person (noted by you)${when ? `, ${when}` : ''}.`
-  if (p.consent_record) return `Agreed${p.consent_record_by ? ` by ${p.consent_record_by}` : ''}${p.consent_record_how === 'welcome' ? ' on their welcome link' : ''}${when ? `, ${when}` : ''}.`
+  if (p.consent_record) return `Agreed${p.consent_record_by ? ` by ${p.consent_record_by}` : ''}${p.consent_record_how === 'welcome' ? ' on their welcome link' : p.consent_record_how === 'app' ? ' in the app' : ''}${when ? `, ${when}` : ''}.`
   if (p.consent_record_how === 'withdrawn' || p.consent_record_how === 'declined') return `${first} said no${when ? ` (${when})` : ''}. Their lessons cannot be recorded.`
   return `Not asked yet. ${first}’s lessons cannot be recorded until they agree.`
 }

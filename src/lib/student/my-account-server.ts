@@ -18,8 +18,12 @@ import { policyTerms } from '@/lib/coach/cancel-policy'
 import { owedPennies } from '@/lib/coach/camp-money'
 import { balanceUrl } from '@/lib/coach/camp-balance-server'
 import { formatPennies } from '@/lib/coach/money'
+import { formLinkFor } from '@/lib/coach/camp-form-server'
+import { recordQuestion } from '@/lib/coach/recording-consent'
+import { stripe } from '@/app/api/coach/pay/_stripe'
+import { randomBytes } from 'crypto'
 import { ukDate, addDaysIso } from '@/lib/coach/uk-date'
-import { cancelTerms, started, policyShort, bookingDurations, whenWords, momentWords, type MyLesson, type MyGroup, type MyAccount, type MyBooking, type MyPage } from './my-account'
+import { cancelTerms, started, policyShort, bookingDurations, whenWords, momentWords, type MyLesson, type MyGroup, type MyAccount, type MyBooking, type MyPage, type MyOffer, type MyPrefs } from './my-account'
 
 type Db = SupabaseClient
 type Row = Record<string, any>   // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -27,7 +31,12 @@ type Row = Record<string, any>   // eslint-disable-line @typescript-eslint/no-ex
 /** The day they will be asked, only while it is still to come. */
 const laterThan = (day: string | null | undefined, today: string) => (day && day > today ? day : null)
 
-export async function loadMyPage(db: Db, academyId: string, playerId: string, o: { origin: string; sectionsOff?: string[]; m?: AcademyMoney }): Promise<MyPage> {
+/**
+ * `forFamily`: the family's own page (not the coach's preview). Only then is a
+ * card link made for them when they have none — the same link the coach's
+ * "Send card link" emails, so saving a card never waits on an email.
+ */
+export async function loadMyPage(db: Db, academyId: string, playerId: string, o: { origin: string; sectionsOff?: string[]; m?: AcademyMoney; forFamily?: boolean }): Promise<MyPage> {
   const m = o.m || await academyMoney(db, academyId)
   const today = ukDate()
   const safe = async <T,>(f: () => Promise<T>, fallback: T): Promise<T> => { try { return await f() } catch (e) { console.error('[my-page]', e); return fallback } }
@@ -147,6 +156,46 @@ export async function loadMyPage(db: Db, academyId: string, playerId: string, o:
       if (owe < 50 || a.balance_status === 'charging') continue
       owed.push({ kind: 'balance', title: `${camp.name}: balance ${formatPennies(owe)}`, detail: camp.balance_due ? `Due ${whenWords(camp.balance_due)}.` : 'Still to pay.', url: await balanceUrl(db, a, o.origin) })
     }
+    // The camp's player-information form, while it still needs answering.
+    for (const a of places || []) {
+      const url = await formLinkFor(db, a.id, o.origin)
+      if (!url) continue
+      const { data: camp } = await db.from('coach_camps').select('name, end_date, start_date').eq('id', a.camp_id).eq('coach_id', academyId).maybeSingle()
+      if (!camp || String(camp.end_date || camp.start_date || '') < today) continue
+      owed.push({ kind: 'form', title: `${camp.name}: the information form`, detail: 'A few questions your coach needs before the camp.', url })
+    }
+
+    // No card or Direct Debit saved, and the academy takes card payments: the
+    // card link, here rather than only in an email.
+    if (!method && m.chargesEnabled) {
+      const { data: open } = await db.from('coach_pay_methods').select('id, link_token').eq('coach_id', academyId).eq('player_id', playerId).eq('status', 'invited')
+        .order('created_at', { ascending: false }).limit(1)
+      let token: string | null = open?.[0]?.link_token || null
+      if (!token && o.forFamily) {
+        const fresh = randomBytes(15).toString('base64url')
+        const { data: made } = await db.from('coach_pay_methods').insert({ coach_id: academyId, player_id: playerId, link_token: fresh, status: 'invited' }).select('link_token').single()
+        token = made?.link_token || null
+      }
+      if (token) owed.push({ kind: 'card', title: m.policy.directDebit ? 'Save a card or Direct Debit' : 'Save a card', detail: `So lessons can be paid without asking each time. You agree to ${m.academy || 'your coach'}’s cancellation policy as you save it.`, url: `${o.origin}/card/${token}` })
+    }
+
+    // A lesson the bank would not let the coach charge without them: the
+    // payment link the coach made, while it is still open (Stripe keeps one
+    // open for a day).
+    if (m.accountId) {
+      const { data: pending } = await db.from('coach_charges').select('id, booking_id, amount_pennies, description, stripe_checkout_session_id, created_at')
+        .eq('coach_id', academyId).eq('player_id', playerId).eq('status', 'pending').not('booking_id', 'is', null).not('stripe_checkout_session_id', 'is', null)
+        .gte('created_at', new Date(Date.now() - 23 * 3_600_000).toISOString()).order('created_at', { ascending: false }).limit(3)
+      for (const c of pending || []) {
+        try {
+          const s = await stripe.checkout.sessions.retrieve(String(c.stripe_checkout_session_id), {}, { stripeAccount: m.accountId })
+          if (s.status !== 'open' || !s.url) continue
+          const { data: bk } = await db.from('coach_bookings').select('booking_date, start_time').eq('id', c.booking_id).eq('coach_id', academyId).maybeSingle()
+          owed.push({ kind: 'lesson', title: `${c.description || 'Lesson'}: ${formatPennies(Number(c.amount_pennies) || 0)}`, detail: bk ? `For your lesson on ${whenWords(bk.booking_date, bk.start_time)}. Your bank asked you to confirm it.` : 'Your bank asked you to confirm this payment.', url: s.url })
+        } catch { /* a link we cannot read is left out */ }
+      }
+    }
+
     for (const g of groups) {
       const n = g.next
       if (n?.token && n.answer === 'yes' && !n.paid && !n.coveredByPlan && g.price >= 50 && m.chargesEnabled) {
@@ -163,5 +212,40 @@ export async function loadMyPage(db: Db, academyId: string, playerId: string, o:
   const d = bookingDurations(usual?.[0]?.duration_min)
   const booking: MyBooking = { on: !(o.sectionsOff || []).includes('booking'), ...d, type: 'Private' }
 
-  return { lessons, groups, account, booking }
+  // ── Free slots the coach offered them, still open ────────────────────────
+  const offers = await safe(async (): Promise<MyOffer[]> => {
+    const { data: mine } = await db.from('coach_slot_offer_recipients').select('offer_id, token, response').eq('coach_id', academyId).eq('player_id', playerId).is('response', null)
+      .order('created_at', { ascending: false }).limit(10)
+    if (!mine?.length) return []
+    const now = new Date().toISOString()
+    const { data: open } = await db.from('coach_slot_offers').select('id, booking_date, start_time, duration_min, type, court, assigned_coach, staff_id, venue_id, expires_at')
+      .eq('coach_id', academyId).in('id', mine.map((r: Row) => r.offer_id)).eq('status', 'open').gt('expires_at', now).order('booking_date', { ascending: true })
+    if (!open?.length) return []
+    const [{ data: staff }, { data: venues }] = await Promise.all([
+      db.from('coach_staff').select('id, name').eq('coach_id', academyId).limit(60),
+      db.from('coach_venues').select('id, name').eq('coach_id', academyId).limit(60),
+    ])
+    return open.map((x: Row): MyOffer => ({
+      token: String(mine.find((r: Row) => r.offer_id === x.id)?.token || ''),
+      date: x.booking_date, time: String(x.start_time).slice(0, 5), mins: Number(x.duration_min) || 60, type: x.type || 'Private',
+      where: [(venues || []).find((v: Row) => v.id === x.venue_id)?.name, x.court].filter(Boolean).join(' · ') || null,
+      coach: (staff || []).find((s: Row) => s.id === x.staff_id)?.name || x.assigned_coach || null,
+      closes: momentWords(Date.parse(x.expires_at)),
+    })).filter(x => !!x.token)
+  }, [] as MyOffer[])
+
+  // ── Their own choices ────────────────────────────────────────────────────
+  const prefs = await safe(async (): Promise<MyPrefs | null> => {
+    const { data: p } = await db.from('coach_players').select('name, age, parent_email, free_slot_pings, consent_record, consent_record_at, consent_record_how').eq('id', playerId).eq('coach_id', academyId).maybeSingle()
+    if (!p) return null
+    const child = !!p.parent_email && (Number(p.age) || 0) < 18 ? String(p.name || '').trim().split(/\s+/)[0] || null : null
+    const q = recordQuestion({ coach: m.academy || 'your coach', childFirst: child })
+    const when = p.consent_record_at ? new Date(p.consent_record_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' }) : ''
+    const words = p.consent_record ? `Yes — you agreed${when ? ` on ${when}` : ''}. You can change your mind at any time.`
+      : p.consent_record_how === 'withdrawn' || p.consent_record_how === 'declined' ? `No — you said no${when ? ` on ${when}` : ''}. Lessons are not recorded.`
+      : 'Not answered yet. Lessons are not recorded until you agree.'
+    return { freeSlots: !!p.free_slot_pings, recording: { agreed: !!p.consent_record, words, ask: q.ask, explain: q.explain } }
+  }, null)
+
+  return { lessons, groups, account, booking, offers, prefs }
 }
