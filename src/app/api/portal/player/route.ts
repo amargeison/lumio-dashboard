@@ -278,7 +278,7 @@ export async function GET(req: NextRequest) {
   // Their adult level, its video and the checklist (migration 219).
   const adultLevel = await loadStudentAdultLevel(db, m.academyId, m.scopePlayerId)
   // Their next lessons (confirm or cancel), weekly groups, plan and anything owed (migration 220).
-  const my = await loadMyPage(db, m.academyId, m.scopePlayerId, { origin: publicSiteOrigin(req.nextUrl.origin), sectionsOff })
+  const my = await loadMyPage(db, m.academyId, m.scopePlayerId, { origin: publicSiteOrigin(req.nextUrl.origin), sectionsOff, forFamily: true })
 
   // ── Who they can write to, and the camp conversations they are in ────────
   // A family messaging "the academy" is fine when there is one coach. With eight

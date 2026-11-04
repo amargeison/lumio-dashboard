@@ -23,7 +23,8 @@
 // reply for fire-and-forget calls nobody reads.
 
 import { studentAdultLevel } from '@/lib/student/adult-level'
-import { cancelTerms, started, policyShort, bookingDurations, whenWords, momentWords, type MyPage, type MyLesson, type MyGroup } from '@/lib/student/my-account'
+import { cancelTerms, started, policyShort, bookingDurations, whenWords, momentWords, type MyPage, type MyLesson, type MyGroup, type MyOffer } from '@/lib/student/my-account'
+import { recordQuestion } from '@/lib/coach/recording-consent'
 import { readPolicy, policyTerms, ukLocalToMs } from '@/lib/coach/cancel-policy'
 import { planWords, coversWords } from '@/lib/coach/memberships'
 import { everyWords, askOn as groupAskOn } from '@/lib/coach/groups'
@@ -2668,10 +2669,31 @@ function demoMyPage(player: Row): MyPage {
       packs: packs.map(x => ({ name: String(x.item || 'Lesson pack'), used: Number(x.sessions_used || 0), total: Number(x.sessions_total), left: Number(x.sessions_total) - Number(x.sessions_used || 0), renews: x.renews_date ? whenWords(x.renews_date) : null })),
       method: method ? `${method.kind === 'bacs_debit' ? 'Direct Debit' : String(method.brand || 'Card').replace(/^./, (c: string) => c.toUpperCase())} ending ${method.last4 || '••••'}` : null,
       policy: policyShort(policyTerms(policy, academy)),
-      owed: [],
+      // As the live page: no card saved, so the card link is waiting for them.
+      owed: method ? [] : [{ kind: 'card' as const, title: policy.directDebit ? 'Save a card or Direct Debit' : 'Save a card', detail: `So lessons can be paid without asking each time. You agree to ${academy}’s cancellation policy as you save it.`, url: '#demo-card' }],
     },
     booking: { on: !((settings.sectionsOff?.student || []) as string[]).includes('booking'), ...bookingDurations(lessons[0]?.mins), type: 'Private' },
+    offers: demoOffers(id),
+    prefs: (() => {
+      const child = !!player.parent_email && (Number(player.age) || 0) < 18 ? String(player.name || '').split(/\s+/)[0] : null
+      const q = recordQuestion({ coach: academy, childFirst: child })
+      const when = player.consent_record_at ? new Date(player.consent_record_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Europe/London' }) : ''
+      return {
+        freeSlots: !!player.free_slot_pings,
+        recording: { agreed: !!player.consent_record, ask: q.ask, explain: q.explain,
+          words: player.consent_record ? `Yes — you agreed${when ? ` on ${when}` : ''}. You can change your mind at any time.` : 'Not answered yet. Lessons are not recorded until you agree.' },
+      }
+    })(),
   }
+}
+
+// Open free-slot offers for one player (the demo has none seeded unless the
+// coach offers one from the booking calendar).
+function demoOffers(playerId: string): MyOffer[] {
+  const mine = demoTable('coach_slot_offer_recipients').filter(r => String(r?.player_id) === playerId && !r.response)
+  const now = Date.now()
+  return mine.map(r => ({ r, o: byId('coach_slot_offers', r.offer_id) })).filter(x => x.o && x.o.status === 'open' && Date.parse(String(x.o.expires_at)) > now)
+    .map(({ r, o }) => ({ token: String(r.token), date: String(o!.booking_date), time: String(o!.start_time).slice(0, 5), mins: Number(o!.duration_min) || 60, type: String(o!.type || 'Private'), where: o!.court ? String(o!.court) : null, coach: o!.assigned_coach ? String(o!.assigned_coach) : null, closes: momentWords(Date.parse(String(o!.expires_at))) }))
 }
 
 const studentPreview: Handler = async ({ url }) => {

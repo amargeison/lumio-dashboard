@@ -7,6 +7,7 @@ import { sendEmail } from '@/lib/emails/send'
 import { publicSiteOrigin } from '@/lib/public-origin'
 import { formDone, formEmailBlock, formEnabled, formUrl } from '@/lib/coach/camp-form'
 import { recipientFor } from '@/lib/coach/camp-email-build'
+import { nudgeFamily } from '@/lib/coach/family-mail'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -80,7 +81,8 @@ export async function POST(req: NextRequest) {
         const fb = await sendEmail({ from: 'Lumio Tennis <noreply@lumiosports.com>', to: [r.to], subject, html, replyTo: profile?.contact_email || undefined, context: 'coach/camps/form-send' }).catch(() => null)
         ok = !!fb && !fb.error
       }
-      if (ok) { sent++; await db.from('coach_camp_attendees').update({ form_sent_at: new Date().toISOString() }).eq('id', a.id) } else failed++
+      // The form is also on their Plan page in the app, under things to do.
+      if (ok) { sent++; await db.from('coach_camp_attendees').update({ form_sent_at: new Date().toISOString() }).eq('id', a.id); await nudgeFamily(coachId, r.to, { body: subject, url: '/portal' }) } else failed++
     }
     return NextResponse.json({ ok: true, sent, failed, noAddress })
   } catch (e) {

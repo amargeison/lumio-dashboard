@@ -119,7 +119,7 @@ export function AdultWorkingOn({ T, accent, p, a, levels, passes, onSet, style }
           <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>No adult level yet</div>
         </div>
         {levels.length === 0 ? (
-          <p style={{ fontSize: 12, color: T.text3, margin: 0, lineHeight: 1.55 }}>Your academy has no adult levels yet. Set them up under Racket Progression → Adult levels.</p>
+          <p style={{ fontSize: 12, color: T.text3, margin: 0, lineHeight: 1.55 }}>Your academy has no adult levels yet. Set them up in Player Development → Adult levels.</p>
         ) : (
           <>
             <p style={{ fontSize: 12, color: T.text3, margin: '0 0 10px', lineHeight: 1.55 }}>{p.name.split(/\s+/)[0]} is an adult, so they go on your adult levels rather than the junior colours. Pick the level that fits them in the journey below, or start at the first.</p>
@@ -143,7 +143,7 @@ export function AdultWorkingOn({ T, accent, p, a, levels, passes, onSet, style }
         </div>
       )}
       {err && <div role="alert" style={{ fontSize: 12, color: T.bad, marginBottom: 8 }}>{err}</div>}
-      {level.checklist.length === 0 && <p style={{ fontSize: 12, color: T.text3 }}>This level has no checklist yet. Add one under Racket Progression → Adult levels.</p>}
+      {level.checklist.length === 0 && <p style={{ fontSize: 12, color: T.text3 }}>This level has no checklist yet. Add one in Player Development → Adult levels.</p>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {level.checklist.map(item => {
           const on = a.passed.has(item.id)
@@ -228,7 +228,7 @@ export function AdultJourney({ T, accent, p, a, levels, move }: {
         </div>
       )}
       <div style={{ fontSize: 10.5, color: T.text3, marginTop: 9, lineHeight: 1.5 }}>
-        Your academy&rsquo;s adult levels — set up and changed under Racket Progression → Adult levels. This is the level the roster, the player&rsquo;s own page and the iPhone app read.
+        Your academy&rsquo;s adult levels — set up and changed in Player Development → Adult levels. This is the level the roster, the player&rsquo;s own page and the iPhone app read.
       </div>
     </div>
   )

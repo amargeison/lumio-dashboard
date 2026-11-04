@@ -209,6 +209,14 @@ export function StudentPortal({ onSignOut, players, playerId, onSelect }: {
       if (r.url) { window.location.href = r.url; return r }
       load(); return r
     },
+    // A free slot: the offer's own link books it, as the email's button does.
+    slot: async (token, action) => {
+      const r = await post(`/api/slot/${encodeURIComponent(token)}`, { action }) as { ok: boolean; error?: string; state?: string; response?: string }
+      load()
+      if (!r.ok) return { ok: false, error: r.state === 'gone' || r.state === 'closed' ? 'Sorry — that slot has gone.' : r.error || 'That did not work. Please try again.' }
+      return { ok: true, notice: action === 'accept' ? 'Booked — it is in your lessons, and your coach has been told.' : 'No problem — thanks for letting your coach know.' }
+    },
+    prefs: async p => { const r = await post('/api/portal/prefs', { playerId, ...p }); load(); return r },
   }
 
   if (loading) return <Shell onSignOut={onSignOut} look={look} accent={lk.accent}>{picker}<div style={{ color: MUTED, fontSize: 13 }}>Loading…</div></Shell>

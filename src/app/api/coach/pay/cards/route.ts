@@ -5,6 +5,7 @@ import { coachGate, isUuid } from '@/lib/coach/membership'
 import { publicSiteOrigin } from '@/lib/public-origin'
 import { sendAsCoach } from '@/lib/coach/mail'
 import { sendEmail } from '@/lib/emails/send'
+import { nudgeFamily } from '@/lib/coach/family-mail'
 import { stripe, admin } from '../_stripe'
 import { academyMoney } from '../_saved'
 
@@ -122,7 +123,11 @@ export async function POST(req: NextRequest) {
     const fb = await sendEmail({ from: 'Lumio Tennis <noreply@lumiosports.com>', to: [to], subject, html, replyTo: m.contactEmail || undefined, context: 'coach/pay card link' }).catch(() => null)
     delivered = !!fb && !fb.error
   }
-  if (delivered) await db.from('coach_pay_methods').update({ link_sent_to: to, link_sent_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', row.id)
+  if (delivered) {
+    await db.from('coach_pay_methods').update({ link_sent_to: to, link_sent_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', row.id)
+    // The same link is on their Plan page in the app (my-account-server).
+    await nudgeFamily(g.academyId, to, { body: subject, url: '/portal' })
+  }
   return NextResponse.json({ ok: true, url, sent: delivered, to })
 }
 

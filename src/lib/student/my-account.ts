@@ -37,13 +37,25 @@ export type MyAccount = {
   packs: { name: string; used: number; total: number; left: number; renews: string | null }[]
   method: string | null
   policy: { title: string; text: string }[]
-  owed: { kind: 'welcome' | 'balance' | 'group'; title: string; detail: string; url: string }[]
+  /** Things for them to do, each with the link that does it: finish the
+      welcome, save a card, a camp balance or form, a group place or a lesson
+      to pay. The same links the emails carry, so nobody has to find an email. */
+  owed: { kind: 'welcome' | 'balance' | 'group' | 'card' | 'form' | 'lesson'; title: string; detail: string; url: string }[]
+}
+
+/** A free slot the coach offered them (the free-slot email), to take in the app. */
+export type MyOffer = { token: string; date: string; time: string; mins: number; type: string; where: string | null; coach: string | null; closes: string }
+
+/** Their own choices: hearing about free slots, and lessons being recorded. */
+export type MyPrefs = {
+  freeSlots: boolean
+  recording: { agreed: boolean; words: string; ask: string; explain: string }
 }
 
 export type MyBooking = { on: boolean; durations: number[]; duration: number; type: string }
 
 /** Everything the player app shows about their lessons, groups and plan. */
-export type MyPage = { lessons: MyLesson[]; groups: MyGroup[]; account: MyAccount; booking: MyBooking }
+export type MyPage = { lessons: MyLesson[]; groups: MyGroup[]; account: MyAccount; booking: MyBooking; offers?: MyOffer[]; prefs?: MyPrefs | null }
 
 const TZ = 'Europe/London'
 

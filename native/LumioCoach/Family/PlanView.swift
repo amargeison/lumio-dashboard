@@ -36,7 +36,7 @@ struct AccountSections: View {
     var body: some View {
         if !account.owed.isEmpty {
             // The family pays; the coach only sees what is still outstanding.
-            Section(showPolicy ? "To pay" : "Still to do on their side") {
+            Section(showPolicy ? "To do" : "Still to do on their side") {
                 ForEach(account.owed) { o in
                     if showPolicy {
                         Button { model.web = WebTarget(path: o.url, title: o.title) } label: { owedRow(o, chevron: true) }
@@ -116,6 +116,8 @@ struct AccountSections: View {
         switch kind {
         case "welcome": return "hand.wave"
         case "group": return "person.3"
+        case "card": return "creditcard"
+        case "form": return "doc.text"
         default: return "sterlingsign.circle"
         }
     }

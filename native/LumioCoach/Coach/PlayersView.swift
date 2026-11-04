@@ -116,6 +116,17 @@ struct PlayerDetailView: View {
                     }
                 }
                 .padding(.vertical, 4)
+                if let profile {
+                    // As on the website card: Setup is a button at the top with what is
+                    // left to do, not the first thing in the list — that was nearly every player.
+                    let n = setup.todo(profile, isHead: store.setup?.me.isHead ?? true, pay: pay)
+                    NavigationLink { PlayerSetupView(player: profile, pay: pay, isHead: store.setup?.me.isHead ?? true) { await loadProfile() } } label: {
+                        Label(n > 0 ? "Setup · \(n) to do" : "Set up", systemImage: n > 0 ? "flag.fill" : "checkmark.circle.fill")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(n > 0 ? Color.orange : Color.green)
+                    }
+                    .accessibilityHint(n > 0 ? "\(n) thing\(n == 1 ? "" : "s") still to set up for \(name)" : "\(name) is all set up")
+                }
                 ContactButtons(player: player)
                 PhotoChanger(playerId: player.id) { await loadProfile(); store.saved() }
             }
@@ -128,18 +139,6 @@ struct PlayerDetailView: View {
 
             if let profile {
                 Section {
-                    // The website card's Setup tab: what still needs doing, with the count.
-                    NavigationLink { PlayerSetupView(player: profile, pay: pay, isHead: store.setup?.me.isHead ?? true) { await loadProfile() } } label: {
-                        HStack {
-                            Label("Setup", systemImage: "checklist.unchecked")
-                            Spacer()
-                            let n = setup.todo(profile, isHead: store.setup?.me.isHead ?? true, pay: pay)
-                            if n > 0 {
-                                Text("\(n) to do").font(.caption.weight(.bold)).foregroundStyle(.white)
-                                    .padding(.horizontal, 8).padding(.vertical, 3).background(Color.orange, in: Capsule())
-                            }
-                        }
-                    }
                     NavigationLink { DevelopmentView(player: profile) { await loadProfile() } } label: {
                         Label("Development", systemImage: "chart.line.uptrend.xyaxis")
                     }

@@ -52,6 +52,27 @@ struct FamilyHomeView: View {
                 .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
             }
 
+            // Anything waiting on them — finish the welcome, save a card, a
+            // camp balance or form, a place or lesson to pay — first, so
+            // nobody has to find the email. The same links the emails carry.
+            if let owed = b.my?.account.owed, !owed.isEmpty {
+                Section("To do") {
+                    ForEach(owed) { o in
+                        Button { model.web = WebTarget(path: o.url, title: o.title) } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange).font(.title3)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(o.title).font(.body.weight(.semibold)).foregroundStyle(.primary)
+                                    Text(o.detail).font(.subheadline).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
+                }
+            }
+
             // A camp they're booked on, from booking until it ends — the same
             // card the website shows, and the coach can hide it ("camp").
             if b.shows("camp"), !b.campCards.isEmpty {
@@ -74,6 +95,13 @@ struct FamilyHomeView: View {
                         }
                     }
                 } header: { Text("Next lessons") }
+
+                // Free slots the coach offered by email: take one here.
+                if let offers = my.offers, !offers.isEmpty, b.shows("upcoming") {
+                    Section {
+                        ForEach(offers) { o in offerCard(o) }
+                    } header: { Text("Free slots from your coach") } footer: { Text("The first to take one gets it.") }
+                }
 
                 if !my.groups.isEmpty {
                     Section("Weekly groups") {
@@ -145,6 +173,41 @@ struct FamilyHomeView: View {
             }
         }
         .padding(.vertical, 2)
+    }
+
+    private func offerCard(_ o: MyOffer) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 12) {
+                DayTile(iso: o.date)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("\(Fmt.time(o.time))–\(Fmt.endTime(o.time, mins: o.mins))").font(.headline).monospacedDigit()
+                    Text([o.type, o.coach.map { "with \($0)" }].compactMap { $0 }.joined(separator: " ")).font(.subheadline)
+                    if let w = o.place { Text(w).font(.subheadline).foregroundStyle(.secondary) }
+                    Text("Open until \(o.closes)").font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+            HStack(spacing: 10) {
+                BusyButton(title: "Book it", systemImage: "checkmark") { await slot(o, action: "accept") }
+                BusyButton(title: "No thanks", prominent: false) { await slot(o, action: "decline") }
+            }
+            .buttonStyle(.borderless)
+        }
+        .padding(.vertical, 6)
+    }
+
+    /// The offer's own link does the work, exactly as the email's button does.
+    private func slot(_ o: MyOffer, action: String) async {
+        struct Body: Encodable { let action: String }
+        do {
+            let _: OkNotice = try await API.shared.post("/api/slot/\(o.token)", body: Body(action: action))
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            toast = Toast(text: action == "accept" ? "Booked — it is in your lessons, and your coach has been told." : "No problem — thanks for letting your coach know.")
+        } catch {
+            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            toast = Toast(text: action == "accept" ? "Sorry — that slot has gone." : error.localizedDescription, isError: true)
+        }
+        await family.reload()
     }
 
     private func lesson(_ l: MyLesson, action: String) async {

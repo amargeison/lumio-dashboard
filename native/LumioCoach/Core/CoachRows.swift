@@ -494,7 +494,7 @@ struct PlayerProfile: Decodable, Identifiable, Hashable {
         let when = Fmt.stamp(consentRecordAt).map { $0.formatted(.dateTime.day().month(.abbreviated).year().locale(Locale(identifier: "en_GB"))) } ?? ""
         if consentRecord == true && consentRecordHow == "in_person" { return "Agreed in person (noted by you)\(when.isEmpty ? "" : ", \(when)")." }
         if consentRecord == true {
-            return "Agreed\(consentRecordBy.map { " by \($0)" } ?? "")\(consentRecordHow == "welcome" ? " on their welcome link" : "")\(when.isEmpty ? "" : ", \(when)")."
+            return "Agreed\(consentRecordBy.map { " by \($0)" } ?? "")\(consentRecordHow == "welcome" ? " on their welcome link" : consentRecordHow == "app" ? " in the app" : "")\(when.isEmpty ? "" : ", \(when)")."
         }
         if consentRecordHow == "withdrawn" || consentRecordHow == "declined" { return "\(first) said no\(when.isEmpty ? "" : " (\(when))"). Their lessons cannot be recorded." }
         return "Not asked yet. \(first)’s lessons cannot be recorded until they agree."

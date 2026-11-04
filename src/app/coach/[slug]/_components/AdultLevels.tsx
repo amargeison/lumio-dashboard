@@ -11,6 +11,10 @@
 // checklist as cards, then every adult on a matrix of the levels. The colours
 // come from the level's place on the ladder (adultColour), never the junior
 // colours, so an adult never looks like a junior on Blue.
+//
+// It lives in Player Development (the source of truth, there for every
+// academy). Racket Progression shows the same page with readOnly: the ladder,
+// the levels and where everyone is, with nothing to change there.
 
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
@@ -33,12 +37,14 @@ export function LevelSwatch({ colour, w = 20, h = 12, T }: { colour: string | nu
   return <span aria-hidden style={{ display: 'inline-block', width: w, height: h, borderRadius: Math.min(5, h / 3), background: colour || 'transparent', border: `1px solid ${colour ? 'rgba(128,128,128,0.4)' : T.border}`, flexShrink: 0 }} />
 }
 
-export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+export function AdultLevels({ T, accent, readOnly = false, onOpenDevelopment }: { T: ThemeTokens; accent: AccentTokens; readOnly?: boolean; onOpenDevelopment?: () => void }) {
   const levelsT = useCoachTable<LevelRow>('coach_adult_levels')
   const playersT = useCoachTable<Player>('coach_players')
   const passesT = useCoachTable<PassRow>('coach_adult_passes')
-  const [isHead, setIsHead] = useState(true)
+  const [headSeat, setIsHead] = useState(true)
   useEffect(() => { let on = true; void currentIdentity().then(me => { if (on) setIsHead(me?.isHead ?? true) }).catch(() => {}); return () => { on = false } }, [])
+  // Read-only (Racket Progression): nothing here changes a level or a player.
+  const isHead = headSeat && !readOnly
   const levels = useMemo(() => ordered(levelsT.rows.map(l => ({ ...l, checklist: tidyChecklist(l.checklist) }))), [levelsT.rows])
   const adults = useMemo(() => playersT.rows.filter(isAdultPlayer).sort((a, b) => a.name.localeCompare(b.name)), [playersT.rows])
   const [openPlayer, setOpenPlayer] = useState<string | null>(null)
@@ -102,8 +108,13 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
   return (
     <div data-testid="adult-levels" style={{ fontFamily: FONT }}>
       <p style={{ margin: '0 0 14px', fontSize: 13, color: T.text3, lineHeight: 1.55, maxWidth: 760 }}>
-        Your own levels for adult players. Each one has a short video and a checklist to pass it. Tick items off as a player shows them; when the checklist is complete, move them up. Players see their level, its video and the checklist on their page.
+        {readOnly
+          ? 'Your adult levels and where every adult is on them. The levels, their checklists and who is on which level are set in Player Development.'
+          : 'Your own levels for adult players. Each one has a short video and a checklist to pass it. Tick items off as a player shows them; when the checklist is complete, move them up. Players see their level, its video and the checklist on their page.'}
       </p>
+      {readOnly && onOpenDevelopment && (
+        <button onClick={onOpenDevelopment} style={{ ...btn, marginBottom: 14, border: `1px solid ${accent.border}`, background: accent.dim, color: accent.hex, fontWeight: 700 }}>Change levels and tick checklists in Player Development →</button>
+      )}
       {err && <div role="alert" style={{ background: `${T.bad}14`, border: `1px solid ${T.bad}44`, borderRadius: 9, padding: '9px 12px', fontSize: 12.5, color: T.bad, marginBottom: 12 }}>{err}</div>}
 
       {levels.length === 0 ? (
@@ -120,7 +131,7 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
               <button onClick={useStarter} disabled={busy} style={primary}>{busy ? 'Setting up…' : 'Use the six starter levels'}</button>
               <button onClick={() => setEditing('new')} style={btn}>Start with one level</button>
             </div>
-          ) : <div style={{ fontSize: 12, color: T.text3, marginTop: 10 }}>Your head coach sets up the levels.</div>}
+          ) : <div style={{ fontSize: 12, color: T.text3, marginTop: 10 }}>{readOnly ? 'Levels are set up in Player Development → Adult levels.' : 'Your head coach sets up the levels.'}</div>}
           {editing === 'new' && <LevelEditor T={T} accent={accent} position={1} onDone={() => setEditing(null)} onError={setErr} />}
         </div>
       ) : (
@@ -150,7 +161,7 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
                 </button>
               )}
             </div>
-            {!isHead && <div style={{ fontSize: 11, color: T.text3, marginTop: 10 }}>Your head coach changes the levels.</div>}
+            {!isHead && !readOnly && <div style={{ fontSize: 11, color: T.text3, marginTop: 10 }}>Your head coach changes the levels.</div>}
           </div>
 
           {/* ── The chosen level, opened ────────────────────────────────── */}
@@ -280,10 +291,10 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
                             const isNow = bi === cur
                             return (
                               <td key={l.id} style={{ textAlign: 'center', padding: '4px 2px' }}>
-                                <button className="cm-tap" onClick={() => void moveTo(p, bi)}
+                                <button className="cm-tap" onClick={readOnly ? undefined : () => void moveTo(p, bi)} disabled={readOnly}
                                   title={isNow ? `${p.name} is on ${l.name} — ${pr?.done}/${pr?.total} passed` : `Move ${p.name} to ${l.name}`}
                                   aria-label={isNow ? `${p.name} is on ${l.name}` : `Move ${p.name} to ${l.name}`}
-                                  style={{ appearance: 'none', cursor: 'pointer', fontFamily: FONT, width: 34, height: 26, borderRadius: 7, display: 'grid', placeItems: 'center', margin: '0 auto',
+                                  style={{ appearance: 'none', cursor: readOnly ? 'default' : 'pointer', fontFamily: FONT, width: 34, height: 26, borderRadius: 7, display: 'grid', placeItems: 'center', margin: '0 auto',
                                     border: `1px solid ${isNow ? accent.hex : isDone ? `${T.good}44` : 'transparent'}`,
                                     background: isNow ? accent.dim : isDone ? `${T.good}14` : 'transparent',
                                     color: isNow ? accent.hex : isDone ? T.good : T.text4, fontSize: isNow ? 9.5 : 12, fontWeight: 800 }}>
@@ -300,7 +311,9 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
                             ) : <span style={{ fontSize: 11.5, color: T.text3, whiteSpace: 'nowrap' }}>No level yet</span>}
                           </td>
                           <td style={{ padding: '8px 8px', textAlign: 'right' }}>
-                            {lv ? (
+                            {readOnly ? (
+                              <span style={{ fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', color: pr?.ready ? T.good : T.text3 }}>{!lv ? '—' : pr?.ready ? '✓ Ready to move up' : `${pr?.done}/${pr?.total} passed`}</span>
+                            ) : lv ? (
                               <button onClick={() => setOpenPlayer(open ? null : p.id)} aria-expanded={open}
                                 style={{ ...btn, padding: '4px 9px', fontSize: 11, whiteSpace: 'nowrap', border: `1px solid ${pr?.ready ? accent.hex : T.border}`, background: pr?.ready ? accent.hex : 'transparent', color: pr?.ready ? T.btnText : accent.hex }}>
                                 {open ? 'Close' : pr?.ready ? '✓ Ready to move up' : 'Tick off'}
@@ -308,7 +321,7 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
                             ) : <button onClick={() => void moveTo(p, 0)} style={{ ...btn, padding: '4px 9px', fontSize: 11, whiteSpace: 'nowrap', color: accent.hex }}>▶ Start on {levels[0].name}</button>}
                           </td>
                         </tr>,
-                        open && lv && pr ? (
+                        open && !readOnly && lv && pr ? (
                           <tr key={`${p.id}-list`}>
                             <td colSpan={levels.length + 3} style={{ padding: '0 10px 10px' }}>
                               <div style={{ background: T.panel2, border: `1px solid ${T.border}`, borderLeft: `3px solid ${adultColour(cur)}`, borderRadius: 10, padding: '10px 12px' }}>
@@ -345,7 +358,7 @@ export function AdultLevels({ T, accent }: { T: ThemeTokens; accent: AccentToken
             <div style={{ display: 'flex', gap: 16, marginTop: 12, flexWrap: 'wrap', fontSize: 10.5, color: T.text3 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: T.good, fontWeight: 800 }}>✓</span> level passed</span>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ color: accent.hex, fontFamily: FONT_MONO, fontWeight: 700 }}>3/5</span> checklist on the level they are on</span>
-              <span>Tap any level in a player&rsquo;s row to move them onto it — you are asked first</span>
+              <span>{readOnly ? 'Levels are set in Player Development' : <>Tap any level in a player&rsquo;s row to move them onto it — you are asked first</>}</span>
             </div>
           </div>
         </>

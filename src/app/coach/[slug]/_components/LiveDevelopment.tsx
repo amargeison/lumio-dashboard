@@ -25,14 +25,14 @@ import {
   SKILL_LEVELS, skillLevelColour, dbUpdate,
 } from '../_lib/coach-db'
 import { goalPresets } from '@/lib/coach/colour-ladder'
-import { printRacketCertificate, certOrg } from './LiveRacketProgression'
+import { printRacketCertificate, certOrg, JuniorLadder, DEV_VIEW_KEY } from './LiveRacketProgression'
 import { getSettings } from '../_lib/settings-store'
 import { useAdultStanding } from '../_lib/adult-standing'
 import { askConfirm } from '../_lib/ask'
 import { getFlags, subscribe as subscribeFlags } from '../_lib/feature-flags'
 import { avatarSrc } from '@/lib/avatar'
 import { ColourLadder } from './ColourLadder'
-import { LevelSwatch } from './AdultLevels'
+import { LevelSwatch, AdultLevels } from './AdultLevels'
 import { AdultLevelPicker, AdultWorkingOn, AdultJourney, useAdultMove } from './AdultPathway'
 
 type Target = { target: string; why?: string; measure?: string; by?: string }
@@ -62,7 +62,41 @@ const sameName = (a?: string | null, b?: string | null) => (a || '').trim().toLo
 // to the first player on the list.
 let lastSelected: string | null = null
 
+// Three views. Players: one player at a time, as before. Junior colours and
+// Adult levels: the two ladders themselves — set up, explained, and every
+// player on them — which used to live under Racket Progression and so vanished
+// for an academy without that module. They are here now, for every academy;
+// Racket Progression reads them.
+type DevView = 'players' | 'junior' | 'adult'
 export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
+  const [view, setView] = useState<DevView>('players')
+  // Racket Progression's "change this in Player Development" buttons say which view to open.
+  useEffect(() => {
+    try {
+      const v = sessionStorage.getItem(DEV_VIEW_KEY)
+      if (v === 'junior' || v === 'adult' || v === 'players') setView(v)
+    } catch { /* fine */ }
+  }, [])
+  const pick = (v: DevView) => { setView(v); try { sessionStorage.setItem(DEV_VIEW_KEY, v) } catch { /* fine */ } }
+  const tabs = (
+    <div role="tablist" aria-label="Player Development" style={{ display: 'flex', gap: 4, marginBottom: 14, padding: 2, background: T.hover, borderRadius: 9, width: 'fit-content', maxWidth: '100%', overflowX: 'auto' }}>
+      {([['players', 'Players'], ['junior', 'Junior colours'], ['adult', 'Adult levels']] as const).map(([id, l]) => (
+        <button key={id} role="tab" aria-selected={view === id} onClick={() => pick(id)} style={{ appearance: 'none', border: 0, padding: '7px 16px', borderRadius: 7, fontSize: 12.5, cursor: 'pointer', whiteSpace: 'nowrap', background: view === id ? T.panel : 'transparent', color: view === id ? T.text : T.text2, fontWeight: view === id ? 700 : 500, fontFamily: FONT }}>{l}</button>
+      ))}
+    </div>
+  )
+  return (
+    <div style={{ fontFamily: FONT }}>
+      <Head T={T} />
+      {tabs}
+      {view === 'junior' ? <JuniorLadder T={T} accent={accent} mode="development" />
+        : view === 'adult' ? <AdultLevels T={T} accent={accent} />
+        : <PlayersView T={T} accent={accent} />}
+    </div>
+  )
+}
+
+function PlayersView({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const { rows: players, reload: reloadPlayers } = useCoachTable<Player>('coach_players')
   const { rows: skillRows, reload: reloadSkills } = useCoachTable<{ player_id: string; skill: string; score: number }>('coach_player_skills')
   const { rows: attRows } = useCoachTable<{ player_id: string; present: boolean }>('coach_attendance')
@@ -91,7 +125,6 @@ export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentT
   if (players.length === 0) {
     return (
       <div style={{ fontFamily: FONT }}>
-        <Head T={T} />
         <div style={{ textAlign: 'center', padding: '48px 20px', background: T.panel, border: `1px dashed ${T.border}`, borderRadius: 12 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>No players yet</div>
           <div style={{ fontSize: 12.5, color: T.text3, marginTop: 4 }}>Add players in the Player Roster, then grade their skills and track where they are here.</div>
@@ -102,7 +135,6 @@ export function LiveDevelopment({ T, accent }: { T: ThemeTokens; accent: AccentT
 
   return (
     <div style={{ fontFamily: FONT }}>
-      <Head T={T} />
       <div className="cm-2" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 14, alignItems: 'start' }}>
         {/* Player list — cm-2 stacks the two panes on a phone (list, then the player) */}
         <div style={{ background: T.panel, border: `1px solid ${T.border}`, borderRadius: 12, padding: 8, alignSelf: 'start' }}>
@@ -144,7 +176,7 @@ function Head({ T }: { T: ThemeTokens }) {
   return (
     <div style={{ marginBottom: 16 }}>
       <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: T.text }}>Player Development</h1>
-      <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Every player’s journey — the colour they’re on (or, for adults, their adult level), skill mastery, goals and trajectory.</p>
+      <p style={{ margin: '4px 0 0', fontSize: 13, color: T.text3 }}>Every player’s journey, and where it is set: juniors on the colours, adults on your adult levels — skill mastery, goals and trajectory. Everything else in the portal reads it from here.</p>
     </div>
   )
 }

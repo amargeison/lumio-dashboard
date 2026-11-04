@@ -337,7 +337,7 @@ function AdultDevelopment({ T, accent, player, a, levels, passes }: { T: ThemeTo
           <>
             <div style={{ ...head, marginBottom: 10 }}>No adult level yet</div>
             {levels.length === 0
-              ? <p style={{ fontSize: 12, color: T.text3 }}>Set up your adult levels under Racket Progression → Adult levels first.</p>
+              ? <p style={{ fontSize: 12, color: T.text3 }}>Set up your adult levels in Player Development → Adult levels first.</p>
               : <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                   <select value={pick} aria-label={`Level for ${player.name}`} onChange={e => setPick(e.target.value)} style={{ background: T.panel2, color: T.text, border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 10px', fontSize: 12.5 }}>
                     {levels.map((l, i) => <option key={l.id} value={l.id}>{i + 1}. {l.name}</option>)}
@@ -352,7 +352,7 @@ function AdultDevelopment({ T, accent, player, a, levels, passes }: { T: ThemeTo
               {a.total > 0 && <span style={{ fontSize: 11, color: a.done === a.total ? T.good : accent.hex, fontWeight: 600 }}>{a.done}/{a.total}</span>}
             </div>
             {level.summary && <div style={{ fontSize: 11.5, color: T.text3, marginBottom: 6 }}>{level.summary}</div>}
-            {level.checklist.length === 0 && <p style={{ fontSize: 12, color: T.text3 }}>This level has no checklist yet. Add one on Adult levels.</p>}
+            {level.checklist.length === 0 && <p style={{ fontSize: 12, color: T.text3 }}>This level has no checklist yet. Add one in Player Development → Adult levels.</p>}
             {level.checklist.map(item => {
               const on = a.passed.has(item.id)
               const when = passes.find(r => r.player_id === player.id && r.level_id === level.id && r.item_id === item.id)?.passed_on

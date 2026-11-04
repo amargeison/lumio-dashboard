@@ -150,6 +150,29 @@ struct MyPage: Decodable, Equatable {
     let groups: [MyGroup]
     let account: MyAccount
     let booking: MyBooking
+    /// Free slots the coach offered them (the free-slot email), still open.
+    let offers: [MyOffer]?
+    /// Their own choices: free-slot messages, and lessons being recorded.
+    let prefs: MyPrefs?
+}
+
+struct MyOffer: Decodable, Identifiable, Equatable {
+    let token: String
+    let date: String
+    let time: String
+    let mins: Int
+    let type: String
+    let place: String?
+    let coach: String?
+    let closes: String
+    var id: String { token }
+    enum CodingKeys: String, CodingKey { case token, date, time, mins, type, place = "where", coach, closes }
+}
+
+struct MyPrefs: Decodable, Equatable {
+    let freeSlots: Bool
+    let recording: Recording
+    struct Recording: Decodable, Equatable { let agreed: Bool; let words: String; let ask: String; let explain: String }
 }
 
 struct MyLesson: Decodable, Identifiable, Equatable {

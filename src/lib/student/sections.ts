@@ -44,8 +44,10 @@ export const STUDENT_SECTIONS: StudentSection[] = [
   { key: 'highlights', label: 'Session highlights',    blurb: 'Clips you saved from sessions, plus your voice notes.', module: 'video' },
   { key: 'report',     label: 'Session report',        blurb: 'Distance, speed and heart rate from a tracked session.', module: 'effort' },
   { key: 'rewards',    label: 'Effort & rewards',      blurb: 'XP, effort level and the three session scores.', module: 'effort' },
-  { key: 'racket',     label: 'Racket progression',    blurb: 'The racket ladder and how far through the current one they are.', module: 'racket' },
-  { key: 'adultlevel', label: 'Adult level',           blurb: 'Their adult level, its video and the checklist to pass it.', module: 'racket' },
+  // Set in Player Development, which every academy has — so neither waits on
+  // the Racket Progression module. That module only adds the reward wording.
+  { key: 'racket',     label: 'Colour / racket progression', blurb: 'The junior colour ladder and how far through the current colour they are.' },
+  { key: 'adultlevel', label: 'Adult level',           blurb: 'Their adult level, its video and the checklist to pass it.' },
   { key: 'homework',   label: "Homework & what's next", blurb: 'What to practise before the next lesson.' },
   { key: 'lessons',    label: 'Recent lessons',        blurb: 'Your lesson summaries and coach notes.' },
   { key: 'resources',  label: 'Recommended resources', blurb: 'Drills, guides and books you have recommended for them.' },
@@ -61,8 +63,10 @@ const MODULE_OF = new Map(STUDENT_SECTIONS.map(s => [s.key, s.module]))
 // switched it off, and there is something in it.
 //
 // The module check comes first and is not negotiable: a family whose academy is
-// not on a plan with Racket Progression must not see a racket ladder, no matter
-// how many skill rows the player has or what the section toggle happens to say.
+// not on a plan with video must not see clips, no matter what the section
+// toggle happens to say. (Colours and adult levels are not behind a module:
+// they are set in Player Development, which every academy has, and the page
+// only says "racket" when the academy runs Racket Progression.)
 //
 // `features` undefined means we do not know yet — an academy whose coach has not
 // opened their portal since the flags started travelling. Nothing is gated in
