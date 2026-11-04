@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { SPORT_NETWORK_BASELINE, type SportNetworkContent } from '@/data/impact/sport-network'
 
+const FAILED = 'Couldn’t refresh — still showing the last good version.'
+
 export function useSportNetwork() {
   const [content, setContent] = useState<SportNetworkContent>(SPORT_NETWORK_BASELINE)
   const [updating, setUpdating] = useState(false)
@@ -28,10 +30,10 @@ export function useSportNetwork() {
       const res = await fetch('/api/impact/sport-network', { method: 'POST' })
       const d = await res.json().catch(() => null)
       if (d?.content) setContent(d.content)
-      if (!res.ok) setMessage(d?.error ?? 'Update failed — showing the last verified content.')
+      if (!res.ok) setMessage(d?.error ?? FAILED)
       else setMessage(d?.refreshed ? 'Updated from GOV.UK / DfE / Youth Sport Trust.' : (d?.note ?? 'Already up to date.'))
     } catch {
-      setMessage('Update failed — showing the last verified content.')
+      setMessage(FAILED)
     } finally {
       setUpdating(false)
     }
