@@ -43,6 +43,29 @@ export const PRINTABLE_CONTENT: Record<string, Printable> = {
     notesLines: 3,
   },
 
+  'white-split-step': {
+    kind: 'drill',
+    diagnosis: 'Players who arrive late to the ball are usually late leaving the last one. They stand flat-footed watching their own shot, then start moving only when the ball is already coming back — so every ball is reached off balance, and the swing is rushed or abandoned. The split-step fixes the start, and the start decides everything after it.',
+    objective: 'A small hop that lands as the opponent strikes, every ball, without being told.',
+    setup: ['Player on the baseline, coach or partner across the net with a basket.', 'Red or orange ball for beginners; yellow once the timing holds.', 'Cones at the two sidelines and the centre mark.'],
+    progressions: [
+      { name: 'Hop on the clap', detail: 'No ball. Coach claps; the player hops and lands on the balls of both feet, knees soft, racket up. Land on the clap, not after it.', reps: '15 hops' },
+      { name: 'Hop on the strike', detail: 'Coach shadows a swing from the far side. The player lands as the racket would meet the ball, then pushes off in the direction the coach points.', reps: '3 × 8' },
+      { name: 'Split and go', detail: 'Coach feeds left or right at random. Split as the feed is struck, first step towards the ball, hit, recover to the centre mark.', reps: '20 balls' },
+      { name: 'Live rally, coach calls it', detail: 'Cooperative rally. Coach calls "late" whenever the split comes after the opponent\'s contact. Three "lates" and the rally restarts.', reps: '10 minutes' },
+    ],
+    cues: ['"Land as they hit."', '"Small hop, not a jump" — height costs time.', '"First step is the turn" — turn the shoulders and the feet follow.'],
+    faults: [
+      { fault: 'Splitting too early', why: 'Player lands, settles flat and has to restart', fix: 'Watch the opponent\'s racket, not the ball in flight. Hop as their racket starts forward.' },
+      { fault: 'Big jump', why: 'Still in the air when the ball is struck, so the first step is late', fix: 'Feet barely leave the ground. Think "bounce", not "jump".' },
+      { fault: 'Landing on the heels', why: 'No push-off; the first step is a shuffle', fix: 'Land on the balls of the feet with the weight forward, as if about to sprint.' },
+      { fault: 'No recovery after the shot', why: 'Next split happens out of position', fix: 'Back to the centre mark before the opponent hits. The split happens there.' },
+    ],
+    success: 'Ten balls in a live rally with the split landing as the opponent strikes on every one.',
+    progress: 'Once it is automatic, move to yellow ball and full court, and start splitting towards the side the ball is going.',
+    notesLines: 3,
+  },
+
   'white-rally-ladder': {
     kind: 'drill',
     diagnosis: 'Rallies end at two or three shots because the player treats every ball as a chance to win the point. They have never been asked to keep one going, so they have no idea what a sustainable shot feels like. Until tolerance exists there is nothing to coach — you cannot fix a forehand that only appears twice a rally.',

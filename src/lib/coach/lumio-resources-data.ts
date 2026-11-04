@@ -22,12 +22,12 @@
 // Plain data with no browser imports, so the server routes that feed the
 // player app can tell Lumio's library from a coach's own resources too.
 
-const yt = (id: string) => `https://www.youtube.com/watch?v=${id}`
 const p = (slug: string) => `lumio:${slug}`
 
 export const LUMIO_RESOURCES: Record<string, string | null>[] = [
   // ─── WHITE — first racket. Contact, tracking, and simply making the ball. ───
-  { title: 'Split-step & first-move reaction', category: 'Drill', level: 'Beginner', format: 'Video', duration: '4 min', racket: 'white', tags: 'movement, warm-up', notes: 'Players who arrive late to the ball are usually late leaving the last one. Trains the split-step to land as the opponent strikes.', url: yt('J1UhPl1UrYs') },
+  // Was a link to somebody else's YouTube video; now Lumio's own printable drill card.
+  { title: 'Split-step & first-move reaction', category: 'Drill', level: 'Beginner', format: 'PDF', duration: '10 min', racket: 'white', tags: 'movement, warm-up', notes: 'Players who arrive late to the ball are usually late leaving the last one. Trains the split-step to land as the opponent strikes.', url: p('white-split-step') },
   { title: 'Catch, drop, hit — contact point card', category: 'Drill', level: 'Beginner', format: 'PDF', duration: '12 min', racket: 'white', tags: 'contact, foundation', notes: 'Beginners meet the ball behind the hip, so the racket face closes and the ball dumps into the net. Fixes contact point out in front.', url: p('white-catch-drop-hit') },
   { title: 'Ten-in-a-row rally ladder', category: 'Drill', level: 'Beginner', format: 'PDF', duration: '15 min', racket: 'white', tags: 'consistency, rally', notes: 'Rallies end at two or three shots because the player plays every ball as a winner. Builds tolerance before power.', url: p('white-rally-ladder') },
   { title: 'Ready position & racket carry', category: 'Technique', level: 'Beginner', format: 'PDF', duration: '10 min', racket: 'white', tags: 'ready, foundation', notes: 'A racket carried low and one-handed costs the unit turn before the ball has bounced. Sets the hands, height and grip that make everything else possible.', url: p('white-ready-position') },
