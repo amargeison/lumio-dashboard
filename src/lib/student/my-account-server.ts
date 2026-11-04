@@ -23,7 +23,7 @@ import { recordQuestion } from '@/lib/coach/recording-consent'
 import { stripe } from '@/app/api/coach/pay/_stripe'
 import { randomBytes } from 'crypto'
 import { ukDate, addDaysIso } from '@/lib/coach/uk-date'
-import { cancelTerms, started, policyShort, bookingDurations, whenWords, momentWords, type MyLesson, type MyGroup, type MyAccount, type MyBooking, type MyPage, type MyOffer, type MyPrefs } from './my-account'
+import { cancelTerms, started, policyShort, bookingDurations, whenWords, momentWords, type MyLesson, type MyGroup, type MyAccount, type MyBooking, type MyPage, type MyOffer, type MyPrefs, type MyPastLesson } from './my-account'
 
 type Db = SupabaseClient
 type Row = Record<string, any>   // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -212,6 +212,22 @@ export async function loadMyPage(db: Db, academyId: string, playerId: string, o:
   const d = bookingDurations(usual?.[0]?.duration_min)
   const booking: MyBooking = { on: !(o.sectionsOff || []).includes('booking'), ...d, type: 'Private' }
 
+  // ── Their lessons that have happened, newest first (the last eight weeks) ─
+  const past = await safe(async (): Promise<MyPastLesson[]> => {
+    const [{ data: rows }, { data: staff }] = await Promise.all([
+      db.from('coach_bookings').select('id, booking_date, start_time, duration_min, type, court, status, staff_id, assigned_coach')
+        .eq('coach_id', academyId).eq('player_id', playerId).gte('booking_date', addDaysIso(today, -56)).lte('booking_date', today)
+        .order('booking_date', { ascending: false }).order('start_time', { ascending: false }).limit(20),
+      db.from('coach_staff').select('id, name').eq('coach_id', academyId).limit(60),
+    ])
+    return (rows || []).filter((b: Row) => b.type !== 'Block' && started(b.booking_date, b.start_time)).slice(0, 6).map((b: Row): MyPastLesson => ({
+      id: b.id, date: b.booking_date, time: b.start_time ? String(b.start_time).slice(0, 5) : null, mins: Number(b.duration_min) || 60,
+      type: b.type || null, court: b.court || null,
+      coach: (staff || []).find((s: Row) => s.id === b.staff_id)?.name || b.assigned_coach || null,
+      cancelled: String(b.status || '').toLowerCase() === 'cancelled',
+    }))
+  }, [] as MyPastLesson[])
+
   // ── Free slots the coach offered them, still open ────────────────────────
   const offers = await safe(async (): Promise<MyOffer[]> => {
     const { data: mine } = await db.from('coach_slot_offer_recipients').select('offer_id, token, response').eq('coach_id', academyId).eq('player_id', playerId).is('response', null)
@@ -247,5 +263,5 @@ export async function loadMyPage(db: Db, academyId: string, playerId: string, o:
     return { freeSlots: !!p.free_slot_pings, recording: { agreed: !!p.consent_record, words, ask: q.ask, explain: q.explain } }
   }, null)
 
-  return { lessons, groups, account, booking, offers, prefs }
+  return { lessons, groups, account, booking, offers, prefs, past }
 }

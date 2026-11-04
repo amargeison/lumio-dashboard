@@ -96,6 +96,25 @@ struct FamilyHomeView: View {
                     }
                 } header: { Text("Next lessons") }
 
+                // The lessons they have had, as the website's "Before".
+                if let past = my.past, !past.isEmpty {
+                    Section("Before") {
+                        ForEach(past) { l in
+                            HStack(spacing: 12) {
+                                DayTile(iso: l.date)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text([l.time.map { Fmt.time($0) }, "\(l.mins) min", l.type].compactMap { $0 }.joined(separator: " · "))
+                                        .font(.subheadline.weight(.semibold)).strikethrough(l.cancelled)
+                                    Text([l.coach.map { "With \($0)" }, l.court].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if l.cancelled { Pill(text: "Cancelled", tint: .secondary) }
+                            }
+                            .opacity(l.cancelled ? 0.7 : 1)
+                        }
+                    }
+                }
+
                 // Free slots the coach offered by email: take one here.
                 if let offers = my.offers, !offers.isEmpty, b.shows("upcoming") {
                     Section {

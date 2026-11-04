@@ -55,7 +55,10 @@ export type MyPrefs = {
 export type MyBooking = { on: boolean; durations: number[]; duration: number; type: string }
 
 /** Everything the player app shows about their lessons, groups and plan. */
-export type MyPage = { lessons: MyLesson[]; groups: MyGroup[]; account: MyAccount; booking: MyBooking; offers?: MyOffer[]; prefs?: MyPrefs | null }
+/** A lesson that has happened (or was cancelled), newest first. */
+export type MyPastLesson = { id: string; date: string; time: string | null; mins: number; type: string | null; coach: string | null; court: string | null; cancelled: boolean }
+
+export type MyPage = { lessons: MyLesson[]; groups: MyGroup[]; account: MyAccount; booking: MyBooking; offers?: MyOffer[]; prefs?: MyPrefs | null; past?: MyPastLesson[] }
 
 const TZ = 'Europe/London'
 
