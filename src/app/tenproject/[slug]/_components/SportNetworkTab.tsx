@@ -77,7 +77,7 @@ export function SchoolReadinessCard({ schoolId }: { schoolId: string }) {
 
 // ─── HQ Sport Network tab ────────────────────────────────────────────────────
 export default function SportNetworkTab() {
-  const { brand, data } = useImpact()
+  const { brand, data, org } = useImpact()
   const { SCHOOLS, SCHOOL_READINESS, PESSPN_CRITERIA } = data
   const { content: N, updating, message, update } = useSportNetwork()
   const updatedLabel = new Date(N.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -94,9 +94,9 @@ export default function SportNetworkTab() {
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>{N.hero.kicker}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 11, color: '#C9C4BE', fontWeight: 700 }}>Last updated: {updatedLabel} · source: GOV.UK</span>
-            <button onClick={update} disabled={updating} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: TP_DARK, border: 'none', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: updating ? 'wait' : 'pointer' }}>
+            {org?.canEdit && <button onClick={() => update()} disabled={updating} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: TP_DARK, border: 'none', borderRadius: 8, padding: '7px 12px', fontSize: 11.5, fontWeight: 800, cursor: updating ? 'wait' : 'pointer' }}>
               <RefreshCw size={12} /> {updating ? 'Checking GOV.UK…' : 'Update'}
-            </button>
+            </button>}
           </div>
         </div>
         <div style={{ fontSize: 19, fontWeight: 900, color: '#fff', marginTop: 6 }}>{N.hero.title}</div>
