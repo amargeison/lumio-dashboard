@@ -129,7 +129,10 @@ export async function GET(req: NextRequest) {
     } catch { /* a greeting must never break the page */ }
   }
 
+  // Booking notices ("Session booked …", filed with channels 'inapp:…') are not
+  // conversation: the lessons and the next session show them on the page.
   const messages = [...messagesAll]
+    .filter(x => !String(x?.channels || '').startsWith('inapp:'))
     .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
 
   // The lesson as the family is meant to see it — the coach's private note and

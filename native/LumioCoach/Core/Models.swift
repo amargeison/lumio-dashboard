@@ -154,6 +154,19 @@ struct MyPage: Decodable, Equatable {
     let offers: [MyOffer]?
     /// Their own choices: free-slot messages, and lessons being recorded.
     let prefs: MyPrefs?
+    /// Lessons that have happened (or were cancelled), newest first.
+    let past: [MyPastLesson]?
+}
+
+struct MyPastLesson: Decodable, Identifiable, Equatable {
+    let id: String
+    let date: String
+    let time: String?
+    let mins: Int
+    let type: String?
+    let coach: String?
+    let court: String?
+    let cancelled: Bool
 }
 
 struct MyOffer: Decodable, Identifiable, Equatable {

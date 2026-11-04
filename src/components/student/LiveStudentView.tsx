@@ -31,7 +31,7 @@ import {
 } from '@/lib/student/bundle'
 import { venueMapUrl } from '@/lib/coach/booking-venue'
 import { lessonRecap } from '@/lib/coach/lesson-recap'
-import { whenWords as whenLine } from '@/lib/student/my-account'
+import { whenWords as whenLine, type MyLesson } from '@/lib/student/my-account'
 import { studentSectionOn } from '@/lib/student/sections'
 import { campParts, mapsUrl, telUrl, webUrl } from '@/lib/student/camp-view'
 
@@ -211,15 +211,17 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
     rewards: studentSectionOn('rewards', off, watch.length > 0 && xpTotal > 0, feat),
     racket: studentSectionOn('racket', off, hasRacket, feat),
     adultlevel: studentSectionOn('adultlevel', off, !!bundle.adultLevel, feat),
-    upcoming: studentSectionOn('upcoming', off, !!bundle.my && (bundle.my.lessons.length > 0 || (bundle.my.booking.on && !off.includes('booking'))), feat),
+    // On for everyone, so every player's page has the same shape: their
+    // lessons, their plan and payments, and messages, even when empty.
+    upcoming: studentSectionOn('upcoming', off, !!bundle.my, feat),
     groups: studentSectionOn('groups', off, !!bundle.my && bundle.my.groups.length > 0, feat),
     // Free slots the coach offered by email, to take here instead.
     offers: studentSectionOn('upcoming', off, !!bundle.my?.offers?.length, feat),
-    account: studentSectionOn('account', off, !!bundle.my && (!!bundle.my.account.plan || bundle.my.account.packs.length > 0 || !!bundle.my.account.method || bundle.my.account.owed.length > 0), feat),
+    account: studentSectionOn('account', off, !!bundle.my, feat),
     homework: studentSectionOn('homework', off, !!(guidance.homework || guidance.nextFocus), feat),
     lessons: studentSectionOn('lessons', off, lessons.length > 0, feat),
     resources: studentSectionOn('resources', off, resources.length > 0 || books.length > 0, feat),
-    messages: studentSectionOn('messages', off, messages.length > 0 || !!onSendMessage, feat),
+    messages: studentSectionOn('messages', off, true, feat),
   }
   const anyBelowHeader = Object.values(show).some(Boolean)
 
@@ -272,35 +274,107 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
            moment they are booked, off when it finishes. ─────────────────── */}
       {show.camp && camps.map(c => <CampCard key={c.id} T={T} camp={c} first={f.first} />)}
 
-      {/* ── MESSAGES — straight under the camp. During a camp the conversation IS
-           the camp (times, kit, the hotel); at the bottom of a long page it was
-           the thing parents could not find. ─────────────────────────────── */}
-      {/* A real conversation, not a notice board. The whole point of this
-          section is that a parent messages their coach HERE rather than on
-          WhatsApp at 10pm — so it has to feel like the thing they would
-          otherwise open: the thread, oldest at the top, newest at the bottom,
-          and the box to type in right under it. */}
-      {show.messages && (
-        <Card T={T}>
-          <Head T={T} icon="megaphone" title={onSendMessage ? 'Messages' : 'Messages'}
-            sub={onSendMessage ? 'Your conversation with the coaching team' : 'What has been said between you'} />
-          <MessageThread T={T} messages={messages} adult={f.audience === 'adult'} me={bundle.player?.name}
-            coaches={bundle.coaches} campThreads={bundle.campThreads}
-            onSend={onSendMessage} onReact={onReact} />
-        </Card>
-      )}
-
       {/* ── NEXT SESSION — the thing they opened the app to check ──────────── */}
       {show.nextsession && nextSession && (
-        <NextSessionCard T={T} next={nextSession} first={f.first} adult={f.audience === 'adult'} />
+        <NextSessionCard T={T} next={nextSession} first={f.first} adult={f.audience === 'adult'}
+          lesson={bundle.my?.lessons.find(l => l.id === nextSession.id)} actions={actions} />
       )}
 
       {/* ── THEIR LESSONS, GROUPS AND PLAN — confirm, cancel, book, say yes ── */}
-      {show.upcoming && bundle.my && <MyLessonsCard T={T} my={bundle.my} you={f.audience === 'adult'} first={f.first} actions={actions} bookingOn={!off.includes('booking')} />}
+      {show.upcoming && bundle.my && <MyLessonsCard T={T} my={bundle.my} you={f.audience === 'adult'} first={f.first} actions={actions} bookingOn={!off.includes('booking')} skipId={show.nextsession && nextSession ? nextSession.id : null} />}
       {show.offers && bundle.my && <MyOffersCard T={T} my={bundle.my} actions={actions} />}
       {show.groups && bundle.my && <MyGroupsCard T={T} my={bundle.my} actions={actions} />}
       {show.account && bundle.my && <MyAccountCard T={T} my={bundle.my} you={f.audience === 'adult'} />}
-      {bundle.my?.prefs && <MyChoicesCard T={T} prefs={bundle.my.prefs} actions={actions} />}
+
+      {/* ── RACKET PROGRESSION ─────────────────────────────────────────────── */}
+      {show.racket && (
+        <Card T={T}>
+          <Head T={T} icon="trophy" title={racketModule ? 'Racket progression' : 'Colour progression'} sub={racketModule ? 'Earn the next racket by mastering every skill' : 'Master every skill to move on to the next colour'} />
+          {!isTop ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 14, background: T.accentDim, border: `1px solid ${T.accentBorder}`, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 30 }}>🏆</span>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>
+                  {remaining === 0
+                    ? `${f.audience === 'adult' ? 'You are' : `${f.first} is`} ready for ${nextStage.name}${racketModule ? ' racket' : ''}!`
+                    : `${f.audience === 'adult' ? 'You are' : `${f.first} is`} ${remaining} skill${remaining === 1 ? '' : 's'} from ${nextStage.name}${racketModule ? ' racket' : ''}`}
+                </div>
+                <div style={{ fontSize: 11.5, color: T.text2, marginTop: 2 }}>{racketModule ? <>Master every {stage.name} skill to earn the next racket — and a certificate to keep.</> : <>Master every {stage.name} skill to move on to the next colour.</>}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ width: 26, height: 16, borderRadius: 4, background: stage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
+                <Icon name="chevron-right" size={16} stroke={2} style={{ color: T.text3 }} />
+                <span style={{ width: 26, height: 16, borderRadius: 4, background: nextStage.colour, border: '1px solid rgba(128,128,128,0.4)', opacity: 0.85 }} />
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: '14px 16px', borderRadius: 14, background: T.accentDim, border: `1px solid ${T.accentBorder}`, fontSize: 14, fontWeight: 700, color: T.text }}>
+              🏆 {f.audience === 'adult' ? 'You have' : `${f.first} has`} reached {stage.name} — the top {racketModule ? 'racket' : 'colour'}.
+            </div>
+          )}
+
+          <div style={{ marginTop: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 }}>
+              <span style={{ fontSize: 11.5, color: T.text2, fontWeight: 600 }}>{stage.name}{racketModule ? ' racket' : ''}</span>
+              <span className="lsv-num" style={{ fontSize: 11.5, color: T.accent, fontFamily: MONO, fontWeight: 700 }}>{pct}% mastered</span>
+            </div>
+            <div style={{ height: 8, borderRadius: 4, background: T.hover, overflow: 'hidden' }}>
+              <div style={{ width: `${pct}%`, height: '100%', background: T.accent }} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 5, marginTop: 14, flexWrap: 'wrap' }}>
+            {RACKET_STAGES.map((b, bi) => {
+              const state = bi < stageIdx ? 'done' : bi === stageIdx ? 'now' : 'next'
+              return (
+                <div key={b.id} style={{ flex: '1 1 64px', textAlign: 'center', opacity: state === 'next' ? 0.5 : 1 }}>
+                  <div style={{ height: 16, borderRadius: 4, background: b.colour, border: `1px solid ${state === 'now' ? T.accent : 'rgba(128,128,128,0.4)'}`, boxShadow: state === 'now' ? `0 0 0 2px ${T.accentDim}` : 'none' }} />
+                  <div style={{ fontSize: 9, color: state === 'now' ? T.accent : T.text3, fontWeight: state === 'now' ? 700 : 500, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.name}</div>
+                  {state === 'now' && <span style={{ fontSize: 8, fontWeight: 700, color: T.accent }}>NOW</span>}
+                </div>
+              )
+            })}
+          </div>
+
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {stageSkills.map(name => {
+              const score = scoreOf(name)
+              const done = score >= awardThreshold
+              return (
+                <div key={name}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
+                    <span style={{ fontSize: 12.5, color: T.text, fontWeight: 500 }}>{done ? '✅ ' : ''}{name}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 10.5, color: done ? T.good : T.text3, fontFamily: MONO, fontWeight: 600 }}>{SKILL_LEVELS[score] || SKILL_LEVELS[0]}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {[1, 2, 3, 4].map(lv => <div key={lv} style={{ flex: 1, height: 5, borderRadius: 3, background: lv <= score ? (done ? T.good : T.accent) : T.hover }} />)}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* ── ADULT LEVEL — the level, its video and the checklist ─────────────── */}
+      {show.adultlevel && bundle.adultLevel && <AdultLevelCard T={T} level={bundle.adultLevel} you={f.audience === 'adult'} first={f.first} />}
+
+      {/* Every player has a pathway on their page, even before it starts: a
+          junior their colour, an adult their level. Until the coach sets it,
+          one line says so — the page reads the same for everyone. */}
+      {!isAdult && !hasRacket && !off.includes('racket') && (
+        <Card T={T}>
+          <Head T={T} icon="trophy" title={racketModule ? 'Racket progression' : 'Colour progression'} sub="Nine colours, from White to Black" />
+          <div style={{ fontSize: 14, color: T.text2, lineHeight: 1.55 }}>Not started yet. The coach will put {f.first} on {racketModule ? 'their first racket' : 'their first colour'} after the first lessons, and the skills to work on will appear here.</div>
+        </Card>
+      )}
+      {isAdult && !bundle.adultLevel && !off.includes('adultlevel') && (
+        <Card T={T}>
+          <Head T={T} icon="trophy" title="Your level" sub="Your coach’s levels for adult players" />
+          <div style={{ fontSize: 14, color: T.text2, lineHeight: 1.55 }}>Not set yet. Your coach will put you on one of their adult levels, with a short video and a checklist of what to pass, and it will appear here.</div>
+        </Card>
+      )}
+
 
       {/* ── RECENT LESSONS — straight after the next session, because the two
            are one thought: what we just did, what we do next. ───────────── */}
@@ -414,79 +488,6 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
         </Card>
       )}
 
-      {/* ── RACKET PROGRESSION ─────────────────────────────────────────────── */}
-      {show.racket && (
-        <Card T={T}>
-          <Head T={T} icon="trophy" title={racketModule ? 'Racket progression' : 'Colour progression'} sub={racketModule ? 'Earn the next racket by mastering every skill' : 'Master every skill to move on to the next colour'} />
-          {!isTop ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderRadius: 14, background: T.accentDim, border: `1px solid ${T.accentBorder}`, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 30 }}>🏆</span>
-              <div style={{ flex: 1, minWidth: 180 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>
-                  {remaining === 0
-                    ? `${f.audience === 'adult' ? 'You are' : `${f.first} is`} ready for ${nextStage.name}${racketModule ? ' racket' : ''}!`
-                    : `${f.audience === 'adult' ? 'You are' : `${f.first} is`} ${remaining} skill${remaining === 1 ? '' : 's'} from ${nextStage.name}${racketModule ? ' racket' : ''}`}
-                </div>
-                <div style={{ fontSize: 11.5, color: T.text2, marginTop: 2 }}>{racketModule ? <>Master every {stage.name} skill to earn the next racket — and a certificate to keep.</> : <>Master every {stage.name} skill to move on to the next colour.</>}</div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ width: 26, height: 16, borderRadius: 4, background: stage.colour, border: '1px solid rgba(128,128,128,0.4)' }} />
-                <Icon name="chevron-right" size={16} stroke={2} style={{ color: T.text3 }} />
-                <span style={{ width: 26, height: 16, borderRadius: 4, background: nextStage.colour, border: '1px solid rgba(128,128,128,0.4)', opacity: 0.85 }} />
-              </div>
-            </div>
-          ) : (
-            <div style={{ padding: '14px 16px', borderRadius: 14, background: T.accentDim, border: `1px solid ${T.accentBorder}`, fontSize: 14, fontWeight: 700, color: T.text }}>
-              🏆 {f.audience === 'adult' ? 'You have' : `${f.first} has`} reached {stage.name} — the top {racketModule ? 'racket' : 'colour'}.
-            </div>
-          )}
-
-          <div style={{ marginTop: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 11.5, color: T.text2, fontWeight: 600 }}>{stage.name}{racketModule ? ' racket' : ''}</span>
-              <span className="lsv-num" style={{ fontSize: 11.5, color: T.accent, fontFamily: MONO, fontWeight: 700 }}>{pct}% mastered</span>
-            </div>
-            <div style={{ height: 8, borderRadius: 4, background: T.hover, overflow: 'hidden' }}>
-              <div style={{ width: `${pct}%`, height: '100%', background: T.accent }} />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 5, marginTop: 14, flexWrap: 'wrap' }}>
-            {RACKET_STAGES.map((b, bi) => {
-              const state = bi < stageIdx ? 'done' : bi === stageIdx ? 'now' : 'next'
-              return (
-                <div key={b.id} style={{ flex: '1 1 64px', textAlign: 'center', opacity: state === 'next' ? 0.5 : 1 }}>
-                  <div style={{ height: 16, borderRadius: 4, background: b.colour, border: `1px solid ${state === 'now' ? T.accent : 'rgba(128,128,128,0.4)'}`, boxShadow: state === 'now' ? `0 0 0 2px ${T.accentDim}` : 'none' }} />
-                  <div style={{ fontSize: 9, color: state === 'now' ? T.accent : T.text3, fontWeight: state === 'now' ? 700 : 500, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.name}</div>
-                  {state === 'now' && <span style={{ fontSize: 8, fontWeight: 700, color: T.accent }}>NOW</span>}
-                </div>
-              )
-            })}
-          </div>
-
-          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 9 }}>
-            {stageSkills.map(name => {
-              const score = scoreOf(name)
-              const done = score >= awardThreshold
-              return (
-                <div key={name}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
-                    <span style={{ fontSize: 12.5, color: T.text, fontWeight: 500 }}>{done ? '✅ ' : ''}{name}</span>
-                    <span style={{ marginLeft: 'auto', fontSize: 10.5, color: done ? T.good : T.text3, fontFamily: MONO, fontWeight: 600 }}>{SKILL_LEVELS[score] || SKILL_LEVELS[0]}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {[1, 2, 3, 4].map(lv => <div key={lv} style={{ flex: 1, height: 5, borderRadius: 3, background: lv <= score ? (done ? T.good : T.accent) : T.hover }} />)}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </Card>
-      )}
-
-      {/* ── ADULT LEVEL — the level, its video and the checklist ─────────────── */}
-      {show.adultlevel && bundle.adultLevel && <AdultLevelCard T={T} level={bundle.adultLevel} you={f.audience === 'adult'} first={f.first} />}
-
       {/* ── HOMEWORK & WHAT'S NEXT ─────────────────────────────────────────── */}
       {show.homework && (
         <Card T={T}>
@@ -556,6 +557,26 @@ export function LiveStudentView({ T, bundle, footnote, onSendMessage, onReact, a
               </div>
             ))}
           </div>
+        </Card>
+      )}
+
+      {bundle.my?.prefs && <MyChoicesCard T={T} prefs={bundle.my.prefs} actions={actions} />}
+
+      {/* ── MESSAGES — last, on every player's page, so the page reads the same
+           for everyone and the conversation is always in the same place.
+           Booking notices are not in it: lessons show those. ───────────── */}
+      {/* A real conversation, not a notice board. The whole point of this
+          section is that a parent messages their coach HERE rather than on
+          WhatsApp at 10pm — so it has to feel like the thing they would
+          otherwise open: the thread, oldest at the top, newest at the bottom,
+          and the box to type in right under it. */}
+      {show.messages && (
+        <Card T={T}>
+          <Head T={T} icon="megaphone" title={onSendMessage ? 'Messages' : 'Messages'}
+            sub={onSendMessage ? 'Your conversation with the coaching team' : 'What has been said between you'} />
+          <MessageThread T={T} messages={messages} adult={f.audience === 'adult'} me={bundle.player?.name}
+            coaches={bundle.coaches} campThreads={bundle.campThreads}
+            onSend={onSendMessage} onReact={onReact} />
         </Card>
       )}
 
@@ -1043,8 +1064,10 @@ function RewardsBlock({ T, xpTotal, sessions, latest }: {
 // with a map link, because "Court 3" has never got anyone to a tennis club, and
 // with the coach's plan, so a player turns up knowing what the session is for
 // rather than finding out in the first ten minutes.
-function NextSessionCard({ T, next, first, adult }: {
+function NextSessionCard({ T, next, first, adult, lesson, actions }: {
   T: StudentTheme; next: StudentNextSession; first: string; adult: boolean
+  /** The same lesson in their bookings, so "I'll be there" / "Can't make it" sit here. */
+  lesson?: MyLesson; actions?: StudentActions
 }) {
   const days = daysUntil(next.date)
   const when = days === null ? ''
@@ -1146,6 +1169,11 @@ function NextSessionCard({ T, next, first, adult }: {
       {!plan && (
         <div style={{ fontSize: 12, color: T.text3, marginTop: T.gap, lineHeight: 1.55 }}>
           Your coach hasn&rsquo;t published the plan for this one yet — it&rsquo;ll appear here once they do.
+        </div>
+      )}
+      {lesson && (
+        <div data-testid="next-actions" style={{ marginTop: T.gap, borderTop: `1px solid ${T.border}`, paddingTop: 12 }}>
+          <LessonActions T={T} l={lesson} actions={actions} />
         </div>
       )}
     </Card>
@@ -1627,65 +1655,100 @@ function Chip({ T, tone, children }: { T: StudentTheme; tone: string; children: 
 }
 const say = (r: ActionResult | null) => (r ? (r.error || r.notice || '') : '')
 
-export function MyLessonsCard({ T, my, you, first, actions, bookingOn }: { T: StudentTheme; my: My; you: boolean; first: string; actions?: StudentActions; bookingOn: boolean }) {
+// One lesson's buttons: "I'll be there", "Can't make it" (saying what it would
+// cost under the policy first), and the answer. Used on the next session and
+// on every other lesson coming up.
+function LessonActions({ T, l, actions }: { T: StudentTheme; l: MyLesson; actions?: StudentActions }) {
   const [busy, setBusy] = useState('')
-  const [asking, setAsking] = useState<string | null>(null)
-  const [msg, setMsg] = useState<{ id: string; text: string; bad?: boolean } | null>(null)
-  const act = async (id: string, action: 'confirm' | 'cancel') => {
+  const [asking, setAsking] = useState(false)
+  const [msg, setMsg] = useState<{ text: string; bad?: boolean } | null>(null)
+  const act = async (action: 'confirm' | 'cancel') => {
     if (!actions || busy) return
-    setBusy(`${id}:${action}`); setMsg(null)
-    const r = await actions.lesson(id, action)
-    setBusy(''); setAsking(null); setMsg({ id, text: say(r) || (r.ok ? 'Done.' : 'That did not work.'), bad: !r.ok })
+    setBusy(action); setMsg(null)
+    const r = await actions.lesson(l.id, action)
+    setBusy(''); setAsking(false); setMsg({ text: say(r) || (r.ok ? 'Done.' : 'That did not work.'), bad: !r.ok })
   }
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        {l.confirmed && <Chip T={T} tone={T.good}>✓ You’ll be there</Chip>}
+        {l.paid && <Chip T={T} tone={T.good}>Paid</Chip>}
+        {l.cover === 'plan' && <Chip T={T} tone={T.accent}>On your plan</Chip>}
+        {l.cover === 'pack' && <Chip T={T} tone={T.accent}>Off your pack</Chip>}
+        <span style={{ marginLeft: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {!l.confirmed && <button disabled={!actions || !!busy} title={actions ? undefined : PREVIEW_NOTE} onClick={() => act('confirm')} style={{ ...btnStyle(T, 'primary'), opacity: actions ? 1 : 0.55 }}>{busy === 'confirm' ? 'Saving…' : 'I’ll be there'}</button>}
+          <button disabled={!actions || !!busy} title={actions ? undefined : PREVIEW_NOTE} onClick={() => setAsking(!asking)} style={{ ...btnStyle(T), opacity: actions ? 1 : 0.55 }}>Can’t make it</button>
+        </span>
+      </div>
+      {asking ? (
+        <div role="dialog" aria-label="Cancel this lesson" style={{ marginTop: 10, borderTop: `1px solid ${T.border}`, paddingTop: 10 }}>
+          <div style={{ fontSize: 13.5, color: l.cancel.free ? T.text : T.warn, lineHeight: 1.5 }}>{l.cancel.words}</div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+            <button disabled={!!busy} onClick={() => act('cancel')} style={btnStyle(T, 'danger')}>{busy === 'cancel' ? 'Cancelling…' : l.cancel.free ? 'Cancel this lesson' : 'Cancel anyway'}</button>
+            <button onClick={() => setAsking(false)} style={btnStyle(T)}>Keep it</button>
+          </div>
+        </div>
+      ) : <div style={{ fontSize: 12, color: T.text3, marginTop: 8 }}>{l.cancel.words}</div>}
+      {msg && <div role="status" style={{ fontSize: 13, color: msg.bad ? T.bad : T.good, marginTop: 6 }}>{msg.text}</div>}
+    </div>
+  )
+}
+
+function DayTile({ T, iso, faded }: { T: StudentTheme; iso: string; faded?: boolean }) {
+  const d = new Date(`${iso}T12:00:00Z`)
+  return (
+    <div style={{ width: 50, textAlign: 'center', flexShrink: 0, background: faded ? T.panel : T.accentDim, border: `1px solid ${faded ? T.border : T.accentBorder}`, borderRadius: 10, padding: '5px 0', opacity: faded ? 0.8 : 1 }}>
+      <div style={{ fontSize: 10, fontWeight: 800, color: faded ? T.text3 : T.accent, textTransform: 'uppercase' }}>{d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' })}</div>
+      <div className="lsv-num" style={{ fontSize: 18, fontWeight: 800, color: T.text, lineHeight: 1.1 }}>{d.getUTCDate()}</div>
+      <div style={{ fontSize: 10, color: T.text3 }}>{d.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })}</div>
+    </div>
+  )
+}
+
+// Their lessons: what else is booked (the next one is on the Next session card
+// above, with its own buttons), booking another, and the ones that have been.
+export function MyLessonsCard({ T, my, you, first, actions, bookingOn, skipId }: { T: StudentTheme; my: My; you: boolean; first: string; actions?: StudentActions; bookingOn: boolean; skipId?: string | null }) {
+  const coming = my.lessons.filter(l => l.id !== skipId)
+  const past = my.past || []
+  const label: React.CSSProperties = { fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: T.text3, margin: '4px 0 8px' }
   return (
     <Card T={T}>
       <div data-testid="my-lessons">
-        <Head T={T} icon="calendar" title={you ? 'Your lessons' : `${first}’s lessons`} sub={my.lessons.length ? 'Let your coach know you’ll be there, or cancel if you can’t make it' : undefined} />
-        {my.lessons.length === 0 && <div style={{ fontSize: 14, color: T.text2 }}>No lessons booked at the moment.</div>}
+        <Head T={T} icon="calendar" title={you ? 'Your lessons' : `${first}’s lessons`} sub="What else is booked, booking another, and the ones you’ve had" />
+        <div style={label}>Coming up</div>
+        {coming.length === 0 && <div style={{ fontSize: 14, color: T.text2 }}>{skipId ? 'Nothing else booked after the next session.' : 'No lessons booked at the moment.'}</div>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {my.lessons.map(l => {
-            const [day, time] = [l.date, l.time]
-            const d = new Date(`${day}T12:00:00Z`)
-            return (
-              <div key={l.id} data-testid="my-lesson" style={{ border: `1px solid ${l.confirmed ? T.good + '66' : T.border}`, borderRadius: 14, padding: '12px 14px', background: T.panel2 }}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <div style={{ width: 50, textAlign: 'center', flexShrink: 0, background: T.accentDim, border: `1px solid ${T.accentBorder}`, borderRadius: 10, padding: '5px 0' }}>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: T.accent, textTransform: 'uppercase' }}>{d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' })}</div>
-                    <div className="lsv-num" style={{ fontSize: 18, fontWeight: 800, color: T.text, lineHeight: 1.1 }}>{d.getUTCDate()}</div>
-                    <div style={{ fontSize: 10, color: T.text3 }}>{d.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })}</div>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 160 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{time || 'Time to be confirmed'} · {l.mins} min{l.type && !/^private$/i.test(l.type) ? ` · ${l.type}` : ''}</div>
-                    <div style={{ fontSize: 12.5, color: T.text2, marginTop: 2 }}>{[l.coach ? `With ${l.coach}` : '', l.court].filter(Boolean).join(' · ')}</div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                      {l.confirmed && <Chip T={T} tone={T.good}>✓ You’ll be there</Chip>}
-                      {l.paid && <Chip T={T} tone={T.good}>Paid</Chip>}
-                      {l.cover === 'plan' && <Chip T={T} tone={T.accent}>On your plan</Chip>}
-                      {l.cover === 'pack' && <Chip T={T} tone={T.accent}>Off your pack</Chip>}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {!l.confirmed && <button disabled={!actions || !!busy} title={actions ? undefined : PREVIEW_NOTE} onClick={() => act(l.id, 'confirm')} style={{ ...btnStyle(T, 'primary'), opacity: actions ? 1 : 0.55 }}>{busy === `${l.id}:confirm` ? 'Saving…' : 'I’ll be there'}</button>}
-                    <button disabled={!actions || !!busy} title={actions ? undefined : PREVIEW_NOTE} onClick={() => setAsking(asking === l.id ? null : l.id)} style={{ ...btnStyle(T), opacity: actions ? 1 : 0.55 }}>Can’t make it</button>
-                  </div>
+          {coming.map(l => (
+            <div key={l.id} data-testid="my-lesson" style={{ border: `1px solid ${l.confirmed ? T.good + '66' : T.border}`, borderRadius: 14, padding: '12px 14px', background: T.panel2 }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
+                <DayTile T={T} iso={l.date} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{l.time || 'Time to be confirmed'} · {l.mins} min{l.type && !/^private$/i.test(l.type) ? ` · ${l.type}` : ''}</div>
+                  <div style={{ fontSize: 12.5, color: T.text2, marginTop: 2 }}>{[l.coach ? `With ${l.coach}` : '', l.court].filter(Boolean).join(' · ')}</div>
                 </div>
-                {asking === l.id && (
-                  <div role="dialog" aria-label="Cancel this lesson" style={{ marginTop: 10, borderTop: `1px solid ${T.border}`, paddingTop: 10 }}>
-                    <div style={{ fontSize: 13.5, color: l.cancel.free ? T.text : T.warn, lineHeight: 1.5 }}>{l.cancel.words}</div>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
-                      <button disabled={!!busy} onClick={() => act(l.id, 'cancel')} style={btnStyle(T, 'danger')}>{busy === `${l.id}:cancel` ? 'Cancelling…' : l.cancel.free ? 'Cancel this lesson' : 'Cancel anyway'}</button>
-                      <button onClick={() => setAsking(null)} style={btnStyle(T)}>Keep it</button>
-                    </div>
-                  </div>
-                )}
-                {asking !== l.id && <div style={{ fontSize: 12, color: T.text3, marginTop: 8 }}>{l.cancel.words}</div>}
-                {msg?.id === l.id && <div role="status" style={{ fontSize: 13, color: msg.bad ? T.bad : T.good, marginTop: 6 }}>{msg.text}</div>}
               </div>
-            )
-          })}
+              <LessonActions T={T} l={l} actions={actions} />
+            </div>
+          ))}
         </div>
-        {msg && !my.lessons.some(l => l.id === msg.id) && <div role="status" style={{ fontSize: 13, color: msg.bad ? T.bad : T.good, marginTop: 8 }}>{msg.text}</div>}
         {bookingOn && my.booking.on && <BookSession T={T} my={my} actions={actions} />}
+        {past.length > 0 && (
+          <div style={{ marginTop: 14, borderTop: `1px solid ${T.border}`, paddingTop: 12 }}>
+            <div style={label}>Before</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {past.map(l => (
+                <div key={l.id} data-testid="my-past-lesson" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <DayTile T={T} iso={l.date} faded />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: l.cancelled ? T.text3 : T.text, textDecoration: l.cancelled ? 'line-through' : 'none' }}>{l.time || ''}{l.time ? ' · ' : ''}{l.mins} min{l.type && !/^private$/i.test(l.type) ? ` · ${l.type}` : ''}</div>
+                    <div style={{ fontSize: 12.5, color: T.text3 }}>{[l.coach ? `With ${l.coach}` : '', l.court].filter(Boolean).join(' · ')}</div>
+                  </div>
+                  {l.cancelled && <Chip T={T} tone={T.text3}>Cancelled</Chip>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {!actions && <div style={{ fontSize: 11.5, color: T.text3, marginTop: 10 }}>{PREVIEW_NOTE}</div>}
       </div>
     </Card>

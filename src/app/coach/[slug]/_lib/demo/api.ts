@@ -28,7 +28,7 @@ import { recordQuestion } from '@/lib/coach/recording-consent'
 import { readPolicy, policyTerms, ukLocalToMs } from '@/lib/coach/cancel-policy'
 import { planWords, coversWords } from '@/lib/coach/memberships'
 import { everyWords, askOn as groupAskOn } from '@/lib/coach/groups'
-import { ukDate as demoUkDate } from '@/lib/coach/uk-date'
+import { ukDate as demoUkDate, addDaysIso } from '@/lib/coach/uk-date'
 import { demoTable, demoId, DEMO_COACH_ID, DEMO_EMAIL, type Row } from './store'
 import { demoClient } from './client'
 import { scoreManualSession, MANUAL_MIN_DURATION_MIN } from '@/lib/coach/effort-score'
@@ -2674,6 +2674,10 @@ function demoMyPage(player: Row): MyPage {
     },
     booking: { on: !((settings.sectionsOff?.student || []) as string[]).includes('booking'), ...bookingDurations(lessons[0]?.mins), type: 'Private' },
     offers: demoOffers(id),
+    past: demoTable('coach_bookings')
+      .filter(b => String(b?.player_id) === id && b.type !== 'Block' && String(b.booking_date || '') >= addDaysIso(today, -56) && started(b.booking_date, b.start_time))
+      .sort((a, b) => `${b.booking_date} ${b.start_time}`.localeCompare(`${a.booking_date} ${a.start_time}`)).slice(0, 6)
+      .map(b => ({ id: String(b.id), date: String(b.booking_date), time: b.start_time ? String(b.start_time).slice(0, 5) : null, mins: Number(b.duration_min) || 60, type: b.type || null, coach: b.assigned_coach || null, court: b.court || null, cancelled: String(b.status || '').toLowerCase() === 'cancelled' })),
     prefs: (() => {
       const child = !!player.parent_email && (Number(player.age) || 0) < 18 ? String(player.name || '').split(/\s+/)[0] : null
       const q = recordQuestion({ coach: academy, childFirst: child })
@@ -2747,7 +2751,7 @@ const studentPreview: Handler = async ({ url }) => {
 
   const all = demoTable('coach_messages')
   const messages = all
-    .filter(m => m && (same(m.thread_key, name) || (m.thread_key == null && same(m.recipients, name))))
+    .filter(m => m && !String(m.channels || '').startsWith('inapp:') && (same(m.thread_key, name) || (m.thread_key == null && same(m.recipients, name))))
     .sort(newestFirst('created_at')).slice(0, 40).map(m => only(m, MSG_COLS))
 
   const books = demoTable('coach_player_resources')

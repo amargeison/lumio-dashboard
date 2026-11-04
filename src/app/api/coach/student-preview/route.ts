@@ -243,7 +243,9 @@ export async function GET(req: NextRequest) {
         .order('created_at', { ascending: false }).limit(50)),
     ]).then(([a, b]) => [...a, ...b]) : Promise.resolve([]),
   ])
+  // Booking notices are shown as lessons, not as conversation (as the family's route).
   const messages = [...threaded, ...legacy]
+    .filter(x => !String((x as { channels?: string | null })?.channels || '').startsWith('inapp:'))
     .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
 
   const books = bookRows.map(b => {
