@@ -35,12 +35,7 @@ struct TodayView: View {
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(T.cBg, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button { adding = true } label: { Image(systemName: "plus") }
-                    .accessibilityLabel("Add a booking")
-            }
-        }
+        // No + in the corner: "+ Add booking" on the banner does the same, one tap away.
         .navigationDestination(for: AppBooking.self) { BookingDetailView(booking: $0) }
         .task { if state.value == nil { await load() } }
         .onChange(of: store.changes) { _, _ in Task { await load() } }
