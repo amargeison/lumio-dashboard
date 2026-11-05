@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { Heart, AlertCircle, Info, TrendingUp, Users, School, ClipboardList, ShieldCheck, PoundSterling, BarChart3, LayoutDashboard, MapPin, Settings, Send, Share2, Package, Landmark } from 'lucide-react'
+import { Heart, AlertCircle, Info, TrendingUp, Users, School, ClipboardList, ShieldCheck, PoundSterling, BarChart3, LayoutDashboard, MapPin, Settings, Send, Share2, Package, Landmark, Target } from 'lucide-react'
 import { Card, SectionTitle, Stat, Pill, Thermometer, EmptyState } from './ui'
 import Insights from './Insights'
 import { CoachesTab, TenorsTab } from './PeopleViews'
@@ -10,6 +10,7 @@ import VenuesTab from './VenuesTab'
 import SettingsTab from './SettingsTab'
 import CommsTab from './CommsTab'
 import SocialTab from './SocialTab'
+import LeadsTab from './LeadsTab'
 import EquipmentTab from './EquipmentTab'
 import SportNetworkTab from './SportNetworkTab'
 import FamiliesTab from './FamiliesTab'
@@ -26,7 +27,7 @@ const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> =
   complete: 'amber',
 }
 
-export type HqTab = 'overview' | 'insights' | 'schools' | 'venues' | 'families' | 'coaches' | 'tenors' | 'comms' | 'social' | 'equipment' | 'network' | 'settings'
+export type HqTab = 'overview' | 'insights' | 'schools' | 'venues' | 'families' | 'coaches' | 'tenors' | 'comms' | 'social' | 'leads' | 'equipment' | 'network' | 'settings'
 
 export const HQ_SECTIONS: { id: HqTab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
@@ -37,6 +38,7 @@ export const HQ_SECTIONS: { id: HqTab; label: string }[] = [
   { id: 'tenors', label: 'TENORs' },
   { id: 'comms', label: 'Comms' },
   { id: 'social', label: 'Social' },
+  { id: 'leads', label: 'Leads' },
   { id: 'equipment', label: 'Equipment & Kit' },
   { id: 'network', label: 'Sport Network' },
   { id: 'settings', label: 'Settings' },
@@ -87,6 +89,7 @@ export default function HQView({ section, onSectionChange }: {
           { id: 'tenors' as const, label: brand.volunteers, icon: Users },
           { id: 'comms' as const, label: 'Communications', icon: Send },
           { id: 'social' as const, label: 'Social', icon: Share2 },
+          ...(ctx.org ? [{ id: 'leads' as const, label: 'Leads', icon: Target }] : []),
           { id: 'equipment' as const, label: 'Equipment', icon: Package },
           { id: 'network' as const, label: 'Sport Network', icon: Landmark },
           { id: 'settings' as const, label: 'Settings', icon: Settings },
@@ -114,6 +117,7 @@ export default function HQView({ section, onSectionChange }: {
       {tab === 'families' && <FamiliesTab />}
       {tab === 'comms' && <CommsTab />}
       {tab === 'social' && <SocialTab />}
+      {tab === 'leads' && <LeadsTab />}
       {tab === 'equipment' && <EquipmentTab />}
       {tab === 'network' && <SportNetworkTab />}
       {tab === 'settings' && <SettingsTab />}

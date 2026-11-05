@@ -5,6 +5,7 @@
 // third-party brands (trusts, sponsors) — use the Meridian/Apex/Crown universe.
 // Curriculum facts (weeks, sticker areas) come from the real Activity Booklet.
 
+import type { Lead } from '@/lib/impact/leads'
 import { scoreSchools } from '@/lib/impact/readiness'
 import type { Certificate } from '@/lib/impact/compliance'
 import { demoReadinessEvidence } from '@/data/impact/readiness-demo'
@@ -1162,3 +1163,6 @@ export const WEEKEND_FAMILIES = [
   { id: 'w5', family: 'Tilbrook', children: 'Oscar', checkedIn: true, via: 'QR' },
   { id: 'w6', family: 'Nazari', children: 'Poppy + Sami', checkedIn: false, via: '—' },
 ]
+
+// Leads. The Ten Project route has no board; /impact/demo has its own hand-written one.
+export const DEMO_LEADS: Lead[] = []
