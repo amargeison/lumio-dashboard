@@ -10,9 +10,9 @@ export type SportNetworkStatus = 'confirmed' | 'expected' | 'not_announced'
 export interface SportNetworkContent {
   updatedAt: string            // ISO date the facts were last verified
   hero: { kicker: string; title: string; body: string; url?: string }
-  keyFacts: { title: string; body: string; url?: string; urls?: string[] }[]
+  keyFacts: { title: string; body: string; url?: string; urls?: string[]; status?: SportNetworkStatus; saidBy?: string }[]
   premium: { title: string; rows: [string, string][]; urls?: string[] }
-  timeline: { when: string; label: string; done: boolean; status?: SportNetworkStatus; url?: string }[]
+  timeline: { when: string; label: string; done: boolean; status?: SportNetworkStatus; saidBy?: string; url?: string }[]
   guidance: { title: string; source: string; date: string; url: string }[]
   /** Older stored copies only. The tab renders the constants below instead. */
   footnote?: string
