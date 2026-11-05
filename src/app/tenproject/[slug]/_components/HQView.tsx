@@ -124,7 +124,7 @@ export default function HQView({ section, onSectionChange }: {
         <Stat label="Schools in pipeline" value={HQ_STATS.schoolsPipeline} />
         <Stat label="Weekend visits this term" value={HQ_STATS.weekendVisitsThisTerm} />
         <Stat label="Registers outstanding" value={HQ_STATS.registersOutstanding} accent />
-        <Stat label="DBS/certs expiring soon" value={HQ_STATS.dbsExpiring} />
+        <Stat label={ctx.mode === 'live' ? 'Certificates expiring or expired' : 'DBS/certs expiring soon'} value={HQ_STATS.dbsExpiring} />
       </div>
 
       {/* Needs attention */}
