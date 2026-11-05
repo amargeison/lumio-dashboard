@@ -22,7 +22,7 @@ registerHooks({
     return base && existsSync(`${base}.ts`) ? next(pathToFileURL(`${base}.ts`).href, ctx) : next(spec, ctx)
   },
 })
-const { fundedPlan, partnerWithNewSchool, partnerWithSchool, recordFunding } = await import('../src/lib/impact/lead-actions.ts')
+const { fundedPlan, markSchoolFunded, partnerWithNewSchool, partnerWithSchool, recordFunding } = await import('../src/lib/impact/lead-actions.ts')
 
 try {
   const env = readFileSync(new URL('../.env.local', import.meta.url), 'utf8')
@@ -146,6 +146,17 @@ async function main() {
   await recordFunding(A.db, A.id, { ...funder, amount_pence: 12300 }, plan, '2026-11-05')
   const gifts = (await admin.from('tp_donations').select('amount_pence, method, donor_name, donated_on').eq('campaign_id', madeId).order('amount_pence')).data
   ok('both donations are recorded, by organisation, as bank payments', gifts?.length === 2 && gifts.every(g => g.method === 'bank' && g.donor_name === 'Wrenfield Fund' && g.donated_on === '2026-11-05') && gifts[1].amount_pence === 500000, JSON.stringify(gifts))
+  const fundraising = (await A.db.from('tp_schools').insert({ hq_id: A.id, name: 'Fundraising Primary', status: 'fundraising' }).select('id').single()).data
+  await markSchoolFunded(A.db, A.id, fundraising.id, 'Wrenfield Fund')
+  const marked = (await admin.from('tp_schools').select('status, funding_source').eq('id', fundraising.id).single()).data
+  ok('marking funded confirms the school and records the funder', marked?.status === 'confirmed' && marked?.funding_source === 'Wrenfield Fund', JSON.stringify(marked))
+  const budgeted = (await A.db.from('tp_schools').insert({ hq_id: A.id, name: 'Budgeted Primary', status: 'fundraising', funding_source: 'School budget' }).select('id').single()).data
+  await markSchoolFunded(A.db, A.id, budgeted.id, 'Wrenfield Fund')
+  const kept = (await admin.from('tp_schools').select('status, funding_source').eq('id', budgeted.id).single()).data
+  ok('a funding source already set is kept', kept?.status === 'confirmed' && kept?.funding_source === 'School budget', JSON.stringify(kept))
+  let blocked = false
+  try { await markSchoolFunded(B.db, B.id, fundraising.id, 'Planted') } catch { blocked = true }
+  ok('B can’t mark A’s school', blocked)
   ok('B reads none of A’s donations', (await B.db.from('tp_donations').select('id')).data?.length === 0)
 
   if (/localhost|127\.0\.0\.1/.test(BASE)) {

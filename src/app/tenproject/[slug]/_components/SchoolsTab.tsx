@@ -202,7 +202,7 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
                   <Pill tone={STATUS_TONE[s.status]}>{s.status.toUpperCase()}</Pill>
                 </div>
                 <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 4 }}>{s.borough} · {s.headTeacher} · {d?.funding.split('—')[0]}</div>
-                <div style={{ fontSize: 12, color: '#5B554F', marginTop: 8, background: '#F7F5F2', borderRadius: 9, padding: '8px 11px' }}>{s.note}</div>
+                {s.note?.trim() && <div style={{ fontSize: 12, color: '#5B554F', marginTop: 8, background: '#F7F5F2', borderRadius: 9, padding: '8px 11px' }}>{s.note}</div>}
                 {s.progress && <div style={{ fontSize: 11.5, fontWeight: 700, color: TP_DARK, marginTop: 8 }}>{withCoach(s.progress, s.coach)}</div>}
                 <div style={{ display: 'flex', gap: 16, marginTop: 10, borderTop: '1px solid #F0EBE5', paddingTop: 10, alignItems: 'center' }}>
                   {([

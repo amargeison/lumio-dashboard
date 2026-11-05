@@ -94,6 +94,7 @@ const SECTION_HEADERS: Record<string, Record<string, { title: string; sub: strin
     tenors: { title: 'Volunteers', sub: 'Your volunteer parents — inductions, venue cover and the “can this session run?” view' },
     comms: { title: 'Communications', sub: 'One inbox, newsletters and automations — replacing your email tools' },
     social: { title: 'Social', sub: 'Plan, schedule, publish and measure across every channel' },
+    leads: { title: 'Leads', sub: 'Schools and funders, from first contact to partnered' },
     equipment: { title: 'Equipment & Kit', sub: 'Everything across venues, school bags and welcome-pack stock — edit inline, restock in one click' },
     network: { title: 'PE & School Sport Partnership Network', sub: 'Which schools are on track to qualify for the new funding — readiness, key dates and the latest DfE guidance, in one place' },
     settings: { title: 'Settings', sub: 'Organisation, branding, integrations, comms and data' },
@@ -513,7 +514,7 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
       {/* Main */}
       {darkStyle}
       <main className={contentClass} style={{ flex: 1, minWidth: 0, padding: '22px 26px 40px', background: mainBg }}>
-        {(() => { const hm = role === 'parent' ? meta : headerFor(role, activeSection, ROLE_TITLES, brand); return (
+        {(() => { const hm = role === 'parent' ? meta : headerFor(role, activeSection === 'leads' && mode === 'demo' ? LANDING_SECTION.hq : activeSection, ROLE_TITLES, brand); return (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 21, fontWeight: 900, color: TP_DARK }}>{hm.title}</div>
           <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 3 }}>{hm.sub}</div>

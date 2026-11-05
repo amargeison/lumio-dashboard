@@ -12,10 +12,11 @@ registerHooks({
     return base ? next(pathToFileURL(base).href, ctx) : next(spec, ctx)
   },
 })
-const { PIPELINES, stagesOf, isClosed, stagePoints, matchStage, guessColumn, readIncoming, cleanImportRow, amountPence, ukDate } = await import('../../src/lib/impact/leads.ts')
-const { donationRow, fundedPlan, insertLeads, linkSchoolPatch, matchSchool, newSchoolRow, partnerWithNewSchool, partnerWithSchool, recordFunding } = await import('../../src/lib/impact/lead-actions.ts')
+const { PIPELINES, stagesOf, isClosed, stagePoints, matchStage, guessColumn, readIncoming, cleanImportRow, amountPence, ukDate, withLeadLinks } = await import('../../src/lib/impact/leads.ts')
+const { donationRow, fundedPlan, fundedSchoolPatch, fundingOutcome, insertLeads, linkSchoolPatch, markSchoolFunded, matchSchool, newSchoolRow, partnerWithNewSchool, partnerWithSchool, recordFunding, withSchools } = await import('../../src/lib/impact/lead-actions.ts')
 const { mapLiveRows, EMPTY_IMPACT_DATA } = await import('../../src/lib/impact/live-context.ts')
 const { impactModules, moduleOn } = await import('../../src/lib/impact/org.ts')
+const { evidenceFromRows, scoreSchool } = await import('../../src/lib/impact/readiness.ts')
 const tpDemo = await import('../../src/data/tenproject/demo-data.ts')
 const impactDemo = await import('../../src/data/impact/demo-data.ts')
 
@@ -202,6 +203,87 @@ test('bulk insert keys every row to the org, and skips rows with nothing to go o
   const r = await insertLeads(db, 'hq', 'funders', [{ org_name: 'Fund A', amount: '£100' }, { notes: 'nothing' }])
   assert.deepEqual([r.added, r.skipped, r.error], [1, 1, null])
   assert.deepEqual([seen[0].hq_id, seen[0].pipeline, seen[0].amount_pence], ['hq', 'funders', 10000])
+})
+
+// ── After a lead is won ─────────────────────────────────────────────────────
+test('a school just created is offered at once, and only once after the portal reloads', () => {
+  const portal = [{ id: 's1', name: 'Harborne Fields Primary' }]
+  const added = [{ id: 'new', name: 'Bramblewood Primary' }]
+  assert.deepEqual(withSchools(portal, added).map(s => s.id), ['s1', 'new'])
+  assert.deepEqual(withSchools([...portal, ...added], added).map(s => s.id), ['s1', 'new'])
+  assert.deepEqual(withSchools(portal, []), portal)
+})
+test('the panel takes the new link, so Save can’t write the old one back', () => {
+  const draft = { name: 'Edited name', school_id: null, campaign_id: null, stage: 'Proposal sent' }
+  const after = withLeadLinks(draft, { stage: 'Partnered', school_id: 'new', campaign_id: null })
+  assert.deepEqual(after, { name: 'Edited name', school_id: 'new', campaign_id: null, stage: 'Partnered' })
+})
+test('the board goes back to its first stage when the pipeline changes, on live only', () => {
+  const tab = readFileSync(new URL('../../src/app/tenproject/[slug]/_components/LeadsTab.tsx', import.meta.url), 'utf8')
+  assert.match(tab, /useEffect\(\(\) => \{ if \(!demo && board\.current\) board\.current\.scrollLeft = 0 \}, \[pipe, demo\]\)/)
+  assert.match(tab, /<div ref=\{board\}[^>]*data-testid="lead-board"/)
+})
+
+test('Leads takes the page title on live, and the demo keeps its header', () => {
+  const page = readFileSync(new URL('../../src/app/impact/[slug]/page.tsx', import.meta.url), 'utf8')
+  assert.match(page, /leads: \{ title: 'Leads', sub: 'Schools and funders, from first contact to partnered' \}/)
+  assert.match(page, /activeSection === 'leads' && mode === 'demo' \? LANDING_SECTION\.hq : activeSection/)
+})
+
+const donate = { kind: 'donate', campaignId: 'c' }
+test('a donation that reaches the target funds a fundraising school', () => {
+  assert.deepEqual(fundingOutcome(donate, 500000, { status: 'fundraising' }, { target_pence: 800000 }, 300000), { total: 800000, target: 800000, meetsTarget: true })
+  assert.equal(fundingOutcome(donate, 900000, { status: 'fundraising' }, { target_pence: 800000 }, 0).meetsTarget, true)
+})
+test('falling short says so, and offers nothing', () => {
+  assert.deepEqual(fundingOutcome(donate, 500000, { status: 'fundraising' }, { target_pence: 800000 }, 0), { total: 500000, target: 800000, meetsTarget: false })
+  assert.equal(fundingOutcome(donate, 100, { status: 'fundraising' }, { target_pence: 800000 }, 799899).meetsTarget, false, 'a penny short')
+})
+test('a campaign made in the dialog always qualifies', () => {
+  assert.equal(fundingOutcome({ kind: 'offer-campaign', schoolId: 's', targetPence: 500000 }, 500000, { status: 'fundraising' }).meetsTarget, true)
+})
+test('only a fundraising school moves', () => {
+  for (const status of ['enquiry', 'confirmed', 'running', 'complete', 'renewal']) assert.equal(fundingOutcome(donate, 500000, { status }, { target_pence: 100 }, 0), null, status)
+})
+test('a campaign with no target can’t be met', () => {
+  assert.equal(fundingOutcome(donate, 500000, { status: 'fundraising' }, undefined, 0).meetsTarget, false)
+})
+test('marking funded confirms the school and records the funder', () => {
+  assert.deepEqual(fundedSchoolPatch({ status: 'fundraising', funding_source: null }, 'Wrenfield Fund'), { status: 'confirmed', funding_source: 'Wrenfield Fund' })
+  assert.deepEqual(fundedSchoolPatch({ status: 'fundraising', funding_source: '   ' }, 'Wrenfield Fund'), { status: 'confirmed', funding_source: 'Wrenfield Fund' })
+})
+test('a funding source already set is never overwritten', () => {
+  assert.deepEqual(fundedSchoolPatch({ status: 'fundraising', funding_source: 'School budget' }, 'Wrenfield Fund'), { status: 'confirmed' })
+})
+test('marking funded writes only what changed', async () => {
+  const db = fakeDb({ tp_schools: { status: 'fundraising', funding_source: 'School budget' } })
+  await markSchoolFunded(db, 'hq', 's1', 'Wrenfield Fund')
+  assert.deepEqual(db.writes.map(w => w.row), [{ status: 'confirmed' }])
+})
+
+// What the readiness engine does once a school is marked, from the real rows.
+const readinessRows = (school, programmeStatus, gifts) => ({
+  schools: [{ id: 's', name: 'St Aldric’s', funding_source: null, safeguarding_lead: null, ...school }],
+  programmes: programmeStatus ? [{ id: 'p', school_id: 's', status: programmeStatus }] : [],
+  campaigns: [{ id: 'c', school_id: 's', target_pence: 800000, status: 'live' }], events: [],
+  donations: gifts.map(amount_pence => ({ campaign_id: 'c', amount_pence })),
+})
+const partner = rows => scoreSchool(evidenceFromRows(rows)[0]).items.partner
+test('readiness: a funded school with a confirmed programme and a safeguarding lead is on track', () => {
+  const before = partner(readinessRows({ status: 'fundraising', safeguarding_lead: 'J. Hill' }, 'confirmed', [300000]))
+  assert.equal(before.status, 'progress')
+  assert.match(before.note, /Fundraising for this school/)
+  const after = partner(readinessRows({ status: 'confirmed', funding_source: 'Wrenfield Fund', safeguarding_lead: 'J. Hill' }, 'confirmed', [300000, 500000]))
+  assert.equal(after.status, 'met')
+})
+test('readiness: funding alone doesn’t make a partnership, so these stay in progress and say why', () => {
+  const marked = { status: 'confirmed', funding_source: 'Wrenfield Fund' }
+  const noProgramme = partner(readinessRows({ ...marked, safeguarding_lead: 'J. Hill' }, null, [800000]))
+  assert.deepEqual([noProgramme.status, noProgramme.action], ['progress', 'Add a programme once it’s agreed.'])
+  const noLead = partner(readinessRows(marked, 'confirmed', [800000]))
+  assert.deepEqual([noLead.status, noLead.action], ['progress', 'Add the school’s safeguarding lead.'])
+  const stillFundraising = partner(readinessRows({ ...marked, safeguarding_lead: 'J. Hill' }, 'fundraising', [800000]))
+  assert.deepEqual([stillFundraising.status, stillFundraising.action], ['progress', 'Confirm the programme with the school.'])
 })
 
 // ── Registration and demo ───────────────────────────────────────────────────
