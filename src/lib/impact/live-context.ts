@@ -13,7 +13,7 @@ import * as TP from '@/data/tenproject/demo-data'
 import type { DemoSchool, FundraisingEvent, SchoolStatus, TpSchoolDetail } from '@/data/tenproject/demo-data'
 import { TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
 import { GENERIC_BRAND } from './org'
-import { evidenceFromRows, scoreSchools } from './readiness'
+import { attendanceBySession, evidenceFromRows, scoreSchools } from './readiness'
 import type { ImpactCopy, ImpactDataset, ImpactPortalContext, ImpactPeople, ImpactChild } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import type { DemoVenue, DemoChild, TpCoach, TpTenor, TpPersonDetail, TpVenueDetail } from '@/data/tenproject/demo-data'
 
@@ -90,10 +90,20 @@ const SCHOOL_STATUS: Record<string, SchoolStatus> = {
 }
 const pounds = (pence: number | null | undefined) => Math.round((pence ?? 0) / 100)
 const shortDate = (d: string | null) => d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'TBC'
+// current_week is optional bookkeeping, so a running programme at week 0 is still in progress.
+const progressLabel = (status: string | undefined, week: number | null | undefined) =>
+  status === 'complete' ? 'Complete'
+  : status === 'running' ? (week ? `In progress · Week ${week}` : 'In progress')
+  : 'Not started'
 
 export function mapLiveRows(rows: LiveRows): ImpactDataset {
   const data: { -readonly [K in keyof ImpactDataset]: ImpactDataset[K] } = { ...EMPTY_IMPACT_DATA }
-  data.SCHOOL_READINESS = scoreSchools(evidenceFromRows(rows))
+  // School-level figures come from the readiness evidence, so the cards and the scores can't disagree.
+  const evidence = evidenceFromRows(rows)
+  data.SCHOOL_READINESS = scoreSchools(evidence)
+  const staffName = new Map((rows.staff ?? []).map(s => [s.id, s.name]))
+  const leadStaff = new Map((rows.programmeLinks ?? []).map(p => [p.id, p.lead_staff_id]))
+  const coachOf = (programmeId: string | undefined) => staffName.get(leadStaff.get(programmeId ?? '') ?? '') ?? '—'
   const raisedFor = (campaignId: string) => pounds(rows.donations.filter(d => d.campaign_id === campaignId).reduce((n, d) => n + d.amount_pence, 0))
 
   data.SCHOOLS = rows.schools.map((s): DemoSchool => {
@@ -104,8 +114,12 @@ export function mapLiveRows(rows: LiveRows): ImpactDataset {
       name: s.name,
       borough: s.borough ?? '',
       status: SCHOOL_STATUS[s.status] ?? 'enquiry',
-      week: live?.current_week ?? undefined,
+      week: live?.current_week || undefined,
+      children: evidence.find(e => e.id === s.id)?.children ?? 0,
       cohorts: progs.length || undefined,
+      coach: coachOf(live?.id),
+      // No programme yet: the school's own status says how far along it is.
+      progress: progressLabel(live?.status ?? SCHOOL_STATUS[s.status], live?.current_week),
       headTeacher: s.head_name ?? '—',
       note: s.notes ?? undefined,
     }
@@ -113,6 +127,7 @@ export function mapLiveRows(rows: LiveRows): ImpactDataset {
 
   data.SCHOOL_DETAILS = Object.fromEntries(rows.schools.map(s => {
     const camp = rows.campaigns.find(c => c.school_id === s.id)
+    const bySession = attendanceBySession(rows, s.id)
     const detail: TpSchoolDetail = {
       contacts: [
         ...(s.head_name ? [{ name: s.head_name, role: 'Headteacher', email: s.contact_email ?? '', phone: s.contact_phone ?? '' }] : []),
@@ -121,8 +136,16 @@ export function mapLiveRows(rows: LiveRows): ImpactDataset {
       safeguardingLead: s.safeguarding_lead ?? '—',
       funding: s.funding_source ?? '—',
       address: s.address ?? '',
-      cohorts: rows.programmes.filter(p => p.school_id === s.id).map(p => ({ name: `${p.term_label}${p.year_groups ? ` · ${p.year_groups}` : ''}`, children: 0, coach: '—', week: p.current_week ?? 0 })),
-      attendanceTrend: [],
+      cohorts: rows.programmes.filter(p => p.school_id === s.id).map(p => ({
+        name: `${p.term_label}${p.year_groups ? ` · ${p.year_groups}` : ''}`,
+        children: (rows.children ?? []).filter(k => k.programme_id === p.id).length,
+        coach: coachOf(p.id),
+        week: p.current_week ?? 0,
+        label: progressLabel(p.status, p.current_week),
+      })),
+      attendanceTrend: bySession.map(x => x.pct),
+      sessionTips: bySession.map(x => `${shortDate(x.date)} · ${x.pct}%`),
+      // No activation data exists on live yet. Stays 0 (shown as "—"): not consent, not a readiness figure.
       activationPct: 0,
       conversionPct: 0,
       kit: '—',

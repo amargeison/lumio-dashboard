@@ -44,6 +44,7 @@ export interface DemoSchool {
   headTeacher: string
   activation?: number // % of parents activated
   note?: string
+  progress?: string // live only: programme status label
 }
 
 export const SCHOOLS: DemoSchool[] = [
@@ -841,8 +842,9 @@ export interface TpSchoolDetail {
   safeguardingLead: string
   funding: string
   address: string
-  cohorts: { name: string; children: number; coach: string; week: number }[]
-  attendanceTrend: number[]     // % per week so far
+  cohorts: { name: string; children: number; coach: string; week: number; label?: string }[] // label: live only
+  attendanceTrend: number[]     // % per week so far (live: per session)
+  sessionTips?: string[]        // live only: one tooltip per bar, e.g. "12 Oct · 100%"
   activationPct: number
   conversionPct: number
   weekendVenue?: string

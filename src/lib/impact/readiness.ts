@@ -176,22 +176,42 @@ const STAGES = ['none', 'planned', 'confirmed', 'complete', 'running'] as const
 const stageOf = (status: string): SchoolEvidence['stage'] =>
   status === 'running' || status === 'complete' || status === 'confirmed' ? status : 'planned'
 
+// A register belongs to the programme's school, or else to the child's.
+function registerOwner(rows: Pick<ReadinessRows, 'programmes' | 'children' | 'sessions'>) {
+  const childSchool = new Map((rows.children ?? []).map(c => [c.id, c.school_id]))
+  const programmeSchool = new Map(rows.programmes.map(p => [p.id, p.school_id]))
+  const sessionById = new Map((rows.sessions ?? []).map(s => [s.id, s]))
+  return (a: { session_id: string; child_id: string }) => {
+    const s = sessionById.get(a.session_id)
+    const owner = s?.programme_id ? programmeSchool.get(s.programme_id) : undefined
+    return owner ?? childSchool.get(a.child_id)
+  }
+}
+
+/** Attendance % per session, oldest first. A session with no register has no rate, so it's left out rather than read as 0%. */
+export function attendanceBySession(rows: ReadinessRows, schoolId: string): { date: string; pct: number }[] {
+  const ownerOf = registerOwner(rows)
+  const marks = (rows.attendance ?? []).filter(a => ownerOf(a) === schoolId)
+  return (rows.sessions ?? [])
+    .filter(s => marks.some(a => a.session_id === s.id))
+    .sort((a, b) => a.session_date.localeCompare(b.session_date))
+    .map(s => {
+      const mine = marks.filter(a => a.session_id === s.id)
+      return { date: s.session_date, pct: pct(mine.filter(a => a.present).length, mine.length) as number }
+    })
+}
+
 export function evidenceFromRows(rows: ReadinessRows): SchoolEvidence[] {
   const children = rows.children ?? [], sessions = rows.sessions ?? [], attendance = rows.attendance ?? []
   const families = new Map((rows.families ?? []).map(f => [f.id, f]))
   const childSchool = new Map(children.map(c => [c.id, c.school_id]))
-  const programmeSchool = new Map(rows.programmes.map(p => [p.id, p.school_id]))
   const sessionById = new Map(sessions.map(s => [s.id, s]))
+  const ownerOf = registerOwner(rows)
 
   return rows.schools.map(school => {
     const progs = rows.programmes.filter(p => p.school_id === school.id)
     const kids = children.filter(c => c.school_id === school.id)
-    // A register belongs to the programme's school, or else to the child's.
-    const marks = attendance.filter(a => {
-      const s = sessionById.get(a.session_id)
-      const owner = s?.programme_id ? programmeSchool.get(s.programme_id) : undefined
-      return (owner ?? childSchool.get(a.child_id)) === school.id
-    })
+    const marks = attendance.filter(a => ownerOf(a) === school.id)
     const held = Array.from(new Set(marks.map(a => a.session_id))).map(id => sessionById.get(id)).filter((s): s is NonNullable<typeof s> => !!s)
     const campaigns = rows.campaigns.filter(c => c.school_id === school.id)
     const raised = rows.donations.filter(d => campaigns.some(c => c.id === d.campaign_id)).reduce((n, d) => n + d.amount_pence, 0)
