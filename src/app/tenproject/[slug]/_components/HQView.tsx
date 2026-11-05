@@ -50,6 +50,8 @@ export default function HQView({ section, onSectionChange }: {
   const ctx = useImpact()
   const { brand } = ctx
   const { SCHOOLS, VENUES, HQ_STATS, FUNNEL, IMPACT_AREAS, NEEDS_ATTENTION, CAMPAIGN } = ctx.data
+  const schoolsTotal = HQ_STATS.schoolsTotal ?? 0
+  const ofSchools = `of ${schoolsTotal} ${schoolsTotal === 1 ? 'school' : 'schools'}`
   const [tab, setTabState] = useState<HqTab>(section ?? 'overview')
   const [openId, setOpenId] = useState<string | undefined>(undefined)
   const controlled = section !== undefined
@@ -118,14 +120,27 @@ export default function HQView({ section, onSectionChange }: {
 
       {tab === 'overview' && (<>
       {/* Programme health stats */}
+      {ctx.mode === 'live' ? (
+        // At most four across, so seven tiles wrap 4 + 3 instead of squeezing their text.
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(max(130px, calc(25% - 12px)), 1fr))', gap: 12 }}>
+          <Stat label="Children reached this term" value={HQ_STATS.childrenThisTerm ?? 0} accent />
+          <Stat label="Active schools" value={HQ_STATS.schoolsActive ?? 0} sub={ofSchools} />
+          <Stat label="Schools in pipeline" value={HQ_STATS.schoolsPipeline} sub={ofSchools} />
+          <Stat label="Complete / renewal" value={HQ_STATS.schoolsComplete ?? 0} sub={ofSchools} />
+          <Stat label="Weekend visits this term" value={HQ_STATS.weekendVisitsThisTerm} />
+          <Stat label="Registers outstanding" value={HQ_STATS.registersOutstanding} accent />
+          <Stat label="Certificates expiring or expired" value={HQ_STATS.dbsExpiring} />
+        </div>
+      ) : (
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <Stat label="Children reached this week" value={HQ_STATS.childrenThisWeek} accent />
         <Stat label="Programmes running" value={HQ_STATS.schoolsRunning} />
         <Stat label="Schools in pipeline" value={HQ_STATS.schoolsPipeline} />
         <Stat label="Weekend visits this term" value={HQ_STATS.weekendVisitsThisTerm} />
         <Stat label="Registers outstanding" value={HQ_STATS.registersOutstanding} accent />
-        <Stat label={ctx.mode === 'live' ? 'Certificates expiring or expired' : 'DBS/certs expiring soon'} value={HQ_STATS.dbsExpiring} />
+        <Stat label="DBS/certs expiring soon" value={HQ_STATS.dbsExpiring} />
       </div>
+      )}
 
       {/* Needs attention */}
       <Card>

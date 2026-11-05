@@ -16,6 +16,7 @@ import { GENERIC_BRAND } from './org'
 import { NO_COACH } from './school-card'
 import { complianceItems, dbsCertificate, isoToday, needsAction, staffCertificates, volunteerCertificates, type CompliancePerson } from './compliance'
 import { attendanceBySession, evidenceFromRows, scoreSchools } from './readiness'
+import { inTerm, termOf } from './term'
 import type { ImpactCopy, ImpactDataset, ImpactPortalContext, ImpactPeople, ImpactChild } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import type { DemoVenue, DemoChild, TpCoach, TpTenor, TpPersonDetail, TpVenueDetail } from '@/data/tenproject/demo-data'
 
@@ -183,6 +184,10 @@ export function mapLiveRows(rows: LiveRows, today = isoToday()): ImpactDataset {
     ...EMPTY_IMPACT_DATA.HQ_STATS,
     schoolsRunning: rows.programmes.filter(p => p.status === 'running').length,
     schoolsPipeline: rows.schools.filter(s => ['enquiry', 'fundraising', 'confirmed'].includes(s.status)).length,
+    // Every status lands in exactly one of these three, so they add up to the school count.
+    schoolsActive: rows.schools.filter(s => s.status === 'running').length,
+    schoolsComplete: rows.schools.filter(s => s.status === 'complete' || s.status === 'renewal').length,
+    schoolsTotal: rows.schools.length,
     weekendVisitsThisTerm: rows.checkins.reduce((n, c) => n + (c.children_count ?? 1), 0),
   }
   mapPeople(rows, data, today)
@@ -341,10 +346,13 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
   data.TP_COACH_ATTENTION = [...coachRows, ...data.TP_COACHES.filter(c => c.dbs === 'missing').map(c => `${c.name} · no DBS on file`)].join(', ')
 
   // Headline numbers
+  const term = termOf(today)
+  const termSessions = new Set(sessions.filter(s => inTerm(s.session_date, term)).map(s => s.id))
   const recent = new Set(att.filter(a => a.present && sessions.some(s => s.id === a.session_id && now - new Date(s.session_date).getTime() < 7 * DAY_MS && new Date(s.session_date).getTime() <= now)).map(a => a.child_id))
   data.HQ_STATS = {
     ...data.HQ_STATS,
     childrenThisWeek: recent.size,
+    childrenThisTerm: new Set(att.filter(a => a.present && termSessions.has(a.session_id)).map(a => a.child_id)).size,
     weekendVisitsThisTerm: data.HQ_STATS.weekendVisitsThisTerm + att.filter(a => a.present && weekend.some(s => s.id === a.session_id)).length,
     dbsExpiring: attention.length,
   }
