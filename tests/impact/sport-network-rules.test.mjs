@@ -13,8 +13,12 @@ test('normalise: money, months, punctuation', () => { assert.equal(normalise('£
 test('pageText strips scripts and entities', () => assert.equal(pageText('<script>x</script><p>a &amp; b &#163;5</p>').replace(/\s+/g, ' ').trim(), 'a & b £5'))
 test('figures: amount must be in the quote, not just the page', () => assert.equal(missingFigure('£580m goes to the Network', 'The payment rises from £100 million', PAGE), '£580m'))
 test('figures: £1m is not £150m', () => assert.equal(missingFigure('£15m', 'costing £150m in all', PAGE), '£15m'))
-test('figures: month and year must be stated', () => assert.equal(missingFigure('Partner appointed in November 2026', 'procurement is expected to begin soon', PAGE + ' 9 November 2026'), 'nov 2026'))
-test('figures: day in quote plus year on page is enough', () => assert.equal(missingFigure('9 November 2026', 'are paid on 9 November', PAGE), null))
+test('figures: a date must be on the page', () => assert.equal(missingFigure('Partner appointed in March 2028', 'procurement is expected to begin soon', PAGE), 'mar 2028'))
+test('figures: a date on the page passes without being quoted', () => assert.equal(missingFigure('Published 9 November 2026', 'procurement is expected to begin soon', PAGE), null))
+test('figures: a month in the quote takes its year from the page', () => assert.equal(missingFigure('November 2027', 'bidder announced in November', 'bidder announced in November, support from April 2027'), null))
+test('figures: amounts must still be quoted, even if on the page', () => assert.equal(missingFigure('£580m', 'Network support starts from April 2027', PAGE), '£580m'))
+test('citation: a second quote can carry the figure', () => assert.equal(citationProblem('£580m from April 2027', { ...q('Network support starts from April 2027'), quote2: '£580m goes to the Network' }, pages), null))
+test('citation: both quotes must be on the page', () => assert.equal(citationProblem('A claim', { ...q('Network support starts from April 2027'), quote2: 'this one was never there' }, pages), 'quote is not on the page'))
 test('citation: quote must be on the page', () => assert.equal(citationProblem('A claim', q('this sentence is not on the page'), pages), 'quote is not on the page'))
 test('citation: unfetched page refused', () => assert.equal(citationProblem('A claim', { url: 'https://www.gov.uk/other', quote: 'long enough quote here' }, pages), 'source page could not be fetched'))
 test('citation: other domains refused', () => assert.equal(citationProblem('A claim', { url: 'https://example.com/a', quote: 'long enough quote here' }, pages), 'no allowed source URL'))
@@ -23,6 +27,12 @@ test('citation: punctuation differences allowed, added words are not', () => {
   const table = new Map([[U, { text: 'Payment date 30 October 2026 9 November 2026', title: '' }]])
   assert.equal(citationProblem('30 October 2026', q('Payment date: 30 October 2026; 9 November 2026'), table), null)
   assert.equal(citationProblem('9 November 2026', q('Payment date: 9 November 2026 [Academies]'), table), 'quote is not on the page')
+})
+test('figures: a leading zero on a date still matches', () => assert.equal(missingFigure('9 July 2026', 'we are increasing the funding', 'Update 09 July 2026'), null))
+test('citation: listing pages are refused, however good the quote', () => {
+  const l = 'https://www.youthsporttrust.org/news-listings/news?page=1'
+  const p = new Map([[l, { text: PAGE, title: '' }]])
+  assert.equal(citationProblem('Network support', { url: l, quote: 'Network support starts from April 2027' }, p), 'cites a listing page, not the article')
 })
 test('headline agrees with its parts', () => { assert.equal(fundingHeadline([580, 200, 150]), 'Almost £1bn (£930m)'); assert.equal(fundingHeadline([500, 700]), 'Around £1.2bn'); assert.equal(fundingHeadline([300, 100]), 'Around £400m') })
 
@@ -51,9 +61,9 @@ test('panel: a stated total outside the headline is dropped', () => {
   assert.ok(!content.keyFacts.some(f => f.title === 'Total')); assert.ok(dropped.some(d => /computed/.test(d.why)))
 })
 test('panel: unsupported date is dropped, not shown', () => {
-  const t = [...timeline, { when: 'Nov 2026', label: 'National Delivery Partner appointed', status: 'confirmed', ...q('Network support starts from April 2027') }]
+  const t = [...timeline, { when: 'Mar 2028', label: 'National Delivery Partner appointed', status: 'confirmed', ...q('Network support starts from April 2027') }]
   const { content, dropped } = buildPanel(raw({ timeline: t }), pages, current, '2026-11-05')
-  assert.ok(!content.timeline.some(x => x.when === 'Nov 2026')); assert.ok(dropped.some(d => /nov 2026/.test(d.why)))
+  assert.ok(!content.timeline.some(x => x.when === 'Mar 2028')); assert.ok(dropped.some(d => /mar 2028/.test(d.why)))
 })
 test('panel: only confirmed past dates are done', () => {
   const { content } = buildPanel(raw({}), pages, current, '2026-12-01')
@@ -63,3 +73,16 @@ test('panel: only confirmed past dates are done', () => {
 test('panel: unsupported hero falls back to fixed text', () => { const { content } = buildPanel(raw({ hero: { body: 'Starts in 2031 for all', ...q('Network support starts from April 2027') } }), pages, current, '2026-11-05'); assert.equal(content.hero.body, HERO_FALLBACK) })
 test('panel: never carries a model footnote', () => { const { content } = buildPanel(raw({ footnote: 'Everything is certain' }), pages, current, '2026-11-05'); assert.equal(content.footnote, undefined) })
 test('panel: too little left means nothing replaces the panel', () => assert.equal(buildPanel(raw({ timeline: [] }), pages, current, '2026-11-05').content, null))
+test('panel: expected items carry who said it, taken from the source page', () => {
+  const y = 'https://www.youthsporttrust.org/news'
+  const p2 = new Map([...pages, [y, { text: 'The successful bidder is announced in November. Published July 2026. Support from April 2027.', title: '' }]])
+  const t = [...timeline, { when: 'November 2026', label: 'Successful bidder to be announced', status: 'expected', saidWhen: 'July 2026', url: y, quote: 'The successful bidder is announced in November' }]
+  const { content } = buildPanel(raw({ timeline: t }), p2, current, '2026-11-05')
+  assert.equal(content.timeline.at(-1).saidBy, 'Youth Sport Trust, July 2026')
+  assert.equal(content.timeline[0].saidBy, undefined)
+})
+test('panel: expected key facts are tagged, confirmed ones are not', () => {
+  const f = [...facts, { ...fact('Plan', 'Support begins from April 2027', 'Network support starts from April 2027'), status: 'expected', saidWhen: 'November 2026' }]
+  const { content } = buildPanel(raw({ keyFacts: f }), pages, current, '2026-11-05')
+  assert.equal(content.keyFacts.at(-1).saidBy, 'DfE, November 2026'); assert.equal(content.keyFacts[1].saidBy, undefined)
+})

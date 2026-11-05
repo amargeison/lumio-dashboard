@@ -181,7 +181,7 @@ export default function SportNetworkTab() {
                   <div style={{ fontSize: 11.5, fontWeight: 900, color: t.done ? '#8A847E' : TP_DARK }}>
                     {t.when}{t.status === 'expected' && <>&nbsp;<Pill tone="amber">EXPECTED</Pill></>}{t.status === 'not_announced' && <>&nbsp;<Pill tone="grey">NOT YET ANNOUNCED</Pill></>}
                   </div>
-                  <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 1, lineHeight: 1.4 }}>{t.label}<SourceLink url={t.url} /></div>
+                  <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 1, lineHeight: 1.4 }}>{t.label}{t.saidBy && ` (${t.saidBy})`}<SourceLink url={t.url} /></div>
                 </div>
               </div>
             ))}
@@ -213,11 +213,11 @@ export default function SportNetworkTab() {
           </SectionTitle>
           <div style={{ display: 'grid', gap: 8 }}>
             {[
-              ...N.keyFacts.map(f => ({ h: f.title, b: f.body, urls: f.urls ?? (f.url ? [f.url] : []) })),
-              { h: `The ${brand.org} angle`, b: 'Registers, CPD, priority-group reach and impact reporting are the evidence schools will need for the Network. Fundraising keeps unfunded schools in the game.', urls: [] as string[] },
-            ].map(({ h, b, urls }) => (
+              ...N.keyFacts.map(f => ({ h: f.title, b: f.saidBy ? `${f.body} (${f.saidBy})` : f.body, urls: f.urls ?? (f.url ? [f.url] : []), expected: f.status === 'expected' })),
+              { h: `The ${brand.org} angle`, b: 'Registers, CPD, priority-group reach and impact reporting are the evidence schools will need for the Network. Fundraising keeps unfunded schools in the game.', urls: [] as string[], expected: false },
+            ].map(({ h, b, urls, expected }) => (
               <div key={h} style={{ background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>
-                <div style={{ fontSize: 12, fontWeight: 900, color: TP_DARK }}>{h}</div>
+                <div style={{ fontSize: 12, fontWeight: 900, color: TP_DARK }}>{h}{expected && <>&nbsp;<Pill tone="amber">EXPECTED</Pill></>}</div>
                 <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 2, lineHeight: 1.5 }}>{b}{urls.map(u => <SourceLink key={u} url={u} />)}</div>
               </div>
             ))}
