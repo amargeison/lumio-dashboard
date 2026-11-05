@@ -166,7 +166,7 @@ export default function ImportCard() {
   return (
     <Card>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
-        <SectionTitle sub="Bulk import from a spreadsheet or photo — schools, programmes, venues, coaches, volunteers, families, children, registers, fundraising and feedback">
+        <SectionTitle sub="Bulk import from a spreadsheet or photo — schools, programmes, venues, coaches, volunteers, families, children, registers, fundraising, feedback and staff CPD">
           <Upload size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Import data
         </SectionTitle>
         <button onClick={() => downloadTemplate()} style={{ ...btn(false), display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', fontSize: 11.5 }}>

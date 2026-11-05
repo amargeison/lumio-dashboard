@@ -14,7 +14,7 @@ import { IMPACT_IMPORT_SCHEMA, IMPACT_SAVE_ORDER, type ImpactImportCategory } fr
 
 export type Found = Record<ImpactImportCategory, Rec[]>
 export const emptyFound = (): Found => Object.fromEntries(
-  ['schools', 'programmes', 'venues', 'coaches', 'volunteers', 'families', 'children', 'registers', 'events', 'donations', 'responses', 'contacts'].map(c => [c, []]),
+  ['schools', 'programmes', 'venues', 'coaches', 'volunteers', 'families', 'children', 'registers', 'events', 'donations', 'responses', 'cpd', 'contacts'].map(c => [c, []]),
 ) as unknown as Found
 
 const issue = (r: Rec, msg: string) => { r._review = [...((r._review as string[] | undefined) ?? []), msg] }

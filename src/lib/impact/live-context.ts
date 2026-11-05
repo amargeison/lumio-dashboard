@@ -13,6 +13,7 @@ import * as TP from '@/data/tenproject/demo-data'
 import type { DemoSchool, FundraisingEvent, SchoolStatus, TpSchoolDetail } from '@/data/tenproject/demo-data'
 import { TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
 import { GENERIC_BRAND } from './org'
+import { evidenceFromRows, scoreSchools } from './readiness'
 import type { ImpactCopy, ImpactDataset, ImpactPortalContext, ImpactPeople, ImpactChild } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import type { DemoVenue, DemoChild, TpCoach, TpTenor, TpPersonDetail, TpVenueDetail } from '@/data/tenproject/demo-data'
 
@@ -73,10 +74,12 @@ export interface LiveRows {
   staff?: { id: string; name: string; role: string; qualification: string | null; email: string | null; phone: string | null; availability: string | null; specialisms: string[] | null; dbs_status: string; dbs_number: string | null; dbs_expiry: string | null; safeguarding_date: string | null; first_aid_expiry: string | null; insurance: string | null; notes: string | null }[]
   volunteers?: { id: string; name: string; email: string | null; phone: string | null; venue_id: string | null; inducted: boolean; induction_date: string | null; dbs_status: string; since: string | null; notes: string | null }[]
   families?: { id: string; guardian_name: string; email: string | null; phone: string | null; emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null; unsubscribed_at: string | null }[]
-  children?: { id: string; family_id: string | null; name: string; date_of_birth: string | null; year_group: string | null; school_id: string | null; programme_id: string | null; medical_notes: string | null; photo_consent: boolean | null; fee_status: string; stickers: number }[]
+  children?: { id: string; family_id: string | null; name: string; date_of_birth: string | null; year_group: string | null; school_id: string | null; programme_id: string | null; medical_notes: string | null; photo_consent: boolean | null; fee_status: string; stickers: number; send?: boolean | null }[]
   sessions?: { id: string; kind: string; programme_id: string | null; venue_id: string | null; session_date: string; lead_staff_id: string | null }[]
   attendance?: { session_id: string; child_id: string; present: boolean; via: string }[]
   programmeLinks?: { id: string; lead_staff_id: string | null; venue_id: string | null }[]
+  responses?: { school_id: string | null; would_recommend: boolean | null; satisfaction: number | null }[]
+  cpd?: { id: string; school_id: string; staff_name: string; course: string; cpd_date: string | null; provider: string | null; notes: string | null }[]
 }
 
 const EVENT_TYPE: Record<string, string> = {
@@ -90,6 +93,7 @@ const shortDate = (d: string | null) => d ? new Date(d).toLocaleDateString('en-G
 
 export function mapLiveRows(rows: LiveRows): ImpactDataset {
   const data: { -readonly [K in keyof ImpactDataset]: ImpactDataset[K] } = { ...EMPTY_IMPACT_DATA }
+  data.SCHOOL_READINESS = scoreSchools(evidenceFromRows(rows))
   const raisedFor = (campaignId: string) => pounds(rows.donations.filter(d => d.campaign_id === campaignId).reduce((n, d) => n + d.amount_pence, 0))
 
   data.SCHOOLS = rows.schools.map((s): DemoSchool => {

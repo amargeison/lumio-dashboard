@@ -8,6 +8,8 @@
 // Same shape as src/data/tenproject/demo-data.ts (which still powers the
 // legacy /tenproject route) so the shared portal views render either set.
 
+import { scoreSchools } from '@/lib/impact/readiness'
+import { demoReadinessEvidence } from './readiness-demo'
 import type {
   SchoolStatus, DemoSchool, DemoVenue, DemoChild, FundraisingEvent, CommsCampaign, CommsAudience,
   CommsJourney, SocialPost, SocialPublished, CalEvent, TpCoach, TpTenor, TpAssignment, TpPersonDetail,
@@ -901,74 +903,7 @@ export const PESSPN_CRITERIA: PesspnCriterion[] = [
   { id: 'partner', label: 'Active delivery partnership', desc: 'Working with an accredited provider (Rally Ten)' },
 ]
 
-const R = (status: PesspnStatus, note: string) => ({ status, note })
-export const SCHOOL_READINESS: Record<string, SchoolReadiness> = {
-  hollinsmere: {
-    verdict: 'on-track', score: 86, summary: 'Strong across the board — live registers, high attendance and staff hand-over underway. Keep the weekend conversion climbing.',
-    items: {
-      data: R('met', 'Named-child registers live, 94% capture'),
-      regular: R('met', '94% attendance across the term so far'),
-      priority: R('progress', 'Girls 49%; SEND + FSM tracked, reach growing'),
-      cpd: R('progress', 'Mrs Bhatt (PE lead) leading warm-ups from week 5'),
-      broader: R('met', 'Festival booked; weekend venue linked; pathway live'),
-      wholeschool: R('progress', '62% parent activation — pushing toward 80%'),
-      impact: R('met', 'Impact dashboard + governor pack generated'),
-      partner: R('met', 'Delivered by Rally Ten (LTA-accredited)'),
-    },
-  },
-  fernleypark: {
-    verdict: 'nearly', score: 78, summary: 'Best delivery in the programme (26% conversion) — but 2026/27 is unfunded. Reaching the fundraising target secures continuity, the one gap to qualifying.',
-    items: {
-      data: R('met', 'Full registers retained; 71% activation'),
-      regular: R('met', '92% attendance, strong retention'),
-      priority: R('met', 'Best priority-group reach in the programme'),
-      cpd: R('met', 'Two teachers trained to co-deliver'),
-      broader: R('met', 'Festival delivered; 26% to weekend sessions'),
-      wholeschool: R('met', 'High family engagement, PE profile raised'),
-      impact: R('met', 'Full impact evidence available'),
-      partner: R('gap', 'Continuity at risk — unfunded for 2026/27'),
-    },
-  },
-  staldrics: {
-    verdict: 'nearly', score: 72, summary: 'Excellent 2025/26 evidence base — the fundraising campaign is what carries it into the qualifying year. On track once the target is hit.',
-    items: {
-      data: R('met', '2025/26 registers complete'),
-      regular: R('met', '93% attendance last term'),
-      priority: R('progress', 'Good reach; refresh demographics at re-registration'),
-      cpd: R('progress', 'PE lead engaged; refresher needed for new year'),
-      broader: R('met', 'Festival delivered; weekend link established'),
-      wholeschool: R('progress', '58% activation — grow with the campaign'),
-      impact: R('met', 'Governor pack + impact dashboard ready'),
-      partner: R('progress', 'Fundraising to re-engage Rally Ten for 2026/27'),
-    },
-  },
-  thornleigh: {
-    verdict: 'at-risk', score: 34, summary: 'Confirmed for September but no delivery data yet. Readiness will build fast once registers and parent activation go live in week 1 — the platform captures it from day one.',
-    items: {
-      data: R('gap', 'Programme starts Sept — no data yet'),
-      regular: R('gap', 'Not started'),
-      priority: R('progress', 'Class lists + consents being collected'),
-      cpd: R('gap', 'Teacher hand-over planned from week 5'),
-      broader: R('progress', 'Weekend venue (Ellisford) linked ready'),
-      wholeschool: R('gap', 'Parent activation from welcome pack, week 1'),
-      impact: R('gap', 'Reporting begins with delivery'),
-      partner: R('met', 'Confirmed with Rally Ten (Owen Pryce)'),
-    },
-  },
-  copperwick: {
-    verdict: 'at-risk', score: 12, summary: 'Enquiry stage, no budget. The fundraising route is the way in — until a programme runs there is nothing to evidence for the Network.',
-    items: {
-      data: R('gap', 'No programme running'),
-      regular: R('gap', 'Not started'),
-      priority: R('gap', 'Not started'),
-      cpd: R('gap', 'Not started'),
-      broader: R('gap', 'Not started'),
-      wholeschool: R('gap', 'Not started'),
-      impact: R('gap', 'Nothing to report yet'),
-      partner: R('progress', 'Bring-to-your-area enquiry; fundraising offered'),
-    },
-  },
-}
+export const SCHOOL_READINESS = scoreSchools(demoReadinessEvidence({ flagship: 'hollinsmere', complete: 'fernleypark', fundraising: 'staldrics', confirmed: 'thornleigh', enquiry: 'copperwick' }))
 
 export const PESSPN_TIMELINE: { when: string; label: string; done: boolean }[] = [
   { when: '2025/26', label: 'Final year of direct PE & Sport Premium payments to schools', done: true },
