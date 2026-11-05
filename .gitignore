@@ -119,3 +119,6 @@ __pycache__/
 # Local drop folder of source tarballs and checksum lists (backups, ~77 MB).
 # Kept on disk, never committed.
 /.lumio-drop/
+
+# Supabase CLI local state
+supabase/.temp/
