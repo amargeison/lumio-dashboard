@@ -23,7 +23,7 @@ import { getClientIp, checkRateLimit, checkDailyCap, recordSpend, rateLimitedRes
 import { ALLOWED_MODELS } from '@/lib/ai/body-guard'
 import { SPORT_NETWORK_BASELINE, type SportNetworkContent } from '@/data/impact/sport-network'
 import { impactHq } from '@/lib/impact/import-auth'
-import { ALLOWED_DOMAINS, buildPanel, citedUrls, fetchPages, refreshPrompt, type RawPanel } from '@/lib/impact/sport-network-rules'
+import { ALLOWED_DOMAINS, buildPanel, citedUrls, fetchPages, parsePanel, refreshPrompt } from '@/lib/impact/sport-network-rules'
 import { rateLimit } from '@/lib/rate-limit'
 
 const KEY = 'sport_network'
@@ -173,10 +173,9 @@ async function refresh(client: NonNullable<ReturnType<typeof db>>, apiKey: strin
     }
 
     const text = (data.content ?? []).filter(b => b.type === 'text').map(b => b.text ?? '').join('')
-    let raw: RawPanel | null = null
-    try { raw = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1)) as RawPanel } catch { /* handled below */ }
-    if (!raw || typeof raw !== 'object') {
-      console.error('[impact/sport-network] unreadable model output', JSON.stringify({ stop: data?.stop_reason, chars: text.length }))
+    const raw = parsePanel(text)
+    if (!raw) {
+      console.error('[impact/sport-network] unreadable model output', JSON.stringify({ stop: data?.stop_reason, chars: text.length, start: text.slice(0, 120), end: text.slice(-120) }))
       return keptLastGood(current)
     }
     const pages = await fetchPages(citedUrls(raw))
