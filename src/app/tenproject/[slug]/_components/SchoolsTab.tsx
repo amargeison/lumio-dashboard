@@ -9,6 +9,7 @@ import { Card, SectionTitle, Pill, Thermometer, EmptyState } from './ui'
 import { SchoolReadinessCard } from './SportNetworkTab'
 import { TP_RED, TP_DARK, type DemoSchool } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { sessionBar, withCoach } from '@/lib/impact/school-card'
 
 const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> = {
   running: 'green', fundraising: 'red', confirmed: 'dark', enquiry: 'grey', complete: 'amber',
@@ -99,7 +100,7 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
                       <span>{c.name}</span>
                       <span style={{ color: done ? '#187A3C' : idle ? '#8A847E' : TP_RED }}>{c.label ?? (done ? 'COMPLETE' : idle ? 'NOT STARTED' : `Week ${c.week}`)}</span>
                     </div>
-                    <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 3 }}>{c.children} children · {c.coach}</div>
+                    <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 3 }}>{withCoach(`${c.children} children`, c.coach)}</div>
                     <div style={{ background: '#EFEBE6', borderRadius: 999, height: 6, marginTop: 7 }}>
                       <div style={{ width: `${(c.week / 10) * 100}%`, height: '100%', background: done ? '#187A3C' : TP_RED, borderRadius: 999 }} />
                     </div>
@@ -115,11 +116,26 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
                 <div style={{ fontSize: 11, fontWeight: 900, color: TP_DARK, letterSpacing: 0.5, marginBottom: 7 }}>
                   <TrendingUp size={12} style={{ verticalAlign: '-2px', marginRight: 5 }} />{d.sessionTips ? 'Attendance by session' : 'ATTENDANCE BY WEEK (%)'}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 64 }}>
-                  {d.attendanceTrend.map((v, i) => (
-                    <div key={i} style={{ flex: 1, height: `${(v / maxAtt) * 100}%`, background: i === d.attendanceTrend.length - 1 ? TP_RED : '#E8B4B3', borderRadius: '3px 3px 0 0' }} title={d.sessionTips?.[i] ?? `W${i + 1}: ${v}%`} />
-                  ))}
-                </div>
+                {d.sessionTips ? (
+                  <div style={{ position: 'relative', paddingTop: 13 }}>
+                    <div style={{ position: 'absolute', top: 0, right: 0, fontSize: 9, fontWeight: 700, lineHeight: '12px', color: '#8A847E' }}>100%</div>
+                    <div style={{ position: 'absolute', top: 13, left: 0, right: 0, borderTop: '1px solid #E7E2DC' }} />
+                    <div style={{ display: 'flex', gap: 4, height: 64 }}>
+                      {d.attendanceTrend.map((v, i) => (
+                        // The tooltip sits on the full-height column so a 0% session can still be hovered.
+                        <div key={i} title={d.sessionTips?.[i]} style={{ flex: 1, display: 'flex', alignItems: 'flex-end' }}>
+                          <div style={{ ...sessionBar(v), width: '100%', background: i === d.attendanceTrend.length - 1 ? TP_RED : '#E8B4B3', borderRadius: '3px 3px 0 0' }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 64 }}>
+                    {d.attendanceTrend.map((v, i) => (
+                      <div key={i} style={{ flex: 1, height: `${(v / maxAtt) * 100}%`, background: i === d.attendanceTrend.length - 1 ? TP_RED : '#E8B4B3', borderRadius: '3px 3px 0 0' }} title={`W${i + 1}: ${v}%`} />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </Card>
@@ -187,7 +203,7 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
                 </div>
                 <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 4 }}>{s.borough} · {s.headTeacher} · {d?.funding.split('—')[0]}</div>
                 <div style={{ fontSize: 12, color: '#5B554F', marginTop: 8, background: '#F7F5F2', borderRadius: 9, padding: '8px 11px' }}>{s.note}</div>
-                {s.progress && <div style={{ fontSize: 11.5, fontWeight: 700, color: TP_DARK, marginTop: 8 }}>{s.progress} · {s.coach}</div>}
+                {s.progress && <div style={{ fontSize: 11.5, fontWeight: 700, color: TP_DARK, marginTop: 8 }}>{withCoach(s.progress, s.coach)}</div>}
                 <div style={{ display: 'flex', gap: 16, marginTop: 10, borderTop: '1px solid #F0EBE5', paddingTop: 10, alignItems: 'center' }}>
                   {([
                     [s.children ?? '—', 'CHILDREN'],
