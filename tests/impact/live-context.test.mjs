@@ -16,6 +16,7 @@ registerHooks({
 const { mapLiveRows, EMPTY_IMPACT_DATA } = await import('../../src/lib/impact/live-context.ts')
 const { evidenceFromRows, attendanceBySession } = await import('../../src/lib/impact/readiness.ts')
 const demo = await import('../../src/data/tenproject/demo-data.ts')
+const { sessionBar, withCoach } = await import('../../src/lib/impact/school-card.ts')
 
 const school = (id, name, status, extra = {}) => ({ id, name, status, borough: null, address: null, head_name: null, pe_lead_name: null, safeguarding_lead: null, contact_email: null, contact_phone: null, funding_source: null, notes: null, ...extra })
 const programme = (id, school_id, status, current_week = 0) => ({ id, school_id, term_label: 'Autumn 2026', year_groups: null, current_week, status, cost_pence: null })
@@ -76,6 +77,23 @@ test('coach is the programme lead when one is set, otherwise a dash', () => {
   const led = mapLiveRows({ ...lumioTest, staff: [{ id: 'st', name: 'Pat Lead', role: 'lead', dbs_status: 'valid' }], programmeLinks: [{ id: 'autumn', lead_staff_id: 'st', venue_id: null }] })
   assert.equal(led.SCHOOLS[0].coach, 'Pat Lead')
   assert.equal(led.SCHOOL_DETAILS.harborne.cohorts[0].coach, 'Pat Lead')
+})
+test('no coach means no trailing separator, on the list and the cohort card', () => {
+  assert.equal(withCoach(listCard.progress, listCard.coach), 'In progress')
+  assert.equal(withCoach(`${detail.cohorts[0].children} children`, detail.cohorts[0].coach), '6 children')
+})
+test('a set coach keeps the separator', () => {
+  assert.equal(withCoach('In progress', 'Sam Test'), 'In progress · Sam Test')
+  assert.equal(withCoach('6 children', 'Sam Test'), '6 children · Sam Test')
+})
+test('the session chart uses a fixed 0–100 scale', () => {
+  assert.deepEqual(detail.attendanceTrend.map(v => sessionBar(v).height), ['100%', '100%'])
+  assert.deepEqual([50, 83].map(v => sessionBar(v).height), ['50%', '83%'])
+})
+test('a 0% session is still a visible bar', () => {
+  const [bar] = [0].map(sessionBar)
+  assert.equal(bar.height, '0%')
+  assert.equal(bar.minHeight, 2)
 })
 test('the trend is ordered by date, per session, with partial attendance', () => {
   const rows = { ...lumioTest, attendance: [...kids.map(k => mark('s1', k.id, k.id !== 'c6')), ...kids.map(k => mark('s2', k.id))] }

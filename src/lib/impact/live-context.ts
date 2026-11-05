@@ -13,6 +13,7 @@ import * as TP from '@/data/tenproject/demo-data'
 import type { DemoSchool, FundraisingEvent, SchoolStatus, TpSchoolDetail } from '@/data/tenproject/demo-data'
 import { TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
 import { GENERIC_BRAND } from './org'
+import { NO_COACH } from './school-card'
 import { attendanceBySession, evidenceFromRows, scoreSchools } from './readiness'
 import type { ImpactCopy, ImpactDataset, ImpactPortalContext, ImpactPeople, ImpactChild } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import type { DemoVenue, DemoChild, TpCoach, TpTenor, TpPersonDetail, TpVenueDetail } from '@/data/tenproject/demo-data'
@@ -103,7 +104,7 @@ export function mapLiveRows(rows: LiveRows): ImpactDataset {
   data.SCHOOL_READINESS = scoreSchools(evidence)
   const staffName = new Map((rows.staff ?? []).map(s => [s.id, s.name]))
   const leadStaff = new Map((rows.programmeLinks ?? []).map(p => [p.id, p.lead_staff_id]))
-  const coachOf = (programmeId: string | undefined) => staffName.get(leadStaff.get(programmeId ?? '') ?? '') ?? '—'
+  const coachOf = (programmeId: string | undefined) => staffName.get(leadStaff.get(programmeId ?? '') ?? '') ?? NO_COACH
   const raisedFor = (campaignId: string) => pounds(rows.donations.filter(d => d.campaign_id === campaignId).reduce((n, d) => n + d.amount_pence, 0))
 
   data.SCHOOLS = rows.schools.map((s): DemoSchool => {
