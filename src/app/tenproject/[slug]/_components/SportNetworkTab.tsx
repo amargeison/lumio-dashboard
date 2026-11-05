@@ -12,6 +12,13 @@ import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK, type PesspnVerdict, type PesspnStatus } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { useSportNetwork } from '@/lib/impact/use-sport-network'
+import { SPORT_NETWORK_DISCLAIMER, SPORT_NETWORK_SOURCE_NOTE } from '@/data/impact/sport-network'
+
+// The page an item was checked against, so anyone can read it for themselves.
+function SourceLink({ url, light }: { url?: string; light?: boolean }) {
+  if (!url) return null
+  return <a href={url} target="_blank" rel="noreferrer" style={{ fontSize: 10.5, fontWeight: 700, color: light ? '#fff' : TP_RED, marginLeft: 6, whiteSpace: 'nowrap' }}>Source</a>
+}
 
 const VERDICT: Record<PesspnVerdict, { label: string; color: string; tone: 'green' | 'amber' | 'red' }> = {
   'on-track': { label: 'On track to qualify', color: '#187A3C', tone: 'green' },
@@ -45,7 +52,7 @@ export function SchoolReadinessCard({ schoolId }: { schoolId: string }) {
   const v = VERDICT[rd.verdict]
   return (
     <Card>
-      <SectionTitle sub="Indicative readiness for the Partnerships Network (operational from January 2027)">
+      <SectionTitle sub="Indicative readiness for the Partnerships Network">
         <Landmark size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />PE &amp; School Sport Partnerships Network — readiness
       </SectionTitle>
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', background: '#F7F5F2', borderRadius: 12, padding: '14px 16px', marginBottom: 12, flexWrap: 'wrap' }}>
@@ -101,7 +108,7 @@ export default function SportNetworkTab() {
         </div>
         <div style={{ fontSize: 19, fontWeight: 900, color: '#fff', marginTop: 6 }}>{N.hero.title}</div>
         <div style={{ fontSize: 12.5, color: '#C9C4BE', marginTop: 5, maxWidth: 640 }}>
-          {N.hero.body} {brand.org}’s registers, CPD and impact data are the evidence schools will need.
+          {N.hero.body}<SourceLink url={N.hero.url} light /> {brand.org}’s registers, CPD and impact data are the evidence schools will need.
         </div>
         {message && <div style={{ fontSize: 11.5, color: '#fff', marginTop: 8, fontWeight: 700 }}>{message}</div>}
       </Card>
@@ -171,8 +178,10 @@ export default function SportNetworkTab() {
                   {i < N.timeline.length - 1 && <div style={{ width: 2, flex: 1, background: '#E7E2DC', minHeight: 16 }} />}
                 </div>
                 <div style={{ paddingBottom: 12 }}>
-                  <div style={{ fontSize: 11.5, fontWeight: 900, color: t.done ? '#8A847E' : TP_DARK }}>{t.when}</div>
-                  <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 1, lineHeight: 1.4 }}>{t.label}</div>
+                  <div style={{ fontSize: 11.5, fontWeight: 900, color: t.done ? '#8A847E' : TP_DARK }}>
+                    {t.when}{t.status === 'expected' && <>&nbsp;<Pill tone="amber">EXPECTED</Pill></>}{t.status === 'not_announced' && <>&nbsp;<Pill tone="grey">NOT YET ANNOUNCED</Pill></>}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 1, lineHeight: 1.4 }}>{t.label}<SourceLink url={t.url} /></div>
                 </div>
               </div>
             ))}
@@ -204,12 +213,12 @@ export default function SportNetworkTab() {
           </SectionTitle>
           <div style={{ display: 'grid', gap: 8 }}>
             {[
-              ...N.keyFacts.map(f => [f.title, f.body]),
-              [`The ${brand.org} angle`, 'Registers, CPD, priority-group reach and impact reporting are the evidence schools will need for the Network. Fundraising keeps unfunded schools in the game.'],
-            ].map(([h, b]) => (
+              ...N.keyFacts.map(f => ({ h: f.title, b: f.body, urls: f.urls ?? (f.url ? [f.url] : []) })),
+              { h: `The ${brand.org} angle`, b: 'Registers, CPD, priority-group reach and impact reporting are the evidence schools will need for the Network. Fundraising keeps unfunded schools in the game.', urls: [] as string[] },
+            ].map(({ h, b, urls }) => (
               <div key={h} style={{ background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>
                 <div style={{ fontSize: 12, fontWeight: 900, color: TP_DARK }}>{h}</div>
-                <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 2, lineHeight: 1.5 }}>{b}</div>
+                <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 2, lineHeight: 1.5 }}>{b}{urls.map(u => <SourceLink key={u} url={u} />)}</div>
               </div>
             ))}
           </div>
@@ -222,17 +231,18 @@ export default function SportNetworkTab() {
           <PoundSterling size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{N.premium.title}
         </SectionTitle>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 8 }}>
-          {N.premium.rows.map(([k, v]) => (
+          {N.premium.rows.map(([k, v], i) => (
             <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, background: '#F7F5F2', borderRadius: 10, padding: '10px 12px', fontSize: 12 }}>
               <span style={{ color: '#6B6560', fontWeight: 700 }}>{k}</span>
-              <span style={{ color: TP_DARK, fontWeight: 900, textAlign: 'right' }}>{v}</span>
+              <span style={{ color: TP_DARK, fontWeight: 900, textAlign: 'right' }}>{v}<SourceLink url={N.premium.urls?.[i]} /></span>
             </div>
           ))}
         </div>
       </Card>
 
       <div style={{ fontSize: 11, color: '#8A847E', lineHeight: 1.6 }}>
-        <Pill tone="grey">INDICATIVE</Pill>&nbsp; {N.footnote}
+        <Pill tone="grey">INDICATIVE</Pill>&nbsp; {SPORT_NETWORK_DISCLAIMER}
+        <div style={{ marginTop: 6 }}>{SPORT_NETWORK_SOURCE_NOTE}</div>
         <div style={{ marginTop: 6 }}>
           Last updated {updatedLabel}. Source:{' '}
           {N.sources.map((s, i) => (

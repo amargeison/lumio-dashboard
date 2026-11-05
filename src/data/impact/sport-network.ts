@@ -5,16 +5,24 @@
 // DfE / Youth Sport Trust and the tab prefers that copy when it's newer.
 // Keep entries short, plain-English and sourced.
 
+export type SportNetworkStatus = 'confirmed' | 'expected' | 'not_announced'
+
 export interface SportNetworkContent {
   updatedAt: string            // ISO date the facts were last verified
-  hero: { kicker: string; title: string; body: string }
-  keyFacts: { title: string; body: string }[]
-  premium: { title: string; rows: [string, string][] }
-  timeline: { when: string; label: string; done: boolean }[]
+  hero: { kicker: string; title: string; body: string; url?: string }
+  keyFacts: { title: string; body: string; url?: string; urls?: string[] }[]
+  premium: { title: string; rows: [string, string][]; urls?: string[] }
+  timeline: { when: string; label: string; done: boolean; status?: SportNetworkStatus; url?: string }[]
   guidance: { title: string; source: string; date: string; url: string }[]
-  footnote: string
+  /** Older stored copies only. The tab renders the constants below instead. */
+  footnote?: string
   sources: { title: string; url: string }[]
 }
+
+// Rendered by the component, never taken from a refresh, so no refresh can drop
+// or contradict them.
+export const SPORT_NETWORK_DISCLAIMER = 'Readiness scores are an indicative framework built from the published direction for the Partnerships Network and the Premium’s key indicators, not DfE criteria. They’ll be reconciled to DfE’s detailed requirements as they’re published.'
+export const SPORT_NETWORK_SOURCE_NOTE = 'Policy facts are sourced from GOV.UK / DfE and the Youth Sport Trust and can change. Check the linked source before relying on them.'
 
 export const SPORT_NETWORK_BASELINE: SportNetworkContent = {
   updatedAt: '2026-10-10',

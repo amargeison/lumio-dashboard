@@ -2,10 +2,11 @@
 // "PE & School Sport Partnerships Network" tab.
 //   GET  → the stored copy if one exists and is newer than the baseline,
 //          otherwise the verified baseline in src/data/impact/sport-network.ts
-//   POST → "Update": web-searches gov.uk / DfE / Youth Sport Trust, has the
-//          model summarise what's current into the same shape, validates it
-//          and stores it (impact_reference_content, key 'sport_network'). The
-//          version it replaces is kept under 'sport_network_previous'.
+//   POST → "Update": the model reads gov.uk / DfE / Youth Sport Trust and cites
+//          every item; lib/impact/sport-network-rules.ts fetches those pages
+//          and keeps only what they support, then it's stored
+//          (impact_reference_content, key 'sport_network'). The version it
+//          replaces is kept under 'sport_network_previous'.
 //   POST { "rollback": true } → swaps those two rows, so a bad refresh can be
 //          reverted, and a rollback undone the same way.
 //
@@ -22,19 +23,22 @@ import { getClientIp, checkRateLimit, checkDailyCap, recordSpend, rateLimitedRes
 import { ALLOWED_MODELS } from '@/lib/ai/body-guard'
 import { SPORT_NETWORK_BASELINE, type SportNetworkContent } from '@/data/impact/sport-network'
 import { impactHq } from '@/lib/impact/import-auth'
+import { ALLOWED_DOMAINS, buildPanel, citedUrls, fetchPages, refreshPrompt, type RawPanel } from '@/lib/impact/sport-network-rules'
 import { rateLimit } from '@/lib/rate-limit'
 
 const KEY = 'sport_network'
 const PREVIOUS_KEY = 'sport_network_previous'
-const ALLOWED_DOMAINS = ['gov.uk', 'youthsporttrust.org']
 // One refresh per cooldown regardless of who clicks — bounds search cost.
 const COOLDOWN_MS = 6 * 60 * 60 * 1000
 // The cooldown only starts on success, so failed attempts need their own limit.
 const ATTEMPTS_PER_HOUR = 6
 // The whole panel comes back as JSON, which doesn't fit the 1,500-token ceiling
 // the chat routes use. Cut off part-way, it would fail validation every time.
-const MAX_REFRESH_TOKENS = 8000
-const UPSTREAM_TIMEOUT_MS = 150_000
+const MAX_REFRESH_TOKENS = 12000
+const UPSTREAM_TIMEOUT_MS = 280_000
+// The API pauses long server-tool runs and expects the turn to be sent back.
+const MAX_TURNS = 4
+const KEEP_ALIVE_MS = 15_000
 
 function db() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -60,7 +64,7 @@ function newest(stored: SportNetworkContent | null): SportNetworkContent {
 // still showing, so the panel can never go blank. Sent as a 200 on purpose: the
 // edge in front of the app swaps a 502 for its own HTML page, which would lose
 // this message.
-const keptLastGood = (current: SportNetworkContent) => NextResponse.json({
+const keptLastGood = (current: SportNetworkContent) => ({
   refreshed: false,
   error: `Couldn’t refresh — still showing the version last updated ${new Date(current.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.`,
   content: current,
@@ -73,33 +77,6 @@ export async function GET() {
     return NextResponse.json({ content, source: content === SPORT_NETWORK_BASELINE ? 'baseline' : 'stored' })
   } catch {
     return NextResponse.json({ content: SPORT_NETWORK_BASELINE, source: 'baseline' })
-  }
-}
-
-// ─── Validation — only accept the exact shape, plain strings, allowed links ──
-const str = (v: unknown, max = 600) => typeof v === 'string' && v.trim().length > 0 && v.length <= max
-const okUrl = (v: unknown) => {
-  if (typeof v !== 'string') return false
-  try {
-    const u = new URL(v)
-    return u.protocol === 'https:' && ALLOWED_DOMAINS.some(d => u.hostname === d || u.hostname.endsWith(`.${d}`))
-  } catch { return false }
-}
-
-function validate(x: unknown): SportNetworkContent | null {
-  const c = x as SportNetworkContent
-  if (!c || typeof c !== 'object') return null
-  if (!c.hero || !str(c.hero.kicker, 80) || !str(c.hero.title, 160) || !str(c.hero.body, 700)) return null
-  if (!Array.isArray(c.keyFacts) || c.keyFacts.length < 1 || c.keyFacts.length > 8 || !c.keyFacts.every(f => str(f?.title, 120) && str(f?.body, 500))) return null
-  if (!c.premium || !str(c.premium.title, 120) || !Array.isArray(c.premium.rows) || c.premium.rows.length > 12 || !c.premium.rows.every(r => Array.isArray(r) && r.length === 2 && str(r[0], 120) && str(r[1], 160))) return null
-  if (!Array.isArray(c.timeline) || c.timeline.length > 10 || !c.timeline.every(t => str(t?.when, 40) && str(t?.label, 200) && typeof t?.done === 'boolean')) return null
-  if (!Array.isArray(c.guidance) || c.guidance.length > 8 || !c.guidance.every(g => str(g?.title, 200) && str(g?.source, 80) && str(g?.date, 40) && okUrl(g?.url))) return null
-  if (!str(c.footnote, 500)) return null
-  if (!Array.isArray(c.sources) || c.sources.length < 1 || !c.sources.every(s => str(s?.title, 200) && okUrl(s?.url))) return null
-  return {
-    updatedAt: new Date().toISOString().slice(0, 10),
-    hero: c.hero, keyFacts: c.keyFacts, premium: c.premium, timeline: c.timeline,
-    guidance: c.guidance, footnote: c.footnote, sources: c.sources,
   }
 }
 
@@ -116,7 +93,7 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!client || !apiKey) return NextResponse.json({ error: 'Server not configured' }, { status: 500 })
 
-  const body = (await req.json().catch(() => ({}))) as { rollback?: unknown }
+  const body = (await req.json().catch(() => ({}))) as { rollback?: unknown; force?: unknown }
   if (body.rollback === true) {
     const [now, before] = await Promise.all([readStored(), readStored(PREVIOUS_KEY)])
     if (!now || !before) return NextResponse.json({ error: 'There’s no earlier version to go back to.' }, { status: 409 })
@@ -125,71 +102,93 @@ export async function POST(req: NextRequest) {
       { key: KEY, content: before.content, updated_at: before.updatedAt },
       { key: PREVIOUS_KEY, content: now.content, updated_at: now.updatedAt },
     ])
-    if (error) return keptLastGood(newest(now.content))
+    if (error) return NextResponse.json(keptLastGood(newest(now.content)))
     console.log('[impact/sport-network] rolled back', JSON.stringify({ hq: auth.user.id, to: before.updatedAt }))
     return NextResponse.json({ content: newest(before.content), source: 'stored', rolledBack: true })
   }
 
-  // Whatever goes wrong below, this is what stays on screen.
-  let current = SPORT_NETWORK_BASELINE
+  const stored = await readStored()
+  const current = newest(stored?.content ?? null)
+  // The cooldown override is for Lumio staff only: the ids are set on the server.
+  const admins = (process.env.IMPACT_SPORT_NETWORK_ADMIN_IDS ?? '').split(',').map(s => s.trim())
+  const forced = body.force === true && admins.includes(auth.user.id)
+  if (!forced && stored && Date.now() - new Date(stored.updatedAt).getTime() < COOLDOWN_MS) {
+    return NextResponse.json({ content: current, source: 'stored', refreshed: false, note: 'Checked recently — showing the latest stored update.' })
+  }
+  const attempts = rateLimit('impact-sport-network-refresh', ATTEMPTS_PER_HOUR, 60 * 60_000)
+  if (!attempts.ok) return rateLimitedResponse(attempts.retryAfterSeconds)
+  const rl = checkRateLimit(getClientIp(req))
+  if (!rl.ok) return rateLimitedResponse(rl.retryInSec)
+  const cap = checkDailyCap()
+  if (!cap.ok) return capReachedResponse(cap.spent)
+
+  // A refresh can outlast the edge's 100-second limit on a silent response.
+  // Leading spaces keep it open and are still valid JSON when the body is read.
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      controller.enqueue(encoder.encode(' '))
+      const beat = setInterval(() => controller.enqueue(encoder.encode(' ')), KEEP_ALIVE_MS)
+      const result = await refresh(client, apiKey, auth.user.id, stored?.updatedAt ?? null, current)
+      clearInterval(beat)
+      controller.enqueue(encoder.encode(JSON.stringify(result)))
+      controller.close()
+    },
+  })
+  return new Response(stream, { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' } })
+}
+
+async function refresh(client: NonNullable<ReturnType<typeof db>>, apiKey: string, hqId: string, storedAt: string | null, current: SportNetworkContent) {
   try {
-    const stored = await readStored()
-    current = newest(stored?.content ?? null)
-    if (stored && Date.now() - new Date(stored.updatedAt).getTime() < COOLDOWN_MS) {
-      return NextResponse.json({ content: current, source: 'stored', refreshed: false, note: 'Checked recently — showing the latest stored update.' })
-    }
-
-    const attempts = rateLimit('impact-sport-network-refresh', ATTEMPTS_PER_HOUR, 60 * 60_000)
-    if (!attempts.ok) return rateLimitedResponse(attempts.retryAfterSeconds)
-    const ip = getClientIp(req)
-    const rl = checkRateLimit(ip)
-    if (!rl.ok) return rateLimitedResponse(rl.retryInSec)
-    const cap = checkDailyCap()
-    if (!cap.ok) return capReachedResponse(cap.spent)
-
     const today = new Date().toISOString().slice(0, 10)
-    const prompt = `Today is ${today}. You maintain a factual reference panel for English primary/secondary schools about the PE & School Sport Partnerships Network and the PE & Sport Premium.
-
-Search GOV.UK (DfE: PE and sport premium conditions of grant, PE and School Sport Partnerships Network announcements) and the Youth Sport Trust for the CURRENT position. Then return the panel below, corrected and updated to what is current today. Keep every statement factual and sourced; do not speculate; remove anything no longer true; keep the same tone (short, plain English, UK spelling, £ amounts as written by DfE).
-
-Current panel (JSON):
-${JSON.stringify(current)}
-
-Return ONLY a JSON object with exactly these keys: hero {kicker,title,body}, keyFacts [{title,body}] (3-6 items), premium {title, rows [[label,value]]}, timeline [{when,label,done}] (done = date has passed), guidance [{title,source,date,url}], footnote, sources [{title,url}]. Every url must be https on gov.uk or youthsporttrust.org. No markdown, no commentary — JSON only.`
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: [...ALLOWED_MODELS][0],
-        max_tokens: MAX_REFRESH_TOKENS,
-        tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 4, allowed_domains: ALLOWED_DOMAINS }],
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    })
-    const data = await res.json()
-    if (data?.usage?.input_tokens != null && data?.usage?.output_tokens != null) {
-      recordSpend(data.usage.input_tokens, data.usage.output_tokens, data.model, 'impact')
+    const signal = AbortSignal.timeout(UPSTREAM_TIMEOUT_MS)
+    const messages: { role: string; content: unknown }[] = [{ role: 'user', content: refreshPrompt(today) }]
+    let data: { content?: { type?: string; text?: string }[]; stop_reason?: string; usage?: { input_tokens?: number; output_tokens?: number }; model?: string; error?: { type?: string } } = {}
+    for (let turn = 0; turn < MAX_TURNS; turn++) {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        signal,
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: [...ALLOWED_MODELS][0],
+          max_tokens: MAX_REFRESH_TOKENS,
+          tools: [
+            // The basic versions: the _20260209 pair ran past four minutes here.
+            { type: 'web_search_20250305', name: 'web_search', max_uses: 3, allowed_domains: ALLOWED_DOMAINS },
+            { type: 'web_fetch_20250910', name: 'web_fetch', max_uses: 4, max_content_tokens: 12000, allowed_domains: ALLOWED_DOMAINS },
+          ],
+          messages,
+        }),
+      })
+      data = await res.json()
+      if (data?.usage?.input_tokens != null && data?.usage?.output_tokens != null) {
+        recordSpend(data.usage.input_tokens, data.usage.output_tokens, data.model ?? '', 'impact')
+      }
+      if (!res.ok) {
+        console.error('[impact/sport-network] upstream failed', res.status, data?.error?.type)
+        return keptLastGood(current)
+      }
+      if (data.stop_reason !== 'pause_turn') break
+      messages.push({ role: 'assistant', content: data.content })
     }
-    if (!res.ok) {
-      console.error('[impact/sport-network] upstream failed', res.status, data?.error?.type)
+
+    const text = (data.content ?? []).filter(b => b.type === 'text').map(b => b.text ?? '').join('')
+    let raw: RawPanel | null = null
+    try { raw = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1)) as RawPanel } catch { /* handled below */ }
+    if (!raw || typeof raw !== 'object') {
+      console.error('[impact/sport-network] unreadable model output', JSON.stringify({ stop: data?.stop_reason, chars: text.length }))
       return keptLastGood(current)
     }
-
-    const text: string = (data.content ?? []).filter((b: { type?: string }) => b.type === 'text').map((b: { text?: string }) => b.text ?? '').join('')
-    const json = text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1)
-    let parsed: unknown = null
-    try { parsed = JSON.parse(json) } catch { /* handled below */ }
-    const next = validate(parsed)
+    const pages = await fetchPages(citedUrls(raw))
+    const { content: next, dropped } = buildPanel(raw, pages, current, today)
     if (!next) {
-      console.error('[impact/sport-network] rejected model output', JSON.stringify({ stop: data?.stop_reason, chars: text.length }))
-      return keptLastGood(current)
+      console.error('[impact/sport-network] too little passed the source check', JSON.stringify({ pages: pages.size, dropped: dropped.length }))
+      return { ...keptLastGood(current), dropped }
     }
 
     // Keep what's being replaced first: nothing is overwritten without a way back.
     const { error: keepError } = await client.from('impact_reference_content').upsert({
-      key: PREVIOUS_KEY, content: current, updated_at: stored?.updatedAt ?? new Date(current.updatedAt).toISOString(),
+      key: PREVIOUS_KEY, content: current, updated_at: storedAt ?? new Date(current.updatedAt).toISOString(),
     })
     if (keepError) {
       console.error('[impact/sport-network] could not keep the previous version', keepError.message)
@@ -200,8 +199,8 @@ Return ONLY a JSON object with exactly these keys: hero {kicker,title,body}, key
       console.error('[impact/sport-network] store failed', error.message)
       return keptLastGood(current)
     }
-    console.log('[impact/sport-network] refreshed', JSON.stringify({ hq: auth.user.id, from: current.updatedAt, to: next.updatedAt }))
-    return NextResponse.json({ content: next, source: 'stored', refreshed: true })
+    console.log('[impact/sport-network] refreshed', JSON.stringify({ hq: hqId, from: current.updatedAt, to: next.updatedAt, pages: pages.size, dropped: dropped.length }))
+    return { content: next, source: 'stored', refreshed: true, dropped }
   } catch (e) {
     console.error('[impact/sport-network] refresh failed', e instanceof Error ? e.message : e)
     return keptLastGood(current)
