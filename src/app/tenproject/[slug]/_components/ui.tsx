@@ -20,11 +20,12 @@ export function SectionTitle({ children, sub }: { children: React.ReactNode; sub
   )
 }
 
-export function Stat({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+export function Stat({ label, value, accent, sub }: { label: string; value: string | number; accent?: boolean; sub?: string }) {
   return (
     <Card style={{ padding: '14px 16px', flex: 1, minWidth: 130 }}>
       <div style={{ fontSize: 24, fontWeight: 900, color: accent ? TP_RED : TP_DARK }}>{value}</div>
       <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 2, fontWeight: 600 }}>{label}</div>
+      {sub && <div style={{ fontSize: 10.5, color: '#8A847E', marginTop: 2, fontWeight: 600 }}>{sub}</div>}
     </Card>
   )
 }

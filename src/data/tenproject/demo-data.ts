@@ -153,7 +153,12 @@ export const PARENT_MESSAGES = [
 ]
 
 // ─── HQ dashboard numbers ───────────────────────────────────────────────────
-export const HQ_STATS = {
+export const HQ_STATS: {
+  childrenThisWeek: number; schoolsRunning: number; schoolsPipeline: number
+  weekendVisitsThisTerm: number; registersOutstanding: number; dbsExpiring: number
+  // Live only: the school funnel and this term's reach. The demo keeps its own tiles.
+  schoolsActive?: number; schoolsComplete?: number; schoolsTotal?: number; childrenThisTerm?: number
+} = {
   childrenThisWeek: 214,
   schoolsRunning: 2,
   schoolsPipeline: 3,
