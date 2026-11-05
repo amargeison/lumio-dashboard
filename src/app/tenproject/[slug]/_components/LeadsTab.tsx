@@ -12,17 +12,17 @@
 // Reads and writes go straight to impact_leads as the signed-in HQ (RLS). The
 // demo shows a hand-written board, read-only.
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { Download, Plus, Target, Upload, X } from 'lucide-react'
 import { Card, Pill, SectionTitle, Stat } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import {
-  PIPELINES, SOURCES, CONTACT_METHODS, FOLLOWUP_POINTS, amountPence, guessColumn, isClosed, matchStage, notesForDisplay, stagePoints, stagesOf, ukDate, weekOf,
+  PIPELINES, SOURCES, CONTACT_METHODS, FOLLOWUP_POINTS, amountPence, guessColumn, isClosed, matchStage, notesForDisplay, stagePoints, stagesOf, ukDate, weekOf, withLeadLinks,
   type ImportColumn, type Lead, type LeadEvent, type Pipeline,
 } from '@/lib/impact/leads'
-import { fundedPlan, matchSchool, partnerWithNewSchool, partnerWithSchool, recordFunding, type CampaignRef, type FundedPlan, type SchoolRef } from '@/lib/impact/lead-actions'
+import { fundedPlan, fundingOutcome, markSchoolFunded, matchSchool, partnerWithNewSchool, partnerWithSchool, recordFunding, withSchools, type CampaignRef, type FundedPlan, type SchoolRef } from '@/lib/impact/lead-actions'
 
 const sb = () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const MUTED = '#6B6560', FAINT = '#8A847E', LINE = '#E7E2DC', PAPER = '#F7F5F2', AMBER = '#9A6A0B', GREEN = '#187A3C'
@@ -71,13 +71,34 @@ async function moveLead(lead: Lead, to: string, extra: Partial<Lead> = {}) {
   await logEvent(lead, { kind: 'stage', from_stage: lead.stage, to_stage: to, points: stagePoints(lead.pipeline, lead.stage, to) })
 }
 
-type Closing = { lead: Lead; to: 'Partnered' } | { lead: Lead; to: 'Funded'; plan: Exclude<FundedPlan, { kind: 'close' }> }
+type Closing = { lead: Lead; to: 'Partnered' } | {
+  lead: Lead; to: 'Funded'; plan: Exclude<FundedPlan, { kind: 'close' }>
+  schoolName: string; outcome: ReturnType<typeof fundingOutcome>
+}
+type Closed = { notice: string; added?: SchoolRef }
+
+/** Everything the Funded dialog needs, read fresh so its sums are today's. */
+async function fundedClosing(lead: Lead): Promise<Closing | null> {
+  const { data: campaigns } = await sb().from('tp_fundraising_campaigns').select('id, school_id, status, target_pence')
+  const plan = fundedPlan(lead, (campaigns ?? []) as CampaignRef[])
+  if (plan.kind === 'close') return null
+  const { data: school } = await sb().from('tp_schools').select('name, status').eq('id', lead.school_id as string).single()
+  if (!school) throw new Error('That school could not be found.')
+  let raised = 0
+  if (plan.kind === 'donate') {
+    const { data: gifts } = await sb().from('tp_donations').select('amount_pence').eq('campaign_id', plan.campaignId)
+    raised = (gifts ?? []).reduce((n, g) => n + (g.amount_pence as number), 0)
+  }
+  const campaign = (campaigns ?? []).find(c => plan.kind === 'donate' && c.id === plan.campaignId) as CampaignRef | undefined
+  return { lead, to: 'Funded', plan, schoolName: school.name as string, outcome: fundingOutcome(plan, lead.amount_pence as number, school as { status: string }, campaign, raised) }
+}
 
 export default function LeadsTab() {
   const ctx = useImpact()
   const demo = ctx.mode === 'demo'
   const canEdit = !demo && !!ctx.org?.canEdit
-  const schools: SchoolRef[] = useMemo(() => ctx.data.SCHOOLS.map(s => ({ id: s.id, name: s.name })), [ctx.data.SCHOOLS])
+  const [addedSchools, setAddedSchools] = useState<SchoolRef[]>([])
+  const schools: SchoolRef[] = useMemo(() => withSchools(ctx.data.SCHOOLS.map(s => ({ id: s.id, name: s.name })), addedSchools), [ctx.data.SCHOOLS, addedSchools])
   const [rows, setRows] = useState<Lead[]>([])
   const [loading, setLoading] = useState(canEdit)
   const [pipe, setPipe] = useState<Pipeline>('schools')
@@ -88,7 +109,9 @@ export default function LeadsTab() {
   const [modal, setModal] = useState<'import' | 'ads' | null>(null)
   const [closing, setClosing] = useState<Closing | null>(null)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [copied, setCopied] = useState('')
+  const board = useRef<HTMLDivElement>(null)
   const today = ukDate(new Date())
 
   const load = useCallback(async () => {
@@ -97,6 +120,8 @@ export default function LeadsTab() {
     setLoading(false)
   }, [canEdit])
   useEffect(() => { void load() }, [load])
+  // Each pipeline opens at its first stage, not wherever the last one was scrolled to.
+  useEffect(() => { if (!demo && board.current) board.current.scrollLeft = 0 }, [pipe, demo])
 
   const leads = demo ? ctx.data.DEMO_LEADS : rows
   const open = openId === 'new' ? null : leads.find(l => l.id === openId) ?? null
@@ -115,13 +140,12 @@ export default function LeadsTab() {
   /** Moves a lead, stopping first if winning it has something to offer. */
   async function requestMove(lead: Lead, to: string) {
     if (!canEdit || to === lead.stage) return
-    setError('')
+    setError(''); setNotice('')
     try {
       if (to === 'Partnered' && !lead.school_id) { setClosing({ lead, to }); return }
       if (to === 'Funded') {
-        const { data } = await sb().from('tp_fundraising_campaigns').select('id, school_id, status')
-        const plan = fundedPlan(lead, (data ?? []) as CampaignRef[])
-        if (plan.kind !== 'close') { setClosing({ lead, to, plan }); return }
+        const offer = await fundedClosing(lead)
+        if (offer) { setClosing(offer); return }
       }
       await moveLead(lead, to)
       await load()
@@ -136,10 +160,10 @@ export default function LeadsTab() {
 
   return (
     <div style={{ display: 'grid', gap: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
-        <SectionTitle sub="Schools and funders, from first contact to partnered">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: demo ? 'space-between' : 'flex-end', gap: 14, flexWrap: 'wrap' }}>
+        {demo && <SectionTitle sub="Schools and funders, from first contact to partnered">
           <Target size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Leads
-        </SectionTitle>
+        </SectionTitle>}
         {canEdit ? (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={() => setModal('ads')} style={secondary}><Download size={14} /> Leads from ads</button>
@@ -178,8 +202,9 @@ export default function LeadsTab() {
         </div>
       )}
       {error && <div role="alert" style={{ fontSize: 12.5, color: TP_RED }}>{error}</div>}
+      {notice && <div role="status" style={{ fontSize: 12.5, color: GREEN }}>{notice}</div>}
 
-      <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8 }} data-testid="lead-board">
+      <div ref={board} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8 }} data-testid="lead-board">
         {stagesOf(pipe).map(stage => {
           const col = shown.filter(l => l.stage === stage).sort((a, b) => (a.next_action_at || '9999').localeCompare(b.next_action_at || '9999') || b.created_at.localeCompare(a.created_at))
           const closed = isClosed(pipe, stage)
@@ -215,11 +240,18 @@ export default function LeadsTab() {
         <Card style={{ borderStyle: 'dashed', textAlign: 'center', color: MUTED, fontSize: 13 }}>No leads yet — add one, import a spreadsheet, or connect Leads from ads</Card>
       )}
 
-      {openId && <LeadPanel lead={open} pipeline={pipe} lists={lists.map(l => l[0])} schools={schools} canEdit={canEdit}
-        onMove={to => open && requestMove(open, to)} onClose={() => setOpenId(null)} onChanged={load} />}
+      {openId && <LeadPanel lead={open} pipeline={pipe} lists={lists.map(l => l[0])} schools={schools} canEdit={canEdit} notice={notice}
+        onMove={to => open && requestMove(open, to)} onClose={() => { setOpenId(null); setNotice('') }} onChanged={load} />}
       {modal === 'import' && <ImportLeads pipeline={pipe} onClose={() => setModal(null)} onDone={load} />}
       {modal === 'ads' && <AdsLeads onClose={() => setModal(null)} onTest={load} />}
-      {closing && <ClosingDialog closing={closing} schools={schools} onClose={() => setClosing(null)} onDone={async () => { setClosing(null); await load(); ctx.reload?.() }} />}
+      {closing && <ClosingDialog closing={closing} schools={schools} onClose={() => setClosing(null)} onDone={async done => {
+        setClosing(null)
+        setNotice(done.notice)
+        const { added } = done
+        if (added) setAddedSchools(a => [...a, added])
+        await load()
+        ctx.reload?.()
+      }} />}
     </div>
   )
 }
@@ -243,29 +275,38 @@ function Shell({ title, onClose, children, wide }: { title: string; onClose: () 
 }
 
 // ── Winning a lead ───────────────────────────────────────────────────────────
-function ClosingDialog({ closing, schools, onClose, onDone }: { closing: Closing; schools: SchoolRef[]; onClose: () => void; onDone: () => Promise<void> }) {
+function ClosingDialog({ closing, schools, onClose, onDone }: { closing: Closing; schools: SchoolRef[]; onClose: () => void; onDone: (done: Closed) => Promise<void> }) {
   const { lead } = closing
   const orgName = lead.org_name || lead.name
   const match = matchSchool(orgName, schools)
   const [choice, setChoice] = useState(match?.id ?? 'new')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const schoolName = schools.find(s => s.id === lead.school_id)?.name ?? 'this school'
+  const funded = closing.to === 'Funded' ? closing : null
 
-  async function run(work: () => Promise<void>) {
+  async function run(work: () => Promise<Closed>) {
     setBusy(true); setErr('')
-    try { await work(); await onDone() } catch (e) { setErr(problem(e, 'That could not be saved.')); setBusy(false) }
+    try { await onDone(await work()) } catch (e) { setErr(problem(e, 'That could not be saved.')); setBusy(false) }
   }
-  const justClose = () => run(() => moveLead(lead, closing.to))
+  const justClose = () => run(async () => { await moveLead(lead, closing.to); return { notice: '' } })
   const partner = () => run(async () => {
     const hq = await hqId()
-    const school_id = choice === 'new' ? await partnerWithNewSchool(sb(), hq, lead) : await partnerWithSchool(sb(), hq, lead, choice)
+    if (choice === 'new') {
+      const school_id = await partnerWithNewSchool(sb(), hq, lead)
+      await moveLead(lead, 'Partnered', { school_id })
+      return { notice: `✓ Added ${orgName} to Schools`, added: { id: school_id, name: orgName } }
+    }
+    const school_id = await partnerWithSchool(sb(), hq, lead, choice)
     await moveLead(lead, 'Partnered', { school_id })
+    return { notice: `✓ Linked to ${schools.find(s => s.id === choice)?.name ?? 'the school'}` }
   })
-  const fund = () => run(async () => {
-    if (closing.to !== 'Funded') return
-    const campaign_id = await recordFunding(sb(), await hqId(), lead, closing.plan)
+  const fund = (mark: boolean) => run(async () => {
+    if (!funded) return { notice: '' }
+    const hq = await hqId()
+    const campaign_id = await recordFunding(sb(), hq, lead, funded.plan)
+    if (mark) await markSchoolFunded(sb(), hq, lead.school_id as string, orgName)
     await moveLead(lead, 'Funded', { campaign_id })
+    return { notice: mark ? `✓ ${funded.schoolName} marked as funded` : '' }
   })
 
   return (
@@ -281,27 +322,31 @@ function ClosingDialog({ closing, schools, onClose, onDone }: { closing: Closing
             {schools.map(s => <option key={s.id} value={s.id}>Link to {s.name}</option>)}
           </select>
         </label>
-      </>) : (
+      </>) : funded && (
         <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.55 }}>
-          {closing.plan.kind === 'donate'
-            ? `Record ${pounds(lead.amount_pence as number)} from ${orgName} as a donation to ${schoolName}’s campaign?`
-            : `${schoolName} has no fundraising campaign. Create one with a ${pounds(lead.amount_pence as number)} target and record ${orgName}’s donation against it?`}
+          {funded.plan.kind === 'donate'
+            ? `Record ${pounds(lead.amount_pence as number)} from ${orgName} as a donation to ${funded.schoolName}’s campaign?`
+            : `${funded.schoolName} has no fundraising campaign. Create one with a ${pounds(lead.amount_pence as number)} target and record ${orgName}’s donation against it?`}
+          {funded.outcome && !funded.outcome.meetsTarget && <div style={{ marginTop: 8, color: TP_DARK, fontWeight: 700 }}>{pounds(funded.outcome.total)} of {pounds(funded.outcome.target)} raised — the school stays at fundraising</div>}
         </div>
       )}
       {err && <div role="alert" style={{ fontSize: 12, color: TP_RED, marginTop: 10 }}>{err}</div>}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
         <button onClick={justClose} disabled={busy} style={secondary}>Just close it</button>
-        <button onClick={closing.to === 'Partnered' ? partner : fund} disabled={busy} style={primary}>
-          {busy ? 'Saving…' : closing.to === 'Partnered' ? (choice === 'new' ? 'Create school and close' : 'Link school and close') : 'Record donation and close'}
+        <button onClick={funded ? () => fund(false) : partner} disabled={busy} style={funded?.outcome?.meetsTarget ? secondary : primary}>
+          {busy ? 'Saving…' : !funded ? (choice === 'new' ? 'Create school and close' : 'Link school and close') : 'Record donation and close'}
         </button>
+        {funded?.outcome?.meetsTarget && <button onClick={() => fund(true)} disabled={busy} style={primary}>
+          {busy ? 'Saving…' : `${funded.plan.kind === 'donate' ? 'Record donation' : 'Create campaign, record donation'} and mark ${funded.schoolName} as funded`}
+        </button>}
       </div>
     </Shell>
   )
 }
 
 // ── One lead ─────────────────────────────────────────────────────────────────
-function LeadPanel({ lead, pipeline, lists, schools, canEdit, onMove, onClose, onChanged }: {
-  lead: Lead | null; pipeline: Pipeline; lists: string[]; schools: SchoolRef[]; canEdit: boolean
+function LeadPanel({ lead, pipeline, lists, schools, canEdit, notice, onMove, onClose, onChanged }: {
+  lead: Lead | null; pipeline: Pipeline; lists: string[]; schools: SchoolRef[]; canEdit: boolean; notice: string
   onMove: (to: string) => void; onClose: () => void; onChanged: () => Promise<void>
 }) {
   const [d, setD] = useState<Partial<Lead>>(() => lead ? { ...lead } : { pipeline, stage: 'Enquired', source: 'Other' })
@@ -314,7 +359,12 @@ function LeadPanel({ lead, pipeline, lists, schools, canEdit, onMove, onClose, o
   const set = (k: keyof Lead, v: unknown) => setD(x => ({ ...x, [k]: v }))
   const pipe = (d.pipeline || pipeline) as Pipeline
   const today = ukDate(new Date())
-  const leadId = lead?.id, stage = lead?.stage
+  const leadId = lead?.id, stage = lead?.stage, schoolId = lead?.school_id, campaignId = lead?.campaign_id
+
+  // A move can link a school or campaign while this is open, and Save mustn't undo that.
+  useEffect(() => {
+    if (leadId && stage) setD(x => withLeadLinks(x, { stage, school_id: schoolId, campaign_id: campaignId }))
+  }, [leadId, stage, schoolId, campaignId])
 
   useEffect(() => {
     if (!canEdit || !leadId) return
@@ -342,7 +392,7 @@ function LeadPanel({ lead, pipeline, lists, schools, canEdit, onMove, onClose, o
     if (f.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email)) { setErr('That email address does not look right.'); return }
     if (amount.trim() && f.amount_pence === null) { setErr('Enter the amount as a number, like 5000.'); return }
     void run('save', async () => {
-      if (lead) { await updateLead(lead.id, f); await onChanged(); return }
+      if (lead) { await updateLead(lead.id, f); await onChanged(); onClose(); return }
       const { data: made, error } = await sb().from('impact_leads').insert({ ...f, hq_id: await hqId(), stage: d.stage || 'Enquired', notes: note.trim() ? `[${today}] ${note.trim()}` : null }).select('id, stage').single()
       if (error || !made) throw new Error('It could not be saved.')
       await logEvent(made, { kind: 'created', to_stage: made.stage, points: 0 })
@@ -410,6 +460,7 @@ function LeadPanel({ lead, pipeline, lists, schools, canEdit, onMove, onClose, o
           <label><span style={label}>{pipe === 'funders' ? 'For school (optional)' : 'Linked school'}</span><select value={d.school_id || ''} onChange={e => set('school_id', e.target.value || null)} style={field}><option value="">{schools.length ? 'None' : 'No schools yet'}</option>{schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
         </div>
       </fieldset>
+      {notice && <div role="status" style={{ fontSize: 12, color: GREEN, marginTop: 10 }}>{notice}</div>}
       {lead?.campaign_id && linked && <div style={{ fontSize: 12, color: GREEN, marginTop: 10 }}>✓ Donation recorded against {linked}’s campaign</div>}
 
       {lead && (lead.email || lead.phone || lead.next_action_at) && (

@@ -6,8 +6,11 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { cleanImportRow, ukDate, type Lead, type Pipeline } from './leads'
 
 export type SchoolRef = { id: string; name: string }
-export type CampaignRef = { id: string; school_id: string | null; status: string }
+export type CampaignRef = { id: string; school_id: string | null; status: string; target_pence?: number }
 export type SchoolContact = { status: string; head_name?: string | null; pe_lead_name?: string | null; contact_email?: string | null; contact_phone?: string | null }
+
+/** The schools to offer: the portal's list plus any just created, which it won't have until it reloads. */
+export const withSchools = (schools: SchoolRef[], added: SchoolRef[]) => [...schools, ...added.filter(a => !schools.some(s => s.id === a.id))]
 
 // ── Partnered ───────────────────────────────────────────────────────────────
 const NOISE = /\b(the|primary|junior|infants?|school|academy|c of e|ce|church of england)\b/g
@@ -100,6 +103,38 @@ export async function recordFunding(db: SupabaseClient, hqId: string, lead: Lead
   const { error } = await db.from('tp_donations').insert(donationRow(lead, campaignId, hqId, today))
   if (error) throw new Error('The donation could not be recorded.')
   return campaignId
+}
+
+/**
+ * Whether this donation funds the school. Null unless the school is fundraising,
+ * because nothing else moves. A campaign made here has target = amount, so it
+ * always qualifies.
+ */
+export function fundingOutcome(
+  plan: Exclude<FundedPlan, { kind: 'close' }>, amountPence: number, school: { status: string },
+  campaign?: { target_pence?: number }, raisedPence = 0,
+): { total: number; target: number; meetsTarget: boolean } | null {
+  if (school.status !== 'fundraising') return null
+  const total = plan.kind === 'donate' ? raisedPence + amountPence : amountPence
+  const target = plan.kind === 'donate' ? campaign?.target_pence ?? 0 : plan.targetPence
+  return { total, target, meetsTarget: target > 0 && total >= target }
+}
+
+/** Confirmed, and funded by this funder unless a source is already recorded. */
+export function fundedSchoolPatch(school: { status: string; funding_source?: string | null }, funder: string) {
+  return {
+    ...(school.status === 'fundraising' ? { status: 'confirmed' } : {}),
+    ...(!school.funding_source?.trim() && funder.trim() ? { funding_source: funder.trim() } : {}),
+  }
+}
+
+export async function markSchoolFunded(db: SupabaseClient, hqId: string, schoolId: string, funder: string) {
+  const { data: school, error } = await db.from('tp_schools').select('status, funding_source').eq('id', schoolId).eq('hq_id', hqId).single()
+  if (error || !school) throw new Error('The donation was recorded, but that school could not be found.')
+  const patch = fundedSchoolPatch(school as { status: string; funding_source: string | null }, funder)
+  if (!Object.keys(patch).length) return
+  const { error: failed } = await db.from('tp_schools').update(patch).eq('id', schoolId).eq('hq_id', hqId)
+  if (failed) throw new Error('The donation was recorded, but the school could not be updated.')
 }
 
 // ── Bulk ────────────────────────────────────────────────────────────────────

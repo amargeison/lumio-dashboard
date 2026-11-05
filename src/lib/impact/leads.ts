@@ -25,6 +25,10 @@ export type Lead = {
 }
 export type LeadEvent = { id: string; lead_id: string; kind: string; from_stage?: string | null; to_stage?: string | null; text?: string | null; points?: number | null; created_at: string }
 
+/** The links a move can change while the panel is open. Without this, Save would write the old ones back. */
+export const withLeadLinks = <T extends Partial<Lead>>(draft: T, lead: Pick<Lead, 'stage' | 'school_id' | 'campaign_id'>): T =>
+  ({ ...draft, stage: lead.stage, school_id: lead.school_id ?? null, campaign_id: lead.campaign_id ?? null })
+
 export const SOURCES = ['Meta ad', 'Website', 'Referral', 'Google', 'Event', 'Council / LA', 'Import', 'Other'] as const
 export const CONTACT_METHODS = ['WhatsApp', 'Email', 'Phone', 'In person'] as const
 
