@@ -17,7 +17,7 @@
 // Standard portal zoom 0.9 — sidebar compensates with calc(100vh / 0.9).
 
 import React, { use, useEffect, useState } from 'react'
-import { Heart, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp, Landmark } from 'lucide-react'
+import { Heart, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp, Landmark, Target } from 'lucide-react'
 import { TP_RED, TP_DARK, TP_BLACK, TP_PAPER } from '@/data/tenproject/demo-data'
 import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { ImpactDataProvider, useImpact, type ImpactBrand, type ImpactCopy, type ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
@@ -371,6 +371,9 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
       { group: 'ENGAGE', items: [
         { id: 'comms', label: 'Communications', icon: Send },
         { id: 'social', label: 'Social', icon: Share2 },
+      ] },
+      { group: 'GROWTH', items: [
+        { id: 'leads', label: 'Leads', icon: Target },
       ] },
       { group: 'OPERATIONS', items: [
         { id: 'equipment', label: 'Equipment & Kit', icon: Package },

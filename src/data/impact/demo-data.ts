@@ -8,6 +8,7 @@
 // Same shape as src/data/tenproject/demo-data.ts (which still powers the
 // legacy /tenproject route) so the shared portal views render either set.
 
+import type { Lead } from '@/lib/impact/leads'
 import { scoreSchools } from '@/lib/impact/readiness'
 import { demoReadinessEvidence } from './readiness-demo'
 import type {
@@ -1002,4 +1003,23 @@ export const WEEKEND_FAMILIES = [
   { id: 'w4', family: 'Calloway', children: 'Ruby', checkedIn: false, via: '—' },
   { id: 'w5', family: 'Quinn', children: 'Harvey', checkedIn: true, via: 'QR' },
   { id: 'w6', family: 'Haddad', children: 'Lily + Omar', checkedIn: false, via: '—' },
+]
+
+// ─── Leads ───────────────────────────────────────────────────────────────────
+// Dates are relative to today, so the board always has one follow-up overdue and
+// none that drift overdue by themselves. All names are fictional.
+const dayFromNow = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10)
+const addedDaysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString()
+
+export const DEMO_LEADS: Lead[] = [
+  { id: 'l1', pipeline: 'schools', stage: 'Enquired', name: 'Mrs S. Whitlow', org_name: 'Marlowe Fields Primary', for_name: 'PE lead', email: 's.whitlow@marlowefields.example', source: 'Website', message: 'Saw the festival at Hollinsmere. Could Rally Ten run with our Year 3s?', created_at: addedDaysAgo(2) },
+  { id: 'l2', pipeline: 'schools', stage: 'Contacted', name: 'Mr J. Okoro', org_name: 'Ashgrove Vale Academy', for_name: 'Headteacher', phone: '07700 900412', source: 'Council / LA', contact_method: 'Phone', next_action_at: dayFromNow(-3), next_action: 'Call back about spring dates', created_at: addedDaysAgo(12) },
+  { id: 'l3', pipeline: 'schools', stage: 'Meeting booked', name: 'Ms R. Lanyon', org_name: 'Copperwick Primary', for_name: 'Deputy head', email: 'r.lanyon@copperwick.example', source: 'Referral', contact_method: 'Email', school_id: 'copperwick', next_action_at: dayFromNow(4), next_action: 'Meet in the school office', created_at: addedDaysAgo(18) },
+  { id: 'l4', pipeline: 'schools', stage: 'Visit / taster', name: 'Mr D. Fenn', org_name: 'Ellisford Junior School', for_name: 'PE lead', source: 'Event', contact_method: 'In person', next_action_at: dayFromNow(9), next_action: 'Taster session with Year 4', created_at: addedDaysAgo(26) },
+  { id: 'l5', pipeline: 'schools', stage: 'Keen for future', name: 'Mrs A. Pryce', org_name: 'Hartswood C of E Primary', for_name: 'Headteacher', source: 'Meta ad', list: 'Contact next term', notes: 'Budget set for this year. Asked us to come back after Easter.', created_at: addedDaysAgo(40) },
+  { id: 'l6', pipeline: 'schools', stage: 'Partnered', name: 'Mr P. Sandell', org_name: 'Thornleigh Green Primary', for_name: 'Headteacher', source: 'Referral', school_id: 'thornleigh', created_at: addedDaysAgo(70) },
+  { id: 'l7', pipeline: 'funders', stage: 'Enquired', name: 'Dee Marchant', org_name: 'Ashgrove Community Foundation', for_name: 'Grants officer', email: 'grants@ashgrovefoundation.example', source: 'Event', created_at: addedDaysAgo(3) },
+  { id: 'l8', pipeline: 'funders', stage: 'Meeting booked', name: 'Tom Ashworth', org_name: 'Harcastle Building Society Fund', for_name: 'Community manager', source: 'Referral', amount_pence: 250000, next_action_at: dayFromNow(6), next_action: 'Bring the funder pack', created_at: addedDaysAgo(15) },
+  { id: 'l9', pipeline: 'funders', stage: 'Proposal sent', name: 'Nadia Rahman', org_name: 'Ashgrove Borough Sports Fund', for_name: 'Sports development officer', source: 'Council / LA', amount_pence: 500000, next_action_at: dayFromNow(14), next_action: 'Chase the panel’s decision', created_at: addedDaysAgo(31) },
+  { id: 'l10', pipeline: 'funders', stage: 'Funded', name: 'Graham Lyle', org_name: 'Meridian Community Fund', for_name: 'Trustee', source: 'Referral', amount_pence: 320000, school_id: 'staldrics', created_at: addedDaysAgo(90) },
 ]

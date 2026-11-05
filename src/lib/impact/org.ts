@@ -110,6 +110,7 @@ export function impactModules(brand: ImpactBrand): ImpactModule[] {
     { id: 'tenors', label: brand.volunteers, desc: `Volunteer ${brand.volunteers.toLowerCase()} — and the ${brand.volunteer} view` },
     { id: 'comms', label: 'Communications', desc: 'Inbox, newsletters, automations, audiences' },
     { id: 'social', label: 'Social', desc: 'Scheduling, publishing and analytics' },
+    { id: 'leads', label: 'Leads', desc: 'Schools and funders pipeline — from first contact to partnered' },
     { id: 'equipment', label: 'Equipment & Kit', desc: 'Inventory, restock and kit lists' },
     { id: 'network', label: 'Sport Network', desc: 'PE & School Sport Partnerships Network readiness' },
     { id: 'settings', label: 'Settings', locked: true, desc: 'Organisation, modules, integrations and data' },
