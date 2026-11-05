@@ -19,7 +19,7 @@ import { Card, Pill, Stat } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import {
-  PIPELINES, SOURCES, CONTACT_METHODS, FOLLOWUP_POINTS, amountPence, guessColumn, isClosed, matchStage, notesForDisplay, stagePoints, stagesOf, ukDate, weekOf, withLeadLinks,
+  PIPELINES, SOURCES, CONTACT_METHODS, FOLLOWUP_POINTS, amountPence, guessColumn, isClosed, leadEdits, matchStage, notesForDisplay, stagePoints, stagesOf, ukDate, weekOf, withLeadLinks,
   type ImportColumn, type Lead, type LeadEvent, type Pipeline,
 } from '@/lib/impact/leads'
 import { fundedPlan, fundingOutcome, markSchoolFunded, matchSchool, partnerWithNewSchool, partnerWithSchool, recordFunding, withSchools, type CampaignRef, type FundedPlan, type SchoolRef } from '@/lib/impact/lead-actions'
@@ -238,7 +238,7 @@ export default function LeadsTab() {
       )}
 
       {openId && <LeadPanel lead={open} pipeline={pipe} lists={lists.map(l => l[0])} schools={schools} canEdit={canEdit} notice={notice}
-        onMove={to => open && requestMove(open, to)} onClose={() => { setOpenId(null); setNotice('') }} onChanged={load} />}
+        onMove={requestMove} onClose={() => { setOpenId(null); setNotice('') }} onChanged={load} />}
       {modal === 'import' && <ImportLeads pipeline={pipe} onClose={() => setModal(null)} onDone={load} />}
       {modal === 'ads' && <AdsLeads onClose={() => setModal(null)} onTest={load} />}
       {closing && <ClosingDialog closing={closing} schools={schools} onClose={() => setClosing(null)} onDone={async done => {
@@ -344,7 +344,7 @@ function ClosingDialog({ closing, schools, onClose, onDone }: { closing: Closing
 // ── One lead ─────────────────────────────────────────────────────────────────
 function LeadPanel({ lead, pipeline, lists, schools, canEdit, notice, onMove, onClose, onChanged }: {
   lead: Lead | null; pipeline: Pipeline; lists: string[]; schools: SchoolRef[]; canEdit: boolean; notice: string
-  onMove: (to: string) => void; onClose: () => void; onChanged: () => Promise<void>
+  onMove: (lead: Lead, to: string) => Promise<void>; onClose: () => void; onChanged: () => Promise<void>
 }) {
   const [d, setD] = useState<Partial<Lead>>(() => lead ? { ...lead } : { pipeline, stage: 'Enquired', source: 'Other' })
   const [amount, setAmount] = useState(lead?.amount_pence ? String(lead.amount_pence / 100) : '')
@@ -383,11 +383,28 @@ function LeadPanel({ lead, pipeline, lists, schools, canEdit, notice, onMove, on
     next_action_at: d.next_action_at || null, next_action: String(d.next_action || '').trim() || null,
     amount_pence: amountPence(amount), school_id: d.school_id || null,
   })
-  const save = () => {
+  /** Null when the panel's values can be saved; otherwise says what's wrong, on screen. */
+  const checked = () => {
     const f = fields()
-    if (!f.name) { setErr('Give the lead a name or an organisation.'); return }
-    if (f.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email)) { setErr('That email address does not look right.'); return }
-    if (amount.trim() && f.amount_pence === null) { setErr('Enter the amount as a number, like 5000.'); return }
+    const problem = !f.name ? 'Give the lead a name or an organisation.'
+      : f.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email) ? 'That email address does not look right.'
+      : amount.trim() && f.amount_pence === null ? 'Enter the amount as a number, like 5000.' : ''
+    if (problem) setErr(problem)
+    return problem ? null : f
+  }
+  // The dialogs decide from the school and amount, so what's on screen is saved first.
+  const moveTo = (to: string) => {
+    const f = checked()
+    if (!lead || !f || to === lead.stage) return
+    void run('move', async () => {
+      const edits = leadEdits(lead, f)
+      if (Object.keys(edits).length) { await updateLead(lead.id, edits); await onChanged() }
+      await onMove({ ...lead, ...edits }, to)
+    }, 'It could not be moved.')
+  }
+  const save = () => {
+    const f = checked()
+    if (!f) return
     void run('save', async () => {
       if (lead) { await updateLead(lead.id, f); await onChanged(); onClose(); return }
       const { data: made, error } = await sb().from('impact_leads').insert({ ...f, hq_id: await hqId(), stage: d.stage || 'Enquired', notes: note.trim() ? `[${today}] ${note.trim()}` : null }).select('id, stage').single()
@@ -435,7 +452,7 @@ function LeadPanel({ lead, pipeline, lists, schools, canEdit, notice, onMove, on
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {stagesOf(pipe).map(st => {
               const on = lead.stage === st
-              return <button key={st} onClick={() => onMove(st)} disabled={off || !!busy} aria-pressed={on} style={{ border: `1px solid ${on ? TP_RED : LINE}`, background: on ? TP_RED : '#fff', color: on ? '#fff' : MUTED, borderRadius: 999, padding: '6px 12px', fontSize: 12, fontWeight: on ? 800 : 600, cursor: off ? 'default' : 'pointer', fontFamily: 'inherit' }}>{st}</button>
+              return <button key={st} onClick={() => moveTo(st)} disabled={off || !!busy} aria-pressed={on} style={{ border: `1px solid ${on ? TP_RED : LINE}`, background: on ? TP_RED : '#fff', color: on ? '#fff' : MUTED, borderRadius: 999, padding: '6px 12px', fontSize: 12, fontWeight: on ? 800 : 600, cursor: off ? 'default' : 'pointer', fontFamily: 'inherit' }}>{st}</button>
             })}
           </div>
         </div>
