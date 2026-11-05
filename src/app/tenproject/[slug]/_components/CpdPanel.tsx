@@ -43,6 +43,8 @@ export function CpdPanel({ schoolId }: { schoolId: string }) {
 
   return (
     <div style={{ marginTop: 14, borderTop: '1px solid #EFEBE6', paddingTop: 12 }}>
+      {/* An inline style can't reach a placeholder. #6B6560 on white is 5.7:1 (AA). */}
+      <style>{'.cpd-input::placeholder { color: #6B6560; opacity: 1; }'}</style>
       <div style={{ fontSize: 12, fontWeight: 900, color: TP_DARK, marginBottom: 8 }}>
         <GraduationCap size={14} style={{ verticalAlign: '-2px', marginRight: 6, color: TP_RED }} />Staff CPD
       </div>
@@ -55,10 +57,10 @@ export function CpdPanel({ schoolId }: { schoolId: string }) {
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 6 }}>
-        <input style={field} placeholder="Staff member" aria-label="Staff member" value={draft.staff_name} onChange={set('staff_name')} />
-        <input style={field} placeholder="Course" aria-label="Course" value={draft.course} onChange={set('course')} />
-        <input style={field} type="date" aria-label="Date" value={draft.cpd_date} onChange={set('cpd_date')} />
-        <input style={field} placeholder="Provider" aria-label="Provider" value={draft.provider} onChange={set('provider')} />
+        <input className="cpd-input" style={field} placeholder="Staff member" aria-label="Staff member" value={draft.staff_name} onChange={set('staff_name')} />
+        <input className="cpd-input" style={field} placeholder="Course" aria-label="Course" value={draft.course} onChange={set('course')} />
+        <input className="cpd-input" style={field} type="date" aria-label="Date" value={draft.cpd_date} onChange={set('cpd_date')} />
+        <input className="cpd-input" style={field} placeholder="Provider" aria-label="Provider" value={draft.provider} onChange={set('provider')} />
       </div>
       <button onClick={add} disabled={busy || !draft.staff_name.trim() || !draft.course.trim()} style={{ marginTop: 8, background: TP_RED, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 800, cursor: 'pointer', opacity: busy || !draft.staff_name.trim() || !draft.course.trim() ? 0.5 : 1 }}>Add CPD record</button>
       {error && <div style={{ fontSize: 11.5, color: TP_RED, marginTop: 6, fontWeight: 700 }}>{error}</div>}

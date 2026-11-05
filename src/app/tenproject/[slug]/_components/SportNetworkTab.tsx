@@ -12,13 +12,14 @@ import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK, type PesspnVerdict, type PesspnStatus } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { useSportNetwork } from '@/lib/impact/use-sport-network'
+import { GENERIC_BRAND } from '@/lib/impact/org'
 import { CpdPanel } from './CpdPanel'
 import { SPORT_NETWORK_DISCLAIMER, SPORT_NETWORK_SOURCE_NOTE } from '@/data/impact/sport-network'
 
 // The page an item was checked against, so anyone can read it for themselves.
-function SourceLink({ url, light }: { url?: string; light?: boolean }) {
+function SourceLink({ url, light, label = 'Source' }: { url?: string; light?: boolean; label?: string }) {
   if (!url) return null
-  return <a href={url} target="_blank" rel="noreferrer" style={{ fontSize: 10.5, fontWeight: 700, color: light ? '#fff' : TP_RED, marginLeft: 6, whiteSpace: 'nowrap' }}>Source</a>
+  return <a href={url} target="_blank" rel="noreferrer" style={{ fontSize: 10.5, fontWeight: 700, color: light ? '#fff' : TP_RED, marginLeft: 6, whiteSpace: 'nowrap' }}>{label}</a>
 }
 
 const VERDICT: Record<PesspnVerdict, { label: string; color: string; tone: 'green' | 'amber' | 'red' | 'grey' }> = {
@@ -217,12 +218,12 @@ export default function SportNetworkTab() {
           </SectionTitle>
           <div style={{ display: 'grid', gap: 8 }}>
             {[
-              ...N.keyFacts.map(f => ({ h: f.title, b: f.saidBy ? `${f.body} (${f.saidBy})` : f.body, urls: f.urls ?? (f.url ? [f.url] : []), expected: f.status === 'expected' })),
-              { h: `The ${brand.org} angle`, b: 'Registers, CPD, priority-group reach and impact reporting are the evidence schools will need for the Network. Fundraising keeps unfunded schools in the game.', urls: [] as string[], expected: false },
+              ...N.keyFacts.map(f => ({ h: f.title, b: f.saidBy ? `${f.body} (${f.saidBy})` : f.body, urls: Array.from(new Set(f.urls ?? (f.url ? [f.url] : []))), expected: f.status === 'expected' })),
+              { h: brand.org === GENERIC_BRAND.org ? 'Your organisation’s angle' : `The ${brand.org} angle`, b: 'Registers, CPD, priority-group reach and impact reporting are the evidence schools will need for the Network. Fundraising keeps unfunded schools in the game.', urls: [] as string[], expected: false },
             ].map(({ h, b, urls, expected }) => (
               <div key={h} style={{ background: '#F7F5F2', borderRadius: 10, padding: '10px 12px' }}>
                 <div style={{ fontSize: 12, fontWeight: 900, color: TP_DARK }}>{h}{expected && <>&nbsp;<Pill tone="amber">EXPECTED</Pill></>}</div>
-                <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 2, lineHeight: 1.5 }}>{b}{urls.map(u => <SourceLink key={u} url={u} />)}</div>
+                <div style={{ fontSize: 11.5, color: '#5B554F', marginTop: 2, lineHeight: 1.5 }}>{b}{urls.map((u, i) => <SourceLink key={u} url={u} label={urls.length > 1 ? `Source ${i + 1}` : 'Source'} />)}</div>
               </div>
             ))}
           </div>
