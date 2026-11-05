@@ -7,11 +7,12 @@
 // Readiness scores are an indicative framework, not DfE criteria.
 
 import React from 'react'
-import { Landmark, CheckCircle, CircleDashed, Circle, CalendarClock, FileText, ExternalLink, ArrowUpRight, School, Info, RefreshCw, PoundSterling } from 'lucide-react'
+import { Landmark, CheckCircle, CircleDashed, Circle, CalendarClock, FileText, ExternalLink, ArrowUpRight, School, RefreshCw, PoundSterling } from 'lucide-react'
 import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK, type PesspnVerdict, type PesspnStatus } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { useSportNetwork } from '@/lib/impact/use-sport-network'
+import { CpdPanel } from './CpdPanel'
 import { SPORT_NETWORK_DISCLAIMER, SPORT_NETWORK_SOURCE_NOTE } from '@/data/impact/sport-network'
 
 // The page an item was checked against, so anyone can read it for themselves.
@@ -20,10 +21,11 @@ function SourceLink({ url, light }: { url?: string; light?: boolean }) {
   return <a href={url} target="_blank" rel="noreferrer" style={{ fontSize: 10.5, fontWeight: 700, color: light ? '#fff' : TP_RED, marginLeft: 6, whiteSpace: 'nowrap' }}>Source</a>
 }
 
-const VERDICT: Record<PesspnVerdict, { label: string; color: string; tone: 'green' | 'amber' | 'red' }> = {
+const VERDICT: Record<PesspnVerdict, { label: string; color: string; tone: 'green' | 'amber' | 'red' | 'grey' }> = {
   'on-track': { label: 'On track to qualify', color: '#187A3C', tone: 'green' },
   'nearly': { label: 'Nearly there', color: '#9A6A0B', tone: 'amber' },
   'at-risk': { label: 'At risk', color: TP_RED, tone: 'red' },
+  'needs-evidence': { label: 'Not enough evidence yet', color: '#8A847E', tone: 'grey' },
 }
 const STATUS: Record<PesspnStatus, { icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>; color: string }> = {
   met: { icon: CheckCircle, color: '#187A3C' },
@@ -56,7 +58,7 @@ export function SchoolReadinessCard({ schoolId }: { schoolId: string }) {
         <Landmark size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />PE &amp; School Sport Partnerships Network — readiness
       </SectionTitle>
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', background: '#F7F5F2', borderRadius: 12, padding: '14px 16px', marginBottom: 12, flexWrap: 'wrap' }}>
-        <ScoreRing score={rd.score} verdict={rd.verdict} />
+        {rd.verdict !== 'needs-evidence' && <ScoreRing score={rd.score} verdict={rd.verdict} />}
         <div style={{ flex: 1, minWidth: 200 }}>
           <Pill tone={v.tone}>{v.label.toUpperCase()}</Pill>
           <div style={{ fontSize: 12.5, color: '#5B554F', marginTop: 8, lineHeight: 1.55 }}>{rd.summary}</div>
@@ -73,11 +75,13 @@ export function SchoolReadinessCard({ schoolId }: { schoolId: string }) {
               <div>
                 <div style={{ fontSize: 12, fontWeight: 800, color: TP_DARK }}>{cr.label}</div>
                 <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2, lineHeight: 1.4 }}>{it.note}</div>
+                {it.status !== 'met' && <div style={{ fontSize: 11, color: TP_DARK, marginTop: 3, lineHeight: 1.4, fontWeight: 700 }}>{it.action}</div>}
               </div>
             </div>
           )
         })}
       </div>
+      <CpdPanel schoolId={schoolId} />
     </Card>
   )
 }
@@ -89,9 +93,10 @@ export default function SportNetworkTab() {
   const { content: N, updating, message, update } = useSportNetwork()
   const updatedLabel = new Date(N.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
   const scored = SCHOOLS.map(s => ({ s, rd: SCHOOL_READINESS[s.id] })).filter(x => x.rd)
-  const counts = { 'on-track': 0, nearly: 0, 'at-risk': 0 } as Record<PesspnVerdict, number>
+  const counts = { 'on-track': 0, nearly: 0, 'at-risk': 0, 'needs-evidence': 0 } as Record<PesspnVerdict, number>
   scored.forEach(x => { counts[x.rd.verdict]++ })
-  const avg = scored.length ? Math.round(scored.reduce((n, x) => n + x.rd.score, 0) / scored.length) : 0
+  const banded = scored.filter(x => x.rd.verdict !== 'needs-evidence')
+  const avg = banded.length ? Math.round(banded.reduce((n, x) => n + x.rd.score, 0) / banded.length) : 0
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -119,7 +124,8 @@ export default function SportNetworkTab() {
           [`${counts['on-track']}`, 'ON TRACK TO QUALIFY', '#187A3C'],
           [`${counts.nearly}`, 'NEARLY THERE', '#9A6A0B'],
           [`${counts['at-risk']}`, 'AT RISK', TP_RED],
-          [`${avg}`, 'AVG READINESS SCORE', TP_DARK],
+          [`${counts['needs-evidence']}`, 'NEEDS EVIDENCE', '#8A847E'],
+          [banded.length ? `${avg}` : '—', 'AVG READINESS SCORE', TP_DARK],
           [`${scored.length}`, 'SCHOOLS TRACKED', TP_DARK],
         ] as [string, string, string][]).map(([v, l, c]) => (
           <Card key={l} style={{ padding: '14px 16px' }}>
@@ -133,11 +139,11 @@ export default function SportNetworkTab() {
         {/* Schools readiness table */}
         <Card>
           <SectionTitle sub="Every school’s indicative readiness — and the single biggest gap to close">School readiness</SectionTitle>
-          {scored.length === 0 && <EmptyState compact icon={School} title="No schools tracked yet" sub="Each partner school's readiness for the new funding model is scored here from its registers, CPD, reach and impact evidence." />}
+          {scored.length === 0 && <EmptyState compact icon={School} title="No schools added yet" sub="Add your schools and each one is scored automatically from what you record: registers and attendance, children reached, programme status and funding, family contact, feedback and staff CPD. Anything not recorded yet shows what to add." />}
           <div style={{ display: 'grid', gap: 8 }}>
             {scored.map(({ s, rd }) => {
               const v = VERDICT[rd.verdict]
-              const gap = PESSPN_CRITERIA.find(cr => rd.items[cr.id]?.status === 'gap')
+              const gap = PESSPN_CRITERIA.find(cr => cr.id === rd.biggestGap)
               return (
                 <div key={s.id} style={{ background: '#F7F5F2', borderRadius: 10, padding: '11px 13px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -145,23 +151,21 @@ export default function SportNetworkTab() {
                       <School size={13} style={{ verticalAlign: '-2px', marginRight: 6, color: TP_RED }} />{s.name}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 80, background: '#EFEBE6', borderRadius: 999, height: 8 }}>
-                        <div style={{ width: `${rd.score}%`, height: '100%', background: v.color, borderRadius: 999 }} />
-                      </div>
-                      <span style={{ fontSize: 12, fontWeight: 900, color: v.color, width: 26, textAlign: 'right' }}>{rd.score}</span>
+                      {rd.verdict !== 'needs-evidence' && <>
+                        <div style={{ width: 80, background: '#EFEBE6', borderRadius: 999, height: 8 }}>
+                          <div style={{ width: `${rd.score}%`, height: '100%', background: v.color, borderRadius: 999 }} />
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 900, color: v.color, width: 26, textAlign: 'right' }}>{rd.score}</span>
+                      </>}
                       <Pill tone={v.tone}>{v.label.toUpperCase()}</Pill>
                     </div>
                   </div>
                   <div style={{ fontSize: 11, color: '#6B6560', marginTop: 5 }}>
-                    {gap ? <>Next gap: <strong style={{ color: TP_DARK }}>{gap.label}</strong> — {rd.items[gap.id].note}</> : 'All criteria met or in progress — maintain momentum'}
+                    {gap ? <>Biggest gap: <strong style={{ color: TP_DARK }}>{gap.label}</strong> — {rd.items[gap.id].note}. {rd.items[gap.id].action}</> : 'All eight areas evidenced and on track — keep it up to date'}
                   </div>
                 </div>
               )
             })}
-          </div>
-          <div style={{ fontSize: 11, color: '#8A847E', marginTop: 10, background: '#FDE8E8', borderRadius: 9, padding: '9px 11px' }}>
-            <Info size={12} style={{ verticalAlign: '-2px', marginRight: 6, color: TP_RED }} />
-            The common thread: unfunded schools score low on continuity. The fundraising module is the lever that moves them to “on track”.
           </div>
         </Card>
 

@@ -48,6 +48,10 @@ export interface ImpactPortalContext {
   org?: ImpactOrgHandle
   /** Live portals: households and their children (Families module, parent preview). */
   people?: ImpactPeople
+  /** Live portals: staff CPD records, by school. */
+  cpd?: ImpactCpd[]
+  /** Live portals: load the org's data again after a change. */
+  reload?: () => void
 }
 
 export interface ImpactChild {
@@ -58,6 +62,7 @@ export interface ImpactFamily {
   id: string; guardian: string; email: string | null; phone: string | null
   consentData: boolean | null; consentPhoto: boolean | null; unsubscribed: boolean; children: ImpactChild[]
 }
+export interface ImpactCpd { id: string; school_id: string; staff_name: string; course: string; cpd_date: string | null; provider: string | null; notes: string | null }
 export interface ImpactPeople { families: ImpactFamily[]; unlinkedChildren: ImpactChild[] }
 
 const { TP_RED: _r, TP_BLACK: _b, TP_DARK: _d, TP_PAPER: _p, ...TP_DATA } = TP

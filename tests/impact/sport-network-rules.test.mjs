@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildPanel, citationProblem, fundingHeadline, HERO_FALLBACK, missingFigure, normalise, pageText } from '../../src/lib/impact/sport-network-rules.ts'
+import { buildPanel, citationProblem, fundingHeadline, HERO_FALLBACK, missingFigure, normalise, pageSections, pageStamps, pageText } from '../../src/lib/impact/sport-network-rules.ts'
 
 const U = 'https://www.gov.uk/guidance'
 const PAGE = 'The transition payment rises from £100 million to £150 million. Academies are paid on 9 November 2026. Network support starts from April 2027. The return closes at 5pm on 31 July 2027. £580m goes to the Network and £200m to facilities.'
@@ -34,6 +34,18 @@ test('citation: listing pages are refused, however good the quote', () => {
   const p = new Map([[l, { text: PAGE, title: '' }]])
   assert.equal(citationProblem('Network support', { url: l, quote: 'Network support starts from April 2027' }, p), 'cites a listing page, not the article')
 })
+test('sections split at headings and drop scripts', () => assert.deepEqual(pageSections('<script>no</script><h2>One</h2><p>a</p><h2>Two</h2><p>b</p>').map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean), ['One a', 'Two b']))
+test('stamps: published, updated and bulletin dates, newest first', () => {
+  assert.deepEqual(pageStamps('Published: 19 September 2014 Last updated: 24 September 2026'), ['24 sep 2026', '19 sep 2014'])
+  assert.deepEqual(pageStamps('Guidance Updated 29 October 2026 Applies to England'), ['29 oct 2026'])
+  assert.deepEqual(pageStamps('Update 09 July 2026 View in browser'), ['9 jul 2026'])
+  assert.deepEqual(pageStamps('The fair is on 12 June 2026'), [])
+})
+const sectioned = { text: 'Payments Paid on 9 November 2026. Network Support starts soon for schools. Published: 21 May 2026', title: '', sections: ['Payments Paid on 9 November 2026.', 'Network Support starts soon for schools.', 'Published: 21 May 2026'] }
+const secPages = new Map([[U, sectioned]])
+test('dates: a date in another section is refused', () => assert.equal(citationProblem('9 November 2026 network support', q('Support starts soon for schools'), secPages), '"9 nov" isn\'t in the quote'))
+test('dates: a date beside the quote passes', () => assert.equal(citationProblem('Paid 9 November 2026', q('Paid on 9 November'), secPages), null))
+test('dates: the page\'s own published date passes', () => assert.equal(citationProblem('21 May 2026 network support', q('Support starts soon for schools'), secPages), null))
 test('headline agrees with its parts', () => { assert.equal(fundingHeadline([580, 200, 150]), 'Almost £1bn (£930m)'); assert.equal(fundingHeadline([500, 700]), 'Around £1.2bn'); assert.equal(fundingHeadline([300, 100]), 'Around £400m') })
 
 const rows = ['a', 'b', 'c'].map(l => ({ label: `Row ${l}`, value: '9 November 2026', ...q('Academies are paid on 9 November 2026') }))
@@ -71,6 +83,15 @@ test('panel: only confirmed past dates are done', () => {
   assert.equal(content.timeline[2].status, 'not_announced')
 })
 test('panel: unsupported hero falls back to fixed text', () => { const { content } = buildPanel(raw({ hero: { body: 'Starts in 2031 for all', ...q('Network support starts from April 2027') } }), pages, current, '2026-11-05'); assert.equal(content.hero.body, HERO_FALLBACK) })
+test('panel: a guidance date comes from the page when the model gets it wrong', () => {
+  const p = new Map([[U, { text: PAGE + ' Updated 29 October 2026', title: 'G' }]])
+  const r = buildPanel(raw({ guidance: [{ title: 'Guide', date: '24 September 2026', url: U }] }), p, current, '2026-11-05')
+  assert.equal(r.content.guidance[0].date, '29 October 2026'); assert.ok(r.dropped.some(d => /corrected/.test(d.why)))
+})
+test('panel: a matching guidance date is left alone', () => {
+  const p = new Map([[U, { text: PAGE + ' Updated 29 October 2026', title: 'G' }]])
+  assert.equal(buildPanel(raw({ guidance: [{ title: 'Guide', date: '29 Oct 2026', url: U }] }), p, current, '2026-11-05').content.guidance[0].date, '29 Oct 2026')
+})
 test('panel: never carries a model footnote', () => { const { content } = buildPanel(raw({ footnote: 'Everything is certain' }), pages, current, '2026-11-05'); assert.equal(content.footnote, undefined) })
 test('panel: too little left means nothing replaces the panel', () => assert.equal(buildPanel(raw({ timeline: [] }), pages, current, '2026-11-05').content, null))
 test('panel: expected items carry who said it, taken from the source page', () => {

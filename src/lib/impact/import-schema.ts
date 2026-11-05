@@ -7,7 +7,7 @@
 //   volunteers → tp_volunteers    families → tp_families
 //   children → tp_children        registers → tp_sessions + tp_attendance
 //   events → tp_fundraising_events   donations → tp_donations
-//   responses → tp_impact_responses
+//   responses → tp_impact_responses   cpd → tp_cpd
 // "contacts" is read but never saved as-is: a contacts list is routed by its
 // tags into families / volunteers / coaches (src/lib/impact/import-tidy.ts).
 //
@@ -20,7 +20,7 @@ import { toNumber } from '@/lib/import-engine/records'
 
 export type ImpactImportCategory =
   | 'schools' | 'programmes' | 'venues' | 'coaches' | 'volunteers' | 'families'
-  | 'children' | 'registers' | 'events' | 'donations' | 'responses' | 'contacts'
+  | 'children' | 'registers' | 'events' | 'donations' | 'responses' | 'cpd' | 'contacts'
 
 export const IMPACT_IMPORT_FIELDS: Record<ImpactImportCategory, string[]> = {
   schools: ['name', 'borough', 'address', 'head_name', 'pe_lead_name', 'safeguarding_lead', 'contact_email', 'contact_phone', 'funding_source', 'status', 'notes'],
@@ -34,18 +34,19 @@ export const IMPACT_IMPORT_FIELDS: Record<ImpactImportCategory, string[]> = {
   events: ['name', 'event_type', 'event_date', 'target', 'status', 'notes'],
   donations: ['donor_name', 'amount', 'donated_on', 'purpose', 'gift_aid', 'method', 'notes'],
   responses: ['respondent_name', 'child_name', 'respondent', 'areas_helped', 'would_recommend', 'satisfaction', 'comment', 'consent_publish', 'notes'],
+  cpd: ['school_name', 'staff_name', 'course', 'date', 'provider', 'notes'],
   contacts: ['name', 'email', 'phone', 'tags', 'notes'],
 }
 
 export const IMPACT_IMPORT_CATEGORIES = Object.keys(IMPACT_IMPORT_FIELDS) as ImpactImportCategory[]
 /** Categories that are saved (in this order — later ones link to earlier). */
 export const IMPACT_SAVE_ORDER: Exclude<ImpactImportCategory, 'contacts'>[] = [
-  'schools', 'programmes', 'venues', 'coaches', 'families', 'volunteers', 'children', 'events', 'donations', 'registers', 'responses',
+  'schools', 'programmes', 'venues', 'coaches', 'families', 'volunteers', 'children', 'events', 'donations', 'registers', 'responses', 'cpd',
 ]
 
 const LABEL: Record<ImpactImportCategory, string> = {
   schools: 'name', programmes: 'school_name', venues: 'name', coaches: 'name', volunteers: 'name', families: 'guardian_name',
-  children: 'name', registers: 'child_name', events: 'name', donations: 'donor_name', responses: 'respondent_name', contacts: 'name',
+  children: 'name', registers: 'child_name', events: 'name', donations: 'donor_name', responses: 'respondent_name', cpd: 'staff_name', contacts: 'name',
 }
 
 export const IMPACT_ENUMS: Record<string, string[]> = {
@@ -65,7 +66,7 @@ export const IMPACT_ENUMS: Record<string, string[]> = {
 export const IMPACT_CATEGORY_LABEL: Record<ImpactImportCategory, string> = {
   schools: 'Schools', programmes: 'Programmes', venues: 'Venues', coaches: 'Coaches', volunteers: 'Volunteers',
   families: 'Families', children: 'Children', registers: 'Register entries', events: 'Fundraising events',
-  donations: 'Donations', responses: 'Feedback responses', contacts: 'Contacts',
+  donations: 'Donations', responses: 'Feedback responses', cpd: 'CPD records', contacts: 'Contacts',
 }
 
 // ── Value readers ────────────────────────────────────────────────────────────
@@ -153,7 +154,7 @@ export const IMPACT_IMPORT_SCHEMA: ImportSchema<ImpactImportCategory> = {
   labelField: LABEL,
   intFields: new Set(['programmes.current_week', 'registers.week_number', 'responses.satisfaction']),
   numFields: new Set(['programmes.cost', 'children.fee_amount', 'events.target', 'donations.amount']),
-  dateFields: new Set(['programmes.start_date', 'programmes.end_date', 'coaches.dbs_expiry', 'coaches.safeguarding_date', 'coaches.first_aid_expiry',
+  dateFields: new Set(['cpd.date', 'programmes.start_date', 'programmes.end_date', 'coaches.dbs_expiry', 'coaches.safeguarding_date', 'coaches.first_aid_expiry',
     'volunteers.induction_date', 'volunteers.since', 'children.date_of_birth', 'registers.session_date', 'events.event_date', 'donations.donated_on']),
   enums: IMPACT_ENUMS,
   synonyms: {
@@ -232,7 +233,7 @@ export const IMPACT_IMPORT_SCHEMA: ImportSchema<ImpactImportCategory> = {
     return null
   },
   afterClean: (category, out) => {
-    for (const f of ['name', 'guardian_name', 'guardian2_name', 'donor_name', 'respondent_name', 'child_name']) {
+    for (const f of ['name', 'guardian_name', 'guardian2_name', 'donor_name', 'respondent_name', 'child_name', 'staff_name']) {
       if (typeof out[f] === 'string') out[f] = titleCase((out[f] as string).replace(/\s+/g, ' ').trim())
     }
     if (category === 'children' && typeof out.fee_status !== 'string') out.fee_status = undefined
