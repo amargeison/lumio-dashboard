@@ -218,16 +218,18 @@ test('the panel takes the new link, so Save can’t write the old one back', () 
   const after = withLeadLinks(draft, { stage: 'Partnered', school_id: 'new', campaign_id: null })
   assert.deepEqual(after, { name: 'Edited name', school_id: 'new', campaign_id: null, stage: 'Partnered' })
 })
-test('the board goes back to its first stage when the pipeline changes, on live only', () => {
+test('the board goes back to its first stage when the pipeline changes, on live and demo', () => {
   const tab = readFileSync(new URL('../../src/app/tenproject/[slug]/_components/LeadsTab.tsx', import.meta.url), 'utf8')
-  assert.match(tab, /useEffect\(\(\) => \{ if \(!demo && board\.current\) board\.current\.scrollLeft = 0 \}, \[pipe, demo\]\)/)
+  assert.match(tab, /useEffect\(\(\) => \{ if \(board\.current\) board\.current\.scrollLeft = 0 \}, \[pipe\]\)/)
   assert.match(tab, /<div ref=\{board\}[^>]*data-testid="lead-board"/)
 })
 
-test('Leads takes the page title on live, and the demo keeps its header', () => {
+test('Leads takes the page title on live and demo', () => {
   const page = readFileSync(new URL('../../src/app/impact/[slug]/page.tsx', import.meta.url), 'utf8')
   assert.match(page, /leads: \{ title: 'Leads', sub: 'Schools and funders, from first contact to partnered' \}/)
-  assert.match(page, /activeSection === 'leads' && mode === 'demo' \? LANDING_SECTION\.hq : activeSection/)
+  assert.match(page, /headerFor\(role, activeSection, ROLE_TITLES, brand\)/)
+  const tab = readFileSync(new URL('../../src/app/tenproject/[slug]/_components/LeadsTab.tsx', import.meta.url), 'utf8')
+  assert.doesNotMatch(tab, /<SectionTitle/, 'no second heading under the page title')
 })
 
 const donate = { kind: 'donate', campaignId: 'c' }
@@ -255,10 +257,46 @@ test('marking funded confirms the school and records the funder', () => {
 test('a funding source already set is never overwritten', () => {
   assert.deepEqual(fundedSchoolPatch({ status: 'fundraising', funding_source: 'School budget' }, 'Wrenfield Fund'), { status: 'confirmed' })
 })
-test('marking funded writes only what changed', async () => {
-  const db = fakeDb({ tp_schools: { status: 'fundraising', funding_source: 'School budget' } })
+// Holds real rows and applies the filters, so "unchanged" is an outcome, not an assumption.
+function schoolDb(school, programmes) {
+  const rows = { tp_schools: [{ id: 's1', hq_id: 'hq', ...school }], tp_programmes: programmes }
+  const from = table => {
+    let patch = null
+    const filters = []
+    const hits = () => rows[table].filter(r => filters.every(f => f(r)))
+    const q = {
+      select() { return q }, update(p) { patch = p; return q },
+      eq(k, v) { filters.push(r => r[k] === v); return q },
+      in(k, v) { filters.push(r => v.includes(r[k])); return q },
+      single() { return Promise.resolve({ data: hits()[0] ?? null, error: null }) },
+      then(done) { for (const r of hits()) Object.assign(r, patch); return Promise.resolve({ error: null }).then(done) },
+    }
+    return q
+  }
+  return { from, rows }
+}
+const programmeRow = (id, status, school_id = 's1', hq_id = 'hq') => ({ id, status, school_id, hq_id })
+const statuses = db => Object.fromEntries(db.rows.tp_programmes.map(p => [p.id, p.status]))
+
+test('marking funded writes only what changed on the school', async () => {
+  const db = schoolDb({ status: 'fundraising', funding_source: 'School budget' }, [])
   await markSchoolFunded(db, 'hq', 's1', 'Wrenfield Fund')
-  assert.deepEqual(db.writes.map(w => w.row), [{ status: 'confirmed' }])
+  assert.deepEqual([db.rows.tp_schools[0].status, db.rows.tp_schools[0].funding_source], ['confirmed', 'School budget'])
+})
+test('marking funded confirms a fundraising or planned programme', async () => {
+  const db = schoolDb({ status: 'fundraising', funding_source: null }, [programmeRow('a', 'fundraising'), programmeRow('b', 'planned')])
+  await markSchoolFunded(db, 'hq', 's1', 'Wrenfield Fund')
+  assert.deepEqual(statuses(db), { a: 'confirmed', b: 'confirmed' })
+})
+test('running and complete programmes are never touched', async () => {
+  const db = schoolDb({ status: 'fundraising', funding_source: null }, [programmeRow('a', 'running'), programmeRow('b', 'complete'), programmeRow('c', 'confirmed')])
+  await markSchoolFunded(db, 'hq', 's1', 'Wrenfield Fund')
+  assert.deepEqual(statuses(db), { a: 'running', b: 'complete', c: 'confirmed' })
+})
+test('only this school’s programmes move, even when the school has nothing to change', async () => {
+  const db = schoolDb({ status: 'confirmed', funding_source: 'School budget' }, [programmeRow('mine', 'planned'), programmeRow('other', 'planned', 's2'), programmeRow('theirs', 'planned', 's1', 'hq2')])
+  await markSchoolFunded(db, 'hq', 's1', 'Wrenfield Fund')
+  assert.deepEqual(statuses(db), { mine: 'confirmed', other: 'planned', theirs: 'planned' })
 })
 
 // What the readiness engine does once a school is marked, from the real rows.
@@ -282,8 +320,14 @@ test('readiness: funding alone doesn’t make a partnership, so these stay in pr
   assert.deepEqual([noProgramme.status, noProgramme.action], ['progress', 'Add a programme once it’s agreed.'])
   const noLead = partner(readinessRows(marked, 'confirmed', [800000]))
   assert.deepEqual([noLead.status, noLead.action], ['progress', 'Add the school’s safeguarding lead.'])
-  const stillFundraising = partner(readinessRows({ ...marked, safeguarding_lead: 'J. Hill' }, 'fundraising', [800000]))
-  assert.deepEqual([stillFundraising.status, stillFundraising.action], ['progress', 'Confirm the programme with the school.'])
+})
+test('readiness: a fundraising programme is on track once marking funded has confirmed it', async () => {
+  const school = { status: 'fundraising', funding_source: null, safeguarding_lead: 'J. Hill' }
+  assert.equal(partner(readinessRows(school, 'fundraising', [300000])).status, 'progress')
+  const db = schoolDb(school, [programmeRow('p', 'fundraising')])
+  await markSchoolFunded(db, 'hq', 's1', 'Wrenfield Fund')
+  const { status, funding_source, safeguarding_lead } = db.rows.tp_schools[0]
+  assert.equal(partner(readinessRows({ status, funding_source, safeguarding_lead }, db.rows.tp_programmes[0].status, [300000, 500000])).status, 'met')
 })
 
 // ── Registration and demo ───────────────────────────────────────────────────

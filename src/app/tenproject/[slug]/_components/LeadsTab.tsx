@@ -14,8 +14,8 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import { Download, Plus, Target, Upload, X } from 'lucide-react'
-import { Card, Pill, SectionTitle, Stat } from './ui'
+import { Download, Plus, Upload, X } from 'lucide-react'
+import { Card, Pill, Stat } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import {
@@ -121,7 +121,7 @@ export default function LeadsTab() {
   }, [canEdit])
   useEffect(() => { void load() }, [load])
   // Each pipeline opens at its first stage, not wherever the last one was scrolled to.
-  useEffect(() => { if (!demo && board.current) board.current.scrollLeft = 0 }, [pipe, demo])
+  useEffect(() => { if (board.current) board.current.scrollLeft = 0 }, [pipe])
 
   const leads = demo ? ctx.data.DEMO_LEADS : rows
   const open = openId === 'new' ? null : leads.find(l => l.id === openId) ?? null
@@ -160,10 +160,7 @@ export default function LeadsTab() {
 
   return (
     <div style={{ display: 'grid', gap: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: demo ? 'space-between' : 'flex-end', gap: 14, flexWrap: 'wrap' }}>
-        {demo && <SectionTitle sub="Schools and funders, from first contact to partnered">
-          <Target size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Leads
-        </SectionTitle>}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', gap: 14, flexWrap: 'wrap' }}>
         {canEdit ? (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={() => setModal('ads')} style={secondary}><Download size={14} /> Leads from ads</button>
