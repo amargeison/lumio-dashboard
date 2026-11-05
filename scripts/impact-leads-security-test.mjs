@@ -147,7 +147,12 @@ async function main() {
   const gifts = (await admin.from('tp_donations').select('amount_pence, method, donor_name, donated_on').eq('campaign_id', madeId).order('amount_pence')).data
   ok('both donations are recorded, by organisation, as bank payments', gifts?.length === 2 && gifts.every(g => g.method === 'bank' && g.donor_name === 'Wrenfield Fund' && g.donated_on === '2026-11-05') && gifts[1].amount_pence === 500000, JSON.stringify(gifts))
   const fundraising = (await A.db.from('tp_schools').insert({ hq_id: A.id, name: 'Fundraising Primary', status: 'fundraising' }).select('id').single()).data
+  const programme = (status) => ({ hq_id: A.id, school_id: fundraising.id, term_label: `Test ${status}`, status })
+  const added = await A.db.from('tp_programmes').insert(['fundraising', 'planned', 'running', 'complete'].map(programme))
+  ok('A can add programmes', !added.error, added.error?.message)
   await markSchoolFunded(A.db, A.id, fundraising.id, 'Wrenfield Fund')
+  const after = (await admin.from('tp_programmes').select('term_label, status').eq('school_id', fundraising.id).order('term_label')).data
+  ok('fundraising and planned programmes are confirmed; running and complete are not', after?.find(p => p.term_label === 'Test fundraising')?.status === 'confirmed' && after?.find(p => p.term_label === 'Test planned')?.status === 'confirmed' && after?.find(p => p.term_label === 'Test running')?.status === 'running' && after?.find(p => p.term_label === 'Test complete')?.status === 'complete', JSON.stringify(after))
   const marked = (await admin.from('tp_schools').select('status, funding_source').eq('id', fundraising.id).single()).data
   ok('marking funded confirms the school and records the funder', marked?.status === 'confirmed' && marked?.funding_source === 'Wrenfield Fund', JSON.stringify(marked))
   const budgeted = (await A.db.from('tp_schools').insert({ hq_id: A.id, name: 'Budgeted Primary', status: 'fundraising', funding_source: 'School budget' }).select('id').single()).data

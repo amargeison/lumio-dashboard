@@ -128,13 +128,19 @@ export function fundedSchoolPatch(school: { status: string; funding_source?: str
   }
 }
 
+/** Programmes that funding confirms. Running and complete ones have moved past this and are never touched. */
+export const FUNDED_PROGRAMME_STATUSES = ['fundraising', 'planned']
+
 export async function markSchoolFunded(db: SupabaseClient, hqId: string, schoolId: string, funder: string) {
   const { data: school, error } = await db.from('tp_schools').select('status, funding_source').eq('id', schoolId).eq('hq_id', hqId).single()
   if (error || !school) throw new Error('The donation was recorded, but that school could not be found.')
   const patch = fundedSchoolPatch(school as { status: string; funding_source: string | null }, funder)
-  if (!Object.keys(patch).length) return
-  const { error: failed } = await db.from('tp_schools').update(patch).eq('id', schoolId).eq('hq_id', hqId)
-  if (failed) throw new Error('The donation was recorded, but the school could not be updated.')
+  if (Object.keys(patch).length) {
+    const { error: failed } = await db.from('tp_schools').update(patch).eq('id', schoolId).eq('hq_id', hqId)
+    if (failed) throw new Error('The donation was recorded, but the school could not be updated.')
+  }
+  const { error: failed } = await db.from('tp_programmes').update({ status: 'confirmed' }).eq('school_id', schoolId).eq('hq_id', hqId).in('status', FUNDED_PROGRAMME_STATUSES)
+  if (failed) throw new Error('The school was marked as funded, but its programme could not be confirmed.')
 }
 
 // ── Bulk ────────────────────────────────────────────────────────────────────

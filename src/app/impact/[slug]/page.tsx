@@ -514,7 +514,7 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
       {/* Main */}
       {darkStyle}
       <main className={contentClass} style={{ flex: 1, minWidth: 0, padding: '22px 26px 40px', background: mainBg }}>
-        {(() => { const hm = role === 'parent' ? meta : headerFor(role, activeSection === 'leads' && mode === 'demo' ? LANDING_SECTION.hq : activeSection, ROLE_TITLES, brand); return (
+        {(() => { const hm = role === 'parent' ? meta : headerFor(role, activeSection, ROLE_TITLES, brand); return (
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 21, fontWeight: 900, color: TP_DARK }}>{hm.title}</div>
           <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 3 }}>{hm.sub}</div>
