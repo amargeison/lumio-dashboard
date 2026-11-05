@@ -266,7 +266,7 @@ export default function HQView({ section, onSectionChange }: {
             {IMPACT_AREAS.map(a => <Pill key={a} tone="grey">{a}</Pill>)}
           </div>
           <button onClick={() => openFunderDoc('term-report', ctx)} style={{ marginTop: 14, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-            <ClipboardList size={14} /> Draft term report for funders (AI)
+            <ClipboardList size={14} /> Draft term report for funders{ctx.mode === 'live' ? '' : ' (AI)'}
           </button>
         </Card>
       </div>

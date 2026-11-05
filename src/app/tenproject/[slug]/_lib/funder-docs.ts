@@ -4,7 +4,10 @@
 // Built client-side from demo data; the production version renders the same
 // templates from real registers/surveys (tp_funder_reports stores snapshots).
 
-import { fill, type ImpactPortalContext } from '../_components/ImpactDataContext'
+import type { ImpactPortalContext } from '../_components/ImpactDataContext'
+import { fill } from '@/lib/impact/fill'
+import { EXPIRY_WINDOW_DAYS, longDate } from '@/lib/impact/compliance'
+import { emptyInsights, WHAT_TO_RECORD, type LiveInsights } from '@/lib/impact/insights'
 
 export type FunderDocKind = 'term-report' | 'funder-pack' | 'bid-narrative' | 'governor-pack' | 'newsletter-snippet'
 
@@ -237,22 +240,136 @@ function noDataDoc(ctx: ImpactPortalContext, title: string) {
   return shell(ctx, `${b.org} — ${title}`, body)
 }
 
+// ─── Live documents ─────────────────────────────────────────────────────────
+// Built only from the live computations. A section appears when its data exists,
+// and nothing is claimed that the rows don't show: no retention, survey or
+// social value lines until those exist. People are counted here, never named.
+// Readiness stays on the Insights page: it's for the team, not for funders.
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+const listed = (items: string[]) => items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
+const liveFoot = (ctx: ImpactPortalContext) => [ctx.brand.legal, ctx.brand.town, ctx.brand.domain].filter(Boolean).map(esc).concat(foot(ctx)).join(' · ')
+// A school at enquiry stage isn't a partner yet, so documents only name schools with children or sessions.
+const delivering = (i: LiveInsights) => i.schools.rows.filter(r => r.children > 0 || r.sessions > 0)
+const hasData = (i: LiveInsights) => !i.reach.need || !i.attendance.need || !i.demographics.need || !i.compliance.need || delivering(i).length > 0
+
+const reachLine = (i: LiveInsights) => `${plural(i.reach.total, 'child', 'children')} attended at least one session in ${i.year}, counted from named-child registers.`
+
+function attendanceLine(i: LiveInsights) {
+  const s = i.attendance.sessions, first = longDate(s[0].date), last = longDate(s[s.length - 1].date)
+  return s.length === 1
+    ? `Attendance was ${i.attendance.overallPct}% at the 1 session on register, on ${first}.`
+    : `Attendance was ${i.attendance.overallPct}% across ${s.length} sessions on register, from ${first} to ${last}.`
+}
+
+function complianceLine(c: LiveInsights['compliance'], ctx: ImpactPortalContext) {
+  const total = c.valid + c.expiring + c.expired + c.notRecorded
+  const states = [
+    c.expiring > 0 && `${c.expiring} ${c.expiring === 1 ? 'is' : 'are'} expiring within ${EXPIRY_WINDOW_DAYS} days`,
+    c.expired > 0 && `${c.expired} ${c.expired === 1 ? 'has' : 'have'} expired`,
+    c.notRecorded > 0 && `${c.notRecorded} ${c.notRecorded === 1 ? 'is' : 'are'} not recorded`,
+  ].filter((x): x is string => !!x)
+  const team = listed([
+    ...(c.coaches ? [plural(c.coaches, 'coach', 'coaches')] : []),
+    ...(c.volunteers ? [plural(c.volunteers, ctx.brand.volunteer.toLowerCase(), ctx.brand.volunteers.toLowerCase())] : []),
+  ])
+  return `Across ${team}, ${c.valid} of ${plural(total, 'DBS, first aid and safeguarding record')} ${c.valid === 1 ? 'is' : 'are'} valid${states.length ? `; ${listed(states)}` : ''}. Safeguarding counts as valid once a completion date is on record.`
+}
+
+function liveReport(ctx: ImpactPortalContext, label: string, heading: string, title: string) {
+  const i = ctx.insights ?? emptyInsights()
+  const schools = delivering(i)
+  const flags = i.demographics.flags.filter(f => f.recorded > 0)
+  const sections = !hasData(i) ? `<p>${esc(WHAT_TO_RECORD)}</p>` : [
+    !i.reach.need && `<h2>REACH ACROSS THE YEAR</h2>
+    <p>${esc(reachLine(i))}</p>
+    <table><tr><th>Month</th><th>Children reached</th></tr>
+    ${i.reach.months.filter(m => m.children !== null).map(m => `<tr><td>${esc(m.label)} ${m.month.slice(0, 4)}</td><td>${m.children}</td></tr>`).join('')}
+    </table>`,
+    !i.attendance.need && `<h2>ATTENDANCE</h2><p>${esc(attendanceLine(i))}</p>`,
+    schools.length > 0 && `<h2>SCHOOLS</h2>
+    <table><tr><th>School</th><th>Children</th><th>Sessions</th><th>Attendance</th></tr>
+    ${schools.map(r => `<tr><td><b>${esc(r.school)}</b></td><td>${r.children}</td><td>${r.sessions}</td><td>${r.attendancePct === null ? '—' : `${r.attendancePct}%`}</td></tr>`).join('')}
+    </table>`,
+    !i.demographics.need && `<h2>WHO TAKES PART</h2>
+    <table><tr><th>Year group</th><th>Children</th><th>%</th></tr>
+    ${i.demographics.yearGroups.map(y => `<tr><td>${esc(y.label)}</td><td>${y.n}</td><td>${y.pct}%</td></tr>`).join('')}
+    </table>
+    ${flags.flatMap(f => f.shares.map(s => `<p>${esc(s.label)}: ${s.pct}% of the ${plural(f.recorded, 'child', 'children')} with this recorded.</p>`)).join('')}`,
+    !i.conversion.need && i.conversion.rows.length > 0 && `<h2>SCHOOL → WEEKEND CONVERSION</h2>
+    <table><tr><th>School</th><th>Children reached</th><th>Families at a weekend session</th><th>%</th></tr>
+    ${i.conversion.rows.map(r => `<tr><td>${esc(r.school)}</td><td>${r.reached}</td><td>${r.converted}</td><td>${r.pct}%</td></tr>`).join('')}
+    </table>`,
+    !i.compliance.need && `<h2>SAFEGUARDING &amp; COMPLIANCE</h2><p>${esc(complianceLine(i.compliance, ctx))}</p>`,
+  ].filter(Boolean).join('\n')
+  const body = `
+    ${brandHeader(ctx, label)}
+    <h1>${esc(heading)}</h1>
+    <div class="sub">${esc(`Figures for ${i.year} so far, from named-child registers`)}</div>
+    <h2>HEADLINES</h2>
+    ${tiles(i.headline)}
+    ${sections}
+    <div class="foot">${liveFoot(ctx)}</div>
+  `
+  return shell(ctx, title, body)
+}
+
+function liveBidNarrative(ctx: ImpactPortalContext) {
+  const i = ctx.insights ?? emptyInsights()
+  const b = ctx.brand
+  const schools = delivering(i).length
+  const flags = i.demographics.flags.filter(f => f.recorded > 0)
+  const years = i.demographics.yearGroups.filter(y => y.label !== 'Not recorded').map(y => y.label)
+  const paras = hasData(i) ? [
+    !i.reach.need && `${schools ? `${b.org} is working with ${plural(schools, 'school')} in ${i.year}. ` : ''}${reachLine(i)}`,
+    !i.attendance.need && attendanceLine(i),
+    !i.demographics.need && [
+      years.length > 0 && `Children taking part are in ${listed(years)}.`,
+      ...flags.flatMap(f => f.shares.map(s => `${s.label}: ${s.pct}% of the ${plural(f.recorded, 'child', 'children')} with this recorded.`)),
+    ].filter(Boolean).join(' '),
+    !i.conversion.need && i.conversion.rows.length > 0 && `School to weekend conversion: ${listed(i.conversion.rows.map(r => `${r.pct}% at ${r.school} (${r.converted} of ${plural(r.reached, 'child', 'children')} reached)`))}.`,
+    !i.compliance.need && complianceLine(i.compliance, ctx),
+  ].filter((p): p is string => !!p) : []
+  const body = `
+    ${brandHeader(ctx, 'BID NARRATIVE · DRAFT')}
+    <h1>${esc(b.org)} — bid narrative</h1>
+    <div class="sub">Drop-in copy for grant applications, drawn from your own records — edit to fit the funder's word limit and priorities</div>
+    ${paras.length ? paras.map(p => `<p style="margin-bottom:12px">${esc(p)}</p>`).join('') : `<p>${esc(WHAT_TO_RECORD)}</p>`}
+    <div class="foot">${liveFoot(ctx)}${paras.length ? ' · Use the Copy text button above to paste into a bid' : ''}</div>
+  `
+  return shell(ctx, `${b.org} — Bid Narrative`, body, paras.length ? paras.join('\n\n') : undefined)
+}
+
 const DOC_TITLE: Record<FunderDocKind, string> = {
   'term-report': 'Term Report', 'funder-pack': 'Funder Pack', 'bid-narrative': 'Bid Narrative',
   'governor-pack': 'Governor Pack', 'newsletter-snippet': 'Newsletter Snippet',
 }
 
-export function openFunderDoc(kind: FunderDocKind, ctx: ImpactPortalContext) {
+/** The finished document. Pure, so the tests can read what a funder would. */
+export function funderDocHtml(kind: FunderDocKind, ctx: ImpactPortalContext): string {
   const schoolDoc = kind === 'governor-pack' || kind === 'newsletter-snippet'
-  const empty = ctx.mode === 'live' && (schoolDoc ? ctx.data.SCHOOL_STATS.headline.length === 0 : ctx.data.INSIGHTS.headline.length === 0)
-  if (empty) { openDocWindow(noDataDoc(ctx, DOC_TITLE[kind])); return }
-  const html =
-    kind === 'term-report' ? termReport(ctx)
+  if (ctx.mode === 'live') {
+    const org = ctx.brand.org
+    if (kind === 'funder-pack') return liveReport(ctx, `FUNDER PACK · ${(ctx.insights ?? emptyInsights()).year}`, `The case for ${org}`, `${org} — Funder Pack`)
+    if (kind === 'term-report') return liveReport(ctx, 'TERM REPORT', `${org} — Term Report`, `${org} — Term Report`)
+    if (kind === 'bid-narrative') return liveBidNarrative(ctx)
+    if (schoolDoc && ctx.data.SCHOOL_STATS.headline.length === 0) return noDataDoc(ctx, DOC_TITLE[kind])
+  }
+  return kind === 'term-report' ? termReport(ctx)
     : kind === 'funder-pack' ? funderPack(ctx)
     : kind === 'governor-pack' ? governorPack(ctx)
     : kind === 'newsletter-snippet' ? newsletterSnippet(ctx)
     : bidNarrative(ctx)
-  openDocWindow(html)
+}
+
+/** Tests run every document through this: a missing figure must never reach a funder. */
+export function assertCleanDoc(html: string) {
+  const text = html.replace(/<style[\s\S]*?<\/style>/g, '').replace(/<script[\s\S]*?<\/script>/g, '')
+  const bad = text.match(/\b(undefined|NaN|Infinity|null)\b|\[object Object\]/)
+  if (bad) throw new Error(`"${bad[0]}" reached the document: …${text.slice(Math.max(0, (bad.index ?? 0) - 60), (bad.index ?? 0) + 40)}…`)
+}
+
+export function openFunderDoc(kind: FunderDocKind, ctx: ImpactPortalContext) {
+  openDocWindow(funderDocHtml(kind, ctx))
 }
 
 export function openDocWindow(html: string) {

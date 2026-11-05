@@ -18,6 +18,7 @@ import type { ImpactCpd, ImpactDataset, ImpactPortalContext } from '@/app/tenpro
 import { EMPTY_IMPACT_COPY, EMPTY_IMPACT_DATA, mapLiveRows, buildPeople, type LiveRows } from './live-context'
 import type { ImpactPeople } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import { brandFor, type ImpactOrgSettings } from './org'
+import { buildInsights, type LiveInsights } from './insights'
 
 export interface LiveImpactState {
   ready: boolean
@@ -39,6 +40,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
   const [hq, setHq] = useState<LiveImpactState['hq']>(null)
   const [denied, setDenied] = useState<LiveImpactState['denied']>(null)
   const [cpd, setCpd] = useState<ImpactCpd[]>([])
+  const [insights, setInsights] = useState<LiveInsights | undefined>(undefined)
   const [reloads, setReloads] = useState(0)
   const reload = useCallback(() => setReloads(n => n + 1), [])
 
@@ -116,6 +118,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
         if (cancelled) return
         setData(mapLiveRows(rows))
         setPeople(buildPeople(rows))
+        setInsights(buildInsights(rows))
         setCpd((rows.cpd ?? []) as ImpactCpd[])
         setHq({ userId: user.id, email: user.email ?? '', name: profile.display_name ?? '' })
       } catch {
@@ -143,6 +146,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
       data,
       people,
       cpd,
+      insights,
       reload,
       org: {
         slug,
@@ -154,7 +158,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
         save,
       },
     }
-  }, [slug, settings, rowExists, data, people, cpd, reload, hq, save])
+  }, [slug, settings, rowExists, data, people, cpd, insights, reload, hq, save])
 
   return { ready, ctx, hq, denied }
 }
