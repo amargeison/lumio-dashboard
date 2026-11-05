@@ -30,7 +30,7 @@ export function useSportNetwork() {
       const res = await fetch('/api/impact/sport-network', { method: 'POST' })
       const d = await res.json().catch(() => null)
       if (d?.content) setContent(d.content)
-      if (!res.ok) setMessage(d?.error ?? FAILED)
+      if (!res.ok || d?.error) setMessage(d?.error ?? FAILED)
       else setMessage(d?.refreshed ? 'Updated from GOV.UK / DfE / Youth Sport Trust.' : (d?.note ?? 'Already up to date.'))
     } catch {
       setMessage(FAILED)

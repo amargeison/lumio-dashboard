@@ -57,11 +57,14 @@ function newest(stored: SportNetworkContent | null): SportNetworkContent {
 }
 
 // Every failed refresh answers the same way: the last good content, and why it's
-// still showing, so the panel can never go blank.
-const keptLastGood = (current: SportNetworkContent, status: number) => NextResponse.json({
+// still showing, so the panel can never go blank. Sent as a 200 on purpose: the
+// edge in front of the app swaps a 502 for its own HTML page, which would lose
+// this message.
+const keptLastGood = (current: SportNetworkContent) => NextResponse.json({
+  refreshed: false,
   error: `Couldn’t refresh — still showing the version last updated ${new Date(current.updatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.`,
   content: current,
-}, { status })
+})
 
 export async function GET() {
   try {
@@ -122,7 +125,7 @@ export async function POST(req: NextRequest) {
       { key: KEY, content: before.content, updated_at: before.updatedAt },
       { key: PREVIOUS_KEY, content: now.content, updated_at: now.updatedAt },
     ])
-    if (error) return keptLastGood(newest(now.content), 500)
+    if (error) return keptLastGood(newest(now.content))
     console.log('[impact/sport-network] rolled back', JSON.stringify({ hq: auth.user.id, to: before.updatedAt }))
     return NextResponse.json({ content: newest(before.content), source: 'stored', rolledBack: true })
   }
@@ -157,7 +160,7 @@ Return ONLY a JSON object with exactly these keys: hero {kicker,title,body}, key
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'web-search-20250305' },
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: [...ALLOWED_MODELS][0],
         max_tokens: MAX_REFRESH_TOKENS,
@@ -171,7 +174,7 @@ Return ONLY a JSON object with exactly these keys: hero {kicker,title,body}, key
     }
     if (!res.ok) {
       console.error('[impact/sport-network] upstream failed', res.status, data?.error?.type)
-      return keptLastGood(current, 502)
+      return keptLastGood(current)
     }
 
     const text: string = (data.content ?? []).filter((b: { type?: string }) => b.type === 'text').map((b: { text?: string }) => b.text ?? '').join('')
@@ -181,7 +184,7 @@ Return ONLY a JSON object with exactly these keys: hero {kicker,title,body}, key
     const next = validate(parsed)
     if (!next) {
       console.error('[impact/sport-network] rejected model output', JSON.stringify({ stop: data?.stop_reason, chars: text.length }))
-      return keptLastGood(current, 502)
+      return keptLastGood(current)
     }
 
     // Keep what's being replaced first: nothing is overwritten without a way back.
@@ -190,17 +193,17 @@ Return ONLY a JSON object with exactly these keys: hero {kicker,title,body}, key
     })
     if (keepError) {
       console.error('[impact/sport-network] could not keep the previous version', keepError.message)
-      return keptLastGood(current, 500)
+      return keptLastGood(current)
     }
     const { error } = await client.from('impact_reference_content').upsert({ key: KEY, content: next, updated_at: new Date().toISOString() })
     if (error) {
       console.error('[impact/sport-network] store failed', error.message)
-      return keptLastGood(current, 500)
+      return keptLastGood(current)
     }
     console.log('[impact/sport-network] refreshed', JSON.stringify({ hq: auth.user.id, from: current.updatedAt, to: next.updatedAt }))
     return NextResponse.json({ content: next, source: 'stored', refreshed: true })
   } catch (e) {
     console.error('[impact/sport-network] refresh failed', e instanceof Error ? e.message : e)
-    return keptLastGood(current, 502)
+    return keptLastGood(current)
   }
 }
