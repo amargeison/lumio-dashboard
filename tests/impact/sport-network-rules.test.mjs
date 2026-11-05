@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { buildPanel, citationProblem, fundingHeadline, HERO_FALLBACK, missingFigure, normalise, pageSections, pageStamps, pageText } from '../../src/lib/impact/sport-network-rules.ts'
+import { buildPanel, citationProblem, fundingHeadline, HERO_FALLBACK, missingFigure, normalise, pageSections, pageStamps, pageText, parsePanel } from '../../src/lib/impact/sport-network-rules.ts'
 
 const U = 'https://www.gov.uk/guidance'
 const PAGE = 'The transition payment rises from £100 million to £150 million. Academies are paid on 9 November 2026. Network support starts from April 2027. The return closes at 5pm on 31 July 2027. £580m goes to the Network and £200m to facilities.'
@@ -34,6 +34,10 @@ test('citation: listing pages are refused, however good the quote', () => {
   const p = new Map([[l, { text: PAGE, title: '' }]])
   assert.equal(citationProblem('Network support', { url: l, quote: 'Network support starts from April 2027' }, p), 'cites a listing page, not the article')
 })
+test('reply: the panel is found among other text', () => assert.deepEqual(parsePanel('Here {see} is it: {"timeline":[{"when":"a } b"}]} done').timeline, [{ when: 'a } b' }]))
+test('reply: a repeated panel uses the last one', () => assert.equal(parsePanel('{"keyFacts":[1]} then {"keyFacts":[2]}').keyFacts[0], 2))
+test('reply: a broken final panel falls back to an earlier good one', () => assert.equal(parsePanel('{"keyFacts":[1]} {"keyFacts":[oops]}').keyFacts[0], 1))
+test('reply: nothing usable is null', () => { assert.equal(parsePanel('sorry, no'), null); assert.equal(parsePanel('{"other":1}'), null) })
 test('sections split at headings and drop scripts', () => assert.deepEqual(pageSections('<script>no</script><h2>One</h2><p>a</p><h2>Two</h2><p>b</p>').map(s => s.replace(/\s+/g, ' ').trim()).filter(Boolean), ['One a', 'Two b']))
 test('stamps: published, updated and bulletin dates, newest first', () => {
   assert.deepEqual(pageStamps('Published: 19 September 2014 Last updated: 24 September 2026'), ['24 sep 2026', '19 sep 2014'])

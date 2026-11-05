@@ -253,16 +253,17 @@ async function save(db: SupabaseClient, userId: string, category: Category, rows
     case 'cpd': {
       const have = await all<{ school_id: string; staff_name: string; course: string; cpd_date: string | null }>(db, 'tp_cpd', 'school_id, staff_name, course, cpd_date')
       const same = (a: unknown, b: unknown) => foldText(a) === foldText(b)
+      let notFound = 0
       const fresh = rows.filter(r => {
         const id = schoolId(r.school_name)
-        if (!id) { miss('School not found (left out)', r.school_name); return false }
+        if (!id) { notFound++; miss('School not found (left out)', r.school_name); return false }
         return !have.some(h => h.school_id === id && same(h.staff_name, r.staff_name) && same(h.course, r.course) && (h.cpd_date ?? null) === (r.date ?? null))
       })
       await insert('tp_cpd', fresh.map(r => ({
         hq_id: userId, school_id: schoolId(r.school_name), staff_name: str(r.staff_name, 200), course: str(r.course, 300),
         cpd_date: r.date ?? null, provider: str(r.provider, 200), notes: str(r.notes, 4000),
       })))
-      return out(fresh.length, rows.length - fresh.length)
+      return out(fresh.length, rows.length - fresh.length - notFound)
     }
   }
 }
