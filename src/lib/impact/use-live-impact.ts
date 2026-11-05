@@ -95,7 +95,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
         const [venues, staff, volunteers, families, children, sessions, attendance, programmeLinks, responses, cpdRows] = await Promise.all([
           rowsOf(supabase.from('tp_venues').select('id, name, address, postcode, courts, surface, access_notes, storage_notes, session_day, session_time, inclusive, external_partner, external_url, notes').order('name')),
           rowsOf(supabase.from('tp_staff').select('id, name, role, qualification, email, phone, availability, specialisms, dbs_status, dbs_number, dbs_expiry, safeguarding_date, first_aid_expiry, insurance, notes').order('name')),
-          rowsOf(supabase.from('tp_volunteers').select('id, name, email, phone, venue_id, inducted, induction_date, dbs_status, since, notes').order('name')),
+          rowsOf(supabase.from('tp_volunteers').select('id, name, email, phone, venue_id, inducted, induction_date, dbs_status, dbs_expiry, since, notes').order('name')),
           rowsOf(supabase.from('tp_families').select('id, guardian_name, email, phone, emergency_contact, consent_data, consent_photo, unsubscribed_at').order('guardian_name')),
           rowsOf(supabase.from('tp_children').select('id, family_id, name, date_of_birth, year_group, school_id, programme_id, medical_notes, photo_consent, fee_status, stickers, send').order('name')),
           rowsOf(supabase.from('tp_sessions').select('id, kind, programme_id, venue_id, session_date, lead_staff_id').order('session_date')),

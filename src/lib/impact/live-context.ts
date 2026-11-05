@@ -14,6 +14,7 @@ import type { DemoSchool, FundraisingEvent, SchoolStatus, TpSchoolDetail } from 
 import { TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
 import { GENERIC_BRAND } from './org'
 import { NO_COACH } from './school-card'
+import { complianceItems, dbsCertificate, isoToday, needsAction, staffCertificates, volunteerCertificates, type CompliancePerson } from './compliance'
 import { attendanceBySession, evidenceFromRows, scoreSchools } from './readiness'
 import type { ImpactCopy, ImpactDataset, ImpactPortalContext, ImpactPeople, ImpactChild } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import type { DemoVenue, DemoChild, TpCoach, TpTenor, TpPersonDetail, TpVenueDetail } from '@/data/tenproject/demo-data'
@@ -73,7 +74,7 @@ export interface LiveRows {
   // Impact-owned people & places (drafts 213/214) — empty until applied.
   venues?: { id: string; name: string; address: string | null; postcode: string | null; courts: string | null; surface: string | null; access_notes: string | null; storage_notes: string | null; session_day: string | null; session_time: string | null; inclusive: boolean; external_partner: string | null; external_url: string | null; notes: string | null }[]
   staff?: { id: string; name: string; role: string; qualification: string | null; email: string | null; phone: string | null; availability: string | null; specialisms: string[] | null; dbs_status: string; dbs_number: string | null; dbs_expiry: string | null; safeguarding_date: string | null; first_aid_expiry: string | null; insurance: string | null; notes: string | null }[]
-  volunteers?: { id: string; name: string; email: string | null; phone: string | null; venue_id: string | null; inducted: boolean; induction_date: string | null; dbs_status: string; since: string | null; notes: string | null }[]
+  volunteers?: { id: string; name: string; email: string | null; phone: string | null; venue_id: string | null; inducted: boolean; induction_date: string | null; dbs_status: string; dbs_expiry?: string | null; since: string | null; notes: string | null }[]
   families?: { id: string; guardian_name: string; email: string | null; phone: string | null; emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null; unsubscribed_at: string | null }[]
   children?: { id: string; family_id: string | null; name: string; date_of_birth: string | null; year_group: string | null; school_id: string | null; programme_id: string | null; medical_notes: string | null; photo_consent: boolean | null; fee_status: string; stickers: number; send?: boolean | null }[]
   sessions?: { id: string; kind: string; programme_id: string | null; venue_id: string | null; session_date: string; lead_staff_id: string | null }[]
@@ -97,7 +98,7 @@ const progressLabel = (status: string | undefined, week: number | null | undefin
   : status === 'running' ? (week ? `In progress · Week ${week}` : 'In progress')
   : 'Not started'
 
-export function mapLiveRows(rows: LiveRows): ImpactDataset {
+export function mapLiveRows(rows: LiveRows, today = isoToday()): ImpactDataset {
   const data: { -readonly [K in keyof ImpactDataset]: ImpactDataset[K] } = { ...EMPTY_IMPACT_DATA }
   // School-level figures come from the readiness evidence, so the cards and the scores can't disagree.
   const evidence = evidenceFromRows(rows)
@@ -184,7 +185,7 @@ export function mapLiveRows(rows: LiveRows): ImpactDataset {
     schoolsPipeline: rows.schools.filter(s => ['enquiry', 'fundraising', 'confirmed'].includes(s.status)).length,
     weekendVisitsThisTerm: rows.checkins.reduce((n, c) => n + (c.children_count ?? 1), 0),
   }
-  mapPeople(rows, data)
+  mapPeople(rows, data, today)
   return data
 }
 
@@ -199,19 +200,16 @@ const ageOf = (dob: string | null, now = new Date()) => {
   return now.getFullYear() - d.getFullYear() - (now < new Date(now.getFullYear(), d.getMonth(), d.getDate()) ? 1 : 0)
 }
 const roleLabel = (r: string): TpCoach['role'] => (r === 'lead' ? 'Lead' : r === 'assistant' ? 'Assistant' : r === 'apprentice' ? 'Apprentice' : 'Coach')
-/** Staff DBS state, refreshed against today's date. */
-function dbsNow(status: string, expiry: string | null): TpCoach['dbs'] {
-  if (expiry) {
-    const days = (new Date(expiry).getTime() - Date.now()) / DAY_MS
-    if (days < 0) return 'expired'
-    if (days < 60) return 'due-soon'
-    return 'valid'
-  }
-  return status === 'valid' || status === 'due-soon' || status === 'expired' ? status : 'missing'
+/** Staff DBS pill, from the compliance rule. A hand-set "valid" stands when there's no date. */
+function dbsNow(status: string, expiry: string | null, today: string): TpCoach['dbs'] {
+  const { state } = dbsCertificate(status, expiry, today)
+  if (state === 'expired') return 'expired'
+  if (state === 'expiring') return 'due-soon'
+  return state === 'ok' || status === 'valid' ? 'valid' : 'missing'
 }
 const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : 0)
 
-function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]: ImpactDataset[K] }) {
+function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]: ImpactDataset[K] }, today: string) {
   const venues = rows.venues ?? [], staff = rows.staff ?? [], vols = rows.volunteers ?? []
   const fams = rows.families ?? [], kids = rows.children ?? [], sessions = rows.sessions ?? [], att = rows.attendance ?? []
   const links = new Map((rows.programmeLinks ?? []).map(p => [p.id, p]))
@@ -250,12 +248,13 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
   // Coaches
   data.TP_COACHES = staff.map((s): TpCoach => {
     const progIds = (rows.programmeLinks ?? []).filter(p => p.lead_staff_id === s.id).map(p => p.id)
-    const dbs = dbsNow(s.dbs_status, s.dbs_expiry)
+    const dbs = dbsNow(s.dbs_status, s.dbs_expiry, today)
     return { id: s.id, name: s.name, role: roleLabel(s.role), qual: s.qualification ?? '—', dbs,
       dbsNote: s.dbs_expiry ? `to ${monthYear(s.dbs_expiry)}` : 'no DBS on file', firstAid: s.first_aid_expiry ? `to ${monthYear(s.first_aid_expiry)}` : 'not recorded',
       specialisms: s.specialisms ?? [], schools: progIds.map(progLabel).filter(Boolean).join(' · ') || 'Unassigned',
       sessionsWeek: sessions.filter(x => x.lead_staff_id === s.id && now - new Date(x.session_date).getTime() < 7 * DAY_MS && new Date(x.session_date).getTime() <= now).length,
-      childrenCovered: kids.filter(k => k.programme_id && progIds.includes(k.programme_id)).length }
+      childrenCovered: kids.filter(k => k.programme_id && progIds.includes(k.programme_id)).length,
+      certificates: staffCertificates(s, today) }
   })
   data.COACH_DETAILS = Object.fromEntries(staff.map(s => {
     const d: TpPersonDetail = { email: s.email ?? '', phone: s.phone ?? '', availability: s.availability ?? '—', dbsNumber: s.dbs_number ?? '—',
@@ -264,18 +263,21 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
       cal: [] }
     return [s.id, d]
   }))
-  const flagged = data.TP_COACHES.filter(c => c.dbs !== 'valid')
+  // Certificates to act on, plus anyone with no DBS at all: not counted on the Overview, still worth chasing.
+  const flagged = data.TP_COACHES.filter(c => c.certificates?.some(needsAction) || c.dbs === 'missing')
   data.TP_COACH_STATS_ROW = staff.length ? [
     { label: 'COACHES', value: String(staff.length) },
     { label: 'DBS VALID', value: `${data.TP_COACHES.filter(c => c.dbs === 'valid').length}/${staff.length}` },
     { label: 'NEED ATTENTION', value: String(flagged.length) },
   ] : []
-  data.TP_COACH_ATTENTION = flagged.map(c => `${c.name} (${c.dbs === 'missing' ? 'no DBS on file' : c.dbs === 'expired' ? 'DBS expired' : `DBS ${c.dbsNote}`})`).join(', ')
 
   // Volunteers
-  data.TP_TENORS = vols.map((v): TpTenor => ({ id: v.id, name: v.name, venue: venues.find(x => x.id === v.venue_id)?.name ?? 'No venue yet', inducted: v.inducted,
-    dbs: v.dbs_status === 'valid' ? 'valid' : v.dbs_status === 'pending' || v.dbs_status === 'expired' ? 'pending' : 'n/a',
-    sessionsCovered: 0, since: monthYear(v.since), note: v.notes ?? undefined }))
+  data.TP_TENORS = vols.map((v): TpTenor => {
+    const { state } = dbsCertificate(v.dbs_status, v.dbs_expiry, today)
+    return { id: v.id, name: v.name, venue: venues.find(x => x.id === v.venue_id)?.name ?? 'No venue yet', inducted: v.inducted,
+      dbs: state === 'expired' ? 'expired' : state === 'expiring' ? 'due-soon' : v.dbs_status === 'valid' ? 'valid' : v.dbs_status === 'pending' ? 'pending' : 'n/a',
+      sessionsCovered: 0, since: monthYear(v.since), note: v.notes ?? undefined, certificates: volunteerCertificates(v, today) }
+  })
   data.TENOR_DETAILS = Object.fromEntries(vols.map(v => [v.id, {
     email: v.email ?? '', phone: v.phone ?? '', availability: '—', dbsNumber: '—', dbsIssued: '—', dbsExpiry: '—',
     safeguardingDate: v.induction_date ? `Induction ${fmt(v.induction_date)}` : 'Induction not recorded',
@@ -328,13 +330,23 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
   }
   data.WEEKEND_FAMILIES = [...byFamily].map(([fid, e]) => ({ id: fid, family: (fams.find(f => f.id === fid)?.guardian_name ?? 'Family').split(' ').slice(-1)[0], children: e.names.join(' + '), checkedIn: e.checked, via: e.via }))
 
+  // Compliance: the tile is the length of the list, so the two can't disagree.
+  const people: CompliancePerson[] = [
+    ...data.TP_COACHES.map(c => ({ id: c.id, name: c.name, role: c.role, kind: 'coach' as const, certificates: c.certificates ?? [] })),
+    ...data.TP_TENORS.map(t => ({ id: t.id, name: t.name, role: 'Volunteer', kind: 'volunteer' as const, certificates: t.certificates ?? [] })),
+  ]
+  const attention = complianceItems(people)
+  data.NEEDS_ATTENTION = attention
+  const coachRows = complianceItems(people.filter(p => p.kind === 'coach')).map(i => i.text)
+  data.TP_COACH_ATTENTION = [...coachRows, ...data.TP_COACHES.filter(c => c.dbs === 'missing').map(c => `${c.name} · no DBS on file`)].join(', ')
+
   // Headline numbers
   const recent = new Set(att.filter(a => a.present && sessions.some(s => s.id === a.session_id && now - new Date(s.session_date).getTime() < 7 * DAY_MS && new Date(s.session_date).getTime() <= now)).map(a => a.child_id))
   data.HQ_STATS = {
     ...data.HQ_STATS,
     childrenThisWeek: recent.size,
     weekendVisitsThisTerm: data.HQ_STATS.weekendVisitsThisTerm + att.filter(a => a.present && weekend.some(s => s.id === a.session_id)).length,
-    dbsExpiring: data.TP_COACHES.filter(c => c.dbs === 'due-soon' || c.dbs === 'expired').length,
+    dbsExpiring: attention.length,
   }
   if (kids.length || fams.length) {
     data.INSIGHTS = {

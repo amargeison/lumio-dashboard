@@ -11,6 +11,7 @@ import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { PersonDetailView, AddCoachModal } from './PersonDetail'
 import { TP_RED, TP_DARK, type TpCoach, type TpTenor, type TpPersonDetail } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { certText, needsAction, type Certificate } from '@/lib/impact/compliance'
 
 const DBS_PILL: Record<string, { tone: 'green' | 'amber' | 'red' | 'grey'; label: string }> = {
   'valid': { tone: 'green', label: 'DBS VALID' },
@@ -47,6 +48,18 @@ function Avatar({ name, online }: { name: string; online?: boolean }) {
   )
 }
 
+// Live cards only: the demo has no certificates, so it renders nothing here.
+function CertBadges({ certificates }: { certificates?: Certificate[] }) {
+  if (!certificates) return null
+  const missing = certificates.filter(c => c.state === 'not recorded').map(c => c.name)
+  return (
+    <>
+      {certificates.filter(needsAction).map(c => <Pill key={c.name} tone={c.state === 'expired' ? 'red' : 'amber'}>{certText(c).toUpperCase()}</Pill>)}
+      {missing.length > 0 && <Pill tone="grey">NOT RECORDED: {missing.join(', ').toUpperCase()}</Pill>}
+    </>
+  )
+}
+
 function StatsRow({ items }: { items: { label: string; value: string }[] }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
@@ -65,7 +78,8 @@ export function CoachesTab() {
   const { brand, data } = useImpact()
   const { TP_COACHES, TP_COACH_STATS_ROW, TP_COACH_ATTENTION, COACH_DETAILS } = data
   const [filter, setFilter] = useState<'All' | TpCoach['role']>('All')
-  const [roster, setRoster] = useState<TpCoach[]>(TP_COACHES)
+  const [added, setAdded] = useState<TpCoach[]>([])
+  const roster = [...TP_COACHES, ...added]
   const [selected, setSelected] = useState<TpCoach | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const coaches = filter === 'All' ? roster : roster.filter(c => c.role === filter)
@@ -128,6 +142,7 @@ export function CoachesTab() {
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
                   <Pill tone={DBS_PILL[c.dbs].tone}>{DBS_PILL[c.dbs].label}</Pill>
+                  <CertBadges certificates={c.certificates} />
                   {c.specialisms.map(s => <Pill key={s} tone="grey">{s}</Pill>)}
                 </div>
                 <div style={{ fontSize: 11, color: '#6B6560', marginTop: 8 }}>
@@ -152,7 +167,7 @@ export function CoachesTab() {
         })}
       </div>
 
-      {showAdd && <AddCoachModal onClose={() => setShowAdd(false)} onAdd={c => setRoster(prev => [...prev, c])} />}
+      {showAdd && <AddCoachModal onClose={() => setShowAdd(false)} onAdd={c => setAdded(prev => [...prev, c])} />}
     </div>
   )
 }
@@ -223,6 +238,7 @@ export function TenorsTab() {
                 <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
                   <Pill tone={t.inducted ? 'green' : 'amber'}>{t.inducted ? 'INDUCTED' : 'INDUCTION PENDING'}</Pill>
                   <Pill tone={DBS_PILL[t.dbs].tone}>{DBS_PILL[t.dbs].label}</Pill>
+                  <CertBadges certificates={t.certificates} />
                 </div>
                 <div style={{ display: 'flex', gap: 14, marginTop: 10, borderTop: '1px solid #F0EBE5', paddingTop: 10, alignItems: 'center' }}>
                   <div>

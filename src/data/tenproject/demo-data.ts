@@ -6,6 +6,7 @@
 // Curriculum facts (weeks, sticker areas) come from the real Activity Booklet.
 
 import { scoreSchools } from '@/lib/impact/readiness'
+import type { Certificate } from '@/lib/impact/compliance'
 import { demoReadinessEvidence } from '@/data/impact/readiness-demo'
 export const TP_RED = '#D7262C'
 export const TP_BLACK = '#111114'
@@ -650,6 +651,7 @@ export interface TpCoach {
   sessionsWeek: number
   childrenCovered: number
   online?: boolean
+  certificates?: Certificate[] // live only
 }
 
 export const TP_COACHES: TpCoach[] = [
@@ -677,10 +679,11 @@ export interface TpTenor {
   name: string
   venue: string
   inducted: boolean
-  dbs: 'valid' | 'pending' | 'n/a'
+  dbs: 'valid' | 'pending' | 'n/a' | 'due-soon' | 'expired'
   sessionsCovered: number
   since: string
   note?: string
+  certificates?: Certificate[] // live only
 }
 
 export const TP_TENORS: TpTenor[] = [
