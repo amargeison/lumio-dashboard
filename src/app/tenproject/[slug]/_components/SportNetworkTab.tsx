@@ -13,6 +13,7 @@ import { TP_RED, TP_DARK, type PesspnVerdict, type PesspnStatus } from '@/data/t
 import { useImpact } from './ImpactDataContext'
 import { useSportNetwork } from '@/lib/impact/use-sport-network'
 import { GENERIC_BRAND } from '@/lib/impact/org'
+import { VERDICT_LABEL } from '@/lib/impact/readiness'
 import { CpdPanel } from './CpdPanel'
 import { SPORT_NETWORK_DISCLAIMER, SPORT_NETWORK_SOURCE_NOTE } from '@/data/impact/sport-network'
 
@@ -23,10 +24,10 @@ function SourceLink({ url, light, label = 'Source' }: { url?: string; light?: bo
 }
 
 const VERDICT: Record<PesspnVerdict, { label: string; color: string; tone: 'green' | 'amber' | 'red' | 'grey' }> = {
-  'on-track': { label: 'On track to qualify', color: '#187A3C', tone: 'green' },
-  'nearly': { label: 'Nearly there', color: '#9A6A0B', tone: 'amber' },
-  'at-risk': { label: 'At risk', color: TP_RED, tone: 'red' },
-  'needs-evidence': { label: 'Not enough evidence yet', color: '#8A847E', tone: 'grey' },
+  'on-track': { label: VERDICT_LABEL['on-track'], color: '#187A3C', tone: 'green' },
+  'nearly': { label: VERDICT_LABEL['nearly'], color: '#9A6A0B', tone: 'amber' },
+  'at-risk': { label: VERDICT_LABEL['at-risk'], color: TP_RED, tone: 'red' },
+  'needs-evidence': { label: VERDICT_LABEL['needs-evidence'], color: '#8A847E', tone: 'grey' },
 }
 const STATUS: Record<PesspnStatus, { icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>; color: string }> = {
   met: { icon: CheckCircle, color: '#187A3C' },

@@ -1,0 +1,18 @@
+{
+  "tenproject": {
+    "INSIGHTS": "74d217b48fb005c932acecacb31c7de1a013e7f2780e8d64cbf516155a17bf05",
+    "term-report": "901d9a23853cf59903c57f44e6b83c2df4e8490ac9e51c10f3252eafdcb979fa",
+    "funder-pack": "503c88bbc246ee9a46e2c9a714990fa5f1e1613e11d2a92bcb46a85690fc656c",
+    "bid-narrative": "a08a53a6a88418ff4d1692f09330d66f26373c005bf2720f3cb4239c78d6df81",
+    "governor-pack": "00e3d553b6e4727a3bb4659414b306ad9c8d7c69c27bf0d2b637c0e62b7276e8",
+    "newsletter-snippet": "c7f37b7fbfc65f6fbcb68f34ed26a533077f5104529c0c65d484d10e9d3f1316"
+  },
+  "impactDemo": {
+    "INSIGHTS": "3eb071e43969d58a0722091ca9528478c720671cea08deb95640dab4ef2a4484",
+    "term-report": "e01424fe0e7afc8d6c16ba6681487af7d2a67ddcc5f80982d35d5307008e14af",
+    "funder-pack": "72a81150d491b229a45545424bd619a1f301f46e39dab63025860e5c454e5184",
+    "bid-narrative": "7e36b324fee22fb91c48df4cb535f6afa689e4cf7f39172474c2ed87226908cc",
+    "governor-pack": "41ce25e64f1a924f9e85976b8ea1050699090a8aedfbb396fc9d8acee7915a63",
+    "newsletter-snippet": "da1439840bfddf7d38c1eaf79a84b15b2121a1b8a8de2b03d6827391a0de56fe"
+  }
+}

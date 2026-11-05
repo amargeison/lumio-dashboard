@@ -23,6 +23,9 @@ export const READINESS_WEIGHTS: Record<string, number> = {
   data: 15, regular: 15, priority: 10, cpd: 10, broader: 10, wholeschool: 10, impact: 10, partner: 20,
 }
 export const READINESS_BANDS = { onTrack: 80, nearly: 50 }
+export const VERDICT_LABEL: Record<PesspnVerdict, string> = {
+  'on-track': 'On track to qualify', nearly: 'Nearly there', 'at-risk': 'At risk', 'needs-evidence': 'Not enough evidence yet',
+}
 const NOT_FUNDED_CAP = 79
 const MIN_EVIDENCED = 3
 export const CAP_NOTE = 'Capped at Nearly there — no secure funding recorded.'
@@ -165,7 +168,7 @@ export interface ReadinessRows {
   cpd?: { school_id: string; staff_name: string }[]
 }
 
-const pct = (part: number, whole: number) => whole ? Math.round(part / whole * 100) : null
+export const pct = (part: number, whole: number) => whole ? Math.round(part / whole * 100) : null
 // Monday of the date's week, so two sessions in one week count once.
 const weekOf = (date: string) => {
   const d = new Date(`${date}T00:00:00Z`)
@@ -177,7 +180,7 @@ const stageOf = (status: string): SchoolEvidence['stage'] =>
   status === 'running' || status === 'complete' || status === 'confirmed' ? status : 'planned'
 
 // A register belongs to the programme's school, or else to the child's.
-function registerOwner(rows: Pick<ReadinessRows, 'programmes' | 'children' | 'sessions'>) {
+export function registerOwner(rows: Pick<ReadinessRows, 'programmes' | 'children' | 'sessions'>) {
   const childSchool = new Map((rows.children ?? []).map(c => [c.id, c.school_id]))
   const programmeSchool = new Map(rows.programmes.map(p => [p.id, p.school_id]))
   const sessionById = new Map((rows.sessions ?? []).map(s => [s.id, s]))
@@ -191,8 +194,11 @@ function registerOwner(rows: Pick<ReadinessRows, 'programmes' | 'children' | 'se
 /** Attendance % per session, oldest first. A session with no register has no rate, so it's left out rather than read as 0%. */
 export function attendanceBySession(rows: ReadinessRows, schoolId: string): { date: string; pct: number }[] {
   const ownerOf = registerOwner(rows)
-  const marks = (rows.attendance ?? []).filter(a => ownerOf(a) === schoolId)
-  return (rows.sessions ?? [])
+  return sessionRates(rows.sessions ?? [], (rows.attendance ?? []).filter(a => ownerOf(a) === schoolId))
+}
+
+export function sessionRates(sessions: NonNullable<ReadinessRows['sessions']>, marks: NonNullable<ReadinessRows['attendance']>): { date: string; pct: number }[] {
+  return sessions
     .filter(s => marks.some(a => a.session_id === s.id))
     .sort((a, b) => a.session_date.localeCompare(b.session_date))
     .map(s => {

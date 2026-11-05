@@ -4,11 +4,13 @@
 // Dependency-free charts (divs + inline SVG) so nothing new to bundle.
 
 import React from 'react'
-import { TrendingUp, Users, Download, Sparkles, HeartHandshake, MapPin, ShieldCheck, PieChart, Repeat, Coins, Quote } from 'lucide-react'
-import { Card, SectionTitle, Pill, EmptyState } from './ui'
+import { TrendingUp, Users, Download, Sparkles, HeartHandshake, MapPin, ShieldCheck, PieChart, Repeat, Coins, Quote, School } from 'lucide-react'
+import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { openFunderDoc } from '../_lib/funder-docs'
+import { sessionBar } from '@/lib/impact/school-card'
+import { emptyInsights, needNote, TIER_2, type LiveInsights } from '@/lib/impact/insights'
 
 const RED_SOFT = '#F0524F'
 const RED_TINT = '#E8B4B3'
@@ -40,9 +42,195 @@ function BarRow({ label, pct, width = 118, color = RED_SOFT, suffix = '%' }: { l
   )
 }
 
+const Note = ({ text }: { text: string }) => (
+  <div style={{ fontSize: 11.5, color: '#6B6560', background: '#F7F5F2', borderRadius: 9, padding: '9px 11px' }}>{text}</div>
+)
+
+// Bars scale to the busiest month. A month with no register gets no bar at all, so it can't read as zero.
+function ReachChart({ months }: { months: LiveInsights['reach']['months'] }) {
+  const max = Math.max(1, ...months.map(m => m.children ?? 0))
+  return (
+    <div style={{ display: 'flex', gap: 6 }}>
+      {months.map(m => (
+        <div key={m.month} title={m.children === null ? `${m.label} · no register` : `${m.label} · ${m.children} children`} style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+          <div style={{ height: 130, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', borderBottom: '1px solid #E7E2DC' }}>
+            {m.children !== null && <>
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: TP_DARK, marginBottom: 3 }}>{m.children}</div>
+              <div style={{ width: '70%', maxWidth: 28, height: `${(m.children / max) * 75}%`, minHeight: 2, background: TP_RED, borderRadius: '4px 4px 0 0' }} />
+            </>}
+          </div>
+          <div style={{ fontSize: 9.5, color: '#8A847E', fontWeight: 700, marginTop: 4 }}>{m.label}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Same rules as the school card chart: fixed 0–100 scale, faint 100% line, latest session in red.
+function AttendanceChart({ sessions }: { sessions: LiveInsights['attendance']['sessions'] }) {
+  return (
+    <div>
+      <div style={{ position: 'relative', paddingTop: 13 }}>
+        <div style={{ position: 'absolute', top: 0, right: 0, fontSize: 9, fontWeight: 700, lineHeight: '12px', color: '#8A847E' }}>100%</div>
+        <div style={{ position: 'absolute', top: 13, left: 0, right: 0, borderTop: '1px solid #E7E2DC' }} />
+        <div style={{ display: 'flex', gap: 4, height: 130 }}>
+          {sessions.map((s, i) => (
+            <div key={`${s.date}-${i}`} title={s.tip} style={{ flex: 1, maxWidth: 40, display: 'flex', alignItems: 'flex-end' }}>
+              <div style={{ ...sessionBar(s.pct), width: '100%', background: i === sessions.length - 1 ? TP_RED : RED_TINT, borderRadius: '3px 3px 0 0' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 8 }}>{sessions.length} {sessions.length === 1 ? 'session' : 'sessions'} on register · hover a bar for its date</div>
+    </div>
+  )
+}
+
+function LiveInsightsBody({ insights: L, volunteerLabel }: { insights: LiveInsights; volunteerLabel: string }) {
+  const c = L.compliance
+  const th = { padding: '5px 8px 5px 0', whiteSpace: 'nowrap' as const }
+  return (<>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+      {L.headline.map(h => (
+        <Card key={h.label} style={{ padding: '14px 16px' }}>
+          <div style={{ fontSize: 25, fontWeight: 900, color: TP_RED }}>{h.value}</div>
+          <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2, fontWeight: 600 }}>{h.label}</div>
+        </Card>
+      ))}
+    </div>
+
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+      <Card>
+        <SectionTitle sub={`Different children marked present each month, ${L.year}`}>
+          <TrendingUp size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Reach across the year
+        </SectionTitle>
+        {L.reach.need ? <Note text={needNote(L.reach.need)} /> : <ReachChart months={L.reach.months} />}
+      </Card>
+      <Card>
+        <SectionTitle sub="Attendance at each session, oldest first">Attendance over time</SectionTitle>
+        {L.attendance.need ? <Note text={needNote(L.attendance.need)} /> : <AttendanceChart sessions={L.attendance.sessions} />}
+      </Card>
+    </div>
+
+    <Card>
+      <SectionTitle sub="Registers and readiness, school by school">
+        <School size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Schools
+      </SectionTitle>
+      {L.schools.need ? <Note text={needNote(L.schools.need)} /> : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, color: TP_DARK }}>
+            <thead><tr style={{ textAlign: 'left', color: '#8A847E', fontSize: 10.5 }}>
+              <th style={th}>School</th><th style={th}>Children</th><th style={th}>Sessions</th><th style={th}>Attendance</th><th style={th}>Readiness</th>
+            </tr></thead>
+            <tbody>
+              {L.schools.rows.map(r => (
+                <tr key={r.id} style={{ borderTop: '1px solid #F0EBE5' }}>
+                  <td style={{ padding: '9px 8px 9px 0', fontWeight: 800, color: TP_DARK }}>{r.school}</td>
+                  <td style={{ fontWeight: 700 }}>{r.children}</td>
+                  <td style={{ fontWeight: 700 }}>{r.sessions}</td>
+                  <td style={{ fontWeight: 700 }}>{r.attendancePct === null ? '—' : `${r.attendancePct}%`}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    {r.verdict !== 'needs-evidence' && <b style={{ marginRight: 6 }}>{r.score}</b>}
+                    <Pill tone={r.verdict === 'on-track' ? 'green' : r.verdict === 'nearly' ? 'amber' : r.verdict === 'at-risk' ? 'red' : 'grey'}>{r.band}</Pill>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
+
+    <Card>
+      <SectionTitle sub="Flags are shown as a share of the children with that flag recorded, never of all children">
+        <PieChart size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Demographics
+      </SectionTitle>
+      {L.demographics.need ? <Note text={needNote(L.demographics.need)} /> : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 20 }}>
+          <div>
+            <div style={{ fontSize: 10.5, fontWeight: 800, color: '#8A847E', letterSpacing: 0.5, marginBottom: 8 }}>YEAR GROUP</div>
+            <div style={{ display: 'grid', gap: 7 }}>{L.demographics.yearGroups.map(y => <BarRow key={y.label} label={`${y.label} (${y.n})`} pct={y.pct} width={110} />)}</div>
+          </div>
+          <div style={{ display: 'grid', gap: 12, alignContent: 'start' }}>
+            {L.demographics.flags.map(f => (
+              <div key={f.label}>
+                <div style={{ fontSize: 10.5, fontWeight: 800, color: '#8A847E', letterSpacing: 0.5, marginBottom: 6 }}>{f.label.toUpperCase()}</div>
+                {f.recorded === 0 ? <Note text={needNote(f.need)} /> : <>
+                  <div style={{ display: 'grid', gap: 7 }}>{f.shares.map(s => <BarRow key={s.label} label={`${s.label} (${s.n})`} pct={s.pct} width={110} color={TP_RED} />)}</div>
+                  <div style={{ fontSize: 10.5, color: '#8A847E', marginTop: 4 }}>Recorded for {f.recorded} of {L.demographics.children} children</div>
+                </>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+      <Card>
+        <SectionTitle sub="Children reached in curriculum time whose family came to a weekend session">School → weekend conversion</SectionTitle>
+        {L.conversion.need ? <Note text={needNote(L.conversion.need)} />
+          : L.conversion.rows.length === 0 ? <Note text={needNote('school registers')} />
+          : <div style={{ display: 'grid', gap: 7 }}>{L.conversion.rows.map(r => <BarRow key={r.school} label={`${r.school} (${r.converted}/${r.reached})`} pct={r.pct} width={170} />)}</div>}
+      </Card>
+      <Card>
+        <SectionTitle sub="% of converted families still attending, by weeks after first visit">
+          <Repeat size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Retention cohorts
+        </SectionTitle>
+        <Note text={TIER_2.retention} />
+      </Card>
+    </div>
+
+    <Card>
+      <SectionTitle sub={`DBS, first aid and safeguarding across coaches and ${volunteerLabel}`}>
+        <ShieldCheck size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Compliance & safeguarding
+      </SectionTitle>
+      {c.need ? <Note text={needNote(c.need)} /> : <>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 12 }}>
+          {([[c.valid, 'Valid'], [c.expiring, 'Expiring'], [c.expired, 'Expired'], [c.notRecorded, 'Not recorded']] as [number, string][]).map(([v, l]) => (
+            <div key={l} style={{ background: '#F7F5F2', borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: TP_DARK }}>{v}</div>
+              <div style={{ fontSize: 10.5, color: '#6B6560', fontWeight: 600, marginTop: 2 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+        {c.items.length > 0 && <div style={{ display: 'grid', gap: 6, marginTop: 12 }}>
+          {c.items.map(i => (
+            <div key={i.id} style={{ fontSize: 12.5, color: TP_DARK, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Pill tone={i.kind === 'warn' ? 'red' : 'amber'}>{i.kind === 'warn' ? 'EXPIRED' : 'EXPIRING'}</Pill>{i.text}
+            </div>
+          ))}
+        </div>}
+      </>}
+      <div style={{ fontSize: 10.5, fontWeight: 800, color: '#8A847E', letterSpacing: 0.5, margin: '14px 0 8px' }}>STAFF CPD BY SCHOOL</div>
+      {c.cpdNeed ? <Note text={needNote(c.cpdNeed)} /> : (
+        <div style={{ display: 'grid', gap: 5 }}>
+          {c.cpd.map(r => <div key={r.school} style={{ fontSize: 12.5, color: TP_DARK }}><b>{r.school}</b> · {r.records} {r.records === 1 ? 'record' : 'records'}, {r.people} {r.people === 1 ? 'person' : 'people'}</div>)}
+        </div>
+      )}
+    </Card>
+
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
+      <Card>
+        <SectionTitle sub="What families say the programme improves">
+          <HeartHandshake size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Wellbeing & impact survey
+        </SectionTitle>
+        <Note text={TIER_2.wellbeing} />
+      </Card>
+      <Card>
+        <SectionTitle sub="What the investment returns">
+          <Coins size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Social value
+        </SectionTitle>
+        <Note text={TIER_2.socialValue} />
+      </Card>
+    </div>
+  </>)
+}
+
 export default function Insights() {
   const ctx = useImpact()
   const { brand, copy } = ctx
+  const live = ctx.mode === 'live' ? ctx.insights ?? emptyInsights() : null
   const { INSIGHTS, FUNNEL } = ctx.data
   const I = INSIGHTS
   const maxTerm = Math.max(...I.termGrowth.map(t => t.children))
@@ -58,10 +246,10 @@ export default function Insights() {
       <Card style={{ background: TP_DARK, border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, flexWrap: 'wrap' }}>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>PROGRAMME INSIGHTS · 2025/26</div>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, color: TP_RED }}>PROGRAMME INSIGHTS · {live ? live.year : '2025/26'}</div>
             <div style={{ fontSize: 20, fontWeight: 900, color: '#fff', marginTop: 6 }}>Every number, evidenced from named-child registers</div>
             <div style={{ fontSize: 12.5, color: '#C9C4BE', marginTop: 4, maxWidth: 560 }}>
-              Participation, conversion, demographics, wellbeing, compliance and social value — the complete picture for schools, boroughs and funders.
+              {live ? 'Reach, attendance, schools, demographics and compliance, straight from your own records.' : 'Participation, conversion, demographics, wellbeing, compliance and social value — the complete picture for schools, boroughs and funders.'}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -69,14 +257,14 @@ export default function Insights() {
               <Download size={14} /> Export funder pack
             </button>
             <button onClick={() => openFunderDoc('bid-narrative', ctx)} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
-              <Sparkles size={14} /> AI bid narrative
+              <Sparkles size={14} /> {live ? 'Bid narrative' : 'AI bid narrative'}
             </button>
           </div>
         </div>
       </Card>
 
-      {I.headline.length === 0 && <Card><EmptyState icon={TrendingUp} title="No programme data yet" sub="Participation, conversion, demographics, wellbeing, compliance and social value fill in automatically from registers, QR check-ins and family surveys as soon as sessions run." /></Card>}
-      {!(I.headline.length === 0) && (<>
+      {live && <LiveInsightsBody insights={live} volunteerLabel={brand.volunteers.toLowerCase()} />}
+      {!live && (<>
       {/* Headline tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
         {I.headline.map(h => (
@@ -87,11 +275,6 @@ export default function Insights() {
         ))}
       </div>
 
-      {ctx.mode === 'live' ? (
-        <Card>
-          <EmptyState icon={TrendingUp} title="Charts build as your data does" sub="Reach over the year, school-to-weekend conversion, retention, demographics, wellbeing and social value fill in automatically from registers, QR check-ins and family surveys." />
-        </Card>
-      ) : (<>
       {/* Reach over the year + term growth */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 16 }}>
         <Card>
@@ -319,7 +502,6 @@ export default function Insights() {
           <Pill tone="grey">DEMO DATA</Pill>&nbsp; Every figure on this page draws from registers, QR check-ins and surveys — one click to a branded PDF for any school, borough or trust.
         </div>
       </Card>
-      </>)}
       </>)}
     </div>
   )

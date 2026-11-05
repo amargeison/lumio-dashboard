@@ -12,6 +12,9 @@ import React, { createContext, useContext } from 'react'
 import * as TP from '@/data/tenproject/demo-data'
 import { TEN_PROJECT_BRAND, TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
 import type { ImpactOrgSettings } from '@/lib/impact/org'
+import type { LiveInsights } from '@/lib/impact/insights'
+
+export { fill } from '@/lib/impact/fill'
 
 type Palette = 'TP_RED' | 'TP_BLACK' | 'TP_DARK' | 'TP_PAPER'
 type TpModule = Omit<typeof TP, Palette>
@@ -50,6 +53,8 @@ export interface ImpactPortalContext {
   people?: ImpactPeople
   /** Live portals: staff CPD records, by school. */
   cpd?: ImpactCpd[]
+  /** Live portals: the Insights page and funder documents, computed from the rows. */
+  insights?: LiveInsights
   /** Live portals: load the org's data again after a change. */
   reload?: () => void
 }
@@ -82,13 +87,4 @@ export function ImpactDataProvider({ value, children }: { value: ImpactPortalCon
 
 export function useImpact(): ImpactPortalContext {
   return useContext(Ctx)
-}
-
-/** Fill `{name}` placeholders in copy from call-site vars, then the brand. */
-export function fill(tpl: string, brand: ImpactBrand, vars: Record<string, string | number> = {}): string {
-  return tpl.replace(/\{(\w+)\}/g, (m, k: string) => {
-    if (k in vars) return String(vars[k])
-    if (k in brand) return String(brand[k as keyof ImpactBrand])
-    return m
-  })
 }

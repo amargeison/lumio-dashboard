@@ -14,7 +14,8 @@ import type { DemoSchool, FundraisingEvent, SchoolStatus, TpSchoolDetail } from 
 import { TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
 import { GENERIC_BRAND } from './org'
 import { NO_COACH } from './school-card'
-import { complianceItems, dbsCertificate, isoToday, needsAction, staffCertificates, volunteerCertificates, type CompliancePerson } from './compliance'
+import { complianceItems, compliancePeople, dbsCertificate, isoToday, needsAction, roleLabel, staffCertificates, volunteerCertificates } from './compliance'
+import { headlineTiles } from './insights'
 import { attendanceBySession, evidenceFromRows, scoreSchools } from './readiness'
 import { inTerm, termOf } from './term'
 import type { ImpactCopy, ImpactDataset, ImpactPortalContext, ImpactPeople, ImpactChild } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
@@ -204,7 +205,6 @@ const ageOf = (dob: string | null, now = new Date()) => {
   const d = new Date(dob); if (isNaN(d.getTime())) return null
   return now.getFullYear() - d.getFullYear() - (now < new Date(now.getFullYear(), d.getMonth(), d.getDate()) ? 1 : 0)
 }
-const roleLabel = (r: string): TpCoach['role'] => (r === 'lead' ? 'Lead' : r === 'assistant' ? 'Assistant' : r === 'apprentice' ? 'Apprentice' : 'Coach')
 /** Staff DBS pill, from the compliance rule. A hand-set "valid" stands when there's no date. */
 function dbsNow(status: string, expiry: string | null, today: string): TpCoach['dbs'] {
   const { state } = dbsCertificate(status, expiry, today)
@@ -336,10 +336,7 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
   data.WEEKEND_FAMILIES = [...byFamily].map(([fid, e]) => ({ id: fid, family: (fams.find(f => f.id === fid)?.guardian_name ?? 'Family').split(' ').slice(-1)[0], children: e.names.join(' + '), checkedIn: e.checked, via: e.via }))
 
   // Compliance: the tile is the length of the list, so the two can't disagree.
-  const people: CompliancePerson[] = [
-    ...data.TP_COACHES.map(c => ({ id: c.id, name: c.name, role: c.role, kind: 'coach' as const, certificates: c.certificates ?? [] })),
-    ...data.TP_TENORS.map(t => ({ id: t.id, name: t.name, role: 'Volunteer', kind: 'volunteer' as const, certificates: t.certificates ?? [] })),
-  ]
+  const people = compliancePeople(rows, today)
   const attention = complianceItems(people)
   data.NEEDS_ATTENTION = attention
   const coachRows = complianceItems(people.filter(p => p.kind === 'coach')).map(i => i.text)
@@ -356,19 +353,7 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
     weekendVisitsThisTerm: data.HQ_STATS.weekendVisitsThisTerm + att.filter(a => a.present && weekend.some(s => s.id === a.session_id)).length,
     dbsExpiring: attention.length,
   }
-  if (kids.length || fams.length) {
-    data.INSIGHTS = {
-      ...data.INSIGHTS,
-      headline: [
-        { label: 'Children registered', value: String(kids.length) },
-        { label: 'Families', value: String(fams.length) },
-        { label: 'Sessions delivered', value: String(sessions.length) },
-        { label: 'Attendance rate', value: att.length ? `${pct(att.filter(a => a.present).length, att.length)}%` : '—' },
-        { label: 'Schools', value: String(rows.schools.length) },
-        { label: 'Volunteers', value: String(vols.length) },
-      ],
-    }
-  }
+  data.INSIGHTS = { ...data.INSIGHTS, headline: headlineTiles(rows) }
 }
 
 /** Households and their children, for the Families module and the parent preview. */

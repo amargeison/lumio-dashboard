@@ -48,6 +48,17 @@ export const volunteerCertificates = (v: { dbs_status: string; dbs_expiry?: stri
   safeguarding(v.induction_date),
 ]
 
+export const roleLabel = (r: string) => r === 'lead' ? 'Lead' as const : r === 'assistant' ? 'Assistant' as const : r === 'apprentice' ? 'Apprentice' as const : 'Coach' as const
+
+type StaffRow = Parameters<typeof staffCertificates>[0] & { id: string; name: string; role: string }
+type VolunteerRow = Parameters<typeof volunteerCertificates>[0] & { id: string; name: string }
+
+/** Everyone the rule covers, coaches first. */
+export const compliancePeople = (rows: { staff?: StaffRow[]; volunteers?: VolunteerRow[] }, today: string): CompliancePerson[] => [
+  ...(rows.staff ?? []).map(s => ({ id: s.id, name: s.name, role: roleLabel(s.role), kind: 'coach' as const, certificates: staffCertificates(s, today) })),
+  ...(rows.volunteers ?? []).map(v => ({ id: v.id, name: v.name, role: 'Volunteer', kind: 'volunteer' as const, certificates: volunteerCertificates(v, today) })),
+]
+
 export const longDate = (iso: string) => {
   const [y, m, d] = iso.split('-').map(Number)
   return `${d} ${MONTHS[m - 1]} ${y}`
