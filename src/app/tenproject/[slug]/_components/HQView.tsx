@@ -52,6 +52,8 @@ export default function HQView({ section, onSectionChange }: {
   const ctx = useImpact()
   const { brand } = ctx
   const { SCHOOLS, VENUES, HQ_STATS, FUNNEL, IMPACT_AREAS, NEEDS_ATTENTION, CAMPAIGN } = ctx.data
+  const [showRegisters, setShowRegisters] = useState(false)
+  const registers = HQ_STATS.outstandingRegisters ?? []
   const schoolsTotal = HQ_STATS.schoolsTotal ?? 0
   const ofSchools = `of ${schoolsTotal} ${schoolsTotal === 1 ? 'school' : 'schools'}`
   const [tab, setTabState] = useState<HqTab>(section ?? 'overview')
@@ -132,7 +134,9 @@ export default function HQView({ section, onSectionChange }: {
           <Stat label="Schools in pipeline" value={HQ_STATS.schoolsPipeline} sub={ofSchools} />
           <Stat label="Complete / renewal" value={HQ_STATS.schoolsComplete ?? 0} sub={ofSchools} />
           <Stat label="Weekend visits this term" value={HQ_STATS.weekendVisitsThisTerm} />
-          <Stat label="Registers outstanding" value={HQ_STATS.registersOutstanding} accent />
+          <button onClick={() => setShowRegisters(v => !v)} disabled={!registers.length} aria-expanded={showRegisters} style={{ all: 'unset', cursor: registers.length ? 'pointer' : 'default', display: 'grid' }}>
+            <Stat label="Registers outstanding" value={HQ_STATS.registersOutstanding} accent sub={registers.length ? 'Tap to see them' : undefined} />
+          </button>
           <Stat label="Certificates expiring or expired" value={HQ_STATS.dbsExpiring} />
         </div>
       ) : (
@@ -146,6 +150,28 @@ export default function HQView({ section, onSectionChange }: {
       </div>
       )}
 
+      {showRegisters && registers.length > 0 && (
+        <Card>
+          <SectionTitle sub="Sessions in the last 14 days with no marks at all">Registers outstanding</SectionTitle>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, color: TP_DARK }}>
+              <thead><tr style={{ textAlign: 'left', color: '#8A847E', fontSize: 10.5 }}>
+                <th style={{ padding: '5px 8px 5px 0' }}>School</th><th style={{ padding: '5px 8px 5px 0' }}>Date</th><th style={{ padding: '5px 0' }}>Coach</th>
+              </tr></thead>
+              <tbody>
+                {registers.map(r => (
+                  <tr key={r.id} style={{ borderTop: '1px solid #F0EBE5' }}>
+                    <td style={{ padding: '9px 8px 9px 0', fontWeight: 800 }}>{r.school}</td>
+                    <td style={{ padding: '9px 8px 9px 0', whiteSpace: 'nowrap' }}>{r.dateLabel}</td>
+                    <td style={{ padding: '9px 0' }}>{r.coach}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
       {/* Needs attention */}
       <Card>
         <SectionTitle sub="The programme-health briefing — registers, renewals, compliance and fundraising triggers in one list">
@@ -154,7 +180,7 @@ export default function HQView({ section, onSectionChange }: {
         {NEEDS_ATTENTION.length === 0 && <EmptyState compact icon={Info} title="Nothing needs attention yet" sub="Missing registers, renewals, DBS/certificate expiries and fundraising triggers land here automatically once programmes are running." />}
         <div style={{ display: 'grid', gap: 8 }}>
           {NEEDS_ATTENTION.map(item => (
-            <button key={item.id} onClick={() => goTo(item.target.tab as HqTab, item.target.id)} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: item.kind === 'warn' ? '#FDF3F3' : '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
+            <button key={item.id} onClick={() => item.target.id === 'registers' ? setShowRegisters(true) : goTo(item.target.tab as HqTab, item.target.id)} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: item.kind === 'warn' ? '#FDF3F3' : '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
               {item.kind === 'warn'
                 ? <AlertCircle size={16} style={{ color: TP_RED, flexShrink: 0, marginTop: 1 }} />
                 : <Info size={16} style={{ color: '#6B6560', flexShrink: 0, marginTop: 1 }} />}

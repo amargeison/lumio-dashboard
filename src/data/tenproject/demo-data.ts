@@ -6,6 +6,7 @@
 // Curriculum facts (weeks, sticker areas) come from the real Activity Booklet.
 
 import type { Lead } from '@/lib/impact/leads'
+import type { OutstandingRegister } from '@/lib/impact/registers'
 import { scoreSchools } from '@/lib/impact/readiness'
 import type { Certificate } from '@/lib/impact/compliance'
 import { demoReadinessEvidence } from '@/data/impact/readiness-demo'
@@ -159,6 +160,7 @@ export const HQ_STATS: {
   weekendVisitsThisTerm: number; registersOutstanding: number; dbsExpiring: number
   // Live only: the school funnel and this term's reach. The demo keeps its own tiles.
   schoolsActive?: number; schoolsComplete?: number; schoolsTotal?: number; childrenThisTerm?: number
+  outstandingRegisters?: OutstandingRegister[]
 } = {
   childrenThisWeek: 214,
   schoolsRunning: 2,

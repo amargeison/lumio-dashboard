@@ -18,6 +18,7 @@ import { complianceItems, compliancePeople, dbsCertificate, isoToday, needsActio
 import { headlineTiles } from './insights'
 import { attendanceBySession, evidenceFromRows, scoreSchools } from './readiness'
 import { inTerm, termOf } from './term'
+import { outstandingRegisters } from './registers'
 import type { ImpactCopy, ImpactDataset, ImpactPortalContext, ImpactPeople, ImpactChild } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import type { DemoVenue, DemoChild, TpCoach, TpTenor, TpPersonDetail, TpVenueDetail } from '@/data/tenproject/demo-data'
 
@@ -72,13 +73,13 @@ export interface LiveRows {
   campaigns: { id: string; school_id: string | null; target_pence: number; status: string; match_partner: string | null; match_note: string | null; public_slug: string | null }[]
   events: { id: string; campaign_id: string; name: string; event_type: string; event_date: string | null; status: string; target_pence: number | null }[]
   donations: { campaign_id: string; event_id: string | null; amount_pence: number }[]
-  checkins: { children_count: number | null }[]
+  checkins: { children_count: number | null; session_date?: string | null }[]
   // Impact-owned people & places (drafts 213/214) — empty until applied.
   venues?: { id: string; name: string; address: string | null; postcode: string | null; courts: string | null; surface: string | null; access_notes: string | null; storage_notes: string | null; session_day: string | null; session_time: string | null; inclusive: boolean; external_partner: string | null; external_url: string | null; notes: string | null }[]
   staff?: { id: string; name: string; role: string; qualification: string | null; email: string | null; phone: string | null; availability: string | null; specialisms: string[] | null; dbs_status: string; dbs_number: string | null; dbs_expiry: string | null; safeguarding_date: string | null; first_aid_expiry: string | null; insurance: string | null; notes: string | null }[]
-  volunteers?: { id: string; name: string; email: string | null; phone: string | null; venue_id: string | null; inducted: boolean; induction_date: string | null; dbs_status: string; dbs_expiry?: string | null; since: string | null; notes: string | null }[]
+  volunteers?: { id: string; name: string; email: string | null; phone: string | null; venue_id: string | null; inducted: boolean; induction_date: string | null; dbs_status: string; dbs_expiry?: string | null; first_aid_expiry?: string | null; since: string | null; notes: string | null }[]
   families?: { id: string; guardian_name: string; email: string | null; phone: string | null; emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null; unsubscribed_at: string | null }[]
-  children?: { id: string; family_id: string | null; name: string; date_of_birth: string | null; year_group: string | null; school_id: string | null; programme_id: string | null; medical_notes: string | null; photo_consent: boolean | null; fee_status: string; stickers: number; send?: boolean | null }[]
+  children?: { id: string; family_id: string | null; name: string; date_of_birth: string | null; year_group: string | null; school_id: string | null; programme_id: string | null; medical_notes: string | null; photo_consent: boolean | null; fee_status: string; gender?: string | null; fsm?: boolean | null; pupil_premium?: boolean | null; stickers: number; send?: boolean | null }[]
   sessions?: { id: string; kind: string; programme_id: string | null; venue_id: string | null; session_date: string; lead_staff_id: string | null }[]
   attendance?: { session_id: string; child_id: string; present: boolean; via: string }[]
   programmeLinks?: { id: string; lead_staff_id: string | null; venue_id: string | null }[]
@@ -189,7 +190,6 @@ export function mapLiveRows(rows: LiveRows, today = isoToday()): ImpactDataset {
     schoolsActive: rows.schools.filter(s => s.status === 'running').length,
     schoolsComplete: rows.schools.filter(s => s.status === 'complete' || s.status === 'renewal').length,
     schoolsTotal: rows.schools.length,
-    weekendVisitsThisTerm: rows.checkins.reduce((n, c) => n + (c.children_count ?? 1), 0),
   }
   mapPeople(rows, data, today)
   return data
@@ -285,7 +285,7 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
   })
   data.TENOR_DETAILS = Object.fromEntries(vols.map(v => [v.id, {
     email: v.email ?? '', phone: v.phone ?? '', availability: '—', dbsNumber: '—', dbsIssued: '—', dbsExpiry: '—',
-    safeguardingDate: v.induction_date ? `Induction ${fmt(v.induction_date)}` : 'Induction not recorded',
+    safeguardingDate: v.induction_date ? `Induction ${fmt(v.induction_date)}` : 'Induction not recorded', firstAid: fmt(v.first_aid_expiry ?? null),
     assignments: v.venue_id ? [{ name: venues.find(x => x.id === v.venue_id)?.name ?? 'Venue', kind: 'venue' as const, detail: 'Volunteer' }] : [], cal: [],
   } satisfies TpPersonDetail]))
   data.TP_TENOR_STATS_ROW = vols.length ? [
@@ -335,10 +335,14 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
   }
   data.WEEKEND_FAMILIES = [...byFamily].map(([fid, e]) => ({ id: fid, family: (fams.find(f => f.id === fid)?.guardian_name ?? 'Family').split(' ').slice(-1)[0], children: e.names.join(' + '), checkedIn: e.checked, via: e.via }))
 
-  // Compliance: the tile is the length of the list, so the two can't disagree.
+  // Compliance: the tile counts these rows of the list, so the two can't disagree.
   const people = compliancePeople(rows, today)
   const attention = complianceItems(people)
-  data.NEEDS_ATTENTION = attention
+  const registers = outstandingRegisters(rows, today)
+  data.NEEDS_ATTENTION = [
+    ...registers.map(r => ({ id: `register-${r.id}`, text: r.text, kind: 'warn' as const, target: { tab: 'overview', id: 'registers' } })),
+    ...attention,
+  ]
   const coachRows = complianceItems(people.filter(p => p.kind === 'coach')).map(i => i.text)
   data.TP_COACH_ATTENTION = [...coachRows, ...data.TP_COACHES.filter(c => c.dbs === 'missing').map(c => `${c.name} · no DBS on file`)].join(', ')
 
@@ -350,7 +354,11 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
     ...data.HQ_STATS,
     childrenThisWeek: recent.size,
     childrenThisTerm: new Set(att.filter(a => a.present && termSessions.has(a.session_id)).map(a => a.child_id)).size,
-    weekendVisitsThisTerm: data.HQ_STATS.weekendVisitsThisTerm + att.filter(a => a.present && weekend.some(s => s.id === a.session_id)).length,
+    // A register mark is one child at one session. A QR check-in is one family, so it counts its children.
+    weekendVisitsThisTerm: att.filter(a => a.present && weekend.some(s => s.id === a.session_id && inTerm(s.session_date, term))).length
+      + rows.checkins.filter(c => c.session_date && inTerm(c.session_date, term)).reduce((n, c) => n + (c.children_count ?? 1), 0),
+    registersOutstanding: registers.length,
+    outstandingRegisters: registers,
     dbsExpiring: attention.length,
   }
   data.INSIGHTS = { ...data.INSIGHTS, headline: headlineTiles(rows) }

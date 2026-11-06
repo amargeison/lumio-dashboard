@@ -156,7 +156,7 @@ async function save(db: SupabaseClient, userId: string, category: Category, rows
         if (r.venue_name && !venueId) miss('No venue with that name (saved without a venue)', r.venue_name)
         return { hq_id: userId, name: str(r.name, 200), email: str(r.email), phone: str(r.phone), venue_id: venueId,
           family_id: find(r.email, r.phone, r.name), inducted: bool(r.inducted) ?? false, induction_date: r.induction_date ?? null,
-          dbs_status: str(r.dbs_status) ?? 'n/a', since: r.since ?? null, notes: str(r.notes, 4000) }
+          dbs_status: str(r.dbs_status) ?? 'n/a', first_aid_expiry: r.first_aid_expiry ?? null, since: r.since ?? null, notes: str(r.notes, 4000) }
       }))
       return out(fresh.length, rows.length - fresh.length)
     }
@@ -175,7 +175,7 @@ async function save(db: SupabaseClient, userId: string, category: Category, rows
         if (!fid && (r.guardian_name || r.guardian_email || r.guardian_phone)) miss('Guardian not found (saved without a family)', r.name)
         toSave.push({ hq_id: userId, family_id: fid, name: str(r.name, 200), date_of_birth: r.date_of_birth ?? null, year_group: str(r.year_group, 4),
           school_id: sid, programme_id: pid, class_name: str(r.class_name, 80), photo_consent: bool(r.photo_consent), medical_notes: str(r.medical_notes, 2000),
-          send: bool(r.send), fee_status: str(r.fee_status) ?? 'unknown', fee_pence: pence(r.fee_amount), notes: str(r.notes, 4000) })
+          send: bool(r.send), gender: str(r.gender, 20), fsm: bool(r.fsm), pupil_premium: bool(r.pupil_premium), fee_status: str(r.fee_status) ?? 'unknown', fee_pence: pence(r.fee_amount), notes: str(r.notes, 4000) })
         kids.push({ name: String(r.name), date_of_birth: (r.date_of_birth as string) ?? null })
       }
       await insert('tp_children', toSave)

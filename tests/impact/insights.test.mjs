@@ -18,6 +18,7 @@ const { mapLiveRows, EMPTY_IMPACT_COPY } = await import('../../src/lib/impact/li
 const { academicYear, buildInsights, emptyInsights, headlineTiles, needNote, TIER_2 } = await import('../../src/lib/impact/insights.ts')
 const { assertCleanDoc, funderDocHtml } = await import('../../src/app/tenproject/[slug]/_lib/funder-docs.ts')
 const { GENERIC_BRAND } = await import('../../src/lib/impact/org.ts')
+const { evidenceFromRows, scoreSchool } = await import('../../src/lib/impact/readiness.ts')
 const tp = await import('../../src/data/tenproject/demo-data.ts')
 const { TEN_PROJECT_BRAND, TEN_PROJECT_COPY } = await import('../../src/data/tenproject/portal-copy.ts')
 const { IMPACT_DEMO_CONTEXT } = await import('../../src/data/impact/demo-context.ts')
@@ -123,14 +124,19 @@ test('demographics: no flags recorded means each flag asks for itself', () => {
   assert.deepEqual(I.demographics.flags.map(f => [f.label, f.recorded, f.need]), [['Gender', 0, 'gender flags'], ['SEND', 0, 'SEND flags'], ['Free school meals', 0, 'FSM flags'], ['Pupil premium', 0, 'pupil premium flags']])
 })
 test('demographics: a flag is a share of children with it recorded, never of all children', () => {
-  const children = [child('a', null, null, 'Y2', { send: true }), child('b', null, null, 'Y2', { send: false }), child('c', null, null, 'Y2', { send: false }), child('d', null, null, 'Y2', { send: false }), child('e', null, null, 'Y2', { gender: 'Girl', fsm: true }), child('f', null, null, 'Y2', { gender: 'Boy' })]
+  const children = [child('a', null, null, 'Y2', { send: true }), child('b', null, null, 'Y2', { send: false }), child('c', null, null, 'Y2', { send: false }), child('d', null, null, 'Y2', { send: false }), child('e', null, null, 'Y2', { gender: 'female', fsm: true }), child('f', null, null, 'Y2', { gender: 'male' })]
   const { flags } = buildInsights(with_({ children }), today).demographics
   const flag = label => flags.find(f => f.label === label)
   assert.equal(flag('SEND').recorded, 4)
   assert.equal(flag('SEND').shares[0].pct, 25, 'one of four recorded, not one of six children')
   assert.equal(flag('Free school meals').shares[0].pct, 100)
-  assert.deepEqual(flag('Gender').shares.map(s => [s.label, s.pct]), [['Girl', 50], ['Boy', 50]])
+  assert.deepEqual(flag('Gender').shares.map(s => [s.label, s.pct]), [['Female', 50], ['Male', 50]])
   assert.equal(flag('Pupil premium').recorded, 0)
+})
+
+test('gender reads in words, including prefer not to say', () => {
+  const children = [child('a', null, null, 'Y2', { gender: 'prefer_not_to_say' }), child('b', null, null, 'Y2', { gender: 'other' })]
+  assert.deepEqual(buildInsights(with_({ children }), today).demographics.flags[0].shares.map(s => s.label), ['Prefer not to say', 'Other'])
 })
 
 test('conversion: no weekend session means the section asks for one', () => {
@@ -232,9 +238,38 @@ test('conversion appears in the documents once weekend sessions exist', () => {
   const ctx = live(with_({ sessions: [...lumioTest.sessions, session('wk', null, '2026-10-03', 'weekend')], attendance: [...lumioTest.attendance, mark('wk', 'h0')] }))
   for (const html of docs(ctx)) { assertCleanDoc(html); assert.match(html, /1 of 6 children|<td>6<\/td><td>1<\/td><td>17%<\/td>/) }
 })
-test('recorded flags reach the documents as a share of those recorded', () => {
-  const children = kids.map((k, n) => n < 4 ? { ...k, send: n === 0 } : k)
-  for (const html of docs(live(with_({ children })))) { assertCleanDoc(html); assert.match(html, /SEND: 25% of the 4 children with this recorded/) }
+const recorded = n => kids.map((k, i) => i < n ? { ...k, send: i === 0, fsm: i < 2, pupil_premium: false, gender: i % 2 ? 'male' : 'female' } : k)
+const [funderPack, termReport, bid] = ['funder-pack', 'term-report', 'bid-narrative']
+test('9 recorded: suppressed in the funder pack and term report, shown on the page', () => {
+  const ctx = live(with_({ children: recorded(9) }))
+  for (const kind of [funderPack, termReport]) {
+    const html = funderDocHtml(kind, ctx)
+    assertCleanDoc(html)
+    for (const label of ['Gender', 'SEND', 'Free school meals', 'Pupil premium']) assert.ok(html.includes(`${label}: recorded for fewer than 10 children — not shown`), `${kind} ${label}`)
+    assert.doesNotMatch(html, /% of the 9 children/)
+  }
+  const send = ctx.insights.demographics.flags.find(f => f.label === 'SEND')
+  assert.deepEqual([send.recorded, send.shares[0].n, send.shares[0].pct], [9, 1, 11], 'the page keeps the figure and the count')
+})
+test('10 recorded: shown in both', () => {
+  const ctx = live(with_({ children: recorded(10) }))
+  for (const kind of [funderPack, termReport]) {
+    const html = funderDocHtml(kind, ctx)
+    assertCleanDoc(html)
+    assert.ok(html.includes('SEND: 10% of the 10 children with this recorded.'), kind)
+    assert.ok(html.includes('Free school meals: 20% of the 10 children with this recorded.'), kind)
+    assert.ok(html.includes('Female: 50% of the 10 children with this recorded.'), kind)
+    assert.doesNotMatch(html, /fewer than 10/)
+  }
+  assert.equal(ctx.insights.demographics.flags.find(f => f.label === 'SEND').shares[0].pct, 10)
+})
+test('the bid narrative leaves a small group out rather than stating it', () => {
+  const small = funderDocHtml(bid, live(with_({ children: recorded(9) })))
+  assert.doesNotMatch(small, /SEND|Free school meals|Pupil premium|Gender|Female/)
+  assert.match(funderDocHtml(bid, live(with_({ children: recorded(10) }))), /SEND: 10% of the 10 children/)
+})
+test('a flag nobody has recorded doesn’t appear in a document at all', () => {
+  assert.doesNotMatch(funderDocHtml(funderPack, live(lumioTest)), /fewer than 10|SEND|Gender/)
 })
 test('an empty org gets a short document: its name, zeros, and what to record', () => {
   const ctx = { mode: 'live', brand: { ...GENERIC_BRAND, org: 'Ten Project' }, copy: EMPTY_IMPACT_COPY, data: mapLiveRows(noRows, today), insights: E }
@@ -270,3 +305,23 @@ for (const [name, ctx] of Object.entries(demos)) {
     })
   }
 }
+
+// Taken from the code before migration 225, on the same fixture. With every flag
+// null, nothing may move except the wording of the Priority Reach gap line.
+const snapshot = JSON.parse(readFileSync(new URL('./lumio-test-snapshot.json', import.meta.url), 'utf8'))
+const withoutPriorityText = items => ({ ...items, priority: { status: items.priority.status } })
+test('regression: readiness is identical apart from the Priority Reach line', () => {
+  const now = Object.fromEntries(evidenceFromRows(lumioTest).map(e => [e.id, scoreSchool(e)]))
+  assert.deepEqual(Object.keys(now), Object.keys(snapshot.readiness))
+  for (const [id, was] of Object.entries(snapshot.readiness)) {
+    const { score, verdict, summary, biggestGap, items } = now[id]
+    assert.deepEqual({ score, verdict, summary, biggestGap, items: withoutPriorityText(items) }, { ...was, items: withoutPriorityText(was.items) }, id)
+  }
+})
+test('regression: every Insights section is identical', () => assert.deepEqual(I, snapshot.insights))
+test('regression: tiles and Needs attention are identical', () => {
+  const d = mapLiveRows(lumioTest, today)
+  for (const [k, v] of Object.entries(snapshot.tiles)) assert.deepEqual(d.HQ_STATS[k], v, k)
+  assert.deepEqual(d.NEEDS_ATTENTION, snapshot.attention)
+})
+test('regression: the not recorded count stays at 18', () => assert.equal(I.compliance.notRecorded, 18))

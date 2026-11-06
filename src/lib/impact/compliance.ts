@@ -41,10 +41,10 @@ const safeguarding = (completed: string | null | undefined): Certificate => ({ n
 export const staffCertificates = (s: { dbs_status: string; dbs_expiry?: string | null; first_aid_expiry?: string | null; safeguarding_date?: string | null }, today: string): Certificate[] =>
   [dbsCertificate(s.dbs_status, s.dbs_expiry, today), firstAid(s.first_aid_expiry, today), safeguarding(s.safeguarding_date)]
 
-// Volunteers have no first aid column, and their induction is their safeguarding training.
-export const volunteerCertificates = (v: { dbs_status: string; dbs_expiry?: string | null; induction_date?: string | null }, today: string): Certificate[] => [
+// A volunteer's induction is their safeguarding training.
+export const volunteerCertificates = (v: { dbs_status: string; dbs_expiry?: string | null; first_aid_expiry?: string | null; induction_date?: string | null }, today: string): Certificate[] => [
   ...(v.dbs_status === 'n/a' && !v.dbs_expiry ? [] : [dbsCertificate(v.dbs_status, v.dbs_expiry, today)]),
-  firstAid(null, today),
+  firstAid(v.first_aid_expiry, today),
   safeguarding(v.induction_date),
 ]
 
