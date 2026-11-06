@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState } from 'react'
 import { Lock, QrCode, WifiOff, CheckCircle, Users, ClipboardList, Sparkles, PlayCircle, BookOpen, ShieldAlert, Package, Phone, FileText, BarChart3, MapPin, GraduationCap, CalendarDays, Send, Navigation, Printer, Share2, School } from 'lucide-react'
-import { Card, SectionTitle, Pill, EmptyState } from './ui'
+import { Card, SectionTitle, Pill, EmptyState, formField, formLabel } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
 import { SendMessageWizard } from './CommsTab'
 import { openResourceDoc, openSessionCardDoc } from '../_lib/resource-docs'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact, fill, type ImpactDataset } from './ImpactDataContext'
+import { BulkIssue, IssuePackButton } from './PackIssue'
 
 // Shown above a register on live portals: what you see is the saved register;
 // tapping to change it isn't available yet (it would only change this screen).
@@ -107,7 +108,12 @@ export function CoachView({ section }: { section?: CoachSection }) {
   const [wizard, setWizard] = useState(false)
   const controlled = section !== undefined
   useEffect(() => { if (section !== undefined) setTab(section) }, [section])
-  const present = children.filter(c => c.present).length
+  // Live: pick a cohort. The demo keeps its one tappable register.
+  const cohorts = ctx.cohorts ?? []
+  const [cohortId, setCohortId] = useState<string | null>(null)
+  const cohort = cohorts.find(c => c.id === cohortId) ?? cohorts[0]
+  const roster = ctx.mode === 'live' ? cohort?.children ?? [] : children
+  const present = roster.filter(c => c.present).length
   const block = CURRICULUM[1]
   const maxTrend = Math.max(...COACH_STATS.attendanceTrend)
   // Live portals before any programme is assigned to this coach
@@ -118,7 +124,8 @@ export function CoachView({ section }: { section?: CoachSection }) {
   // Live portals show the register read-only until tap-to-save ships — no tap
   // that looks like it saved and then quietly vanishes.
   const readOnly = ctx.mode === 'live'
-  const firstCohort = COACH_STATS.cohortProgress[0]?.cohort
+  const firstCohort = cohort?.label ?? COACH_STATS.cohortProgress[0]?.cohort
+  const packActor = { role: 'hq' as const, staffId: cohort?.leadStaffId ?? null }
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -335,7 +342,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
           <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(OAKRIDGE_ADDRESS)}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#22222A', color: '#fff', borderRadius: 8, padding: '7px 12px', fontSize: 11, fontWeight: 800, textDecoration: 'none' }}>
             <Navigation size={12} /> Directions
           </a></>}
-          <Pill tone="red">{present} / {children.length} PRESENT</Pill>
+          <Pill tone="red">{present} / {roster.length} PRESENT</Pill>
           {copy.coach.kitPill && <Pill tone="grey">{copy.coach.kitPill}</Pill>}
           {copy.coach.nextPill && <Pill tone="grey">{copy.coach.nextPill}</Pill>}
         </div>
@@ -346,8 +353,14 @@ export function CoachView({ section }: { section?: CoachSection }) {
           <ClipboardList size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{readOnly ? 'Register — latest session' : 'Register — tap to mark'}
         </SectionTitle>
         {readOnly && <ReadOnlyNote />}
+        {cohorts.length > 1 && (
+          <label style={{ display: 'block', marginBottom: 10 }}>
+            <span style={formLabel}>Cohort</span>
+            <select value={cohort?.id ?? ''} onChange={e => setCohortId(e.target.value)} style={{ ...formField, maxWidth: 360 }}>{cohorts.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select>
+          </label>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8 }}>
-          {children.map(c => (
+          {roster.map(c => (
             <div key={c.id} style={{ border: '1px solid #F0EBE5', borderRadius: 10, padding: '10px 12px', background: c.present ? '#fff' : '#F7F5F2' }}>
               <button
                 onClick={() => { if (!readOnly) setChildren(prev => prev.map(x => x.id === c.id ? { ...x, present: !x.present } : x)) }}
@@ -367,9 +380,11 @@ export function CoachView({ section }: { section?: CoachSection }) {
                   {skillTapped[c.id] ? `★ ${block.skill} recorded` : `+ record ${block.skill}`}
                 </button>
               )}
+              <div style={{ marginTop: 6 }}><IssuePackButton child={c} actor={packActor} sessionId={cohort?.sessionId} /></div>
             </div>
           ))}
         </div>
+        <BulkIssue children={roster} actor={packActor} sessionId={cohort?.sessionId} />
         {!readOnly && <button style={{ marginTop: 12, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
           <Sparkles size={14} /> AI cohort summary for the school (demo)
         </button>}

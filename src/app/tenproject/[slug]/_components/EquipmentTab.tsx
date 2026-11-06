@@ -11,6 +11,7 @@ import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { shell, brandHeader, esc, openDocWindow, foot } from '../_lib/funder-docs'
 import { useImpact, fill, type ImpactPortalContext } from './ImpactDataContext'
+import PackStockPanel from './PackStockPanel'
 
 const STATUS_PILL: Record<string, { tone: 'green' | 'amber' | 'red' | 'grey'; label: string }> = {
   'in-stock': { tone: 'green', label: 'IN STOCK' },
@@ -45,6 +46,8 @@ export default function EquipmentTab() {
           <Printer size={14} /> Print kit list
         </button>
       </div>
+
+      <PackStockPanel />
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>

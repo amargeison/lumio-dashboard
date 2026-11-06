@@ -13,6 +13,7 @@ import * as TP from '@/data/tenproject/demo-data'
 import { TEN_PROJECT_BRAND, TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
 import type { ImpactOrgSettings } from '@/lib/impact/org'
 import type { LiveInsights } from '@/lib/impact/insights'
+import type { PackData } from '@/lib/impact/packs'
 
 export { fill } from '@/lib/impact/fill'
 
@@ -55,12 +56,18 @@ export interface ImpactPortalContext {
   cpd?: ImpactCpd[]
   /** Live portals: the Insights page and funder documents, computed from the rows. */
   insights?: LiveInsights
+  /** Live portals: the welcome pack, its stock, issues and payments. */
+  packs?: PackData
+  /** Live portals: every cohort with its children, for the Coach view. */
+  cohorts?: LiveCohort[]
   /** Live portals: load the org's data again after a change. */
   reload?: () => void
 }
 
+export interface LiveCohort { id: string; label: string; sessionId: string | null; leadStaffId: string | null; children: TP.DemoChild[] }
+
 export interface ImpactChild {
-  id: string; name: string; age: number | null; yearGroup: string | null; school: string | null
+  id: string; name: string; age: number | null; yearGroup: string | null; school: string | null; schoolId?: string | null
   medical: string | null; photoConsent: boolean | null; feeStatus: string; stickers: number
 }
 export interface ImpactFamily {
