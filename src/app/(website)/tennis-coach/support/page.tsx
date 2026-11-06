@@ -11,6 +11,10 @@ export const metadata: Metadata = {
 
 const QA: { q: string; a: React.ReactNode }[] = [
   {
+    q: 'Where do I get the app?',
+    a: <>Lumio Tennis Coach is free on the <a href="https://apps.apple.com/gb/app/id6827285797" target="_blank" rel="noopener noreferrer" className="text-sky-400 underline">App Store</a> for iPhone (UK). On any other phone, sign in from your web browser.</>,
+  },
+  {
     q: 'How do I sign in?',
     a: <>Enter your email and we send you a six-digit code; there is no password to remember. Coaches sign in with the address they signed up with. Players and parents sign in with the address their coach invited.</>,
   },
