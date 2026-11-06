@@ -15,7 +15,9 @@ import { TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
 import { GENERIC_BRAND } from './org'
 import { NO_COACH } from './school-card'
 import { complianceItems, compliancePeople, dbsCertificate, isoToday, needsAction, roleLabel, staffCertificates, volunteerCertificates } from './compliance'
-import { headlineTiles } from './insights'
+import { headlineTiles, weekendConversion } from './insights'
+import { activationPct } from './members'
+import type { FamilySession } from './family-week'
 import { attendanceBySession, evidenceFromRows, scoreSchools } from './readiness'
 import { inTerm, termOf } from './term'
 import { outstandingRegisters } from './registers'
@@ -80,11 +82,12 @@ export interface LiveRows {
   volunteers?: { id: string; name: string; email: string | null; phone: string | null; venue_id: string | null; inducted: boolean; induction_date: string | null; dbs_status: string; dbs_expiry?: string | null; first_aid_expiry?: string | null; since: string | null; notes: string | null }[]
   families?: { id: string; guardian_name: string; email: string | null; phone: string | null; emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null; unsubscribed_at: string | null }[]
   children?: { id: string; family_id: string | null; name: string; date_of_birth: string | null; year_group: string | null; school_id: string | null; programme_id: string | null; medical_notes: string | null; photo_consent: boolean | null; fee_status: string; gender?: string | null; fsm?: boolean | null; pupil_premium?: boolean | null; stickers: number; send?: boolean | null }[]
-  sessions?: { id: string; kind: string; programme_id: string | null; venue_id: string | null; session_date: string; lead_staff_id: string | null }[]
+  sessions?: { id: string; kind: string; programme_id: string | null; venue_id: string | null; session_date: string; week_number?: number | null; lead_staff_id: string | null }[]
   attendance?: { session_id: string; child_id: string; present: boolean; via: string }[]
   programmeLinks?: { id: string; lead_staff_id: string | null; venue_id: string | null }[]
   responses?: { school_id: string | null; would_recommend: boolean | null; satisfaction: number | null }[]
   cpd?: { id: string; school_id: string; staff_name: string; course: string; cpd_date: string | null; provider: string | null; notes: string | null }[]
+  members?: { role: string; family_id: string | null; accepted_at: string | null; revoked_at: string | null }[]
 }
 
 const EVENT_TYPE: Record<string, string> = {
@@ -111,6 +114,7 @@ export function mapLiveRows(rows: LiveRows, today = isoToday()): ImpactDataset {
   const coachOf = (programmeId: string | undefined) => staffName.get(leadStaff.get(programmeId ?? '') ?? '') ?? NO_COACH
   const raisedFor = (campaignId: string) => pounds(rows.donations.filter(d => d.campaign_id === campaignId).reduce((n, d) => n + d.amount_pence, 0))
 
+  const conversion = weekendConversion(rows).rows
   data.SCHOOLS = rows.schools.map((s): DemoSchool => {
     const progs = rows.programmes.filter(p => p.school_id === s.id)
     const live = progs.find(p => p.status === 'running') ?? progs[0]
@@ -126,6 +130,7 @@ export function mapLiveRows(rows: LiveRows, today = isoToday()): ImpactDataset {
       // No programme yet: the school's own status says how far along it is.
       progress: progressLabel(live?.status ?? SCHOOL_STATUS[s.status], live?.current_week),
       headTeacher: s.head_name ?? '—',
+      activation: activationPct(rows.children ?? [], rows.members, s.id, rows.programmes) ?? undefined,
       note: s.notes ?? undefined,
     }
   })
@@ -150,9 +155,9 @@ export function mapLiveRows(rows: LiveRows, today = isoToday()): ImpactDataset {
       })),
       attendanceTrend: bySession.map(x => x.pct),
       sessionTips: bySession.map(x => `${shortDate(x.date)} · ${x.pct}%`),
-      // No activation data exists on live yet. Stays 0 (shown as "—"): not consent, not a readiness figure.
-      activationPct: 0,
-      conversionPct: 0,
+      // Null shows as "—": the school has no families, or no children reached yet.
+      activationPct: activationPct(rows.children ?? [], rows.members, s.id, rows.programmes),
+      conversionPct: conversion.find(c => c.school === s.name)?.pct ?? null,
       kit: '—',
       fundraising: camp ? { raised: raisedFor(camp.id), target: pounds(camp.target_pence), supporters: rows.donations.filter(d => d.campaign_id === camp.id).length } : undefined,
       notes: s.notes ? [s.notes] : [],
@@ -365,11 +370,24 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
 }
 
 /** Every cohort with its children and latest register, for the Coach view's picker. */
-export function buildCohorts(rows: LiveRows): LiveCohort[] {
+/** Each child's sessions: their programme's, and any they've attended. Mirrors impact_parent_home(). */
+export function sessionsByChild(rows: LiveRows): Record<string, FamilySession[]> {
+  const sessions = rows.sessions ?? [], att = rows.attendance ?? []
+  const venue = new Map((rows.venues ?? []).map(v => [v.id, v.name]))
+  return Object.fromEntries((rows.children ?? []).map(k => {
+    const attended = new Set(att.filter(a => a.child_id === k.id).map(a => a.session_id))
+    return [k.id, sessions.filter(s => (k.programme_id && s.programme_id === k.programme_id) || attended.has(s.id))
+      .map(s => ({ id: s.id, kind: s.kind, session_date: s.session_date, week_number: s.week_number ?? null, venue: venue.get(s.venue_id ?? '') ?? null }))]
+  }))
+}
+
+export function buildCohorts(rows: LiveRows, today = isoToday()): LiveCohort[] {
   const kids = rows.children ?? [], att = rows.attendance ?? []
   const lead = new Map((rows.programmeLinks ?? []).map(p => [p.id, p.lead_staff_id]))
   return rows.programmes.filter(p => kids.some(k => k.programme_id === p.id)).map(p => {
-    const last = (rows.sessions ?? []).filter(s => s.kind === 'school' && s.programme_id === p.id).sort((a, b) => a.session_date.localeCompare(b.session_date)).pop()
+    // The register a coach can tap, so never a session still to come while one has happened.
+    const dated = (rows.sessions ?? []).filter(s => s.kind === 'school' && s.programme_id === p.id).sort((a, b) => a.session_date.localeCompare(b.session_date))
+    const last = dated.filter(s => s.session_date <= today).pop() ?? dated[0]
     const school = rows.schools.find(s => s.id === p.school_id)?.name ?? 'School'
     return {
       id: p.id, label: `${school} — ${p.term_label}`, sessionId: last?.id ?? null, leadStaffId: lead.get(p.id) ?? null,

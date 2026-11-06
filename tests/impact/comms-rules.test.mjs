@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { contactBlock, familyFromUnsubscribeToken, namedWithoutConsent, photoGreen, toE164, unsubscribeToken, verifiedSender } from '../../src/lib/impact/comms-rules.ts'
+import { appFiledDetail, contactBlock, familyFromUnsubscribeToken, namedWithoutConsent, photoGreen, toE164, unsubscribeToken, verifiedSender } from '../../src/lib/impact/comms-rules.ts'
 const fam = (o={}) => ({ id:'f1', consent_data:true, consent_photo:true, opt_in_email:true, opt_in_sms:true, opt_in_app:true, unsubscribed_at:null, ...o })
 const kid = (o={}) => ({ id:'c1', family_id:'f1', name:'Sam Jones', photo_consent:true, ...o })
 test('contact: null consent refused', () => assert.equal(contactBlock(fam({consent_data:null}),'email'),'No contact consent on record'))
@@ -27,3 +27,15 @@ test('unsubscribe: wrong secret refused', () => assert.equal(familyFromUnsubscri
 test('unsubscribe: token cannot be moved to another family', () => { const sig=unsubscribeToken(ID,'s').split('.')[1]; assert.equal(familyFromUnsubscribeToken(`${ID2}.${sig}`,'s'),null) })
 test('unsubscribe: malformed refused', () => { for (const t of ['',ID,`${ID}.`,'a.b',`${ID}.x.y`]) assert.equal(familyFromUnsubscribeToken(t,'s'),null,t) })
 test('unsubscribe: no secret refuses everything', () => assert.equal(familyFromUnsubscribeToken(unsubscribeToken(ID,''),''),null))
+test('app status: FAMILY_APP_LIVE=on says it is in the family app', t => {
+  t.after(() => { delete process.env.FAMILY_APP_LIVE })
+  process.env.FAMILY_APP_LIVE = 'on'
+  assert.equal(appFiledDetail(), 'In the family app')
+})
+test('app status: off, unset or any other value keeps the can’t open yet wording', t => {
+  t.after(() => { delete process.env.FAMILY_APP_LIVE })
+  const waiting = 'Saved for the family app, which families can’t open yet'
+  delete process.env.FAMILY_APP_LIVE
+  assert.equal(appFiledDetail(), waiting)
+  for (const v of ['off', 'true', '1', 'ON', '']) { process.env.FAMILY_APP_LIVE = v; assert.equal(appFiledDetail(), waiting) }
+})

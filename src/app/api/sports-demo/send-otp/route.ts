@@ -15,7 +15,7 @@ function getSupabase() {
 export async function POST(req: NextRequest) {
   const supabase = getSupabase()
   try {
-    const { email, sport, clubName, purpose } = await req.json()
+    const { email, sport, clubName, purpose, invite } = await req.json()
     const isFounder = purpose === 'founder'
     // Members get sign-in wording, never "demo code" / "Demo access". Read from
     // the membership table as well as the request, so a coach arriving by a page
@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: BLOCKED_MESSAGE }, { status: 403 })
     }
     const invited = await isAcademyMember(email)
+      // An Impact coach or parent: a current membership, or a valid invite to this address.
+      || (sport === 'impact' && await (await import('@/lib/impact/member-auth')).impactMayGetCode(email, invite))
     if (!isMember && !isFounder && invited) isMember = true
     // A "member" is somebody a head coach has invited. Asking for a member's
     // code for an address nobody invited used to store a code, and entering it

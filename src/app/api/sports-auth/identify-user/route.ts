@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { portalUrlFor } from '@/lib/sports-admin/portal-url'
 import { rateLimit, clientIp } from '@/lib/rate-limit'
 import { findAuthUserByEmail, isValidEmail, exactEmailPattern } from '../_lib/account'
+import { impactMemberSlug } from '@/lib/impact/member-auth'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -153,6 +154,12 @@ export async function POST(req: NextRequest) {
         founderSlug: academy?.portal_slug || null,
         memberDest,
       })
+    }
+
+    // An Impact coach or parent. As above, a stranger learns only the kind of account.
+    const impactSlug = await impactMemberSlug(normalised)
+    if (impactSlug) {
+      return NextResponse.json({ type: 'member', sport: 'impact', ...(self ? { memberDest: `/impact/${impactSlug}` } : {}) })
     }
 
     if (demoLead) {

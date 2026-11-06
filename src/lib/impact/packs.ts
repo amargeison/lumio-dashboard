@@ -61,12 +61,14 @@ export function hasPack(p: PackData, childId: string) {
 export interface IssueLine { item: PackItem; size: string | null; issued: PackIssue | null; paid: PackPayment | null; canIssue: boolean; ticked: boolean; why: string | null }
 
 /** What the issue dialog offers for one child. Included items start ticked; paid ones only if paid for. */
-export function issueLines(p: PackData, childId: string): IssueLine[] {
+export function issueLines(p: PackData, childId: string, coach = false): IssueLine[] {
   return activeItems(p).map(item => {
     const issued = currentIssue(p, childId, item.id), paid = paymentFor(p, childId, item.id)
     const unpaid = item.kind === 'paid' && !paid
     const canIssue = !issued && !unpaid
-    return { item, size: sizeFor(p, childId, item.id), issued, paid, canIssue, ticked: canIssue, why: issued ? 'Already issued' : unpaid ? `Not paid · ${pounds(item.price_pence ?? 0)}` : null }
+    // A coach knows paid or not, never an amount, and HQ records the payment.
+    const why = issued ? 'Already issued' : unpaid ? (coach ? 'Not paid yet · HQ records payment' : `Not paid · ${pounds(item.price_pence ?? 0)}`) : null
+    return { item, size: sizeFor(p, childId, item.id), issued, paid, canIssue, ticked: canIssue, why }
   })
 }
 

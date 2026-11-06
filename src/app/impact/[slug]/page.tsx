@@ -55,6 +55,11 @@ function signOutImpact(slug: string) {
   window.location.href = `/impact/${slug}`
 }
 
+async function signOutToLogin() {
+  await createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!).auth.signOut()
+  window.location.href = '/sports-login'
+}
+
 type Role = 'hq' | 'school' | 'parent' | 'coach' | 'tenor'
 
 type RoleDef = { id: Role; label: string; desc: string; icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }> }
@@ -160,7 +165,7 @@ function headerFor(role: Role, section: string, titles: Record<Role, { title: st
   return h ?? titles[role]
 }
 
-function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSession; slug: string; onSignOut?: () => void }) {
+function ImpactPortalInner({ session, slug, onSignOut, lockTo, switchTo }: { session: SportsDemoSession; slug: string; onSignOut?: () => void; lockTo?: Role; switchTo?: string }) {
   const { brand, copy, mode, org } = useImpact()
   // Per-org modules (Settings → Modules). Off = gone from the sidebar, and a
   // role view whose module is off (School / Coach / volunteer) is hidden too.
@@ -174,8 +179,8 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
   const ROLE_TITLES = roleTitlesFor(brand, copy)
   // Role starts unset so the programme's role picker still fronts the portal,
   // exactly as it did behind the PIN.
-  const [role, setRole] = useState<Role | null>(null)
-  const [lockedRole, setLockedRole] = useState<Role | null>(null)
+  const [role, setRole] = useState<Role | null>(lockTo ?? null)
+  const [lockedRole, setLockedRole] = useState<Role | null>(lockTo ?? null)
   const [isMobile, setIsMobile] = useState(false)
   // Sidebar-driven sections per role (tennis-portal pattern)
   const [hqSection, setHqSection] = useState<HqTab>('overview')
@@ -187,7 +192,8 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
   // a role view switched off → back to HQ.
   const modulesKey = JSON.stringify(org?.settings?.modules ?? {})
   useEffect(() => {
-    if (role && !roleOn(role)) { setRole(lockedRole && roleOn(lockedRole) ? lockedRole : 'hq'); return }
+    // A signed-in member stays in their role whatever the modules say.
+    if (role && !roleOn(role) && !lockTo) { setRole(lockedRole && roleOn(lockedRole) ? lockedRole : 'hq'); return }
     if (!on(hqSection)) setHqSection('overview')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modulesKey, role, hqSection])
@@ -237,7 +243,7 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
   const mainBg = dark ? '#EEEEEB' : TP_PAPER
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || lockTo) return
     // Deep-link support: /impact/demo?role=parent lands straight on that
     // role after the gate AND locks the session to it — a parent following the
     // website CTA never sees HQ/School/Coach/volunteer (mirrors real role-based
@@ -249,7 +255,7 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
     }
   }, [])
 
-  const navRoles = lockedRole ? ROLES.filter(r => r.id === lockedRole) : ROLES
+  const navRoles = lockedRole ? rolesFor(brand, copy).filter(r => r.id === lockedRole) : ROLES
 
   // ── Role picker ──
   if (!role) {
@@ -308,6 +314,7 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
           ) : (
             <div style={{ flex: 1, color: '#C9C4BE', fontSize: 12, fontWeight: 700 }}>{ROLES.find(r => r.id === lockedRole)?.label}</div>
           )}
+          {switchTo && <a href={`/impact/${slug}?view=${switchTo}`} style={{ display: 'block', color: '#C9C4BE', fontSize: 11.5, fontWeight: 700, marginBottom: 8 }}>Switch to {switchTo} view</a>}
           <button
             onClick={exitPortal}
             aria-label={exitLabel}
@@ -501,6 +508,7 @@ function ImpactPortalInner({ session, slug, onSignOut }: { session: SportsDemoSe
         )}
         {expanded && (
         <div style={{ padding: 12 }}>
+          {switchTo && <a href={`/impact/${slug}?view=${switchTo}`} style={{ display: 'block', color: '#C9C4BE', fontSize: 11.5, fontWeight: 700, marginBottom: 8 }}>Switch to {switchTo} view</a>}
           <button
             onClick={exitPortal}
             style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', color: '#8A847E', border: '1px solid #33333B', borderRadius: 9, padding: '9px 12px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}
@@ -547,23 +555,65 @@ export default function ImpactPortal({ params }: { params: Promise<{ slug: strin
     </div>
   )
 
-  // Signed in as another org's HQ → refused at this address (Coach idiom).
+  // Signed in with no access at this address. Never the HQ view, never a redirect.
   if (!isDemo && live.denied) {
     const own = live.denied.ownSlug
     return (
       <div style={{ minHeight: '100vh', background: TP_PAPER, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
         <div style={{ maxWidth: 440, background: '#fff', border: '1px solid #E7E2DC', borderRadius: 14, padding: 24, textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK }}>This isn’t your organisation’s portal</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK }}>You don’t have access to this portal</div>
           <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 8, lineHeight: 1.55 }}>
-            You’re signed in as the HQ of a different Lumio Impact organisation, so this portal’s data isn’t available to you.
+            The login you’re using isn’t linked to this organisation. If you think it should be, ask them for a new invite.
           </div>
           {own && (
             <a href={`/impact/${own}`} style={{ display: 'inline-block', marginTop: 14, background: TP_RED, color: '#fff', borderRadius: 9, padding: '10px 16px', fontSize: 12.5, fontWeight: 800, textDecoration: 'none' }}>
               Go to your portal →
             </a>
           )}
+          <div style={{ marginTop: 14 }}>
+            <button onClick={signOutToLogin} style={{ background: 'none', border: 'none', color: TP_RED, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>
+          </div>
         </div>
       </div>
+    )
+  }
+
+  // A signed-in coach, parent or school: their own view, with no picker.
+  if (!isDemo && live.member) {
+    const m = live.member
+    if (m.error || m.role === 'school') {
+      return (
+        <div style={{ minHeight: '100vh', background: TP_PAPER, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ maxWidth: 440, background: '#fff', border: '1px solid #E7E2DC', borderRadius: 14, padding: 24, textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK }}>{m.error ? 'Your portal couldn’t load' : 'Your school view is on its way'}</div>
+            <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 8, lineHeight: 1.55 }}>{m.error ?? `${ctx.brand.org} will let you know when it’s ready.`}</div>
+            <button onClick={signOutToLogin} style={{ marginTop: 14, background: 'none', border: 'none', color: TP_RED, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>
+          </div>
+        </div>
+      )
+    }
+    if (m.role === 'parent') {
+      return (
+        <ImpactDataProvider value={ctx}>
+          <div style={{ background: TP_DARK, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', boxSizing: 'border-box' }}>
+            <span style={{ color: '#fff', fontSize: 13, fontWeight: 800 }}>{ctx.brand.org}</span>
+            <span style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+              {m.otherRole && <a href={`/impact/${slug}?view=${m.otherRole}`} style={{ color: '#C9C4BE', fontSize: 12, fontWeight: 700 }}>Switch to {m.otherRole} view</a>}
+              <button onClick={signOutToLogin} style={{ background: 'none', border: 'none', color: '#C9C4BE', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>
+            </span>
+          </div>
+          <ParentApp fullScreen />
+        </ImpactDataProvider>
+      )
+    }
+    const session: SportsDemoSession = {
+      email: m.email, userName: '', clubName: ctx.brand.org, role: 'coach',
+      photoDataUrl: null, logoDataUrl: null, sport: 'impact', verifiedAt: new Date().toISOString(), isDemoShell: false,
+    }
+    return (
+      <ImpactDataProvider value={ctx}>
+        <ImpactPortalInner session={session} slug={slug} onSignOut={signOutToLogin} lockTo="coach" switchTo={m.otherRole ?? undefined} />
+      </ImpactDataProvider>
     )
   }
 
@@ -574,14 +624,9 @@ export default function ImpactPortal({ params }: { params: Promise<{ slug: strin
       email: hq.email, userName: hq.name, clubName: ctx.brand.org, role: 'hq',
       photoDataUrl: null, logoDataUrl: null, sport: 'impact', verifiedAt: new Date().toISOString(), isDemoShell: false,
     }
-    const handleSignOut = async () => {
-      const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-      await supabase.auth.signOut()
-      window.location.href = '/sports-login'
-    }
     return (
       <ImpactDataProvider value={ctx}>
-        <ImpactPortalInner session={session} slug={slug} onSignOut={handleSignOut} />
+        <ImpactPortalInner session={session} slug={slug} onSignOut={signOutToLogin} />
       </ImpactDataProvider>
     )
   }

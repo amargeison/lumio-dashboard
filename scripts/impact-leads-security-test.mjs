@@ -61,6 +61,21 @@ async function hq(letter) {
   return { id: user.id, slug, db, api }
 }
 
+// A signed-in login with no org of its own: an invited coach or parent.
+async function person(letter) {
+  const email = `${tag}_${letter}@lumio.test`
+  const { data: { user }, error } = await admin.auth.admin.createUser({ email, email_confirm: true })
+  if (error) throw error
+  made.push({ id: user.id })
+  const jar = new Map()
+  const db = createServerClient(SB, ANON, { cookies: { getAll: () => [...jar].map(([name, value]) => ({ name, value })), setAll: all => all.forEach(c => jar.set(c.name, c.value)) } })
+  const { data: link } = await admin.auth.admin.generateLink({ type: 'magiclink', email })
+  const { error: otpError } = await db.auth.verifyOtp({ email, token: link.properties.email_otp, type: 'email' })
+  if (otpError) throw otpError
+  const cookie = () => [...jar].map(([k, v]) => `${k}=${v}`).join('; ')
+  return { id: user.id, email, db, api: (path, init = {}) => fetch(`${BASE}${path}`, { ...init, headers: { 'Content-Type': 'application/json', cookie: cookie(), ...init.headers } }) }
+}
+
 const made = []
 async function main() {
   const A = await hq('a'); made.push(A)
@@ -228,12 +243,138 @@ async function main() {
   const finalQty = (await admin.from('tp_pack_stock').select('item_id, size, qty').eq('hq_id', A.id)).data
   ok('stock still equals the sum of moves', finalQty.every(l => l.qty === finalMoves.filter(m => m.item_id === l.item_id && (m.size ?? '') === (l.size ?? '')).reduce((n, m) => n + m.delta, 0)), `${nineTen}`)
 
+  await logins(A, B)
+
   if (/localhost|127\.0\.0\.1/.test(BASE)) {
     console.log('\nRate limit:')
     let status = 0
     for (let i = 0; i < 121; i++) status = (await fetch(`${BASE}/api/impact/leads/in/ratelimit${token.slice(0, 10)}xxxx`, { method: 'POST', body: '{}' })).status
     ok('the 121st request in an hour is a 429', status === 429, String(status))
   }
+}
+
+// Coaches, parents and invites: who can read what, as real sessions over the API.
+async function logins(A, B) {
+  console.log('\nLogins:')
+  const one = async (t, row) => { const r = await admin.from(t).insert(row).select('id').single(); if (r.error) throw new Error(`${t}: ${r.error.message}`); return r.data.id }
+  const hq = A.id
+  const school = await one('tp_schools', { hq_id: hq, name: `${tag} one`, notes: 'HQ ONLY' }), school2 = await one('tp_schools', { hq_id: hq, name: `${tag} two` })
+  const staff = await one('tp_staff', { hq_id: hq, name: 'Coach One', email: `${tag}_coach@lumio.test`, notes: 'HQ ONLY' }), staff2 = await one('tp_staff', { hq_id: hq, name: 'Coach Two' })
+  const prog = await one('tp_programmes', { hq_id: hq, school_id: school, term_label: 'One', lead_staff_id: staff, notes: 'HQ ONLY' }), prog2 = await one('tp_programmes', { hq_id: hq, school_id: school2, term_label: 'Two', lead_staff_id: staff2 })
+  const fam = await one('tp_families', { hq_id: hq, guardian_name: 'Fam One', email: `${tag}_parent@lumio.test`, phone: '07700', notes: 'HQ ONLY', consent_photo: true }), fam2 = await one('tp_families', { hq_id: hq, guardian_name: 'Fam Two', notes: 'HQ ONLY' })
+  const kid = await one('tp_children', { hq_id: hq, name: 'Kid One', family_id: fam, school_id: school, programme_id: prog, medical_notes: 'Asthma', send: true, fsm: true, pupil_premium: true, notes: 'HQ ONLY', photo_consent: true })
+  const kid2 = await one('tp_children', { hq_id: hq, name: 'Kid Two', family_id: fam2, school_id: school2, programme_id: prog2, notes: 'HQ ONLY' })
+  const venue = await one('tp_venues', { hq_id: hq, name: `${tag} rec`, notes: 'HQ ONLY', access_notes: 'Gate code' }), venue2 = await one('tp_venues', { hq_id: hq, name: `${tag} park` })
+  const ses = await one('tp_sessions', { hq_id: hq, programme_id: prog, session_date: '2026-10-01', lead_staff_id: staff, venue_id: venue, notes: 'HQ ONLY' }), ses2 = await one('tp_sessions', { hq_id: hq, programme_id: prog2, session_date: '2026-10-02', lead_staff_id: staff2, venue_id: venue2 })
+  await one('tp_attendance', { hq_id: hq, session_id: ses2, child_id: kid2 })
+  await one('impact_leads', { hq_id: hq, name: 'Lead' })
+  const item = await one('tp_pack_items', { hq_id: hq, name: `${tag} ball` })
+  await one('tp_pack_stock_moves', { hq_id: hq, item_id: item, delta: 3, reason: 'received' })
+  const racket = await one('tp_pack_items', { hq_id: hq, name: `${tag} racket`, kind: 'paid', price_pence: 2500 })
+  await one('tp_pack_stock_moves', { hq_id: hq, item_id: racket, delta: 3, reason: 'received' })
+  await one('tp_pack_payments', { hq_id: hq, child_id: kid, item_id: racket, amount_pence: 2500, method: 'cash' })
+  await one('tp_pack_payments', { hq_id: hq, child_id: kid2, item_id: item, amount_pence: 100, method: 'cash' }).catch(() => {})
+
+  const coach = await person('coach'), parent = await person('parent'), gone = await person('gone')
+  const join = (who, role, target) => one('impact_members', { user_id: who.id, hq_id: hq, role, ...target, invited_email: who.email, accepted_at: new Date().toISOString() })
+  await join(coach, 'coach', { staff_id: staff }); await join(parent, 'parent', { family_id: fam })
+  const goneId = await join(gone, 'parent', { family_id: fam })
+  const rows = async (who, t) => (await who.db.from(t).select('*')).data ?? []
+  const coachView = !!(await coach.db.rpc('impact_coach_home', { p_hq: hq })).data?.programmes
+
+  ok('coach can’t read another programme’s child', !(await rows(coach, 'tp_children')).some(c => c.id === kid2))
+  ok('coach can’t read another programme’s session', !(await rows(coach, 'tp_sessions')).some(s => s.id === ses2))
+  if (coachView) {
+    ok('coach reads no child row directly', (await rows(coach, 'tp_children')).length === 0)
+    ok('coach reads no family row directly', (await rows(coach, 'tp_families')).length === 0)
+    ok('coach reads no session or school row directly', (await rows(coach, 'tp_sessions')).length + (await rows(coach, 'tp_schools')).length === 0)
+    const home = (await coach.db.rpc('impact_coach_home', { p_hq: hq })).data, raw = JSON.stringify(home)
+    ok('coach home: medical and SEND for their child', home.children[0]?.medical_notes === 'Asthma' && home.children[0]?.send === true, raw)
+    ok('coach home: their session and school', home.sessions.some(s => s.id === ses) && home.schools.some(s => s.id === school), raw)
+    ok('coach home: no notes, FSM or pupil premium', !/HQ ONLY|fsm|pupil_premium|"notes"/.test(raw), raw)
+    ok('coach home: paid is yes/no, no amounts', home.paid.some(p => p.child_id === kid && p.item_id === racket) && !/amount|2500/.test(raw), raw)
+    ok('coach reads no programme, venue or staff row directly', (await rows(coach, 'tp_programmes')).length + (await rows(coach, 'tp_venues')).length + (await rows(coach, 'tp_staff')).length === 0)
+    ok('coach home: their programme and venue, not another', home.programmes.map(p => p.id).join() === prog && home.venues.map(v => v.id).join() === venue, raw)
+    ok('coach home: venue access notes stay', home.venues[0]?.access_notes === 'Gate code', raw)
+    ok('coach adds a QR check-in at their venue', !(await coach.db.from('tp_qr_checkins').insert({ hq_id: hq, tp_venue_id: venue, session_date: '2026-10-01', children_count: 1 })).error)
+    ok('coach can’t add one at another venue', !!(await coach.db.from('tp_qr_checkins').insert({ hq_id: hq, tp_venue_id: venue2, session_date: '2026-10-01', children_count: 1 })).error)
+    ok('coach issues a paid item once it’s paid', (await coach.db.rpc('impact_issue_pack', { p_child: kid, p_lines: [{ item_id: racket }], p_session: ses })).data === 1)
+    ok('coach records a return for their own child', !(await coach.db.rpc('impact_return_item', { p_child: kid, p_item: racket, p_reason: 'too_small' })).error)
+    ok('coach can’t record a return for another child', !!(await coach.db.rpc('impact_return_item', { p_child: kid2, p_item: item, p_reason: 'too_small' })).error)
+    const both = await one('impact_members', { user_id: coach.id, hq_id: hq, role: 'parent', family_id: fam2, invited_email: coach.email, accepted_at: new Date().toISOString() })
+    ok('one login can be a coach and a parent', (await coach.db.rpc('impact_parent_home')).data?.[0]?.id === fam2 && (await coach.db.rpc('impact_coach_home', { p_hq: hq })).data?.children?.length === 1)
+    await admin.from('impact_members').delete().eq('id', both)
+    ok('coach home: no child outside their programmes', !raw.includes(kid2), raw)
+    ok('coach home: no family email', !raw.includes('_parent@lumio.test'), raw)
+    ok('coach marks their register', !(await coach.db.from('tp_attendance').upsert({ hq_id: hq, session_id: ses, child_id: kid, present: true, via: 'register' }, { onConflict: 'session_id,child_id' })).error)
+    ok('coach can’t mark another child', !!(await coach.db.from('tp_attendance').insert({ hq_id: hq, session_id: ses, child_id: kid2 })).error)
+    ok('another org’s id gives the coach nothing', (await coach.db.rpc('impact_coach_home', { p_hq: B.id })).data?.children?.length === 0)
+    const schoolLogin = await person('school')
+    await join(schoolLogin, 'school', { school_id: school })
+    ok('school login reads no programme row directly', (await rows(schoolLogin, 'tp_programmes')).length === 0)
+    const schoolHome = await schoolLogin.db.rpc('impact_school_home')
+    if (schoolHome.error) console.log('  – 231 not applied: school home checks skipped')
+    else {
+      const sraw = JSON.stringify(schoolHome.data)
+      ok('school login gets its own school and programme', schoolHome.data.schools.map(s => s.id).join() === school && schoolHome.data.programmes.map(p => p.id).join() === prog, sraw)
+      ok('school home has no notes', !sraw.includes('HQ ONLY') && !('notes' in schoolHome.data.schools[0]), sraw)
+      ok('school login reads no school row directly', (await rows(schoolLogin, 'tp_schools')).length === 0)
+      ok('a coach gets an empty school home', (await coach.db.rpc('impact_school_home')).data?.schools?.length === 0)
+    }
+  } else console.log('  – 230 not applied: coach view checks skipped')
+  ok('coach issues to their own child', (await coach.db.rpc('impact_issue_pack', { p_child: kid, p_lines: [{ item_id: item }], p_session: ses })).data === 1)
+  ok('coach can’t issue to another child', !!(await coach.db.rpc('impact_issue_pack', { p_child: kid2, p_lines: [{ item_id: item }] })).error)
+  ok('parent reads no child or family row directly', (await rows(parent, 'tp_children')).length + (await rows(parent, 'tp_families')).length === 0)
+  const home = (await parent.db.rpc('impact_parent_home')).data
+  ok('parent gets their own family only', home?.length === 1 && home[0].id === fam && !JSON.stringify(home).includes(kid2) && !JSON.stringify(home).includes('HQ ONLY'))
+  ok('parent can’t change another family', !!(await parent.db.rpc('impact_parent_update_family', { p_family: fam2, p_email: 'x@x.test', p_phone: null, p_emergency_contact: null, p_consent_data: true, p_consent_photo: true, p_opt_in_email: true, p_opt_in_sms: true, p_opt_in_app: true })).error)
+  for (const [who, label] of [[coach, 'coach'], [parent, 'parent']]) {
+    ok(`${label} reads no leads`, (await rows(who, 'impact_leads')).length === 0)
+    ok(`${label} can’t save settings`, !(await who.db.from('impact_orgs').update({ settings: {} }).eq('hq_id', hq).select('slug')).data?.length)
+    ok(`${label} can’t reach the invite route`, [401, 403].includes((await who.api('/api/impact/invite', { method: 'POST', body: '{}' })).status))
+    ok(`${label} can’t reach the members route`, [401, 403].includes((await who.api('/api/impact/members', { method: 'POST', body: '{}' })).status))
+  }
+  ok('coach reads no payment rows', (await rows(coach, 'tp_pack_payments')).length === 0)
+  ok('parent reads no other family’s payments', !(await rows(parent, 'tp_pack_payments')).some(p => p.child_id === kid2))
+  const b = await admin.from('impact_members').update({ revoked_at: new Date().toISOString() }).eq('id', goneId); if (b.error) throw b.error
+  const seen = []
+  for (const t of ['tp_children', 'tp_families', 'tp_sessions', 'tp_attendance', 'tp_schools', 'tp_programmes', 'tp_pack_items', 'tp_pack_issues', 'tp_pack_payments', 'impact_messages', 'impact_leads', 'tp_booklet']) if ((await rows(gone, t)).length) seen.push(t)
+  ok('a revoked member reads nothing', seen.length === 0, seen.join())
+  ok('a revoked member’s home is empty', (await gone.db.rpc('impact_parent_home')).data?.length === 0)
+  ok('anon can’t reach the invite route', (await fetch(`${BASE}/api/impact/invite`, { method: 'POST', body: '{}' })).status === 401)
+  ok('anon can’t accept an invite', (await fetch(`${BASE}/api/impact/invite/accept`, { method: 'POST', body: '{"token":"x"}' })).status === 401)
+
+  const invited = await A.api('/api/impact/invite', { method: 'POST', body: JSON.stringify({ role: 'parent', targetId: fam2 }) })
+  if (invited.status === 503) { console.log('  – invites are off here: send checks skipped'); ok('with invites off, nothing was created', ((await admin.from('impact_invites').select('id').eq('hq_id', hq)).data ?? []).length === 0); return }
+
+  console.log('\nInvites (dry run, nothing sent):')
+  ok('no email on the family is refused', invited.status === 400)
+  const bAttempt = await B.api('/api/impact/invite', { method: 'POST', body: JSON.stringify({ role: 'coach', targetId: staff }) })
+  ok('another org can’t invite your coach', bAttempt.status === 404, bAttempt.status)
+  const stranger = await person('coach2'); await admin.from('tp_staff').update({ email: stranger.email }).eq('id', staff2)
+  const send = async () => (await (await A.api('/api/impact/invite', { method: 'POST', body: JSON.stringify({ role: 'coach', targetId: staff2 }) })).json()).link
+  const first = await send(), link = await send()
+  const tok = u => new URL(u).searchParams.get('invite')
+  const accept = (who, t) => who.api('/api/impact/invite/accept', { method: 'POST', body: JSON.stringify({ token: t }) })
+  ok('the link prefills the address', new URL(link).searchParams.get('email') === stranger.email && new URL(link).pathname === '/sports-login')
+  ok('the token isn’t stored', !((await admin.from('impact_invites').select('token_hash').eq('hq_id', hq)).data ?? []).some(r => r.token_hash === tok(link)))
+  ok('a resent invite cancels the old link', (await accept(stranger, tok(first))).status === 400)
+  ok('another login can’t use it', (await accept(coach, tok(link))).status === 400)
+  const joined = await accept(stranger, tok(link)), joinedBody = await joined.json()
+  ok('the right login gets a membership and the slug', joined.status === 200 && joinedBody.role === 'coach' && joinedBody.slug === A.slug, JSON.stringify(joinedBody))
+  ok('single use', (await accept(stranger, tok(link))).status === 400)
+  await admin.from('impact_invites').update({ expires_at: '2020-01-01' }).eq('hq_id', hq)
+  ok('already a coach is refused a new invite', (await A.api('/api/impact/invite', { method: 'POST', body: JSON.stringify({ role: 'coach', targetId: staff2 }) })).status === 409)
+  const mine = (await admin.from('impact_members').select('id').eq('user_id', stranger.id).single()).data
+  ok('another org can’t revoke your member', (await B.api('/api/impact/members', { method: 'POST', body: JSON.stringify({ action: 'revoke', memberId: mine.id }) })).status === 404)
+  ok('the HQ can revoke', (await A.api('/api/impact/members', { method: 'POST', body: JSON.stringify({ action: 'revoke', memberId: mine.id }) })).status === 200)
+  ok('revoked at once', (await rows(stranger, 'tp_attendance')).length === 0 && (await rows(stranger, 'tp_programmes')).length === 0)
+  const expired = await one('impact_invites', { hq_id: hq, role: 'parent', family_id: fam, email: stranger.email, token_hash: 'x'.repeat(64), expires_at: '2020-01-01' })
+  ok('an expired token is refused', !!(await stranger.db.rpc('impact_accept_invite', { p_token_hash: 'x'.repeat(64) })).error, expired)
+  const fill = Array.from({ length: 50 }, (_, i) => ({ hq_id: hq, role: 'parent', family_id: fam, email: 'x@lumio.test', token_hash: `limit-${tag}-${i}`, revoked_at: new Date().toISOString() }))
+  await admin.from('impact_invites').insert(fill)
+  await admin.from('tp_families').update({ email: `${tag}_fam2@lumio.test` }).eq('id', fam2)
+  ok('the 51st invite in an hour is refused', (await A.api('/api/impact/invite', { method: 'POST', body: JSON.stringify({ role: 'parent', targetId: fam2 }) })).status === 429)
 }
 
 try { await main() } catch (e) { fail++; console.error('  ✗ FAIL: stopped early:', e.message ?? e) }

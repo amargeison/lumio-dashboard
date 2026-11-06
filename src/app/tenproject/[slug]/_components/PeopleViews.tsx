@@ -11,6 +11,7 @@ import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { PersonDetailView, AddCoachModal } from './PersonDetail'
 import { TP_RED, TP_DARK, type TpCoach, type TpTenor, type TpPersonDetail } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { InviteButton, useMembers } from './MembersCard'
 import { certText, needsAction, type Certificate } from '@/lib/impact/compliance'
 
 const DBS_PILL: Record<string, { tone: 'green' | 'amber' | 'red' | 'grey'; label: string }> = {
@@ -77,6 +78,7 @@ function StatsRow({ items }: { items: { label: string; value: string }[] }) {
 export function CoachesTab() {
   const { brand, data } = useImpact()
   const { TP_COACHES, TP_COACH_STATS_ROW, TP_COACH_ATTENTION, COACH_DETAILS } = data
+  const logins = useMembers()
   const [filter, setFilter] = useState<'All' | TpCoach['role']>('All')
   const [added, setAdded] = useState<TpCoach[]>([])
   const roster = [...TP_COACHES, ...added]
@@ -148,6 +150,7 @@ export function CoachesTab() {
                 <div style={{ fontSize: 11, color: '#6B6560', marginTop: 8 }}>
                   DBS {c.dbsNote} · First Aid {c.firstAid}
                 </div>
+                {logins.on && logins.loaded && <div onClick={e => e.stopPropagation()} style={{ marginTop: 8 }}><InviteButton role="coach" targetId={c.id} label="Invite coach" hasEmail={!!logins.emails[c.id]?.trim()} lines={logins.lines} onDone={logins.reload} /></div>}
                 <div style={{ display: 'flex', gap: 14, marginTop: 10, borderTop: '1px solid #F0EBE5', paddingTop: 10, alignItems: 'center' }}>
                   {[
                     [c.sessionsWeek, 'THIS WEEK'],

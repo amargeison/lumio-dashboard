@@ -13,12 +13,14 @@ import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact, type ImpactFamily } from './ImpactDataContext'
 import { ChildPackSummary } from './PackIssue'
+import { BulkInvite, InviteButton, useMembers } from './MembersCard'
 
 const FEE_TONE: Record<string, 'green' | 'amber' | 'red' | 'grey'> = { paid: 'green', deposit: 'amber', due: 'red', waived: 'grey', unknown: 'grey' }
 
 export default function FamiliesTab() {
   const { people, data } = useImpact()
   const [q, setQ] = useState('')
+  const logins = useMembers()
 
   // Demo: households from the demo's weekend register (no live tables there).
   const families: ImpactFamily[] = useMemo(() => people?.families ?? data.WEEKEND_FAMILIES.map(f => ({
@@ -52,6 +54,8 @@ export default function FamiliesTab() {
         ))}
       </div>
 
+      {logins.on && logins.loaded && <BulkInvite families={families} lines={logins.lines} onDone={logins.reload} />}
+
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid #E7E2DC', borderRadius: 10, padding: '8px 12px' }}>
         <Search size={14} style={{ color: '#8A847E' }} />
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search guardians, children or emails" style={{ flex: 1, border: 'none', outline: 'none', fontSize: 12.5, background: 'transparent', color: TP_DARK }} />
@@ -69,6 +73,7 @@ export default function FamiliesTab() {
               {f.phone && <span><Phone size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} />{f.phone}</span>}
               {!f.email && !f.phone && <span>No contact details yet</span>}
             </div>
+            {logins.on && logins.loaded && !f.unsubscribed && <div style={{ marginTop: 8 }}><InviteButton role="parent" targetId={f.id} label="Invite parent" hasEmail={!!f.email?.trim()} lines={logins.lines} onDone={logins.reload} /></div>}
             <div style={{ display: 'grid', gap: 6, marginTop: 10, borderTop: '1px solid #F0EBE5', paddingTop: 10 }}>
               {f.children.length === 0 && <div style={{ fontSize: 11.5, color: '#8A847E' }}>No children linked</div>}
               {f.children.map(c => (

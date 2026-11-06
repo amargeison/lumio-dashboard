@@ -5,30 +5,33 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { EMPTY_PACKS, type Booklet, type PackData, type PackItem, type PackMove } from './packs'
 
 const PAGE = 1000
-async function everyRow<T>(db: SupabaseClient, table: string, order: string): Promise<T[]> {
+async function everyRow<T>(db: SupabaseClient, table: string, order: string, hqId?: string): Promise<T[]> {
   const out: T[] = []
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await db.from(table).select('*').order(order).range(from, from + PAGE - 1)
+    const all = db.from(table).select('*')
+    const { data, error } = await (hqId ? all.eq('hq_id', hqId) : all).order(order).range(from, from + PAGE - 1)
     if (error) throw error
     out.push(...(data as T[]))
     if (!data || data.length < PAGE) return out
   }
 }
 
-/** Everything the views need. Tables that aren't there yet read as an empty pack. */
-export async function loadPacks(db: SupabaseClient): Promise<PackData> {
+/** Everything the views need, for one org. Tables that aren't there yet read as an empty pack. */
+export async function loadPacks(db: SupabaseClient, hqId?: string): Promise<PackData> {
   try {
     const [items, sizes, stock, issues, payments] = await Promise.all([
-      everyRow<PackData['items'][number]>(db, 'tp_pack_items', 'sort'),
-      everyRow<PackData['sizes'][number]>(db, 'tp_pack_sizes', 'child_id'),
-      everyRow<PackData['stock'][number]>(db, 'tp_pack_stock', 'item_id'),
-      everyRow<PackData['issues'][number]>(db, 'tp_pack_issues', 'issued_at'),
-      everyRow<PackData['payments'][number]>(db, 'tp_pack_payments', 'paid_at'),
+      everyRow<PackData['items'][number]>(db, 'tp_pack_items', 'sort', hqId),
+      everyRow<PackData['sizes'][number]>(db, 'tp_pack_sizes', 'child_id', hqId),
+      everyRow<PackData['stock'][number]>(db, 'tp_pack_stock', 'item_id', hqId),
+      everyRow<PackData['issues'][number]>(db, 'tp_pack_issues', 'issued_at', hqId),
+      everyRow<PackData['payments'][number]>(db, 'tp_pack_payments', 'paid_at', hqId),
     ])
+    const moved = () => { const q = db.from('tp_pack_stock_moves').select('*'); return hqId ? q.eq('hq_id', hqId) : q }
+    const book = db.from('tp_booklet').select('title, intro, weeks, stickers')
     const [moves, returns, booklet] = await Promise.all([
-      db.from('tp_pack_stock_moves').select('*').order('created_at', { ascending: false }).limit(50),
-      db.from('tp_pack_stock_moves').select('*').eq('reason', 'returned'),
-      db.from('tp_booklet').select('title, intro, weeks, stickers').maybeSingle(),
+      moved().order('created_at', { ascending: false }).limit(50),
+      moved().eq('reason', 'returned'),
+      (hqId ? book.eq('hq_id', hqId) : book).maybeSingle(),
     ])
     return { items, sizes, stock, issues, payments, moves: (moves.data ?? []) as PackMove[], returns: (returns.data ?? []) as PackMove[], booklet: (booklet.data as Booklet | null) ?? null }
   } catch {

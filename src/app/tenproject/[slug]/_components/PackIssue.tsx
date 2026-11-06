@@ -23,7 +23,7 @@ const problem = (e: unknown, fallback: string) => e instanceof Error ? e.message
 const day = (iso: string) => longDate(iso.slice(0, 10))
 
 /** Who is issuing. A coach is their own record; an HQ acting on a cohort's behalf falls back to its lead coach. */
-export type PackActor = { role: 'hq' | 'coach'; staffId: string | null; leadStaffId?: string | null }
+export type PackActor = { role: 'hq' | 'coach'; staffId: string | null; leadStaffId?: string | null; hqId?: string | null }
 const HQ_ACTOR: PackActor = { role: 'hq', staffId: null }
 export const issuedByFor = (a: PackActor) => a.role === 'coach' ? a.staffId : a.leadStaffId ?? null
 
@@ -31,7 +31,7 @@ export function usePackAccess() {
   const ctx = useImpact()
   const on = !!ctx.packs && moduleOn(ctx.org?.settings, 'packs')
   const packs = ctx.packs ?? EMPTY_PACKS
-  return { on, packs, ready: on && packs.items.some(i => i.active), canEdit: !!ctx.org?.canEdit, reload: () => ctx.reload?.() }
+  return { on, packs, ready: on && packs.items.some(i => i.active), canEdit: !!ctx.org?.canEdit, canIssue: !!ctx.org?.canEdit || !!ctx.coach, reload: () => ctx.reload?.() }
 }
 
 const small: React.CSSProperties = { ...buttonSecondary, padding: '5px 9px', fontSize: 11 }
@@ -39,7 +39,8 @@ const small: React.CSSProperties = { ...buttonSecondary, padding: '5px 9px', fon
 // ── One child ───────────────────────────────────────────────────────────────
 export function IssuePackDialog({ child, actor, sessionId, onClose }: { child: ChildRef; actor: PackActor; sessionId?: string | null; onClose: () => void }) {
   const { packs, reload } = usePackAccess()
-  const lines = issueLines(packs, child.id)
+  const coach = actor.role === 'coach'
+  const lines = issueLines(packs, child.id, coach)
   const [ticked, setTicked] = useState(() => new Set(lines.filter(l => l.ticked).map(l => l.item.id)))
   const [sizes, setSizes] = useState<Record<string, string>>(() => Object.fromEntries(lines.map(l => [l.item.id, l.size ?? ''])))
   const [paying, setPaying] = useState<PackItem | null>(null)
@@ -53,7 +54,7 @@ export function IssuePackDialog({ child, actor, sessionId, onClose }: { child: C
     if (noSize) { setErr(`Choose a size for ${noSize.item.name}.`); return }
     setBusy(true); setErr('')
     try {
-      const db = sb(), hq = await currentHq(db)
+      const db = sb(), hq = await currentHq(db, actor.hqId)
       for (const l of chosen) if (l.item.has_sizes && sizes[l.item.id] !== l.size) await setChildSize(db, hq, child.id, l.item.id, sizes[l.item.id])
       await issuePack(db, child.id, chosen.map(l => ({ item_id: l.item.id, size: l.item.has_sizes ? sizes[l.item.id] : null })), { sessionId, issuedBy: issuedByFor(actor) })
       reload(); onClose()
@@ -69,14 +70,14 @@ export function IssuePackDialog({ child, actor, sessionId, onClose }: { child: C
             <input type="checkbox" aria-label={l.item.name} checked={ticked.has(l.item.id) && l.canIssue} disabled={!l.canIssue} onChange={() => toggle(l.item.id)} />
             <div style={{ flex: 1, minWidth: 120 }}>
               <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{l.item.name}</div>
-              <div style={{ fontSize: 10.5, color: MUTED }}>{l.issued ? `Issued ${day(l.issued.issued_at)}${l.issued.size ? ` · ${l.issued.size}` : ''}` : l.why ?? (l.paid ? `Paid ${day(l.paid.paid_at)}` : 'Included')}</div>
+              <div style={{ fontSize: 10.5, color: MUTED }}>{l.issued ? `Issued ${day(l.issued.issued_at)}${l.issued.size ? ` · ${l.issued.size}` : ''}` : l.why ?? (l.paid?.paid_at ? `Paid ${day(l.paid.paid_at)}` : l.paid ? 'Paid' : 'Included')}</div>
             </div>
             {l.item.has_sizes && l.canIssue && (
               <select aria-label={`${l.item.name} size`} value={sizes[l.item.id]} onChange={e => setSizes(s => ({ ...s, [l.item.id]: e.target.value }))} style={{ ...formField, width: 'auto' }}>
                 <option value="">Size…</option>{l.item.sizes.map(s => <option key={s}>{s}</option>)}
               </select>
             )}
-            {l.item.kind === 'paid' && !l.paid && !l.issued && <button onClick={() => setPaying(l.item)} style={small}>Record payment</button>}
+            {l.item.kind === 'paid' && !l.paid && !l.issued && !coach && <button onClick={() => setPaying(l.item)} style={small}>Record payment</button>}
           </div>
         ))}
       </div>
@@ -91,9 +92,9 @@ export function IssuePackDialog({ child, actor, sessionId, onClose }: { child: C
 }
 
 export function IssuePackButton({ child, actor = HQ_ACTOR, sessionId }: { child: ChildRef; actor?: PackActor; sessionId?: string | null }) {
-  const { ready, canEdit } = usePackAccess()
+  const { ready, canIssue } = usePackAccess()
   const [open, setOpen] = useState(false)
-  if (!ready || !canEdit) return null
+  if (!ready || !canIssue) return null
   return (<>
     <button onClick={() => setOpen(true)} style={small}><Gift size={12} /> Issue welcome pack</button>
     {open && <IssuePackDialog child={child} actor={actor} sessionId={sessionId} onClose={() => setOpen(false)} />}
@@ -150,9 +151,9 @@ export function ReturnDialog({ child, actor, onClose }: { child: ChildRef; actor
 }
 
 export function ReturnButton({ child, actor = HQ_ACTOR }: { child: ChildRef; actor?: PackActor }) {
-  const { ready, canEdit, packs } = usePackAccess()
+  const { ready, canIssue, packs } = usePackAccess()
   const [open, setOpen] = useState(false)
-  if (!ready || !canEdit || !returnableItems(packs, child.id).length) return null
+  if (!ready || !canIssue || !returnableItems(packs, child.id).length) return null
   return (<>
     <button onClick={() => setOpen(true)} style={small}>Return</button>
     {open && <ReturnDialog child={child} actor={actor} onClose={() => setOpen(false)} />}
@@ -195,12 +196,12 @@ export function PaymentDialog({ child, item, onClose }: { child: ChildRef; item:
 
 // ── Everyone on a register ──────────────────────────────────────────────────
 export function BulkIssue({ children, actor = HQ_ACTOR, sessionId }: { children: ChildRef[]; actor?: PackActor; sessionId?: string | null }) {
-  const { ready, canEdit, packs, reload } = usePackAccess()
+  const { ready, canIssue, packs, reload } = usePackAccess()
   const [busy, setBusy] = useState(false)
   const [sure, setSure] = useState(false)
   const [report, setReport] = useState<{ done: number; failed: { name: string; why: string }[] } | null>(null)
   const [sizing, setSizing] = useState<ChildRef | null>(null)
-  if (!ready || !canEdit) return null
+  if (!ready || !canIssue) return null
   const { ready: go, blocked } = bulkPlan(packs, children)
   if (!go.length && !blocked.length && !report) return null
 

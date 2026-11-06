@@ -49,8 +49,8 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
             <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
               {([
                 [selected.children ?? '—', 'CHILDREN'],
-                [d?.activationPct ? `${d.activationPct}%` : '—', 'PARENT ACTIVATION'],
-                [d?.conversionPct ? `${d.conversionPct}%` : '—', 'WEEKEND CONVERSION'],
+                [d?.activationPct != null ? `${d.activationPct}%` : '—', 'PARENT ACTIVATION'],
+                [d?.conversionPct != null ? `${d.conversionPct}%` : '—', 'WEEKEND CONVERSION'],
               ] as [string | number, string][]).map(([v, l]) => (
                 <div key={l} style={{ background: '#22222A', borderRadius: 10, padding: '10px 15px', textAlign: 'center' }}>
                   <div style={{ fontSize: 19, fontWeight: 900, color: TP_RED }}>{v}</div>
@@ -211,8 +211,8 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
                 <div style={{ display: 'flex', gap: 16, marginTop: 10, borderTop: '1px solid #F0EBE5', paddingTop: 10, alignItems: 'center' }}>
                   {([
                     [s.children ?? '—', 'CHILDREN'],
-                    [d?.activationPct ? `${d.activationPct}%` : '—', 'ACTIVATED'],
-                    [d?.conversionPct ? `${d.conversionPct}%` : '—', 'CONVERTED'],
+                    [d?.activationPct != null ? `${d.activationPct}%` : '—', 'ACTIVATED'],
+                    [d?.conversionPct != null ? `${d.conversionPct}%` : '—', 'CONVERTED'],
                   ] as [string | number, string][]).map(([v, l]) => (
                     <div key={l}>
                       <div style={{ fontSize: 15, fontWeight: 900, color: TP_RED }}>{v}</div>

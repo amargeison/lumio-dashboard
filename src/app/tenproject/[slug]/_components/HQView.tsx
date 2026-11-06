@@ -226,7 +226,7 @@ export default function HQView({ section, onSectionChange }: {
                   <td style={{ padding: '8px 4px', fontWeight: 700, color: TP_DARK }}>{s.name} <span style={{ color: TP_RED, fontWeight: 900, fontSize: 11 }}>→</span><div style={{ fontWeight: 400, fontSize: 11, color: '#8A847E' }}>{s.borough} · {s.headTeacher}</div></td>
                   <td style={{ padding: '8px 4px' }}><Pill tone={STATUS_TONE[s.status]}>{s.status.toUpperCase()}</Pill></td>
                   <td style={{ padding: '8px 4px' }}>{s.children ?? '—'}</td>
-                  <td style={{ padding: '8px 4px' }}>{s.activation ? `${s.activation}%` : '—'}</td>
+                  <td style={{ padding: '8px 4px' }}>{s.activation != null ? `${s.activation}%` : '—'}</td>
                   <td style={{ padding: '8px 4px', color: '#6B6560' }}>{s.note}</td>
                 </tr>
               ))}
