@@ -1,6 +1,7 @@
 // What the parent app shows for a child, an email opt-in and the sticker count. No
 // database here, so it runs the same in the browser and the tests.
 
+import { httpsUrl } from './booklet-import'
 import type { Booklet } from './packs'
 
 /** "Sam, 8 — Hollinsmere Primary", with the age or school left out when there isn't one. */
@@ -32,3 +33,14 @@ export function stickerAreas(booklet: Booklet | null, live: boolean, demo: reado
 /** Has the org written anything in its booklet? */
 export const bookletWritten = (b: Booklet | null) =>
   !!b && (!!b.title || b.stickers.length > 0 || b.weeks.some(w => w.title || w.focus || w.home_task))
+
+/** The link for a week's video. Absent, or anything but https, means no link. */
+export function videoLink(b: Booklet | null, key: string | undefined): string | null {
+  const url = key ? b?.videos?.[key] : undefined
+  return httpsUrl(url) ? url : null
+}
+
+export interface ScorecardGame { a: number | null; b: number | null }
+export const scorecardTotal = (games: ScorecardGame[], side: 'a' | 'b') => games.reduce((n, g) => n + (g[side] ?? 0), 0)
+/** Only an org that turns it on for week 10 gets the Festival scorecard. */
+export const scorecardOn = (b: Booklet | null) => b?.weeks.find(w => w.week === 10)?.scorecard === true

@@ -376,3 +376,11 @@ Known hard parts, none of which exist today:
   surface that can fail unattended.
 - Imported rows have no `player_name` / `player_id` (a dentist appointment has no
   player). Check the booking calendar and Session Planner tolerate that.
+
+---
+
+## Impact readiness follow-ups
+
+Noted 6 Nov 2026 with Activity Booklet round 2. Not built.
+
+- **Family-engagement evidence from booklet notes.** A child with a note in tp_booklet_notes in at least 3 distinct weeks this term should count as family-engagement evidence in `src/lib/impact/readiness.ts`, replacing the contact-consent proxy (`familyContactPct`, used by the whole-school criterion).

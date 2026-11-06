@@ -9,9 +9,18 @@ export interface PackStock { item_id: string; size: string | null; qty: number }
 export interface PackMove { id: string; item_id: string; size: string | null; delta: number; reason: string; child_id: string | null; note: string | null; created_at: string }
 export interface PackIssue { id: string; child_id: string; item_id: string; size: string | null; issued_at: string; note: string | null }
 export interface PackPayment { id: string; child_id: string | null; item_id: string; amount_pence: number; paid_at: string; method: string; reference: string | null }
-export interface BookletWeek { week: number; title: string; focus: string; home_task: string }
+export interface BookletWeek { week: number; title: string; focus: string; home_task: string; top_tip?: string; did_you_know?: string; video?: string; scorecard?: boolean }
+export interface BookletWarmUp { title?: string; text?: string; did_you_know?: string[] }
 export interface BookletSticker { id: string; label: string; description: string }
-export interface Booklet { title: string; intro: string; weeks: BookletWeek[]; stickers: BookletSticker[] }
+export interface Booklet {
+  title: string; intro: string; weeks: BookletWeek[]; stickers: BookletSticker[]
+  motto?: string; values?: string; website?: string; hashtag?: string; warm_up?: BookletWarmUp
+  completion?: string; tenors?: string; notes_prompt?: string
+  /** Video key to link, such as { forehand: url }. No link for a key that isn't here. */
+  videos?: Record<string, string>
+  /** Set by the upload route only. */
+  pdf_path?: string | null; pdf_name?: string | null; pdf_pages?: number | null; pdf_bytes?: number | null; pdf_uploaded_at?: string | null
+}
 export interface PackData {
   items: PackItem[]; sizes: PackSize[]; stock: PackStock[]
   moves: PackMove[]                     // the latest, for the log

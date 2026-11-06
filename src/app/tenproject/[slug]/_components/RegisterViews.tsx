@@ -146,6 +146,8 @@ export function CoachView({ section }: { section?: CoachSection }) {
   const chosen = cohort?.sessions.find(s => s.id === sessionId)
   const [futureOk, setFutureOk] = useState<Record<string, boolean>>({})
   const [askFuture, setAskFuture] = useState<{ id: string; present?: boolean } | null>(null)
+  // The booklet week on the register: the session's own, or its place in the cohort's.
+  const registerWeek = chosen ? chosen.week ?? (cohort?.sessions.findIndex(s => s.id === chosen.id) ?? 0) + 1 : null
   const markKey = (childId: string) => `${sessionId}:${childId}`
   const roster = ctx.mode === 'live' ? (cohort?.children ?? []).map(c => ({ ...c, present: marks[markKey(c.id)] ?? !!cohort?.presentBySession[sessionId ?? '']?.includes(c.id) })) : children
   async function tapRegister(c: { id: string; present?: boolean }, sure = false) {
@@ -455,6 +457,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
                 </div>
                 <div style={{ fontSize: 10.5, color: '#8A847E' }}>{c.year}{stickerCount > 0 ? ` · ${Math.min(c.stickers, stickerCount)}/${stickerCount} stickers` : ''}</div>
               </button>
+              {signedIn?.practised[`${c.id}:${registerWeek}`] && <div style={{ fontSize: 10, color: '#187A3C', fontWeight: 700, marginTop: 3 }}><span aria-hidden="true">● </span>practised at home</div>}
               {signedIn && <CoachChildNotes child={signedIn.children[c.id]} family={signedIn.families[signedIn.children[c.id]?.family_id ?? '']} />}
               {c.present && !readOnly && !signedIn && (
                 <button
