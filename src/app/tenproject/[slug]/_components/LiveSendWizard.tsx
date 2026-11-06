@@ -10,15 +10,16 @@ import { EmptyState, Pill } from './ui'
 import { draftWithImpactAI } from '@/lib/impact/ai'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact, type ImpactFamily } from './ImpactDataContext'
+import { InviteButton, useMembers } from './MembersCard'
 
 type Channel = 'email' | 'app' | 'sms'
 type Outcome = 'sent' | 'filed' | 'failed' | 'refused'
-type SendResult = { i: number; name: string; channel: Channel; ok: boolean; outcome: Outcome; detail: string }
+type SendResult = { i: number; name: string; channel: Channel; ok: boolean; outcome: Outcome; detail: string; inviteFamilyId?: string }
 type SendResponse = { status: string; logged: boolean; results: SendResult[] }
 
 const CHANNELS: { id: Channel; label: string; hint: string; icon: typeof Mail }[] = [
   { id: 'email', label: 'EMAIL', hint: 'From your organisation’s verified address', icon: Mail },
-  { id: 'app', label: 'APP', hint: 'Saved for the family app, which families can’t open yet', icon: MessageSquare },
+  { id: 'app', label: 'APP', hint: 'In the family app for families with a login, saved for the rest', icon: MessageSquare },
   { id: 'sms', label: 'SMS', hint: 'Only sends once texting is switched on', icon: Smartphone },
 ]
 
@@ -26,6 +27,7 @@ const blocked = (f: ImpactFamily) => f.unsubscribed ? 'Unsubscribed' : f.consent
 
 export function LiveSendWizard({ onClose, defaultMessage }: { onClose: () => void; defaultMessage?: string }) {
   const { people, brand } = useImpact()
+  const { lines, reload: reloadMembers } = useMembers()
   const families = useMemo(() => people?.families ?? [], [people])
   const eligible = useMemo(() => families.filter(f => !blocked(f)), [families])
 
@@ -84,6 +86,7 @@ export function LiveSendWizard({ onClose, defaultMessage }: { onClose: () => voi
 
   const nextDisabled = (step === 1 && picked.length === 0) || (step === 2 && channels.length === 0) || (step === 3 && !message.trim()) || sending
   const count = (o: Outcome) => done?.results.filter(r => r.outcome === o).length ?? 0
+  const inApp = done?.results.filter(r => r.outcome === 'filed' && r.detail.startsWith('In the family app')).length ?? 0
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#00000066', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70, padding: 16 }} onClick={onClose}>
@@ -98,7 +101,7 @@ export function LiveSendWizard({ onClose, defaultMessage }: { onClose: () => voi
         {done ? (
           <div>
             <div style={{ fontSize: 15, fontWeight: 900, color: TP_DARK, margin: '10px 0 4px' }}>
-              {count('sent')} sent · {count('filed')} saved for the app · {count('refused') + count('failed')} not sent
+              {count('sent')} sent · {inApp ? `${inApp} in the app · ` : ''}{count('filed') - inApp} saved for the app · {count('refused') + count('failed')} not sent
             </div>
             {!done.logged && <div style={{ fontSize: 12, color: TP_RED, marginBottom: 6 }}>These results couldn’t be saved to the message log. Keep a note of them.</div>}
             <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
@@ -111,6 +114,7 @@ export function LiveSendWizard({ onClose, defaultMessage }: { onClose: () => voi
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{r.name} · {r.channel.toUpperCase()}</div>
                       <div style={{ fontSize: 11.5, color: '#6B6560', overflowWrap: 'anywhere' }}>{r.detail}</div>
+                      {r.inviteFamilyId && <div style={{ marginTop: 5 }}><InviteButton role="parent" targetId={r.inviteFamilyId} label="Invite parent" hasEmail={!!families.find(f => f.id === r.inviteFamilyId)?.email} lines={lines} onDone={reloadMembers} /></div>}
                     </div>
                   </div>
                 )

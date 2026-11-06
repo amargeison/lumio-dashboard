@@ -14,11 +14,12 @@ registerHooks({
   },
 })
 const { hashInviteToken, inviteEmail, inviteLink, invitesLeft, newInviteToken, INVITE_HOURLY_LIMIT } = await import('../../src/lib/impact/invites.ts')
-const { activationPct, familiesToInvite, memberLines, portalAccess } = await import('../../src/lib/impact/members.ts')
+const { familiesMessagedNoLogin, activationPct, familiesToInvite, memberLines, portalAccess } = await import('../../src/lib/impact/members.ts')
 const { ageFrom, coachPayments, coachRows } = await import('../../src/lib/impact/member-actions.ts')
 const { EMPTY_PACKS, issueLines } = await import('../../src/lib/impact/packs.ts')
-const { familyWeek } = await import('../../src/lib/impact/family-week.ts')
-const { buildCohorts } = await import('../../src/lib/impact/live-context.ts')
+const { familyWeek, weekRange } = await import('../../src/lib/impact/family-week.ts')
+const { pickRegisterSession, sessionDay, sessionShort } = await import('../../src/lib/impact/register-session.ts')
+const { buildCohorts, mapLiveRows } = await import('../../src/lib/impact/live-context.ts')
 
 const member = (o = {}) => ({ id: 'm1', user_id: 'u', hq_id: 'org-a', role: 'parent', staff_id: null, family_id: 'f1', school_id: null, invited_email: 'p@a.test', invited_at: '2026-11-01', accepted_at: '2026-11-02', revoked_at: null, ...o })
 const invite = (o = {}) => ({ id: 'i1', hq_id: 'org-a', role: 'parent', staff_id: null, family_id: 'f1', school_id: null, email: 'p@a.test', expires_at: '2026-11-10T00:00:00Z', accepted_at: null, revoked_at: null, created_at: '2026-11-03T00:00:00Z', ...o })
@@ -155,9 +156,28 @@ test('this week: the next session and its place in the term', () => {
   assert.equal(w.next.id, 'b'); assert.equal(w.week, 2); assert.equal(w.booklet.title, 'Rallies')
 })
 test('this week: a session’s own week number wins', () => assert.equal(familyWeek([[ses('a', '2026-11-10', { week_number: 7 })]], booklet, '2026-11-06').week, 7))
-test('this week: after the last session it stays on that week, with nothing next', () => {
+test('this week: after the last session it says so, and never shows the past week', () => {
   const w = familyWeek([[ses('a', '2026-09-01'), ses('b', '2026-09-08')]], booklet, '2026-11-06')
-  assert.equal(w.next, null); assert.equal(w.week, 2)
+  assert.deepEqual(w, { next: null, week: null, booklet: null, sessionThisWeek: false })
+})
+test('this week: no session this week shows the next one, not the last one', () => {
+  const w = familyWeek([[ses('a', '2026-10-27'), ses('b', '2026-11-17')]], booklet, '2026-11-06')
+  assert.equal(w.sessionThisWeek, false); assert.equal(w.next.id, 'b'); assert.equal(w.week, 2)
+})
+test('this week: a session earlier this week still counts, and next stays the next', () => {
+  const w = familyWeek([[ses('a', '2026-11-03'), ses('b', '2026-11-17')]], booklet, '2026-11-06')
+  assert.equal(w.sessionThisWeek, true); assert.equal(w.next.id, 'b'); assert.equal(w.week, 1)
+})
+test('this week: a session later this week counts', () => assert.equal(familyWeek([[ses('a', '2026-11-08')]], booklet, '2026-11-06').sessionThisWeek, true))
+test('this week: another child’s session counts for the family', () => {
+  const w = familyWeek([[ses('a', '2026-11-20')], [ses('b', '2026-11-03')]], booklet, '2026-11-06')
+  assert.equal(w.sessionThisWeek, true); assert.equal(w.next.id, 'a'); assert.equal(w.week, 1)
+})
+test('this week: Monday to Sunday, across a year end', () => {
+  assert.deepEqual(weekRange('2026-11-06'), ['2026-11-02', '2026-11-08'])
+  assert.deepEqual(weekRange('2026-11-02'), ['2026-11-02', '2026-11-08'])
+  assert.deepEqual(weekRange('2026-11-08'), ['2026-11-02', '2026-11-08'])
+  assert.deepEqual(weekRange('2026-12-30'), ['2026-12-28', '2027-01-03'])
 })
 test('this week: a blank booklet week is treated as not written', () => assert.equal(familyWeek([[ses('a', '2026-09-01'), ses('b', '2026-09-08'), ses('c', '2026-11-10')]], booklet, '2026-11-06').booklet, null))
 test('this week: with two children, the sooner session decides', () => {
@@ -168,7 +188,7 @@ test('this week: a weekend session sits in the school week before it', () => {
   const w = familyWeek([[ses('a', '2026-11-02'), ses('b', '2026-11-05'), ses('w', '2026-11-07', { kind: 'weekend' })]], booklet, '2026-11-06')
   assert.equal(w.next.id, 'w'); assert.equal(w.week, 2)
 })
-test('this week: no sessions, no booklet, no crash', () => assert.deepEqual(familyWeek([[], []], null, '2026-11-06'), { next: null, week: null, booklet: null }))
+test('this week: no sessions, no booklet, no crash', () => assert.deepEqual(familyWeek([[], []], null, '2026-11-06'), { next: null, week: null, booklet: null, sessionThisWeek: false }))
 test('this week: no demo wording reaches live', () => {
   const app = readFileSync(new URL('../../src/app/tenproject/[slug]/_components/ParentApp.tsx', import.meta.url), 'utf8')
   assert.match(app, /live \? <>Hi /)
@@ -191,4 +211,48 @@ test('the register a coach taps is the latest session that has happened', () => 
   assert.equal(buildCohorts(rows, '2026-11-05')[0].sessionId, '2026-10-01', 'never one still to come')
   assert.equal(buildCohorts(rows, '2026-09-01')[0].sessionId, '2026-10-01', 'before the first session, the first session')
   assert.equal(buildCohorts(rows, '2027-01-01')[0].sessionId, '2026-12-01', 'after the last, the last')
+})
+
+test('session dates read the way the register shows them', () => {
+  assert.equal(sessionDay('2026-09-22'), 'Tue 22 Sept')
+  assert.equal(sessionDay('2026-12-03'), 'Thu 3 Dec')
+  assert.equal(sessionShort('2026-12-03'), '3 Dec')
+})
+test('the register opens on today, else the latest past, else the first to come', () => {
+  const list = ['2026-12-01', '2026-10-01', '2026-11-06'].map(d => ({ session_date: d }))
+  assert.equal(pickRegisterSession(list, '2026-11-06').session_date, '2026-11-06')
+  assert.equal(pickRegisterSession(list, '2026-11-20').session_date, '2026-11-06')
+  assert.equal(pickRegisterSession(list, '2026-09-01').session_date, '2026-10-01')
+  assert.equal(pickRegisterSession([], '2026-09-01'), undefined)
+})
+test('a cohort carries every session and who was present at each', () => {
+  const rows = {
+    schools: [{ id: 's', name: 'School' }], programmes: [{ id: 'p', school_id: 's', term_label: 'Autumn' }], campaigns: [], events: [], donations: [], checkins: [],
+    children: [{ id: 'k', name: 'Kid', programme_id: 'p', stickers: 0 }, { id: 'j', name: 'Jo', programme_id: 'p', stickers: 0 }],
+    sessions: [{ id: 'b', kind: 'school', programme_id: 'p', session_date: '2026-12-01', week_number: 9 }, { id: 'a', kind: 'school', programme_id: 'p', session_date: '2026-10-01' }, { id: 'w', kind: 'weekend', programme_id: 'p', session_date: '2026-10-03' }],
+    attendance: [{ session_id: 'a', child_id: 'k', present: true }, { session_id: 'a', child_id: 'j', present: false }],
+  }
+  const [c] = buildCohorts(rows, '2026-11-06')
+  assert.deepEqual(c.sessions, [{ id: 'a', date: '2026-10-01', week: null }, { id: 'b', date: '2026-12-01', week: 9 }])
+  assert.deepEqual(c.presentBySession, { a: ['k'], b: [] })
+})
+test('the register asks before a future session, once, and the date is the session’s', () => {
+  const src = readFileSync(new URL('../../src/app/tenproject/[slug]/_components/RegisterViews.tsx', import.meta.url), 'utf8')
+  assert.match(src, /This session is on \{sessionShort\(chosen\.date\)\} — mark it now\?/)
+  assert.match(src, /chosen\.date > today && !futureOk\[sessionId\] && !sure/)
+})
+test('families messaged with no login: distinct, and an accepted login takes them off', () => {
+  const m = (o = {}) => ({ role: 'parent', family_id: 'f1', accepted_at: '2026-11-01', revoked_at: null, ...o })
+  assert.equal(familiesMessagedNoLogin(['f1', 'f2', 'f2'], [m()]), 1)
+  assert.equal(familiesMessagedNoLogin(['f1'], [m({ accepted_at: null })]), 1, 'an invite isn’t a login')
+  assert.equal(familiesMessagedNoLogin(['f1'], [m({ revoked_at: '2026-11-02' })]), 1, 'nor is a revoked one')
+  assert.equal(familiesMessagedNoLogin(['f1'], [m({ role: 'coach' })]), 1, 'nor a coach login')
+  assert.equal(familiesMessagedNoLogin(undefined, undefined), 0)
+})
+test('Needs attention counts them, and says nothing at zero', () => {
+  const base = { schools: [], programmes: [], campaigns: [], events: [], donations: [], checkins: [] }
+  const items = rows => mapLiveRows({ ...base, ...rows }, '2026-11-06').NEEDS_ATTENTION.filter(i => i.id === 'app-no-login')
+  assert.deepEqual(items({ appMessaged: ['a', 'b'] }).map(i => [i.text, i.target.tab]), [['2 families have app messages but no login', 'families']])
+  assert.equal(items({ appMessaged: ['a'] })[0].text, '1 family has app messages but no login')
+  assert.equal(items({ appMessaged: [] }).length, 0)
 })

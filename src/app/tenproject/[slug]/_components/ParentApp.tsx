@@ -97,7 +97,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={brand.logoDark} alt={brand.logoAlt} style={{ height: 26, width: 'auto', display: 'block' }} />
           <div style={{ color: '#C9C4BE', fontSize: 11.5, marginTop: 6 }}>
-            {noFamily ? <>Welcome · {brand.tagline}</> : live ? <>Hi {PARENT.name.split(' ')[0]}{thisWeek.week ? ` — Week ${thisWeek.week}` : ''}{brand.tagline ? ` · ${brand.tagline}` : ''}</> : <>Hi {PARENT.name.split(' ')[0]} — Week 4 of 10 · {brand.tagline}</>}
+            {noFamily ? <>Welcome · {brand.tagline}</> : live ? <>Hi {PARENT.name.split(' ')[0]}{thisWeek.sessionThisWeek && thisWeek.week ? ` — Week ${thisWeek.week}` : ''}{brand.tagline ? ` · ${brand.tagline}` : ''}</> : <>Hi {PARENT.name.split(' ')[0]} — Week 4 of 10 · {brand.tagline}</>}
           </div>
         </div>
 
@@ -110,9 +110,9 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
             <>
               {live ? <>
                 <div style={{ background: TP_RED, borderRadius: 14, padding: 16, color: '#fff' }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 800, opacity: 0.85, letterSpacing: 1 }}>{thisWeek.week ? `WEEK ${thisWeek.week}` : 'THIS WEEK'}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900, marginTop: 2 }}>{thisWeek.booklet?.title || (thisWeek.week ? `Week ${thisWeek.week}` : 'Your programme')}</div>
-                  <div style={{ fontSize: 12, marginTop: 6, opacity: 0.95 }}>{thisWeek.booklet?.focus || 'This week’s activity appears here once it’s in the booklet.'}</div>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, opacity: 0.85, letterSpacing: 1 }}>{!thisWeek.sessionThisWeek ? 'NO SESSION THIS WEEK' : thisWeek.week ? `WEEK ${thisWeek.week}` : 'THIS WEEK'}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, marginTop: 2 }}>{!thisWeek.sessionThisWeek && !thisWeek.next ? 'Nothing coming up yet' : `${thisWeek.sessionThisWeek ? '' : 'Next up: '}${thisWeek.booklet?.title || (thisWeek.week ? `Week ${thisWeek.week}` : 'Your programme')}`}</div>
+                  <div style={{ fontSize: 12, marginTop: 6, opacity: 0.95 }}>{thisWeek.booklet?.focus || (thisWeek.sessionThisWeek ? 'This week’s activity appears here once it’s in the booklet.' : thisWeek.next ? 'That week’s activity appears here once it’s in the booklet.' : 'Your next session will appear here once it’s booked.')}</div>
                 </div>
                 {thisWeek.booklet?.home_task && (
                   <div style={{ background: '#fff', borderRadius: 12, padding: 14 }}>

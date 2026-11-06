@@ -72,6 +72,15 @@ export function familiesToInvite<F extends { id: string; email: string | null; u
   return families.filter(f => (f.email ?? '').trim() && !f.unsubscribed && !taken.has(f.id))
 }
 
+/** How many families have an app message waiting and no accepted parent login. */
+export function familiesMessagedNoLogin(
+  messaged: string[] | undefined,
+  members: { role: string; family_id: string | null; accepted_at: string | null; revoked_at: string | null }[] | undefined,
+): number {
+  const withLogin = new Set((members ?? []).filter(m => m.role === 'parent' && m.accepted_at && !m.revoked_at).map(m => m.family_id))
+  return new Set((messaged ?? []).filter(id => !withLogin.has(id))).size
+}
+
 /** Parent activation for a school: families with a child there who have an accepted parent login. */
 export function activationPct(
   children: { family_id: string | null; school_id: string | null; programme_id?: string | null }[],
