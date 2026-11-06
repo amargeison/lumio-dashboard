@@ -5,12 +5,15 @@
 import type { ImpactBrand, ImpactCopy, ImpactDataset, ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import * as DEMO from './demo-data'
 import { IMPACT_DEMO_BRAND, IMPACT_DEMO_COPY } from './demo-copy'
+import { DEMO_PACKS, DEMO_PACK_CHILDREN } from './demo-packs'
 
 export const IMPACT_DEMO_CONTEXT: ImpactPortalContext = {
   mode: 'demo',
   brand: IMPACT_DEMO_BRAND satisfies ImpactBrand,
   copy: IMPACT_DEMO_COPY satisfies ImpactCopy,
   data: { ...DEMO } satisfies ImpactDataset,
+  packs: DEMO_PACKS,
+  packChildren: DEMO_PACK_CHILDREN,
   // Demo: every module on, settings shown but not editable (Coach demo idiom).
   org: {
     slug: 'demo',

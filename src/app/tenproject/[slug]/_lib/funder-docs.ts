@@ -6,7 +6,10 @@
 
 import type { ImpactPortalContext } from '../_components/ImpactDataContext'
 import { fill } from '@/lib/impact/fill'
-import { EXPIRY_WINDOW_DAYS, longDate } from '@/lib/impact/compliance'
+import { EXPIRY_WINDOW_DAYS, isoToday, longDate } from '@/lib/impact/compliance'
+import { moduleOn } from '@/lib/impact/org'
+import { packFunderLine, packStats } from '@/lib/impact/packs'
+import { termOf } from '@/lib/impact/term'
 import { documentFlagLines, emptyInsights, MIN_RECORDED_IN_DOCUMENTS, WHAT_TO_RECORD, type LiveInsights } from '@/lib/impact/insights'
 
 export type FunderDocKind = 'term-report' | 'funder-pack' | 'bid-narrative' | 'governor-pack' | 'newsletter-snippet'
@@ -275,6 +278,12 @@ function complianceLine(c: LiveInsights['compliance'], ctx: ImpactPortalContext)
   return `Across ${team}, ${c.valid} of ${plural(total, 'DBS, first aid and safeguarding record')} ${c.valid === 1 ? 'is' : 'are'} valid${states.length ? `; ${listed(states)}` : ''}. Safeguarding counts as valid once a completion date is on record.`
 }
 
+function packLine(ctx: ImpactPortalContext) {
+  if (!ctx.packs || !moduleOn(ctx.org?.settings, 'packs')) return null
+  const ids = [...(ctx.people?.families.flatMap(f => f.children) ?? []), ...(ctx.people?.unlinkedChildren ?? [])].map(c => c.id)
+  return packFunderLine(packStats(ctx.packs, ids, termOf(isoToday())))
+}
+
 function liveReport(ctx: ImpactPortalContext, label: string, heading: string, title: string) {
   const i = ctx.insights ?? emptyInsights()
   const schools = delivering(i)
@@ -300,6 +309,7 @@ function liveReport(ctx: ImpactPortalContext, label: string, heading: string, ti
     ${i.conversion.rows.map(r => `<tr><td>${esc(r.school)}</td><td>${r.reached}</td><td>${r.converted}</td><td>${r.pct}%</td></tr>`).join('')}
     </table>`,
     !i.compliance.need && `<h2>SAFEGUARDING &amp; COMPLIANCE</h2><p>${esc(complianceLine(i.compliance, ctx))}</p>`,
+    packLine(ctx) && `<h2>WELCOME PACKS</h2><p>${esc(packLine(ctx) as string)}</p>`,
   ].filter(Boolean).join('\n')
   const body = `
     ${brandHeader(ctx, label)}

@@ -5,12 +5,12 @@
 // and the full inventory by category. Ten Project twist: welcome-pack stock
 // (T-shirts, balls, booklets, stickers, certificates) tracked like court kit.
 
-import React, { useState } from 'react'
-import { Package, Printer, ShoppingCart, CheckCircle } from 'lucide-react'
+import React from 'react'
+import { Package, Printer } from 'lucide-react'
 import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { shell, brandHeader, esc, openDocWindow, foot } from '../_lib/funder-docs'
-import { useImpact, fill, type ImpactPortalContext } from './ImpactDataContext'
+import { useImpact, type ImpactPortalContext } from './ImpactDataContext'
 import PackStockPanel from './PackStockPanel'
 
 const STATUS_PILL: Record<string, { tone: 'green' | 'amber' | 'red' | 'grey'; label: string }> = {
@@ -35,9 +35,7 @@ function printKitList(ctx: ImpactPortalContext) {
 
 export default function EquipmentTab() {
   const ctx = useImpact()
-  const { TP_EQUIP_STATS, TP_RESTOCK, TP_KITS, TP_INVENTORY } = ctx.data
-  const [ticked, setTicked] = useState<string[]>(TP_RESTOCK.map(r => r.id))
-  const [ordered, setOrdered] = useState(false)
+  const { TP_EQUIP_STATS, TP_KITS, TP_INVENTORY } = ctx.data
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -58,49 +56,6 @@ export default function EquipmentTab() {
           </Card>
         ))}
       </div>
-
-      {/* Restock list */}
-      <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-          <SectionTitle sub="Tick what you need, then Source & order — the portal finds the supplier and drafts the order email">
-            Restock list — never miss anything&nbsp;&nbsp;
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, verticalAlign: '2px', background: '#FCF1DC', color: '#9A6A0B', border: '1px solid #E8CD9A', borderRadius: 999, padding: '2px 9px', fontSize: 9.5, fontWeight: 900, letterSpacing: 0.5 }}>
-              ⏳ COMING SOON · V2
-            </span>
-          </SectionTitle>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 11.5, color: '#8A847E', fontWeight: 700 }}>{ticked.length} selected</span>
-            <button onClick={() => setOrdered(true)} disabled={ticked.length === 0} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: ticked.length ? TP_RED : '#D9D3CC', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 800, cursor: ticked.length ? 'pointer' : 'not-allowed' }}>
-              <ShoppingCart size={14} /> Source & order
-            </button>
-          </div>
-        </div>
-        {ordered && (
-          <div style={{ background: '#E5F5EA', borderRadius: 10, padding: '10px 13px', marginBottom: 10, fontSize: 12.5, color: '#187A3C', fontWeight: 700 }}>
-            <CheckCircle size={14} style={{ verticalAlign: '-2px', marginRight: 6 }} />
-            {fill(ctx.copy.equipment.orderNote || 'Order drafted for {count} items — awaiting your approval in Comms.', ctx.brand, { count: ticked.length })}
-          </div>
-        )}
-        {TP_RESTOCK.length === 0 && <EmptyState compact icon={ShoppingCart} title="Nothing to restock" sub="Items running low, due for repair or to order — across venues, school bags and welcome-pack stock — list here." />}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 10 }}>
-          {TP_RESTOCK.map(r => {
-            const on = ticked.includes(r.id)
-            return (
-              <button key={r.id} onClick={() => setTicked(prev => on ? prev.filter(x => x !== r.id) : [...prev, r.id])}
-                style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: on ? '#FDE8E8' : '#F7F5F2', border: on ? `1.5px solid ${TP_RED}55` : '1.5px solid transparent', borderRadius: 10, padding: '11px 12px', cursor: 'pointer', textAlign: 'left' }}>
-                <div style={{ width: 17, height: 17, borderRadius: 5, flexShrink: 0, marginTop: 1, background: on ? TP_RED : '#fff', border: on ? 'none' : '1.5px solid #D9D3CC', color: '#fff', fontSize: 11, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{on ? '✓' : ''}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
-                    <span style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{r.name}</span>
-                    <Pill tone={STATUS_PILL[r.status].tone}>{STATUS_PILL[r.status].label}</Pill>
-                  </div>
-                  <div style={{ fontSize: 10.5, color: '#6B6560', marginTop: 3 }}>{r.where}</div>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </Card>
 
       {/* Kits */}
       <Card>

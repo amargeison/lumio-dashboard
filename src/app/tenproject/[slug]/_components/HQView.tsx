@@ -18,6 +18,10 @@ import { openFunderDoc } from '../_lib/funder-docs'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { moduleOn } from '@/lib/impact/org'
+import { isoToday } from '@/lib/impact/compliance'
+import { lowStockLines, packStats } from '@/lib/impact/packs'
+import { termOf } from '@/lib/impact/term'
+import { usePackAccess, usePackChildren } from './PackIssue'
 
 const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> = {
   running: 'green',
@@ -53,6 +57,10 @@ export default function HQView({ section, onSectionChange }: {
   const { brand } = ctx
   const { SCHOOLS, VENUES, HQ_STATS, FUNNEL, IMPACT_AREAS, NEEDS_ATTENTION, CAMPAIGN } = ctx.data
   const [showRegisters, setShowRegisters] = useState(false)
+  const { ready: packsReady, packs } = usePackAccess()
+  const packChildIds = usePackChildren().map(c => c.id)
+  const packTile = packsReady ? packStats(packs, packChildIds, termOf(isoToday())) : null
+  const attention = packsReady ? [...NEEDS_ATTENTION, ...lowStockLines(packs)] : NEEDS_ATTENTION
   const registers = HQ_STATS.outstandingRegisters ?? []
   const schoolsTotal = HQ_STATS.schoolsTotal ?? 0
   const ofSchools = `of ${schoolsTotal} ${schoolsTotal === 1 ? 'school' : 'schools'}`
@@ -138,6 +146,7 @@ export default function HQView({ section, onSectionChange }: {
             <Stat label="Registers outstanding" value={HQ_STATS.registersOutstanding} accent sub={registers.length ? 'Tap to see them' : undefined} />
           </button>
           <Stat label="Certificates expiring or expired" value={HQ_STATS.dbsExpiring} />
+          {packTile && <Stat label="Welcome packs issued" value={packTile.issuedThisTerm} sub={`of ${packTile.children} ${packTile.children === 1 ? 'child' : 'children'} this term`} />}
         </div>
       ) : (
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -147,6 +156,7 @@ export default function HQView({ section, onSectionChange }: {
         <Stat label="Weekend visits this term" value={HQ_STATS.weekendVisitsThisTerm} />
         <Stat label="Registers outstanding" value={HQ_STATS.registersOutstanding} accent />
         <Stat label="DBS/certs expiring soon" value={HQ_STATS.dbsExpiring} />
+        {packTile && <Stat label="Welcome packs issued" value={packTile.issuedThisTerm} sub={`of ${packTile.children} children this term`} />}
       </div>
       )}
 
@@ -177,10 +187,10 @@ export default function HQView({ section, onSectionChange }: {
         <SectionTitle sub="The programme-health briefing — registers, renewals, compliance and fundraising triggers in one list">
           Needs attention
         </SectionTitle>
-        {NEEDS_ATTENTION.length === 0 && <EmptyState compact icon={Info} title="Nothing needs attention yet" sub="Missing registers, renewals, DBS/certificate expiries and fundraising triggers land here automatically once programmes are running." />}
+        {attention.length === 0 && <EmptyState compact icon={Info} title="Nothing needs attention yet" sub="Missing registers, renewals, DBS/certificate expiries and fundraising triggers land here automatically once programmes are running." />}
         <div style={{ display: 'grid', gap: 8 }}>
-          {NEEDS_ATTENTION.map(item => (
-            <button key={item.id} onClick={() => item.target.id === 'registers' ? setShowRegisters(true) : goTo(item.target.tab as HqTab, item.target.id)} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: item.kind === 'warn' ? '#FDF3F3' : '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
+          {attention.map(item => (
+            <button key={item.id} onClick={() => 'id' in item.target && item.target.id === 'registers' ? setShowRegisters(true) : goTo(item.target.tab as HqTab, 'id' in item.target ? item.target.id : undefined)} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: item.kind === 'warn' ? '#FDF3F3' : '#F7F5F2', border: 'none', borderRadius: 10, padding: '10px 12px', cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: 'inherit' }}>
               {item.kind === 'warn'
                 ? <AlertCircle size={16} style={{ color: TP_RED, flexShrink: 0, marginTop: 1 }} />
                 : <Info size={16} style={{ color: '#6B6560', flexShrink: 0, marginTop: 1 }} />}
@@ -200,7 +210,7 @@ export default function HQView({ section, onSectionChange }: {
           {SCHOOLS.length === 0 ? (
             <EmptyState icon={School} title="No schools yet" sub="Add your first partner school — its programme, cohorts, registers and fundraising all build from there." />
           ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, color: TP_DARK }}>
             <thead>
               <tr style={{ textAlign: 'left', color: '#6B6560', fontSize: 11 }}>
                 <th style={{ padding: '6px 4px' }}>School</th>

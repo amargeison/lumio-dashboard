@@ -4,13 +4,17 @@
 // Dependency-free charts (divs + inline SVG) so nothing new to bundle.
 
 import React from 'react'
-import { TrendingUp, Users, Download, Sparkles, HeartHandshake, MapPin, ShieldCheck, PieChart, Repeat, Coins, Quote, School } from 'lucide-react'
+import { TrendingUp, Users, Download, Sparkles, HeartHandshake, MapPin, ShieldCheck, PieChart, Repeat, Coins, Quote, School, Gift } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { openFunderDoc } from '../_lib/funder-docs'
 import { sessionBar } from '@/lib/impact/school-card'
 import { emptyInsights, needNote, TIER_2, type LiveInsights } from '@/lib/impact/insights'
+import { isoToday } from '@/lib/impact/compliance'
+import { packStats, pounds } from '@/lib/impact/packs'
+import { termOf } from '@/lib/impact/term'
+import { usePackAccess, usePackChildren } from './PackIssue'
 
 const RED_SOFT = '#F0524F'
 const RED_TINT = '#E8B4B3'
@@ -83,6 +87,35 @@ function AttendanceChart({ sessions }: { sessions: LiveInsights['attendance']['s
       </div>
       <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 8 }}>{sessions.length} {sessions.length === 1 ? 'session' : 'sessions'} on register · hover a bar for its date</div>
     </div>
+  )
+}
+
+// Reads the pack, not the registers, so a portal with no pack simply shows its note.
+function PackInsights() {
+  const { on, ready, packs } = usePackAccess()
+  const children = usePackChildren()
+  if (!on) return null
+  const s = ready ? packStats(packs, children.map(c => c.id), termOf(isoToday())) : null
+  return (
+    <Card>
+      <SectionTitle sub="Packs complete when a child has every included item">
+        <Gift size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Welcome packs
+      </SectionTitle>
+      {!s ? <Note text={needNote('a welcome pack in Settings')} /> : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
+          {([
+            [s.issuedThisTerm, 'Issued this term'], [s.issuedAllTime, 'Issued all time'],
+            [`${s.paidCount} · ${pounds(s.paidPence)}`, 'Paid items bought'],
+            ...(s.stockValuePence === null ? [] : [[pounds(s.stockValuePence), 'Stock value']]),
+          ] as [string | number, string][]).map(([v, l]) => (
+            <div key={l} style={{ background: '#F7F5F2', borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: TP_DARK }}>{v}</div>
+              <div style={{ fontSize: 10.5, color: '#6B6560', fontWeight: 600, marginTop: 2 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
   )
 }
 
@@ -209,6 +242,8 @@ function LiveInsightsBody({ insights: L, volunteerLabel }: { insights: LiveInsig
         </div>
       )}
     </Card>
+
+    <PackInsights />
 
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
       <Card>
@@ -486,6 +521,8 @@ export default function Insights() {
           </div>
         </Card>
       </div>
+
+      <PackInsights />
 
       {/* Quotes reel */}
       <Card>

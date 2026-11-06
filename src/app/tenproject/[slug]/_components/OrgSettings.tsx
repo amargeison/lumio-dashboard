@@ -125,7 +125,7 @@ export function ModulesCard() {
             <div key={m.id} style={{ background: isOn ? '#fff' : '#F7F5F2', border: `1px solid ${isOn ? '#E7E2DC' : '#EFEBE6'}`, borderRadius: 11, padding: '11px 12px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 900, color: isOn ? TP_DARK : '#8A847E' }}>{m.label}</div>
-                <div style={{ fontSize: 10.5, color: '#8A847E', marginTop: 2, lineHeight: 1.4 }}>{m.locked ? 'Always shown' : isOn ? 'Shown in the sidebar' : 'Hidden from the sidebar'} · {m.desc}</div>
+                <div style={{ fontSize: 10.5, color: '#8A847E', marginTop: 2, lineHeight: 1.4 }}>{m.desc}</div>
               </div>
               <button
                 onClick={() => toggle(m.id, !isOn)}

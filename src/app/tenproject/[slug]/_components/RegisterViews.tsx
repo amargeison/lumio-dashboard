@@ -125,7 +125,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
   // that looks like it saved and then quietly vanishes.
   const readOnly = ctx.mode === 'live'
   const firstCohort = cohort?.label ?? COACH_STATS.cohortProgress[0]?.cohort
-  const packActor = { role: 'hq' as const, staffId: cohort?.leadStaffId ?? null }
+  const packActor = { role: 'hq' as const, staffId: null, leadStaffId: cohort?.leadStaffId ?? null }
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>

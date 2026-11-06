@@ -12,7 +12,7 @@ registerHooks({
     return base ? next(pathToFileURL(base).href, ctx) : next(spec, ctx)
   },
 })
-const { EMPTY_PACKS, bulkPlan, currentIssue, hasPack, issueLines, lineLabel, pounds, readPackColumns, restockList, schoolPacks, stockLines } = await import('../../src/lib/impact/packs.ts')
+const { EMPTY_PACKS, RETURN_REASONS, bulkPlan, canReissue, currentIssue, hasPack, issueLines, lineLabel, lowStockLines, packFunderLine, packStats, parentPackLines, pounds, readPackColumns, restockList, returnableItems, schoolPacks, stockLines } = await import('../../src/lib/impact/packs.ts')
 const { EXAMPLE_ITEMS, exampleBooklet } = await import('../../src/lib/impact/pack-example.ts')
 const { adjustStock, itemProblem, receiveStock, saveItem, useExamplePack } = await import('../../src/lib/impact/pack-actions.ts')
 const { IMPACT_IMPORT_FIELDS, IMPACT_IMPORT_SCHEMA } = await import('../../src/lib/impact/import-schema.ts')
@@ -200,3 +200,105 @@ test('cohorts: each programme with children, its latest register and lead coach'
   assert.equal(buildPeople(rows).unlinkedChildren[0].schoolId, 's')
 })
 test('an org with no programmes has no cohorts', () => assert.deepEqual(buildCohorts({ schools: [], programmes: [], campaigns: [], events: [], donations: [], checkins: [] }), []))
+
+// ── Phase 3 ─────────────────────────────────────────────────────────────────
+const term = { start: '2026-09-01', end: '2026-12-31' }
+const day = iso => iso.slice(0, 10)
+const paidRow = (child_id, amount_pence = 1000) => ({ id: child_id, child_id, item_id: 'racket', amount_pence, paid_at: '2026-10-01', method: 'cash', reference: null })
+
+test('parent card: received, coming, and the paid wording from the brief', () => {
+  const lines = id => Object.fromEntries(parentPackLines(pack({ issues: [issue('a', 'shirt', '2026-10-01T10:00:00Z', '9-10'), issue('b', 'racket')], payments: [paidRow('b'), paidRow('c')] }), id, day).map(l => [l.item.id, l]))
+  assert.equal(lines('a').shirt.text, 'Received 2026-10-01 · 9-10')
+  assert.equal(lines('a').ball.text, 'Coming soon')
+  assert.equal(lines('a').racket.text, 'Not yet — £10, ask your coach or pay the school')
+  assert.equal(lines('b').racket.text, 'Paid · issued on 2026-10-01')
+  assert.equal(lines('c').racket.text, 'Paid · to be issued')
+})
+test('low stock: the Needs attention line, only for sizes that have held stock', () => {
+  const lines = lowStockLines(pack({ stock: [{ item_id: 'shirt', size: '9-10', qty: 3 }, { item_id: 'ball', size: null, qty: 40 }] }))
+  assert.deepEqual(lines.map(l => [l.text, l.kind, l.target.tab]), [['Low stock: T-shirt 9-10 (3 left)', 'info', 'equipment']])
+  assert.deepEqual(lowStockLines(EMPTY_PACKS), [])
+})
+test('stats: packs this term and all time, paid count and £', () => {
+  const p = pack({
+    issues: [issue('a', 'shirt'), issue('a', 'ball'), issue('b', 'shirt', '2026-06-01T10:00:00Z'), issue('b', 'ball', '2026-06-01T10:00:00Z'), issue('c', 'ball')],
+    payments: [paidRow('a'), paidRow('b', 750)],
+  })
+  const s = packStats(p, ['a', 'b', 'c'], term)
+  assert.deepEqual([s.children, s.issuedAllTime, s.issuedThisTerm, s.paidCount, s.paidPence], [3, 2, 1, 2, 1750])
+})
+test('stats: a pack finished this term counts this term, even if it started last term', () => {
+  const s = packStats(pack({ issues: [issue('a', 'shirt', '2026-06-01T10:00:00Z'), issue('a', 'ball', '2026-09-20T10:00:00Z')] }), ['a'], term)
+  assert.equal(s.issuedThisTerm, 1)
+})
+test('stats: stock value only when unit costs exist', () => {
+  assert.equal(packStats(pack({ stock: [{ item_id: 'ball', size: null, qty: 5 }] }), [], term).stockValuePence, null)
+  const costed = { ...EMPTY_PACKS, items: [item('b', 'Ball', { unit_cost_pence: 300 })], stock: [{ item_id: 'b', size: null, qty: 5 }] }
+  assert.equal(packStats(costed, [], term).stockValuePence, 1500)
+})
+test('stats: an empty org is zeros and no NaN', () => {
+  const s = packStats(EMPTY_PACKS, [], term)
+  assert.deepEqual([s.issuedThisTerm, s.issuedAllTime, s.paidPence, s.stockValuePence], [0, 0, 0, null])
+  assert.doesNotMatch(JSON.stringify(s), /NaN/)
+})
+test('funder sentence: packs and money, no names, nothing until a pack is out', () => {
+  assert.equal(packFunderLine({ issuedAllTime: 4, paidPence: 2000 }), '4 children have received a welcome pack, and paid items have raised £20.')
+  assert.equal(packFunderLine({ issuedAllTime: 1, paidPence: 0 }), '1 child has received a welcome pack.')
+  assert.equal(packFunderLine({ issuedAllTime: 0, paidPence: 2000 }), null)
+})
+test('returnable: what the child holds now, including paid items', () => {
+  const p = pack({ issues: [issue('a', 'shirt', '2026-10-01T10:00:00Z', '9-10'), issue('a', 'racket')] })
+  assert.deepEqual(returnableItems(p, 'a').map(x => x.item.id), ['shirt', 'racket'])
+  assert.deepEqual(returnableItems(p, 'b'), [])
+})
+test('return reasons: only what can be given out again goes back on the shelf', () => {
+  assert.deepEqual(RETURN_REASONS.map(r => [r.id, r.restocks]), [['too_small', true], ['damaged', false], ['lost_replaced', false], ['other', true]])
+})
+test('a swap needs stock, and a returned item can refill its own size', () => {
+  const p = pack({ stock: [{ item_id: 'shirt', size: '11-12', qty: 1 }] })
+  assert.equal(canReissue(p, shirt, '11-12', { size: '9-10', restocks: true }), true)
+  assert.equal(canReissue(p, shirt, '9-10', { size: '11-12', restocks: true }), false)
+  assert.equal(canReissue(p, shirt, '9-10', { size: '9-10', restocks: true }), true, 'same size back on the shelf')
+  assert.equal(canReissue(p, shirt, '9-10', { size: '9-10', restocks: false }), false, 'but not if it was written off')
+})
+
+const { DEMO_PACKS, DEMO_PACK_CHILDREN } = await import('../../src/data/impact/demo-packs.ts')
+const today = new Date().toISOString().slice(0, 10)
+test('demo: Rally Ten pack, 4 of 6, two payments, one low size', () => {
+  const s = schoolPacks(DEMO_PACKS, DEMO_PACK_CHILDREN)
+  assert.deepEqual([s.done, s.total], [4, 6])
+  assert.deepEqual(s.paid.map(p => [p.item.name, p.paid, p.issued]), [['Racket', 2, 1]])
+  assert.equal(DEMO_PACKS.payments.length, 2)
+  assert.deepEqual(lowStockLines(DEMO_PACKS).map(l => l.text), ['Low stock: T-shirt 9-10 (3 left)'])
+  assert.equal(DEMO_PACKS.booklet.weeks.length, 10)
+  assert.doesNotMatch(JSON.stringify(DEMO_PACKS), /Ten Project/)
+})
+test('demo: child ids match the demo Families', async () => {
+  const { WEEKEND_FAMILIES } = await import('../../src/data/impact/demo-data.ts')
+  const ids = WEEKEND_FAMILIES.flatMap(f => f.children.split('+').map((_, i) => `${f.id}-${i}`))
+  for (const c of DEMO_PACK_CHILDREN) assert.ok(ids.includes(c.id), c.id)
+})
+test('demo: every pack this term reads as this term', async () => {
+  const { termOf } = await import('../../src/lib/impact/term.ts')
+  assert.ok(packStats(DEMO_PACKS, DEMO_PACK_CHILDREN.map(c => c.id), termOf(today)).issuedAllTime === 4)
+})
+test('issued by: a coach is themselves, an HQ falls back to the cohort lead', () => {
+  const src = readFileSync(new URL('../../src/app/tenproject/[slug]/_components/PackIssue.tsx', import.meta.url), 'utf8')
+  const fn = src.match(/export const issuedByFor = \(a: PackActor\) => (.+)/)[1]
+  const issuedByFor = new Function('a', `return ${fn}`)
+  assert.equal(issuedByFor({ role: 'coach', staffId: 'me', leadStaffId: 'lead' }), 'me')
+  assert.equal(issuedByFor({ role: 'hq', staffId: null, leadStaffId: 'lead' }), 'lead')
+  assert.equal(issuedByFor({ role: 'hq', staffId: null }), null)
+  assert.doesNotMatch(src, /issuedBy: actor\.staffId/)
+})
+test('the old coming-soon restock card is gone', () => {
+  assert.doesNotMatch(readFileSync(new URL('../../src/app/tenproject/[slug]/_components/EquipmentTab.tsx', import.meta.url), 'utf8'), /COMING SOON|TP_RESTOCK/)
+})
+test('the modules card shows each module’s own description', () => {
+  assert.equal(impactModules({ volunteers: 'V', volunteer: 'V' }).find(m => m.id === 'packs').desc, 'Stock, issuing and payments on Equipment, Schools, Families and the parent app')
+  assert.doesNotMatch(readFileSync(new URL('../../src/app/tenproject/[slug]/_components/OrgSettings.tsx', import.meta.url), 'utf8'), /Shown in the sidebar/)
+})
+test('the parent app copes with a family that has no messages yet', () => {
+  const app = readFileSync(new URL('../../src/app/tenproject/[slug]/_components/ParentApp.tsx', import.meta.url), 'utf8')
+  assert.match(app, /\{PARENT_MESSAGES\[0\] && \(\s*<button/)
+})

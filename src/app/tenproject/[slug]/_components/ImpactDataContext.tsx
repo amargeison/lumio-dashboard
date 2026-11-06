@@ -56,8 +56,10 @@ export interface ImpactPortalContext {
   cpd?: ImpactCpd[]
   /** Live portals: the Insights page and funder documents, computed from the rows. */
   insights?: LiveInsights
-  /** Live portals: the welcome pack, its stock, issues and payments. */
+  /** The welcome pack, its stock, issues and payments. */
   packs?: PackData
+  /** Demo only: who the demo pack went to, as the demo has no people rows. */
+  packChildren?: { id: string; name: string; schoolId: string }[]
   /** Live portals: every cohort with its children, for the Coach view. */
   cohorts?: LiveCohort[]
   /** Live portals: load the org's data again after a change. */

@@ -14,17 +14,18 @@ import { useImpact } from './ImpactDataContext'
 import { moduleOn } from '@/lib/impact/org'
 import { currentHq } from '@/lib/impact/org-scope'
 import { isoToday, longDate } from '@/lib/impact/compliance'
-import { issuePack, recordPayment, setChildSize } from '@/lib/impact/pack-actions'
-import { EMPTY_PACKS, PAYMENT_METHODS, bulkPlan, currentIssue, hasPack, includedItems, issueLines, paidItems, paymentFor, pounds, schoolPacks, sizeFor, type ChildRef, type PackItem } from '@/lib/impact/packs'
+import { issuePack, recordPayment, returnItem, setChildSize } from '@/lib/impact/pack-actions'
+import { EMPTY_PACKS, PAYMENT_METHODS, RETURN_REASONS, bulkPlan, canReissue, currentIssue, hasPack, includedItems, issueLines, lineLabel, paidItems, paymentFor, pounds, returnableItems, schoolPacks, sizeFor, type ChildRef, type PackItem } from '@/lib/impact/packs'
 
 export const sb = () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const MUTED = '#6B6560', GREEN = '#187A3C'
 const problem = (e: unknown, fallback: string) => e instanceof Error ? e.message : fallback
 const day = (iso: string) => longDate(iso.slice(0, 10))
 
-/** Who is issuing. staffId fills issued_by when known. */
-export type PackActor = { role: 'hq' | 'coach'; staffId: string | null }
+/** Who is issuing. A coach is their own record; an HQ acting on a cohort's behalf falls back to its lead coach. */
+export type PackActor = { role: 'hq' | 'coach'; staffId: string | null; leadStaffId?: string | null }
 const HQ_ACTOR: PackActor = { role: 'hq', staffId: null }
+export const issuedByFor = (a: PackActor) => a.role === 'coach' ? a.staffId : a.leadStaffId ?? null
 
 export function usePackAccess() {
   const ctx = useImpact()
@@ -54,7 +55,7 @@ export function IssuePackDialog({ child, actor, sessionId, onClose }: { child: C
     try {
       const db = sb(), hq = await currentHq(db)
       for (const l of chosen) if (l.item.has_sizes && sizes[l.item.id] !== l.size) await setChildSize(db, hq, child.id, l.item.id, sizes[l.item.id])
-      await issuePack(db, child.id, chosen.map(l => ({ item_id: l.item.id, size: l.item.has_sizes ? sizes[l.item.id] : null })), { sessionId, issuedBy: actor.staffId })
+      await issuePack(db, child.id, chosen.map(l => ({ item_id: l.item.id, size: l.item.has_sizes ? sizes[l.item.id] : null })), { sessionId, issuedBy: issuedByFor(actor) })
       reload(); onClose()
     } catch (e) { setErr(problem(e, 'The pack could not be issued.')); setBusy(false) }
   }
@@ -96,6 +97,65 @@ export function IssuePackButton({ child, actor = HQ_ACTOR, sessionId }: { child:
   return (<>
     <button onClick={() => setOpen(true)} style={small}><Gift size={12} /> Issue welcome pack</button>
     {open && <IssuePackDialog child={child} actor={actor} sessionId={sessionId} onClose={() => setOpen(false)} />}
+  </>)
+}
+
+// ── Returns ─────────────────────────────────────────────────────────────────
+export function ReturnDialog({ child, actor, onClose }: { child: ChildRef; actor: PackActor; onClose: () => void }) {
+  const { packs, reload } = usePackAccess()
+  const held = returnableItems(packs, child.id)
+  const [itemId, setItemId] = useState(held[0]?.item.id ?? '')
+  const [reason, setReason] = useState<string>(RETURN_REASONS[0].id)
+  const [note, setNote] = useState('')
+  const line = held.find(h => h.item.id === itemId)
+  const otherSize = line?.item.sizes.find(s => s !== line.issue.size)
+  const [size, setSize] = useState(otherSize ?? '')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  if (!line) return null
+  const restocks = RETURN_REASONS.find(r => r.id === reason)?.restocks ?? true
+  const newSize = line.item.has_sizes ? size || null : null
+  const inStock = canReissue(packs, line.item, newSize, { size: line.issue.size, restocks })
+
+  async function run(reissue: boolean) {
+    setBusy(true); setErr('')
+    try {
+      await returnItem(sb(), { childId: child.id, itemId: line!.item.id, reason, note, reissue, size: newSize, issuedBy: issuedByFor(actor) })
+      reload(); onClose()
+    } catch (e) { setErr(problem(e, 'The return could not be saved.')); setBusy(false) }
+  }
+  return (
+    <Modal title={`Return: ${child.name}`} onClose={onClose}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10 }}>
+        <label><span style={formLabel}>Item</span>
+          <select value={itemId} onChange={e => { setItemId(e.target.value); setSize(held.find(h => h.item.id === e.target.value)?.item.sizes.find(s => s !== held.find(h => h.item.id === e.target.value)?.issue.size) ?? '') }} style={formField}>
+            {held.map(h => <option key={h.item.id} value={h.item.id}>{lineLabel(h.item, h.issue.size)}</option>)}
+          </select>
+        </label>
+        <label><span style={formLabel}>Why</span><select value={reason} onChange={e => setReason(e.target.value)} style={formField}>{RETURN_REASONS.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}</select></label>
+        {line.item.has_sizes && <label><span style={formLabel}>New size, for a swap</span><select aria-label="New size" value={size} onChange={e => setSize(e.target.value)} style={formField}>{line.item.sizes.map(s => <option key={s}>{s}</option>)}</select></label>}
+      </div>
+      <label style={{ display: 'block', marginTop: 10 }}><span style={formLabel}>{reason === 'other' ? 'Note (required)' : 'Note (optional)'}</span><input value={note} onChange={e => setNote(e.target.value)} style={formField} /></label>
+      <div style={{ fontSize: 11.5, color: MUTED, marginTop: 8 }}>{restocks ? 'This goes back into stock.' : 'This is written off, not put back into stock.'}</div>
+      {err && <div role="alert" style={{ fontSize: 12, color: TP_RED, marginTop: 10 }}>{err}</div>}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+        <button onClick={onClose} style={buttonSecondary}>Cancel</button>
+        <button onClick={() => run(false)} disabled={busy} style={buttonSecondary}>Return</button>
+        <button onClick={() => run(true)} disabled={busy || !inStock} title={inStock ? undefined : 'None in stock'} style={{ ...buttonPrimary, opacity: busy || !inStock ? 0.6 : 1 }}>
+          {busy ? 'Saving…' : !inStock ? `No ${lineLabel(line.item, newSize)} in stock` : line.item.has_sizes ? `Return and re-issue in ${size}` : 'Return and replace'}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+export function ReturnButton({ child, actor = HQ_ACTOR }: { child: ChildRef; actor?: PackActor }) {
+  const { ready, canEdit, packs } = usePackAccess()
+  const [open, setOpen] = useState(false)
+  if (!ready || !canEdit || !returnableItems(packs, child.id).length) return null
+  return (<>
+    <button onClick={() => setOpen(true)} style={small}>Return</button>
+    {open && <ReturnDialog child={child} actor={actor} onClose={() => setOpen(false)} />}
   </>)
 }
 
@@ -150,7 +210,7 @@ export function BulkIssue({ children, actor = HQ_ACTOR, sessionId }: { children:
     let done = 0
     // One child at a time: one child's problem mustn't undo anyone else's pack.
     for (const { child, lines } of go) {
-      try { await issuePack(db, child.id, lines, { sessionId, issuedBy: actor.staffId }); done++ } catch (e) { failed.push({ name: child.name, why: problem(e, 'Not issued') }) }
+      try { await issuePack(db, child.id, lines, { sessionId, issuedBy: issuedByFor(actor) }); done++ } catch (e) { failed.push({ name: child.name, why: problem(e, 'Not issued') }) }
     }
     setReport({ done, failed }); setBusy(false); reload()
   }
@@ -179,10 +239,12 @@ export function BulkIssue({ children, actor = HQ_ACTOR, sessionId }: { children:
 }
 
 // ── School page ─────────────────────────────────────────────────────────────
-function useSchoolChildren(schoolId: string): ChildRef[] {
-  const { people } = useImpact()
-  return [...(people?.families ?? []).flatMap(f => f.children), ...(people?.unlinkedChildren ?? [])].filter(c => c.schoolId === schoolId).map(c => ({ id: c.id, name: c.name }))
+/** Everyone a pack could go to. The demo has no people rows, so it names its own. */
+export function usePackChildren(): (ChildRef & { schoolId?: string | null })[] {
+  const { people, packChildren } = useImpact()
+  return people ? [...people.families.flatMap(f => f.children), ...people.unlinkedChildren].map(c => ({ id: c.id, name: c.name, schoolId: c.schoolId })) : packChildren ?? []
 }
+const useSchoolChildren = (schoolId: string): ChildRef[] => usePackChildren().filter(c => c.schoolId === schoolId)
 
 export function SchoolPackLine({ schoolId }: { schoolId: string }) {
   const { ready, packs } = usePackAccess()
@@ -212,6 +274,19 @@ export function SchoolPacks({ schoolId }: { schoolId: string }) {
           </div>
         </div>
       )}
+      {s.done + s.paid.reduce((n, p) => n + p.issued, 0) > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ ...formLabel, marginBottom: 6 }}>Have items</div>
+          <div style={{ display: 'grid', gap: 5 }}>
+            {children.filter(c => returnableItems(packs, c.id).length).map(c => (
+              <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, fontSize: 12.5, color: TP_DARK }}>
+                <span>{c.name} <span style={{ color: MUTED, fontSize: 11 }}>{returnableItems(packs, c.id).map(h => lineLabel(h.item, h.issue.size)).join(', ')}</span></span>
+                <ReturnButton child={c} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <BulkIssue children={children} />
     </Card>
   )
@@ -234,7 +309,7 @@ export function ChildPackSummary({ child }: { child: ChildRef }) {
           {whole && latest ? `Pack issued ${day(latest)}` : issuesOf.length ? `Pack part issued (${issuesOf.length} of ${includedItems(packs).length})` : 'Pack not issued yet'}
           {size ? ` · ${size}` : ''}
         </span>
-        {!whole && <IssuePackButton child={child} />}
+        <span style={{ display: 'inline-flex', gap: 5 }}>{!whole && <IssuePackButton child={child} />}<ReturnButton child={child} /></span>
       </div>
       {paidItems(packs).map(item => {
         const paid = paymentFor(packs, child.id, item.id), issued = currentIssue(packs, child.id, item.id)

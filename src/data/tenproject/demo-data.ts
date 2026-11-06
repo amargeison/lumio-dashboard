@@ -143,7 +143,7 @@ export const PARENT = {
   children: [
     { name: 'Mia', age: 7, school: 'Oakridge Primary', stickers: 3 },
     { name: 'Tom', age: 5, school: 'Oakridge Primary', stickers: 2 },
-  ],
+  ] as { id?: string; name: string; age: number; school: string; stickers: number }[],
   venue: VENUES[0],
   consents: { data: true, photo: true, emergency: 'Gran (Pat) — 07700 900123' },
 }

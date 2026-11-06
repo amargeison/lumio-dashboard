@@ -5,6 +5,9 @@ import { BookOpen, Award, Calendar, MessageCircle, Users, PlayCircle, CheckCircl
 import { Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK, TP_PAPER } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { longDate } from '@/lib/impact/compliance'
+import { moduleOn } from '@/lib/impact/org'
+import { parentPackLines } from '@/lib/impact/packs'
 
 type Tab = 'week' | 'progress' | 'sessions' | 'messages' | 'family'
 
@@ -22,8 +25,13 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
   const [tab, setTab] = useState<Tab>('week')
   const [confirmed, setConfirmed] = useState(false)
   const [practiceLogged, setPracticeLogged] = useState(false)
-  const { brand, copy, data } = useImpact()
+  const { brand, copy, data, packs, packChildren, mode, org } = useImpact()
   const { CURRICULUM, STICKER_AREAS, PARENT, PARENT_MESSAGES, CAMPAIGN, VENUE_DETAILS } = data
+  // The booklet is the org's own. Live has no stickers to show until it's written.
+  const booklet = moduleOn(org?.settings, 'packs') ? packs?.booklet ?? null : null
+  const stickers = booklet?.stickers.length ? booklet.stickers.map(s => ({ id: s.id, label: s.label, desc: s.description })) : mode === 'live' ? [] : STICKER_AREAS
+  const packOn = !!packs && moduleOn(org?.settings, 'packs') && packs.items.some(i => i.active)
+  const childId = (c: { id?: string; name: string }) => c.id ?? packChildren?.find(k => k.name.startsWith(`${c.name} `))?.id ?? ''
   const block = CURRICULUM[1] // weeks 3 & 4 — BACKHAND
   // The family's linked weekend venue
   const homeVenue = VENUE_DETAILS[PARENT.venue.id]
@@ -106,6 +114,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
               </button>
 
               {/* Latest message */}
+              {PARENT_MESSAGES[0] && (
               <button onClick={() => setTab('messages')} style={{ background: '#fff', border: 'none', borderRadius: 12, padding: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <span style={{ fontSize: 10.5, fontWeight: 800, color: TP_RED, letterSpacing: 0.6 }}>LATEST MESSAGE</span>
@@ -115,6 +124,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                   <strong style={{ color: TP_RED }}>{PARENT_MESSAGES[0].from}:</strong> {PARENT_MESSAGES[0].text}
                 </div>
               </button>
+              )}
 
               {/* Family photo competition */}
               <div style={{ background: TP_DARK, borderRadius: 12, padding: 14, color: '#fff', display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -128,14 +138,27 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
 
           {!noFamily && tab === 'progress' && (
             <>
+              {packOn && packs && PARENT.children.map(child => (
+                <div key={`pack-${child.name}`} style={{ background: '#fff', borderRadius: 12, padding: 14 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, color: TP_RED, letterSpacing: 0.6, marginBottom: 8 }}>{PARENT.children.length > 1 ? `${child.name.toUpperCase()}’S WELCOME PACK` : 'YOUR WELCOME PACK'}</div>
+                  <div style={{ display: 'grid', gap: 7 }}>
+                    {parentPackLines(packs, childId(child), iso => longDate(iso.slice(0, 10))).map(l => (
+                      <div key={l.item.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12 }}>
+                        <span style={{ fontWeight: 800, color: TP_DARK }}>{l.done ? '✓ ' : ''}{l.item.name}</span>
+                        <span style={{ color: '#6B6560', textAlign: 'right' }}>{l.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
               {PARENT.children.map(child => (
                 <div key={child.name} style={{ background: '#fff', borderRadius: 12, padding: 14 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <div style={{ fontSize: 14, fontWeight: 900, color: TP_DARK }}>{child.name}, {child.age}</div>
-                    <Pill tone="red">{child.stickers} of 6 stickers</Pill>
+                    <div style={{ fontSize: 14, fontWeight: 900, color: TP_DARK }}>{child.name}{child.age ? `, ${child.age}` : ''}</div>
+                    <Pill tone="red">{Math.min(child.stickers, stickers.length || 6)} of {stickers.length || 6} stickers</Pill>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    {STICKER_AREAS.map((area, i) => {
+                    {stickers.map((area, i) => {
                       const earned = i < child.stickers
                       return (
                         <div key={area.id} style={{ background: earned ? '#FDE8E8' : '#F7F5F2', border: earned ? `1.5px solid ${TP_RED}55` : '1.5px dashed #D9D3CC', borderRadius: 10, padding: '9px 10px' }}>
@@ -149,6 +172,21 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                   </div>
                 </div>
               ))}
+              {booklet && (booklet.title || booklet.weeks.some(w => w.title)) && (
+                <div style={{ background: '#fff', borderRadius: 12, padding: 14 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: TP_DARK }}>{booklet.title || 'Activity Booklet'}</div>
+                  {booklet.intro && <div style={{ fontSize: 12, color: '#6B6560', marginTop: 4, lineHeight: 1.5 }}>{booklet.intro}</div>}
+                  <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
+                    {booklet.weeks.filter(w => w.title || w.focus || w.home_task).map(w => (
+                      <div key={w.week} style={{ background: TP_PAPER, borderRadius: 9, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: TP_DARK }}>Week {w.week}{w.title ? ` · ${w.title}` : ''}</div>
+                        {w.focus && <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2 }}>{w.focus}</div>}
+                        {w.home_task && <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2 }}>{w.home_task}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div style={{ fontSize: 11, color: '#8A847E', textAlign: 'center' }}>
                 Stickers mirror the printed Activity Booklet — the real stickers stay in the book!
               </div>

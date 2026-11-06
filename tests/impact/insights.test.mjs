@@ -325,3 +325,18 @@ test('regression: tiles and Needs attention are identical', () => {
   assert.deepEqual(d.NEEDS_ATTENTION, snapshot.attention)
 })
 test('regression: the not recorded count stays at 18', () => assert.equal(I.compliance.notRecorded, 18))
+
+const packRow = (id, kind = 'included', price_pence = null) => ({ id, name: id, kind, price_pence, has_sizes: false, sizes: [], low_stock: 0, unit_cost_pence: null, sort: 0, active: true })
+const withPack = extra => ({ ...live(lumioTest), people: { families: [], unlinkedChildren: [{ id: 'h0' }, { id: 'h1' }] }, packs: { items: [packRow('ball'), packRow('racket', 'paid', 1000)], sizes: [], stock: [], moves: [], returns: [], booklet: null, issues: [{ id: 'i', child_id: 'h0', item_id: 'ball', size: null, issued_at: '2026-10-01T10:00:00Z', note: null }], payments: [{ id: 'p', child_id: 'h0', item_id: 'racket', amount_pence: 1000, paid_at: '2026-10-01', method: 'cash', reference: null }], ...extra } })
+test('the funder pack and term report carry one sentence on packs, with no names', () => {
+  for (const kind of ['funder-pack', 'term-report']) {
+    const html = funderDocHtml(kind, withPack())
+    assertCleanDoc(html)
+    assert.ok(html.includes('1 child has received a welcome pack, and paid items have raised £10.'), kind)
+    assert.doesNotMatch(html.split('WELCOME PACKS')[1].split('</p>')[0], /h0|Maya/)
+  }
+})
+test('no pack out, no pack section', () => {
+  assert.doesNotMatch(funderDocHtml('funder-pack', withPack({ issues: [] })), /WELCOME PACKS/)
+  assert.doesNotMatch(funderDocHtml('funder-pack', live(lumioTest)), /WELCOME PACKS/)
+})
