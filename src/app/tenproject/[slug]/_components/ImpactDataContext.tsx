@@ -16,6 +16,7 @@ import type { LiveInsights } from '@/lib/impact/insights'
 import type { PackData } from '@/lib/impact/packs'
 import type { FamilySession } from '@/lib/impact/family-week'
 import type { CoachChild, CoachFamily, ParentDetails, ParentHome } from '@/lib/impact/member-actions'
+import type { RegisterSession } from '@/lib/impact/register-session'
 
 export { fill } from '@/lib/impact/fill'
 
@@ -86,7 +87,7 @@ export interface ParentContext {
   save: (d: ParentDetails) => Promise<void>
 }
 
-export interface LiveCohort { id: string; label: string; sessionId: string | null; leadStaffId: string | null; children: TP.DemoChild[] }
+export interface LiveCohort { id: string; label: string; sessionId: string | null; sessions: RegisterSession[]; presentBySession: Record<string, string[]>; leadStaffId: string | null; children: TP.DemoChild[] }
 
 export interface ImpactChild {
   id: string; name: string; age: number | null; yearGroup: string | null; school: string | null; schoolId?: string | null

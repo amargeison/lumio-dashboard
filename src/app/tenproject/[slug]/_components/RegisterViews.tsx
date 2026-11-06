@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { Lock, QrCode, WifiOff, CheckCircle, Users, ClipboardList, Sparkles, PlayCircle, BookOpen, ShieldAlert, Package, Phone, FileText, BarChart3, MapPin, GraduationCap, CalendarDays, Send, Navigation, Printer, Share2, School } from 'lucide-react'
-import { Card, SectionTitle, Pill, EmptyState, formField, formLabel } from './ui'
+import { Card, SectionTitle, Pill, EmptyState, Modal, formField, formLabel } from './ui'
 import UpcomingCalendar from './UpcomingCalendar'
 import { SendMessageWizard } from './CommsTab'
 import { openResourceDoc, openSessionCardDoc } from '../_lib/resource-docs'
@@ -10,6 +10,8 @@ import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact, fill, type ImpactDataset } from './ImpactDataContext'
 import type { CoachChild, CoachFamily } from '@/lib/impact/member-actions'
 import { BulkIssue, IssuePackButton, ReturnButton } from './PackIssue'
+import { isoToday } from '@/lib/impact/compliance'
+import { sessionDay, sessionShort } from '@/lib/impact/register-session'
 
 // Shown above a register on live portals: what you see is the saved register;
 // tapping to change it isn't available yet (it would only change this screen).
@@ -132,13 +134,22 @@ export function CoachView({ section }: { section?: CoachSection }) {
   const signedIn = ctx.coach
   const [marks, setMarks] = useState<Record<string, boolean>>({})
   const [markError, setMarkError] = useState('')
-  const markKey = (childId: string) => `${cohort?.sessionId}:${childId}`
-  const roster = ctx.mode === 'live' ? (cohort?.children ?? []).map(c => ({ ...c, present: marks[markKey(c.id)] ?? c.present })) : children
-  async function tapRegister(c: { id: string; present?: boolean }) {
-    if (!signedIn || !cohort?.sessionId) return
+  // The session on the register: the coach's pick, or the cohort's default.
+  const today = isoToday()
+  const [picked, setPicked] = useState<Record<string, string>>({})
+  const sessionId = cohort ? picked[cohort.id] ?? cohort.sessionId : null
+  const chosen = cohort?.sessions.find(s => s.id === sessionId)
+  const [futureOk, setFutureOk] = useState<Record<string, boolean>>({})
+  const [askFuture, setAskFuture] = useState<{ id: string; present?: boolean } | null>(null)
+  const markKey = (childId: string) => `${sessionId}:${childId}`
+  const roster = ctx.mode === 'live' ? (cohort?.children ?? []).map(c => ({ ...c, present: marks[markKey(c.id)] ?? !!cohort?.presentBySession[sessionId ?? '']?.includes(c.id) })) : children
+  async function tapRegister(c: { id: string; present?: boolean }, sure = false) {
+    if (!signedIn || !sessionId) return
+    // Asked once per session, so a whole register isn't a question per child.
+    if (chosen && chosen.date > today && !futureOk[sessionId] && !sure) { setAskFuture(c); return }
     const key = markKey(c.id), next = !c.present
     setMarks(m => ({ ...m, [key]: next })); setMarkError('')
-    try { await signedIn.mark(cohort.sessionId, c.id, next) }
+    try { await signedIn.mark(sessionId, c.id, next) }
     catch (e) {
       setMarks(m => ({ ...m, [key]: !next }))
       setMarkError(e instanceof Error ? e.message : 'That register change didn’t save.')
@@ -154,7 +165,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
   const noResources = COACH_RESOURCES.curriculum.length + COACH_RESOURCES.development.length + COACH_RESOURCES.admin.length === 0
   // Live portals show the register read-only until tap-to-save ships — no tap
   // that looks like it saved and then quietly vanishes.
-  const readOnly = ctx.mode === 'live' && !(signedIn && cohort?.sessionId)
+  const readOnly = ctx.mode === 'live' && !(signedIn && sessionId)
   const firstCohort = cohort?.label ?? COACH_STATS.cohortProgress[0]?.cohort
   const packActor = signedIn
     ? { role: 'coach' as const, staffId: signedIn.staffId, hqId: signedIn.hqId }
@@ -343,11 +354,17 @@ export function CoachView({ section }: { section?: CoachSection }) {
           <School size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />My schools
         </SectionTitle>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 10 }}>
-          {COACH_STATS.cohortProgress.map((c, i) => (
-            <div key={c.cohort} style={{ background: i === 0 ? '#FDE8E8' : '#F7F5F2', border: i === 0 ? `1.5px solid ${TP_RED}44` : '1.5px solid transparent', borderRadius: 10, padding: '11px 13px' }}>
+          {COACH_STATS.cohortProgress.map((c, i) => {
+            // Live: the card follows the session on the register. The demo keeps its first card.
+            const live = ctx.mode === 'live'
+            const own = cohorts.find(x => x.label === c.cohort)
+            const shown = own?.id === cohort?.id ? chosen : own?.sessions.find(s => s.id === own.sessionId)
+            const isToday = live ? shown?.date === today : i === 0
+            return (
+            <div key={c.cohort} style={{ background: isToday ? '#FDE8E8' : '#F7F5F2', border: isToday ? `1.5px solid ${TP_RED}44` : '1.5px solid transparent', borderRadius: 10, padding: '11px 13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>{c.cohort}</div>
-                {i === 0 && <Pill tone="red">TODAY</Pill>}
+                {isToday ? <Pill tone="red">TODAY</Pill> : live && shown ? <Pill tone="grey">{sessionDay(shown.date)}</Pill> : null}
               </div>
               <div style={{ fontSize: 11, color: '#6B6560', marginTop: 3 }}>
                 {c.week === 10 ? 'Complete' : `Week ${c.week} of 10`} · {c.attendance}% attendance · {c.stickers} stickers
@@ -356,7 +373,8 @@ export function CoachView({ section }: { section?: CoachSection }) {
                 <div style={{ width: `${(c.week / 10) * 100}%`, height: '100%', background: c.week === 10 ? '#187A3C' : TP_RED, borderRadius: 999 }} />
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       </Card>
 
@@ -393,6 +411,23 @@ export function CoachView({ section }: { section?: CoachSection }) {
             <select value={cohort?.id ?? ''} onChange={e => setCohortId(e.target.value)} style={{ ...formField, maxWidth: 360 }}>{cohorts.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}</select>
           </label>
         )}
+        {signedIn && cohort && cohort.sessions.length > 1 && (
+          <label style={{ display: 'block', marginBottom: 10 }}>
+            <span style={formLabel}>Session</span>
+            <select value={sessionId ?? ''} onChange={e => { setPicked(p => ({ ...p, [cohort.id]: e.target.value })); setMarkError('') }} style={{ ...formField, maxWidth: 360 }}>
+              {cohort.sessions.map(s => <option key={s.id} value={s.id}>{sessionDay(s.date)}{s.week ? ` · Week ${s.week}` : ''}{s.date === today ? ' · today' : s.date > today ? ' · upcoming' : ''}</option>)}
+            </select>
+          </label>
+        )}
+        {askFuture && chosen && (
+          <Modal title="Mark a future session?" onClose={() => setAskFuture(null)}>
+            <div style={{ fontSize: 13, color: TP_DARK }}>This session is on {sessionShort(chosen.date)} — mark it now?</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 14, justifyContent: 'flex-end' }}>
+              <button onClick={() => setAskFuture(null)} style={{ background: '#F7F5F2', color: TP_DARK, border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+              <button onClick={() => { const c = askFuture; setAskFuture(null); setFutureOk(f => ({ ...f, [chosen.id]: true })); void tapRegister(c, true) }} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Mark it</button>
+            </div>
+          </Modal>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8 }}>
           {roster.map(c => (
             <div key={c.id} style={{ border: '1px solid #F0EBE5', borderRadius: 10, padding: '10px 12px', background: c.present ? '#fff' : '#F7F5F2' }}>
@@ -416,13 +451,13 @@ export function CoachView({ section }: { section?: CoachSection }) {
                 </button>
               )}
               <div style={{ marginTop: 6, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                <IssuePackButton child={c} actor={packActor} sessionId={cohort?.sessionId} />
+                <IssuePackButton child={c} actor={packActor} sessionId={sessionId} />
                 {signedIn && <ReturnButton child={c} actor={packActor} />}
               </div>
             </div>
           ))}
         </div>
-        <BulkIssue children={roster} actor={packActor} sessionId={cohort?.sessionId} />
+        <BulkIssue children={roster} actor={packActor} sessionId={sessionId} />
         {!readOnly && !signedIn && <button style={{ marginTop: 12, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
           <Sparkles size={14} /> AI cohort summary for the school (demo)
         </button>}

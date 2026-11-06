@@ -16,7 +16,8 @@ import { GENERIC_BRAND } from './org'
 import { NO_COACH } from './school-card'
 import { complianceItems, compliancePeople, dbsCertificate, isoToday, needsAction, roleLabel, staffCertificates, volunteerCertificates } from './compliance'
 import { headlineTiles, weekendConversion } from './insights'
-import { activationPct } from './members'
+import { activationPct, familiesMessagedNoLogin } from './members'
+import { pickRegisterSession } from './register-session'
 import type { FamilySession } from './family-week'
 import { attendanceBySession, evidenceFromRows, scoreSchools } from './readiness'
 import { inTerm, termOf } from './term'
@@ -88,6 +89,8 @@ export interface LiveRows {
   responses?: { school_id: string | null; would_recommend: boolean | null; satisfaction: number | null }[]
   cpd?: { id: string; school_id: string; staff_name: string; course: string; cpd_date: string | null; provider: string | null; notes: string | null }[]
   members?: { role: string; family_id: string | null; accepted_at: string | null; revoked_at: string | null }[]
+  /** Families with an app message filed for them. */
+  appMessaged?: string[]
 }
 
 const EVENT_TYPE: Record<string, string> = {
@@ -103,6 +106,11 @@ const progressLabel = (status: string | undefined, week: number | null | undefin
   status === 'complete' ? 'Complete'
   : status === 'running' ? (week ? `In progress · Week ${week}` : 'In progress')
   : 'Not started'
+
+const noLoginItem = (n: number) => n ? [{
+  id: 'app-no-login', kind: 'warn' as const, target: { tab: 'families' },
+  text: `${n} ${n === 1 ? 'family has' : 'families have'} app messages but no login`,
+}] : []
 
 export function mapLiveRows(rows: LiveRows, today = isoToday()): ImpactDataset {
   const data: { -readonly [K in keyof ImpactDataset]: ImpactDataset[K] } = { ...EMPTY_IMPACT_DATA }
@@ -347,6 +355,7 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
   data.NEEDS_ATTENTION = [
     ...registers.map(r => ({ id: `register-${r.id}`, text: r.text, kind: 'warn' as const, target: { tab: 'overview', id: 'registers' } })),
     ...attention,
+    ...noLoginItem(familiesMessagedNoLogin(rows.appMessaged, rows.members)),
   ]
   const coachRows = complianceItems(people.filter(p => p.kind === 'coach')).map(i => i.text)
   data.TP_COACH_ATTENTION = [...coachRows, ...data.TP_COACHES.filter(c => c.dbs === 'missing').map(c => `${c.name} · no DBS on file`)].join(', ')
@@ -387,10 +396,12 @@ export function buildCohorts(rows: LiveRows, today = isoToday()): LiveCohort[] {
   return rows.programmes.filter(p => kids.some(k => k.programme_id === p.id)).map(p => {
     // The register a coach can tap, so never a session still to come while one has happened.
     const dated = (rows.sessions ?? []).filter(s => s.kind === 'school' && s.programme_id === p.id).sort((a, b) => a.session_date.localeCompare(b.session_date))
-    const last = dated.filter(s => s.session_date <= today).pop() ?? dated[0]
+    const last = pickRegisterSession(dated, today)
     const school = rows.schools.find(s => s.id === p.school_id)?.name ?? 'School'
     return {
       id: p.id, label: `${school} — ${p.term_label}`, sessionId: last?.id ?? null, leadStaffId: lead.get(p.id) ?? null,
+      sessions: dated.map(s => ({ id: s.id, date: s.session_date, week: s.week_number ?? null })),
+      presentBySession: Object.fromEntries(dated.map(s => [s.id, att.filter(a => a.session_id === s.id && a.present).map(a => a.child_id)])),
       children: kids.filter(k => k.programme_id === p.id).map((k): DemoChild => ({
         id: k.id, name: k.name, year: k.year_group ?? '—', stickers: k.stickers,
         present: last ? !!att.find(a => a.session_id === last.id && a.child_id === k.id && a.present) : false,

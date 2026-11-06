@@ -27,15 +27,20 @@ test('unsubscribe: wrong secret refused', () => assert.equal(familyFromUnsubscri
 test('unsubscribe: token cannot be moved to another family', () => { const sig=unsubscribeToken(ID,'s').split('.')[1]; assert.equal(familyFromUnsubscribeToken(`${ID2}.${sig}`,'s'),null) })
 test('unsubscribe: malformed refused', () => { for (const t of ['',ID,`${ID}.`,'a.b',`${ID}.x.y`]) assert.equal(familyFromUnsubscribeToken(t,'s'),null,t) })
 test('unsubscribe: no secret refuses everything', () => assert.equal(familyFromUnsubscribeToken(unsubscribeToken(ID,''),''),null))
-test('app status: FAMILY_APP_LIVE=on says it is in the family app', t => {
+test('app status: live, a family with an accepted login has it in the app', t => {
   t.after(() => { delete process.env.FAMILY_APP_LIVE })
   process.env.FAMILY_APP_LIVE = 'on'
-  assert.equal(appFiledDetail(), 'In the family app')
+  assert.equal(appFiledDetail(true), 'In the family app')
+})
+test('app status: live, a family with no login is told apart', t => {
+  t.after(() => { delete process.env.FAMILY_APP_LIVE })
+  process.env.FAMILY_APP_LIVE = 'on'
+  assert.equal(appFiledDetail(false), 'Saved for the family app — no login yet')
 })
 test('app status: off, unset or any other value keeps the can’t open yet wording', t => {
   t.after(() => { delete process.env.FAMILY_APP_LIVE })
   const waiting = 'Saved for the family app, which families can’t open yet'
   delete process.env.FAMILY_APP_LIVE
-  assert.equal(appFiledDetail(), waiting)
-  for (const v of ['off', 'true', '1', 'ON', '']) { process.env.FAMILY_APP_LIVE = v; assert.equal(appFiledDetail(), waiting) }
+  assert.equal(appFiledDetail(true), waiting)
+  for (const v of ['off', 'true', '1', 'ON', '']) { process.env.FAMILY_APP_LIVE = v; assert.equal(appFiledDetail(true), waiting); assert.equal(appFiledDetail(false), waiting) }
 })

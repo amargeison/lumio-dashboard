@@ -19,7 +19,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import type { CoachContext, ImpactCpd, ImpactDataset, ImpactPortalContext, ParentContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import { EMPTY_IMPACT_COPY, EMPTY_IMPACT_DATA, mapLiveRows, buildCohorts, buildPeople, sessionsByChild, type LiveRows } from './live-context'
 import { loadPacks } from './pack-actions'
-import { ageFrom, coachPayments, coachRows, loadCoachHome, loadParentHome, markAttendance, saveParentDetails, type ParentDetails } from './member-actions'
+import { appMessagedFamilies, ageFrom, coachPayments, coachRows, loadCoachHome, loadParentHome, markAttendance, saveParentDetails, type ParentDetails } from './member-actions'
 import { portalAccess, type MemberRole, type MemberRow } from './members'
 import type { PackData } from './packs'
 import type { ImpactPeople } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
@@ -163,7 +163,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
         // Impact-owned people & places (drafts 213/214). A table that isn't
         // there yet just reads as empty — the portal keeps its empty states.
         const rowsOf = async <T,>(q: PromiseLike<{ data: T[] | null; error: unknown }>) => { const r = await q; return r.error ? [] : (r.data ?? []) }
-        const [venues, staff, volunteers, families, children, sessions, attendance, programmeLinks, responses, cpdRows, members] = await Promise.all([
+        const [venues, staff, volunteers, families, children, sessions, attendance, programmeLinks, responses, cpdRows, members, appMessaged] = await Promise.all([
           rowsOf(supabase.from('tp_venues').select('id, name, address, postcode, courts, surface, access_notes, storage_notes, session_day, session_time, inclusive, external_partner, external_url, notes').eq('hq_id', user.id).order('name')),
           rowsOf(supabase.from('tp_staff').select('id, name, role, qualification, email, phone, availability, specialisms, dbs_status, dbs_number, dbs_expiry, safeguarding_date, first_aid_expiry, insurance, notes').eq('hq_id', user.id).order('name')),
           rowsOf(supabase.from('tp_volunteers').select('id, name, email, phone, venue_id, inducted, induction_date, dbs_status, dbs_expiry, first_aid_expiry, since, notes').eq('hq_id', user.id).order('name')),
@@ -175,6 +175,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
           rowsOf(supabase.from('tp_impact_responses').select('school_id, would_recommend, satisfaction').eq('hq_id', user.id)),
           rowsOf(supabase.from('tp_cpd').select('id, school_id, staff_name, course, cpd_date, provider, notes').eq('hq_id', user.id).order('cpd_date', { ascending: false })),
           rowsOf(supabase.from('impact_members').select('role, family_id, accepted_at, revoked_at').eq('hq_id', user.id)),
+          appMessagedFamilies(supabase, user.id),
         ])
         const rows: LiveRows = {
           schools: schools.data ?? [],
@@ -183,7 +184,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
           events: events.data ?? [],
           donations: donations.data ?? [],
           checkins: checkins.data ?? [],
-          venues, staff, volunteers, families, children, sessions, attendance, programmeLinks, responses, cpd: cpdRows, members,
+          venues, staff, volunteers, families, children, sessions, attendance, programmeLinks, responses, cpd: cpdRows, members, appMessaged,
         } as LiveRows
         if (cancelled) return
         setData(mapLiveRows(rows))

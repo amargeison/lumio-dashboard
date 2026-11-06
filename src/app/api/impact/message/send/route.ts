@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { impactHq } from '@/lib/impact/import-auth'
-import { appFiledDetail, contactBlock, namedWithoutConsent, photoGreen, toE164, unsubscribeToken, verifiedSender, type CommsChannel, type ConsentChild, type ConsentFamily } from '@/lib/impact/comms-rules'
+import { appFiledDetail, contactBlock, familyAppLive, namedWithoutConsent, photoGreen, toE164, unsubscribeToken, verifiedSender, type CommsChannel, type ConsentChild, type ConsentFamily } from '@/lib/impact/comms-rules'
 import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
@@ -20,8 +20,9 @@ export const runtime = 'nodejs'
 // Channels:
 //   • email → Resend, only from the org's address in IMPACT_EMAIL_SENDERS. Every
 //             email carries that family's unsubscribe link, or it is not sent.
-//   • app   → the impact_messages row itself. Until FAMILY_APP_LIVE=on no family
-//             app reads it, so the result says "saved", never "delivered".
+//   • app   → the impact_messages row itself. Only a family with an accepted parent
+//             login can read it, and only once FAMILY_APP_LIVE=on, so anyone else's
+//             result says "saved", never "delivered".
 //   • sms   → Twilio, only when IMPACT_SMS_LIVE=on; otherwise reported per family.
 
 const CHANNELS: readonly CommsChannel[] = ['email', 'app', 'sms']
@@ -38,7 +39,7 @@ const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
 type Family = ConsentFamily & { guardian_name: string; email: string | null; phone: string | null }
 type Target = { i: number; label: string; family: Family | null; child: ConsentChild | null; refused?: string; note?: string }
 type Outcome = 'sent' | 'filed' | 'failed' | 'refused'
-type Result = { i: number; name: string; channel: CommsChannel; ok: boolean; outcome: Outcome; detail: string; providerId?: string }
+type Result = { i: number; name: string; channel: CommsChannel; ok: boolean; outcome: Outcome; detail: string; providerId?: string; inviteFamilyId?: string }
 
 const FAMILY_COLS = 'id, guardian_name, email, phone, consent_data, consent_photo, opt_in_email, opt_in_sms, opt_in_app, unsubscribed_at'
 
@@ -165,8 +166,16 @@ export async function POST(req: NextRequest) {
   const on = (c: CommsChannel) => open.filter(o => o.channels.includes(c))
 
   // ── App ────────────────────────────────────────────────────────────────────
-  for (const { t } of on('app')) {
-    push(t, 'app', 'filed', appFiledDetail())
+  // A failed read leaves the set empty: the result then says "saved", which is the safe side.
+  const appFamilies = on('app').map(o => o.f.id)
+  const { data: logins } = appFamilies.length
+    ? await db.from('impact_members').select('family_id').eq('hq_id', hqId).eq('role', 'parent').in('family_id', appFamilies).not('accepted_at', 'is', null).is('revoked_at', null)
+    : { data: [] }
+  const withLogin = new Set((logins ?? []).map(l => l.family_id as string))
+  for (const { t, f } of on('app')) {
+    const hasLogin = withLogin.has(f.id)
+    push(t, 'app', 'filed', appFiledDetail(hasLogin))
+    if (familyAppLive() && !hasLogin) results[results.length - 1].inviteFamilyId = f.id
   }
 
   // ── Email ──────────────────────────────────────────────────────────────────

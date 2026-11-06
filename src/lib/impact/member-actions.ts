@@ -53,6 +53,18 @@ export const coachPayments = (home: CoachHome): PackPayment[] =>
   home.paid.map(p => ({ id: `${p.child_id}:${p.item_id}`, child_id: p.child_id, item_id: p.item_id, amount_pence: 0, paid_at: '', method: '', reference: null }))
 
 /** One tap on the register. */
+/** Every family with an app message filed for them, read in pages so a long log isn't cut short. */
+export async function appMessagedFamilies(db: SupabaseClient, hqId: string): Promise<string[]> {
+  const out = new Set<string>()
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db.from('impact_messages').select('family_id').eq('hq_id', hqId).eq('channel', 'app').eq('status', 'filed').eq('direction', 'out').not('family_id', 'is', null).order('id').range(from, from + 999)
+    if (error) return []
+    const rows = (data ?? []) as { family_id: string }[]
+    rows.forEach(r => out.add(r.family_id))
+    if (rows.length < 1000) return [...out]
+  }
+}
+
 export async function markAttendance(db: SupabaseClient, hqId: string, sessionId: string, childId: string, present: boolean) {
   const { error } = await db.from('tp_attendance').upsert({ hq_id: hqId, session_id: sessionId, child_id: childId, present, via: 'register', recorded_at: new Date().toISOString() }, { onConflict: 'session_id,child_id' })
   if (error) throw new Error('That register change didn’t save.')
