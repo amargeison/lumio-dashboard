@@ -23,7 +23,7 @@ registerHooks({
   },
 })
 const { fundedPlan, markSchoolFunded, partnerWithNewSchool, partnerWithSchool, recordFunding } = await import('../src/lib/impact/lead-actions.ts')
-const { adjustStock, issuePack, loadPacks, receiveStock, recordPayment, saveBooklet, saveItem, setChildSize } = await import('../src/lib/impact/pack-actions.ts')
+const { adjustStock, issuePack, loadPacks, receiveStock, recordPayment, returnItem, saveBooklet, saveItem, setChildSize } = await import('../src/lib/impact/pack-actions.ts')
 
 try {
   const env = readFileSync(new URL('../.env.local', import.meta.url), 'utf8')
@@ -210,6 +210,23 @@ async function main() {
   ok('B can’t pay for A’s item', !!(await B.db.from('tp_pack_payments').insert({ hq_id: B.id, child_id: bKid, item_id: racket.id, amount_pence: 100, method: 'cash' })).error)
   ok('B can’t change A’s item', (await B.db.from('tp_pack_items').update({ name: 'x' }).eq('id', ball.id).select('id')).data?.length === 0)
   ok('anon can’t call the function', !!(await anon.rpc('impact_issue_pack', { p_child: c2, p_lines: [{ item_id: ball.id }] })).error)
+
+  console.log('\nReturns, against the real tables:')
+  const lineQty = async (item, size) => (await admin.from('tp_pack_stock').select('qty').eq('item_id', item).eq('hq_id', A.id).filter('size', size ? 'eq' : 'is', size ?? 'null').maybeSingle()).data?.qty ?? 0
+  const giveBack = opts => returnItem(A.db, { childId: c1, note: '', reissue: false, size: null, ...opts }).then(() => null, e => e.message)
+  await receiveStock(A.db, A.id, shirt.id, '7-8', 2, '')
+  const nineTen = await lineQty(shirt.id, '9-10')
+  ok('a size swap moves one each way', await giveBack({ itemId: shirt.id, reason: 'too_small', reissue: true, size: '7-8' }) === null && await lineQty(shirt.id, '9-10') === nineTen + 1 && await lineQty(shirt.id, '7-8') === 1)
+  ok('other needs a note', /Add a note/.test(await giveBack({ itemId: ball.id, reason: 'other' })))
+  ok('B can’t return for A’s child', await returnItem(B.db, { childId: c1, itemId: ball.id, reason: 'too_small', note: '', reissue: false, size: null }).then(() => false, e => /could not be found/.test(e.message)))
+  ok('anon can’t call it', !!(await anon.rpc('impact_return_item', { p_child: c1, p_item: ball.id, p_reason: 'damaged' })).error)
+  const ballBefore = await lineQty(ball.id, null)
+  ok('damaged and replaced writes it off', await giveBack({ itemId: ball.id, reason: 'damaged', reissue: true }) === null)
+  ok('stock falls by the replacement only', await lineQty(ball.id, null) === ballBefore - 1)
+  ok('the login is recorded on the issue', (await admin.from('tp_pack_issues').select('issued_by_user').eq('child_id', c1).eq('item_id', ball.id).order('issued_at', { ascending: false }).limit(1).single()).data?.issued_by_user === A.id)
+  const finalMoves = (await admin.from('tp_pack_stock_moves').select('item_id, size, delta').eq('hq_id', A.id)).data
+  const finalQty = (await admin.from('tp_pack_stock').select('item_id, size, qty').eq('hq_id', A.id)).data
+  ok('stock still equals the sum of moves', finalQty.every(l => l.qty === finalMoves.filter(m => m.item_id === l.item_id && (m.size ?? '') === (l.size ?? '')).reduce((n, m) => n + m.delta, 0)), `${nineTen}`)
 
   if (/localhost|127\.0\.0\.1/.test(BASE)) {
     console.log('\nRate limit:')

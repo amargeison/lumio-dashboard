@@ -129,7 +129,7 @@ function ParentPreview({ fullScreen = false }: { fullScreen?: boolean }) {
       ...ctx.data,
       PARENT: {
         name: fam.guardian,
-        children: fam.children.map(c => ({ name: c.name.split(' ')[0], age: c.age ?? 0, school: c.school ?? '', stickers: c.stickers })),
+        children: fam.children.map(c => ({ id: c.id, name: c.name.split(' ')[0], age: c.age ?? 0, school: c.school ?? '', stickers: c.stickers })),
         venue: ctx.data.VENUES[0] ?? blankVenue,
         consents: { data: fam.consentData ?? false, photo: fam.consentPhoto ?? false, emergency: '—' },
       },

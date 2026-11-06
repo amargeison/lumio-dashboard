@@ -100,6 +100,69 @@ export function schoolPacks(p: PackData, children: ChildRef[]) {
   }
 }
 
+/** One line each for the parent app. Nothing here says more than a family should see. */
+export function parentPackLines(p: PackData, childId: string, day: (iso: string) => string) {
+  return activeItems(p).map(item => {
+    const issued = currentIssue(p, childId, item.id), paid = paymentFor(p, childId, item.id)
+    const text = item.kind === 'paid'
+      ? issued ? `Paid · issued on ${day(issued.issued_at)}` : paid ? 'Paid · to be issued' : `Not yet — ${pounds(item.price_pence ?? 0)}, ask your coach or pay the school`
+      : issued ? `Received ${day(issued.issued_at)}${issued.size ? ` · ${issued.size}` : ''}` : 'Coming soon'
+    return { item, text, done: !!issued }
+  })
+}
+
+/** Low stock for Needs attention. A size never stocked is a setup task, not a shortage. */
+export const lowStockLines = (p: PackData) => stockLines(p)
+  .filter(l => l.low && p.stock.some(s => s.item_id === l.item.id && (s.size ?? null) === l.size))
+  .map(l => ({ id: `low-${l.item.id}-${l.size ?? ''}`, text: `Low stock: ${lineLabel(l.item, l.size)} (${l.qty} left)`, kind: 'info' as const, target: { tab: 'equipment' } }))
+
+const inRange = (iso: string, term: { start: string; end: string }) => iso.slice(0, 10) >= term.start && iso.slice(0, 10) <= term.end
+
+/** The numbers for the Overview tile, Insights and the funder pack. */
+export function packStats(p: PackData, childIds: string[], term: { start: string; end: string }) {
+  const included = includedItems(p)
+  const packed = childIds.filter(id => hasPack(p, id))
+  // A child's pack counts in the term it was completed.
+  const completed = (id: string) => included.map(i => currentIssue(p, id, i.id)?.issued_at ?? '').sort().pop() ?? ''
+  const paid = paidItems(p).map(item => {
+    const mine = p.payments.filter(x => x.item_id === item.id)
+    return { item, count: mine.length, pence: mine.reduce((n, x) => n + x.amount_pence, 0) }
+  })
+  const costed = stockLines(p).filter(l => l.item.unit_cost_pence !== null)
+  return {
+    children: childIds.length,
+    issuedAllTime: packed.length,
+    issuedThisTerm: packed.filter(id => inRange(completed(id), term)).length,
+    paid,
+    paidCount: paid.reduce((n, x) => n + x.count, 0),
+    paidPence: paid.reduce((n, x) => n + x.pence, 0),
+    stockValuePence: costed.length ? costed.reduce((n, l) => n + l.qty * (l.item.unit_cost_pence ?? 0), 0) : null,
+  }
+}
+
+/** The funder pack's one sentence. No names, and null until a pack has gone out. */
+export function packFunderLine(stats: Pick<ReturnType<typeof packStats>, 'issuedAllTime' | 'paidPence'>) {
+  if (!stats.issuedAllTime) return null
+  const packs = `${stats.issuedAllTime} ${stats.issuedAllTime === 1 ? 'child has' : 'children have'} received a welcome pack`
+  return stats.paidPence ? `${packs}, and paid items have raised ${pounds(stats.paidPence)}.` : `${packs}.`
+}
+
+export const RETURN_REASONS = [
+  { id: 'too_small', label: 'Too small', restocks: true },
+  { id: 'damaged', label: 'Damaged', restocks: false },
+  { id: 'lost_replaced', label: 'Lost, replaced', restocks: false },
+  { id: 'other', label: 'Other', restocks: true },
+] as const
+
+/** Items a child holds now, so can return. */
+export const returnableItems = (p: PackData, childId: string) => p.items.map(item => ({ item, issue: currentIssue(p, childId, item.id) })).filter((x): x is { item: PackItem; issue: PackIssue } => !!x.issue)
+
+/** Whether a swap can go ahead. Damaged or lost stock can't refill the size it came from. */
+export function canReissue(p: PackData, item: PackItem, size: string | null, returning: { size: string | null; restocks: boolean }) {
+  const qty = p.stock.find(s => s.item_id === item.id && (s.size ?? null) === size)?.qty ?? 0
+  return qty + (returning.restocks && returning.size === size ? 1 : 0) > 0
+}
+
 // ── Importing ───────────────────────────────────────────────────────────────
 // The children sheet's pack columns are generic, so they only mean something when
 // the org has exactly one sized item and one paid item. Anything else is a

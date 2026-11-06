@@ -112,3 +112,10 @@ export async function recordPayment(db: SupabaseClient, hqId: string, p: { child
   })
   failed(error, 'The payment could not be saved.')
 }
+
+/** A return, and with reissue the replacement, in one transaction. No replacement means no return. */
+export async function returnItem(db: SupabaseClient, r: { childId: string; itemId: string; reason: string; note: string; reissue: boolean; size: string | null; issuedBy?: string | null }) {
+  const { data, error } = await db.rpc('impact_return_item', { p_child: r.childId, p_item: r.itemId, p_reason: r.reason, p_note: r.note.trim() || null, p_reissue: r.reissue, p_size: r.size, p_issued_by: r.issuedBy ?? null })
+  if (error) throw new Error(error.message)
+  return data as number
+}
