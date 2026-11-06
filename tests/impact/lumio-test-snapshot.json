@@ -1,0 +1,593 @@
+{
+ "readiness": {
+  "hollinsmere": {
+   "score": 0,
+   "verdict": "needs-evidence",
+   "summary": "0 of 8 areas have evidence, 0 on track.",
+   "biggestGap": "partner",
+   "items": {
+    "data": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add registers",
+     "action": "Take a register at each session, or import past registers."
+    },
+    "regular": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add attendance",
+     "action": "Attendance comes from registers, so take one at each session."
+    },
+    "priority": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add children",
+     "action": "Add the children taking part, with year group and SEND status."
+    },
+    "cpd": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add staff CPD",
+     "action": "Record any training school staff have done with you."
+    },
+    "broader": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add a weekend venue, session or event",
+     "action": "Link a weekend venue or add an event for this school."
+    },
+    "wholeschool": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add families",
+     "action": "Link each child to their family, with contact consent."
+    },
+    "impact": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add feedback responses",
+     "action": "Collect or import feedback from families and staff."
+    },
+    "partner": {
+     "status": "gap",
+     "note": "No evidence recorded yet — record this school’s funding status",
+     "action": "Add how this school’s programme is funded."
+    }
+   }
+  },
+  "netherby": {
+   "score": 0,
+   "verdict": "needs-evidence",
+   "summary": "0 of 8 areas have evidence, 0 on track.",
+   "biggestGap": "partner",
+   "items": {
+    "data": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add registers",
+     "action": "Take a register at each session, or import past registers."
+    },
+    "regular": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add attendance",
+     "action": "Attendance comes from registers, so take one at each session."
+    },
+    "priority": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add children",
+     "action": "Add the children taking part, with year group and SEND status."
+    },
+    "cpd": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add staff CPD",
+     "action": "Record any training school staff have done with you."
+    },
+    "broader": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add a weekend venue, session or event",
+     "action": "Link a weekend venue or add an event for this school."
+    },
+    "wholeschool": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add families",
+     "action": "Link each child to their family, with contact consent."
+    },
+    "impact": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add feedback responses",
+     "action": "Collect or import feedback from families and staff."
+    },
+    "partner": {
+     "status": "gap",
+     "note": "No evidence recorded yet — record this school’s funding status",
+     "action": "Add how this school’s programme is funded."
+    }
+   }
+  },
+  "aldric": {
+   "score": 10,
+   "verdict": "needs-evidence",
+   "summary": "1 of 8 areas have evidence, 0 on track.",
+   "biggestGap": "data",
+   "items": {
+    "data": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add registers",
+     "action": "Take a register at each session, or import past registers."
+    },
+    "regular": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add attendance",
+     "action": "Attendance comes from registers, so take one at each session."
+    },
+    "priority": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add children",
+     "action": "Add the children taking part, with year group and SEND status."
+    },
+    "cpd": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add staff CPD",
+     "action": "Record any training school staff have done with you."
+    },
+    "broader": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add a weekend venue, session or event",
+     "action": "Link a weekend venue or add an event for this school."
+    },
+    "wholeschool": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add families",
+     "action": "Link each child to their family, with contact consent."
+    },
+    "impact": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add feedback responses",
+     "action": "Collect or import feedback from families and staff."
+    },
+    "partner": {
+     "status": "progress",
+     "note": "Fundraising for this school",
+     "action": "Reach the target to secure the programme."
+    }
+   }
+  },
+  "kingsmead": {
+   "score": 0,
+   "verdict": "needs-evidence",
+   "summary": "0 of 8 areas have evidence, 0 on track.",
+   "biggestGap": "partner",
+   "items": {
+    "data": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add registers",
+     "action": "Take a register at each session, or import past registers."
+    },
+    "regular": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add attendance",
+     "action": "Attendance comes from registers, so take one at each session."
+    },
+    "priority": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add children",
+     "action": "Add the children taking part, with year group and SEND status."
+    },
+    "cpd": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add staff CPD",
+     "action": "Record any training school staff have done with you."
+    },
+    "broader": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add a weekend venue, session or event",
+     "action": "Link a weekend venue or add an event for this school."
+    },
+    "wholeschool": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add families",
+     "action": "Link each child to their family, with contact consent."
+    },
+    "impact": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add feedback responses",
+     "action": "Collect or import feedback from families and staff."
+    },
+    "partner": {
+     "status": "gap",
+     "note": "No evidence recorded yet — record this school’s funding status",
+     "action": "Add how this school’s programme is funded."
+    }
+   }
+  },
+  "harborne": {
+   "score": 38,
+   "verdict": "at-risk",
+   "summary": "4 of 8 areas have evidence, 2 on track.",
+   "biggestGap": "partner",
+   "items": {
+    "data": {
+     "status": "met",
+     "note": "Named registers for 100% of children across 2 sessions",
+     "action": "Keep this up to date."
+    },
+    "regular": {
+     "status": "progress",
+     "note": "100% attendance across 2 weeks",
+     "action": "Good so far: keep it going to 4 weeks to show it’s sustained."
+    },
+    "priority": {
+     "status": "progress",
+     "note": "6 children across 3 year groups, SEND recorded for 0%",
+     "action": "Record SEND status for each child so priority-group reach can be shown."
+    },
+    "cpd": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add staff CPD",
+     "action": "Record any training school staff have done with you."
+    },
+    "broader": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add a weekend venue, session or event",
+     "action": "Link a weekend venue or add an event for this school."
+    },
+    "wholeschool": {
+     "status": "met",
+     "note": "100% of children’s families have contact consent",
+     "action": "Keep this up to date."
+    },
+    "impact": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add feedback responses",
+     "action": "Collect or import feedback from families and staff."
+    },
+    "partner": {
+     "status": "gap",
+     "note": "No evidence recorded yet — record this school’s funding status",
+     "action": "Add how this school’s programme is funded."
+    }
+   }
+  },
+  "willowbank": {
+   "score": 38,
+   "verdict": "at-risk",
+   "summary": "4 of 8 areas have evidence, 2 on track.",
+   "biggestGap": "partner",
+   "items": {
+    "data": {
+     "status": "met",
+     "note": "Named registers for 100% of children across 2 sessions",
+     "action": "Keep this up to date."
+    },
+    "regular": {
+     "status": "progress",
+     "note": "100% attendance across 2 weeks",
+     "action": "Good so far: keep it going to 4 weeks to show it’s sustained."
+    },
+    "priority": {
+     "status": "progress",
+     "note": "6 children across 3 year groups, SEND recorded for 0%",
+     "action": "Record SEND status for each child so priority-group reach can be shown."
+    },
+    "cpd": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add staff CPD",
+     "action": "Record any training school staff have done with you."
+    },
+    "broader": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add a weekend venue, session or event",
+     "action": "Link a weekend venue or add an event for this school."
+    },
+    "wholeschool": {
+     "status": "met",
+     "note": "100% of children’s families have contact consent",
+     "action": "Keep this up to date."
+    },
+    "impact": {
+     "status": "gap",
+     "note": "No evidence recorded yet — add feedback responses",
+     "action": "Collect or import feedback from families and staff."
+    },
+    "partner": {
+     "status": "gap",
+     "note": "No evidence recorded yet — record this school’s funding status",
+     "action": "Add how this school’s programme is funded."
+    }
+   }
+  }
+ },
+ "insights": {
+  "year": "2026/27",
+  "headline": [
+   {
+    "label": "Children registered",
+    "value": "13"
+   },
+   {
+    "label": "Families",
+    "value": "13"
+   },
+   {
+    "label": "Sessions delivered",
+    "value": "4"
+   },
+   {
+    "label": "Attendance rate",
+    "value": "100%"
+   },
+   {
+    "label": "Schools",
+    "value": "6"
+   },
+   {
+    "label": "Volunteers",
+    "value": "6"
+   }
+  ],
+  "reach": {
+   "need": null,
+   "total": 12,
+   "months": [
+    {
+     "month": "2026-09",
+     "label": "Sept",
+     "children": 12
+    },
+    {
+     "month": "2026-10",
+     "label": "Oct",
+     "children": null
+    },
+    {
+     "month": "2026-11",
+     "label": "Nov",
+     "children": null
+    },
+    {
+     "month": "2026-12",
+     "label": "Dec",
+     "children": null
+    },
+    {
+     "month": "2027-01",
+     "label": "Jan",
+     "children": null
+    },
+    {
+     "month": "2027-02",
+     "label": "Feb",
+     "children": null
+    },
+    {
+     "month": "2027-03",
+     "label": "Mar",
+     "children": null
+    },
+    {
+     "month": "2027-04",
+     "label": "Apr",
+     "children": null
+    },
+    {
+     "month": "2027-05",
+     "label": "May",
+     "children": null
+    },
+    {
+     "month": "2027-06",
+     "label": "Jun",
+     "children": null
+    },
+    {
+     "month": "2027-07",
+     "label": "Jul",
+     "children": null
+    },
+    {
+     "month": "2027-08",
+     "label": "Aug",
+     "children": null
+    }
+   ]
+  },
+  "attendance": {
+   "need": null,
+   "sessions": [
+    {
+     "date": "2026-09-15",
+     "pct": 100,
+     "tip": "15 Sept 2026 · 100%"
+    },
+    {
+     "date": "2026-09-17",
+     "pct": 100,
+     "tip": "17 Sept 2026 · 100%"
+    },
+    {
+     "date": "2026-09-22",
+     "pct": 100,
+     "tip": "22 Sept 2026 · 100%"
+    },
+    {
+     "date": "2026-09-24",
+     "pct": 100,
+     "tip": "24 Sept 2026 · 100%"
+    }
+   ],
+   "overallPct": 100
+  },
+  "schools": {
+   "need": null,
+   "rows": [
+    {
+     "id": "harborne",
+     "school": "Harborne Fields Primary",
+     "children": 6,
+     "sessions": 2,
+     "attendancePct": 100,
+     "score": 38,
+     "verdict": "at-risk",
+     "band": "At risk"
+    },
+    {
+     "id": "willowbank",
+     "school": "Willowbank Primary",
+     "children": 6,
+     "sessions": 2,
+     "attendancePct": 100,
+     "score": 38,
+     "verdict": "at-risk",
+     "band": "At risk"
+    },
+    {
+     "id": "aldric",
+     "school": "St Aldric’s C of E Primary",
+     "children": 0,
+     "sessions": 0,
+     "attendancePct": null,
+     "score": 10,
+     "verdict": "needs-evidence",
+     "band": "Not enough evidence yet"
+    },
+    {
+     "id": "hollinsmere",
+     "school": "Hollinsmere Academy",
+     "children": 0,
+     "sessions": 0,
+     "attendancePct": null,
+     "score": 0,
+     "verdict": "needs-evidence",
+     "band": "Not enough evidence yet"
+    },
+    {
+     "id": "kingsmead",
+     "school": "Kingsmead Junior School",
+     "children": 0,
+     "sessions": 0,
+     "attendancePct": null,
+     "score": 0,
+     "verdict": "needs-evidence",
+     "band": "Not enough evidence yet"
+    },
+    {
+     "id": "netherby",
+     "school": "Netherby Green Primary",
+     "children": 0,
+     "sessions": 0,
+     "attendancePct": null,
+     "score": 0,
+     "verdict": "needs-evidence",
+     "band": "Not enough evidence yet"
+    }
+   ]
+  },
+  "demographics": {
+   "need": null,
+   "children": 13,
+   "yearGroups": [
+    {
+     "label": "Y2",
+     "n": 4,
+     "pct": 31
+    },
+    {
+     "label": "Y3",
+     "n": 4,
+     "pct": 31
+    },
+    {
+     "label": "Y4",
+     "n": 4,
+     "pct": 31
+    },
+    {
+     "label": "Not recorded",
+     "n": 1,
+     "pct": 8
+    }
+   ],
+   "flags": [
+    {
+     "label": "Gender",
+     "need": "gender flags",
+     "recorded": 0,
+     "shares": []
+    },
+    {
+     "label": "SEND",
+     "need": "SEND flags",
+     "recorded": 0,
+     "shares": []
+    },
+    {
+     "label": "Free school meals",
+     "need": "FSM flags",
+     "recorded": 0,
+     "shares": []
+    },
+    {
+     "label": "Pupil premium",
+     "need": "pupil premium flags",
+     "recorded": 0,
+     "shares": []
+    }
+   ]
+  },
+  "conversion": {
+   "need": "weekend sessions",
+   "rows": []
+  },
+  "compliance": {
+   "need": null,
+   "coaches": 4,
+   "volunteers": 6,
+   "valid": 10,
+   "expiring": 1,
+   "expired": 1,
+   "notRecorded": 18,
+   "items": [
+    {
+     "id": "ds-First aid",
+     "text": "Dominic Shaw · Assistant · First aid expired 30 Sept 2026",
+     "kind": "warn",
+     "target": {
+      "tab": "coaches"
+     }
+    },
+    {
+     "id": "pm-DBS",
+     "text": "Priya Mehta · Coach · DBS expires 1 Dec 2026",
+     "kind": "info",
+     "target": {
+      "tab": "coaches"
+     }
+    }
+   ],
+   "cpdNeed": "CPD records",
+   "cpd": []
+  }
+ },
+ "tiles": {
+  "childrenThisWeek": 0,
+  "schoolsRunning": 2,
+  "schoolsPipeline": 3,
+  "weekendVisitsThisTerm": 0,
+  "registersOutstanding": 0,
+  "dbsExpiring": 2,
+  "schoolsActive": 2,
+  "schoolsComplete": 1,
+  "schoolsTotal": 6,
+  "childrenThisTerm": 12
+ },
+ "attention": [
+  {
+   "id": "ds-First aid",
+   "text": "Dominic Shaw · Assistant · First aid expired 30 Sept 2026",
+   "kind": "warn",
+   "target": {
+    "tab": "coaches"
+   }
+  },
+  {
+   "id": "pm-DBS",
+   "text": "Priya Mehta · Coach · DBS expires 1 Dec 2026",
+   "kind": "info",
+   "target": {
+    "tab": "coaches"
+   }
+  }
+ ]
+}

@@ -10,10 +10,7 @@ import { complianceItems, compliancePeople, isoToday, longDate, type ComplianceI
 import { evidenceFromRows, pct, registerOwner, scoreSchool, sessionRates, VERDICT_LABEL, type PesspnVerdict } from './readiness'
 import type { LiveRows } from './live-context'
 
-/** Flags with no column on tp_children yet are read if they ever arrive, and otherwise show their note. */
-export type InsightRows = Omit<LiveRows, 'children'> & {
-  children?: (NonNullable<LiveRows['children']>[number] & { gender?: string | null; fsm?: boolean | null; pupil_premium?: boolean | null })[]
-}
+export type InsightRows = LiveRows
 
 export interface Tile { label: string; value: string }
 export interface ReachMonth { month: string; label: string; children: number | null }   // null: no register that month
@@ -98,6 +95,19 @@ export function schoolsTable(rows: InsightRows): LiveInsights['schools'] {
   return { need: out.length ? null : 'schools', rows: out }
 }
 
+const GENDER_LABEL: Record<string, string> = { female: 'Female', male: 'Male', other: 'Other', prefer_not_to_say: 'Prefer not to say' }
+
+// Below this, a percentage in a document could point to one child.
+export const MIN_RECORDED_IN_DOCUMENTS = 10
+const fewerThan = `recorded for fewer than ${MIN_RECORDED_IN_DOCUMENTS} children — not shown`
+
+/** A flag as a document may state it. The signed-in page shows every figure, with its recorded count. */
+export function documentFlagLines(flag: Flag): string[] {
+  if (!flag.recorded) return []
+  if (flag.recorded < MIN_RECORDED_IN_DOCUMENTS) return [`${flag.label}: ${fewerThan}`]
+  return flag.shares.map(s => `${s.label}: ${s.pct}% of the ${flag.recorded} children with this recorded.`)
+}
+
 const yearOrder = (y: string) => y === 'N' ? -1 : y === 'R' ? 0 : Number(y.slice(1))
 
 export function demographics(rows: InsightRows): LiveInsights['demographics'] {
@@ -115,7 +125,7 @@ export function demographics(rows: InsightRows): LiveInsights['demographics'] {
     return { label, need, recorded: known.length, shares: known.length ? [{ label, n, pct: pct(n, known.length) as number }] : [] }
   }
   const genders = new Map<string, number>()
-  for (const k of kids) if (k.gender?.trim()) genders.set(k.gender.trim(), (genders.get(k.gender.trim()) ?? 0) + 1)
+  for (const k of kids) if (k.gender) genders.set(GENDER_LABEL[k.gender] ?? k.gender, (genders.get(GENDER_LABEL[k.gender] ?? k.gender) ?? 0) + 1)
   const genderTotal = [...genders.values()].reduce((a, b) => a + b, 0)
   return {
     need: kids.length ? null : 'children',

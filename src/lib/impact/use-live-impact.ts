@@ -89,7 +89,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
           supabase.from('tp_fundraising_campaigns').select('id, school_id, target_pence, status, match_partner, match_note, public_slug'),
           supabase.from('tp_fundraising_events').select('id, campaign_id, name, event_type, event_date, status, target_pence').order('event_date'),
           supabase.from('tp_donations').select('campaign_id, event_id, amount_pence'),
-          supabase.from('tp_qr_checkins').select('children_count'),
+          supabase.from('tp_qr_checkins').select('children_count, session_date'),
         ])
         // Impact-owned people & places (drafts 213/214). A table that isn't
         // there yet just reads as empty — the portal keeps its empty states.
@@ -97,9 +97,9 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
         const [venues, staff, volunteers, families, children, sessions, attendance, programmeLinks, responses, cpdRows] = await Promise.all([
           rowsOf(supabase.from('tp_venues').select('id, name, address, postcode, courts, surface, access_notes, storage_notes, session_day, session_time, inclusive, external_partner, external_url, notes').order('name')),
           rowsOf(supabase.from('tp_staff').select('id, name, role, qualification, email, phone, availability, specialisms, dbs_status, dbs_number, dbs_expiry, safeguarding_date, first_aid_expiry, insurance, notes').order('name')),
-          rowsOf(supabase.from('tp_volunteers').select('id, name, email, phone, venue_id, inducted, induction_date, dbs_status, dbs_expiry, since, notes').order('name')),
+          rowsOf(supabase.from('tp_volunteers').select('id, name, email, phone, venue_id, inducted, induction_date, dbs_status, dbs_expiry, first_aid_expiry, since, notes').order('name')),
           rowsOf(supabase.from('tp_families').select('id, guardian_name, email, phone, emergency_contact, consent_data, consent_photo, unsubscribed_at').order('guardian_name')),
-          rowsOf(supabase.from('tp_children').select('id, family_id, name, date_of_birth, year_group, school_id, programme_id, medical_notes, photo_consent, fee_status, stickers, send').order('name')),
+          rowsOf(supabase.from('tp_children').select('id, family_id, name, date_of_birth, year_group, school_id, programme_id, medical_notes, photo_consent, fee_status, stickers, send, gender, fsm, pupil_premium').order('name')),
           rowsOf(supabase.from('tp_sessions').select('id, kind, programme_id, venue_id, session_date, lead_staff_id').order('session_date')),
           rowsOf(supabase.from('tp_attendance').select('session_id, child_id, present, via')),
           rowsOf(supabase.from('tp_programmes').select('id, lead_staff_id, venue_id')),

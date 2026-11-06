@@ -36,6 +36,7 @@ const REGISTER_COVERAGE = 90
 const FAMILY_TARGET = 80
 const RESPONSES_NEEDED = 5
 const POSITIVE_TARGET = 80
+const PRIORITY_RECORDED = 80
 
 export interface SchoolEvidence {
   id: string
@@ -49,6 +50,10 @@ export interface SchoolEvidence {
   attendancePct: number | null
   yearGroups: number
   sendRecordedPct: number | null        // children with SEND status recorded
+  // Live only. Share of children with each flag recorded, and priority reach among those recorded.
+  flagsRecordedPct?: { send: number; fsm: number; pupil_premium: number }
+  priorityRecorded?: number             // children with any flag recorded
+  priorityChildren?: number             // of those, children with any flag true
   familyContactPct: number | null       // children whose family has contact consent
   weekendSessions: number
   venueLinked: boolean
@@ -91,6 +96,7 @@ function assess(e: SchoolEvidence): Record<string, ReadinessItem> {
 
   const send = e.sendRecordedPct ?? 0
   const priority = e.children === 0 ? none('children', 'Add the children taking part, with year group and SEND status.')
+    : e.flagsRecordedPct ? priorityReach(e, e.flagsRecordedPct)
     : e.yearGroups >= 3 && send >= 80 ? met(`${childCount(e.children)} across ${e.yearGroups} year groups, SEND recorded for ${send}%`)
     : weak(`${childCount(e.children)} across ${plural(e.yearGroups, 'year group')}, SEND recorded for ${send}%`,
       send < 80 ? 'Record SEND status for each child so priority-group reach can be shown.' : 'Extend the programme to more year groups.')
@@ -114,6 +120,19 @@ function assess(e: SchoolEvidence): Record<string, ReadinessItem> {
     : weak(`${e.responses} feedback responses, ${e.positivePct ?? 0}% positive`, 'Follow up on what families and staff said.')
 
   return { data, regular, priority, cpd, broader, wholeschool, impact, partner: partnership(e) }
+}
+
+const FLAG_NAMES = { send: 'SEND', fsm: 'FSM', pupil_premium: 'pupil premium' }
+const listed = (items: string[]) => items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
+
+// Reach is a share of the children with a flag recorded: a blank is unknown, not a no.
+function priorityReach(e: SchoolEvidence, recorded: NonNullable<SchoolEvidence['flagsRecordedPct']>): ReadinessItem {
+  const missing = (Object.keys(FLAG_NAMES) as (keyof typeof FLAG_NAMES)[]).filter(f => recorded[f] < PRIORITY_RECORDED).map(f => FLAG_NAMES[f])
+  const who = `${childCount(e.children)} across ${plural(e.yearGroups, 'year group')}`
+  const known = e.priorityRecorded ?? 0, reached = e.priorityChildren ?? 0
+  const note = known ? `${who}, ${reached} of ${known} with a flag recorded in a priority group (${pct(reached, known)}%)` : `${who}, no priority flags recorded yet`
+  if (missing.length) return weak(note, `Record ${listed(missing)} status so priority reach can be shown.`)
+  return e.yearGroups >= 3 ? met(note) : weak(note, 'Extend the programme to more year groups.')
 }
 
 function partnership(e: SchoolEvidence): ReadinessItem {
@@ -160,7 +179,7 @@ export interface ReadinessRows {
   campaigns: { id: string; school_id: string | null; target_pence: number; status: string }[]
   events: { campaign_id: string }[]
   donations: { campaign_id: string; amount_pence: number }[]
-  children?: { id: string; family_id: string | null; school_id: string | null; year_group: string | null; send?: boolean | null }[]
+  children?: { id: string; family_id: string | null; school_id: string | null; year_group: string | null; send?: boolean | null; fsm?: boolean | null; pupil_premium?: boolean | null }[]
   families?: { id: string; consent_data: boolean | null }[]
   sessions?: { id: string; kind: string; programme_id: string | null; session_date: string }[]
   attendance?: { session_id: string; child_id: string; present: boolean }[]
@@ -246,6 +265,13 @@ export function evidenceFromRows(rows: ReadinessRows): SchoolEvidence[] {
       attendancePct: pct(marks.filter(a => a.present).length, marks.length),
       yearGroups: new Set(kids.map(c => c.year_group).filter(Boolean)).size,
       sendRecordedPct: pct(kids.filter(c => c.send === true || c.send === false).length, kids.length),
+      flagsRecordedPct: {
+        send: pct(kids.filter(c => typeof c.send === 'boolean').length, kids.length) ?? 0,
+        fsm: pct(kids.filter(c => typeof c.fsm === 'boolean').length, kids.length) ?? 0,
+        pupil_premium: pct(kids.filter(c => typeof c.pupil_premium === 'boolean').length, kids.length) ?? 0,
+      },
+      priorityRecorded: kids.filter(c => [c.send, c.fsm, c.pupil_premium].some(f => typeof f === 'boolean')).length,
+      priorityChildren: kids.filter(c => c.send === true || c.fsm === true || c.pupil_premium === true).length,
       familyContactPct: linked.length ? pct(linked.filter(c => families.get(c.family_id as string)?.consent_data === true).length, kids.length) : null,
       weekendSessions: held.filter(s => s.kind === 'weekend').length,
       venueLinked: (rows.programmeLinks ?? []).some(l => !!l.venue_id && progs.some(p => p.id === l.id)),

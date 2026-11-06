@@ -7,7 +7,7 @@
 import type { ImpactPortalContext } from '../_components/ImpactDataContext'
 import { fill } from '@/lib/impact/fill'
 import { EXPIRY_WINDOW_DAYS, longDate } from '@/lib/impact/compliance'
-import { emptyInsights, WHAT_TO_RECORD, type LiveInsights } from '@/lib/impact/insights'
+import { documentFlagLines, emptyInsights, MIN_RECORDED_IN_DOCUMENTS, WHAT_TO_RECORD, type LiveInsights } from '@/lib/impact/insights'
 
 export type FunderDocKind = 'term-report' | 'funder-pack' | 'bid-narrative' | 'governor-pack' | 'newsletter-snippet'
 
@@ -294,7 +294,7 @@ function liveReport(ctx: ImpactPortalContext, label: string, heading: string, ti
     <table><tr><th>Year group</th><th>Children</th><th>%</th></tr>
     ${i.demographics.yearGroups.map(y => `<tr><td>${esc(y.label)}</td><td>${y.n}</td><td>${y.pct}%</td></tr>`).join('')}
     </table>
-    ${flags.flatMap(f => f.shares.map(s => `<p>${esc(s.label)}: ${s.pct}% of the ${plural(f.recorded, 'child', 'children')} with this recorded.</p>`)).join('')}`,
+    ${flags.flatMap(documentFlagLines).map(line => `<p>${esc(line)}</p>`).join('')}`,
     !i.conversion.need && i.conversion.rows.length > 0 && `<h2>SCHOOL → WEEKEND CONVERSION</h2>
     <table><tr><th>School</th><th>Children reached</th><th>Families at a weekend session</th><th>%</th></tr>
     ${i.conversion.rows.map(r => `<tr><td>${esc(r.school)}</td><td>${r.reached}</td><td>${r.converted}</td><td>${r.pct}%</td></tr>`).join('')}
@@ -324,7 +324,8 @@ function liveBidNarrative(ctx: ImpactPortalContext) {
     !i.attendance.need && attendanceLine(i),
     !i.demographics.need && [
       years.length > 0 && `Children taking part are in ${listed(years)}.`,
-      ...flags.flatMap(f => f.shares.map(s => `${s.label}: ${s.pct}% of the ${plural(f.recorded, 'child', 'children')} with this recorded.`)),
+      // Bid copy gets pasted elsewhere, so a small group is left out rather than explained.
+      ...flags.filter(f => f.recorded >= MIN_RECORDED_IN_DOCUMENTS).flatMap(documentFlagLines),
     ].filter(Boolean).join(' '),
     !i.conversion.need && i.conversion.rows.length > 0 && `School to weekend conversion: ${listed(i.conversion.rows.map(r => `${r.pct}% at ${r.school} (${r.converted} of ${plural(r.reached, 'child', 'children')} reached)`))}.`,
     !i.compliance.need && complianceLine(i.compliance, ctx),

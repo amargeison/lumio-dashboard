@@ -7,18 +7,18 @@
 
 import type { SheetData } from '@/lib/import-engine/read-workbook'
 import type { SheetPlan } from '@/lib/import-engine/records'
-import { IMPACT_IMPORT_FIELDS, IMPACT_SAVE_ORDER, IMPACT_CATEGORY_LABEL, IMPACT_ENUMS, type ImpactImportCategory } from './import-schema'
+import { IMPACT_FIELD_SPELLINGS, IMPACT_IMPORT_FIELDS, IMPACT_SAVE_ORDER, IMPACT_CATEGORY_LABEL, IMPACT_ENUMS, type ImpactImportCategory } from './import-schema'
 
 const norm = (s: unknown) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '')
 
 /** "date_of_birth" → "Date of birth" — the template's heading for a field. */
-export const headingFor = (field: string) => field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ')
+export const headingFor = (field: string) => field === 'fsm' ? 'FSM' : field.charAt(0).toUpperCase() + field.slice(1).replace(/_/g, ' ')
 
 const HINTS: Record<string, string> = {
   date: 'Dates as YYYY-MM-DD or DD/MM/YYYY',
   yesno: 'Yes / No',
 }
-const YESNO = new Set(['inclusive', 'inducted', 'consent_data', 'consent_photo', 'unsubscribed', 'photo_consent', 'send', 'present', 'gift_aid', 'would_recommend', 'consent_publish'])
+const YESNO = new Set(['inclusive', 'inducted', 'consent_data', 'consent_photo', 'unsubscribed', 'photo_consent', 'send', 'fsm', 'pupil_premium', 'present', 'gift_aid', 'would_recommend', 'consent_publish'])
 
 /** A tab that is exactly a template tab → its plan; anything else → null (AI maps it). */
 export function templatePlan(sheet: SheetData): SheetPlan<ImpactImportCategory> | null {
@@ -29,7 +29,7 @@ export function templatePlan(sheet: SheetData): SheetPlan<ImpactImportCategory> 
   const columns: Record<string, number> = {}
   for (let i = 0; i < header.length; i++) {
     if (!String(header[i] ?? '').trim()) continue
-    const f = fields.find(x => norm(x) === norm(header[i]) || norm(headingFor(x)) === norm(header[i]))
+    const f = fields.find(x => norm(x) === norm(header[i]) || norm(headingFor(x)) === norm(header[i]) || IMPACT_FIELD_SPELLINGS[`${cat}.${x}`]?.includes(norm(header[i])))
     if (!f) return null          // an unknown heading — not a template tab
     columns[f] = i
   }
@@ -62,6 +62,8 @@ export async function downloadTemplate() {
     [''],
     ['Children: one row per child. Families are created from the guardian columns and matched by email, then phone.'],
     ['Programmes and children link to schools by the school name; registers link to children by name.'],
+    ['Gender, FSM and Pupil premium are optional. Leave a cell blank if it isn’t recorded: blank means “not recorded”, never “No”.'],
+    ['First aid expiry on Volunteers is the date the certificate runs out, the same as on Coaches.'],
   ]
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(readme), 'Read me')
   for (const c of IMPACT_SAVE_ORDER) {

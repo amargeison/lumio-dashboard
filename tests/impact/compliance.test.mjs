@@ -109,3 +109,16 @@ test('demo data is untouched: no certificates, hand-written attention list', () 
   assert.ok(demo.NEEDS_ATTENTION.length > 0)
   assert.equal(demo.HQ_STATS.dbsExpiring, 1)
 })
+
+test('volunteer first aid runs through the same rule as a coach’s', () => {
+  const state = first_aid_expiry => volunteerCertificates({ dbs_status: 'valid', first_aid_expiry }, today).find(c => c.name === 'First aid').state
+  assert.equal(state('2026-09-30'), 'expired')
+  assert.equal(state('2026-12-01'), 'expiring')
+  assert.equal(state('2027-06-01'), 'ok')
+  assert.equal(state(null), 'not recorded')
+})
+test('a volunteer’s expired first aid reaches Needs attention', () => {
+  const d = mapLiveRows({ ...noRows, volunteers: [volunteer('v', 'Leah Ferraro', { first_aid_expiry: '2026-09-30' })] }, today)
+  assert.deepEqual(d.NEEDS_ATTENTION.map(i => i.text), ['Leah Ferraro · Volunteer · First aid expired 30 Sept 2026'])
+  assert.equal(d.HQ_STATS.dbsExpiring, 1)
+})

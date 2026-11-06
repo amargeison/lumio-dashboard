@@ -15,6 +15,7 @@ registerHooks({
 })
 const { mapLiveRows } = await import('../../src/lib/impact/live-context.ts')
 const { inTerm, termOf } = await import('../../src/lib/impact/term.ts')
+const { dayLabel, outstandingRegisters } = await import('../../src/lib/impact/registers.ts')
 const tp = await import('../../src/data/tenproject/demo-data.ts')
 const impactDemo = await import('../../src/data/impact/demo-data.ts')
 
@@ -51,6 +52,7 @@ test('an empty org: 0 of 0, nobody reached, no NaN', () => {
   const s = stats(noRows)
   assert.deepEqual([s.schoolsActive, s.schoolsPipeline, s.schoolsComplete, s.schoolsTotal, s.childrenThisTerm], [0, 0, 0, 0, 0])
   assert.doesNotMatch(JSON.stringify(s), /NaN|null/)
+  assert.deepEqual([s.registersOutstanding, s.weekendVisitsThisTerm, s.outstandingRegisters], [0, 0, []])
 })
 test('the funnel adds up to the school count', () => {
   for (const rows of [lumioTest, noRows]) {
@@ -70,6 +72,53 @@ test('reach leaves out absences and other terms', () => {
   assert.equal(stats(rows, '2027-02-01').childrenThisTerm, 1)
   assert.equal(stats(rows, '2026-08-01').childrenThisTerm, 1)
 })
+const weekend = (id, date) => ({ ...session(id, null, date), kind: 'weekend' })
+test('weekend visits: this term only, one session this term and one last term → 1', () => {
+  const rows = { ...noRows, sessions: [weekend('now', '2026-10-03'), weekend('then', '2026-06-13')], attendance: [mark('now', 'c1'), mark('then', 'c1')] }
+  assert.equal(stats(rows).weekendVisitsThisTerm, 1)
+})
+test('weekend visits count child × session, not distinct children, and skip absences and school sessions', () => {
+  const rows = { ...noRows,
+    sessions: [weekend('a', '2026-10-03'), weekend('b', '2026-10-10'), session('s', null, '2026-10-05')],
+    attendance: [mark('a', 'c1'), mark('b', 'c1'), mark('b', 'c2'), mark('b', 'c3', false), mark('s', 'c1')] }
+  assert.equal(stats(rows).weekendVisitsThisTerm, 3)
+})
+test('weekend visits include this term’s QR check-ins by children_count, and not last term’s', () => {
+  const rows = { ...noRows, checkins: [{ children_count: 3, session_date: '2026-10-03' }, { children_count: null, session_date: '2026-10-10' }, { children_count: 5, session_date: '2026-06-13' }] }
+  assert.equal(stats(rows).weekendVisitsThisTerm, 4)
+})
+
+const staffRow = (id, name) => ({ id, name, role: 'coach', qualification: null, email: null, phone: null, availability: null, specialisms: null, dbs_status: 'valid', dbs_number: null, dbs_expiry: '2028-01-01', safeguarding_date: '2026-01-01', first_aid_expiry: '2028-01-01', insurance: null, notes: null })
+const withSession = (date, marks = []) => ({ ...noRows, schools: [school('harborne', 'running')], programmes: [programme('hp', 'harborne')], staff: [staffRow('st', 'Sam Okafor')], sessions: [{ ...session('s', 'hp', date), lead_staff_id: 'st' }], attendance: marks })
+const on = '2026-11-06'
+test('registers: a session 3 days ago with no marks → 1', () => {
+  const s = stats(withSession('2026-11-03'), on)
+  assert.equal(s.registersOutstanding, 1)
+  assert.deepEqual(s.outstandingRegisters.map(r => [r.school, r.dateLabel, r.coach]), [['harborne', 'Tue 3 Nov', 'Sam Okafor']])
+})
+test('registers: the same session with one mark → 0', () => assert.equal(stats(withSession('2026-11-03', [mark('s', 'c1', false)]), on).registersOutstanding, 0))
+test('registers: a session 20 days ago → 0', () => assert.equal(stats(withSession('2026-10-17'), on).registersOutstanding, 0))
+test('registers: the window is 14 days back to today, and a future session isn’t missing', () => {
+  assert.equal(stats(withSession('2026-10-23'), on).registersOutstanding, 1, '14 days ago')
+  assert.equal(stats(withSession('2026-10-22'), on).registersOutstanding, 0, '15 days ago')
+  assert.equal(stats(withSession(on), on).registersOutstanding, 1, 'today')
+  assert.equal(stats(withSession('2026-11-07'), on).registersOutstanding, 0, 'tomorrow')
+})
+test('registers: one Needs attention line each, which doesn’t change the certificates tile', () => {
+  const d = mapLiveRows(withSession('2026-11-03'), on)
+  assert.deepEqual(d.NEEDS_ATTENTION.map(i => [i.text, i.kind, i.target]), [['Register missing — harborne, Tue 3 Nov', 'warn', { tab: 'overview', id: 'registers' }]])
+  assert.equal(d.HQ_STATS.dbsExpiring, 0)
+})
+test('registers: a weekend session shows its venue, and a missing coach shows a dash', () => {
+  const rows = { ...noRows, venues: [{ id: 'v', name: 'Rec Ground' }], sessions: [{ ...weekend('w', '2026-11-01'), venue_id: 'v' }] }
+  assert.deepEqual(outstandingRegisters(rows, on).map(r => [r.school, r.coach]), [['Rec Ground', '—']])
+})
+test('registers: newest first', () => {
+  const rows = { ...noRows, sessions: [session('a', null, '2026-10-30'), session('b', null, '2026-11-04')] }
+  assert.deepEqual(outstandingRegisters(rows, on).map(r => r.id), ['b', 'a'])
+})
+test('dayLabel', () => assert.equal(dayLabel('2026-09-30'), 'Wed 30 Sept'))
+
 test('term boundaries', () => {
   for (const [date, name] of [['2026-09-01', 'Autumn'], ['2026-12-31', 'Autumn'], ['2027-01-01', 'Spring'], ['2027-03-31', 'Spring'], ['2027-04-01', 'Summer'], ['2027-07-20', 'Summer'], ['2027-08-31', 'Summer']]) {
     assert.equal(termOf(date).name, name, date)

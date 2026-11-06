@@ -75,3 +75,40 @@ test('demo: the engine reproduces the hand-written verdicts', () => {
   const hand = [86, 78, 72, 34]
   hand.forEach((h, i) => { const s = Object.values(r)[i].score; assert.ok(Math.abs(s - h) <= 8, `${s} vs ${h}`) })
 })
+
+// Priority reach, from real rows.
+const kid = (id, flags = {}, year_group = 'Y3') => ({ id, family_id: null, school_id: 's', year_group, send: null, fsm: null, pupil_premium: null, ...flags })
+const flagRows = children => ({ schools: [{ id: 's', name: 'S', status: 'running', funding_source: null, safeguarding_lead: null }], programmes: [], campaigns: [], events: [], donations: [], children })
+const priority = children => scoreSchool(evidenceFromRows(flagRows(children))[0]).items.priority
+const spread = flags => ['Y2', 'Y3', 'Y4'].flatMap((y, i) => [kid(`a${i}`, flags, y), kid(`b${i}`, flags, y)])
+
+test('priority: nothing recorded asks for all three flags and counts nobody', () => {
+  const p = priority(spread({}))
+  assert.equal(p.status, 'progress')
+  assert.match(p.note, /no priority flags recorded yet/)
+  assert.equal(p.action, 'Record SEND, FSM and pupil premium status so priority reach can be shown.')
+})
+test('priority: the gap names only the flags that are missing', () => {
+  assert.equal(priority(spread({ send: false })).action, 'Record FSM and pupil premium status so priority reach can be shown.')
+  assert.equal(priority(spread({ send: false, fsm: true })).action, 'Record pupil premium status so priority reach can be shown.')
+})
+test('priority: any flag true counts once, and the share is of children recorded', () => {
+  const p = priority([kid('a', { send: true, fsm: true }), kid('b', { pupil_premium: true }), kid('c', { fsm: false }), kid('d', { send: false }), kid('e')])
+  assert.match(p.note, /2 of 4 with a flag recorded in a priority group \(50%\)/)
+})
+test('priority: a blank is never counted as false', () => {
+  const e = evidenceFromRows(flagRows([kid('a', { fsm: true }), kid('b')]))[0]
+  assert.deepEqual([e.priorityChildren, e.priorityRecorded], [1, 1])
+})
+test('priority: met with all three recorded across three year groups', () => {
+  assert.equal(priority(spread({ send: false, fsm: true, pupil_premium: false })).status, 'met')
+})
+test('priority: all recorded but too few year groups stays in progress', () => {
+  const p = priority([kid('a', { send: false, fsm: false, pupil_premium: false })])
+  assert.deepEqual([p.status, p.action], ['progress', 'Extend the programme to more year groups.'])
+})
+test('priority: the demo’s evidence still reads the way it did', () => {
+  const p = scoreSchool(base).items.priority
+  assert.equal(p.status, 'met')
+  assert.match(p.note, /SEND recorded for 100%/)
+})
