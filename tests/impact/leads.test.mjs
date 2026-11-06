@@ -12,7 +12,7 @@ registerHooks({
     return base ? next(pathToFileURL(base).href, ctx) : next(spec, ctx)
   },
 })
-const { PIPELINES, stagesOf, isClosed, stagePoints, matchStage, guessColumn, readIncoming, cleanImportRow, amountPence, ukDate, withLeadLinks } = await import('../../src/lib/impact/leads.ts')
+const { PIPELINES, stagesOf, isClosed, stagePoints, matchStage, guessColumn, readIncoming, cleanImportRow, amountPence, ukDate, withLeadLinks, leadEdits } = await import('../../src/lib/impact/leads.ts')
 const { donationRow, fundedPlan, fundedSchoolPatch, fundingOutcome, insertLeads, linkSchoolPatch, markSchoolFunded, matchSchool, newSchoolRow, partnerWithNewSchool, partnerWithSchool, recordFunding, withSchools } = await import('../../src/lib/impact/lead-actions.ts')
 const { mapLiveRows, EMPTY_IMPACT_DATA } = await import('../../src/lib/impact/live-context.ts')
 const { impactModules, moduleOn } = await import('../../src/lib/impact/org.ts')
@@ -230,6 +230,24 @@ test('Leads takes the page title on live and demo', () => {
   assert.match(page, /headerFor\(role, activeSection, ROLE_TITLES, brand\)/)
   const tab = readFileSync(new URL('../../src/app/tenproject/[slug]/_components/LeadsTab.tsx', import.meta.url), 'utf8')
   assert.doesNotMatch(tab, /<SectionTitle/, 'no second heading under the page title')
+})
+
+test('a stage click carries the panel’s unsaved school and amount into the Funded dialog', () => {
+  const stored = { id: 'f', pipeline: 'funders', stage: 'Proposal sent', name: 'Helen Cross', org_name: 'Wrenfield Fund', amount_pence: null, school_id: null, campaign_id: null }
+  assert.deepEqual(fundedPlan(stored, []), { kind: 'close' }, 'the stored row skips the dialog: this was the bug')
+  const onScreen = { pipeline: 'funders', name: 'Helen Cross', org_name: 'Wrenfield Fund', amount_pence: 500000, school_id: 's1' }
+  const edits = leadEdits(stored, onScreen)
+  assert.deepEqual(edits, { amount_pence: 500000, school_id: 's1' })
+  assert.deepEqual(fundedPlan({ ...stored, ...edits }, []), { kind: 'offer-campaign', schoolId: 's1', targetPence: 500000 })
+})
+test('only real changes count as edits', () => {
+  assert.deepEqual(leadEdits({ email: null, name: 'A' }, { email: null, name: 'A', phone: null }), {})
+  assert.deepEqual(leadEdits({ name: 'A', school_id: 's1' }, { name: 'A', school_id: null }), { school_id: null }, 'clearing a link is an edit')
+})
+test('the stage pills save before moving', () => {
+  const tab = readFileSync(new URL('../../src/app/tenproject/[slug]/_components/LeadsTab.tsx', import.meta.url), 'utf8')
+  assert.match(tab, /onClick=\{\(\) => moveTo\(st\)\}/)
+  assert.match(tab, /await updateLead\(lead\.id, edits\)[\s\S]{0,80}await onMove\(\{ \.\.\.lead, \.\.\.edits \}, to\)/)
 })
 
 const donate = { kind: 'donate', campaignId: 'c' }

@@ -29,6 +29,12 @@ export type LeadEvent = { id: string; lead_id: string; kind: string; from_stage?
 export const withLeadLinks = <T extends Partial<Lead>>(draft: T, lead: Pick<Lead, 'stage' | 'school_id' | 'campaign_id'>): T =>
   ({ ...draft, stage: lead.stage, school_id: lead.school_id ?? null, campaign_id: lead.campaign_id ?? null })
 
+/** The panel's values that differ from the saved lead. Blank and null are the same thing. */
+export function leadEdits<T extends Partial<Lead>>(lead: Partial<Lead>, values: T): Partial<T> {
+  const same = (a: unknown, b: unknown) => (a ?? null) === (b ?? null)
+  return Object.fromEntries(Object.entries(values).filter(([k, v]) => !same(lead[k as keyof Lead], v))) as Partial<T>
+}
+
 export const SOURCES = ['Meta ad', 'Website', 'Referral', 'Google', 'Event', 'Council / LA', 'Import', 'Other'] as const
 export const CONTACT_METHODS = ['WhatsApp', 'Email', 'Phone', 'In person'] as const
 
