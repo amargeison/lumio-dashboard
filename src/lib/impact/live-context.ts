@@ -380,7 +380,7 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
     outstandingRegisters: registers,
     dbsExpiring: attention.length,
   }
-  data.INSIGHTS = { ...data.INSIGHTS, headline: headlineTiles(rows) }
+  data.INSIGHTS = { ...data.INSIGHTS, headline: headlineTiles(rows, today) }
 }
 
 /** Every cohort with its children and latest register, for the Coach view's picker. */

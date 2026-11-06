@@ -12,6 +12,7 @@ import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { shell, brandHeader, esc, openDocWindow, foot } from '../_lib/funder-docs'
 import { useImpact, type ImpactPortalContext } from './ImpactDataContext'
 import PackStockPanel from './PackStockPanel'
+import BookletPdfCard from './BookletPdfCard'
 
 const STATUS_PILL: Record<string, { tone: 'green' | 'amber' | 'red' | 'grey'; label: string }> = {
   'in-stock': { tone: 'green', label: 'IN STOCK' },
@@ -39,12 +40,13 @@ export default function EquipmentTab() {
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -50, marginBottom: 4, position: 'relative', zIndex: 1 }}>
+      {ctx.mode !== 'live' && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: -50, marginBottom: 4, position: 'relative', zIndex: 1 }}>
         <button onClick={() => printKitList(ctx)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: TP_DARK, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer' }}>
           <Printer size={14} /> Print kit list
         </button>
-      </div>
+      </div>}
 
+      <BookletPdfCard printKit />
       <PackStockPanel />
 
       {/* Stats */}

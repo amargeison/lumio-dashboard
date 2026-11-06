@@ -27,7 +27,7 @@ export async function loadPacks(db: SupabaseClient, hqId?: string): Promise<Pack
       everyRow<PackData['payments'][number]>(db, 'tp_pack_payments', 'paid_at', hqId),
     ])
     const moved = () => { const q = db.from('tp_pack_stock_moves').select('*'); return hqId ? q.eq('hq_id', hqId) : q }
-    const book = db.from('tp_booklet').select('title, intro, weeks, stickers')
+    const book = db.from('tp_booklet').select('title, intro, weeks, stickers, motto, values, website, hashtag, warm_up, completion, tenors, notes_prompt, videos, pdf_path, pdf_name, pdf_pages, pdf_bytes, pdf_uploaded_at')
     const [moves, returns, booklet] = await Promise.all([
       moved().order('created_at', { ascending: false }).limit(50),
       moved().eq('reason', 'returned'),
@@ -78,7 +78,9 @@ export async function useExamplePack(db: SupabaseClient, hqId: string, items: Pi
 }
 
 export async function saveBooklet(db: SupabaseClient, hqId: string, b: Booklet) {
-  const { error } = await db.from('tp_booklet').upsert({ hq_id: hqId, ...b, updated_at: new Date().toISOString() })
+  // Named fields, so a save can't overwrite the PDF's details with a stale copy.
+  const { title, intro, weeks, stickers, motto, values, website, hashtag, warm_up, completion, tenors, notes_prompt, videos } = b
+  const { error } = await db.from('tp_booklet').upsert({ hq_id: hqId, title, intro, weeks, stickers, motto, values, website, hashtag, warm_up, completion, tenors, notes_prompt, videos, updated_at: new Date().toISOString() })
   failed(error, 'The booklet could not be saved.')
 }
 

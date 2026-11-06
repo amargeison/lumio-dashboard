@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
     // replacement, so builds on the VPS are no longer capped. Watch memory
     // during golive.)
     cpus: 1,
+    // The middleware runs on /api and buffers bodies, cutting them at 10 MB by default.
+    // A 10 MB booklet PDF plus its form wrapper goes over that.
+    proxyClientMaxBodySize: '11mb',
   },
   images: {
     remotePatterns: [

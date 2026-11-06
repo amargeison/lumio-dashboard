@@ -16,7 +16,7 @@ import type { LiveInsights } from '@/lib/impact/insights'
 import type { PackData } from '@/lib/impact/packs'
 import type { Certificate } from '@/lib/impact/compliance'
 import type { FamilySession } from '@/lib/impact/family-week'
-import type { CoachChild, CoachFamily, ParentDetails, ParentHome } from '@/lib/impact/member-actions'
+import type { CoachChild, CoachFamily, BookletNote, FamilyScorecard, ParentDetails, ParentHome } from '@/lib/impact/member-actions'
 import type { RegisterSession } from '@/lib/impact/register-session'
 
 export { fill } from '@/lib/impact/fill'
@@ -81,12 +81,18 @@ export interface CoachContext {
   children: Record<string, CoachChild>
   families: Record<string, CoachFamily>
   certificates: Certificate[]
+  /** Keyed child:week. A note exists; the coach never gets its text. */
+  practised: Record<string, boolean>
   mark: (sessionId: string, childId: string, present: boolean) => Promise<void>
 }
 export interface ParentContext {
   home: ParentHome
   attendance: { session_id: string; child_id: string; present: boolean }[]
   save: (d: ParentDetails) => Promise<void>
+  notes: BookletNote[]
+  scorecard: FamilyScorecard | null
+  saveNote: (childId: string, week: number, text: string) => Promise<void>
+  saveScorecard: (s: FamilyScorecard) => Promise<void>
 }
 
 export interface LiveCohort { id: string; label: string; sessionId: string | null; sessions: RegisterSession[]; presentBySession: Record<string, string[]>; leadStaffId: string | null; children: TP.DemoChild[] }

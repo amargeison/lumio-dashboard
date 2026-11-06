@@ -1,10 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
-import { BookOpen, Award, Calendar, MessageCircle, Users, PlayCircle, CheckCircle, QrCode, Heart, MapPin, Navigation, Camera } from 'lucide-react'
+import { BookMarked, BookOpen, Award, Calendar, MessageCircle, Users, PlayCircle, CheckCircle, QrCode, Heart, MapPin, Navigation, Camera } from 'lucide-react'
 import { Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK, TP_PAPER } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import ParentBooklet, { WeekFacts } from './ParentBooklet'
 import { isoToday, longDate } from '@/lib/impact/compliance'
 import { familyWeek } from '@/lib/impact/family-week'
 import { moduleOn } from '@/lib/impact/org'
@@ -13,11 +14,12 @@ import { bookletWritten, childLine, emailTicked, optsBackIn, stickerAreas, ukDay
 import type { ParentContext } from './ImpactDataContext'
 import type { ParentDetails } from '@/lib/impact/member-actions'
 
-type Tab = 'week' | 'progress' | 'sessions' | 'messages' | 'family'
+type Tab = 'week' | 'progress' | 'booklet' | 'sessions' | 'messages' | 'family'
 
 const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }> }[] = [
   { id: 'week', label: 'This Week', icon: BookOpen },
   { id: 'progress', label: 'Progress', icon: Award },
+  { id: 'booklet', label: 'Booklet', icon: BookMarked },
   { id: 'sessions', label: 'Sessions', icon: Calendar },
   { id: 'messages', label: 'Messages', icon: MessageCircle },
   { id: 'family', label: 'Family', icon: Users },
@@ -120,11 +122,8 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                   <div style={{ fontSize: 22, fontWeight: 900, marginTop: 2 }}>{!thisWeek.sessionThisWeek && !thisWeek.next ? 'Nothing coming up yet' : `${thisWeek.sessionThisWeek ? '' : 'Next up: '}${thisWeek.booklet?.title || (thisWeek.week ? `Week ${thisWeek.week}` : 'Your programme')}`}</div>
                   <div style={{ fontSize: 12, marginTop: 6, opacity: 0.95 }}>{thisWeek.booklet?.focus || (thisWeek.sessionThisWeek ? 'This week’s activity appears here once it’s in the booklet.' : thisWeek.next ? 'That week’s activity appears here once it’s in the booklet.' : 'Your next session will appear here once it’s booked.')}</div>
                 </div>
-                {thisWeek.booklet?.home_task && (
-                  <div style={{ background: '#fff', borderRadius: 12, padding: 14 }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: TP_RED, letterSpacing: 0.6 }}>TRY AT HOME</div>
-                    <div style={{ fontSize: 13, color: TP_DARK, marginTop: 4 }}>{thisWeek.booklet.home_task}</div>
-                  </div>
+                {thisWeek.booklet && booklet && (thisWeek.booklet.top_tip || thisWeek.booklet.did_you_know || thisWeek.booklet.home_task) && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '6px 14px 14px' }}><WeekFacts week={thisWeek.booklet} booklet={booklet} /></div>
                 )}
                 <button onClick={() => setTab('sessions')} style={{ background: '#fff', border: 'none', borderRadius: 12, padding: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%' }}>
                   <div style={{ fontSize: 10.5, fontWeight: 800, color: TP_RED, letterSpacing: 0.6 }}>NEXT SESSION</div>
@@ -246,25 +245,17 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                   </div>
                 </div>
               ))}
-              {booklet && (booklet.title || booklet.weeks.some(w => w.title)) && (
-                <div style={{ background: '#fff', borderRadius: 12, padding: 14 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: TP_DARK }}>{booklet.title || 'Activity Booklet'}</div>
-                  {booklet.intro && <div style={{ fontSize: 12, color: '#6B6560', marginTop: 4, lineHeight: 1.5 }}>{booklet.intro}</div>}
-                  <div style={{ display: 'grid', gap: 8, marginTop: 10 }}>
-                    {booklet.weeks.filter(w => w.title || w.focus || w.home_task).map(w => (
-                      <div key={w.week} style={{ background: TP_PAPER, borderRadius: 9, padding: '8px 10px' }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: TP_DARK }}>Week {w.week}{w.title ? ` · ${w.title}` : ''}</div>
-                        {w.focus && <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2 }}>{w.focus}</div>}
-                        {w.home_task && <div style={{ fontSize: 11, color: '#6B6560', marginTop: 2 }}>{w.home_task}</div>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               {stickerCount > 0 && <div style={{ fontSize: 11, color: '#8A847E', textAlign: 'center' }}>
                 Stickers mirror the printed Activity Booklet — the real stickers stay in the book!
               </div>}
             </>
+          )}
+
+          {!noFamily && tab === 'booklet' && booklet && bookletWritten(booklet) && (
+            <ParentBooklet booklet={booklet} stickers={stickers} kids={PARENT.children} parent={parent} canWrite={!!parent || !live} />
+          )}
+          {!noFamily && tab === 'booklet' && !(booklet && bookletWritten(booklet)) && (
+            <EmptyState compact icon={BookOpen} title="Your organisation hasn't set up the Activity Booklet yet" />
           )}
 
           {!noFamily && tab === 'sessions' && live && (
@@ -379,7 +370,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
 
         {/* Bottom tab bar */}
         <div style={{ display: 'flex', background: '#fff', borderTop: '1px solid #E7E2DC' }}>
-          {TABS.map(t => {
+          {TABS.filter(t => t.id !== 'booklet' || live || booklet).map(t => {
             const Icon = t.icon
             const active = tab === t.id
             return (

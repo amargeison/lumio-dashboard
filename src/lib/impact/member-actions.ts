@@ -23,6 +23,8 @@ export interface CoachHome {
   attendance: { session_id: string; child_id: string; present: boolean; via: string }[]
   /** Paid yes/no: a row means paid. No amounts. */
   paid: { child_id: string; item_id: string }[]
+  /** A note exists for this child and week. Never its text. */
+  practised?: { child_id: string; week: number }[]
   /** The coach's own certificates. Nothing else from their staff row. */
   me?: { dbs_status: string; dbs_expiry: string | null; first_aid_expiry: string | null; safeguarding_date: string | null } | null
 }
@@ -96,6 +98,31 @@ export async function saveParentDetails(db: SupabaseClient, familyId: string, d:
     p_consent_data: d.consent_data, p_consent_photo: d.consent_photo, p_opt_in_email: d.opt_in_email, p_opt_in_sms: d.opt_in_sms, p_opt_in_app: d.opt_in_app, p_resubscribe: d.resubscribe === true,
   })
   if (error) throw new Error('Your details could not be saved.')
+}
+
+export interface BookletNote { child_id: string; week: number; text: string }
+export interface FamilyScorecard { player_a: string; player_b: string; games: { a: number | null; b: number | null }[] }
+
+export async function loadFamilyBooklet(db: SupabaseClient, familyId: string): Promise<{ notes: BookletNote[]; scorecard: FamilyScorecard | null }> {
+  const [notes, card] = await Promise.all([
+    db.from('tp_booklet_notes').select('child_id, week, text').eq('family_id', familyId),
+    db.from('tp_booklet_scorecards').select('player_a, player_b, games').eq('family_id', familyId).maybeSingle(),
+  ])
+  return { notes: (notes.data ?? []) as BookletNote[], scorecard: (card.data as FamilyScorecard | null) ?? null }
+}
+
+/** An emptied box removes the note, so a coach's dot goes with it. */
+export async function saveBookletNote(db: SupabaseClient, hqId: string, familyId: string, childId: string, week: number, text: string) {
+  const body = text.trim()
+  const { error } = body
+    ? await db.from('tp_booklet_notes').upsert({ hq_id: hqId, family_id: familyId, child_id: childId, week, text: body, updated_at: new Date().toISOString() }, { onConflict: 'child_id,week' })
+    : await db.from('tp_booklet_notes').delete().eq('child_id', childId).eq('week', week)
+  if (error) throw new Error('Your note could not be saved.')
+}
+
+export async function saveFamilyScorecard(db: SupabaseClient, hqId: string, familyId: string, s: FamilyScorecard) {
+  const { error } = await db.from('tp_booklet_scorecards').upsert({ family_id: familyId, hq_id: hqId, player_a: s.player_a.trim(), player_b: s.player_b.trim(), games: s.games, updated_at: new Date().toISOString() }, { onConflict: 'family_id' })
+  if (error) throw new Error('Your scorecard could not be saved.')
 }
 
 export const ageFrom = (dob: string | null, today = new Date()) => {

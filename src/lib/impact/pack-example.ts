@@ -20,7 +20,9 @@ export const exampleBooklet = (): Booklet => ({
   title: 'Activity Booklet',
   intro: 'Ten weeks of skills, games and challenges. Collect a sticker for each area as you go.',
   weeks: CURRICULUM.flatMap(block => block.weeks.split('&').map(w => ({
-    week: Number(w.trim()), title: sentence(block.skill), focus: block.tip, home_task: `Did you know? ${block.didYouKnow}`,
+    week: Number(w.trim()), title: sentence(block.skill), focus: `This week’s skill: ${block.skill.toLowerCase()}.`, home_task: 'Try it at home, as a family.',
+    top_tip: block.tip, did_you_know: block.didYouKnow, video: block.skill.toLowerCase().replace(/[^a-z0-9]+/g, '-'), scorecard: Number(w.trim()) === 10,
   }))),
+  notes_prompt: 'List what you practised this week.',
   stickers: STICKER_AREAS.map(s => ({ id: s.id, label: s.label, description: s.desc })),
 })

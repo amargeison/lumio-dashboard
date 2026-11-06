@@ -20,7 +20,7 @@ import type { CoachContext, ImpactCpd, ImpactDataset, ImpactPortalContext, Paren
 import { EMPTY_IMPACT_COPY, EMPTY_IMPACT_DATA, mapLiveRows, buildCohorts, buildPeople, sessionsByChild, type LiveRows } from './live-context'
 import { loadPacks } from './pack-actions'
 import { isoToday, staffCertificates } from './compliance'
-import { appMessagedFamilies, ageFrom, coachPayments, coachRows, loadCoachHome, loadParentHome, markAttendance, saveParentDetails, type ParentDetails } from './member-actions'
+import { appMessagedFamilies, ageFrom, coachPayments, coachRows, loadCoachHome, loadFamilyBooklet, loadParentHome, markAttendance, saveBookletNote, saveFamilyScorecard, saveParentDetails, type ParentDetails } from './member-actions'
 import { portalAccess, type MemberRole, type MemberRow } from './members'
 import type { PackData } from './packs'
 import type { ImpactPeople } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
@@ -116,15 +116,17 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
                 children: Object.fromEntries(home.children.map(c => [c.id, c])),
                 families: Object.fromEntries(home.families.map(f => [f.id, f])),
                 certificates: home.me ? staffCertificates(home.me, isoToday()) : [],
+                practised: Object.fromEntries((home.practised ?? []).map(p => [`${p.child_id}:${p.week}`, true])),
                 mark: (sessionId, childId, present) => markAttendance(supabase, hqId, sessionId, childId, present),
               })
             } else if (m.role === 'parent' && m.family_id) {
               const familyId = m.family_id
-              const [home, attendance, messages, packData] = await Promise.all([
+              const [home, attendance, messages, packData, familyBooklet] = await Promise.all([
                 loadParentHome(supabase, familyId),
                 supabase.from('tp_attendance').select('session_id, child_id, present').eq('hq_id', hqId),
                 supabase.from('impact_messages').select('id, subject, body, created_at').eq('hq_id', hqId).eq('family_id', familyId).eq('direction', 'out').order('created_at', { ascending: false }).limit(50),
                 loadPacks(supabase, hqId),
+                loadFamilyBooklet(supabase, familyId),
               ])
               if (cancelled) return
               if (home) {
@@ -144,6 +146,9 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
                 setParent({
                   home, attendance: (attendance.data ?? []) as ParentContext['attendance'],
                   save: async (d: ParentDetails) => { await saveParentDetails(supabase, familyId, d); reload() },
+                  ...familyBooklet,
+                  saveNote: (childId, week, text) => saveBookletNote(supabase, hqId, familyId, childId, week, text),
+                  saveScorecard: s => saveFamilyScorecard(supabase, hqId, familyId, s),
                 })
               }
             }

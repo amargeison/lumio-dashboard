@@ -50,14 +50,14 @@ const firstYear = (today: string) => Number(today.slice(0, 4)) - (Number(today.s
 /** "2026/27": the academic year runs September to August. */
 export const academicYear = (today: string) => { const y = firstYear(today); return `${y}/${String(y + 1).slice(2)}` }
 
-export function headlineTiles(rows: InsightRows): Tile[] {
+export function headlineTiles(rows: InsightRows, today = isoToday()): Tile[] {
   const marks = rows.attendance ?? [], sessions = rows.sessions ?? []
   // Sessions with no register have no rate, which isn't the same as 0%.
   const attendance = marks.length ? `${pct(marks.filter(a => a.present).length, marks.length)}%` : sessions.length ? '—' : '0%'
   return [
     { label: 'Children registered', value: String(rows.children?.length ?? 0) },
     { label: 'Families', value: String(rows.families?.length ?? 0) },
-    { label: 'Sessions delivered', value: String(sessions.length) },
+    { label: 'Sessions delivered', value: String(sessions.filter(s => s.session_date <= today).length) },
     { label: 'Attendance rate', value: attendance },
     { label: 'Schools', value: String(rows.schools.length) },
     { label: 'Volunteers', value: String(rows.volunteers?.length ?? 0) },
@@ -177,7 +177,7 @@ export function complianceSummary(rows: InsightRows, today: string): LiveInsight
 export function buildInsights(rows: InsightRows, today = isoToday()): LiveInsights {
   return {
     year: academicYear(today),
-    headline: headlineTiles(rows),
+    headline: headlineTiles(rows, today),
     reach: monthlyReach(rows, today),
     attendance: attendanceOverTime(rows),
     schools: schoolsTable(rows),
