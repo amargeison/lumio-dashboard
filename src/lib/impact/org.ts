@@ -111,6 +111,7 @@ export function impactModules(brand: ImpactBrand): ImpactModule[] {
     { id: 'comms', label: 'Communications', desc: 'Inbox, newsletters, automations, audiences' },
     { id: 'social', label: 'Social', desc: 'Scheduling, publishing and analytics' },
     { id: 'leads', label: 'Leads', desc: 'Schools and funders pipeline — from first contact to partnered' },
+    { id: 'packs', label: 'Welcome packs', desc: 'Pack items, stock, issuing, payments and the Activity Booklet' },
     { id: 'equipment', label: 'Equipment & Kit', desc: 'Inventory, restock and kit lists' },
     { id: 'network', label: 'Sport Network', desc: 'PE & School Sport Partnerships Network readiness' },
     { id: 'settings', label: 'Settings', locked: true, desc: 'Organisation, modules, integrations and data' },

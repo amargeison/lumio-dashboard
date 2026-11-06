@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { cleanRecord, foldText, type Rec } from '@/lib/import-engine/records'
 import { IMPACT_IMPORT_SCHEMA, IMPACT_SAVE_ORDER, type ImpactImportCategory } from '@/lib/impact/import-schema'
 import { impactHq } from '@/lib/impact/import-auth'
+import { readPackColumns, type PackItem } from '@/lib/impact/packs'
 
 export const runtime = 'nodejs'
 
@@ -47,6 +48,35 @@ async function familyResolver(db: SupabaseClient) {
     const n = foldText(name)
     if (n) { const hits = fams.filter(x => foldText(x.guardian_name) === n); if (hits.length === 1) return hits[0].id }
     return null
+  }
+}
+
+// Pack columns on the children sheet. Runs after the children exist, and only ever
+// adds: a past issue or payment already recorded is left alone, so importing the
+// same file twice changes nothing.
+async function savePackColumns(db: SupabaseClient, userId: string, rows: Rec[], miss: (why: string, name: unknown) => void) {
+  const withPack = rows.filter(r => r.pack_size || r.pack_issued || r.paid_item_date || r.paid_item_amount)
+  if (!withPack.length) return
+  const items = await all<PackItem>(db, 'tp_pack_items', '*')
+  const kids = await all<{ id: string; name: string; date_of_birth: string | null }>(db, 'tp_children', 'id, name, date_of_birth')
+  const paid = await all<{ child_id: string | null; item_id: string }>(db, 'tp_pack_payments', 'child_id, item_id')
+  for (const r of withPack) {
+    const kid = kids.find(k => foldText(k.name) === foldText(r.name) && (!k.date_of_birth || !r.date_of_birth || k.date_of_birth === r.date_of_birth))
+    if (!kid) continue
+    const pack = readPackColumns(r, items)
+    for (const why of pack.issues) miss(why, r.name)
+    if (pack.sizeItem && pack.size) {
+      const { error } = await db.from('tp_pack_sizes').upsert({ hq_id: userId, child_id: kid.id, item_id: pack.sizeItem.id, size: pack.size })
+      if (error) miss('Pack size not saved', r.name)
+    }
+    for (const item of pack.issuedItems) {
+      const { error } = await db.rpc('impact_record_past_issue', { p_child: kid.id, p_item: item.id, p_size: item.id === pack.sizeItem?.id ? pack.size : null, p_issued_at: pack.issuedOn })
+      if (error) miss(`Pack issued not saved: ${error.message}`, r.name)
+    }
+    if (pack.paidItem && pack.paidPence && !paid.some(p => p.child_id === kid.id && p.item_id === pack.paidItem?.id)) {
+      const { error } = await db.from('tp_pack_payments').insert({ hq_id: userId, child_id: kid.id, item_id: pack.paidItem.id, amount_pence: pack.paidPence, paid_at: pack.paidOn, method: 'other', reference: 'Imported', recorded_by: userId })
+      if (error) miss('Paid item not saved', r.name)
+    }
   }
 }
 
@@ -179,6 +209,7 @@ async function save(db: SupabaseClient, userId: string, category: Category, rows
         kids.push({ name: String(r.name), date_of_birth: (r.date_of_birth as string) ?? null })
       }
       await insert('tp_children', toSave)
+      await savePackColumns(db, userId, rows, miss)
       return out(toSave.length, already)
     }
     case 'events': {

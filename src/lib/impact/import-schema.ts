@@ -29,7 +29,7 @@ export const IMPACT_IMPORT_FIELDS: Record<ImpactImportCategory, string[]> = {
   coaches: ['name', 'role', 'qualification', 'email', 'phone', 'availability', 'specialisms', 'dbs_status', 'dbs_number', 'dbs_expiry', 'safeguarding_date', 'first_aid_expiry', 'notes'],
   volunteers: ['name', 'email', 'phone', 'venue_name', 'inducted', 'induction_date', 'dbs_status', 'first_aid_expiry', 'since', 'notes'],
   families: ['guardian_name', 'guardian2_name', 'email', 'phone', 'emergency_contact', 'consent_data', 'consent_photo', 'unsubscribed', 'notes'],
-  children: ['name', 'date_of_birth', 'year_group', 'school_name', 'programme_term', 'class_name', 'guardian_name', 'guardian_email', 'guardian_phone', 'photo_consent', 'medical_notes', 'send', 'gender', 'fsm', 'pupil_premium', 'fee_status', 'fee_amount', 'notes'],
+  children: ['name', 'date_of_birth', 'year_group', 'school_name', 'programme_term', 'class_name', 'guardian_name', 'guardian_email', 'guardian_phone', 'photo_consent', 'medical_notes', 'send', 'gender', 'fsm', 'pupil_premium', 'fee_status', 'fee_amount', 'pack_size', 'pack_issued', 'paid_item_date', 'paid_item_amount', 'notes'],
   registers: ['child_name', 'session_date', 'present', 'kind', 'school_name', 'venue_name', 'week_number', 'notes'],
   events: ['name', 'event_type', 'event_date', 'target', 'status', 'notes'],
   donations: ['donor_name', 'amount', 'donated_on', 'purpose', 'gift_aid', 'method', 'notes'],
@@ -112,6 +112,10 @@ export const IMPACT_FIELD_SPELLINGS: Record<string, string[]> = {
   'children.fsm': ['fsm', 'freeschoolmeals', 'freemeals'],
   'children.pupil_premium': ['pupilpremium', 'pp'],
   'volunteers.first_aid_expiry': ['firstaid', 'firstaidexpiry', 'firstaiddate'],
+  'children.pack_size': ['tshirtsize', 'tshirt', 'shirtsize'],
+  'children.pack_issued': ['packissuedate', 'packdate', 'welcomepack'],
+  'children.paid_item_date': ['racketpaid', 'racketpaiddate'],
+  'children.paid_item_amount': ['racketpaidamount', 'racketamount'],
 }
 
 /** Y3 / 3 / Year 4 / yr2 / year3 / R / rec / reception / nursery → R, Y1–Y13, N. */
@@ -184,9 +188,9 @@ export const IMPACT_IMPORT_SCHEMA: ImportSchema<ImpactImportCategory> = {
   fields: IMPACT_IMPORT_FIELDS,
   labelField: LABEL,
   intFields: new Set(['programmes.current_week', 'registers.week_number', 'responses.satisfaction']),
-  numFields: new Set(['programmes.cost', 'children.fee_amount', 'events.target', 'donations.amount']),
+  numFields: new Set(['programmes.cost', 'children.fee_amount', 'children.paid_item_amount', 'events.target', 'donations.amount']),
   dateFields: new Set(['cpd.date', 'programmes.start_date', 'programmes.end_date', 'coaches.dbs_expiry', 'coaches.safeguarding_date', 'coaches.first_aid_expiry',
-    'volunteers.first_aid_expiry', 'volunteers.induction_date', 'volunteers.since', 'children.date_of_birth', 'registers.session_date', 'events.event_date', 'donations.donated_on']),
+    'volunteers.first_aid_expiry', 'children.pack_issued', 'children.paid_item_date', 'volunteers.induction_date', 'volunteers.since', 'children.date_of_birth', 'registers.session_date', 'events.event_date', 'donations.donated_on']),
   enums: IMPACT_ENUMS,
   synonyms: {
     'schools.status': { interested: 'enquiry', lead: 'enquiry', prospect: 'enquiry', unfunded: 'fundraising', booked: 'confirmed', active: 'running', live: 'running', completed: 'complete', finished: 'complete', renewing: 'renewal' },
@@ -205,7 +209,7 @@ export const IMPACT_IMPORT_SCHEMA: ImportSchema<ImpactImportCategory> = {
     year_group: 'Year group', photo_consent: 'Photo consent', consent_photo: 'Photo consent', consent_data: 'Data consent',
     fee_status: 'Paid?', fee_amount: 'Fee', amount: 'Amount', donated_on: 'Date', event_date: 'Date', session_date: 'Date',
     email: 'Email', contact_email: 'Email', guardian_email: 'Email', phone: 'Phone', contact_phone: 'Phone', guardian_phone: 'Phone',
-    present: 'Present', gift_aid: 'Gift Aid', inducted: 'Inducted', inclusive: 'Inclusive', send: 'SEND', gender: 'Gender', fsm: 'FSM', pupil_premium: 'Pupil premium', unsubscribed: 'Unsubscribed',
+    present: 'Present', gift_aid: 'Gift Aid', inducted: 'Inducted', inclusive: 'Inclusive', send: 'SEND', gender: 'Gender', fsm: 'FSM', pupil_premium: 'Pupil premium', pack_size: 'Pack size', pack_issued: 'Pack issued', paid_item_date: 'Paid item date', paid_item_amount: 'Paid item amount', unsubscribed: 'Unsubscribed',
     would_recommend: 'Would recommend', consent_publish: 'OK to publish', satisfaction: 'Satisfaction', week_number: 'Week',
     dbs_expiry: 'DBS expiry', safeguarding_date: 'Safeguarding', first_aid_expiry: 'First aid', induction_date: 'Induction', since: 'Since',
     target: 'Target', role: 'Role', dbs_status: 'DBS', kind: 'Session type', event_type: 'Event type', method: 'Method', respondent: 'Respondent',
@@ -360,7 +364,7 @@ export const IMPACT_MEANINGS = `What each category means:
 - families: parents, guardians and carers — one per household, with contact details and consents.
 - children: the children taking part. ONE RECORD PER CHILD — a row naming two children ("Jack & Mia Okafor (twins)") is still mapped as children; it is split later. guardian_name/email/phone are that child's parent or carer.
 - registers: attendance — one row per child per session (child, date, present).
-Common headings: gender is also "Sex" or "M/F"; fsm is "Free school meals"; pupil_premium is "PP" or "Pupil Premium"; a volunteer's first_aid_expiry is "First aid". Map these columns even when most cells are blank.
+Common headings: gender is also "Sex" or "M/F"; fsm is "Free school meals"; pupil_premium is "PP" or "Pupil Premium"; a volunteer's first_aid_expiry is "First aid"; pack_size is "T-shirt size"; paid_item_date is "Racket paid"; paid_item_amount is "Racket paid amount". Map these columns even when most cells are blank.
 - events: fundraising events (fairs, cake sales, sponsored ball hits, quiz nights).
 - donations: money given — donor, amount, date, what for.
 - responses: feedback or survey answers from parents, schools or volunteers.

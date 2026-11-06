@@ -19,7 +19,7 @@ import { headlineTiles } from './insights'
 import { attendanceBySession, evidenceFromRows, scoreSchools } from './readiness'
 import { inTerm, termOf } from './term'
 import { outstandingRegisters } from './registers'
-import type { ImpactCopy, ImpactDataset, ImpactPortalContext, ImpactPeople, ImpactChild } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
+import type { ImpactCopy, ImpactDataset, ImpactPortalContext, ImpactPeople, ImpactChild, LiveCohort } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import type { DemoVenue, DemoChild, TpCoach, TpTenor, TpPersonDetail, TpVenueDetail } from '@/data/tenproject/demo-data'
 
 const KEEP: (keyof ImpactDataset)[] = [
@@ -364,11 +364,28 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
   data.INSIGHTS = { ...data.INSIGHTS, headline: headlineTiles(rows) }
 }
 
+/** Every cohort with its children and latest register, for the Coach view's picker. */
+export function buildCohorts(rows: LiveRows): LiveCohort[] {
+  const kids = rows.children ?? [], att = rows.attendance ?? []
+  const lead = new Map((rows.programmeLinks ?? []).map(p => [p.id, p.lead_staff_id]))
+  return rows.programmes.filter(p => kids.some(k => k.programme_id === p.id)).map(p => {
+    const last = (rows.sessions ?? []).filter(s => s.kind === 'school' && s.programme_id === p.id).sort((a, b) => a.session_date.localeCompare(b.session_date)).pop()
+    const school = rows.schools.find(s => s.id === p.school_id)?.name ?? 'School'
+    return {
+      id: p.id, label: `${school} — ${p.term_label}`, sessionId: last?.id ?? null, leadStaffId: lead.get(p.id) ?? null,
+      children: kids.filter(k => k.programme_id === p.id).map((k): DemoChild => ({
+        id: k.id, name: k.name, year: k.year_group ?? '—', stickers: k.stickers,
+        present: last ? !!att.find(a => a.session_id === last.id && a.child_id === k.id && a.present) : false,
+      })),
+    }
+  })
+}
+
 /** Households and their children, for the Families module and the parent preview. */
 export function buildPeople(rows: LiveRows): ImpactPeople {
   const kids = rows.children ?? []
   const child = (k: typeof kids[number]): ImpactChild => ({
-    id: k.id, name: k.name, age: ageOf(k.date_of_birth), yearGroup: k.year_group, school: rows.schools.find(s => s.id === k.school_id)?.name ?? null,
+    id: k.id, name: k.name, age: ageOf(k.date_of_birth), yearGroup: k.year_group, school: rows.schools.find(s => s.id === k.school_id)?.name ?? null, schoolId: k.school_id,
     medical: k.medical_notes, photoConsent: k.photo_consent, feeStatus: k.fee_status, stickers: k.stickers,
   })
   return {

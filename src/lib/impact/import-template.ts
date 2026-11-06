@@ -54,7 +54,7 @@ export async function downloadTemplate() {
         const allowed = IMPACT_ENUMS[`${c}.${f}`]
         if (allowed) return `${headingFor(f)}: ${allowed.join(' / ')}`
         if (YESNO.has(f)) return `${headingFor(f)}: ${HINTS.yesno}`
-        if (/date|_on$|expiry|since/.test(f)) return `${headingFor(f)}: ${HINTS.date}`
+        if (/date|_on$|expiry|since|pack_issued/.test(f)) return `${headingFor(f)}: ${HINTS.date}`
         return ''
       }).filter(Boolean).join(' · ')
       return [IMPACT_CATEGORY_LABEL[c], IMPACT_IMPORT_FIELDS[c].map(headingFor).join(', '), notes]
@@ -64,6 +64,7 @@ export async function downloadTemplate() {
     ['Programmes and children link to schools by the school name; registers link to children by name.'],
     ['Gender, FSM and Pupil premium are optional. Leave a cell blank if it isn’t recorded: blank means “not recorded”, never “No”.'],
     ['First aid expiry on Volunteers is the date the certificate runs out, the same as on Coaches.'],
+    ['Pack size, Pack issued, Paid item date and Paid item amount are optional, and need your pack set up first (Settings → Welcome pack). Blank means nothing recorded.'],
   ]
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(readme), 'Read me')
   for (const c of IMPACT_SAVE_ORDER) {

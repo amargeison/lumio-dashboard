@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
+import { X } from 'lucide-react'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 
 export function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
@@ -27,6 +28,29 @@ export function Stat({ label, value, accent, sub }: { label: string; value: stri
       <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 2, fontWeight: 600 }}>{label}</div>
       {sub && <div style={{ fontSize: 10.5, color: '#8A847E', marginTop: 2, fontWeight: 600 }}>{sub}</div>}
     </Card>
+  )
+}
+
+export const formField: React.CSSProperties = { width: '100%', minWidth: 0, boxSizing: 'border-box', background: '#fff', color: TP_DARK, border: '1px solid #E7E2DC', borderRadius: 8, padding: '8px 9px', fontSize: 12.5, fontFamily: 'inherit', outline: 'none' }
+export const formLabel: React.CSSProperties = { display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: 0.4, textTransform: 'uppercase', color: '#8A847E', marginBottom: 4 }
+export const buttonPrimary: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, border: 'none', background: TP_RED, color: '#fff', borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }
+export const buttonSecondary: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid #E7E2DC', background: '#fff', color: TP_DARK, borderRadius: 9, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' }
+
+export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k)
+  }, [onClose])
+  return (
+    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
+      <div role="dialog" aria-label={title} style={{ width: '100%', maxWidth: wide ? 720 : 560, background: '#fff', border: '1px solid #E7E2DC', borderRadius: 14, padding: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK, flex: 1, minWidth: 0 }}>{title}</div>
+          <button onClick={onClose} aria-label="Close" style={{ background: 'transparent', border: '1px solid #E7E2DC', borderRadius: 8, color: '#6B6560', width: 32, height: 32, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={15} /></button>
+        </div>
+        {children}
+      </div>
+    </div>
   )
 }
 

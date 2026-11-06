@@ -12,6 +12,7 @@ import { Users, Search, HeartPulse, Camera, CameraOff, MailX, Phone, Mail } from
 import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact, type ImpactFamily } from './ImpactDataContext'
+import { ChildPackSummary } from './PackIssue'
 
 const FEE_TONE: Record<string, 'green' | 'amber' | 'red' | 'grey'> = { paid: 'green', deposit: 'amber', due: 'red', waived: 'grey', unknown: 'grey' }
 
@@ -85,6 +86,7 @@ export default function FamiliesTab() {
                   {c.medical && !/^(none|no|n\/?a|na|-|ok)$/i.test(c.medical.trim()) && (
                     <div style={{ fontSize: 10.5, color: '#9A6A0B', marginTop: 3, fontWeight: 700 }}><HeartPulse size={10} style={{ verticalAlign: '-1px', marginRight: 3 }} />{c.medical}</div>
                   )}
+                  <ChildPackSummary child={c} />
                 </div>
               ))}
             </div>

@@ -15,7 +15,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import type { ImpactCpd, ImpactDataset, ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
-import { EMPTY_IMPACT_COPY, EMPTY_IMPACT_DATA, mapLiveRows, buildPeople, type LiveRows } from './live-context'
+import { EMPTY_IMPACT_COPY, EMPTY_IMPACT_DATA, mapLiveRows, buildCohorts, buildPeople, type LiveRows } from './live-context'
+import { loadPacks } from './pack-actions'
+import type { PackData } from './packs'
 import type { ImpactPeople } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import { brandFor, type ImpactOrgSettings } from './org'
 import { buildInsights, type LiveInsights } from './insights'
@@ -41,6 +43,8 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
   const [denied, setDenied] = useState<LiveImpactState['denied']>(null)
   const [cpd, setCpd] = useState<ImpactCpd[]>([])
   const [insights, setInsights] = useState<LiveInsights | undefined>(undefined)
+  const [cohorts, setCohorts] = useState<ImpactPortalContext['cohorts']>(undefined)
+  const [packs, setPacks] = useState<PackData | undefined>(undefined)
   const [reloads, setReloads] = useState(0)
   const reload = useCallback(() => setReloads(n => n + 1), [])
 
@@ -119,6 +123,8 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
         setData(mapLiveRows(rows))
         setPeople(buildPeople(rows))
         setInsights(buildInsights(rows))
+        setCohorts(buildCohorts(rows))
+        setPacks(await loadPacks(supabase))
         setCpd((rows.cpd ?? []) as ImpactCpd[])
         setHq({ userId: user.id, email: user.email ?? '', name: profile.display_name ?? '' })
       } catch {
@@ -147,6 +153,8 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
       people,
       cpd,
       insights,
+      packs,
+      cohorts,
       reload,
       org: {
         slug,
@@ -158,7 +166,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
         save,
       },
     }
-  }, [slug, settings, rowExists, data, people, cpd, insights, reload, hq, save])
+  }, [slug, settings, rowExists, data, people, cpd, insights, packs, cohorts, reload, hq, save])
 
   return { ready, ctx, hq, denied }
 }

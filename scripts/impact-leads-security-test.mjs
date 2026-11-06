@@ -23,6 +23,7 @@ registerHooks({
   },
 })
 const { fundedPlan, markSchoolFunded, partnerWithNewSchool, partnerWithSchool, recordFunding } = await import('../src/lib/impact/lead-actions.ts')
+const { adjustStock, issuePack, loadPacks, receiveStock, recordPayment, saveBooklet, saveItem, setChildSize } = await import('../src/lib/impact/pack-actions.ts')
 
 try {
   const env = readFileSync(new URL('../.env.local', import.meta.url), 'utf8')
@@ -163,6 +164,52 @@ async function main() {
   try { await markSchoolFunded(B.db, B.id, fundraising.id, 'Planted') } catch { blocked = true }
   ok('B can’t mark A’s school', blocked)
   ok('B reads none of A’s donations', (await B.db.from('tp_donations').select('id')).data?.length === 0)
+
+  console.log('\nWelcome packs, against the real tables:')
+  const draft = extra => ({ name: 'Ball', kind: 'included', price_pence: null, has_sizes: false, sizes: [], low_stock: 2, unit_cost_pence: null, sort: 0, active: true, ...extra })
+  await saveItem(A.db, A.id, null, draft({ name: 'T-shirt', has_sizes: true, sizes: ['7-8', '9-10'] }))
+  await saveItem(A.db, A.id, null, draft({ sort: 1 }))
+  await saveItem(A.db, A.id, null, draft({ name: 'Racket', kind: 'paid', price_pence: 1000, sort: 2 }))
+  let pk = await loadPacks(A.db)
+  const [shirt, ball, racket] = ['T-shirt', 'Ball', 'Racket'].map(n => pk.items.find(i => i.name === n))
+  ok('items saved and read back', !!(shirt && ball && racket))
+  const kid = async name => (await admin.from('tp_children').insert({ hq_id: A.id, name }).select('id').single()).data.id
+  const [c1, c2] = [await kid('Pack One'), await kid('Pack Two')]
+  const bKid = (await admin.from('tp_children').insert({ hq_id: B.id, name: 'Other Org' }).select('id').single()).data.id
+  const issueErr = async (db, child, lines) => { try { await issuePack(db, child, lines); return null } catch (e) { return e.message } }
+  ok('0 stock blocks issuing, by name', await issueErr(A.db, c1, [{ item_id: shirt.id, size: '9-10' }]) === 'No T-shirt 9-10 in stock — receive stock first')
+  await receiveStock(A.db, A.id, shirt.id, '9-10', 5, 'Delivery')
+  await receiveStock(A.db, A.id, ball.id, null, 3, '')
+  await receiveStock(A.db, A.id, racket.id, null, 2, '')
+  ok('a paid item can’t be issued without a payment', /No payment recorded for Racket/.test(await issueErr(A.db, c1, [{ item_id: racket.id, size: null }])))
+  ok('a failure issues nothing at all', (await issueErr(A.db, c1, [{ item_id: ball.id, size: null }, { item_id: racket.id, size: null }])) !== null && (await loadPacks(A.db)).issues.length === 0)
+  ok('sizes save', await setChildSize(A.db, A.id, c1, shirt.id, '9-10').then(() => true, () => false))
+  ok('the pack issues', await issuePack(A.db, c1, [{ item_id: shirt.id, size: '9-10' }, { item_id: ball.id, size: null }]) === 2)
+  ok('the same item twice is blocked', /already has a T-shirt/.test(await issueErr(A.db, c1, [{ item_id: shirt.id, size: '9-10' }])))
+  await recordPayment(A.db, A.id, { childId: c1, itemId: racket.id, amountPence: 1000, method: 'cash', reference: '', paidAt: '2026-11-01' })
+  ok('a paid item issues once paid', await issuePack(A.db, c1, [{ item_id: racket.id, size: null }]) === 1)
+  ok('another child’s payment doesn’t count', /No payment recorded/.test(await issueErr(A.db, c2, [{ item_id: racket.id, size: null }])))
+  await adjustStock(A.db, A.id, ball.id, null, -1, 'One split')
+  let adjust = ''
+  try { await adjustStock(A.db, A.id, ball.id, null, -99, 'Count') } catch (e) { adjust = e.message }
+  ok('stock can’t go below zero', adjust === 'That would take the stock below zero.', adjust)
+  const moves = (await admin.from('tp_pack_stock_moves').select('item_id, size, delta').eq('hq_id', A.id)).data
+  const qty = (await admin.from('tp_pack_stock').select('item_id, size, qty').eq('hq_id', A.id)).data
+  ok('every stock line equals the sum of its moves', qty.length === 3 && qty.every(l => l.qty === moves.filter(m => m.item_id === l.item_id && (m.size ?? '') === (l.size ?? '')).reduce((n, m) => n + m.delta, 0)), JSON.stringify(qty))
+  ok('a browser session can’t write qty', !!(await A.db.from('tp_pack_stock').update({ qty: 999 }).eq('hq_id', A.id).select('id')).error)
+  ok('a browser session can’t insert an issue', !!(await A.db.from('tp_pack_issues').insert({ hq_id: A.id, child_id: c2, item_id: ball.id })).error)
+  ok('a browser session can’t record an issued move', !!(await A.db.from('tp_pack_stock_moves').insert({ hq_id: A.id, item_id: ball.id, delta: -1, reason: 'issued' })).error)
+  await saveBooklet(A.db, A.id, { title: 'Booklet', intro: '', weeks: [], stickers: [] })
+  for (const t of ['tp_pack_items', 'tp_pack_sizes', 'tp_pack_stock', 'tp_pack_stock_moves', 'tp_pack_issues', 'tp_pack_payments', 'tp_booklet']) {
+    ok(`B reads none of A’s ${t}`, (await B.db.from(t).select('hq_id')).data?.length === 0)
+    ok(`anon reads none of ${t}`, (await anon.from(t).select('hq_id')).data?.length === 0)
+  }
+  ok('B can’t issue to A’s child', /could not be found/.test(await issueErr(B.db, c2, [{ item_id: ball.id, size: null }])))
+  ok('B can’t issue A’s item to its own child', /could not be found/.test(await issueErr(B.db, bKid, [{ item_id: ball.id, size: null }])))
+  ok('B can’t receive onto A’s item', !!(await B.db.from('tp_pack_stock_moves').insert({ hq_id: B.id, item_id: ball.id, delta: 5, reason: 'received' })).error)
+  ok('B can’t pay for A’s item', !!(await B.db.from('tp_pack_payments').insert({ hq_id: B.id, child_id: bKid, item_id: racket.id, amount_pence: 100, method: 'cash' })).error)
+  ok('B can’t change A’s item', (await B.db.from('tp_pack_items').update({ name: 'x' }).eq('id', ball.id).select('id')).data?.length === 0)
+  ok('anon can’t call the function', !!(await anon.rpc('impact_issue_pack', { p_child: c2, p_lines: [{ item_id: ball.id }] })).error)
 
   if (/localhost|127\.0\.0\.1/.test(BASE)) {
     console.log('\nRate limit:')

@@ -14,10 +14,11 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
-import { Download, Plus, Upload, X } from 'lucide-react'
-import { Card, Pill, Stat } from './ui'
+import { Download, Plus, Upload } from 'lucide-react'
+import { Card, Modal as Shell, Pill, Stat } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { currentHq } from '@/lib/impact/org-scope'
 import {
   PIPELINES, SOURCES, CONTACT_METHODS, FOLLOWUP_POINTS, amountPence, guessColumn, isClosed, leadEdits, matchStage, notesForDisplay, stagePoints, stagesOf, ukDate, weekOf, withLeadLinks,
   type ImportColumn, type Lead, type LeadEvent, type Pipeline,
@@ -53,11 +54,7 @@ async function allLeads(): Promise<Lead[]> {
     if (!data || data.length < 1000) return out
   }
 }
-async function hqId() {
-  const { data: { user } } = await sb().auth.getUser()
-  if (!user) throw new Error('Please sign in again.')
-  return user.id
-}
+const hqId = () => currentHq(sb())
 async function logEvent(lead: Pick<Lead, 'id'>, event: Partial<LeadEvent>) {
   const { error } = await sb().from('impact_lead_events').insert({ hq_id: await hqId(), lead_id: lead.id, ...event })
   if (error) throw new Error('That was saved, but its history could not be.')
@@ -249,24 +246,6 @@ export default function LeadsTab() {
         await load()
         ctx.reload?.()
       }} />}
-    </div>
-  )
-}
-
-function Shell({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
-  useEffect(() => {
-    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k)
-  }, [onClose])
-  return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose() }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1100, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 16px', overflowY: 'auto' }}>
-      <div role="dialog" aria-label={title} style={{ width: '100%', maxWidth: wide ? 720 : 560, background: '#fff', border: `1px solid ${LINE}`, borderRadius: 14, padding: 18 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK, flex: 1, minWidth: 0 }}>{title}</div>
-          <button onClick={onClose} aria-label="Close" style={{ background: 'transparent', border: `1px solid ${LINE}`, borderRadius: 8, color: MUTED, width: 32, height: 32, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><X size={15} /></button>
-        </div>
-        {children}
-      </div>
     </div>
   )
 }

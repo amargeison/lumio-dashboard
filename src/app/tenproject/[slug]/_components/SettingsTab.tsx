@@ -11,6 +11,7 @@ import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { OrgDetailsCard, ModulesCard } from './OrgSettings'
 import ImportCard from './ImportCard'
+import WelcomePackSettings from './WelcomePackSettings'
 
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
@@ -78,6 +79,9 @@ export default function SettingsTab() {
 
       {/* Import data — bulk import into this org (Impact portals only) */}
       {org && <ImportCard />}
+
+      {/* Welcome pack — items and the Activity Booklet */}
+      {org && <WelcomePackSettings />}
 
       {/* Communications */}
       <Card>

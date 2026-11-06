@@ -10,6 +10,7 @@ import { SchoolReadinessCard } from './SportNetworkTab'
 import { TP_RED, TP_DARK, type DemoSchool } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { sessionBar, withCoach } from '@/lib/impact/school-card'
+import { SchoolPackLine, SchoolPacks } from './PackIssue'
 
 const STATUS_TONE: Record<string, 'red' | 'green' | 'amber' | 'grey' | 'dark'> = {
   running: 'green', fundraising: 'red', confirmed: 'dark', enquiry: 'grey', complete: 'amber',
@@ -59,6 +60,8 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
             </div>
           </div>
         </Card>
+
+        <SchoolPacks schoolId={selected.id} />
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           {/* Contacts */}
@@ -204,6 +207,7 @@ export default function SchoolsTab({ initialId }: { initialId?: string }) {
                 <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 4 }}>{s.borough} · {s.headTeacher} · {d?.funding.split('—')[0]}</div>
                 {s.note?.trim() && <div style={{ fontSize: 12, color: '#5B554F', marginTop: 8, background: '#F7F5F2', borderRadius: 9, padding: '8px 11px' }}>{s.note}</div>}
                 {s.progress && <div style={{ fontSize: 11.5, fontWeight: 700, color: TP_DARK, marginTop: 8 }}>{withCoach(s.progress, s.coach)}</div>}
+                <SchoolPackLine schoolId={s.id} />
                 <div style={{ display: 'flex', gap: 16, marginTop: 10, borderTop: '1px solid #F0EBE5', paddingTop: 10, alignItems: 'center' }}>
                   {([
                     [s.children ?? '—', 'CHILDREN'],

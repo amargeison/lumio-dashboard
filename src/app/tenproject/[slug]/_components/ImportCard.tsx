@@ -24,6 +24,7 @@ import { applyPlan, type SheetPlan, type Rec } from '@/lib/import-engine/records
 import { IMPACT_IMPORT_SCHEMA, IMPACT_IMPORT_CATEGORIES, IMPACT_SAVE_ORDER, IMPACT_CATEGORY_LABEL, type ImpactImportCategory } from '@/lib/impact/import-schema'
 import { emptyFound, finalise, type Found } from '@/lib/impact/import-tidy'
 import { templatePlan, downloadTemplate } from '@/lib/impact/import-template'
+import { readPackColumns } from '@/lib/impact/packs'
 
 // The same file types Tennis Coach's importer takes.
 const ACCEPT = '.csv,.tsv,.txt,.xlsx,.xlsm,.xlsb,.xls,.ods,.docx,.pdf,.png,.jpg,.jpeg,.webp'
@@ -50,7 +51,7 @@ const labelOf = (c: ImpactImportCategory, r: Rec) =>
   : String(r[IMPACT_IMPORT_SCHEMA.labelField[c]] ?? '')
 
 export default function ImportCard() {
-  const { org } = useImpact()
+  const { org, packs } = useImpact()
   const [phase, setPhase] = useState<'idle' | 'reading' | 'preview' | 'saving' | 'done'>('idle')
   const [progress, setProgress] = useState('')
   const [found, setFound] = useState<Found>(emptyFound())
@@ -125,6 +126,11 @@ export default function ImportCard() {
         await readFile(f, into, skipped, usedAi)
       }
       const done = finalise(into)
+      // Pack columns can only be judged against this org's own pack.
+      for (const r of done.children) {
+        const issues = readPackColumns(r, packs?.items ?? []).issues
+        if (issues.length) r._review = [...((r._review as string[] | undefined) ?? []), ...issues]
+      }
       setFound(done); setNotes(skipped.slice(0, 8)); setAiUsed(usedAi.v)
       setPick(Object.fromEntries(IMPACT_SAVE_ORDER.map(c => [c, true]))); setSkip(new Set())
       setPhase('preview')
