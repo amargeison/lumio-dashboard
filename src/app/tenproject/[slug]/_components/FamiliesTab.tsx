@@ -12,6 +12,7 @@ import { Users, Search, HeartPulse, Camera, CameraOff, MailX, Phone, Mail } from
 import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact, type ImpactFamily } from './ImpactDataContext'
+import { ukDay } from '@/lib/impact/parent-view'
 import { ChildPackSummary } from './PackIssue'
 import { BulkInvite, InviteButton, useMembers } from './MembersCard'
 
@@ -66,7 +67,8 @@ export default function FamiliesTab() {
           <Card key={f.id} style={{ padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
               <div style={{ fontSize: 13.5, fontWeight: 900, color: TP_DARK }}>{f.guardian}</div>
-              {f.unsubscribed && <Pill tone="grey"><MailX size={10} style={{ verticalAlign: '-1px', marginRight: 3 }} />OPTED OUT</Pill>}
+              {f.unsubscribed ? <Pill tone="grey"><MailX size={10} style={{ verticalAlign: '-1px', marginRight: 3 }} />OPTED OUT</Pill>
+                : f.resubscribedAt ? <Pill tone="green">Opted back in {ukDay(f.resubscribedAt)}</Pill> : null}
             </div>
             <div style={{ fontSize: 11, color: '#6B6560', marginTop: 4, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               {f.email && <span><Mail size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} />{f.email}</span>}

@@ -611,6 +611,7 @@ export const SCHOOL_STATS = {
 
 // ─── Upcoming calendar (per role) — demo of Gmail/365-synced schedule ───────
 export interface CalEvent {
+  date?: string // live: the session's own date
   day: 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun'
   time: string
   title: string

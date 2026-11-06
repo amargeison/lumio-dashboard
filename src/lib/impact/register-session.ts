@@ -26,3 +26,28 @@ export function pickRegisterSession<T extends { session_date: string }>(sessions
   const dated = [...sessions].sort((a, b) => a.session_date.localeCompare(b.session_date))
   return dated.filter(s => s.session_date <= today).pop() ?? dated[0]
 }
+
+/**
+ * "Harborne Fields Primary — Autumn 2026". A term label can carry the school as well
+ * ("Autumn 2026 — Harborne Fields"), so that part is dropped rather than printed twice.
+ */
+export function cohortLabel(school: string, term: string): string {
+  const name = school.trim().toLowerCase()
+  const parts = term.split(' — ').map(p => p.trim()).filter(Boolean)
+  const isSchool = (p: string) => { const x = p.toLowerCase(); return x === name || name.startsWith(`${x} `) || x.startsWith(`${name} `) }
+  const kept = parts.filter(p => !isSchool(p))
+  return kept.length ? `${school} — ${kept.join(' — ')}` : school
+}
+
+/** How far a cohort has got, never "Week 0". */
+export function cohortStage(week: number, held: number, long = false): string {
+  if (week) return long ? `Week ${week} of 10` : `Week ${week}`
+  return held ? `${held} session${held === 1 ? '' : 's'} so far` : 'Not started'
+}
+
+/** The sessions from today to six days on, soonest first. */
+export function nextSevenDays<T extends { session_date: string }>(sessions: T[], today: string): T[] {
+  const [y, m, d] = today.slice(0, 10).split('-').map(Number)
+  const last = new Date(Date.UTC(y, m - 1, d + 6)).toISOString().slice(0, 10)
+  return sessions.filter(s => s.session_date >= today && s.session_date <= last).sort((a, b) => a.session_date.localeCompare(b.session_date))
+}

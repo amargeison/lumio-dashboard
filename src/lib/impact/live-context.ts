@@ -10,14 +10,14 @@
 // and the factual DfE / PESSPN criteria, dates and guidance links.
 
 import * as TP from '@/data/tenproject/demo-data'
-import type { DemoSchool, FundraisingEvent, SchoolStatus, TpSchoolDetail } from '@/data/tenproject/demo-data'
+import type { CalEvent, DemoSchool, FundraisingEvent, SchoolStatus, TpSchoolDetail } from '@/data/tenproject/demo-data'
 import { TEN_PROJECT_COPY } from '@/data/tenproject/portal-copy'
 import { GENERIC_BRAND } from './org'
 import { NO_COACH } from './school-card'
 import { complianceItems, compliancePeople, dbsCertificate, isoToday, needsAction, roleLabel, staffCertificates, volunteerCertificates } from './compliance'
 import { headlineTiles, weekendConversion } from './insights'
 import { activationPct, familiesMessagedNoLogin } from './members'
-import { pickRegisterSession } from './register-session'
+import { cohortLabel, nextSevenDays, pickRegisterSession, sessionDay } from './register-session'
 import type { FamilySession } from './family-week'
 import { attendanceBySession, evidenceFromRows, scoreSchools } from './readiness'
 import { inTerm, termOf } from './term'
@@ -81,7 +81,7 @@ export interface LiveRows {
   venues?: { id: string; name: string; address: string | null; postcode: string | null; courts: string | null; surface: string | null; access_notes: string | null; storage_notes: string | null; session_day: string | null; session_time: string | null; inclusive: boolean; external_partner: string | null; external_url: string | null; notes: string | null }[]
   staff?: { id: string; name: string; role: string; qualification: string | null; email: string | null; phone: string | null; availability: string | null; specialisms: string[] | null; dbs_status: string; dbs_number: string | null; dbs_expiry: string | null; safeguarding_date: string | null; first_aid_expiry: string | null; insurance: string | null; notes: string | null }[]
   volunteers?: { id: string; name: string; email: string | null; phone: string | null; venue_id: string | null; inducted: boolean; induction_date: string | null; dbs_status: string; dbs_expiry?: string | null; first_aid_expiry?: string | null; since: string | null; notes: string | null }[]
-  families?: { id: string; guardian_name: string; email: string | null; phone: string | null; emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null; unsubscribed_at: string | null }[]
+  families?: { id: string; guardian_name: string; email: string | null; phone: string | null; emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null; unsubscribed_at: string | null; resubscribed_at?: string | null }[]
   children?: { id: string; family_id: string | null; name: string; date_of_birth: string | null; year_group: string | null; school_id: string | null; programme_id: string | null; medical_notes: string | null; photo_consent: boolean | null; fee_status: string; gender?: string | null; fsm?: boolean | null; pupil_premium?: boolean | null; stickers: number; send?: boolean | null }[]
   sessions?: { id: string; kind: string; programme_id: string | null; venue_id: string | null; session_date: string; week_number?: number | null; lead_staff_id: string | null }[]
   attendance?: { session_id: string; child_id: string; present: boolean; via: string }[]
@@ -234,7 +234,7 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
   const schoolName = (id: string | null) => rows.schools.find(s => s.id === id)?.name ?? null
   const progLabel = (id: string | null) => {
     const p = rows.programmes.find(x => x.id === id)
-    return p ? `${schoolName(p.school_id) ?? 'School'} — ${p.term_label}` : null
+    return p ? cohortLabel(schoolName(p.school_id) ?? 'School', p.term_label) : null
   }
   const presentIn = (sessionIds: string[]) => att.filter(a => sessionIds.includes(a.session_id))
   const now = Date.now()
@@ -319,7 +319,7 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
     ...EMPTY_IMPACT_DATA.COACH_STATS,
     headline: kids.length ? [
       { label: 'Children', value: kids.length },
-      { label: 'Sessions delivered', value: school.length },
+      { label: 'Sessions delivered', value: school.filter(s => s.session_date <= today).length },
       { label: 'Avg attendance', value: `${rate(school.map(s => s.id))}%` },
       { label: 'Stickers awarded', value: kids.reduce((n, k) => n + k.stickers, 0) },
       { label: 'Cohorts', value: cohorts.length },
@@ -328,6 +328,11 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
       attendance: rate(school.filter(s => s.programme_id === p.id).map(s => s.id)), stickers: kids.filter(k => k.programme_id === p.id).reduce((n, k) => n + k.stickers, 0) })),
     attendanceTrend: school.slice(-10).map(s => rate([s.id])),
   }
+  data.CAL_EVENTS = { ...data.CAL_EVENTS, coach: nextSevenDays(sessions, today).map(s => {
+    const venue = venues.find(v => v.id === s.venue_id)
+    return { date: s.session_date, day: sessionDay(s.session_date).slice(0, 3) as CalEvent['day'], time: s.kind === 'weekend' ? venue?.session_time ?? '' : '',
+      title: progLabel(s.programme_id) ?? 'Family session', where: venue?.name, kind: s.kind === 'weekend' ? 'weekend' as const : 'school' as const }
+  }) }
   const first = cohorts[0]
   const firstLast = first ? school.filter(s => s.programme_id === first.id).sort((a, b) => a.session_date.localeCompare(b.session_date)).pop() : undefined
   data.COHORT_CHILDREN = first ? kids.filter(k => k.programme_id === first.id).map((k): DemoChild => ({
@@ -399,7 +404,7 @@ export function buildCohorts(rows: LiveRows, today = isoToday()): LiveCohort[] {
     const last = pickRegisterSession(dated, today)
     const school = rows.schools.find(s => s.id === p.school_id)?.name ?? 'School'
     return {
-      id: p.id, label: `${school} — ${p.term_label}`, sessionId: last?.id ?? null, leadStaffId: lead.get(p.id) ?? null,
+      id: p.id, label: cohortLabel(school, p.term_label), sessionId: last?.id ?? null, leadStaffId: lead.get(p.id) ?? null,
       sessions: dated.map(s => ({ id: s.id, date: s.session_date, week: s.week_number ?? null })),
       presentBySession: Object.fromEntries(dated.map(s => [s.id, att.filter(a => a.session_id === s.id && a.present).map(a => a.child_id)])),
       children: kids.filter(k => k.programme_id === p.id).map((k): DemoChild => ({
@@ -420,7 +425,7 @@ export function buildPeople(rows: LiveRows): ImpactPeople {
   return {
     families: (rows.families ?? []).map(f => ({
       id: f.id, guardian: f.guardian_name, email: f.email, phone: f.phone, consentData: f.consent_data, consentPhoto: f.consent_photo,
-      unsubscribed: !!f.unsubscribed_at, children: kids.filter(k => k.family_id === f.id).map(child),
+      unsubscribed: !!f.unsubscribed_at, resubscribedAt: f.resubscribed_at ?? null, children: kids.filter(k => k.family_id === f.id).map(child),
     })),
     unlinkedChildren: kids.filter(k => !k.family_id).map(child),
   }

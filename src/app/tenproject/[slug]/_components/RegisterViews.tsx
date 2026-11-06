@@ -8,10 +8,12 @@ import { SendMessageWizard } from './CommsTab'
 import { openResourceDoc, openSessionCardDoc } from '../_lib/resource-docs'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact, fill, type ImpactDataset } from './ImpactDataContext'
+import { moduleOn } from '@/lib/impact/org'
+import { stickerAreas } from '@/lib/impact/parent-view'
 import type { CoachChild, CoachFamily } from '@/lib/impact/member-actions'
 import { BulkIssue, IssuePackButton, ReturnButton } from './PackIssue'
-import { isoToday } from '@/lib/impact/compliance'
-import { sessionDay, sessionShort } from '@/lib/impact/register-session'
+import { certNote, isoToday } from '@/lib/impact/compliance'
+import { cohortStage, sessionDay, sessionShort } from '@/lib/impact/register-session'
 
 // Shown above a register on live portals: what you see is the saved register;
 // tapping to change it isn't available yet (it would only change this screen).
@@ -100,6 +102,8 @@ export const TENOR_SECTIONS: { id: TenorSection; label: string }[] = [
   { id: 'resources', label: 'Resources' },
 ]
 
+const CERT_TONE = { expired: 'red', expiring: 'amber', ok: 'green', 'not recorded': 'grey' } as const
+
 // ─── COACH: today / weekend / stats / resources ─────────────────────────────
 // What a signed-in coach needs about a child at the session.
 function CoachChildNotes({ child, family }: { child?: CoachChild; family?: CoachFamily }) {
@@ -120,6 +124,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
   const ctx = useImpact()
   const { brand, copy } = ctx
   const { COHORT_CHILDREN, VENUES, CURRICULUM, WEEK4_SESSION_PLAN, WEEK4_SCHOOL_PLAN, OAKRIDGE_ADDRESS, COACH_STATS, COACH_WEEKEND, COACH_RESOURCES, VENUE_DETAILS } = ctx.data
+  const stickerCount = stickerAreas(moduleOn(ctx.org?.settings, 'packs') ? ctx.packs?.booklet ?? null : null, ctx.mode === 'live', ctx.data.STICKER_AREAS).length
   const [children, setChildren] = useState(COHORT_CHILDREN)
   const [skillTapped, setSkillTapped] = useState<Record<string, boolean>>({})
   const [tab, setTab] = useState<'today' | 'weekend' | 'stats' | 'resources'>(section ?? 'stats')
@@ -156,6 +161,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
     }
   }
   const present = roster.filter(c => c.present).length
+  const heldIn = (label: string) => cohorts.find(x => x.label === label)?.sessions.filter(s => s.date <= today).length ?? 0
   const block = CURRICULUM[1]
   const maxTrend = Math.max(...COACH_STATS.attendanceTrend)
   // Live portals before any programme is assigned to this coach
@@ -267,13 +273,13 @@ export function CoachView({ section }: { section?: CoachSection }) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
           <Card>
-            <SectionTitle sub="Attendance and sticker progress across your four cohorts">Your cohorts</SectionTitle>
+            <SectionTitle sub={`Attendance and sticker progress across your ${COACH_STATS.cohortProgress.length} cohort${COACH_STATS.cohortProgress.length === 1 ? '' : 's'}`}>Your cohorts</SectionTitle>
             <div style={{ display: 'grid', gap: 10 }}>
               {COACH_STATS.cohortProgress.map(c => (
                 <div key={c.cohort} style={{ background: '#F7F5F2', borderRadius: 10, padding: '11px 13px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, fontWeight: 800, color: TP_DARK }}>
                     <span>{c.cohort}</span>
-                    <span style={{ color: c.week === 10 ? '#187A3C' : TP_RED }}>{c.week === 10 ? 'COMPLETE' : `Week ${c.week}`}</span>
+                    <span style={{ color: c.week === 10 ? '#187A3C' : TP_RED }}>{c.week === 10 ? 'COMPLETE' : cohortStage(c.week, heldIn(c.cohort))}</span>
                   </div>
                   <div style={{ display: 'flex', gap: 16, fontSize: 11.5, color: '#6B6560', marginTop: 4 }}>
                     <span>Attendance <strong style={{ color: TP_DARK }}>{c.attendance}%</strong></span>
@@ -296,19 +302,26 @@ export function CoachView({ section }: { section?: CoachSection }) {
               </div>
               <div style={{ fontSize: 11, color: '#6B6560', marginTop: 8 }}>Latest: {COACH_STATS.attendanceTrend[COACH_STATS.attendanceTrend.length - 1]}%{copy.coach.trendNote}</div>
             </Card>}
-            <Card>
+            {(ctx.mode !== 'live' || signedIn) && <Card>
               <SectionTitle sub="HQ sees this too — expiries flagged before they bite">
                 <GraduationCap size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />My compliance
               </SectionTitle>
               <div style={{ display: 'grid', gap: 7 }}>
-                {COACH_STATS.compliance.map(c => (
+                {signedIn && !signedIn.certificates.some(c => c.state !== 'not recorded') && <div style={{ fontSize: 12, color: '#6B6560' }}>No certificates recorded yet</div>}
+                {signedIn?.certificates.some(c => c.state !== 'not recorded') && signedIn.certificates.map(c => (
+                  <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                    <span style={{ color: TP_DARK, fontWeight: 700 }}>{c.name}</span>
+                    <Pill tone={CERT_TONE[c.state]}>{certNote(c)}</Pill>
+                  </div>
+                ))}
+                {!signedIn && COACH_STATS.compliance.map(c => (
                   <div key={c.item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
                     <span style={{ color: TP_DARK, fontWeight: 700 }}>{c.item}</span>
                     <Pill tone={c.status === 'valid' ? 'green' : 'amber'}>{c.note}</Pill>
                   </div>
                 ))}
               </div>
-            </Card>
+            </Card>}
           </div>
         </div>
         <UpcomingCalendar role="coach" />
@@ -367,7 +380,7 @@ export function CoachView({ section }: { section?: CoachSection }) {
                 {isToday ? <Pill tone="red">TODAY</Pill> : live && shown ? <Pill tone="grey">{sessionDay(shown.date)}</Pill> : null}
               </div>
               <div style={{ fontSize: 11, color: '#6B6560', marginTop: 3 }}>
-                {c.week === 10 ? 'Complete' : `Week ${c.week} of 10`} · {c.attendance}% attendance · {c.stickers} stickers
+                {c.week === 10 ? 'Complete' : cohortStage(c.week, heldIn(c.cohort), true)} · {c.attendance}% attendance · {c.stickers} stickers
               </div>
               <div style={{ background: '#EFEBE6', borderRadius: 999, height: 6, marginTop: 7 }}>
                 <div style={{ width: `${(c.week / 10) * 100}%`, height: '100%', background: c.week === 10 ? '#187A3C' : TP_RED, borderRadius: 999 }} />
@@ -430,27 +443,28 @@ export function CoachView({ section }: { section?: CoachSection }) {
         )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8 }}>
           {roster.map(c => (
-            <div key={c.id} style={{ border: '1px solid #F0EBE5', borderRadius: 10, padding: '10px 12px', background: c.present ? '#fff' : '#F7F5F2' }}>
+            <div key={c.id} onClick={() => { if (signedIn) void tapRegister(c); else if (!readOnly) setChildren(prev => prev.map(x => x.id === c.id ? { ...x, present: !x.present } : x)) }}
+              style={{ border: '1px solid #F0EBE5', borderRadius: 10, padding: '10px 12px', background: c.present ? '#fff' : '#F7F5F2', cursor: readOnly ? 'default' : 'pointer' }}>
+              {/* The whole card is the tap. The button keeps it reachable by keyboard. */}
               <button
-                onClick={() => { if (signedIn) void tapRegister(c); else if (!readOnly) setChildren(prev => prev.map(x => x.id === c.id ? { ...x, present: !x.present } : x)) }}
                 disabled={readOnly}
                 style={{ background: 'none', border: 'none', padding: 0, cursor: readOnly ? 'default' : 'pointer', textAlign: 'left', width: '100%' }}
               >
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: c.present ? TP_DARK : '#9A948E' }}>
                   {c.present ? '✓ ' : ''}{c.name}
                 </div>
-                <div style={{ fontSize: 10.5, color: '#8A847E' }}>{c.year} · {c.stickers}/6 stickers</div>
+                <div style={{ fontSize: 10.5, color: '#8A847E' }}>{c.year}{stickerCount > 0 ? ` · ${Math.min(c.stickers, stickerCount)}/${stickerCount} stickers` : ''}</div>
               </button>
               {signedIn && <CoachChildNotes child={signedIn.children[c.id]} family={signedIn.families[signedIn.children[c.id]?.family_id ?? '']} />}
               {c.present && !readOnly && !signedIn && (
                 <button
-                  onClick={() => setSkillTapped(prev => ({ ...prev, [c.id]: !prev[c.id] }))}
+                  onClick={e => { e.stopPropagation(); setSkillTapped(prev => ({ ...prev, [c.id]: !prev[c.id] })) }}
                   style={{ marginTop: 6, width: '100%', background: skillTapped[c.id] ? '#187A3C' : '#FDE8E8', color: skillTapped[c.id] ? '#fff' : TP_RED, border: 'none', borderRadius: 7, padding: '5px 8px', fontSize: 10.5, fontWeight: 800, cursor: 'pointer' }}
                 >
                   {skillTapped[c.id] ? `★ ${block.skill} recorded` : `+ record ${block.skill}`}
                 </button>
               )}
-              <div style={{ marginTop: 6, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              <div onClick={e => e.stopPropagation()} style={{ marginTop: 6, display: 'flex', gap: 5, flexWrap: 'wrap', cursor: 'default' }}>
                 <IssuePackButton child={c} actor={packActor} sessionId={sessionId} />
                 {signedIn && <ReturnButton child={c} actor={packActor} />}
               </div>

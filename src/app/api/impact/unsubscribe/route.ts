@@ -10,7 +10,8 @@ export const runtime = 'nodejs'
 // GET only asks. Mail scanners open every link in a message, so a GET that
 // unsubscribed would silently remove families who never clicked anything.
 // POST does it, which is also what a mail app's one-click unsubscribe sends
-// (RFC 8058). unsubscribed_at is set once and never moved.
+// (RFC 8058). unsubscribed_at is set once and never moved here: only the family can
+// clear it, by opting back in from their own login.
 
 const page = (title: string, text: string, status: number, form = '') => new Response(
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${title}</title></head>`

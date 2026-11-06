@@ -23,6 +23,8 @@ export interface CoachHome {
   attendance: { session_id: string; child_id: string; present: boolean; via: string }[]
   /** Paid yes/no: a row means paid. No amounts. */
   paid: { child_id: string; item_id: string }[]
+  /** The coach's own certificates. Nothing else from their staff row. */
+  me?: { dbs_status: string; dbs_expiry: string | null; first_aid_expiry: string | null; safeguarding_date: string | null } | null
 }
 
 export async function loadCoachHome(db: SupabaseClient, hqId: string): Promise<CoachHome> {
@@ -77,10 +79,10 @@ export interface ParentChild {
 export interface ParentHome {
   id: string; hq_id: string; guardian_name: string; guardian2_name: string | null; email: string | null; phone: string | null
   emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null
-  opt_in_email: boolean; opt_in_sms: boolean; opt_in_app: boolean
+  opt_in_email: boolean; opt_in_sms: boolean; opt_in_app: boolean; unsubscribed_at: string | null
   children: ParentChild[]
 }
-export type ParentDetails = Pick<ParentHome, 'email' | 'phone' | 'emergency_contact' | 'consent_data' | 'consent_photo' | 'opt_in_email' | 'opt_in_sms' | 'opt_in_app'>
+export type ParentDetails = Pick<ParentHome, 'email' | 'phone' | 'emergency_contact' | 'consent_data' | 'consent_photo' | 'opt_in_email' | 'opt_in_sms' | 'opt_in_app'> & { resubscribe?: boolean }
 
 export async function loadParentHome(db: SupabaseClient, familyId: string): Promise<ParentHome | null> {
   const { data, error } = await db.rpc('impact_parent_home')
@@ -91,7 +93,7 @@ export async function loadParentHome(db: SupabaseClient, familyId: string): Prom
 export async function saveParentDetails(db: SupabaseClient, familyId: string, d: ParentDetails) {
   const { error } = await db.rpc('impact_parent_update_family', {
     p_family: familyId, p_email: d.email, p_phone: d.phone, p_emergency_contact: d.emergency_contact,
-    p_consent_data: d.consent_data, p_consent_photo: d.consent_photo, p_opt_in_email: d.opt_in_email, p_opt_in_sms: d.opt_in_sms, p_opt_in_app: d.opt_in_app,
+    p_consent_data: d.consent_data, p_consent_photo: d.consent_photo, p_opt_in_email: d.opt_in_email, p_opt_in_sms: d.opt_in_sms, p_opt_in_app: d.opt_in_app, p_resubscribe: d.resubscribe === true,
   })
   if (error) throw new Error('Your details could not be saved.')
 }

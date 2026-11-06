@@ -143,3 +143,9 @@ test('demo data is untouched: no live-only fields', () => {
     for (const c of d.cohorts) assert.equal(c.label, undefined)
   }
 })
+
+test('Sessions delivered counts what has happened, not what is booked', () => {
+  const rows = { ...lumioTest, sessions: [session('a', 'autumn', '2026-10-01'), session('b', 'autumn', '2026-11-06'), session('c', 'autumn', '2026-12-01')] }
+  const tile = mapLiveRows(rows, '2026-11-06').COACH_STATS.headline.find(h => h.label === 'Sessions delivered')
+  assert.equal(tile.value, 2)
+})
