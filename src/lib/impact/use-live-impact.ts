@@ -19,6 +19,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import type { CoachContext, ImpactCpd, ImpactDataset, ImpactPortalContext, ParentContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
 import { EMPTY_IMPACT_COPY, EMPTY_IMPACT_DATA, mapLiveRows, buildCohorts, buildPeople, sessionsByChild, type LiveRows } from './live-context'
 import { loadPacks } from './pack-actions'
+import { isoToday, staffCertificates } from './compliance'
 import { appMessagedFamilies, ageFrom, coachPayments, coachRows, loadCoachHome, loadParentHome, markAttendance, saveParentDetails, type ParentDetails } from './member-actions'
 import { portalAccess, type MemberRole, type MemberRow } from './members'
 import type { PackData } from './packs'
@@ -114,6 +115,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
                 staffId: m.staff_id, hqId,
                 children: Object.fromEntries(home.children.map(c => [c.id, c])),
                 families: Object.fromEntries(home.families.map(f => [f.id, f])),
+                certificates: home.me ? staffCertificates(home.me, isoToday()) : [],
                 mark: (sessionId, childId, present) => markAttendance(supabase, hqId, sessionId, childId, present),
               })
             } else if (m.role === 'parent' && m.family_id) {
@@ -167,7 +169,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
           rowsOf(supabase.from('tp_venues').select('id, name, address, postcode, courts, surface, access_notes, storage_notes, session_day, session_time, inclusive, external_partner, external_url, notes').eq('hq_id', user.id).order('name')),
           rowsOf(supabase.from('tp_staff').select('id, name, role, qualification, email, phone, availability, specialisms, dbs_status, dbs_number, dbs_expiry, safeguarding_date, first_aid_expiry, insurance, notes').eq('hq_id', user.id).order('name')),
           rowsOf(supabase.from('tp_volunteers').select('id, name, email, phone, venue_id, inducted, induction_date, dbs_status, dbs_expiry, first_aid_expiry, since, notes').eq('hq_id', user.id).order('name')),
-          rowsOf(supabase.from('tp_families').select('id, guardian_name, email, phone, emergency_contact, consent_data, consent_photo, unsubscribed_at').eq('hq_id', user.id).order('guardian_name')),
+          rowsOf(supabase.from('tp_families').select('id, guardian_name, email, phone, emergency_contact, consent_data, consent_photo, unsubscribed_at, resubscribed_at').eq('hq_id', user.id).order('guardian_name')),
           rowsOf(supabase.from('tp_children').select('id, family_id, name, date_of_birth, year_group, school_id, programme_id, medical_notes, photo_consent, fee_status, stickers, send, gender, fsm, pupil_premium').eq('hq_id', user.id).order('name')),
           rowsOf(supabase.from('tp_sessions').select('id, kind, programme_id, venue_id, session_date, week_number, lead_staff_id').eq('hq_id', user.id).order('session_date')),
           rowsOf(supabase.from('tp_attendance').select('session_id, child_id, present, via').eq('hq_id', user.id)),

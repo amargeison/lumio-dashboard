@@ -607,7 +607,7 @@ export default function ImpactPortal({ params }: { params: Promise<{ slug: strin
       )
     }
     const session: SportsDemoSession = {
-      email: m.email, userName: '', clubName: ctx.brand.org, role: 'coach',
+      email: m.email, userName: ctx.brand.org, clubName: ctx.brand.org, role: 'coach',
       photoDataUrl: null, logoDataUrl: null, sport: 'impact', verifiedAt: new Date().toISOString(), isDemoShell: false,
     }
     return (

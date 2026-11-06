@@ -24,7 +24,7 @@ export function PersonDetailView({ person, detail, kind, onBack }: {
   kind: 'coach' | 'tenor'
   onBack: () => void
 }) {
-  const { brand } = useImpact()
+  const { brand, mode } = useImpact()
   const stats: [string | number, string][] = kind === 'coach'
     ? [[person.sessionsWeek ?? 0, 'THIS WEEK'], [person.childrenCovered ?? 0, 'CHILDREN'], [detail.assignments.length, 'ASSIGNMENTS'], [detail.availability, 'AVAILABILITY']]
     : [[person.sessionsCovered ?? 0, 'SESSIONS COVERED'], [detail.assignments.length, 'VENUE'], [person.inducted ? 'YES' : 'PENDING', 'INDUCTED'], [detail.availability, 'AVAILABILITY']]
@@ -102,7 +102,7 @@ export function PersonDetailView({ person, detail, kind, onBack }: {
       </Card>
 
       {/* Week calendar */}
-      <UpcomingCalendar events={detail.cal} title="This week" sub="Synced from their Google / Microsoft 365 calendar" />
+      <UpcomingCalendar events={detail.cal} title="This week" sub={mode === 'live' ? 'Their next 7 days' : 'Synced from their Google / Microsoft 365 calendar'} />
 
       {/* Assignments */}
       <Card>

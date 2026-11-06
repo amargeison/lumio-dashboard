@@ -9,6 +9,7 @@ import { isoToday, longDate } from '@/lib/impact/compliance'
 import { familyWeek } from '@/lib/impact/family-week'
 import { moduleOn } from '@/lib/impact/org'
 import { parentPackLines } from '@/lib/impact/packs'
+import { bookletWritten, childLine, emailTicked, optsBackIn, stickerAreas, ukDay } from '@/lib/impact/parent-view'
 import type { ParentContext } from './ImpactDataContext'
 import type { ParentDetails } from '@/lib/impact/member-actions'
 
@@ -26,20 +27,23 @@ const TABS: { id: Tab; label: string; icon: React.ComponentType<{ size?: number 
 // lets a family change its own.
 function ParentDetailsForm({ parent }: { parent: ParentContext }) {
   const h = parent.home
-  const [d, setD] = useState<ParentDetails>({ email: h.email, phone: h.phone, emergency_contact: h.emergency_contact, consent_data: h.consent_data, consent_photo: h.consent_photo, opt_in_email: h.opt_in_email, opt_in_sms: h.opt_in_sms, opt_in_app: h.opt_in_app })
+  const [d, setD] = useState<ParentDetails>({ email: h.email, phone: h.phone, emergency_contact: h.emergency_contact, consent_data: h.consent_data, consent_photo: h.consent_photo, opt_in_email: emailTicked(h), opt_in_sms: h.opt_in_sms, opt_in_app: h.opt_in_app })
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
   const set = (patch: Partial<ParentDetails>) => { setD(x => ({ ...x, ...patch })); setNote('') }
   const field: React.CSSProperties = { width: '100%', boxSizing: 'border-box', border: '1px solid #E7E2DC', borderRadius: 8, padding: '8px 10px', fontSize: 16, fontFamily: 'inherit', color: TP_DARK, background: '#fff' }
   const label: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, color: '#6B6560', marginBottom: 3 }
-  const tick = (text: string, value: boolean | null, key: keyof ParentDetails) => (
-    <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: TP_DARK }}>
-      <input type="checkbox" checked={value === true} onChange={e => set({ [key]: e.target.checked })} /> {text}
+  const tick = (text: string, value: boolean | null, key: keyof ParentDetails, locked = false) => (
+    <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: locked ? '#8A847E' : TP_DARK }}>
+      <input type="checkbox" checked={value === true} disabled={locked} onChange={e => set({ [key]: e.target.checked })} /> {text}
     </label>
   )
+  // An unsubscribe stops every channel. Text and app keep their saved flags underneath,
+  // so they come back as they were once the family opts back in.
+  const unsubscribed = !!h.unsubscribed_at
   async function save() {
     setBusy(true); setNote('')
-    try { await parent.save(d); setNote('Saved.') }
+    try { await parent.save({ ...d, resubscribe: optsBackIn(h, d.opt_in_email) }); setNote('Saved.') }
     catch (e) { setNote(e instanceof Error ? e.message : 'Your details could not be saved.') }
     setBusy(false)
   }
@@ -53,9 +57,10 @@ function ParentDetailsForm({ parent }: { parent: ParentContext }) {
       {tick('We agree to our data being held for the programme', d.consent_data, 'consent_data')}
       {tick('Photos and filming are OK', d.consent_photo, 'consent_photo')}
       <div style={{ fontSize: 12, fontWeight: 800, color: TP_DARK, marginTop: 4 }}>How we hear from you</div>
+      {h.unsubscribed_at && <div style={{ fontSize: 11.5, color: '#6B6560' }}>You unsubscribed from all messages on {ukDay(h.unsubscribed_at)} — tick Email and save to opt back in</div>}
       {tick('Email', d.opt_in_email, 'opt_in_email')}
-      {tick('Text', d.opt_in_sms, 'opt_in_sms')}
-      {tick('In this app', d.opt_in_app, 'opt_in_app')}
+      {tick('Text', unsubscribed ? false : d.opt_in_sms, 'opt_in_sms', unsubscribed)}
+      {tick('In this app', unsubscribed ? false : d.opt_in_app, 'opt_in_app', unsubscribed)}
       <button onClick={save} disabled={busy} style={{ background: TP_RED, color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{busy ? 'Saving…' : 'Save'}</button>
       {note && <div role="status" style={{ fontSize: 11.5, color: note === 'Saved.' ? '#187A3C' : TP_RED }}>{note}</div>}
     </div>
@@ -72,7 +77,8 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
   const { CURRICULUM, STICKER_AREAS, PARENT, PARENT_MESSAGES, CAMPAIGN, VENUE_DETAILS } = data
   // The booklet is the org's own. Live has no stickers to show until it's written.
   const booklet = moduleOn(org?.settings, 'packs') ? packs?.booklet ?? null : null
-  const stickers = booklet?.stickers.length ? booklet.stickers.map(s => ({ id: s.id, label: s.label, desc: s.description })) : mode === 'live' ? [] : STICKER_AREAS
+  const stickers = stickerAreas(booklet, mode === 'live', STICKER_AREAS)
+  const stickerCount = stickers.length
   const packOn = !!packs && moduleOn(org?.settings, 'packs') && packs.items.some(i => i.active)
   const childId = (c: { id?: string; name: string }) => c.id ?? packChildren?.find(k => k.name.startsWith(`${c.name} `))?.id ?? ''
   const block = CURRICULUM[1] // weeks 3 & 4 — BACKHAND
@@ -164,19 +170,19 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
               </>}
 
               {/* Progress snapshot */}
-              <button onClick={() => setTab('progress')} style={{ background: '#fff', border: 'none', borderRadius: 12, padding: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%' }}>
+              {stickerCount > 0 && <button onClick={() => setTab('progress')} style={{ background: '#fff', border: 'none', borderRadius: 12, padding: 14, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', width: '100%' }}>
                 <div style={{ fontSize: 10.5, fontWeight: 800, color: TP_RED, letterSpacing: 0.6, marginBottom: 8 }}>STICKER PROGRESS</div>
                 {PARENT.children.map(c => (
                   <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 7 }}>
                     <div style={{ width: 44, fontSize: 12, fontWeight: 900, color: TP_DARK }}>{c.name}</div>
                     <div style={{ flex: 1, background: '#EFEBE6', borderRadius: 999, height: 9 }}>
-                      <div style={{ width: `${(c.stickers / 6) * 100}%`, height: '100%', background: TP_RED, borderRadius: 999 }} />
+                      <div style={{ width: `${(Math.min(c.stickers, stickerCount) / stickerCount) * 100}%`, height: '100%', background: TP_RED, borderRadius: 999 }} />
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: '#6B6560' }}>{c.stickers}/6</div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#6B6560' }}>{Math.min(c.stickers, stickerCount)}/{stickerCount}</div>
                   </div>
                 ))}
                 <div style={{ fontSize: 10.5, color: '#8A847E' }}>{copy.parent.stickerNote}</div>
-              </button>
+              </button>}
 
               {/* Latest message */}
               {PARENT_MESSAGES[0] && (
@@ -216,11 +222,14 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                   </div>
                 </div>
               ))}
-              {PARENT.children.map(child => (
+              {!bookletWritten(booklet) && stickerCount === 0 && (
+                <EmptyState compact icon={BookOpen} title="Your organisation hasn't set up the Activity Booklet yet" />
+              )}
+              {stickerCount > 0 && PARENT.children.map(child => (
                 <div key={child.name} style={{ background: '#fff', borderRadius: 12, padding: 14 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                     <div style={{ fontSize: 14, fontWeight: 900, color: TP_DARK }}>{child.name}{child.age ? `, ${child.age}` : ''}</div>
-                    <Pill tone="red">{Math.min(child.stickers, stickers.length || 6)} of {stickers.length || 6} stickers</Pill>
+                    <Pill tone="red">{Math.min(child.stickers, stickerCount)} of {stickerCount} stickers</Pill>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     {stickers.map((area, i) => {
@@ -252,9 +261,9 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                   </div>
                 </div>
               )}
-              <div style={{ fontSize: 11, color: '#8A847E', textAlign: 'center' }}>
+              {stickerCount > 0 && <div style={{ fontSize: 11, color: '#8A847E', textAlign: 'center' }}>
                 Stickers mirror the printed Activity Booklet — the real stickers stay in the book!
-              </div>
+              </div>}
             </>
           )}
 
@@ -338,7 +347,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
                 <div style={{ fontSize: 12, fontWeight: 800, color: TP_DARK, marginBottom: 8 }}>Your children</div>
                 {PARENT.children.map(c => (
                   <div key={c.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: TP_DARK, borderBottom: '1px solid #F0EBE5', padding: '6px 0' }}>
-                    <span>{c.name}, {c.age} — {c.school}</span>
+                    <span>{childLine(c)}</span>
                     <CheckCircle size={14} style={{ color: '#187A3C' }} />
                   </div>
                 ))}

@@ -1,14 +1,15 @@
 'use client'
 
-// Shared week-view calendar for the School / Coach / TENOR landing tabs.
-// Demo of the Gmail / Microsoft 365 sync (maps from the tennis coach portal's
-// booking-calendar + MS365 integration — live version reads the same feed).
+// Shared calendar for the School / Coach / TENOR landing tabs. The demo shows the week
+// grid and its Gmail / Microsoft 365 sync. Live has no calendar sync, so it lists the
+// sessions for the next seven days and claims nothing else.
 
 import React from 'react'
 import { CalendarDays, RefreshCw } from 'lucide-react'
 import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK, type CalEvent } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { sessionDay } from '@/lib/impact/register-session'
 
 const DAYS: CalEvent['day'][] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -25,8 +26,25 @@ export default function UpcomingCalendar({ role, events: eventsProp, title, sub 
   title?: string
   sub?: string
 }) {
-  const { CAL_EVENTS } = useImpact().data
+  const { data: { CAL_EVENTS }, mode } = useImpact()
   const events = eventsProp ?? CAL_EVENTS[role ?? 'coach']
+
+  if (mode === 'live') return (
+    <Card>
+      <SectionTitle sub={sub ?? 'Your next 7 days'}>
+        <CalendarDays size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />{title ?? 'Upcoming sessions'}
+      </SectionTitle>
+      {events.length === 0 && <div style={{ fontSize: 11.5, color: '#6B6560', fontWeight: 700 }}>Nothing scheduled this week</div>}
+      <div style={{ display: 'grid', gap: 6 }}>
+        {events.map((e, i) => (
+          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'baseline', background: KIND_STYLE[e.kind].bg, border: `1px solid ${KIND_STYLE[e.kind].border}`, borderRadius: 8, padding: '8px 10px', fontSize: 12 }}>
+            <span style={{ fontWeight: 900, color: KIND_STYLE[e.kind].fg, whiteSpace: 'nowrap' }}>{e.date ? sessionDay(e.date) : e.day}{e.time ? ` · ${e.time}` : ''}</span>
+            <span style={{ fontWeight: 700, color: TP_DARK }}>{e.title}{e.where ? <span style={{ fontWeight: 500, color: '#6B6560' }}> · {e.where}</span> : null}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
 
   return (
     <Card>

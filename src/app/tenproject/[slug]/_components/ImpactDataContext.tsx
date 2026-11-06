@@ -14,6 +14,7 @@ import { TEN_PROJECT_BRAND, TEN_PROJECT_COPY } from '@/data/tenproject/portal-co
 import type { ImpactOrgSettings } from '@/lib/impact/org'
 import type { LiveInsights } from '@/lib/impact/insights'
 import type { PackData } from '@/lib/impact/packs'
+import type { Certificate } from '@/lib/impact/compliance'
 import type { FamilySession } from '@/lib/impact/family-week'
 import type { CoachChild, CoachFamily, ParentDetails, ParentHome } from '@/lib/impact/member-actions'
 import type { RegisterSession } from '@/lib/impact/register-session'
@@ -79,6 +80,7 @@ export interface CoachContext {
   staffId: string; hqId: string
   children: Record<string, CoachChild>
   families: Record<string, CoachFamily>
+  certificates: Certificate[]
   mark: (sessionId: string, childId: string, present: boolean) => Promise<void>
 }
 export interface ParentContext {
@@ -95,7 +97,7 @@ export interface ImpactChild {
 }
 export interface ImpactFamily {
   id: string; guardian: string; email: string | null; phone: string | null
-  consentData: boolean | null; consentPhoto: boolean | null; unsubscribed: boolean; children: ImpactChild[]
+  consentData: boolean | null; consentPhoto: boolean | null; unsubscribed: boolean; resubscribedAt?: string | null; children: ImpactChild[]
 }
 export interface ImpactCpd { id: string; school_id: string; staff_name: string; course: string; cpd_date: string | null; provider: string | null; notes: string | null }
 export interface ImpactPeople { families: ImpactFamily[]; unlinkedChildren: ImpactChild[] }

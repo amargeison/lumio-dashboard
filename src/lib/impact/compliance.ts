@@ -86,3 +86,6 @@ export function complianceItems(people: CompliancePerson[]): ComplianceItem[] {
       target: { tab: p.kind === 'coach' ? 'coaches' : 'tenors' },
     }))
 }
+
+/** certText without the name, for a row that already shows it: "expires 1 Dec 2026". */
+export const certNote = (c: Certificate) => certText(c).slice(c.name.length + 1) || 'Recorded'
