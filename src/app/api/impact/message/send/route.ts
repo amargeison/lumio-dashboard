@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { impactHq } from '@/lib/impact/import-auth'
-import { contactBlock, namedWithoutConsent, photoGreen, toE164, unsubscribeToken, verifiedSender, type CommsChannel, type ConsentChild, type ConsentFamily } from '@/lib/impact/comms-rules'
+import { appFiledDetail, contactBlock, namedWithoutConsent, photoGreen, toE164, unsubscribeToken, verifiedSender, type CommsChannel, type ConsentChild, type ConsentFamily } from '@/lib/impact/comms-rules'
 import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
@@ -20,16 +20,13 @@ export const runtime = 'nodejs'
 // Channels:
 //   • email → Resend, only from the org's address in IMPACT_EMAIL_SENDERS. Every
 //             email carries that family's unsubscribe link, or it is not sent.
-//   • app   → the impact_messages row itself. No family app reads it yet, so the
-//             result says "saved", never "delivered" (see FAMILY_APP_LIVE).
+//   • app   → the impact_messages row itself. Until FAMILY_APP_LIVE=on no family
+//             app reads it, so the result says "saved", never "delivered".
 //   • sms   → Twilio, only when IMPACT_SMS_LIVE=on; otherwise reported per family.
 
 const CHANNELS: readonly CommsChannel[] = ['email', 'app', 'sms']
 const MAX_RECIPIENTS = 300
 const MAX_BODY = 10_000
-// Until Impact families can sign in, an app message waits unread. Results keep
-// that distinct from delivery.
-const FAMILY_APP_LIVE = false
 // The www address: a browser treats the bare domain as a different site.
 const SITE = 'https://www.lumiosports.com'
 
@@ -169,7 +166,7 @@ export async function POST(req: NextRequest) {
 
   // ── App ────────────────────────────────────────────────────────────────────
   for (const { t } of on('app')) {
-    push(t, 'app', 'filed', FAMILY_APP_LIVE ? 'In the family app' : 'Saved for the family app, which families can’t open yet')
+    push(t, 'app', 'filed', appFiledDetail())
   }
 
   // ── Email ──────────────────────────────────────────────────────────────────

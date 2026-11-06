@@ -12,6 +12,7 @@ import { useImpact } from './ImpactDataContext'
 import { OrgDetailsCard, ModulesCard } from './OrgSettings'
 import ImportCard from './ImportCard'
 import WelcomePackSettings from './WelcomePackSettings'
+import MembersCard from './MembersCard'
 
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
@@ -78,6 +79,7 @@ export default function SettingsTab() {
       {org && <ModulesCard />}
 
       {/* Import data — bulk import into this org (Impact portals only) */}
+      {org && <MembersCard />}
       {org && <ImportCard />}
 
       {/* Welcome pack — items and the Activity Booklet */}

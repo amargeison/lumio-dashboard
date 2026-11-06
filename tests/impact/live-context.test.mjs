@@ -114,12 +114,14 @@ test('a weekend register counts for the child’s school, as it does in readines
   const rows = { ...lumioTest, sessions: [...lumioTest.sessions, session('w', null, '2026-09-26', 'weekend')], attendance: [...lumioTest.attendance, mark('w', 'c1')] }
   assert.equal(attendanceBySession(rows, 'harborne').length, evidenceFromRows(rows).find(e => e.id === 'harborne').sessions)
 })
-test('parent activation and weekend conversion stay blank, whatever consent says', () => {
+test('parent activation counts accepted logins, not consent, and conversion stays blank without weekend data', () => {
   const rows = { ...lumioTest, families: [{ id: 'f', guardian_name: 'G', email: null, phone: null, emergency_contact: null, consent_data: true, consent_photo: true, unsubscribed_at: null }], children: kids.map(k => ({ ...k, family_id: 'f' })) }
   const d = mapLiveRows(rows)
   assert.equal(d.SCHOOL_DETAILS.harborne.activationPct, 0)
-  assert.equal(d.SCHOOL_DETAILS.harborne.conversionPct, 0)
-  assert.equal(d.SCHOOLS[0].activation, undefined)
+  assert.equal(d.SCHOOL_DETAILS.harborne.conversionPct, null)
+  assert.equal(d.SCHOOLS[0].activation, 0)
+  const joined = mapLiveRows({ ...rows, members: [{ role: 'parent', family_id: 'f', accepted_at: '2026-11-01', revoked_at: null }] })
+  assert.equal(joined.SCHOOL_DETAILS.harborne.activationPct, 100)
 })
 test('an empty org maps to the blank state', () => {
   const d = mapLiveRows(noRows)

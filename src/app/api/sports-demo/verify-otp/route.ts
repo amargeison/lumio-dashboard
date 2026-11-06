@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
   )
 
   try {
-    const { email, code, sport, slug, clubName, userName, role, nickname, purpose } = await req.json()
+    const { email, code, sport, slug, clubName, userName, role, nickname, purpose, invite } = await req.json()
 
     if (!email || !code || !sport) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -114,6 +114,8 @@ export async function POST(req: NextRequest) {
       }
       // The authority on "is this a real member" is the membership table.
       const invited = await isAcademyMember(normalisedEmail)
+        // An Impact coach or parent: a current membership, or a valid invite to this address.
+        || (sport === 'impact' && await (await import('@/lib/impact/member-auth')).impactMayGetCode(normalisedEmail, invite))
       if (!isMember && invited) isMember = true
       // …in both directions. A member sign-in for an address nobody has invited
       // is refused before anything is created: it used to mint a sign-in account

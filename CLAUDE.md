@@ -31,6 +31,9 @@ critical workflow rules.
 - Always wait for explicit "deploy" instruction; pushing to dev ≠ deploying to live
 - **Pre-deploy build check:** before `npm run golive`, always run `npm run build` locally. Verify it completes without errors. Type-check (`npx tsc --noEmit`) is necessary but not sufficient.
 
+### Migrations
+- A migration file is never edited after it has been applied; follow-ups go in the next number.
+
 ### Demo vs live
 - UI changes (titles, layout, dialogs, labels, behaviour) apply to live AND demo; only the hand-written demo data and the demo's canned numbers are off-limits. "Demo untouched" in a prompt means data, not components.
 

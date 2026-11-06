@@ -8,6 +8,11 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export type CommsChannel = 'email' | 'sms' | 'app'
 
+// What an app message's result says. Until FAMILY_APP_LIVE=on families can't sign
+// in, so the message waits unread and the result must not read as delivered.
+export const appFiledDetail = () =>
+  process.env.FAMILY_APP_LIVE === 'on' ? 'In the family app' : 'Saved for the family app, which families can’t open yet'
+
 export interface ConsentFamily {
   id: string
   consent_data: boolean | null

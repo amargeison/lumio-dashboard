@@ -95,6 +95,8 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
   const params = useSearchParams()
   const intendedRedirect = safePath(params.get('redirectTo') || '')
   const prefillEmail = params.get('email') || ''
+  // An Impact invite link: the token proves the invite, the code proves the address.
+  const invite = params.get('invite') || ''
 
   const [step, setStep] = useState<'email' | 'otp' | 'choose' | 'unknown'>('email')
   const [chosenPath, setChosenPath] = useState<'founder' | 'demo' | null>(null)
@@ -117,6 +119,20 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Enter a valid email address.'); return }
     setLoading(true); setError('')
     try {
+      if (invite) {
+        const otpRes = await fetch('/api/sports-demo/send-otp', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim(), sport: 'impact', purpose: 'member', invite }),
+        })
+        const otpData = await otpRes.json().catch(() => ({}))
+        if (!otpRes.ok || otpData.error) throw new Error(otpData.error || 'Failed to send code')
+        setUserInfo({ type: 'member', sport: 'impact' })
+        setStep('otp')
+        setResendCountdown(30)
+        setTimeout(() => inputRefs.current[0]?.focus(), 100)
+        setLoading(false)
+        return
+      }
       const res = await fetch('/api/sports-auth/identify-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -147,7 +163,7 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         // Supabase's own email was sending a link while the page asked for a code.
         const otpRes = await fetch('/api/sports-demo/send-otp', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), sport: 'coach', purpose: 'member' }),
+          body: JSON.stringify({ email: email.trim(), sport: data.sport === 'impact' ? 'impact' : 'coach', purpose: 'member' }),
         })
         const otpData = await otpRes.json().catch(() => ({}))
         if (!otpRes.ok || otpData.error) throw new Error(otpData.error || 'Failed to send code')
@@ -254,10 +270,23 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         // the wrong place entirely.
         const res = await fetch('/api/sports-demo/verify-otp', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim(), code, sport: 'coach', purpose: 'member' }),
+          body: JSON.stringify({ email: email.trim(), code, sport: userInfo.sport === 'impact' ? 'impact' : 'coach', purpose: 'member', ...(invite ? { invite } : {}) }),
         })
         const data = await res.json().catch(() => ({}))
         if (!data.verified && !data.success) throw new Error(data.error || 'Invalid or expired code.')
+        if (invite) {
+          // Signed in: now the token becomes a membership. A link used twice still
+          // lands its owner in their portal; anything else is shown as it is.
+          const accept = await fetch('/api/impact/invite/accept', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: invite }),
+          })
+          const joined = await accept.json().catch(() => ({}))
+          await clearPrivateCaches()
+          if (accept.ok && joined.slug) { window.location.href = `/impact/${joined.slug}`; return }
+          const known = (await whereAmIGoing()).memberDest
+          if (known) { window.location.href = known; return }
+          throw new Error(joined.error || 'This invite isn’t valid. Ask for a new one.')
+        }
         // A coach uses the REAL portal, scoped by row level security. Customers
         // keep /portal, which is built for them.
         await clearPrivateCaches()   // as above: nothing kept for the last person on this device

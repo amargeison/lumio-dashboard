@@ -14,6 +14,8 @@ import { TEN_PROJECT_BRAND, TEN_PROJECT_COPY } from '@/data/tenproject/portal-co
 import type { ImpactOrgSettings } from '@/lib/impact/org'
 import type { LiveInsights } from '@/lib/impact/insights'
 import type { PackData } from '@/lib/impact/packs'
+import type { FamilySession } from '@/lib/impact/family-week'
+import type { CoachChild, CoachFamily, ParentDetails, ParentHome } from '@/lib/impact/member-actions'
 
 export { fill } from '@/lib/impact/fill'
 
@@ -64,6 +66,24 @@ export interface ImpactPortalContext {
   cohorts?: LiveCohort[]
   /** Live portals: load the org's data again after a change. */
   reload?: () => void
+  /** A signed-in coach: who they are and what they need at the session. */
+  coach?: CoachContext
+  /** A signed-in parent: their own family, sessions and details. */
+  parent?: ParentContext
+  /** Live portals: each child's sessions, for the Parent app. */
+  sessionsByChild?: Record<string, FamilySession[]>
+}
+
+export interface CoachContext {
+  staffId: string; hqId: string
+  children: Record<string, CoachChild>
+  families: Record<string, CoachFamily>
+  mark: (sessionId: string, childId: string, present: boolean) => Promise<void>
+}
+export interface ParentContext {
+  home: ParentHome
+  attendance: { session_id: string; child_id: string; present: boolean }[]
+  save: (d: ParentDetails) => Promise<void>
 }
 
 export interface LiveCohort { id: string; label: string; sessionId: string | null; leadStaffId: string | null; children: TP.DemoChild[] }

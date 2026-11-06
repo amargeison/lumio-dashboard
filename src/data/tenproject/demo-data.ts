@@ -856,8 +856,8 @@ export interface TpSchoolDetail {
   cohorts: { name: string; children: number; coach: string; week: number; label?: string }[] // label: live only
   attendanceTrend: number[]     // % per week so far (live: per session)
   sessionTips?: string[]        // live only: one tooltip per bar, e.g. "12 Oct · 100%"
-  activationPct: number
-  conversionPct: number
+  activationPct: number | null
+  conversionPct: number | null
   weekendVenue?: string
   kit: string
   fundraising?: { raised: number; target: number; supporters: number }
