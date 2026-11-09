@@ -10,8 +10,14 @@
 // Android/Chrome, and an iOS Share → Add to Home Screen hint — coach-branded via
 // the portal's T/accent tokens. Installability itself comes from the manifest +
 // layout metadata; this is just the nudge + SW.
+//
+// iPhone and iPad: Lumio Tennis Coach is on the App Store, so the card offers
+// the App Store app instead of "Add to Home Screen" — in any iPhone browser,
+// and inside a home-screen copy someone added before the app existed. Android
+// and computers keep the install card.
 
 import { isNativeApp } from '@/lib/app/native'
+import { APP_STORE_URL } from '@/lib/app/app-store'
 import { useEffect, useRef, useState } from 'react'
 import type { ThemeTokens, AccentTokens } from '@/app/cricket/[slug]/v2/_lib/theme'
 
@@ -40,21 +46,14 @@ function cookieNoticeShowing(): boolean {
   try { return !localStorage.getItem('lumio_cookie_consent') } catch { return false }
 }
 
-function isIosSafari(): boolean {
+/** An iPhone or iPad, in any browser or a home-screen copy — but not the App Store app itself. */
+function isIosWeb(): boolean {
   if (typeof navigator === 'undefined' || typeof window === 'undefined') return false
+  if (isNativeApp()) return false
   const ua = navigator.userAgent
-  const iOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document)
-  const webkit = /WebKit/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua)
-  return iOS && webkit
+  return /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document)
 }
 
-function isStandalone(): boolean {
-  if (typeof window === 'undefined') return false
-  // The App Store app is already installed: never offer "Add to Home Screen" in it.
-  if (isNativeApp()) return true
-  return window.matchMedia('(display-mode: standalone)').matches
-    || (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-}
 
 export function CoachPwaInstaller({ T, accent }: { T: ThemeTokens; accent: AccentTokens }) {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
@@ -69,7 +68,7 @@ export function CoachPwaInstaller({ T, accent }: { T: ThemeTokens; accent: Accen
 
   useEffect(() => {
     setDismissed(recentlyDismissed())
-    setShowIosHint(isIosSafari() && !isStandalone())
+    setShowIosHint(isIosWeb())
     setCookieNotice(cookieNoticeShowing())
     const onConsent = () => setCookieNotice(false)
     window.addEventListener('lumio:cookie-consent', onConsent)
@@ -169,18 +168,33 @@ export function CoachPwaInstaller({ T, accent }: { T: ThemeTokens; accent: Accen
         </div>
       )}
       {(showInstallCard || showIosCard) && (
-    <div style={card} role="dialog" aria-label="Install Lumio Coach">
+    <div style={card} role="dialog" aria-label={showIosCard ? 'Get the Lumio Tennis Coach app' : 'Install Lumio Coach'}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+        {showIosCard && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src="/icons/lumio-coach-180.png" alt="" width={44} height={44} style={{ borderRadius: 10, flexShrink: 0 }} />
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 2 }}>Install Lumio Coach</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 2 }}>{showIosCard ? 'Get the Lumio Tennis Coach app' : 'Install Lumio Coach'}</div>
           {showInstallCard ? (
             <div style={{ fontSize: 11.5, color: T.text3 }}>Add it to your home screen for a full-screen, app-like experience.</div>
           ) : (
-            <div style={{ fontSize: 11.5, color: T.text3 }}>Tap <strong style={{ color: T.text }}>Share</strong> ⬆︎ → <strong style={{ color: T.text }}>Add to Home Screen</strong> to install.</div>
+            <div style={{ fontSize: 11.5, color: T.text3 }}>Free on the App Store, with notifications, recording and everything in your portal.</div>
           )}
         </div>
         <button onClick={dismiss} aria-label="Dismiss" style={{ flexShrink: 0, background: 'transparent', border: 0, color: T.text3, cursor: 'pointer', fontSize: 18, lineHeight: 1, width: 40, height: 40, margin: '-10px -10px -6px 0' }}>×</button>
       </div>
+      {showIosCard && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer"
+            style={{ flex: 1, textAlign: 'center', textDecoration: 'none', padding: '9px 14px', borderRadius: 9, background: accent.hex, color: T.btnText, fontSize: 12.5, fontWeight: 700 }}>
+            Open the App Store
+          </a>
+          <button onClick={dismiss} style={{ appearance: 'none', padding: '9px 14px', borderRadius: 9, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontSize: 12.5, cursor: 'pointer' }}>
+            Not now
+          </button>
+        </div>
+      )}
       {showInstallCard && (
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           <button

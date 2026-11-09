@@ -71,8 +71,10 @@ export async function GET(
       { src: `${icon}&size=192`, sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: `${icon}&size=512`, sizes: '512x512', type: 'image/png', purpose: 'any' },
     ] : [
-      { src: '/icons/tennis-coach-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/icons/tennis-coach-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      // The App Store app's own icon (the logo, no words), so the phone shows
+      // the same Lumio Coach whichever way it was installed.
+      { src: '/icons/lumio-coach-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/lumio-coach-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
     ],
   }
 
