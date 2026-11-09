@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { shareMeta, ogImageUrl } from '@/lib/share-meta'
+import { APP_STORE_ID } from '@/lib/app/app-store'
 
 // The player and parent app. Its page is a client component, so the link
 // preview copy lives here rather than falling back to the root layout's.
@@ -15,13 +16,15 @@ export const metadata: Metadata = {
     siteName: 'Lumio Tennis Coach',
   }),
   manifest: '/portal/manifest.json',
+  // Families on iPhone are pointed to the App Store app (Safari's own banner).
+  itunes: { appId: APP_STORE_ID },
   appleWebApp: { capable: true, title: 'My coaching', statusBarStyle: 'black' },
   icons: {
     icon: [
       { url: '/lumio-favicon-32.png', sizes: '32x32', type: 'image/png' },
       { url: '/lumio-favicon-64.png', sizes: '64x64', type: 'image/png' },
     ],
-    apple: '/icons/tennis-coach-192.png',
+    apple: '/icons/lumio-coach-180.png',
   },
 }
 

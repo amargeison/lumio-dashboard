@@ -5,6 +5,7 @@ import { signInstallToken } from '@/lib/pwa-install-token'
 import { PwaInstallRedeemer } from '@/components/pwa/PwaInstallRedeemer'
 import { partnerBrandBySlug } from '@/lib/coach/partner-login'
 import { shareMeta, ogImageUrl } from '@/lib/share-meta'
+import { APP_STORE_ID } from '@/lib/app/app-store'
 
 // Server component wrapping the client coach [slug]/page.tsx so we can export
 // generateMetadata: a per-slug PWA manifest + iOS standalone tags so an
@@ -83,6 +84,9 @@ export async function generateMetadata(
   return {
     ...share,
     manifest: tokenHref || `/coach/${slug}/m/anon/manifest.webmanifest`,
+    // Safari on iPhone shows its own "Open in the App Store" banner for the
+    // Lumio Tennis Coach app.
+    itunes: { appId: APP_STORE_ID },
     appleWebApp: {
       capable:        true,
       // The name under the iPhone home-screen icon: the academy's own, and the
@@ -107,8 +111,8 @@ export async function generateMetadata(
             { url: '/lumio-favicon-32.png', sizes: '32x32', type: 'image/png' },
             { url: '/lumio-favicon-64.png', sizes: '64x64', type: 'image/png' },
           ],
-          // A real 192px file. This used to be the 2160px, 670 KB artwork.
-          apple: '/icons/tennis-coach-192.png',
+          // The App Store app's icon at iOS's own size (the logo, no words).
+          apple: '/icons/lumio-coach-180.png',
         },
   }
 }
