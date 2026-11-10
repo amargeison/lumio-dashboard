@@ -2,6 +2,7 @@ import Link from 'next/link'
 import RevenueCalculator from './RevenueCalculator'
 import SpotlightTabsClient from './SpotlightTabs'
 import { SOCIAL_LINKS } from '@/lib/social-links'
+import AppStoreBadge from '@/app/(website)/components/AppStoreBadge'
 
 // Lumio Tennis Coach on the App Store (UK storefront), live from November 2026.
 const APP_STORE_URL = 'https://apps.apple.com/gb/app/id6827285797'
@@ -40,7 +41,7 @@ const FEATURES: Array<{ icon: string; title: string; desc: string }> = [
   { icon: '🏕️', title: 'Training Camps & holidays', desc: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft and a per-player camp log that captures progress day by day. Families sign up and pay a deposit online, choose their room (with any upgrade added to what they owe), and the balance is taken on the due date after a reminder.' },
   { icon: '👥', title: 'Staff / Coaches', desc: 'Run a club of coaches, not just yourself. A directory with each coach’s calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team’s week.' },
   { icon: '🔒', title: 'Consent & data protection', desc: 'Built for coaches who take GDPR seriously. A data processing agreement you read and accept in Settings, listing every service involved and where it is, and a privacy notice to give your clients. Lessons are only recorded for clients who have agreed, health notes are only kept with explicit consent, and your private notes on each client are never shown to them.' },
-  { icon: '📱', title: 'Mobile App', desc: 'Lumio Tennis Coach for iPhone, now available on the App Store: your day and the morning briefing, record a lesson and have it written up, your players, payments and camps — a proper app, built for the court. Families see their side in the same app. On any other phone, install it from the browser in seconds.' },
+  { icon: '📱', title: 'Mobile App', desc: 'Lumio Tennis Coach for iPhone, free on the App Store: your day and the morning briefing, record a lesson and have it written up, your players, payments and camps — a proper app, built for the court. Families see their side in the same app. On any other phone, install it from the browser in seconds.' },
 ]
 
 const STAT_PILLS = [`${FEATURES.length} modules`, 'AI powered', 'Payments & cancellations', 'LTA racket pathway', 'Mobile app']
@@ -585,7 +586,7 @@ function SpotlightTabs() {
     { tab: 'Effort & Rewards', eyebrow: 'SPOTLIGHT · EFFORT & REWARDS', title: 'Turn every session into XP — no hardware to buy.', body: "Log a session in seconds — effort, movement and consistency become scores, XP and effort levels, with a squad leaderboard to keep players coming back. It's a motivation layer that sits alongside the technical racket pathway, never replacing it, and it never tracks a player's position on court. Automatic smartwatch sync is coming soon.", bullets: ['Effort, movement & consistency scores from every session', 'XP, effort levels and a squad leaderboard', 'Smartwatch sync (Apple Watch & Wear OS) coming soon — manual logging now', 'Kept separate from the LTA-mapped Racket Progression pathway'], mockup: <EffortRewardsMockup /> },
     { tab: 'Staff & Coaches', eyebrow: 'SPOTLIGHT · STAFF & COACHES', title: 'Run a club of coaches, not just yourself.', body: "A directory with each coach's calendar, accreditations, specialisms, assigned players and utilisation — the head-coach view of the whole team's week. See who's busy, who has room, and which certifications are about to expire.", bullets: ['Per-coach calendar, specialisms and assigned players', 'Utilisation across the whole team at a glance', 'Accreditation and certification expiry alerts', 'The head-coach view of the academy week'], mockup: <StaffMockup /> },
     { tab: 'Training Camps', eyebrow: 'SPOTLIGHT · TRAINING CAMPS', title: 'Day camps and tours, drafted by AI.', body: 'Build day camps and residential tours: itineraries, attendees, targets and finances, with a one-click AI draft to get you started and a per-player camp log that captures progress day by day — and shows you the margin before you publish.', bullets: ['Itineraries, attendees, targets and finances in one place', 'One-click AI draft for the whole camp', 'Per-player camp log captures progress day by day', 'Revenue and margin visible before you publish', 'Deposits online, room upgrades, and the balance taken on the due date'], mockup: <CampMockup /> },
-    { tab: 'Mobile App', eyebrow: 'SPOTLIGHT · MOBILE APP', title: 'The whole platform, on your phone.', body: "Lumio Tennis Coach for iPhone, now available on the App Store — your day, the morning briefing and the tools you actually reach for on court, in a proper app. Record a lesson and it is written up for you. Families see their side in the same app. On any other phone, install it from the browser — no app store needed.", bullets: ['Native iPhone app — available on the App Store', 'Record a lesson and it is written up for you', 'Your day and the morning briefing the moment you open it', 'Any other phone: install from the browser in seconds'], mockup: <MobileAppMockup /> },
+    { tab: 'Mobile App', eyebrow: 'SPOTLIGHT · MOBILE APP', title: 'The whole platform, on your phone.', body: "Lumio Tennis Coach for iPhone, free on the App Store — your day, the morning briefing and the tools you actually reach for on court, in a proper app. Record a lesson and it is written up for you. Families see their side in the same app. On any other phone, install it from the browser — no app store needed.", bullets: ['Native iPhone app — free on the App Store', 'Record a lesson and it is written up for you', 'Your day and the morning briefing the moment you open it', 'Any other phone: install from the browser in seconds'], mockup: <MobileAppMockup /> },
   ]
   return <SpotlightTabsClient spots={spots} />
 }
@@ -968,7 +969,7 @@ export default function TennisCoachPage() {
           <div style={{ marginTop: 48, paddingTop: 28, borderTop: `1px solid ${BORDER}` }}>
             <p style={{ fontSize: 13, fontWeight: 800, color: TEXT, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Follow the build</p>
             <p style={{ fontSize: 14, color: MUTED, marginBottom: 16 }}>New features, founding-coach stories and coaching tips, most weeks.</p>
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
               {SOCIAL_LINKS.map(sl => (
                 <a key={sl.key} href={sl.url} target="_blank" rel="noopener noreferrer" aria-label={`Lumio Sports on ${sl.label}`}
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 16px', borderRadius: 999, border: `1px solid ${BORDER}`, color: TEXT, fontSize: 13.5, fontWeight: 700, textDecoration: 'none', backgroundColor: '#ffffff08' }}>
@@ -976,6 +977,7 @@ export default function TennisCoachPage() {
                   {sl.label}
                 </a>
               ))}
+              <AppStoreBadge height={40} />
             </div>
           </div>
         </div>
