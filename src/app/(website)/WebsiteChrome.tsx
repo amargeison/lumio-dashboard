@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation'
 import { Menu, X, ArrowUpRight } from 'lucide-react'
 import { NavDropdown } from '@/app/(website)/components/NavDropdown'
 import { SOCIAL_LINKS } from '@/lib/social-links'
+import AppStoreBadge from '@/app/(website)/components/AppStoreBadge'
 
 const SPORTS_NAV: { label: string; href: string; badge?: string }[] = [
   { label: 'Product',      href: '/sports-product' },
@@ -436,6 +437,8 @@ function Footer({ initialIsSportsHost }: { initialIsSportsHost: boolean }) {
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d={sl.path} /></svg>
                   </a>
                 ))}
+                {/* Lumio Tennis Coach is live on the App Store (Nov 2026). */}
+                <AppStoreBadge height={40} />
               </div>
             )}
           </div>
