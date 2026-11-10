@@ -3,9 +3,9 @@ import RevenueCalculator from './RevenueCalculator'
 import SpotlightTabsClient from './SpotlightTabs'
 import { SOCIAL_LINKS } from '@/lib/social-links'
 import AppStoreBadge from '@/app/(website)/components/AppStoreBadge'
+// Lumio Tennis Coach on the App Store, live from November 2026.
+import { APP_STORE_URL } from '@/lib/app/app-store'
 
-// Lumio Tennis Coach on the App Store (UK storefront), live from November 2026.
-const APP_STORE_URL = 'https://apps.apple.com/gb/app/id6827285797'
 
 // "Ocean" accent — matches the coach portal's blue accent preset (#3A8EE0).
 const PURPLE = '#1F6FCC'        // primary (buttons, shadows) — deep ocean
