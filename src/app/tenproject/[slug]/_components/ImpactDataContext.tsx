@@ -74,6 +74,8 @@ export interface ImpactPortalContext {
   parent?: ParentContext
   /** Live portals: each child's sessions, for the Parent app. */
   sessionsByChild?: Record<string, FamilySession[]>
+  /** Live portals: part of the load failed; what did load is still shown. */
+  loadError?: string
 }
 
 export interface CoachContext {

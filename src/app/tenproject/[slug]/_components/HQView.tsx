@@ -86,6 +86,11 @@ export default function HQView({ section, onSectionChange }: {
 
   return (
     <div style={{ display: 'grid', gap: 16 }}>
+      {ctx.loadError && (
+        <div role="alert" style={{ background: '#FDECEC', border: '1px solid #F3B9B9', color: '#8A1C1C', borderRadius: 10, padding: '10px 14px', fontSize: 12.5, fontWeight: 700 }}>
+          Couldn’t load your data — {ctx.loadError}
+        </div>
+      )}
       {/* HQ tabs (hidden when the sidebar drives sections) */}
       {!controlled && (
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
