@@ -633,6 +633,11 @@ export default function ImpactPortal({ params }: { params: Promise<{ slug: strin
 
   return (
     <ImpactDataProvider value={ctx}>
+    {!isDemo && ctx.loadError && (
+      <div role="alert" style={{ background: '#FDECEC', borderBottom: '1px solid #F3B9B9', color: '#8A1C1C', padding: '10px 16px', fontSize: 12.5, fontWeight: 700 }}>
+        Couldn’t load your data — {ctx.loadError}
+      </div>
+    )}
     <SportsDemoGate
       sport="impact"
       defaultClubName={ctx.brand.org}

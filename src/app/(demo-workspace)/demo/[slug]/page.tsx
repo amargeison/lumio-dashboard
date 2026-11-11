@@ -2363,6 +2363,7 @@ function VoiceSelector() {
 
   async function preview(voice: typeof VOICES[0]) {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel()
     if (previewing === voice.id) { setPreviewing(null); setPreviewLoading(null); return }
 
     setPreviewing(voice.id)
@@ -2373,7 +2374,19 @@ function VoiceSelector() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: voice.sample, voice_id: voice.id, preview: true }),
       })
-      if (!res.ok) { const err = await res.text(); console.error(`[Voice Preview] Failed for ${voice.name}:`, res.status, err); throw new Error(`TTS failed: ${res.status}`) }
+      if (!res.ok) {
+        // Paid TTS unavailable (e.g. the demo guard) — read the sample with the browser's own voice.
+        const synth = typeof window !== 'undefined' ? window.speechSynthesis : undefined
+        if (!synth) { setPreviewing(null); setPreviewLoading(null); return }
+        const utter = new SpeechSynthesisUtterance(voice.sample)
+        utter.lang = 'en-GB'
+        const done = () => { setPreviewing(p => (p === voice.id ? null : p)); setPreviewLoading(p => (p === voice.id ? null : p)) }
+        utter.onend = done
+        utter.onerror = done
+        setPreviewLoading(null)
+        synth.speak(utter)
+        return
+      }
 
       const buf = await res.arrayBuffer()
       const blob = new Blob([buf], { type: 'audio/mpeg' })

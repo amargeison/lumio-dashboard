@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { ttsGate } from '@/lib/ai/guards'
+import { ttsGate, groupDisabledResponse } from '@/lib/ai/guards'
 import { createClient } from '@supabase/supabase-js'
 
 // Default ElevenLabs voice — "Dallin" (positive, inspiring & clear)
@@ -15,6 +15,9 @@ function getSupabase() {
 }
 
 export async function POST(req: NextRequest) {
+  // Product switch: answered before any rate limit or spend (lib/ai/guards).
+  const disabled = groupDisabledResponse('tts')
+  if (disabled) return disabled
   const apiKey = process.env.ELEVENLABS_API_KEY
   if (!apiKey) {
     return NextResponse.json({ error: 'TTS not configured' }, { status: 500 })

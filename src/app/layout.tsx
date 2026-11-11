@@ -6,6 +6,7 @@ import './globals.css'
 import CookieBanner from '@/components/gdpr/CookieBanner'
 import PageViewTracker from '@/components/analytics/PageViewTracker'
 import { AppBridge } from '@/components/app/AppBridge'
+import DemoFetchGuard from '@/components/demo/DemoFetchGuard'
 
 // Self-hosted (src/fonts, SIL OFL). next/font/google downloads fonts during
 // `next build`, so a Google Fonts hiccup on the VPS could fail the whole
@@ -84,6 +85,7 @@ export default function RootLayout({
         <meta name="google" content="notranslate" />
       </head>
       <body className="h-full" style={{ backgroundColor: '#07080F' }}>
+        <DemoFetchGuard />
         {children}
         <CookieBanner />
         <PageViewTracker />

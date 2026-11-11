@@ -169,6 +169,38 @@ export function capReachedResponse(spent: number): Response {
   )
 }
 
+// ─── Product switch: which groups may spend at all ─────────────────────────
+//
+// Only the products that are live may call a paid model. Every route that
+// spends belongs to a group:
+//   · spendGate routes — the prefix of their label before ':' (cms, crm,
+//     schools, football)
+//   · text-to-speech   — 'tts'
+//   · sport proxies    — their sport name (tennis, impact, golf, cricket, …)
+// A group is OFF unless it is listed in AI_LIVE_GROUPS (comma-separated).
+// Unset, the live groups are "tennis,impact" (Tennis Coach and Lumio Impact).
+// A blocked call is answered before the rate limit and before anything is
+// reserved, so it never moves the spend counter.
+
+const DEFAULT_LIVE_GROUPS = 'tennis,impact'
+
+export function liveGroups(): Set<string> {
+  const raw = process.env.AI_LIVE_GROUPS ?? DEFAULT_LIVE_GROUPS
+  return new Set(raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean))
+}
+
+export function groupOf(label: string): string {
+  return label.split(':')[0].trim().toLowerCase()
+}
+
+export function groupDisabledResponse(group: string): Response | null {
+  if (liveGroups().has(group.toLowerCase())) return null
+  return new Response(
+    JSON.stringify({ error: 'ai_disabled', group }),
+    { status: 503, headers: { 'Content-Type': 'application/json' } },
+  )
+}
+
 // ─── Gate for every other route that spends on our keys ────────────────────
 //
 // The sport routes above check the cap, call the model, then record what it
@@ -225,6 +257,8 @@ function reserve(usd: number, label: string) {
 }
 
 function gate(req: Request, label: string, usd: number, limit: number, bucket = 'ai-open'): Response | null {
+  const off = groupDisabledResponse(groupOf(label))
+  if (off) return off
   const rl = rateLimit(`${bucket}:${getClientIp(req)}`, limit, WINDOW_MS)
   if (!rl.ok) return rateLimitedResponse(rl.retryAfterSeconds)
   rollIfNewDay()

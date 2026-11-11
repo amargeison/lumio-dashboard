@@ -7,6 +7,7 @@ import {
   recordSpend,
   rateLimitedResponse,
   capReachedResponse,
+  groupDisabledResponse,
 } from '@/lib/ai/guards'
 import { sanitizeAiBody, AiBodyError } from '@/lib/ai/body-guard'
 
@@ -20,6 +21,9 @@ const PRESETS: Record<string, string> = {
 }
 
 export async function POST(req: NextRequest) {
+  // Product switch: answered before any rate limit or spend (lib/ai/guards).
+  const disabled = groupDisabledResponse('golf')
+  if (disabled) return disabled
   try {
     const ip = getClientIp(req)
     const rl = checkRateLimit(ip)

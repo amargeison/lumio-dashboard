@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server'
-import { rateGate } from '@/lib/ai/guards'
+import { rateGate, groupDisabledResponse } from '@/lib/ai/guards'
 
 export async function GET(req: Request) {
+  // Product switch: answered before any rate limit or spend (lib/ai/guards).
+  const disabled = groupDisabledResponse('tts')
+  if (disabled) return disabled
   const overLimit = rateGate(req, 5)
   if (overLimit) return overLimit
   const apiKey = process.env.ELEVENLABS_API_KEY
