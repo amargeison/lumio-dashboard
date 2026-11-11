@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import {
   getClientIp, checkRateLimit, checkDailyCap, rateLimitedResponse, capReachedResponse,
+  groupDisabledResponse,
 } from '@/lib/ai/guards'
 import { sanitizeAiBody, AiBodyError } from '@/lib/ai/body-guard'
 
 export async function POST(req: NextRequest) {
+  // Product switch: answered before any rate limit or spend (lib/ai/guards).
+  const disabled = groupDisabledResponse('rugby')
+  if (disabled) return disabled
   try {
     // This route had no rate limit, no spend cap and no body validation at all —
     // the only one of the sport passthroughs with none of the three.

@@ -19,7 +19,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getClientIp, checkRateLimit, checkDailyCap, recordSpend, rateLimitedResponse, capReachedResponse } from '@/lib/ai/guards'
+import { getClientIp, checkRateLimit, checkDailyCap, recordSpend, rateLimitedResponse, capReachedResponse, groupDisabledResponse } from '@/lib/ai/guards'
 import { ALLOWED_MODELS } from '@/lib/ai/body-guard'
 import { SPORT_NETWORK_BASELINE, type SportNetworkContent } from '@/data/impact/sport-network'
 import { impactHq } from '@/lib/impact/import-auth'
@@ -81,6 +81,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // Product switch: answered before any rate limit or spend (lib/ai/guards).
+  const disabled = groupDisabledResponse('impact')
+  if (disabled) return disabled
   if (process.env.IMPACT_SPORT_NETWORK_REFRESH !== 'on') {
     return NextResponse.json({
       error: 'Sport Network refresh is not enabled',

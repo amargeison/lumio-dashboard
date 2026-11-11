@@ -7,6 +7,7 @@ import {
   scrubContext,
   rateLimitedResponse,
   capReachedResponse,
+  groupDisabledResponse,
 } from '@/lib/ai/guards'
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -77,6 +78,9 @@ const PROMPTS: Record<ActionType, { system: string; user: (ctx: Record<string, u
 
 // ─── Handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  // Product switch: answered before any rate limit or spend (lib/ai/guards).
+  const disabled = groupDisabledResponse('cricket')
+  if (disabled) return disabled
   const started = Date.now()
   try {
     const ip = getClientIp(req)
