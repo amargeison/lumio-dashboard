@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const pipeline = b.pipeline === 'funders' ? 'funders' : 'schools'
   const rows = Array.isArray(b.rows) ? b.rows.slice(0, IMPORT_MAX) : []
   if (!rows.length) return NextResponse.json({ error: 'There are no rows to bring in.' }, { status: 400 })
-  const { added, skipped, error } = await insertLeads(who.db, who.user.id, pipeline, rows)
+  const { added, skipped, error } = await insertLeads(who.db, who.hqId, pipeline, rows)
   if (error) return NextResponse.json({ error: `Stopped after ${added} rows: ${error}`, added }, { status: 400 })
   if (!added) return NextResponse.json({ error: 'None of the rows had a name, organisation, email or phone.' }, { status: 400 })
   return NextResponse.json({ ok: true, added, skipped })

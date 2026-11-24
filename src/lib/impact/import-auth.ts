@@ -1,15 +1,18 @@
-// Who may act for a Lumio Impact org (import, send messages): a signed-in user with an Impact
-// sports_profiles row who is the HQ of an org (impact_orgs.hq_id). Returns a
-// Supabase client acting AS that user, so every write is checked by the tp_*
-// RLS policies (hq_id = auth.uid()) — an import can only ever land in the
-// signed-in org's own rows. Demo and anonymous visitors are refused.
+// Who may act for a Lumio Impact org (import, send messages): its HQ, or an admin of it.
+// The portal names the org in a header; with none, it's the caller's own. The database
+// confirms it (impact_hqs_for), so naming someone else's org gets a refusal. The client
+// returned acts AS the user, so RLS checks every write.
+//
+// RLS alone is not a filter: an admin's session can read several orgs. Every query made
+// with this client must also match hqId.
 
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import type { SupabaseClient, User } from '@supabase/supabase-js'
+import { ORG_HEADER } from './org-scope'
 
-export async function impactHq(action = 'import data'): Promise<{ user: User; db: SupabaseClient } | NextResponse> {
+export async function impactHq(action = 'import data'): Promise<{ user: User; db: SupabaseClient; hqId: string } | NextResponse> {
   const cookieStore = await cookies()
   const db = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,11 +21,9 @@ export async function impactHq(action = 'import data'): Promise<{ user: User; db
   )
   const { data: { user } } = await db.auth.getUser()
   if (!user) return NextResponse.json({ error: `Sign in as your organisation’s HQ to ${action}.` }, { status: 401 })
-  const { data: profile } = await db.from('sports_profiles').select('sport').eq('id', user.id).maybeSingle()
-  if (profile?.sport !== 'impact') return NextResponse.json({ error: `Only a Lumio Impact HQ account can ${action}.` }, { status: 403 })
-  // HQ of an org. (Before impact_orgs exists, an Impact profile is enough —
-  // RLS still confines every write to this user's own rows.)
-  const org = await db.from('impact_orgs').select('slug').eq('hq_id', user.id).maybeSingle()
-  if (!org.error && !org.data) return NextResponse.json({ error: 'This login isn’t linked to an organisation yet.' }, { status: 403 })
-  return { user, db }
+  const hqId = (await headers()).get(ORG_HEADER) ?? user.id
+  const { data: allowed, error } = await db.rpc('impact_hqs_for', { p_role: 'hq' })
+  if (error) return NextResponse.json({ error: 'Your access couldn’t be checked. Please try again.' }, { status: 503 })
+  if (!((allowed ?? []) as string[]).includes(hqId)) return NextResponse.json({ error: `Only this organisation’s HQ can ${action}.` }, { status: 403 })
+  return { user, db, hqId }
 }

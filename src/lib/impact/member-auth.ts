@@ -20,6 +20,16 @@ export async function impactMemberSlug(email: string): Promise<string | null> {
   } catch { return null }
 }
 
+/** Whether this address is an org's own HQ login. */
+export async function impactHqEmail(email: string): Promise<boolean> {
+  const db = admin()
+  const user = await findAuthUserByEmail(db, email.trim().toLowerCase())
+  if (!user) return false
+  const { data, error } = await db.from('impact_orgs').select('slug').eq('hq_id', user.id).limit(1)
+  if (error) throw error
+  return !!data?.length
+}
+
 export async function impactInviteValid(email: string, token: unknown): Promise<boolean> {
   if (typeof token !== 'string' || !token) return false
   try {

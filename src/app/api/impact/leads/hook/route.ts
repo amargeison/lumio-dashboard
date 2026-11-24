@@ -21,7 +21,7 @@ const admin = () => createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.
 export async function GET(req: NextRequest) {
   const who = await impactHq('see the leads address')
   if (who instanceof NextResponse) return who
-  const { data } = await who.db.from('impact_lead_hooks').select('token, last_used_at').eq('hq_id', who.user.id).maybeSingle()
+  const { data } = await who.db.from('impact_lead_hooks').select('token, last_used_at').eq('hq_id', who.hqId).maybeSingle()
   return NextResponse.json({ url: data ? address(req, data.token as string) : null, lastUsedAt: data?.last_used_at || null })
 }
 
@@ -30,11 +30,11 @@ export async function POST(req: NextRequest) {
   if (who instanceof NextResponse) return who
   const { rotate } = (await req.json().catch(() => ({}))) as { rotate?: boolean }
   const db = admin()
-  const { data: had } = await db.from('impact_lead_hooks').select('token, last_used_at').eq('hq_id', who.user.id).maybeSingle()
+  const { data: had } = await db.from('impact_lead_hooks').select('token, last_used_at').eq('hq_id', who.hqId).maybeSingle()
   let token = had?.token as string | undefined
   if (!token || rotate) {
     token = randomBytes(18).toString('base64url')
-    const { error } = await db.from('impact_lead_hooks').upsert({ hq_id: who.user.id, token, last_used_at: null, created_at: new Date().toISOString() })
+    const { error } = await db.from('impact_lead_hooks').upsert({ hq_id: who.hqId, token, last_used_at: null, created_at: new Date().toISOString() })
     if (error) return NextResponse.json({ error: 'The address could not be made. Please try again.' }, { status: 500 })
   }
   return NextResponse.json({ url: address(req, token), lastUsedAt: !rotate && had?.token === token ? had?.last_used_at || null : null })

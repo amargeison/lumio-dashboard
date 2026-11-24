@@ -76,6 +76,8 @@ export interface ImpactPortalContext {
   sessionsByChild?: Record<string, FamilySession[]>
   /** Live portals: part of the load failed; what did load is still shown. */
   loadError?: string
+  /** Signed in as a Lumio admin, with this org's HQ rights. */
+  actingAsAdmin?: boolean
 }
 
 export interface CoachContext {

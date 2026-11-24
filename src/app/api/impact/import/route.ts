@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   if (hq instanceof NextResponse) return hq
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'AI not configured' }, { status: 500 })
-  const limited = importGate(hq.user.id)
+  const limited = importGate(hq.hqId)
   if (limited) return limited
 
   const content: Anthropic.ContentBlockParam[] = []
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
   try {
     const model = isChunk ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-6'
     const res = await new Anthropic({ apiKey }).messages.create({ model, max_tokens: 16000, messages: [{ role: 'user', content }] })
-    recordImportSpend(hq.user.id, res.usage, model, 'impact')
+    recordImportSpend(hq.hqId, res.usage, model, 'impact')
     let txt = ''
     for (const b of res.content) if (b.type === 'text') txt += b.text
     const extracted = parseRecordLines(IMPACT_IMPORT_SCHEMA, txt)

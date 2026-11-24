@@ -10,7 +10,7 @@ import { Card, Pill, SectionTitle, buttonPrimary, buttonSecondary } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { sb, usePackAccess } from './PackIssue'
-import { currentHq } from '@/lib/impact/org-scope'
+import { currentHq, impactFetch } from '@/lib/impact/org-scope'
 import { longDate } from '@/lib/impact/compliance'
 import { MAX_BOOKLET_PDF_BYTES, pdfSize, printKitLine } from '@/lib/impact/booklet-pdf'
 
@@ -41,7 +41,7 @@ export default function BookletPdfCard({ printKit = false, bare = false, title =
     setBusy(true)
     try {
       const form = new FormData(); form.append('file', file)
-      const res = await fetch('/api/impact/booklet-pdf', { method: 'POST', body: form })
+      const res = await impactFetch('/api/impact/booklet-pdf', { method: 'POST', body: form })
       const body = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(body.error ?? 'The PDF couldn’t be uploaded.')
       setMsg({ text: '✓ PDF uploaded.' }); reload()

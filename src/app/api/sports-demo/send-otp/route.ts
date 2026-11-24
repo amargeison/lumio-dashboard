@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
     // No code is stored or sent. The answer is the same either way, so this
     // route says nothing about who is and is not a member.
     if (purpose === 'member' && !invited) return NextResponse.json({ success: true })
+    // The same for an Impact HQ code: only to an address that is an org's HQ.
+    if (isFounder && sport === 'impact' && !(await (await import('@/lib/impact/member-auth')).impactHqEmail(email))) return NextResponse.json({ success: true })
 
     // Generate 6-digit OTP (dev always returns 000000 for bypass)
     const code = process.env.NODE_ENV !== 'production'

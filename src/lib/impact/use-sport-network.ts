@@ -6,6 +6,7 @@
 // server to re-check gov.uk / DfE / YST and refreshes the panel.
 
 import { useCallback, useEffect, useState } from 'react'
+import { impactFetch } from './org-scope'
 import { SPORT_NETWORK_BASELINE, type SportNetworkContent } from '@/data/impact/sport-network'
 
 const FAILED = 'Couldn’t refresh — still showing the last good version.'
@@ -27,7 +28,7 @@ export function useSportNetwork() {
   const update = useCallback(async () => {
     setUpdating(true); setMessage(null)
     try {
-      const res = await fetch('/api/impact/sport-network', { method: 'POST' })
+      const res = await impactFetch('/api/impact/sport-network', { method: 'POST' })
       const d = await res.json().catch(() => null)
       if (d?.content) setContent(d.content)
       if (!res.ok || d?.error) setMessage(d?.error ?? FAILED)

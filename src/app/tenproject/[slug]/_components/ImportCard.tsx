@@ -19,6 +19,7 @@ import { Upload, FileSpreadsheet, CheckCircle, AlertTriangle, Lock, Download, Sp
 import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { impactFetch } from '@/lib/impact/org-scope'
 import { readWorkbook, sheetSample, sheetChunks, SPREADSHEET_RE } from '@/lib/import-engine/read-workbook'
 import { applyPlan, type SheetPlan, type Rec } from '@/lib/import-engine/records'
 import { IMPACT_IMPORT_SCHEMA, IMPACT_IMPORT_CATEGORIES, IMPACT_SAVE_ORDER, IMPACT_CATEGORY_LABEL, type ImpactImportCategory } from '@/lib/impact/import-schema'
@@ -34,7 +35,7 @@ const PARALLEL = 6
 const SAVE_BATCH = 500
 
 async function postJson(url: string, body: unknown) {
-  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  const res = await impactFetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data?.error || (res.status === 413 ? 'That file is too big.' : 'Something went wrong.'))
   return data
@@ -106,7 +107,7 @@ export default function ImportCard() {
     setProgress(`Reading ${f.name}…`)
     const fd = new FormData()
     fd.append('file', f)
-    const res = await fetch('/api/impact/import', { method: 'POST', body: fd })
+    const res = await impactFetch('/api/impact/import', { method: 'POST', body: fd })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) throw new Error(data?.error || (res.status === 413 ? 'That file is too big.' : `Could not read ${f.name}.`))
     merge(into, data.extracted || {})

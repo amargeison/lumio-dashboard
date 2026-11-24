@@ -135,7 +135,7 @@ test('stock writes check their input first', async () => {
   await assert.rejects(saveItem(never, 'hq', null, { name: '', kind: 'included', has_sizes: false, sizes: [] }), /name/)
 })
 test('the example can’t be added on top of an existing pack', async () => {
-  const db = { from: () => ({ select: async () => ({ count: 2 }) }) }
+  const db = { from: () => ({ select: () => ({ eq: async () => ({ count: 2 }) }) }) }
   await assert.rejects(useExamplePack(db, 'hq', [], exampleBooklet()), /already has items/)
 })
 

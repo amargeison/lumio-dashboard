@@ -11,6 +11,7 @@ import { draftWithImpactAI } from '@/lib/impact/ai'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact, type ImpactFamily } from './ImpactDataContext'
 import { InviteButton, useMembers } from './MembersCard'
+import { impactFetch } from '@/lib/impact/org-scope'
 
 type Channel = 'email' | 'app' | 'sms'
 type Outcome = 'sent' | 'filed' | 'failed' | 'refused'
@@ -58,7 +59,7 @@ export function LiveSendWizard({ onClose, defaultMessage }: { onClose: () => voi
     setSending(true)
     setError('')
     try {
-      const res = await fetch('/api/impact/message/send', {
+      const res = await impactFetch('/api/impact/message/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

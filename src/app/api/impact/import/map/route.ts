@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   if (hq instanceof NextResponse) return hq
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'AI not configured' }, { status: 500 })
-  const limited = importGate(hq.user.id)
+  const limited = importGate(hq.hqId)
   if (limited) return limited
 
   const body = await req.json().catch(() => ({})) as { fileName?: string; sheets?: { name: string; sample: string }[] }
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       model: 'claude-sonnet-4-6', max_tokens: 6000,
       messages: [{ role: 'user', content: [{ type: 'text', text }, { type: 'text', text: PROMPT }] }],
     })
-    recordImportSpend(hq.user.id, res.usage, 'claude-sonnet-4-6', 'impact')
+    recordImportSpend(hq.hqId, res.usage, 'claude-sonnet-4-6', 'impact')
     let txt = ''
     for (const b of res.content) if (b.type === 'text') txt += b.text
     const match = txt.replace(/```json\s*/gi, '').replace(/```/g, '').match(/\{[\s\S]*\}/)
