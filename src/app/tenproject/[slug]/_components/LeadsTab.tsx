@@ -18,7 +18,7 @@ import { Download, Plus, Upload } from 'lucide-react'
 import { Card, Modal as Shell, Pill, Stat } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
-import { currentHq } from '@/lib/impact/org-scope'
+import { currentHq, impactFetch } from '@/lib/impact/org-scope'
 import {
   PIPELINES, SOURCES, CONTACT_METHODS, FOLLOWUP_POINTS, amountPence, guessColumn, isClosed, leadEdits, matchStage, notesForDisplay, stagePoints, stagesOf, ukDate, weekOf, withLeadLinks,
   type ImportColumn, type Lead, type LeadEvent, type Pipeline,
@@ -46,9 +46,9 @@ const problem = (e: unknown, fallback: string) => e instanceof Error ? e.message
 
 /** Reads past Supabase's 1,000-row page, since an import can bring in 2,000. */
 async function allLeads(): Promise<Lead[]> {
-  const out: Lead[] = []
+  const out: Lead[] = [], hq = await hqId()
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await sb().from('impact_leads').select('*').order('created_at', { ascending: false }).range(from, from + 999)
+    const { data, error } = await sb().from('impact_leads').select('*').eq('hq_id', hq).order('created_at', { ascending: false }).range(from, from + 999)
     if (error) throw error
     out.push(...(data as Lead[]))
     if (!data || data.length < 1000) return out
@@ -76,7 +76,7 @@ type Closed = { notice: string; added?: SchoolRef }
 
 /** Everything the Funded dialog needs, read fresh so its sums are today's. */
 async function fundedClosing(lead: Lead): Promise<Closing | null> {
-  const { data: campaigns } = await sb().from('tp_fundraising_campaigns').select('id, school_id, status, target_pence')
+  const { data: campaigns } = await sb().from('tp_fundraising_campaigns').select('id, school_id, status, target_pence').eq('hq_id', await hqId())
   const plan = fundedPlan(lead, (campaigns ?? []) as CampaignRef[])
   if (plan.kind === 'close') return null
   const { data: school } = await sb().from('tp_schools').select('name, status').eq('id', lead.school_id as string).single()
@@ -540,7 +540,7 @@ function ImportLeads({ pipeline, onClose, onDone }: { pipeline: Pipeline; onClos
   const go = async () => {
     setBusy(true); setMsg(null)
     try {
-      const r = await fetch('/api/impact/leads/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pipeline: pipe, rows: records }) })
+      const r = await impactFetch('/api/impact/leads/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pipeline: pipe, rows: records }) })
       const d = await r.json()
       if (!r.ok) setMsg({ text: d.error || 'The import did not work.', bad: true })
       else { setMsg({ text: `✓ ${d.added} lead${d.added === 1 ? '' : 's'} brought in.${d.skipped ? ` ${d.skipped} row${d.skipped === 1 ? '' : 's'} had no name, organisation, email or phone.` : ''}` }); await onDone(); setRows([]); setHeaders([]) }
@@ -591,7 +591,7 @@ function AdsLeads({ onClose, onTest }: { onClose: () => void; onTest: () => Prom
   const [sure, setSure] = useState(false)
   useEffect(() => {
     let live = true
-    fetch('/api/impact/leads/hook').then(r => r.json()).then(d => {
+    impactFetch('/api/impact/leads/hook').then(r => r.json()).then(d => {
       if (!live) return
       if (d.error) { setHook({ url: null, lastUsedAt: null }); setMsg({ text: d.error, bad: true }) } else setHook(d)
     }).catch(() => { if (live) setHook({ url: null, lastUsedAt: null }) })
@@ -601,7 +601,7 @@ function AdsLeads({ onClose, onTest }: { onClose: () => void; onTest: () => Prom
     if (rotate && !sure) { setSure(true); return }
     setBusy('make'); setMsg(null); setSure(false)
     try {
-      const r = await fetch('/api/impact/leads/hook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rotate }) })
+      const r = await impactFetch('/api/impact/leads/hook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rotate }) })
       const d = await r.json()
       if (!r.ok) setMsg({ text: d.error || 'It could not be made.', bad: true }); else setHook(d)
     } catch { setMsg({ text: 'You appear to be offline.', bad: true }) }

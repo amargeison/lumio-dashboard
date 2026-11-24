@@ -543,6 +543,32 @@ function ImpactPortalInner({ session, slug, onSignOut, lockTo, switchTo }: { ses
 // (see src/app/nonleague/[slug]/page.tsx): email → OTP → the portal below.
 export default function ImpactPortal({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params)
+  // Keyed, so nothing loaded for one org is still there on another's address.
+  return <PortalAt key={slug} slug={slug} />
+}
+
+// Generic on purpose: no org name, logo or anything else that says who is here.
+function PrivatePortal({ slug, signedInAs, error }: { slug: string; signedInAs: string | null; error?: string }) {
+  return (
+    <div style={{ minHeight: '100vh', background: TP_PAPER, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ maxWidth: 440, background: '#fff', border: '1px solid #E7E2DC', borderRadius: 14, padding: 24, textAlign: 'center' }}>
+        <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK }}>This portal is private — sign in</div>
+        {signedInAs && <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 8, lineHeight: 1.55 }}>You’re signed in as {signedInAs}, which doesn’t have access here.</div>}
+        {error && <div role="alert" style={{ fontSize: 12.5, color: TP_RED, marginTop: 8, lineHeight: 1.55 }}>{error}</div>}
+        <a href={`/sports-login?redirectTo=${encodeURIComponent(`/impact/${slug}`)}`} style={{ display: 'inline-block', marginTop: 14, background: TP_RED, color: '#fff', borderRadius: 9, padding: '10px 16px', fontSize: 12.5, fontWeight: 800, textDecoration: 'none' }}>Sign in</a>
+        {signedInAs && <div style={{ marginTop: 12 }}><button onClick={signOutToLogin} style={{ background: 'none', border: 'none', color: TP_RED, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button></div>}
+      </div>
+    </div>
+  )
+}
+
+function AdminStrip() {
+  const { actingAsAdmin, brand } = useImpact()
+  if (!actingAsAdmin) return null
+  return <div role="status" style={{ position: 'sticky', top: 0, zIndex: 40, background: '#FCE9C8', borderBottom: '2px solid #9A6A0B', color: '#5F4207', padding: '8px 16px', fontSize: 12.5, fontWeight: 800, textAlign: 'center' }}>Acting as admin for {brand.org}</div>
+}
+
+function PortalAt({ slug }: { slug: string }) {
   // URL decides demo vs live (see src/lib/config/demo-slugs.ts) — never the
   // session. Live portals load their HQ's Supabase data, or stay empty.
   const isDemo = isDemoSlug(slug, 'impact')
@@ -554,29 +580,6 @@ export default function ImpactPortal({ params }: { params: Promise<{ slug: strin
       <div style={{ fontSize: 11, color: '#8A847E', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Loading…</div>
     </div>
   )
-
-  // Signed in with no access at this address. Never the HQ view, never a redirect.
-  if (!isDemo && live.denied) {
-    const own = live.denied.ownSlug
-    return (
-      <div style={{ minHeight: '100vh', background: TP_PAPER, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <div style={{ maxWidth: 440, background: '#fff', border: '1px solid #E7E2DC', borderRadius: 14, padding: 24, textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 900, color: TP_DARK }}>You don’t have access to this portal</div>
-          <div style={{ fontSize: 12.5, color: '#6B6560', marginTop: 8, lineHeight: 1.55 }}>
-            The login you’re using isn’t linked to this organisation. If you think it should be, ask them for a new invite.
-          </div>
-          {own && (
-            <a href={`/impact/${own}`} style={{ display: 'inline-block', marginTop: 14, background: TP_RED, color: '#fff', borderRadius: 9, padding: '10px 16px', fontSize: 12.5, fontWeight: 800, textDecoration: 'none' }}>
-              Go to your portal →
-            </a>
-          )}
-          <div style={{ marginTop: 14 }}>
-            <button onClick={signOutToLogin} style={{ background: 'none', border: 'none', color: TP_RED, fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // A signed-in coach, parent or school: their own view, with no picker.
   if (!isDemo && live.member) {
@@ -626,18 +629,18 @@ export default function ImpactPortal({ params }: { params: Promise<{ slug: strin
     }
     return (
       <ImpactDataProvider value={ctx}>
+        <AdminStrip />
         <ImpactPortalInner session={session} slug={slug} onSignOut={signOutToLogin} />
       </ImpactDataProvider>
     )
   }
 
+  // A live org's page is private: nobody else gets anything but this card, whether or
+  // not there's an org at this address.
+  if (!isDemo) return <PrivatePortal slug={slug} signedInAs={live.signedInAs} error={ctx.loadError} />
+
   return (
     <ImpactDataProvider value={ctx}>
-    {!isDemo && ctx.loadError && (
-      <div role="alert" style={{ background: '#FDECEC', borderBottom: '1px solid #F3B9B9', color: '#8A1C1C', padding: '10px 16px', fontSize: 12.5, fontWeight: 700 }}>
-        Couldn’t load your data — {ctx.loadError}
-      </div>
-    )}
     <SportsDemoGate
       sport="impact"
       defaultClubName={ctx.brand.org}

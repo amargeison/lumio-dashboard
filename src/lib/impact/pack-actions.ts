@@ -70,7 +70,7 @@ export async function reorderItems(db: SupabaseClient, items: Pick<PackItem, 'id
 }
 
 export async function useExamplePack(db: SupabaseClient, hqId: string, items: Pick<PackItem, 'name' | 'kind' | 'price_pence' | 'has_sizes' | 'sizes' | 'sort'>[], booklet: Booklet) {
-  const { count } = await db.from('tp_pack_items').select('id', { count: 'exact', head: true })
+  const { count } = await db.from('tp_pack_items').select('id', { count: 'exact', head: true }).eq('hq_id', hqId)
   if (count) throw new Error('Your pack already has items, so the example wasn’t added.')
   const { error } = await db.from('tp_pack_items').insert(items.map(i => ({ ...i, hq_id: hqId })))
   failed(error, 'The example pack could not be added.')
@@ -111,9 +111,11 @@ export async function issuePack(db: SupabaseClient, childId: string, lines: { it
 
 export async function recordPayment(db: SupabaseClient, hqId: string, p: { childId: string; itemId: string; amountPence: number; method: string; reference: string; paidAt: string }) {
   if (!Number.isInteger(p.amountPence) || p.amountPence <= 0) throw new Error('Enter the amount paid.')
+  // Who recorded it, which isn't always the org's own login.
+  const { data: { user } } = await db.auth.getUser()
   const { error } = await db.from('tp_pack_payments').insert({
     hq_id: hqId, child_id: p.childId, item_id: p.itemId, amount_pence: p.amountPence, method: p.method,
-    reference: p.reference.trim() || null, paid_at: p.paidAt, recorded_by: hqId,
+    reference: p.reference.trim() || null, paid_at: p.paidAt, recorded_by: user?.id ?? hqId,
   })
   failed(error, 'The payment could not be saved.')
 }

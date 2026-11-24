@@ -140,6 +140,12 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
       })
       const data: IdentifyResult & { error?: string } = await res.json().catch(() => ({ type: null }))
       if (!res.ok || !data.type) throw new Error(data.error || 'We could not check that address just now. Please try again.')
+      // Sent here by a private Impact portal: a demo session is no way in, so a
+      // demo-only address is one with no portal, and nothing is sent to it.
+      if (/^\/impact\//.test(intendedRedirect)) {
+        if (data.type === 'demo') data.type = 'unknown'
+        else if (data.type === 'both') { data.type = 'founder'; data.sport = data.founderSport }
+      }
       setUserInfo(data)
 
       if (data.type === 'founder') {
@@ -534,14 +540,14 @@ export function SportsLoginForm({ brand }: { brand?: PartnerBrand } = {}) {
         {step === 'unknown' && (
           <>
             <h1 style={{ color: P.text, fontSize: 22, fontWeight: 800, textAlign: 'center', marginBottom: 8 }}>
-              We don&apos;t recognise that email
+              {brand || app ? <>We don&apos;t recognise that email</> : <>We couldn&apos;t find a portal for that address</>}
             </h1>
             <p style={{ color: P.muted, fontSize: 13, textAlign: 'center', marginBottom: 28 }}>
               {brand
                 ? <><strong style={{ color: P.sub }}>{email}</strong> isn&apos;t on {brand.name}&apos;s list yet. Ask {brand.name} to add you — they&apos;ll send you an invite to this address.</>
                 : app
                 ? <><strong style={{ color: P.sub }}>{email}</strong> isn&apos;t on Lumio Tennis Coach yet. Players and parents: ask your coach to add you, and they&apos;ll send an invite to this address.</>
-                : <><strong style={{ color: P.sub }}>{email}</strong> isn&apos;t linked to a founding member account or a demo session.</>}
+                : <><strong style={{ color: P.sub }}>{email}</strong> — check it for typos, or use the address your invite was sent to.</>}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {app && (

@@ -11,14 +11,15 @@ import { Card, EmptyState, Pill, SectionTitle, buttonPrimary, buttonSecondary } 
 import { TP_DARK, TP_RED } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { familiesToInvite, memberLines, type InviteRow, type MemberLine, type MemberRow, type MemberStatus } from '@/lib/impact/members'
+import { currentHq, impactFetch } from '@/lib/impact/org-scope'
 
 const sb = () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const small: React.CSSProperties = { ...buttonSecondary, padding: '5px 9px', fontSize: 11 }
 const TONE: Record<MemberStatus, 'green' | 'amber' | 'grey' | 'red'> = { active: 'green', invited: 'amber', expired: 'red', revoked: 'grey' }
-const ROLE_LABEL = { coach: 'Coach', parent: 'Parent', school: 'School' }
+const ROLE_LABEL = { coach: 'Coach', parent: 'Parent', school: 'School', admin: 'Lumio admin' }
 
 async function post(path: string, body: unknown): Promise<Record<string, unknown>> {
-  const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  const res = await impactFetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error((data as { error?: string }).error ?? 'That didn’t work. Please try again.')
   return data
@@ -37,14 +38,14 @@ export function useMembers() {
   const load = useCallback(async () => {
     if (!on) return
     const db = sb()
-    const { data: { user } } = await db.auth.getUser()
-    if (!user) return
+    const hq = await currentHq(db).catch(() => null)
+    if (!hq) return
     const [m, i, s, f, sc] = await Promise.all([
-      db.from('impact_members').select('*').eq('hq_id', user.id),
-      db.from('impact_invites').select('id, hq_id, role, staff_id, family_id, school_id, email, expires_at, accepted_at, revoked_at, created_at').eq('hq_id', user.id),
-      db.from('tp_staff').select('id, name, email').eq('hq_id', user.id),
-      db.from('tp_families').select('id, guardian_name').eq('hq_id', user.id),
-      db.from('tp_schools').select('id, name').eq('hq_id', user.id),
+      db.from('impact_members').select('*').eq('hq_id', hq),
+      db.from('impact_invites').select('id, hq_id, role, staff_id, family_id, school_id, email, expires_at, accepted_at, revoked_at, created_at').eq('hq_id', hq),
+      db.from('tp_staff').select('id, name, email').eq('hq_id', hq),
+      db.from('tp_families').select('id, guardian_name').eq('hq_id', hq),
+      db.from('tp_schools').select('id, name').eq('hq_id', hq),
     ])
     setMembers((m.data ?? []) as MemberRow[])
     setInvites((i.data ?? []) as InviteRow[])
@@ -153,7 +154,7 @@ export default function MembersCard() {
                   <td style={{ padding: '8px 4px' }}><Pill tone={TONE[l.status]}>{l.status.toUpperCase()}</Pill></td>
                   <td style={{ padding: '8px 4px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                     {l.inviteId && l.status !== 'active' && <button disabled={busy === l.key} onClick={() => act(l, 'resend')} style={{ ...small, marginRight: 6 }}>Resend invite</button>}
-                    {(l.status === 'active' || l.status === 'invited') && <button disabled={busy === l.key} onClick={() => act(l, 'revoke')} style={small}>Revoke</button>}
+                    {l.role !== 'admin' && (l.status === 'active' || l.status === 'invited') && <button disabled={busy === l.key} onClick={() => act(l, 'revoke')} style={small}>Revoke</button>}
                   </td>
                 </tr>
               ))}

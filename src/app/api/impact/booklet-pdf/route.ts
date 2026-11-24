@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   try { pages = (await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false })).getPageCount() }
   catch { return refuse('That PDF couldn’t be read. Try saving it again.', 400) }
 
-  const hq = auth.user.id
+  const hq = auth.hqId
   const stored = await admin().storage.from(BOOKLET_BUCKET).upload(bookletPath(hq), bytes, { contentType: 'application/pdf', upsert: true, cacheControl: '60' })
   if (stored.error) {
     console.error('[impact/booklet-pdf] upload failed', stored.error.message)

@@ -22,18 +22,18 @@ async function hasLogin(admin: SupabaseClient, hqId: string, col: 'family_id' | 
   return !!data?.length
 }
 
-async function orgOf(db: SupabaseClient, userId: string): Promise<OrgForInvite | null> {
-  const { data } = await db.from('impact_orgs').select('slug, settings').eq('hq_id', userId).maybeSingle()
+async function orgOf(db: SupabaseClient, hqId: string, userId: string): Promise<OrgForInvite | null> {
+  const { data } = await db.from('impact_orgs').select('slug, settings').eq('hq_id', hqId).maybeSingle()
   if (!data) return null
   const name = String((data.settings as { org?: string } | null)?.org ?? '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, 80)
-  return { hqId: userId, userId, slug: data.slug as string, name: name || 'Lumio Impact' }
+  return { hqId, userId, slug: data.slug as string, name: name || 'Lumio Impact' }
 }
 
 export async function POST(req: NextRequest) {
   const auth = await impactHq('invite people')
   if (auth instanceof NextResponse) return auth
-  const { user, db } = auth
-  const org = await orgOf(db, user.id)
+  const { user, db, hqId } = auth
+  const org = await orgOf(db, hqId, user.id)
   if (!org) return NextResponse.json({ error: 'This login isn’t linked to an organisation yet.' }, { status: 403 })
   if (!invitesOn()) return NextResponse.json({ error: 'Invites aren’t switched on yet.' }, { status: 503 })
   const admin = serviceDb()

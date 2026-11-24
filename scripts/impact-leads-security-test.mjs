@@ -14,6 +14,7 @@ import { createServerClient } from '@supabase/ssr'
 import { existsSync, readFileSync } from 'node:fs'
 import { registerHooks } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { haveChrome, openPage } from './lib-headless.mjs'
 
 // lead-actions.ts uses extensionless imports, which node can't resolve alone.
 registerHooks({
@@ -23,6 +24,7 @@ registerHooks({
   },
 })
 const { fundedPlan, markSchoolFunded, partnerWithNewSchool, partnerWithSchool, recordFunding } = await import('../src/lib/impact/lead-actions.ts')
+const { resolvePortal } = await import('../src/lib/impact/portal-access.ts')
 const { adjustStock, issuePack, loadPacks, receiveStock, recordPayment, returnItem, saveBooklet, saveItem, setChildSize } = await import('../src/lib/impact/pack-actions.ts')
 
 try {
@@ -377,7 +379,82 @@ async function logins(A, B) {
   ok('the 51st invite in an hour is refused', (await A.api('/api/impact/invite', { method: 'POST', body: JSON.stringify({ role: 'parent', targetId: fam2 }) })).status === 429)
 }
 
-try { await main() } catch (e) { fail++; console.error('  ✗ FAIL: stopped early:', e.message ?? e) }
+// A stands in for ten-project and B for lumio-test: the rules are per org, and this
+// script writes to no real org. The real addresses are only opened, signed out.
+async function adminCases(A, B) {
+  console.log('\nPrivate portals and admins:')
+  if (haveChrome) {
+    for (const slug of [A.slug, 'ten-project', 'lumio-test', `${tag}-no-such-org`]) {
+      const { text } = await openPage(`${BASE}/impact/${slug}`, /This portal is private/)
+      ok(`a stranger at /impact/${slug.startsWith(tag) ? slug.slice(tag.length + 1) : slug} gets the sign-in card`, /This portal is private/.test(text) && text.includes('/sports-login'), text.slice(0, 200))
+      ok('  and no picker, HQ view or email gate', /This portal is private/.test(text) && !/Pick a view|Programme Health|SWITCH VIEW|Overview|input:/i.test(text), text.slice(0, 200))
+    }
+  } else ok('Chrome is needed for the stranger checks', false)
+  const kind = async (who, org) => (await resolvePortal(who.db, org.slug)).kind
+  ok('anon reads no org records', (await anon.from('impact_orgs').select('slug')).data?.length === 0)
+  const nobody = await person('nobody')
+  ok('a signed-in stranger gets the card and reads no orgs', await kind(nobody, A) === 'private' && (await nobody.db.from('impact_orgs').select('slug')).data?.length === 0)
+  ok('another org’s HQ gets the card, and their own portal', await kind(B, A) === 'private' && await kind(B, B) === 'hq')
+
+  const both = await person('admin2'), one = await person('admin1')
+  const grant = async (who, org) => { const { error } = await admin.from('impact_members').insert({ user_id: who.id, hq_id: org.id, role: 'admin', invited_email: who.email, accepted_at: new Date().toISOString() }); if (error) throw error }
+  await grant(both, A); await grant(both, B); await grant(one, B)
+  const as = (who, org) => (path, init = {}) => who.api(path, { ...init, headers: { 'x-impact-hq': org.id } })
+  const school = async org => (await admin.from('tp_schools').insert({ hq_id: org.id, name: 'Admin Test Primary', status: 'enquiry' }).select('id').single()).data.id
+  const sA = await school(A), sB = await school(B)
+  for (const [name, org, id] of [['ten-project', A, sA], ['lumio-test', B, sB]]) {
+    const r = await resolvePortal(both.db, org.slug)
+    ok(`admin opens ${name} as HQ, marked as admin`, r.kind === 'hq' && r.admin && r.org.hqId === org.id)
+    ok(`admin reads ${name}`, (await both.db.from('tp_schools').select('id').eq('id', id)).data?.length === 1)
+    ok(`admin changes ${name}`, (await both.db.from('tp_schools').update({ name: 'Changed' }).eq('id', id).select('id')).data?.length === 1)
+    const lead = await both.db.from('impact_leads').insert({ hq_id: org.id, name: 'By admin', pipeline: 'schools' }).select('id').single()
+    ok(`admin adds to ${name}`, !lead.error, lead.error?.message)
+    ok(`admin saves ${name} settings`, (await both.db.from('impact_orgs').update({ settings: { org: org.slug, town: 'T' } }).eq('slug', org.slug).select('slug')).data?.length === 1)
+    ok(`admin can’t take over ${name}`, !!(await both.db.from('impact_orgs').update({ hq_id: both.id }).eq('slug', org.slug)).error)
+    ok(`admin has ${name}’s lead address`, (await as(both, org)('/api/impact/leads/hook')).status === 200)
+    // The same name exists in the other org, so this would come back 'already' if reads mixed.
+    const imp = await (await as(both, org)('/api/impact/import/save', { method: 'POST', body: JSON.stringify({ category: 'schools', rows: [{ name: `Only Here Primary` }] }) })).json()
+    ok(`admin imports into ${name} only`, imp.inserted === 1 && (await admin.from('tp_schools').select('id').eq('hq_id', org.id).eq('name', 'Only Here Primary')).data?.length === 1, JSON.stringify(imp))
+  }
+  ok('naming no org is refused, not guessed', (await both.api('/api/impact/leads/hook')).status === 403)
+  const hook = await (await as(both, A)('/api/impact/leads/hook', { method: 'POST', body: '{}' })).json()
+  ok('it is A’s address, not the admin’s', (await admin.from('impact_lead_hooks').select('token').eq('hq_id', A.id)).data?.[0]?.token === hook.url?.split('/').pop())
+
+  ok('lumio-test admin opens lumio-test, gets the card at ten-project', await kind(one, B) === 'hq' && await kind(one, A) === 'private')
+  for (const t of ['tp_schools', 'tp_families', 'tp_children', 'tp_staff', 'impact_leads', 'impact_lead_hooks', 'tp_pack_items', 'tp_donations', 'impact_members'])
+    ok(`lumio-test admin reads none of ten-project’s ${t}`, (await one.db.from(t).select('hq_id').eq('hq_id', A.id)).data?.length === 0)
+  ok('… can’t change it', (await one.db.from('tp_schools').update({ name: 'Hacked' }).eq('id', sA).select('id')).data?.length === 0)
+  ok('… can’t delete from it', (await one.db.from('tp_schools').delete().eq('id', sA).select('id')).data?.length === 0)
+  ok('… can’t add to it', !!(await one.db.from('tp_schools').insert({ hq_id: A.id, name: 'Planted' })).error)
+  ok('… can’t change its settings', (await one.db.from('impact_orgs').update({ settings: {} }).eq('slug', A.slug).select('slug')).data?.length === 0)
+  for (const [path, body] of [['/api/impact/leads/hook', {}], ['/api/impact/leads/import', { rows: [{ name: 'x' }] }], ['/api/impact/import/save', { category: 'schools', rows: [{ name: 'x' }] }], ['/api/impact/members', { action: 'revoke', memberId: sA }], ['/api/impact/invite', { role: 'parent', targetId: sA }], ['/api/impact/message/send', { body: 'x' }]])
+    ok(`… is refused by ${path}`, (await as(one, A)(path, { method: 'POST', body: JSON.stringify(body) })).status === 403)
+
+  const row = { user_id: nobody.id, hq_id: A.id, role: 'admin', accepted_at: new Date().toISOString() }
+  ok('a session can’t make an admin, even the HQ or another admin', !!(await nobody.db.from('impact_members').insert(row)).error && !!(await A.db.from('impact_members').insert(row)).error && !!(await both.db.from('impact_members').insert(row)).error)
+  ok('there is no admin invite', !!(await admin.from('impact_invites').insert({ hq_id: A.id, role: 'admin', email: nobody.email, token_hash: `adm-${tag}` })).error)
+  const mB = (await admin.from('impact_members').select('id').eq('user_id', one.id).eq('role', 'admin').single()).data.id
+  ok('the HQ’s Revoke doesn’t reach an admin', (await B.api('/api/impact/members', { method: 'POST', body: JSON.stringify({ action: 'revoke', memberId: mB }) })).status === 404)
+
+  await admin.from('impact_members').update({ revoked_at: new Date().toISOString() }).eq('user_id', both.id).eq('hq_id', A.id)
+  ok('a revoked admin gets the sign-in card', await kind(both, A) === 'private')
+  ok('… reads and writes nothing there', (await both.db.from('tp_schools').select('id').eq('hq_id', A.id)).data?.length === 0 && !!(await both.db.from('tp_schools').insert({ hq_id: A.id, name: 'x' })).error)
+  ok('… is refused by the routes', (await as(both, A)('/api/impact/leads/hook')).status === 403)
+  ok('… and keeps the other org', await kind(both, B) === 'hq')
+
+  console.log('\nSign-in codes:')
+  const missing = `${tag}_nowhere@example.com`
+  const say = async email => (await (await fetch(`${BASE}/api/sports-auth/identify-user`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) })).json())
+  ok('an unknown address is only ever "unknown"', JSON.stringify(await say(missing)) === '{"type":"unknown"}')
+  for (const purpose of ['founder', 'member']) {
+    await fetch(`${BASE}/api/sports-demo/send-otp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: missing, sport: 'impact', purpose }) })
+    ok(`no ${purpose} code is made for it`, (await admin.from('demo_magic_links').select('id').eq('email', missing)).data?.length === 0)
+  }
+  ok('an admin is recognised, with no org named', JSON.stringify(await say(one.email)) === '{"type":"member","sport":"impact"}')
+}
+
+// Run separately: main() stops early where invites are off.
+try { await main(); await adminCases(...made) } catch (e) { fail++; console.error('  ✗ FAIL: stopped early:', e.message ?? e) }
 finally {
   for (const u of made) {
     await admin.from('impact_orgs').delete().eq('hq_id', u.id)

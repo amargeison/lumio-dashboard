@@ -9,13 +9,13 @@ export const runtime = 'nodejs'
 // Sends an Impact message and logs every attempt to impact_messages. The same
 // three rules as /api/coach/message/send:
 //
-//   WHO IT IS FROM: the HQ's own Supabase session. Reads and writes run as that
+//   WHO IT IS FROM: the HQ's (or an admin's) own Supabase session. Reads and writes run as that
 //   user, not the service role, so the tp_* RLS applies on top of the filters.
 //
 //   WHO IT GOES TO: family ids, looked up here in this HQ's own tp_families. An
 //   address in the request is never read, so this cannot be an open mail relay.
 //
-//   WHOSE IT IS: every row is filed under hq_id = the signed-in HQ.
+//   WHOSE IT IS: every row is filed under the org being acted for.
 //
 // Channels:
 //   • email → Resend, only from the org's address in IMPACT_EMAIL_SENDERS. Every
@@ -80,8 +80,7 @@ async function allChildren(db: SupabaseClient, hqId: string): Promise<ConsentChi
 export async function POST(req: NextRequest) {
   const auth = await impactHq('send messages')
   if (auth instanceof NextResponse) return auth
-  const { user, db } = auth
-  const hqId = user.id
+  const { user, db, hqId } = auth
 
   const { data: org } = await db.from('impact_orgs').select('slug, settings').eq('hq_id', hqId).maybeSingle()
   if (!org) return NextResponse.json({ error: 'This login isn’t linked to an organisation yet.' }, { status: 403 })

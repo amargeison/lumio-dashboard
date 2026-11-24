@@ -9,6 +9,7 @@ import { createBrowserClient } from '@supabase/ssr'
 import { GraduationCap, X } from 'lucide-react'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { currentHq } from '@/lib/impact/org-scope'
 
 const sb = () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const field: React.CSSProperties = { border: '1px solid #E7E2DC', borderRadius: 8, padding: '8px 10px', fontSize: 12, background: '#fff', fontFamily: 'inherit', minWidth: 0 }
@@ -32,10 +33,10 @@ export function CpdPanel({ schoolId }: { schoolId: string }) {
   }
   async function add() {
     const client = sb()
-    const { data: { user } } = await client.auth.getUser()
-    if (!user) { setError('Please sign in again.'); return }
+    let hq: string
+    try { hq = await currentHq(client) } catch { setError('Please sign in again.'); return }
     const saved = await run(() => client.from('tp_cpd').insert({
-      hq_id: user.id, school_id: schoolId, staff_name: draft.staff_name.trim(), course: draft.course.trim(),
+      hq_id: hq, school_id: schoolId, staff_name: draft.staff_name.trim(), course: draft.course.trim(),
       cpd_date: draft.cpd_date || null, provider: draft.provider.trim() || null,
     }))
     if (saved) setDraft({ staff_name: '', course: '', cpd_date: '', provider: '' })

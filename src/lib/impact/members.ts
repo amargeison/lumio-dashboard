@@ -1,7 +1,7 @@
 // Who belongs to an org, in the terms the portal and the Members list use. No
 // database here, so the rules run the same in the browser and the tests.
 
-export type MemberRole = 'coach' | 'parent' | 'school'
+export type MemberRole = 'coach' | 'parent' | 'school' | 'admin'
 
 export interface MemberRow {
   id: string; user_id: string; hq_id: string; role: MemberRole
@@ -16,16 +16,15 @@ export interface InviteRow {
 
 export const isActive = (m: Pick<MemberRow, 'accepted_at' | 'revoked_at'>) => !!m.accepted_at && !m.revoked_at
 
-/** What a signed-in person gets at one org's address. The coach view comes first if they hold two roles. */
-export type PortalAccess = { kind: 'member'; member: MemberRow; otherRole: MemberRole | null } | { kind: 'denied' } | { kind: 'public' }
-const ORDER: MemberRole[] = ['coach', 'parent', 'school']
-export function portalAccess(memberships: MemberRow[], orgHq: string | null, isOtherOrgHq: boolean, wanted?: string | null): PortalAccess {
+/** What a membership gives someone at one org's address. Admin comes first, then coach, if they hold two roles. */
+export type PortalAccess = { kind: 'member'; member: MemberRow; otherRole: MemberRole | null } | { kind: 'private' }
+const ORDER: MemberRole[] = ['admin', 'coach', 'parent', 'school']
+export function portalAccess(memberships: MemberRow[], orgHq: string | null, wanted?: string | null): PortalAccess {
   const here = memberships.filter(m => m.hq_id === orgHq && isActive(m)).sort((a, b) => ORDER.indexOf(a.role) - ORDER.indexOf(b.role))
   // ?view= only chooses between roles this person holds.
   const member = here.find(m => m.role === wanted) ?? here[0]
   if (member) return { kind: 'member', member, otherRole: here.find(m => m.role !== member.role)?.role ?? null }
-  // Any membership at all, even a revoked one, means this person isn't a visitor.
-  return memberships.length || isOtherOrgHq ? { kind: 'denied' } : { kind: 'public' }
+  return { kind: 'private' }
 }
 
 export type MemberStatus = 'active' | 'invited' | 'expired' | 'revoked'
@@ -35,8 +34,9 @@ export interface MemberLine {
   staffId: string | null; familyId: string | null; schoolId: string | null
 }
 
-const targetKey = (r: { role: MemberRole; staff_id: string | null; family_id: string | null; school_id: string | null }) =>
-  `${r.role}:${r.staff_id ?? r.family_id ?? r.school_id}`
+// An admin has no person record behind it, so the login itself tells two apart.
+const targetKey = (r: { role: MemberRole; staff_id: string | null; family_id: string | null; school_id: string | null; user_id?: string }) =>
+  `${r.role}:${r.staff_id ?? r.family_id ?? r.school_id ?? r.user_id}`
 
 /** One line per person: a membership wins over the invites behind it, and only the latest invite counts. */
 export function memberLines(members: MemberRow[], invites: InviteRow[], now = new Date()): MemberLine[] {

@@ -55,25 +55,54 @@ test('invites stop at 50 an hour', () => {
 })
 
 test('routing: a member of this org gets their role', () => {
-  const a = portalAccess([member()], 'org-a', false)
+  const a = portalAccess([member()], 'org-a')
   assert.equal(a.kind, 'member'); assert.equal(a.member.role, 'parent')
 })
-test('routing: a parent on another org’s address is refused', () => assert.equal(portalAccess([member()], 'org-b', false).kind, 'denied'))
-test('routing: a revoked member is refused, not treated as a visitor', () => assert.equal(portalAccess([member({ revoked_at: '2026-11-03' })], 'org-a', false).kind, 'denied'))
-test('routing: an invited-only member has no access yet', () => assert.equal(portalAccess([member({ accepted_at: null })], 'org-a', false).kind, 'denied'))
-test('routing: another org’s HQ is refused', () => assert.equal(portalAccess([], 'org-a', true).kind, 'denied'))
-test('routing: someone with no link to Impact stays a visitor', () => assert.equal(portalAccess([], 'org-a', false).kind, 'public'))
+const PRIVATE = { kind: 'private' }
+test('routing: a parent on another org’s address is private', () => assert.deepEqual(portalAccess([member()], 'org-b'), PRIVATE))
+test('routing: a revoked member is private', () => assert.deepEqual(portalAccess([member({ revoked_at: '2026-11-03' })], 'org-a'), PRIVATE))
+test('routing: an invited-only member is private', () => assert.deepEqual(portalAccess([member({ accepted_at: null })], 'org-a'), PRIVATE))
+test('routing: someone with no link is private', () => assert.deepEqual(portalAccess([], 'org-a'), PRIVATE))
+const admin = (o = {}) => member({ id: 'ad', role: 'admin', family_id: null, ...o })
+test('routing: an admin comes before their other roles, on that org only', () => {
+  const a = portalAccess([member(), admin()], 'org-a')
+  assert.equal(a.member.role, 'admin'); assert.equal(a.otherRole, 'parent')
+  assert.deepEqual(portalAccess([admin()], 'org-b'), PRIVATE)
+})
+test('routing: a revoked or unaccepted admin is private', () => {
+  assert.deepEqual(portalAccess([admin({ revoked_at: '2026-11-03' })], 'org-a'), PRIVATE)
+  assert.deepEqual(portalAccess([admin({ accepted_at: null })], 'org-a'), PRIVATE)
+})
+test('members list: two admins are two lines', () => assert.equal(memberLines([admin(), admin({ id: 'ad2', user_id: 'u2' })], [], NOW).length, 2))
+test('no live page outside the portal: the demo gate is demo only', () => {
+  const page = readFileSync(new URL('../../src/app/impact/[slug]/page.tsx', import.meta.url), 'utf8')
+  assert.ok(page.indexOf('if (!isDemo) return <PrivatePortal') > 0)
+  assert.ok(page.indexOf('if (!isDemo) return <PrivatePortal') < page.indexOf('<SportsDemoGate\n'))
+})
+const { resolvePortal } = await import('../../src/lib/impact/portal-access.ts')
+const fakeDb = (user, org, mine) => ({ auth: { getUser: async () => ({ data: { user } }) }, from: t => ({ select: () => ({ eq: () => t === 'impact_orgs' ? { maybeSingle: async () => org } : Promise.resolve({ data: mine, error: null }) }) }) })
+test('resolve: an unknown address answers like a private one', async () => {
+  const u = { id: 'u', email: 'x@a.test' }
+  assert.deepEqual(await resolvePortal(fakeDb(u, { data: null, error: null }, []), 'nope'), await resolvePortal(fakeDb(u, { data: { hq_id: 'org-a', settings: {} }, error: null }, []), 'real'))
+})
+test('resolve: a failed org read never gives access', async () => {
+  await assert.rejects(resolvePortal(fakeDb({ id: 'u', email: '' }, { data: null, error: { message: 'x' } }, []), 'a'))
+})
+test('resolve: an admin gets the HQ view, marked as admin', async () => {
+  const r = await resolvePortal(fakeDb({ id: 'u', email: 'x@a.test' }, { data: { hq_id: 'org-a', settings: {} }, error: null }, [admin()]), 'a')
+  assert.equal(r.kind, 'hq'); assert.equal(r.admin, true); assert.equal(r.org.hqId, 'org-a')
+})
 test('routing: the coach view comes first for someone holding two roles', () => {
   const both = [member(), member({ id: 'm2', role: 'coach', staff_id: 's1', family_id: null })]
-  const a = portalAccess(both, 'org-a', false)
+  const a = portalAccess(both, 'org-a')
   assert.equal(a.member.role, 'coach'); assert.equal(a.otherRole, 'parent')
-  const b = portalAccess(both, 'org-a', false, 'parent')
+  const b = portalAccess(both, 'org-a', 'parent')
   assert.equal(b.member.role, 'parent'); assert.equal(b.otherRole, 'coach')
 })
 test('routing: ?view= can’t reach a role the person doesn’t hold', () => {
-  const a = portalAccess([member()], 'org-a', false, 'coach')
+  const a = portalAccess([member()], 'org-a', 'coach')
   assert.equal(a.member.role, 'parent'); assert.equal(a.otherRole, null)
-  assert.equal(portalAccess([member()], 'org-a', false, 'hq').member.role, 'parent')
+  assert.equal(portalAccess([member()], 'org-a', 'hq').member.role, 'parent')
 })
 test('routing: a real member can never be given the HQ role', () => {
   const page = readFileSync(new URL('../../src/app/impact/[slug]/page.tsx', import.meta.url), 'utf8')
