@@ -5,6 +5,8 @@ import { parseRecordLines } from '@/lib/import-engine/records'
 import { importGate, recordImportSpend } from '@/lib/import-engine/guard'
 import { IMPACT_IMPORT_SCHEMA, IMPACT_IMPORT_FIELDS, IMPACT_IMPORT_CATEGORIES, IMPACT_MEANINGS } from '@/lib/impact/import-schema'
 import { impactHq } from '@/lib/impact/import-auth'
+import { MAX_IMPORT_BYTES } from '@/lib/impact/import-plan'
+import { trace } from '@/lib/impact/import-run'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -36,9 +38,13 @@ export async function POST(req: NextRequest) {
   const hq = await impactHq()
   if (hq instanceof NextResponse) return hq
   const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'AI not configured' }, { status: 500 })
+  if (!apiKey) return NextResponse.json({ error: 'Reading files with AI isn’t available right now. Use the import template instead — it needs no AI.' }, { status: 503 })
+  // Too big is refused before the AI allowance is touched.
+  if (Number(req.headers.get('content-length') ?? 0) > MAX_IMPORT_BYTES + 64 * 1024) {
+    return NextResponse.json({ error: 'That file is over 10 MB. One import takes files up to 10 MB — save it without pictures, or split it.' }, { status: 413 })
+  }
   const limited = importGate(hq.hqId)
-  if (limited) return limited
+  if (limited) { trace('ai read refused: daily cap', { hqId: hq.hqId }); return limited }
 
   const content: Anthropic.ContentBlockParam[] = []
   const isChunk = (req.headers.get('content-type') || '').includes('application/json')
@@ -50,7 +56,8 @@ export async function POST(req: NextRequest) {
   } else {
     let file: File | null = null
     try { file = (await req.formData()).get('file') as File | null } catch { /* ignore */ }
-    if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
+    if (!file) return NextResponse.json({ error: 'No file arrived. Choose it again.' }, { status: 400 })
+    if (file.size > MAX_IMPORT_BYTES) return NextResponse.json({ error: `${file.name} is ${(file.size / 1048576).toFixed(1)} MB. One import takes files up to 10 MB — save it without pictures, or split it.` }, { status: 413 })
     try {
       const { blocks } = await fileToContent(file)
       content.push(...(blocks as Anthropic.ContentBlockParam[]), { type: 'text', text: SCHEMA_PROMPT })
@@ -62,8 +69,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const model = isChunk ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-4-6'
+    trace('ai read', { hqId: hq.hqId, chunk: isChunk })
     const res = await new Anthropic({ apiKey }).messages.create({ model, max_tokens: 16000, messages: [{ role: 'user', content }] })
     recordImportSpend(hq.hqId, res.usage, model, 'impact')
+    trace('ai read done', { hqId: hq.hqId, input: res.usage?.input_tokens, output: res.usage?.output_tokens, stop: res.stop_reason })
     let txt = ''
     for (const b of res.content) if (b.type === 'text') txt += b.text
     const extracted = parseRecordLines(IMPACT_IMPORT_SCHEMA, txt)
@@ -72,6 +81,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ extracted, ...(res.stop_reason === 'max_tokens' ? { truncated: true } : {}) })
   } catch (err) {
     const e = err as { message?: string; status?: number }
-    return NextResponse.json({ error: `Import failed: ${e?.message ?? 'unknown error'}` }, { status: typeof e?.status === 'number' ? e.status : 500 })
+    trace('ai read failed', { hqId: hq.hqId, status: e?.status, error: e?.message })
+    return NextResponse.json({ error: `The AI couldn’t read that file just now (${e?.message ?? 'no reason given'}). Try again in a minute, or use the import template.` }, { status: 502 })
   }
 }

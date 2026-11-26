@@ -11,6 +11,7 @@ import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { OrgDetailsCard, ModulesCard } from './OrgSettings'
 import ImportCard from './ImportCard'
+import ImportHistoryCard from './ImportHistoryCard'
 import WelcomePackSettings from './WelcomePackSettings'
 import MembersCard from './MembersCard'
 
@@ -78,9 +79,11 @@ export default function SettingsTab() {
       {/* Modules — per-org on/off (Impact portals only) */}
       {org && <ModulesCard />}
 
-      {/* Import data — bulk import into this org (Impact portals only) */}
       {org && <MembersCard />}
+
+      {/* Data — import into this org, and the import history with Undo (Impact portals only) */}
       {org && <ImportCard />}
+      {org && <ImportHistoryCard />}
 
       {/* Welcome pack — items and the Activity Booklet */}
       {org && <WelcomePackSettings />}
