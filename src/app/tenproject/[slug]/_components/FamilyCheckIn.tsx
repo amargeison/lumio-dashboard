@@ -19,14 +19,16 @@ import { checkIn, weekendDay, type WeekendDay } from '@/lib/impact/community-act
 const sb = () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const todayIso = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
 
-export default function FamilyCheckIn() {
+/** venueId / onVenue: the venue being checked in at, shared with the view's header; onDay: its numbers. */
+export default function FamilyCheckIn({ venueId, onVenue, onDay }: { venueId: string; onVenue: (id: string) => void; onDay?: (d: WeekendDay | null) => void }) {
   const ctx = useImpact()
   const venues = ctx.people?.community?.venues ?? []
-  const [venueId, setVenueId] = useState(venues[0]?.id ?? '')
+  const setVenueId = onVenue
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null)
-  const [day, setDay] = useState<WeekendDay | null>(null)
+  const [day, setDayState] = useState<WeekendDay | null>(null)
+  const setDay = useCallback((d: WeekendDay | null) => { setDayState(d); onDay?.(d) }, [onDay])
   const [scanning, setScanning] = useState(false)
   const video = useRef<HTMLVideoElement>(null)
   const stream = useRef<MediaStream | null>(null)
@@ -34,7 +36,7 @@ export default function FamilyCheckIn() {
   const refresh = useCallback(async () => {
     if (!venueId) return
     try { setDay(await weekendDay(sb(), await currentHq(sb()), venueId, todayIso())) } catch { setDay(null) }
-  }, [venueId])
+  }, [venueId, setDay])
   useEffect(() => { refresh() }, [refresh])
 
   const submit = useCallback(async (raw: string) => {

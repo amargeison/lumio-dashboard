@@ -1,7 +1,8 @@
 // Community (brief 3, migration 237), end to end against a running app and the real
 // database, as two throwaway orgs that are deleted at the end. Touches no real org.
 //   /join: closed until a privacy link is set (server-side), never shows existing data,
-//   writes family + children + audit row, "already with us" creates nothing, the
+//   writes family + children + audit row, one identical reply for new and known
+//   addresses (a known one creates nothing), the
 //   waiting list, the venue poster's QR channel, honeypot and speed checks, rate limit,
 //   module off, the demo writes nothing.
 //   Check-in, the day's numbers, parent intents, and cross-org on every new table.
@@ -58,8 +59,9 @@ async function hq(letter, settings = {}) {
   return { id: user.id, slug, db: s.db, call }
 }
 const join = async (slug, body, ip = nextIp()) => {
+  const t0 = Date.now()
   const res = await fetch(`${BASE}/api/impact/join/${slug}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip }, body: JSON.stringify(body) })
-  return { status: res.status, body: await res.json().catch(() => ({})) }
+  return { status: res.status, body: await res.json().catch(() => ({})), ms: Date.now() - t0 }
 }
 const rows = async (hqId, table, f = q => q) => (await f(admin.from(table).select('*').eq('hq_id', hqId))).data ?? []
 const form = (venueId, extra = {}) => ({ guardian: 'Chris Doyle', email: `chris.doyle+${tag}@example.com`, phone: '07700 900350', children: [{ name: 'Ben Doyle', dob: '2017-05-02' }, { name: 'Amy Doyle', dob: '2019-08-14' }],
@@ -90,8 +92,8 @@ async function main() {
   ok('an unknown org is a 404', (await fetch(`${BASE}/impact/${tag}-nobody/join`)).status === 404 && (await join(`${tag}-nobody`, form(big))).status === 404)
 
   const first = await join(A.slug, form(small, { channel: 'qr' }))
-  ok('a family joins', first.status === 200 && first.body.ok === true && first.body.waitlisted === false, JSON.stringify(first.body))
-  ok('… the reply holds nothing but the outcome', JSON.stringify(Object.keys(first.body).sort()) === JSON.stringify(['ok', 'venue', 'waitlisted']))
+  const SAME = JSON.stringify({ ok: true })
+  ok('a family joins: the reply is only { ok: true }', first.status === 200 && JSON.stringify(first.body) === SAME, JSON.stringify(first.body))
   const [fam] = await rows(A.id, 'tp_families', q => q.eq('email', `chris.doyle+${tag}@example.com`))
   ok('family: community, venue, consents, signed up, a check-in code', fam?.source === 'community' && fam.community_venue_id === small && fam.consent_data === true && fam.consent_photo === false && !!fam.consent_at && !!fam.signed_up_at && !fam.waitlisted_at && /^[A-HJ-NP-Z2-9]{12}$/.test(fam.checkin_code) && fam.opt_in_email === true && fam.opt_in_sms === false, JSON.stringify(fam))
   const kids = await rows(A.id, 'tp_children', q => q.eq('family_id', fam.id))
@@ -100,20 +102,21 @@ async function main() {
   ok('audit row: from the venue poster (qr), consent version, hashed address', audit?.channel === 'qr' && audit.venue_id === small && audit.consent_text_version === 'join-2026-11' && /^[0-9a-f]{64}$/.test(audit.ip_hash) && !JSON.stringify(audit).includes('203.0.113'), JSON.stringify(audit))
 
   const again = await join(A.slug, form(big, { guardian: 'Someone Else', email: `CHRIS.DOYLE+${tag}@example.com` }))
-  ok('the same email again: “already with us”', again.status === 200 && again.body.existing === true && JSON.stringify(Object.keys(again.body).sort()) === JSON.stringify(['existing', 'ok']))
+  ok('the same email again: the identical reply — nothing says it was known', again.status === 200 && JSON.stringify(again.body) === SAME, JSON.stringify(again.body))
   ok('… creates no family, child or sign-up', (await rows(A.id, 'tp_families')).length === 2 && (await rows(A.id, 'tp_children')).length === 2 && (await rows(A.id, 'tp_community_signups')).length === 1)
   const secret = await join(A.slug, form(big, { email: `secret+${tag}@example.com` }))
-  ok('… the same for an HQ-added family: nothing about them comes back', secret.status === 200 && secret.body.existing === true && !JSON.stringify(secret.body).includes('Secret'))
+  ok('… the same for an HQ-added family', secret.status === 200 && JSON.stringify(secret.body) === SAME)
+  ok('every accepted reply takes at least the 900 ms floor (new and known alike)', [first, again, secret].every(r => r.ms >= 880), [first, again, secret].map(r => r.ms).join(' / '))
 
   const full = await join(A.slug, form(small, { guardian: 'Grace Whitlow', email: `grace+${tag}@example.com`, children: [{ name: 'Lily Whitlow', dob: '2018-03-03' }] }))
-  ok('venue at capacity: on the waiting list', full.status === 200 && full.body.waitlisted === true)
+  ok('venue at capacity: the identical reply (the waiting list is in the email)', full.status === 200 && JSON.stringify(full.body) === SAME)
   const [grace] = await rows(A.id, 'tp_families', q => q.eq('email', `grace+${tag}@example.com`))
   ok('… waitlisted, with the venue they chose, channel form', !!grace?.waitlisted_at && grace.community_venue_id === small && (await rows(A.id, 'tp_community_signups', q => q.eq('family_id', grace.id)))[0]?.channel === 'form')
 
   console.log('\n/join — refusals:')
   const before = (await rows(A.id, 'tp_families')).length
-  ok('the hidden field filled: a normal-looking reply, nothing saved', (await join(A.slug, form(big, { email: `bot1+${tag}@example.com`, website: 'http://spam.example' }))).body.ok === true && (await rows(A.id, 'tp_families')).length === before)
-  ok('sent within 3 seconds: the same', (await join(A.slug, form(big, { email: `bot2+${tag}@example.com`, startedAt: Date.now() }))).body.ok === true && (await rows(A.id, 'tp_families')).length === before)
+  ok('the hidden field filled: the identical reply, nothing saved', JSON.stringify((await join(A.slug, form(big, { email: `bot1+${tag}@example.com`, website: 'http://spam.example' }))).body) === SAME && (await rows(A.id, 'tp_families')).length === before)
+  ok('sent within 3 seconds: the same', JSON.stringify((await join(A.slug, form(big, { email: `bot2+${tag}@example.com`, startedAt: Date.now() }))).body) === SAME && (await rows(A.id, 'tp_families')).length === before)
   const noConsent = await join(A.slug, form(big, { email: `nc+${tag}@example.com`, consentData: false }))
   ok('no data consent: refused in plain words, nothing saved', noConsent.status === 400 && noConsent.body.field === 'consentData' && (await rows(A.id, 'tp_families')).length === before)
   ok('another org’s venue: refused', (await join(A.slug, form(bVenue, { email: `x+${tag}@example.com` }))).body.field === 'venueId')

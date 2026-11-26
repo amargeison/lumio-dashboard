@@ -2,8 +2,9 @@
 //   welcomeEmail   a new family: their QR for check-in (an inline image, cid:family-qr),
 //                  the venue's day and time — or that they're on its waiting list —
 //                  and the link to open the family app
-//   alreadyEmail   that address is already a family here: a link to sign in (or a new
-//                  invite link when they have no login yet). Nothing else is said.
+//   alreadyEmail   that address is already a family here: the app link again (sign in,
+//                  or a new invite link when they have no login yet). Nothing else is
+//                  said, and the page's reply is the same as for a new family.
 
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
 const button = (href: string, label: string) =>

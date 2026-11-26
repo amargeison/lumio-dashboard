@@ -8,6 +8,7 @@ import { SendMessageWizard } from './CommsTab'
 import { openResourceDoc, openSessionCardDoc } from '../_lib/resource-docs'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import FamilyCheckIn from './FamilyCheckIn'
+import type { WeekendDay } from '@/lib/impact/community-actions'
 import { useImpact, fill, type ImpactDataset } from './ImpactDataContext'
 import { moduleOn } from '@/lib/impact/org'
 import { stickerAreas } from '@/lib/impact/parent-view'
@@ -502,7 +503,10 @@ export function TenorView({ section }: { section?: TenorSection }) {
   const controlled = section !== undefined
   useEffect(() => { if (section !== undefined) setTab(section) }, [section])
   const [shared, setShared] = useState(false)
-  const venue = VENUES[0]
+  // Live: the venue being checked in at (chosen in Family check-in), and its numbers today.
+  const [checkinVenue, setCheckinVenue] = useState<string>(() => ctx.people?.community?.venues?.[0]?.id ?? '')
+  const [today, setToday] = useState<WeekendDay | null>(null)
+  const venue = VENUES.find(v => v.id === checkinVenue) ?? VENUES[0]
   const vd = venue ? VENUE_DETAILS[venue.id] : undefined
   const mapQ = encodeURIComponent(`${vd?.address}, ${vd?.postcode}`)
   // Live portals before a venue and volunteer team exist
@@ -602,7 +606,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
         <Card><EmptyState icon={MapPin} title="No weekend session yet" sub="Once you're inducted onto a venue, today's family session, the gate QR, the live count and the register appear here." /></Card>
         <UpcomingCalendar role="tenor" />
       </>)}
-      {tab === 'session' && readOnly && ctx.people && <FamilyCheckIn />}
+      {tab === 'session' && readOnly && ctx.people && <FamilyCheckIn venueId={checkinVenue} onVenue={setCheckinVenue} onDay={setToday} />}
       {tab === 'session' && !noVenue && venue && vd && (<>
       {/* eslint-disable-next-line no-lone-blocks */}
       <Card style={{ background: TP_DARK, border: 'none' }}>
@@ -623,7 +627,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
             </div>
           </div>
           <div style={{ textAlign: 'center', background: '#fff', borderRadius: 12, padding: '10px 16px' }}>
-            <div style={{ fontSize: 26, fontWeight: 900, color: TP_RED }}>{childCount}</div>
+            <div style={{ fontSize: 26, fontWeight: 900, color: TP_RED }}>{readOnly && today ? today.checked_in_children : childCount}</div>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#6B6560' }}>children on court</div>
           </div>
         </div>
