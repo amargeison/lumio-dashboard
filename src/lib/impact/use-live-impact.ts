@@ -107,7 +107,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
               const [home, attendance, messages, packData, familyBooklet] = await Promise.all([
                 loadParentHome(supabase, familyId),
                 supabase.from('tp_attendance').select('session_id, child_id, present').eq('hq_id', hqId),
-                supabase.from('impact_messages').select('id, subject, body, created_at').eq('hq_id', hqId).eq('family_id', familyId).eq('direction', 'out').order('created_at', { ascending: false }).limit(50),
+                supabase.from('impact_messages').select('id, subject, body, created_at, direction, channel').eq('hq_id', hqId).eq('family_id', familyId).order('created_at', { ascending: false }).limit(80),
                 loadPacks(supabase, hqId),
                 loadFamilyBooklet(supabase, familyId),
               ])
@@ -122,7 +122,8 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
                     venue: { id: '', name: '', day: '', time: '', tenors: 0 },
                     consents: { data: home.consent_data ?? false, photo: home.consent_photo ?? false, emergency: home.emergency_contact ?? '—' },
                   },
-                  PARENT_MESSAGES: (messages.data ?? []).map(x => ({ id: x.id as string, from: orgName, when: new Date(x.created_at as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), text: (x.body as string) || (x.subject as string) || '' })),
+                  // Their own replies show as theirs; the org's emails and app messages as the org's.
+                  PARENT_MESSAGES: (messages.data ?? []).map(x => ({ id: x.id as string, from: x.direction === 'in' ? 'You' : orgName, mine: x.direction === 'in', when: new Date(x.created_at as string).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), text: (x.body as string) || (x.subject as string) || '' })),
                 } as ImpactDataset)
                 setPacks(packData)
                 setFamilySessions(Object.fromEntries(home.children.map(c => [c.id, c.sessions])))
@@ -132,6 +133,11 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
                   ...familyBooklet,
                   saveNote: (childId, week, text) => saveBookletNote(supabase, hqId, familyId, childId, week, text),
                   saveScorecard: s => saveFamilyScorecard(supabase, hqId, familyId, s),
+                  reply: async (body: string) => {
+                    const { error } = await supabase.rpc('impact_parent_reply', { p_family: familyId, p_body: body })
+                    if (error) throw new Error(error.message)
+                    reload()
+                  },
                 })
               }
             }

@@ -318,11 +318,12 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
 
           {!noFamily && tab === 'messages' && (
             <>
+              {mode === 'live' && parent && <ParentReply onSend={parent.reply} />}
               {PARENT_MESSAGES.length === 0 && mode === 'live' && <EmptyState compact icon={MessageCircle} title="No messages yet" sub="Messages from your programme appear here." />}
               {PARENT_MESSAGES.map(m => (
-                <div key={m.id} style={{ background: '#fff', borderRadius: 12, padding: 13 }}>
+                <div key={m.id} style={{ background: (m as { mine?: boolean }).mine ? '#F0EBE5' : '#fff', borderRadius: 12, padding: 13, marginLeft: (m as { mine?: boolean }).mine ? 28 : 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: TP_RED }}>{m.from}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: (m as { mine?: boolean }).mine ? TP_DARK : TP_RED }}>{m.from}</span>
                     <span style={{ fontSize: 10.5, color: '#8A847E' }}>{m.when}</span>
                   </div>
                   <div style={{ fontSize: 12.5, color: TP_DARK }}>{m.text}</div>
@@ -384,6 +385,29 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
           })}
         </div>
       </div>
+    </div>
+  )
+}
+
+// Messages → write to the programme. Goes to the HQ's Inbox (impact_parent_reply: your
+// own family only, 20 an hour).
+function ParentReply({ onSend }: { onSend: (body: string) => Promise<void> }) {
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null)
+  async function send() {
+    if (!text.trim() || busy) return
+    setBusy(true); setNote(null)
+    try { await onSend(text.trim()); setText(''); setNote({ ok: true, text: 'Sent — the team will reply here or by email.' }) }
+    catch (e) { setNote({ ok: false, text: e instanceof Error ? e.message : 'That didn’t send. Please try again.' }) }
+    finally { setBusy(false) }
+  }
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, padding: 12 }}>
+      <label htmlFor="parent-reply" style={{ display: 'block', fontSize: 12, fontWeight: 800, color: TP_DARK, marginBottom: 6 }}>Message the team</label>
+      <textarea id="parent-reply" value={text} onChange={e => setText(e.target.value)} rows={3} maxLength={4000} placeholder="Ask a question or let us know something…" style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #E7E2DC', borderRadius: 10, padding: '9px 10px', fontSize: 13, fontFamily: 'inherit', color: TP_DARK, resize: 'vertical' }} />
+      <button onClick={send} disabled={busy || !text.trim()} style={{ marginTop: 8, width: '100%', background: busy || !text.trim() ? '#D9D3CC' : TP_RED, color: '#fff', border: 'none', borderRadius: 10, padding: '10px 14px', fontSize: 13, fontWeight: 700, cursor: busy ? 'default' : 'pointer' }}>{busy ? 'Sending…' : 'Send'}</button>
+      {note && <div role="status" style={{ fontSize: 11.5, marginTop: 6, color: note.ok ? '#187A3C' : TP_RED, fontWeight: 700 }}>{note.text}</div>}
     </div>
   )
 }

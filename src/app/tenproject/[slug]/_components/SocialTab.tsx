@@ -50,7 +50,7 @@ export default function SocialTab() {
     if (mode !== 'live') { setCaption(SOCIAL_AI_CAPTIONS[aiIdx % SOCIAL_AI_CAPTIONS.length]); setAiIdx(i => i + 1); return }
     setDrafting(true)
     try {
-      setCaption(await draftWithImpactAI(`Write one upbeat social media caption (under 45 words) for ${brand.org}, a free schools and family tennis programme, for ${platforms.join(' / ') || 'Instagram'}. Do not include hashtags.`, 160))
+      setCaption(await draftWithImpactAI(`Write one upbeat social media caption (under 45 words) for ${brand.org}, a free schools and family tennis programme, for ${platforms.join(' / ') || 'Instagram'}. Do not include hashtags.`, 160, 'social'))
     } catch { /* leave the caption as-is */ } finally { setDrafting(false) }
   }
   function schedule() {

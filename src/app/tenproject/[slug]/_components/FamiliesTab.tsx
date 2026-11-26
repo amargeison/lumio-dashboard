@@ -38,6 +38,7 @@ export default function FamiliesTab() {
     ['MEDICAL FLAGS', kids.filter(c => c.medical && !/^(none|no|n\/?a|na|-|ok)$/i.test(c.medical.trim())).length],
     ['NO PHOTO CONSENT', kids.filter(c => c.photoConsent !== true).length],
     ['OPTED OUT OF COMMS', families.filter(f => f.unsubscribed).length],
+    ...(families.some(f => f.emailBounced) ? [['NEED A NEW EMAIL', families.filter(f => f.emailBounced).length] as [string, number]] : []),
   ]
 
   if (!families.length && !unlinked.length) {
@@ -72,6 +73,7 @@ export default function FamiliesTab() {
             </div>
             <div style={{ fontSize: 11, color: '#6B6560', marginTop: 4, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               {f.email && <span><Mail size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} />{f.email}</span>}
+              {f.email && f.emailBounced && <span title={f.emailBounced.reason ?? undefined}><Pill tone="red">Needs a new email</Pill> bounced {ukDay(f.emailBounced.at)}</span>}
               {f.phone && <span><Phone size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} />{f.phone}</span>}
               {!f.email && !f.phone && <span>No contact details yet</span>}
             </div>

@@ -10,6 +10,7 @@
 
 import { TEN_PROJECT_BRAND } from '@/data/tenproject/portal-copy'
 import type { ImpactBrand } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
+import type { MessagingSettings } from './comms-settings'
 
 /** What an org saves. Every field optional — blank means "not set yet". */
 export interface ImpactOrgSettings {
@@ -34,6 +35,8 @@ export interface ImpactOrgSettings {
   privacyUrl?: string
   /** Module id → false when switched off. Missing = on. */
   modules?: Record<string, boolean>
+  /** Settings → Messaging: quiet hours and brand voice (see comms-settings.ts). */
+  messaging?: MessagingSettings
 }
 
 export const FOUNDER_FALLBACK: Record<string, ImpactBrand> = {

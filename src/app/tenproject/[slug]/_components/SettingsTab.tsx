@@ -9,6 +9,7 @@ import { Building2, Palette, Plug, Bell, Users, ShieldCheck, Moon, MessageSquare
 import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import { MessagingSettings } from './MessagingSettings'
 import { OrgDetailsCard, ModulesCard } from './OrgSettings'
 import ImportCard from './ImportCard'
 import ImportHistoryCard from './ImportHistoryCard'
@@ -88,8 +89,8 @@ export default function SettingsTab() {
       {/* Welcome pack — items and the Activity Booklet */}
       {org && <WelcomePackSettings />}
 
-      {/* Communications */}
-      <Card>
+      {/* Communications — live: quiet hours, brand voice, AI usage. Demo: the canned card. */}
+      {org ? <MessagingSettings /> : <Card>
         <SectionTitle sub="Sender identity, channels and automation rules for the Communications centre">
           <MessageSquare size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />Communications
         </SectionTitle>
@@ -103,7 +104,7 @@ export default function SettingsTab() {
         </div>
         <Row label="Automations enabled" desc="Master switch for all comms automations (weekly sends, sticker notifications, register chasing)" on={t.autoMaster} onChange={flip('autoMaster')} />
         <Row label="Quiet hours (8pm–8am)" desc="Non-urgent messages queue overnight; session cancellations always send" on={t.quietHours} onChange={flip('quietHours')} />
-      </Card>
+      </Card>}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         {/* Organisation */}

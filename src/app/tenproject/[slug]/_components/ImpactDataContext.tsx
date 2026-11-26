@@ -97,6 +97,8 @@ export interface ParentContext {
   scorecard: FamilyScorecard | null
   saveNote: (childId: string, week: number, text: string) => Promise<void>
   saveScorecard: (s: FamilyScorecard) => Promise<void>
+  /** A message to the org from the Messages tab (migration 238, impact_parent_reply). */
+  reply: (body: string) => Promise<void>
 }
 
 export interface LiveCohort { id: string; label: string; sessionId: string | null; sessions: RegisterSession[]; presentBySession: Record<string, string[]>; leadStaffId: string | null; children: TP.DemoChild[] }
@@ -110,6 +112,8 @@ export interface ImpactFamily {
   consentData: boolean | null; consentPhoto: boolean | null; unsubscribed: boolean; resubscribedAt?: string | null; children: ImpactChild[]
   /** An accepted parent login. */
   hasLogin?: boolean
+  /** Emails to this address bounced (migration 238): "needs a new email" until it is changed. */
+  emailBounced?: { at: string; reason: string | null } | null
   /** Weekend Community (migration 237). */
   community?: ImpactFamilyCommunity
 }
