@@ -355,7 +355,11 @@ async function logins(A, B) {
   ok('another org can’t invite your coach', bAttempt.status === 404, bAttempt.status)
   const stranger = await person('coach2'); await admin.from('tp_staff').update({ email: stranger.email }).eq('id', staff2)
   const send = async () => (await (await A.api('/api/impact/invite', { method: 'POST', body: JSON.stringify({ role: 'coach', targetId: staff2 }) })).json()).link
-  const first = await send(), link = await send()
+  const first = await send()
+  // The link only comes back in dry-run mode (local). Where invites really send, a throwaway
+  // org has no verified sender, so nothing is sent and these checks can't run.
+  if (!first) { console.log('  – invites really send here: link checks skipped (run locally with IMPACT_INVITES_LIVE=dry)'); ok('… and nothing was sent or left waiting', ((await admin.from('impact_invites').select('id').eq('hq_id', hq).is('revoked_at', null).is('accepted_at', null)).data ?? []).length === 0); return }
+  const link = await send()
   const tok = u => new URL(u).searchParams.get('invite')
   const accept = (who, t) => who.api('/api/impact/invite/accept', { method: 'POST', body: JSON.stringify({ token: t }) })
   ok('the link prefills the address', new URL(link).searchParams.get('email') === stranger.email && new URL(link).pathname === '/sports-login')
