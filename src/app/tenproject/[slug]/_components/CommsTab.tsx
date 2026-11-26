@@ -2,7 +2,7 @@
 
 // HQ Communications centre + the shared Send Message wizard (mapped from the
 // tennis coach Send Message flow: Who → Channels → Message → Preview/send).
-// Inbox threads, the newsletter builder and automations are all live.
+// Live portals render LiveComms instead; what follows is the demo's canned version.
 
 import React, { useState } from 'react'
 import { Mail, MessageSquare, Smartphone, Send, X, School, Users, Megaphone, CheckCircle, Sparkles, Newspaper, Inbox as InboxIcon, Heart, Reply, Forward, Eye, Zap, LayoutTemplate, Target, GitBranch, BarChart3, Clock, FlaskConical } from 'lucide-react'
@@ -12,6 +12,7 @@ import { TP_RED, TP_DARK, type CommsCampaign } from '@/data/tenproject/demo-data
 import { openNewsletter } from '../_lib/newsletter-docs'
 import { useImpact, type ImpactDataset } from './ImpactDataContext'
 import { LiveSendWizard } from './LiveSendWizard'
+import { LiveComms } from './LiveComms'
 
 const CHANNEL_META: Record<string, { label: string; icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties }> }> = {
   email: { label: 'EMAIL', icon: Mail },
@@ -165,7 +166,14 @@ type InboxMsg = ImpactDataset['COMMS_INBOX'][number]
 
 type SubTab = 'inbox' | 'newsletters' | 'automations' | 'audiences'
 
+// Live portals: the real Inbox, Newsletters, Automations and Audiences (LiveComms).
+// The demo keeps its canned tabs below.
 export default function CommsTab() {
+  const { mode } = useImpact()
+  return mode === 'live' ? <LiveComms /> : <DemoComms />
+}
+
+function DemoComms() {
   const ctx = useImpact()
   const { copy } = ctx
   const { COMMS_INBOX, COMMS_STATS_NL, COMMS_CAMPAIGNS, COMMS_TEMPLATES, COMMS_AUDIENCES, COMMS_JOURNEYS, COMMS_EVENT_AUTOS } = ctx.data

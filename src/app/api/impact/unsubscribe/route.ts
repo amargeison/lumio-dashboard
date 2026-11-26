@@ -42,6 +42,11 @@ export async function POST(req: NextRequest) {
     console.error('[impact/unsubscribe] failed', error.message)
     return page('That didn’t work', 'We couldn’t unsubscribe you just now. Please try the link again.', 500)
   }
-  console.log('[impact/unsubscribe]', JSON.stringify({ family: familyId }))
+  // The newsletter they unsubscribed from (the latest one sent to them in the last 30 days)
+  // counts it in its results. The link is per family, so that's the best attribution there is.
+  const since = new Date(Date.now() - 30 * 86_400_000).toISOString()
+  const { data: last } = await admin.from('impact_campaign_recipients').select('id').eq('family_id', familyId).not('sent_at', 'is', null).gt('sent_at', since).order('sent_at', { ascending: false }).limit(1)
+  if (last?.[0]) await admin.from('impact_campaign_recipients').update({ status: 'unsubscribed', unsubscribed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', last[0].id)
+  console.log('[impact/unsubscribe]', JSON.stringify({ family: familyId, campaign: !!last?.[0] }))
   return page('You’re unsubscribed', 'You won’t get any more messages from this programme.', 200)
 }

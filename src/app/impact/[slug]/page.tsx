@@ -32,6 +32,8 @@ import HQView, { type HqTab } from '@/app/tenproject/[slug]/_components/HQView'
 import SchoolView, { type SchoolSection } from '@/app/tenproject/[slug]/_components/SchoolView'
 import ParentApp from '@/app/tenproject/[slug]/_components/ParentApp'
 import { CoachView, TenorView, type CoachSection, type TenorSection } from '@/app/tenproject/[slug]/_components/RegisterViews'
+import { useCommsUnread } from '@/app/tenproject/[slug]/_components/LiveComms'
+import { CoachMessages } from '@/app/tenproject/[slug]/_components/CoachMessages'
 
 // Roles offered by SportsDemoGate's wizard (it wants emoji icons). Mirrors
 // rolesFor() below one-for-one; that keeps the lucide icons the chrome uses.
@@ -113,6 +115,7 @@ const SECTION_HEADERS: Record<string, Record<string, { title: string; sub: strin
     today: { title: 'Schools', sub: 'Your schools and today’s in-school session' },
     weekend: { title: 'Weekend sessions', sub: 'Your Saturday and Sunday family sessions' },
     resources: { title: 'Resources', sub: 'Session plans, videos and guides' },
+    messages: { title: 'Messages', sub: 'Family conversations your HQ has passed to you' },
   },
   tenor: {
     resources: { title: 'Resources', sub: 'Videos, session cards, guides and who to call' },
@@ -186,7 +189,9 @@ function ImpactPortalInner({ session, slug, onSignOut, lockTo, switchTo }: { ses
   // Sidebar-driven sections per role (tennis-portal pattern)
   const [hqSection, setHqSection] = useState<HqTab>('overview')
   const [schoolSection, setSchoolSection] = useState<SchoolSection>('programme')
-  const [coachSection, setCoachSection] = useState<CoachSection>('stats')
+  const [coachSection, setCoachSection] = useState<CoachSection | 'messages'>('stats')
+  // Unread replies in Communications, for the sidebar (live HQ only).
+  const commsUnread = useCommsUnread(mode === 'live' && role === 'hq')
   const [tenorSection, setTenorSection] = useState<TenorSection>('session')
 
   // A module switched off while it's open → back to Overview (Coach idiom);
@@ -404,6 +409,7 @@ function ImpactPortalInner({ session, slug, onSignOut, lockTo, switchTo }: { ses
         { id: 'today', label: 'Schools', icon: School },
         { id: 'weekend', label: 'Weekend sessions', icon: CalendarDays },
         { id: 'resources', label: 'Resources', icon: BookOpen },
+        ...(mode === 'live' ? [{ id: 'messages', label: 'Messages', icon: Send }] : []),
       ] },
     ]
     : role === 'tenor' ? [
@@ -423,7 +429,7 @@ function ImpactPortalInner({ session, slug, onSignOut, lockTo, switchTo }: { ses
   function setSection(id: string) {
     if (role === 'hq') setHqSection(id as HqTab)
     else if (role === 'school') setSchoolSection(id as SchoolSection)
-    else if (role === 'coach') setCoachSection(id as CoachSection)
+    else if (role === 'coach') setCoachSection(id as CoachSection | 'messages')
     else if (role === 'tenor') setTenorSection(id as TenorSection)
   }
   const expanded = pinned || railHover
@@ -483,6 +489,7 @@ function ImpactPortalInner({ session, slug, onSignOut, lockTo, switchTo }: { ses
                   >
                     <Icon size={15} style={{ flexShrink: 0 }} />
                     {expanded && s.label}
+                    {s.id === 'comms' && role === 'hq' && commsUnread > 0 && <span aria-label={`${commsUnread} unread`} style={{ marginLeft: expanded ? 'auto' : -8, background: active ? '#fff' : TP_RED, color: active ? TP_RED : '#fff', borderRadius: 999, fontSize: 9.5, fontWeight: 900, padding: '1px 6px' }}>{commsUnread}</span>}
                   </button>
                 )
               })}
@@ -533,7 +540,7 @@ function ImpactPortalInner({ session, slug, onSignOut, lockTo, switchTo }: { ses
         {role === 'hq' && <HQView section={hqSection} onSectionChange={setHqSection} />}
         {role === 'school' && <SchoolView section={schoolSection} />}
         {role === 'parent' && <ParentPreview />}
-        {role === 'coach' && <CoachView section={coachSection} />}
+        {role === 'coach' && (coachSection === 'messages' ? <CoachMessages /> : <CoachView section={coachSection} />)}
         {role === 'tenor' && <TenorView section={tenorSection} />}
       </main>
     </div>

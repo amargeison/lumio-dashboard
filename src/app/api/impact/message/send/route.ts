@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { impactHq } from '@/lib/impact/import-auth'
 import { appFiledDetail, contactBlock, familyAppLive, namedWithoutConsent, photoGreen, toE164, unsubscribeToken, verifiedSender, type CommsChannel, type ConsentChild, type ConsentFamily } from '@/lib/impact/comms-rules'
 import { rateLimit } from '@/lib/rate-limit'
+import { impactReplyTo } from '@/lib/impact/inbound'
 
 export const runtime = 'nodejs'
 
@@ -36,12 +37,12 @@ const looksLikeEmail = (s: string) => /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]+$/.t
 const oneLine = (s: unknown, max: number) => String(s ?? '').replace(/[\r\n\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, max)
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-type Family = ConsentFamily & { guardian_name: string; email: string | null; phone: string | null }
+type Family = ConsentFamily & { guardian_name: string; email: string | null; phone: string | null; email_bounced_at?: string | null }
 type Target = { i: number; label: string; family: Family | null; child: ConsentChild | null; refused?: string; note?: string }
 type Outcome = 'sent' | 'filed' | 'failed' | 'refused'
 type Result = { i: number; name: string; channel: CommsChannel; ok: boolean; outcome: Outcome; detail: string; providerId?: string; inviteFamilyId?: string }
 
-const FAMILY_COLS = 'id, guardian_name, email, phone, consent_data, consent_photo, opt_in_email, opt_in_sms, opt_in_app, unsubscribed_at'
+const FAMILY_COLS = 'id, guardian_name, email, phone, consent_data, consent_photo, opt_in_email, opt_in_sms, opt_in_app, unsubscribed_at, email_bounced_at'
 
 // Both reads throw rather than come back short: a consent check run against
 // half the records would pass messages it should stop.
@@ -190,14 +191,16 @@ export async function POST(req: NextRequest) {
       on('email').forEach(({ t }) => push(t, 'email', 'failed', 'Email is not set up on this server'))
     } else {
       const from = `${orgName.replace(/["<>\\]/g, '')} <${address}>`
-      // Impact has no inbound route yet, so replies go to a person. The org's
-      // public address when it has one, otherwise the HQ login's.
+      // Replies come back into the org's inbox: reply+<slug>@inbound.lumiosports.com
+      // (the Resend webhook threads them by the sender's email). If the slug can't make
+      // an address, they go to the org's public address, or the HQ login's.
       const orgEmail = oneLine(settings.email, 200)
-      const replyTo = looksLikeEmail(orgEmail) ? orgEmail : (user.email ?? undefined)
+      const replyTo = impactReplyTo(org.slug as string) ?? (looksLikeEmail(orgEmail) ? orgEmail : (user.email ?? undefined))
       for (const { t, f } of on('email')) {
         const to = (f.email ?? '').trim()
         if (!to) { push(t, 'email', 'failed', 'No email address on file'); continue }
         if (!looksLikeEmail(to)) { push(t, 'email', 'failed', 'The address on file is not an email address'); continue }
+        if (f.email_bounced_at) { push(t, 'email', 'failed', 'Emails to this address bounced — it needs a new email'); continue }
         // Counted per email: one message to every family is hundreds of emails.
         if (!rateLimit(`impact-message-email:${hqId}`, 600, 60 * 60_000).ok) { push(t, 'email', 'failed', 'Hourly email limit reached, send this one again later'); continue }
         const unsubscribe = `${SITE}/api/impact/unsubscribe?t=${encodeURIComponent(unsubscribeToken(f.id, unsubscribeSecret))}`

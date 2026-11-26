@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { appFiledDetail, contactBlock, familyFromUnsubscribeToken, namedWithoutConsent, photoGreen, toE164, unsubscribeToken, verifiedSender } from '../../src/lib/impact/comms-rules.ts'
+import './brackenmoor.mjs'   // registers the import hooks (comms-rules imports ./comms-consent)
+const { appFiledDetail, contactBlock, familyFromUnsubscribeToken, namedWithoutConsent, photoGreen, toE164, unsubscribeToken, verifiedSender } = await import('../../src/lib/impact/comms-rules.ts')
 const fam = (o={}) => ({ id:'f1', consent_data:true, consent_photo:true, opt_in_email:true, opt_in_sms:true, opt_in_app:true, unsubscribed_at:null, ...o })
 const kid = (o={}) => ({ id:'c1', family_id:'f1', name:'Sam Jones', photo_consent:true, ...o })
 test('contact: null consent refused', () => assert.equal(contactBlock(fam({consent_data:null}),'email'),'No contact consent on record'))

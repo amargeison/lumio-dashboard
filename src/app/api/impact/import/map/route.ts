@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { importGate, recordImportSpend } from '@/lib/import-engine/guard'
+import { serviceDb } from '@/lib/impact/invite-send'
+import { aiGate, logAiUsage } from '@/lib/impact/ai-usage'
 import type { SheetPlan } from '@/lib/import-engine/records'
 import { IMPACT_IMPORT_FIELDS, IMPACT_IMPORT_CATEGORIES, IMPACT_ENUMS, IMPACT_MEANINGS, type ImpactImportCategory } from '@/lib/impact/import-schema'
 import { impactHq } from '@/lib/impact/import-auth'
@@ -40,8 +42,12 @@ export async function POST(req: NextRequest) {
   if (hq instanceof NextResponse) return hq
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) return NextResponse.json({ error: 'Reading files with AI isn’t available right now. Use the import template instead — it needs no AI.' }, { status: 503 })
-  const limited = importGate(hq.hqId)
+  const limited = importGate(hq.hqId, { accountSpend: false })
   if (limited) { trace('ai map refused: daily cap', { hqId: hq.hqId }); return limited }
+  const service = serviceDb()
+  const { data: orgRow } = await service.from('impact_orgs').select('slug').eq('hq_id', hq.hqId).maybeSingle()
+  const allowance = await aiGate(service, { hqId: hq.hqId, slug: (orgRow?.slug as string) ?? '' }, hq.user.id, 'import')
+  if (!allowance.ok) return NextResponse.json({ error: allowance.status === 429 ? 'You’ve used today’s AI allowance for your organisation, so files can’t be read with AI until midnight. The import template needs no AI.' : allowance.error }, { status: allowance.status })
 
   const body = await req.json().catch(() => ({})) as { fileName?: string; sheets?: { name: string; sample: string }[] }
   const sheets = (Array.isArray(body.sheets) ? body.sheets : []).filter(s => s && typeof s.name === 'string' && typeof s.sample === 'string').slice(0, 20)
@@ -55,6 +61,7 @@ export async function POST(req: NextRequest) {
       messages: [{ role: 'user', content: [{ type: 'text', text }, { type: 'text', text: PROMPT }] }],
     })
     recordImportSpend(hq.hqId, res.usage, 'claude-sonnet-4-6', 'impact')
+    await logAiUsage(service, hq.hqId, hq.user.id, 'import', 'claude-sonnet-4-6', res.usage)
     let txt = ''
     for (const b of res.content) if (b.type === 'text') txt += b.text
     const match = txt.replace(/```json\s*/gi, '').replace(/```/g, '').match(/\{[\s\S]*\}/)

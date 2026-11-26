@@ -1,8 +1,10 @@
-# Impact Communications — scheduler and provider set-up (plan, for approval)
+# Impact Communications — scheduler and provider set-up
 
 Brief 4 needs things to happen without anyone pressing a button: scheduled newsletters,
-the automations, and webhook results from Resend and Twilio. This is what would run, and
-the server and provider steps that need Arron's OK. Nothing here is switched on yet.
+the automations, and webhook results from Resend. This is what runs, and the server and
+provider steps. Approved 26 Nov 2026: the crontab line (with the scheduler off first, a
+dry run, then on for Lumio Test only), the Resend webhook and open tracking, inbound
+option B. Twilio inbound: not now.
 
 ## 1. The five-minute runner
 
@@ -44,46 +46,50 @@ gets a bot challenge.
    the lease.
 
 **Safety:** off unless `IMPACT_COMMS_SCHEDULER=on` is in `.env.production`, so adding the
-crontab line alone does nothing until that is set. Each automation is also off until an
+crontab line alone does nothing until that is set (each run answers `{"off":true}`).
+`IMPACT_COMMS_SCHEDULER_ORGS=lumio-test` limits it to the listed org slugs (comma
+separated); unset means every live org with Communications on. A dry run —
+`POST /api/cron/impact-comms?dry=1` with the same secret — works whatever the switch says,
+reports per org what a run would send (counts only, no names or addresses) and writes and
+sends nothing. Each automation is also off until an
 HQ switches it on, and shows "who would receive it today" before it is switched on. To
 stop everything at once: remove the env var (and `pm2 restart lumio --update-env`) or
 comment out the crontab line. Only dry runs are called while testing; a test never calls
 the live route.
 
-## 2. Resend webhooks (delivered / opened / bounced / complained)
+## 2. Resend webhook (delivered / opened / bounced / complained, and replies)
 
 **Route:** `POST /api/impact/webhooks/resend` (new), verified with Svix
 (`RESEND_IMPACT_WEBHOOK_SECRET`), five-minute replay window, each event id handled once
-(`impact_provider_events`).
+(`impact_provider_events`). One endpoint takes both the delivery events and inbound replies.
 
 **Provider step:** in Resend → Webhooks, add `https://www.lumiosports.com/api/impact/webhooks/resend`
-for `email.delivered`, `email.opened`, `email.bounced`, `email.complained`, and put its
-signing secret in `.env.production` as `RESEND_IMPACT_WEBHOOK_SECRET`. A bounce marks the
-family's email as bad ("needs a new email" in Families) until the email is changed; a
-complaint unsubscribes the family.
+for `email.delivered`, `email.opened`, `email.bounced`, `email.complained` and
+`email.received`, and put its signing secret in `.env.production` as
+`RESEND_IMPACT_WEBHOOK_SECRET`. A bounce marks the family's email as bad ("needs a new
+email" in Families) until the email is changed; a complaint unsubscribes the family.
+Resend sends every event on the account here (Coach's too); anything that isn't an Impact
+email or an Impact reply address is ignored.
 
 Open tracking must be turned on for each sending domain in Resend, or "opened" stays empty.
 Apple Mail's privacy protection opens everything, so opens over-count; the results tab
-will say so next to the number.
+says so next to the number.
 
-## 3. Inbound email (replies → threads)
+## 3. Inbound email (replies → threads) — option B
 
-**Pushback on the brief.** "replies@<their sending domain>" would mean pointing the MX
-records of the org's own domain at Resend, which would take over the org's whole mailbox
-(info@, the head's email…). That can't be done on a domain they use for email.
+Impact emails carry **Reply-To `reply+<org slug>@inbound.lumiosports.com`**; From stays the
+org's verified sender. `inbound.lumiosports.com` already receives through Resend for
+Coach, so there's no DNS work. Coach's addresses are `reply+<token>.<signature>`; an org
+slug has no dot, so each side ignores the other's.
 
-Two safe options:
+(Option A, `replies@reply.<their domain>`, is left for later as a Settings choice: their main
+mailbox can't be pointed at Resend without taking it over.)
 
-- **A. A reply subdomain per org** — `replies@reply.<their domain>`, with an MX record on
-  `reply.<their domain>` only. Their main mailbox is untouched. Each org (Ten Project,
-  then others) adds one DNS record. Recommended.
-- **B. Lumio's own inbound domain** — `reply+<org>@inbound.lumiosports.com`, which Coach
-  already uses. No DNS work for the org, but the reply-to address shows lumiosports.com.
-
-Either way: Resend inbound → `POST /api/impact/webhooks/inbound-email` (Svix-verified),
-the org found from the recipient address, the family from the sender's email (a sender
-who isn't a family here is filed as "unknown sender", never matched by name), de-duplicated
-on the message id, and filed as `direction = 'in'` in that family's thread.
+Resend `email.received` → the webhook above: the org from the recipient address, the
+family from the sender's email only (a sender who isn't exactly one family in that org is
+filed as an unknown sender, never matched by name), de-duplicated on the message id, filed
+as `direction = 'in'` in that family's thread. The body is fetched from Resend's Received
+Emails API and the quoted earlier message cut off.
 
 ## 4. SMS replies
 
@@ -100,10 +106,14 @@ Every call (and every refusal) is logged in `impact_ai_usage` with org, feature,
 tokens; Settings shows today's spend against the cap. The importer's separate $5/day cap
 (src/lib/import-engine/guard.ts) is replaced by this one: imports log as feature `import`.
 
-## What needs Arron's OK
+## Server steps, in order (after the code is live)
 
-1. Add the crontab line (section 1) and `IMPACT_COMMS_SCHEDULER=on` to `.env.production`
-   — after the code is live and has run as a dry run.
-2. Add the Resend webhook and its secret (section 2); turn on open tracking per domain.
-3. Choose A or B for inbound email (section 3); for A, a DNS record per org.
-4. Twilio inbound webhook — only when there is an Impact SMS number.
+1. Add `CRON_SECRET`-authenticated crontab line (section 1) and
+   `IMPACT_COMMS_SCHEDULER=off` to `.env.production`; `pm2 restart lumio --update-env`.
+2. Dry run on the server and show Arron its log:
+   `curl -sS -X POST -H "Authorization: Bearer $CRON_SECRET" "http://127.0.0.1:3000/api/cron/impact-comms?dry=1"`
+3. On Arron's OK: `IMPACT_COMMS_SCHEDULER=on` and `IMPACT_COMMS_SCHEDULER_ORGS=lumio-test`,
+   restart, test on Lumio Test only.
+4. Resend: the webhook (section 2) with its secret in `.env.production`; open tracking on per
+   sending domain.
+5. Twilio inbound: not now.

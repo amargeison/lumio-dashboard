@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 import { fileToContent, UnreadableFile } from '@/lib/import-engine/file-to-content'
 import { parseRecordLines } from '@/lib/import-engine/records'
 import { importGate, recordImportSpend } from '@/lib/import-engine/guard'
+import { serviceDb } from '@/lib/impact/invite-send'
+import { aiGate, logAiUsage } from '@/lib/impact/ai-usage'
 import { IMPACT_IMPORT_SCHEMA, IMPACT_IMPORT_FIELDS, IMPACT_IMPORT_CATEGORIES, IMPACT_MEANINGS } from '@/lib/impact/import-schema'
 import { impactHq } from '@/lib/impact/import-auth'
 import { MAX_IMPORT_BYTES } from '@/lib/impact/import-plan'
@@ -43,8 +45,12 @@ export async function POST(req: NextRequest) {
   if (Number(req.headers.get('content-length') ?? 0) > MAX_IMPORT_BYTES + 64 * 1024) {
     return NextResponse.json({ error: 'That file is over 10 MB. One import takes files up to 10 MB — save it without pictures, or split it.' }, { status: 413 })
   }
-  const limited = importGate(hq.hqId)
+  const limited = importGate(hq.hqId, { accountSpend: false })
   if (limited) { trace('ai read refused: daily cap', { hqId: hq.hqId }); return limited }
+  const service = serviceDb()
+  const { data: orgRow } = await service.from('impact_orgs').select('slug').eq('hq_id', hq.hqId).maybeSingle()
+  const allowance = await aiGate(service, { hqId: hq.hqId, slug: (orgRow?.slug as string) ?? '' }, hq.user.id, 'import')
+  if (!allowance.ok) return NextResponse.json({ error: allowance.status === 429 ? 'You’ve used today’s AI allowance for your organisation, so files can’t be read with AI until midnight. The import template needs no AI.' : allowance.error }, { status: allowance.status })
 
   const content: Anthropic.ContentBlockParam[] = []
   const isChunk = (req.headers.get('content-type') || '').includes('application/json')
@@ -72,6 +78,7 @@ export async function POST(req: NextRequest) {
     trace('ai read', { hqId: hq.hqId, chunk: isChunk })
     const res = await new Anthropic({ apiKey }).messages.create({ model, max_tokens: 16000, messages: [{ role: 'user', content }] })
     recordImportSpend(hq.hqId, res.usage, model, 'impact')
+    await logAiUsage(service, hq.hqId, hq.user.id, 'import', model, res.usage)
     trace('ai read done', { hqId: hq.hqId, input: res.usage?.input_tokens, output: res.usage?.output_tokens, stop: res.stop_reason })
     let txt = ''
     for (const b of res.content) if (b.type === 'text') txt += b.text

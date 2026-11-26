@@ -81,7 +81,7 @@ export interface LiveRows {
   venues?: { id: string; name: string; address: string | null; postcode: string | null; courts: string | null; surface: string | null; access_notes: string | null; storage_notes: string | null; session_day: string | null; session_time: string | null; inclusive: boolean; external_partner: string | null; external_url: string | null; notes: string | null; capacity?: number | null }[]
   staff?: { id: string; name: string; role: string; qualification: string | null; email: string | null; phone: string | null; availability: string | null; specialisms: string[] | null; dbs_status: string; dbs_number: string | null; dbs_expiry: string | null; safeguarding_date: string | null; first_aid_expiry: string | null; insurance: string | null; notes: string | null }[]
   volunteers?: { id: string; name: string; email: string | null; phone: string | null; venue_id: string | null; inducted: boolean; induction_date: string | null; dbs_status: string; dbs_expiry?: string | null; first_aid_expiry?: string | null; since: string | null; notes: string | null }[]
-  families?: { id: string; guardian_name: string; email: string | null; phone: string | null; emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null; unsubscribed_at: string | null; resubscribed_at?: string | null
+  families?: { id: string; guardian_name: string; email: string | null; phone: string | null; emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null; unsubscribed_at: string | null; resubscribed_at?: string | null; email_bounced_at?: string | null; email_bounce_reason?: string | null
     // 237 — Community
     source?: 'school' | 'community' | 'both' | null; community_venue_id?: string | null; signed_up_at?: string | null; lapsed_at?: string | null; waitlisted_at?: string | null; checkin_code?: string | null; created_at?: string | null }[]
   children?: { id: string; family_id: string | null; name: string; date_of_birth: string | null; year_group: string | null; school_id: string | null; programme_id: string | null; medical_notes: string | null; photo_consent: boolean | null; fee_status: string; gender?: string | null; fsm?: boolean | null; pupil_premium?: boolean | null; stickers: number; send?: boolean | null }[]
@@ -442,7 +442,7 @@ export function buildPeople(rows: LiveRows): ImpactPeople {
   return {
     families: (rows.families ?? []).map(f => ({
       id: f.id, guardian: f.guardian_name, email: f.email, phone: f.phone, consentData: f.consent_data, consentPhoto: f.consent_photo,
-      unsubscribed: !!f.unsubscribed_at, resubscribedAt: f.resubscribed_at ?? null, children: kids.filter(k => k.family_id === f.id).map(child),
+      unsubscribed: !!f.unsubscribed_at, resubscribedAt: f.resubscribed_at ?? null, emailBounced: f.email_bounced_at ? { at: f.email_bounced_at, reason: f.email_bounce_reason ?? null } : null, children: kids.filter(k => k.family_id === f.id).map(child),
       hasLogin: logins.has(f.id),
       community: {
         source: f.source ?? null, venueId: f.community_venue_id ?? null, signedUpAt: f.signed_up_at ?? null, lapsedAt: f.lapsed_at ?? null,

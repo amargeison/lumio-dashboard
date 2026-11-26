@@ -38,13 +38,18 @@ const RATES: Record<string, { input: number; output: number }> = {
 }
 const rate = (model: string) => (/haiku/i.test(model) ? RATES.haiku : /opus/i.test(model) ? RATES.opus : RATES.sonnet)
 
-/** Call before each model call. Returns a ready-made 429 response when over a limit. */
-export function importGate(accountId: string): NextResponse | null {
+/**
+ * Call before each model call. Returns a ready-made 429 response when over a limit.
+ * `accountSpend: false` leaves the per-account dollar cap to the caller (Lumio Impact
+ * counts imports against its per-org daily AI allowance instead, lib/impact/ai-usage.ts);
+ * the burst window and the global cap still apply.
+ */
+export function importGate(accountId: string, opts: { accountSpend?: boolean } = {}): NextResponse | null {
   const s = state()
   if (s.total >= IMPORT_GLOBAL_DAILY_USD) {
     return NextResponse.json({ error: 'Imports are paused for today — please try again tomorrow.' }, { status: 429 })
   }
-  if ((s.spend.get(accountId) ?? 0) >= IMPORT_ACCOUNT_DAILY_USD) {
+  if (opts.accountSpend !== false && (s.spend.get(accountId) ?? 0) >= IMPORT_ACCOUNT_DAILY_USD) {
     return NextResponse.json({ error: 'You’ve reached today’s import allowance — please try again tomorrow, or contact Lumio.' }, { status: 429 })
   }
   const now = Date.now()
