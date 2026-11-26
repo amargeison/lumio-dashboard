@@ -12,7 +12,8 @@ export async function parseMime(raw: Uint8Array, envelope: { to: string; from: s
   const from = email.from && !('group' in email.from && email.from.group) ? email.from as { name: string; address: string } : null
   const fromAddress = lowerAddress(from?.address ?? '') || lowerAddress(envelope.from) || null
   const recipients = [...new Set([extractAddress(envelope.to), ...flat(email.to), ...flat(email.cc)].filter(Boolean))]
-  const authHeader = envelope.authResults || email.headers.find(h => h.key === 'authentication-results')?.value || ''
+  // Only the Worker's (Cloudflare's own) verdict counts; headers inside the message are the sender's.
+  const authHeader = envelope.authResults
   return {
     recipients,
     from: fromAddress,
