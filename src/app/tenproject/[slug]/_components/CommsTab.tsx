@@ -22,9 +22,9 @@ const CHANNEL_META: Record<string, { label: string; icon: React.ComponentType<{ 
 
 // ─── Send Message wizard (shared) ───────────────────────────────────────────
 // Live portals send for real through LiveSendWizard. Demo keeps the canned flow.
-export function SendMessageWizard({ onClose, defaultRecipient, defaultMessage }: { onClose: () => void; defaultRecipient?: string; defaultMessage?: string }) {
+export function SendMessageWizard({ onClose, defaultRecipient, defaultMessage, defaultFamilyIds }: { onClose: () => void; defaultRecipient?: string; defaultMessage?: string; defaultFamilyIds?: string[] }) {
   const { mode } = useImpact()
-  if (mode === 'live') return <LiveSendWizard onClose={onClose} defaultMessage={defaultMessage} />
+  if (mode === 'live') return <LiveSendWizard onClose={onClose} defaultMessage={defaultMessage} defaultFamilyIds={defaultFamilyIds} />
   return <DemoSendWizard onClose={onClose} defaultRecipient={defaultRecipient} defaultMessage={defaultMessage} />
 }
 

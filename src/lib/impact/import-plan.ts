@@ -53,7 +53,7 @@ export type ImportPlan = { tables: PlanTable[]; ops: Op[]; writes: number; recor
 
 /** The tables an import writes, in the order the rows are created (later ones link to earlier). */
 export const INSERT_ORDER = [
-  'tp_schools', 'tp_programmes', 'tp_venues', 'tp_staff', 'tp_families', 'tp_volunteers', 'tp_children', 'tp_pack_sizes', 'tp_pack_payments',
+  'tp_schools', 'tp_programmes', 'tp_venues', 'tp_staff', 'tp_families', 'tp_community_signups', 'tp_volunteers', 'tp_children', 'tp_pack_sizes', 'tp_pack_payments',
   'tp_fundraising_campaigns', 'tp_fundraising_events', 'tp_donations', 'tp_sessions', 'tp_attendance', 'tp_impact_responses', 'tp_cpd',
 ] as const
 
@@ -278,7 +278,16 @@ export function planImport(records: Record<ImpactSaveCategory, Rec[]>, existing:
 
   for (const r of records.families) {
     const m = familyMatch(r.email, r.phone, r.guardian_name)
-    put('families', r, m?.row ?? null, m?.how ?? '', {}, pool.families, [])
+    const notes: string[] = []
+    const venueId = venueFor(r.weekend_venue, notes)
+    const id = put('families', r, m?.row ?? null, m?.how ?? '', { community_venue_id: venueId }, pool.families, notes)
+    // A new family with a weekend venue joins Community through this import: marked so, with the audit row /join would make.
+    if (!m && venueId) {
+      const made = ops.find(o => o.kind === 'insert' && o.table === 'tp_families' && o.row.id === id)
+      if (made?.kind === 'insert') Object.assign(made.row, { source: 'community', signed_up_at: ctx.now })
+      // No id: the database makes it (HQ logins may only set these columns, migration 237).
+      ops.push({ kind: 'insert', table: 'tp_community_signups', row: { hq_id: ctx.hqId, family_id: id, venue_id: venueId, channel: 'import' } })
+    }
   }
 
   for (const r of records.volunteers) {

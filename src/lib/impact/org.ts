@@ -30,6 +30,8 @@ export interface ImpactOrgSettings {
   tagline?: string
   hashtag?: string
   socialHandle?: string
+  /** The org's privacy policy (https). Until it is set, /join stays closed. */
+  privacyUrl?: string
   /** Module id → false when switched off. Missing = on. */
   modules?: Record<string, boolean>
 }
@@ -104,6 +106,7 @@ export function impactModules(brand: ImpactBrand): ImpactModule[] {
     { id: 'overview', label: 'Overview', locked: true, desc: 'Programme health, needs-attention and the snapshot' },
     { id: 'insights', label: 'Insights', desc: 'Participation, conversion, impact and social value' },
     { id: 'schools', label: 'Schools', desc: 'Partner schools — and the School view' },
+    { id: 'community', label: 'Community', desc: 'Families at the weekend sessions — sign-ups, visits, QR check-in and the waiting list' },
     { id: 'venues', label: 'Venues', desc: 'Weekend community venues' },
     { id: 'families', label: 'Families', desc: 'Households and children — consents, medical flags, fees and opt-outs' },
     { id: 'coaches', label: 'Coaches', desc: 'Coaching team, compliance — and the Coach view' },
@@ -123,4 +126,11 @@ export const ALWAYS_ON = ['overview', 'settings']
 export function moduleOn(settings: ImpactOrgSettings | null | undefined, id: string): boolean {
   if (ALWAYS_ON.includes(id)) return true
   return settings?.modules?.[id] !== false
+}
+
+/** The privacy policy link, only when it is a real https address. Until there is one, /join stays closed. */
+export function privacyUrlOf(s: ImpactOrgSettings | null | undefined): string | null {
+  const v = s?.privacyUrl?.trim()
+  if (!v) return null
+  try { const u = new URL(v); return u.protocol === 'https:' && u.hostname.includes('.') ? u.toString() : null } catch { return null }
 }

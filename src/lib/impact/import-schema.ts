@@ -31,7 +31,7 @@ export const IMPACT_IMPORT_FIELDS: Record<ImpactImportCategory, string[]> = {
   venues: ['name', 'address', 'postcode', 'courts', 'surface', 'access_notes', 'storage_notes', 'session_day', 'session_time', 'inclusive', 'notes'],
   coaches: ['name', 'role', 'qualification', 'email', 'phone', 'availability', 'specialisms', 'dbs_status', 'dbs_number', 'dbs_expiry', 'safeguarding_date', 'first_aid_expiry', 'notes'],
   volunteers: ['name', 'email', 'phone', 'venue_name', 'inducted', 'induction_date', 'dbs_status', 'first_aid_expiry', 'since', 'notes'],
-  families: ['guardian_name', 'guardian2_name', 'email', 'phone', 'emergency_contact', 'consent_data', 'consent_photo', 'unsubscribed', 'notes'],
+  families: ['guardian_name', 'guardian2_name', 'email', 'phone', 'emergency_contact', 'consent_data', 'consent_photo', 'unsubscribed', 'weekend_venue', 'notes'],
   children: ['name', 'date_of_birth', 'year_group', 'school_name', 'programme_term', 'class_name', 'guardian_name', 'guardian_email', 'guardian_phone', 'photo_consent', 'medical_notes', 'send', 'gender', 'fsm', 'pupil_premium', 'fee_status', 'fee_amount', 'pack_size', 'pack_issued', 'paid_item_date', 'paid_item_amount', 'notes'],
   registers: ['child_name', 'child_date_of_birth', 'session_date', 'present', 'kind', 'school_name', 'venue_name', 'week_number', 'notes'],
   events: ['name', 'event_type', 'event_date', 'target', 'status', 'notes'],
@@ -213,7 +213,7 @@ export const IMPACT_IMPORT_SCHEMA: ImportSchema<ImpactImportCategory> = {
     'responses.respondent': { mum: 'parent', dad: 'parent', carer: 'parent', guardian: 'parent', family: 'parent', teacher: 'school', head: 'school', volunteer: 'tenor', helper: 'tenor' },
   },
   fieldLabels: {
-    status: 'Status', current_week: 'Week', first_visit: 'First visit', child_date_of_birth: 'Child date of birth', postcode: 'Postcode', cost: 'Cost', start_date: 'Start', end_date: 'End', date_of_birth: 'Date of birth',
+    status: 'Status', weekend_venue: 'Weekend venue', current_week: 'Week', first_visit: 'First visit', child_date_of_birth: 'Child date of birth', postcode: 'Postcode', cost: 'Cost', start_date: 'Start', end_date: 'End', date_of_birth: 'Date of birth',
     year_group: 'Year group', photo_consent: 'Photo consent', consent_photo: 'Photo consent', consent_data: 'Data consent',
     fee_status: 'Paid?', fee_amount: 'Fee', amount: 'Amount', donated_on: 'Date', event_date: 'Date', session_date: 'Date',
     email: 'Email', contact_email: 'Email', guardian_email: 'Email', phone: 'Phone', contact_phone: 'Phone', guardian_phone: 'Phone',

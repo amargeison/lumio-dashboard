@@ -179,7 +179,7 @@ test('duplicates: a register entry already recorded is left as it is', () => {
   assert.ok(!p.ops.some(o => o.kind === 'update'))
 })
 
-test('Community: a family, a child with no school, and the first visit as a weekend register entry', () => {
+test('Community: a family at its weekend venue, a child with no school, and the first visit as a weekend register entry', () => {
   const found = B.emptyFound()
   found.venues.push({ name: 'Kingsmead Rec Ground' })
   found.community.push(
@@ -192,19 +192,22 @@ test('Community: a family, a child with no school, and the first visit as a week
   assert.equal(ben.school_id, undefined)
   assert.equal(ben.photo_consent, false)
   const fam = ins('tp_families').find(f => f.id === ben.family_id)
-  assert.deepEqual([fam.guardian_name, fam.consent_data, fam.consent_photo, fam.notes], ['Chris Doyle', true, false, 'Weekend venue: Kingsmead Rec Ground'])
   const venue = ins('tp_venues')[0]
+  assert.deepEqual([fam.guardian_name, fam.consent_data, fam.consent_photo, fam.community_venue_id, fam.source, fam.signed_up_at], ['Chris Doyle', true, false, venue.id, 'community', '2026-11-26T10:00:00.000Z'])
+  // The same audit row /join makes, marked as an import (stamped with the import when written, so undo covers it).
+  assert.deepEqual(ins('tp_community_signups').map(x => [x.family_id, x.venue_id, x.channel]).sort(), [[ben.family_id, venue.id, 'import'], [zara.family_id, venue.id, 'import']].sort())
   const session = ins('tp_sessions')[0]
   assert.deepEqual([session.kind, session.session_date, session.venue_id], ['weekend', '2026-10-03', venue.id])
   assert.deepEqual(ins('tp_attendance').map(a => [a.child_id, a.present]), [[ben.id, true]])
-  // No visit date: no register entry, the venue kept on the family.
-  assert.equal(ins('tp_families').find(f => f.id === zara.family_id).notes, 'Weekend venue: Kingsmead Rec Ground')
+  // No visit date: no register entry, but the venue is still the family's.
+  assert.equal(ins('tp_families').find(f => f.id === zara.family_id).community_venue_id, venue.id)
 })
 
 test('Community: the template has the tab, and its rows are read with no AI', async () => {
   const tabs = templateSheets()
   const community = tabs.find(t => t.name === 'Community')
   assert.deepEqual(community.rows[0], ['Guardian name', 'Email', 'Phone', 'Child name', 'Date of birth', 'Venue name', 'First visit', 'Consent data', 'Consent photo', 'Notes'])
+  assert.ok(tabs.find(t => t.name === 'Families').rows[0].includes('Weekend venue'))
   community.rows.push(['Chris Doyle', 'chris.doyle@example.com', '07700 900350', 'Ben Doyle', '02/05/2017', 'Kingsmead Rec Ground', '03/10/2026', 'Yes', 'No', ''])
   const read = B.readRecords(await B.readWorkbook(await B.workbookFile(tabs)))
   assert.equal(read.forAi.length, 0)
