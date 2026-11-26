@@ -26,6 +26,7 @@ test('SPF/DKIM: verified only when it passed; a DMARC fail or no header is flagg
   assert.equal(M.authVerdict('mx.cloudflare.net; dkim=fail; spf=softfail; dmarc=fail'), false)
   assert.equal(M.authVerdict('mx.cloudflare.net; dkim=pass; spf=pass; dmarc=fail'), false, 'DMARC fail wins')
   assert.equal(M.authVerdict('mx.cloudflare.net; dkim=fail; spf=fail'), false)
+  assert.equal(M.authVerdict('evil.example; dkim=pass; spf=pass; dmarc=pass'), false, 'not Cloudflare’s header: not trusted')
   assert.equal(M.authVerdict(''), false)
   assert.equal(M.authVerdict(null), false)
 })
@@ -62,7 +63,7 @@ const mime = (extra = '') => new TextEncoder().encode([
 ].join('\r\n'))
 
 test('MIME: sender, envelope recipient first, subject, id, text, attachments by name, verdict', async () => {
-  const m = await parseMime(mime(), { to: 'reply+lumio-test@inbound.lumiosports.com', from: 'bounce@example.com', authResults: 'dkim=pass; spf=pass; dmarc=pass' })
+  const m = await parseMime(mime(), { to: 'reply+lumio-test@inbound.lumiosports.com', from: 'bounce@example.com', authResults: 'mx.cloudflare.net; dkim=pass; spf=pass; dmarc=pass' })
   assert.equal(m.from, 'pat.doyle@example.com')
   assert.equal(m.fromName, 'Pat Doyle')
   assert.equal(m.recipients[0], 'reply+lumio-test@inbound.lumiosports.com')
@@ -71,7 +72,8 @@ test('MIME: sender, envelope recipient first, subject, id, text, attachments by 
   assert.match(m.text, /^Yes, we’ll be there!/)
   assert.deepEqual(m.attachments, ['form.pdf'])
   assert.equal(m.verified, true)
-  assert.equal((await parseMime(mime(), { to: 'x', from: '', authResults: 'spf=fail; dkim=fail' })).verified, false)
+  assert.equal((await parseMime(mime(), { to: 'x', from: '', authResults: 'mx.cloudflare.net; spf=fail; dkim=fail' })).verified, false)
+  assert.equal((await parseMime(new TextEncoder().encode('Authentication-Results: mx.cloudflare.net; dkim=pass; spf=pass; dmarc=pass\r\n' + new TextDecoder().decode(mime())), { to: 'x', from: '', authResults: '' })).verified, false, 'a header inside the message is ignored')
   const html = new TextEncoder().encode('From: a@b.c\r\nTo: x@y.z\r\nSubject: s\r\nContent-Type: text/html\r\n\r\n<p>Hello <b>there</b></p><p>Bye</p>')
   assert.equal((await parseMime(html, { to: 'x@y.z', from: '', authResults: '' })).text, 'Hello there\nBye', 'HTML-only becomes text')
 })

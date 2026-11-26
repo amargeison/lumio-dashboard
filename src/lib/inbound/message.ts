@@ -23,13 +23,14 @@ export interface InboundMessage {
 export const NOT_VERIFIED = 'Sender not verified (SPF/DKIM didn’t pass)'
 
 /**
- * Reads an Authentication-Results header. Verified when DMARC passed, or (no DMARC
- * result) SPF or DKIM passed. A DMARC fail, or nothing passing, is not verified. No header
- * at all is not verified either: a message we can't check is flagged, not trusted.
+ * Reads Cloudflare's Authentication-Results header (authserv-id mx.cloudflare.net — any
+ * other is the sender's own and not trusted). Verified when DMARC passed, or (no DMARC
+ * result) SPF or DKIM passed. A DMARC fail, nothing passing, or no Cloudflare header is
+ * not verified: a message we can't check is flagged, not trusted.
  */
 export function authVerdict(header: string | null | undefined): boolean {
-  const h = String(header ?? '').toLowerCase()
-  if (!h.trim()) return false
+  const h = String(header ?? '').toLowerCase().trim()
+  if (!/^mx\.cloudflare\.net\s*;/.test(h)) return false
   const result = (k: string) => (h.match(new RegExp(`\\b${k}=([a-z]+)`))?.[1] ?? null)
   const dmarc = result('dmarc'), spf = result('spf'), dkim = result('dkim')
   if (dmarc === 'fail') return false
