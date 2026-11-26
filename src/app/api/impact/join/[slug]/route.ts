@@ -14,10 +14,12 @@ export const runtime = 'nodejs'
 // No session: the slug names the org, the service key stays here, and every write is
 // pinned to that org's hq_id. It refuses unless the org has a privacy policy URL in
 // its settings and the Community module is on. It never returns anything about
-// existing data: a new family gets "you're in" (or "you're on the waiting list"); an
-// email already in this org gets "you're already with us" and an email with a link,
-// and nothing is created. A bot (hidden field filled, or sent within 3 seconds) gets
-// a normal-looking reply and nothing is written. The demo writes nothing.
+// existing data. Every accepted sign-up gets the same reply, { ok: true } — a new
+// family, an address that is already a family here, and a suspected bot alike — so the
+// reply never says whether an address was known. What happened goes by email only: a
+// new family gets the welcome (with the waiting list if the venue is full), a known
+// address gets its app link again and nothing is created, a bot gets nothing. The demo
+// writes nothing.
 //
 // Writes: the family (source community, venue, consents, signed up now, waiting list
 // if the venue is full), its children (no school), the sign-up audit row (channel
@@ -94,7 +96,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     }
     const sent = await sendMail(j.email, alreadyEmail({ org: brand.org, link, isInvite }))
     log('already a family', { slug, sent, isInvite })
-    return NextResponse.json({ ok: true, existing: true })
+    return NextResponse.json({ ok: true })
   }
 
   const { count: placed } = await db.from('tp_families').select('id', { count: 'exact', head: true }).eq('hq_id', hqId).eq('community_venue_id', venue.id).is('waitlisted_at', null)
@@ -121,5 +123,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const mail = welcomeEmail({ org: brand.org, guardian: j.guardian, children: j.children.map(c => c.name), venue, waitlisted, appLink, qrCid: 'family-qr' })
   const sent = await sendMail(j.email, mail, [{ filename: 'family-qr.png', content: qr, contentId: 'family-qr' }])
   log('joined', { slug, children: j.children.length, waitlisted, emailed: sent, invite: !!appLink })
-  return NextResponse.json({ ok: true, waitlisted, venue: venue.name })
+  return NextResponse.json({ ok: true })
 }

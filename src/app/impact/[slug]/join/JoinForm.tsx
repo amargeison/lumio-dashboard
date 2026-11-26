@@ -27,7 +27,7 @@ export default function JoinForm({ page, venue, viaQr }: { page: JoinPage; venue
   const [website, setWebsite] = useState('')   // hidden: people leave it empty
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState<{ existing?: boolean; waitlisted?: boolean; venue?: string } | null>(null)
+  const [done, setDone] = useState(false)
 
   const chosen = page.venues.find(v => v.id === venueId)
   async function submit(e: React.FormEvent) {
@@ -36,12 +36,12 @@ export default function JoinForm({ page, venue, viaQr }: { page: JoinPage; venue
     if (!consentData) { setError('We need your agreement to keep your details before you can join.'); return }
     setBusy(true)
     try {
-      if (page.demo) { await new Promise(r => setTimeout(r, 400)); setDone({ waitlisted: false, venue: chosen?.name }); return }
+      if (page.demo) { await new Promise(r => setTimeout(r, 400)); setDone(true); return }
       const res = await fetch(`/api/impact/join/${page.slug}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
         guardian, email, phone, children, venueId, consentData, consentPhoto, optInEmail, optInSms, website, startedAt, channel: viaQr ? 'qr' : 'form' }) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setError(data.error || `Something went wrong (error ${res.status}). Please try again.`); return }
-      setDone({ existing: data.existing, waitlisted: data.waitlisted, venue: data.venue ?? chosen?.name })
+      setDone(true)
     } catch {
       setError('We couldn’t reach Lumio — check your connection and try again.')
     } finally { setBusy(false) }
@@ -62,15 +62,12 @@ export default function JoinForm({ page, venue, viaQr }: { page: JoinPage; venue
 
   if (page.closed) return shell(<><h1 style={{ fontSize: 21, margin: 0, color: DARK }}>{page.org}</h1><p style={{ fontSize: 15, color: '#6B6560' }}>{page.closed}</p></>)
 
+  // The same words for everyone, whether the address was new or already known.
   if (done) return shell(
     <div role="status">
-      <h1 style={{ fontSize: 22, margin: '0 0 10px', color: DARK }}>{done.existing ? 'Looks like you’re already with us' : done.waitlisted ? 'You’re on the waiting list' : 'You’re in!'}</h1>
-      <p style={{ fontSize: 15, color: '#3F3A36', lineHeight: 1.5 }}>
-        {done.existing ? 'We’ve sent you a link — check your email to open the family app.'
-          : done.waitlisted ? `${done.venue ?? 'That venue'} is full at the moment. We’ve emailed you, and we’ll be in touch as soon as there’s a place.`
-          : `We’ve emailed you your family QR code${done.venue ? ` and the details for ${done.venue}` : ''}. Show the code when you arrive and we’ll check everyone in.`}
-      </p>
-      {!done.existing && <p style={{ fontSize: 13, color: '#8A847E' }}>Can’t see the email? Check your junk folder.</p>}
+      <h1 style={{ fontSize: 22, margin: '0 0 10px', color: DARK }}>Thanks — check your email for your link</h1>
+      <p style={{ fontSize: 15, color: '#3F3A36', lineHeight: 1.5 }}>Everything you need is in the email{chosen ? `, including the details for ${chosen.name}` : ''}.</p>
+      <p style={{ fontSize: 13, color: '#8A847E' }}>Can’t see it? Check your junk folder.</p>
     </div>,
   )
 
