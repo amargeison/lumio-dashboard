@@ -34,7 +34,21 @@ const SITE = 'https://www.lumiosports.com'
 const ipHash = (ip: string) => createHmac('sha256', `impact-join:${process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''}`).update(ip).digest('hex')
 const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+// Every accepted submission answers no sooner than this, so a known address (which skips
+// the writes) can't be told apart from a new one by how fast the reply comes back.
+const REPLY_FLOOR_MS = 900
+
+export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: string }> }) {
+  const started = Date.now()
+  const res = await join(req, ctx)
+  if (res.status === 200) {
+    const wait = REPLY_FLOOR_MS - (Date.now() - started)
+    if (wait > 0) await new Promise(r => setTimeout(r, wait))
+  }
+  return res
+}
+
+async function join(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   if (!SLUG_RE.test(slug)) return NextResponse.json({ error: 'This sign-up page doesn’t exist.' }, { status: 404 })
   const ip = clientIp(req.headers)

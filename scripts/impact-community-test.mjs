@@ -59,8 +59,9 @@ async function hq(letter, settings = {}) {
   return { id: user.id, slug, db: s.db, call }
 }
 const join = async (slug, body, ip = nextIp()) => {
+  const t0 = Date.now()
   const res = await fetch(`${BASE}/api/impact/join/${slug}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-forwarded-for': ip }, body: JSON.stringify(body) })
-  return { status: res.status, body: await res.json().catch(() => ({})) }
+  return { status: res.status, body: await res.json().catch(() => ({})), ms: Date.now() - t0 }
 }
 const rows = async (hqId, table, f = q => q) => (await f(admin.from(table).select('*').eq('hq_id', hqId))).data ?? []
 const form = (venueId, extra = {}) => ({ guardian: 'Chris Doyle', email: `chris.doyle+${tag}@example.com`, phone: '07700 900350', children: [{ name: 'Ben Doyle', dob: '2017-05-02' }, { name: 'Amy Doyle', dob: '2019-08-14' }],
@@ -105,6 +106,7 @@ async function main() {
   ok('… creates no family, child or sign-up', (await rows(A.id, 'tp_families')).length === 2 && (await rows(A.id, 'tp_children')).length === 2 && (await rows(A.id, 'tp_community_signups')).length === 1)
   const secret = await join(A.slug, form(big, { email: `secret+${tag}@example.com` }))
   ok('… the same for an HQ-added family', secret.status === 200 && JSON.stringify(secret.body) === SAME)
+  ok('every accepted reply takes at least the 900 ms floor (new and known alike)', [first, again, secret].every(r => r.ms >= 880), [first, again, secret].map(r => r.ms).join(' / '))
 
   const full = await join(A.slug, form(small, { guardian: 'Grace Whitlow', email: `grace+${tag}@example.com`, children: [{ name: 'Lily Whitlow', dob: '2018-03-03' }] }))
   ok('venue at capacity: the identical reply (the waiting list is in the email)', full.status === 200 && JSON.stringify(full.body) === SAME)
