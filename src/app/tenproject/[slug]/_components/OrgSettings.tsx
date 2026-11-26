@@ -14,6 +14,7 @@ import { Card, SectionTitle, Pill } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { impactModules, moduleOn, type ImpactOrgSettings } from '@/lib/impact/org'
+import { privacyUrlOf } from '@/lib/impact/org'
 
 const FIELDS: { key: keyof ImpactOrgSettings; label: string; placeholder: string }[] = [
   { key: 'org', label: 'Organisation name', placeholder: 'e.g. Northvale Sport Foundation' },
@@ -24,6 +25,7 @@ const FIELDS: { key: keyof ImpactOrgSettings; label: string; placeholder: string
   { key: 'logo', label: 'Logo (image URL)', placeholder: 'https://… or /path.png' },
   { key: 'volunteer', label: 'Volunteer role name', placeholder: 'e.g. Volunteer, Court Captain' },
   { key: 'tagline', label: 'Tagline', placeholder: 'Optional' },
+  { key: 'privacyUrl', label: 'Privacy policy link', placeholder: 'https://yourorg.org.uk/privacy — opens the Community sign-up page' },
 ]
 
 function Notice({ text }: { text: string }) {
@@ -38,6 +40,7 @@ export function OrgDetailsCard() {
   const { org, brand } = useImpact()
   const [draft, setDraft] = useState<ImpactOrgSettings>(org?.settings ?? {})
   const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [problem, setProblem] = useState<string | null>(null)
   useEffect(() => { setDraft(org?.settings ?? {}) }, [org?.settings])
   if (!org) return null
   const editable = org.canEdit
@@ -50,6 +53,9 @@ export function OrgDetailsCard() {
   }
   async function save() {
     if (!org) return
+    // The Community sign-up page only opens with a real https privacy link.
+    if (draft.privacyUrl?.trim() && !privacyUrlOf(draft)) { setProblem('The privacy policy link must be a full web address starting https://'); setState('error'); return }
+    setProblem(null)
     setState('saving')
     const r = await org.save({ ...org.settings, ...draft, modules: org.settings.modules ?? {} })
     setState(r.ok ? 'saved' : 'error')
@@ -77,7 +83,7 @@ export function OrgDetailsCard() {
             {state === 'saving' ? 'Saving…' : 'Save details'}
           </button>
           {state === 'saved' && <span style={{ fontSize: 11.5, color: '#187A3C', fontWeight: 800 }}><CheckCircle size={12} style={{ verticalAlign: '-2px', marginRight: 4 }} />Saved</span>}
-          {state === 'error' && <span style={{ fontSize: 11.5, color: TP_RED, fontWeight: 800 }}>Couldn’t save — try again</span>}
+          {state === 'error' && <span style={{ fontSize: 11.5, color: TP_RED, fontWeight: 800 }}>{problem ?? 'Couldn’t save — try again'}</span>}
         </div>
       )}
     </Card>

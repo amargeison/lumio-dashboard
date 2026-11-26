@@ -5,6 +5,7 @@ import { BookMarked, BookOpen, Award, Calendar, MessageCircle, Users, PlayCircle
 import { Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK, TP_PAPER } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
+import ParentWeekend from './ParentWeekend'
 import ParentBooklet, { WeekFacts } from './ParentBooklet'
 import { isoToday, longDate } from '@/lib/impact/compliance'
 import { familyWeek } from '@/lib/impact/family-week'
@@ -260,6 +261,7 @@ export default function ParentApp({ fullScreen = false }: { fullScreen?: boolean
 
           {!noFamily && tab === 'sessions' && live && (
             <>
+              <ParentWeekend />
               {PARENT.children.map(c => (
                 <div key={c.id ?? c.name} style={{ background: '#fff', borderRadius: 12, padding: 14 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 900, color: TP_DARK, marginBottom: 6 }}>{c.name}</div>

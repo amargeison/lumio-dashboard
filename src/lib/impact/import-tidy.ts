@@ -10,8 +10,8 @@
 //     contacts list by email, then phone, then name);
 //   • a Community row (a family at the weekend sessions, no school) becomes a
 //     family, a child with no school and — with a first visit date — a weekend
-//     register entry at that venue. Until the venue can be stored on the family
-//     (migration 237), the preferred venue is kept in the family's notes.
+//     register entry at that venue. The venue becomes the family's weekend venue
+//     (migration 237).
 
 import { cleanRecord, dedupeRecords, type Rec } from '@/lib/import-engine/records'
 import { IMPACT_IMPORT_SCHEMA, IMPACT_SAVE_ORDER, type ImpactImportCategory } from './import-schema'
@@ -95,7 +95,7 @@ export function communityRecords(rows: Rec[]): Pick<Found, 'families' | 'childre
     if (r.guardian_name || r.email || r.phone) {
       const fam = cleanRecord(IMPACT_IMPORT_SCHEMA, 'families', {
         guardian_name: r.guardian_name ?? `Parent/carer of ${child.name}`, email: r.email, phone: r.phone,
-        consent_data: yesNo(r.consent_data), consent_photo: yesNo(r.consent_photo), notes: venue ? `Weekend venue: ${venue}` : undefined,
+        consent_data: yesNo(r.consent_data), consent_photo: yesNo(r.consent_photo), weekend_venue: venue,
       })
       if (fam) families.push(fam)
     }

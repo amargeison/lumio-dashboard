@@ -26,25 +26,40 @@ export async function sentThisHour(db: SupabaseClient, hqId: string): Promise<nu
   return count ?? 0
 }
 
-export async function sendInvite(db: SupabaseClient, org: OrgForInvite, t: InviteTarget): Promise<InviteResult> {
-  if (!invitesOn()) return { ok: false, error: 'Invites aren’t switched on yet.', status: 503 }
-  const address = verifiedSender(org.slug, process.env.IMPACT_EMAIL_SENDERS)
+/** Can this org email from this server right now? → its verified address, or why not. */
+export function senderFor(slug: string): { ok: true; address: string | null } | { ok: false; error: string; status: number } {
+  const address = verifiedSender(slug, process.env.IMPACT_EMAIL_SENDERS)
   if (!address && !dryRun()) return { ok: false, error: 'No verified sending address for this organisation yet.', status: 503 }
   if (!process.env.RESEND_API_KEY && !dryRun()) return { ok: false, error: 'Email is not set up on this server.', status: 503 }
-  if (!invitesLeft(await sentThisHour(db, org.hqId))) return { ok: false, error: 'Hourly invite limit reached. Try again later.', status: 429 }
+  return { ok: true, address }
+}
 
+/** Records an invite (replacing any still waiting) and returns its link. Sends nothing. */
+export async function createInvite(db: SupabaseClient, org: OrgForInvite, t: InviteTarget): Promise<{ ok: true; id: string; link: string } | { ok: false; error: string; status: number }> {
+  if (!invitesOn()) return { ok: false, error: 'Invites aren’t switched on yet.', status: 503 }
+  if (!invitesLeft(await sentThisHour(db, org.hqId))) return { ok: false, error: 'Hourly invite limit reached. Try again later.', status: 429 }
   const target = t.role === 'parent' ? { family_id: t.familyId } : { staff_id: t.staffId }
   // A new invite replaces any that is still waiting, so only the latest link works.
   await db.from('impact_invites').update({ revoked_at: new Date().toISOString() })
     .eq('hq_id', org.hqId).eq('role', t.role).match(target).is('accepted_at', null).is('revoked_at', null)
-
   const token = newInviteToken()
   const { data: row, error } = await db.from('impact_invites')
     .insert({ hq_id: org.hqId, role: t.role, ...target, email: t.email.trim(), token_hash: hashInviteToken(token), created_by: org.userId })
     .select('id').single()
   if (error || !row) return { ok: false, error: 'The invite could not be saved.', status: 500 }
+  return { ok: true, id: row.id as string, link: inviteLink(SITE, t.email.trim(), token) }
+}
 
-  const link = inviteLink(SITE, t.email.trim(), token)
+export const isDryRun = dryRun
+
+export async function sendInvite(db: SupabaseClient, org: OrgForInvite, t: InviteTarget): Promise<InviteResult> {
+  if (!invitesOn()) return { ok: false, error: 'Invites aren’t switched on yet.', status: 503 }
+  const sender = senderFor(org.slug)
+  if (!sender.ok) return sender
+  const address = sender.address
+  const made = await createInvite(db, org, t)
+  if (!made.ok) return made
+  const { link } = made, row = { id: made.id }
   if (dryRun()) return { ok: true, link }
 
   const mail = inviteEmail({ org: org.name, role: t.role, link })

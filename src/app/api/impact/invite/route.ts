@@ -37,10 +37,12 @@ export async function POST(req: NextRequest) {
   if (!org) return NextResponse.json({ error: 'This login isn’t linked to an organisation yet.' }, { status: 403 })
   if (!invitesOn()) return NextResponse.json({ error: 'Invites aren’t switched on yet.' }, { status: 503 })
   const admin = serviceDb()
-  const raw = (await req.json().catch(() => ({}))) as { role?: unknown; targetId?: unknown; bulk?: unknown }
+  const raw = (await req.json().catch(() => ({}))) as { role?: unknown; targetId?: unknown; bulk?: unknown; familyIds?: unknown }
 
-  // Every family with an email and no login, up to what's left of this hour.
+  // Every family with an email and no login (or only those named in familyIds, e.g. a
+  // Community list), up to what's left of this hour.
   if (raw.bulk === true) {
+    const only = Array.isArray(raw.familyIds) ? new Set(raw.familyIds.filter(isUuid).slice(0, 2000)) : null
     const [{ data: families, error }, { data: members }, { data: waiting }] = await Promise.all([
       db.from('tp_families').select('id, email, unsubscribed_at').eq('hq_id', org.hqId),
       admin.from('impact_members').select('family_id').eq('hq_id', org.hqId).eq('role', 'parent').not('accepted_at', 'is', null).is('revoked_at', null),
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
     ])
     if (error) return NextResponse.json({ error: 'The families could not be read.' }, { status: 500 })
     const taken = new Set([...(members ?? []), ...(waiting ?? [])].map(m => m.family_id))
-    const eligible = ((families ?? []) as Family[]).filter(f => !familyProblem(f) && !taken.has(f.id))
+    const eligible = ((families ?? []) as Family[]).filter(f => !familyProblem(f) && !taken.has(f.id) && (!only || only.has(f.id)))
     const batch = eligible.slice(0, invitesLeft(await sentThisHour(admin, org.hqId)))
     let sent = 0, failed = 0
     const links: string[] = []

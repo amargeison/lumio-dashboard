@@ -40,6 +40,7 @@ const SAY: Record<string, string> = {
   paid_item_amount: 'Pounds', first_visit: 'Date of their first weekend session — recorded as attended',
   consent_data: 'Agreed to their data being held', child_date_of_birth: 'Only needed when two children share a name',
   tags: 'parent / volunteer / coach', kind: 'school or weekend',
+  weekend_venue: 'The weekend venue they come to, exactly as on the Venues tab',
 }
 
 export function columnNote(c: TemplateCategory, f: string): string {

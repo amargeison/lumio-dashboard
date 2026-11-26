@@ -26,14 +26,15 @@ const CHANNELS: { id: Channel; label: string; hint: string; icon: typeof Mail }[
 
 const blocked = (f: ImpactFamily) => f.unsubscribed ? 'Unsubscribed' : f.consentData !== true ? 'No contact consent' : null
 
-export function LiveSendWizard({ onClose, defaultMessage }: { onClose: () => void; defaultMessage?: string }) {
+/** defaultFamilyIds: an audience handed over from another tab (e.g. a filtered Community list); only those who can be messaged are picked. */
+export function LiveSendWizard({ onClose, defaultMessage, defaultFamilyIds }: { onClose: () => void; defaultMessage?: string; defaultFamilyIds?: string[] }) {
   const { people, brand } = useImpact()
   const { lines, reload: reloadMembers } = useMembers()
   const families = useMemo(() => people?.families ?? [], [people])
   const eligible = useMemo(() => families.filter(f => !blocked(f)), [families])
 
   const [step, setStep] = useState(1)
-  const [picked, setPicked] = useState<string[]>([])
+  const [picked, setPicked] = useState<string[]>(() => (defaultFamilyIds ?? []).filter(id => eligible.some(f => f.id === id)))
   const [childId, setChildId] = useState('')
   const [channels, setChannels] = useState<Channel[]>(['email'])
   const [message, setMessage] = useState(defaultMessage ?? '')

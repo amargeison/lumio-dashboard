@@ -78,10 +78,12 @@ export interface LiveRows {
   donations: { campaign_id: string; event_id: string | null; amount_pence: number }[]
   checkins: { children_count: number | null; session_date?: string | null }[]
   // Impact-owned people & places (drafts 213/214) — empty until applied.
-  venues?: { id: string; name: string; address: string | null; postcode: string | null; courts: string | null; surface: string | null; access_notes: string | null; storage_notes: string | null; session_day: string | null; session_time: string | null; inclusive: boolean; external_partner: string | null; external_url: string | null; notes: string | null }[]
+  venues?: { id: string; name: string; address: string | null; postcode: string | null; courts: string | null; surface: string | null; access_notes: string | null; storage_notes: string | null; session_day: string | null; session_time: string | null; inclusive: boolean; external_partner: string | null; external_url: string | null; notes: string | null; capacity?: number | null }[]
   staff?: { id: string; name: string; role: string; qualification: string | null; email: string | null; phone: string | null; availability: string | null; specialisms: string[] | null; dbs_status: string; dbs_number: string | null; dbs_expiry: string | null; safeguarding_date: string | null; first_aid_expiry: string | null; insurance: string | null; notes: string | null }[]
   volunteers?: { id: string; name: string; email: string | null; phone: string | null; venue_id: string | null; inducted: boolean; induction_date: string | null; dbs_status: string; dbs_expiry?: string | null; first_aid_expiry?: string | null; since: string | null; notes: string | null }[]
-  families?: { id: string; guardian_name: string; email: string | null; phone: string | null; emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null; unsubscribed_at: string | null; resubscribed_at?: string | null }[]
+  families?: { id: string; guardian_name: string; email: string | null; phone: string | null; emergency_contact: string | null; consent_data: boolean | null; consent_photo: boolean | null; unsubscribed_at: string | null; resubscribed_at?: string | null
+    // 237 — Community
+    source?: 'school' | 'community' | 'both' | null; community_venue_id?: string | null; signed_up_at?: string | null; lapsed_at?: string | null; waitlisted_at?: string | null; checkin_code?: string | null; created_at?: string | null }[]
   children?: { id: string; family_id: string | null; name: string; date_of_birth: string | null; year_group: string | null; school_id: string | null; programme_id: string | null; medical_notes: string | null; photo_consent: boolean | null; fee_status: string; gender?: string | null; fsm?: boolean | null; pupil_premium?: boolean | null; stickers: number; send?: boolean | null }[]
   sessions?: { id: string; kind: string; programme_id: string | null; venue_id: string | null; session_date: string; week_number?: number | null; lead_staff_id: string | null }[]
   attendance?: { session_id: string; child_id: string; present: boolean; via: string }[]
@@ -416,17 +418,39 @@ export function buildCohorts(rows: LiveRows, today = isoToday()): LiveCohort[] {
 }
 
 /** Households and their children, for the Families module and the parent preview. */
+/** One row per family per weekend session where any of its children was present. */
+export function weekendVisits(rows: LiveRows): { familyId: string; date: string; venueId: string | null }[] {
+  const weekend = new Map((rows.sessions ?? []).filter(s => s.kind === 'weekend').map(s => [s.id, s]))
+  const family = new Map((rows.children ?? []).map(c => [c.id, c.family_id]))
+  const seen = new Set<string>(), out: { familyId: string; date: string; venueId: string | null }[] = []
+  for (const a of rows.attendance ?? []) {
+    const s = weekend.get(a.session_id), f = family.get(a.child_id)
+    if (!a.present || !s || !f || seen.has(`${f}|${s.id}`)) continue
+    seen.add(`${f}|${s.id}`)
+    out.push({ familyId: f, date: s.session_date, venueId: s.venue_id })
+  }
+  return out
+}
+
 export function buildPeople(rows: LiveRows): ImpactPeople {
   const kids = rows.children ?? []
   const child = (k: typeof kids[number]): ImpactChild => ({
     id: k.id, name: k.name, age: ageOf(k.date_of_birth), yearGroup: k.year_group, school: rows.schools.find(s => s.id === k.school_id)?.name ?? null, schoolId: k.school_id,
     medical: k.medical_notes, photoConsent: k.photo_consent, feeStatus: k.fee_status, stickers: k.stickers,
   })
+  const logins = new Set((rows.members ?? []).filter(m => m.role === 'parent' && m.accepted_at && !m.revoked_at && m.family_id).map(m => m.family_id!))
   return {
     families: (rows.families ?? []).map(f => ({
       id: f.id, guardian: f.guardian_name, email: f.email, phone: f.phone, consentData: f.consent_data, consentPhoto: f.consent_photo,
       unsubscribed: !!f.unsubscribed_at, resubscribedAt: f.resubscribed_at ?? null, children: kids.filter(k => k.family_id === f.id).map(child),
+      hasLogin: logins.has(f.id),
+      community: {
+        source: f.source ?? null, venueId: f.community_venue_id ?? null, signedUpAt: f.signed_up_at ?? null, lapsedAt: f.lapsed_at ?? null,
+        waitlistedAt: f.waitlisted_at ?? null, checkinCode: f.checkin_code ?? null, createdAt: f.created_at ?? null,
+        hasSchoolChild: kids.some(k => k.family_id === f.id && !!k.school_id),
+      },
     })),
     unlinkedChildren: kids.filter(k => !k.family_id).map(child),
+    community: { visits: weekendVisits(rows), venues: (rows.venues ?? []).map(v => ({ id: v.id, name: v.name, day: v.session_day, time: v.session_time, address: v.address, postcode: v.postcode, capacity: v.capacity ?? null })) },
   }
 }

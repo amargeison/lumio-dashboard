@@ -55,6 +55,8 @@ export interface SchoolEvidence {
   priorityRecorded?: number             // children with any flag recorded
   priorityChildren?: number             // of those, children with any flag true
   familyContactPct: number | null       // children whose family has contact consent
+  /** Families of this school's children who have been to a weekend community session (237). Optional: 0 when absent. */
+  weekendFamilies?: number
   weekendSessions: number
   venueLinked: boolean
   events: number
@@ -110,9 +112,11 @@ function assess(e: SchoolEvidence): Record<string, ReadinessItem> {
     : offers.length >= 2 ? met(offers.join(', '))
     : weak(offers[0], 'Add a second route beyond the core sessions, such as a weekend session or event.')
 
+  // Weekend community visits are evidence of family engagement beyond the school day.
+  const atWeekends = e.weekendFamilies ? `, ${e.weekendFamilies} ${e.weekendFamilies === 1 ? 'family' : 'families'} at weekend community sessions` : ''
   const wholeschool = e.familyContactPct === null ? none('families', 'Link each child to their family, with contact consent.')
-    : e.familyContactPct >= FAMILY_TARGET ? met(`${e.familyContactPct}% of children’s families have contact consent`)
-    : weak(`${e.familyContactPct}% of children’s families have contact consent`, `Collect consent to reach ${FAMILY_TARGET}%.`)
+    : e.familyContactPct >= FAMILY_TARGET ? met(`${e.familyContactPct}% of children’s families have contact consent${atWeekends}`)
+    : weak(`${e.familyContactPct}% of children’s families have contact consent${atWeekends}`, `Collect consent to reach ${FAMILY_TARGET}%.`)
 
   const impact = e.responses === 0 ? none('feedback responses', 'Collect or import feedback from families and staff.')
     : e.responses < RESPONSES_NEEDED ? weak(`${plural(e.responses, 'feedback response')} so far`, `Collect at least ${RESPONSES_NEEDED} to show a pattern.`)
@@ -273,6 +277,12 @@ export function evidenceFromRows(rows: ReadinessRows): SchoolEvidence[] {
       priorityRecorded: kids.filter(c => [c.send, c.fsm, c.pupil_premium].some(f => typeof f === 'boolean')).length,
       priorityChildren: kids.filter(c => c.send === true || c.fsm === true || c.pupil_premium === true).length,
       familyContactPct: linked.length ? pct(linked.filter(c => families.get(c.family_id as string)?.consent_data === true).length, kids.length) : null,
+      weekendFamilies: (() => {
+        const weekend = new Set((rows.sessions ?? []).filter(s => s.kind === 'weekend').map(s => s.id))
+        const familyOf = new Map((rows.children ?? []).map(c => [c.id, c.family_id]))
+        const mine = new Set(linked.map(c => c.family_id))
+        return new Set((rows.attendance ?? []).filter(a => a.present && weekend.has(a.session_id)).map(a => familyOf.get(a.child_id)).filter(f => f && mine.has(f))).size
+      })(),
       weekendSessions: held.filter(s => s.kind === 'weekend').length,
       venueLinked: (rows.programmeLinks ?? []).some(l => !!l.venue_id && progs.some(p => p.id === l.id)),
       events: rows.events.filter(ev => campaigns.some(c => c.id === ev.campaign_id)).length,

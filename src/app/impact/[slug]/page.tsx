@@ -17,7 +17,7 @@
 // Standard portal zoom 0.9 — sidebar compensates with calc(100vh / 0.9).
 
 import React, { use, useEffect, useState } from 'react'
-import { Heart, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp, Landmark, Target } from 'lucide-react'
+import { Heart, LayoutDashboard, School, Smartphone, ClipboardList, Users, LogOut, BarChart3, MapPin, ShieldCheck, Send, Share2, Package, Settings, PoundSterling, CalendarDays, BookOpen, Pin, PinOff, TrendingUp, Landmark, Target, HeartHandshake } from 'lucide-react'
 import { TP_RED, TP_DARK, TP_BLACK, TP_PAPER } from '@/data/tenproject/demo-data'
 import { isDemoSlug } from '@/lib/config/demo-slugs'
 import { ImpactDataProvider, useImpact, type ImpactBrand, type ImpactCopy, type ImpactPortalContext } from '@/app/tenproject/[slug]/_components/ImpactDataContext'
@@ -93,6 +93,7 @@ const SECTION_HEADERS: Record<string, Record<string, { title: string; sub: strin
   hq: {
     insights: { title: 'Insights', sub: 'Participation, conversion, impact and social value — funder-ready' },
     schools: { title: 'Schools', sub: 'Every partner school — profile, programme, stats and actions in one place' },
+    community: { title: 'Community', sub: 'Families at the weekend sessions — sign-ups, visits, check-in and the waiting list' },
     families: { title: 'Families', sub: 'Every household and its children — contacts, consents, medical flags, fees and comms opt-outs' },
     venues: { title: 'Weekend venues', sub: 'Every weekend community venue — access, sessions, teams and attendance in one place' },
     coaches: { title: 'Coaches', sub: 'Your coaching team at a glance — accreditations, compliance and workload across the programme' },
@@ -369,6 +370,7 @@ function ImpactPortalInner({ session, slug, onSignOut, lockTo, switchTo }: { ses
       ] },
       { group: 'NETWORK', items: [
         { id: 'schools', label: 'Schools', icon: School },
+        { id: 'community', label: 'Community', icon: HeartHandshake },
         { id: 'venues', label: 'Venues', icon: MapPin },
         { id: 'families', label: 'Families', icon: Heart },
       ] },

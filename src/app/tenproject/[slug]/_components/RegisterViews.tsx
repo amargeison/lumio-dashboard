@@ -7,6 +7,7 @@ import UpcomingCalendar from './UpcomingCalendar'
 import { SendMessageWizard } from './CommsTab'
 import { openResourceDoc, openSessionCardDoc } from '../_lib/resource-docs'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
+import FamilyCheckIn from './FamilyCheckIn'
 import { useImpact, fill, type ImpactDataset } from './ImpactDataContext'
 import { moduleOn } from '@/lib/impact/org'
 import { stickerAreas } from '@/lib/impact/parent-view'
@@ -495,7 +496,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
   const ctx = useImpact()
   const { brand, copy } = ctx
   const { WEEKEND_FAMILIES, VENUES, WEEK4_SESSION_PLAN, TENOR_RESOURCES, VENUE_DETAILS } = ctx.data
-  const [families, setFamilies] = useState(WEEKEND_FAMILIES)
+  const [demoFamilies, setFamilies] = useState(WEEKEND_FAMILIES)
   const [tab, setTab] = useState<'session' | 'resources'>(section ?? 'session')
   const [wizard, setWizard] = useState(false)
   const controlled = section !== undefined
@@ -507,6 +508,8 @@ export function TenorView({ section }: { section?: TenorSection }) {
   // Live portals before a venue and volunteer team exist
   const noVenue = !venue
   const readOnly = ctx.mode === 'live'
+  // Live reads the saved register every time (a check-in reloads it); the demo keeps its own taps.
+  const families = readOnly ? WEEKEND_FAMILIES : demoFamilies
   const noResources = TENOR_RESOURCES.weeks.length + TENOR_RESOURCES.guides.length + TENOR_RESOURCES.contacts.length === 0
   const checkedIn = families.filter(f => f.checkedIn)
   const childCount = checkedIn.reduce((n, f) => n + f.children.split('+').length, 0)
@@ -599,6 +602,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
         <Card><EmptyState icon={MapPin} title="No weekend session yet" sub="Once you're inducted onto a venue, today's family session, the gate QR, the live count and the register appear here." /></Card>
         <UpcomingCalendar role="tenor" />
       </>)}
+      {tab === 'session' && readOnly && ctx.people && <FamilyCheckIn />}
       {tab === 'session' && !noVenue && venue && vd && (<>
       {/* eslint-disable-next-line no-lone-blocks */}
       <Card style={{ background: TP_DARK, border: 'none' }}>
@@ -657,7 +661,8 @@ export function TenorView({ section }: { section?: TenorSection }) {
         </Card>
 
         <div style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
-          <Card style={{ textAlign: 'center' }}>
+          {/* The demo's gate QR. Live check-in is the Family check-in card above. */}
+          {!readOnly && <Card style={{ textAlign: 'center' }}>
             <SectionTitle sub="Printed on the gate sign — venue- and date-aware">The gate QR</SectionTitle>
             <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 130, height: 130, background: '#F7F5F2', borderRadius: 12, border: '1px solid #E7E2DC' }}>
               <QrCode size={92} style={{ color: TP_DARK }} />
@@ -665,7 +670,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
             <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 10, display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
               <WifiOff size={13} /> Works offline — check-ins sync when signal returns
             </div>
-          </Card>
+          </Card>}
           {plan.blocks.length > 0 && <Card>
             <SectionTitle>This week at a glance</SectionTitle>
             <div style={{ fontSize: 12.5, color: TP_DARK }}>

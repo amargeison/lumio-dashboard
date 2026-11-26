@@ -108,9 +108,22 @@ export interface ImpactChild {
 export interface ImpactFamily {
   id: string; guardian: string; email: string | null; phone: string | null
   consentData: boolean | null; consentPhoto: boolean | null; unsubscribed: boolean; resubscribedAt?: string | null; children: ImpactChild[]
+  /** An accepted parent login. */
+  hasLogin?: boolean
+  /** Weekend Community (migration 237). */
+  community?: ImpactFamilyCommunity
 }
+export interface ImpactFamilyCommunity {
+  source: 'school' | 'community' | 'both' | null; venueId: string | null; signedUpAt: string | null; lapsedAt: string | null
+  waitlistedAt: string | null; checkinCode: string | null; createdAt: string | null; hasSchoolChild: boolean
+}
+export interface CommunityVenue { id: string; name: string; day: string | null; time: string | null; address: string | null; postcode: string | null; capacity: number | null }
 export interface ImpactCpd { id: string; school_id: string; staff_name: string; course: string; cpd_date: string | null; provider: string | null; notes: string | null }
-export interface ImpactPeople { families: ImpactFamily[]; unlinkedChildren: ImpactChild[] }
+export interface ImpactPeople {
+  families: ImpactFamily[]; unlinkedChildren: ImpactChild[]
+  /** Weekend visits (a family at a session) and the org's venues, for Community. */
+  community?: { visits: { familyId: string; date: string; venueId: string | null }[]; venues: CommunityVenue[] }
+}
 
 const { TP_RED: _r, TP_BLACK: _b, TP_DARK: _d, TP_PAPER: _p, ...TP_DATA } = TP
 
