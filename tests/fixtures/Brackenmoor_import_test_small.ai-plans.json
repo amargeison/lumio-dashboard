@@ -1,0 +1,311 @@
+{
+  "note": "Plans the AI returned for Brackenmoor_import_test_small.xlsx via /api/impact/import/map, recorded by scripts/impact-import-test.mjs AI=1 RECORD_AI=1.",
+  "recorded": "2026-11-26",
+  "plans": [
+    {
+      "sheet": "Schools",
+      "category": "schools",
+      "confidence": "high",
+      "reason": "Each row is one school the organisation works with, including contact and status details.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {
+        "name": 0,
+        "address": 2,
+        "postcode": 3,
+        "head_name": 4,
+        "contact_email": 5,
+        "contact_phone": 6,
+        "status": 7
+      },
+      "notes_columns": [
+        1
+      ],
+      "values": {
+        "status": {
+          "Running": "running",
+          "Confirmed": "confirmed",
+          "Fundraising": "fundraising",
+          "Enquiry": "enquiry",
+          "Renewal": "renewal"
+        }
+      },
+      "default": {},
+      "irregular": false
+    },
+    {
+      "sheet": "Programmes",
+      "category": "programmes",
+      "confidence": "high",
+      "reason": "Each row is a block of sessions (programme) run at a school in a term.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {
+        "school_name": 1,
+        "term_label": 0,
+        "start_date": 2,
+        "end_date": 3,
+        "status": 8
+      },
+      "notes_columns": [
+        4,
+        5,
+        6,
+        7
+      ],
+      "values": {
+        "status": {
+          "Running": "running",
+          "Confirmed": "confirmed"
+        }
+      },
+      "default": {},
+      "irregular": false
+    },
+    {
+      "sheet": "Children",
+      "category": "children",
+      "confidence": "high",
+      "reason": "Each row is one child with their parent/guardian contact details and programme enrolment.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {
+        "name": [
+          0,
+          1
+        ],
+        "date_of_birth": 2,
+        "year_group": 3,
+        "school_name": 4,
+        "programme_term": 5,
+        "guardian_name": 6,
+        "guardian_email": 7,
+        "guardian_phone": 8,
+        "photo_consent": 10,
+        "medical_notes": 11
+      },
+      "notes_columns": [
+        9,
+        12
+      ],
+      "values": {},
+      "default": {
+        "fee_status": "unknown"
+      },
+      "irregular": false
+    },
+    {
+      "sheet": "Families",
+      "category": "families",
+      "confidence": "high",
+      "reason": "Each row is one parent/guardian household with contact details, consent flags and account status.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {
+        "guardian_name": 0,
+        "email": 1,
+        "phone": 2,
+        "consent_data": 4,
+        "consent_photo": 5
+      },
+      "notes_columns": [
+        3,
+        6
+      ],
+      "values": {
+        "consent_photo": {
+          "No": "false",
+          "Yes": "true"
+        },
+        "consent_data": {
+          "Yes": "true"
+        }
+      },
+      "default": {},
+      "irregular": false
+    },
+    {
+      "sheet": "Coaches",
+      "category": "coaches",
+      "confidence": "high",
+      "reason": "Each row is one paid coach or staff member with compliance and contact details.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {
+        "name": 0,
+        "role": 1,
+        "email": 2,
+        "phone": 3,
+        "dbs_expiry": 4,
+        "first_aid_expiry": 5,
+        "safeguarding_date": 6
+      },
+      "notes_columns": [
+        7
+      ],
+      "values": {
+        "role": {
+          "Lead Coach": "lead",
+          "Coach": "coach",
+          "Assistant Coach": "assistant"
+        },
+        "dbs_status": {}
+      },
+      "default": {
+        "dbs_status": "valid"
+      },
+      "irregular": false
+    },
+    {
+      "sheet": "Volunteers",
+      "category": "volunteers",
+      "confidence": "high",
+      "reason": "Each row is one community volunteer with their venue, DBS expiry and status.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {
+        "name": 0,
+        "email": 1,
+        "phone": 2,
+        "venue_name": 3,
+        "dbs_expiry": 4
+      },
+      "notes_columns": [
+        5
+      ],
+      "values": {
+        "dbs_status": {
+          "Active": "valid",
+          "Invited": "pending"
+        }
+      },
+      "default": {
+        "inducted": false
+      },
+      "irregular": false
+    },
+    {
+      "sheet": "Venues",
+      "category": "venues",
+      "confidence": "high",
+      "reason": "Each row is one community or weekend venue where family sessions run.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {
+        "name": 0,
+        "address": 1,
+        "postcode": 2,
+        "session_day": 6,
+        "session_time": 6
+      },
+      "notes_columns": [
+        3,
+        4,
+        5,
+        7
+      ],
+      "values": {},
+      "default": {},
+      "irregular": false
+    },
+    {
+      "sheet": "Sessions",
+      "category": "skip",
+      "confidence": "high",
+      "reason": "Each row is a planned session timetable entry with no per-child attendance data — not a register.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {},
+      "notes_columns": [],
+      "values": {},
+      "default": {},
+      "irregular": false
+    },
+    {
+      "sheet": "Registers",
+      "category": "registers",
+      "confidence": "high",
+      "reason": "Each row is one child's attendance at one session on a specific date.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {
+        "child_name": 1,
+        "session_date": 0,
+        "present": 4,
+        "school_name": 2,
+        "venue_name": 2,
+        "notes": 5
+      },
+      "notes_columns": [
+        3,
+        5
+      ],
+      "values": {
+        "present": {
+          "Y": "true",
+          "N": "false"
+        }
+      },
+      "default": {
+        "kind": "school"
+      },
+      "irregular": false
+    },
+    {
+      "sheet": "Campaigns",
+      "category": "events",
+      "confidence": "medium",
+      "reason": "Each row is a fundraising campaign with a target, amount raised and status — closest match is events.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {
+        "name": 0,
+        "event_date": 4,
+        "target": 2,
+        "status": 6,
+        "notes": 3
+      },
+      "notes_columns": [
+        1,
+        3,
+        5
+      ],
+      "values": {
+        "status": {
+          "Live": "live",
+          "Target met": "complete"
+        }
+      },
+      "default": {
+        "event_type": "other"
+      },
+      "irregular": false
+    },
+    {
+      "sheet": "Donations",
+      "category": "donations",
+      "confidence": "high",
+      "reason": "Each row is a single donation with donor, amount, date, campaign and gift-aid flag.",
+      "header_row": 0,
+      "first_data_row": 1,
+      "columns": {
+        "donor_name": 1,
+        "amount": 2,
+        "donated_on": 0,
+        "purpose": 3,
+        "gift_aid": 4
+      },
+      "notes_columns": [],
+      "values": {
+        "gift_aid": {
+          "Yes": "true",
+          "No": "false"
+        }
+      },
+      "default": {
+        "method": "bank"
+      },
+      "irregular": false
+    }
+  ]
+}

@@ -10,43 +10,50 @@
 //   responses → tp_impact_responses   cpd → tp_cpd
 // "contacts" is read but never saved as-is: a contacts list is routed by its
 // tags into families / volunteers / coaches (src/lib/impact/import-tidy.ts).
+// "community" (families who come to weekend sessions with no school) is the same:
+// each row becomes a family, a child with no school and, with a first visit date,
+// a weekend register entry.
 //
 // Opts in to the engine's review flags: anything that doesn't read cleanly
 // (an impossible date, an email with no @, "fifty" as an amount, "maybe" for
 // consent) is listed for the user to check before saving — never guessed.
 
 import type { ImportSchema, Rec } from '@/lib/import-engine/records'
-import { toNumber } from '@/lib/import-engine/records'
+import { toNumber, tidyPersonName } from '@/lib/import-engine/records'
 
 export type ImpactImportCategory =
   | 'schools' | 'programmes' | 'venues' | 'coaches' | 'volunteers' | 'families'
-  | 'children' | 'registers' | 'events' | 'donations' | 'responses' | 'cpd' | 'contacts'
+  | 'children' | 'registers' | 'events' | 'donations' | 'responses' | 'cpd' | 'contacts' | 'community'
 
 export const IMPACT_IMPORT_FIELDS: Record<ImpactImportCategory, string[]> = {
-  schools: ['name', 'borough', 'address', 'head_name', 'pe_lead_name', 'safeguarding_lead', 'contact_email', 'contact_phone', 'funding_source', 'status', 'notes'],
+  schools: ['name', 'borough', 'address', 'postcode', 'head_name', 'pe_lead_name', 'safeguarding_lead', 'contact_email', 'contact_phone', 'funding_source', 'status', 'notes'],
   programmes: ['school_name', 'term_label', 'start_date', 'end_date', 'year_groups', 'current_week', 'status', 'cost', 'notes'],
   venues: ['name', 'address', 'postcode', 'courts', 'surface', 'access_notes', 'storage_notes', 'session_day', 'session_time', 'inclusive', 'notes'],
   coaches: ['name', 'role', 'qualification', 'email', 'phone', 'availability', 'specialisms', 'dbs_status', 'dbs_number', 'dbs_expiry', 'safeguarding_date', 'first_aid_expiry', 'notes'],
   volunteers: ['name', 'email', 'phone', 'venue_name', 'inducted', 'induction_date', 'dbs_status', 'first_aid_expiry', 'since', 'notes'],
   families: ['guardian_name', 'guardian2_name', 'email', 'phone', 'emergency_contact', 'consent_data', 'consent_photo', 'unsubscribed', 'notes'],
   children: ['name', 'date_of_birth', 'year_group', 'school_name', 'programme_term', 'class_name', 'guardian_name', 'guardian_email', 'guardian_phone', 'photo_consent', 'medical_notes', 'send', 'gender', 'fsm', 'pupil_premium', 'fee_status', 'fee_amount', 'pack_size', 'pack_issued', 'paid_item_date', 'paid_item_amount', 'notes'],
-  registers: ['child_name', 'session_date', 'present', 'kind', 'school_name', 'venue_name', 'week_number', 'notes'],
+  registers: ['child_name', 'child_date_of_birth', 'session_date', 'present', 'kind', 'school_name', 'venue_name', 'week_number', 'notes'],
   events: ['name', 'event_type', 'event_date', 'target', 'status', 'notes'],
   donations: ['donor_name', 'amount', 'donated_on', 'purpose', 'gift_aid', 'method', 'notes'],
   responses: ['respondent_name', 'child_name', 'respondent', 'areas_helped', 'would_recommend', 'satisfaction', 'comment', 'consent_publish', 'notes'],
   cpd: ['school_name', 'staff_name', 'course', 'date', 'provider', 'notes'],
   contacts: ['name', 'email', 'phone', 'tags', 'notes'],
+  community: ['guardian_name', 'email', 'phone', 'child_name', 'date_of_birth', 'venue_name', 'first_visit', 'consent_data', 'consent_photo', 'notes'],
 }
 
 export const IMPACT_IMPORT_CATEGORIES = Object.keys(IMPACT_IMPORT_FIELDS) as ImpactImportCategory[]
-/** Categories that are saved (in this order — later ones link to earlier). */
-export const IMPACT_SAVE_ORDER: Exclude<ImpactImportCategory, 'contacts'>[] = [
+/** Categories that are saved (in this order — later ones link to earlier). Contacts and
+ *  community rows are turned into these first (import-tidy). */
+export type ImpactSaveCategory = Exclude<ImpactImportCategory, 'contacts' | 'community'>
+export const IMPACT_SAVE_ORDER: ImpactSaveCategory[] = [
   'schools', 'programmes', 'venues', 'coaches', 'families', 'volunteers', 'children', 'events', 'donations', 'registers', 'responses', 'cpd',
 ]
 
 const LABEL: Record<ImpactImportCategory, string> = {
   schools: 'name', programmes: 'school_name', venues: 'name', coaches: 'name', volunteers: 'name', families: 'guardian_name',
   children: 'name', registers: 'child_name', events: 'name', donations: 'donor_name', responses: 'respondent_name', cpd: 'staff_name', contacts: 'name',
+  community: 'child_name',
 }
 
 export const IMPACT_ENUMS: Record<string, string[]> = {
@@ -67,13 +74,13 @@ export const IMPACT_ENUMS: Record<string, string[]> = {
 export const IMPACT_CATEGORY_LABEL: Record<ImpactImportCategory, string> = {
   schools: 'Schools', programmes: 'Programmes', venues: 'Venues', coaches: 'Coaches', volunteers: 'Volunteers',
   families: 'Families', children: 'Children', registers: 'Register entries', events: 'Fundraising events',
-  donations: 'Donations', responses: 'Feedback responses', cpd: 'CPD records', contacts: 'Contacts',
+  donations: 'Donations', responses: 'Feedback responses', cpd: 'CPD records', contacts: 'Contacts', community: 'Community',
 }
 
 // ── Value readers ────────────────────────────────────────────────────────────
 const BOOL = new Set([
   'venues.inclusive', 'volunteers.inducted', 'families.consent_data', 'families.consent_photo', 'families.unsubscribed',
-  'children.photo_consent', 'children.send', 'registers.present', 'donations.gift_aid', 'responses.would_recommend', 'responses.consent_publish',
+  'children.photo_consent', 'children.send', 'registers.present', 'community.consent_data', 'community.consent_photo', 'donations.gift_aid', 'responses.would_recommend', 'responses.consent_publish',
 ])
 
 /** Y, yes, TRUE, ✓, 1 → true; N, no, FALSE, 0, ✗ → false; anything else → unreadable. */
@@ -168,8 +175,8 @@ const yearIndex = (y: string | null) => y === 'N' ? -1 : y === 'R' ? 0 : y && /^
 
 const BLANKISH = /^(none|no ?email|n\/?a|na|-|—|unknown|tbc|tba|nil|\?)$/i
 
-const EMAIL_FIELDS = new Set(['schools.contact_email', 'coaches.email', 'volunteers.email', 'families.email', 'children.guardian_email', 'contacts.email'])
-const PHONE_FIELDS = new Set(['schools.contact_phone', 'coaches.phone', 'volunteers.phone', 'families.phone', 'children.guardian_phone', 'contacts.phone'])
+const EMAIL_FIELDS = new Set(['schools.contact_email', 'coaches.email', 'volunteers.email', 'families.email', 'children.guardian_email', 'contacts.email', 'community.email'])
+const PHONE_FIELDS = new Set(['schools.contact_phone', 'coaches.phone', 'volunteers.phone', 'families.phone', 'children.guardian_phone', 'contacts.phone', 'community.phone'])
 
 const isPersonName = (name: string) => {
   const s = name.trim()
@@ -190,7 +197,8 @@ export const IMPACT_IMPORT_SCHEMA: ImportSchema<ImpactImportCategory> = {
   intFields: new Set(['programmes.current_week', 'registers.week_number', 'responses.satisfaction']),
   numFields: new Set(['programmes.cost', 'children.fee_amount', 'children.paid_item_amount', 'events.target', 'donations.amount']),
   dateFields: new Set(['cpd.date', 'programmes.start_date', 'programmes.end_date', 'coaches.dbs_expiry', 'coaches.safeguarding_date', 'coaches.first_aid_expiry',
-    'volunteers.first_aid_expiry', 'children.pack_issued', 'children.paid_item_date', 'volunteers.induction_date', 'volunteers.since', 'children.date_of_birth', 'registers.session_date', 'events.event_date', 'donations.donated_on']),
+    'volunteers.first_aid_expiry', 'children.pack_issued', 'children.paid_item_date', 'volunteers.induction_date', 'volunteers.since', 'children.date_of_birth', 'registers.session_date', 'events.event_date', 'donations.donated_on',
+    'registers.child_date_of_birth', 'community.date_of_birth', 'community.first_visit']),
   enums: IMPACT_ENUMS,
   synonyms: {
     'schools.status': { interested: 'enquiry', lead: 'enquiry', prospect: 'enquiry', unfunded: 'fundraising', booked: 'confirmed', active: 'running', live: 'running', completed: 'complete', finished: 'complete', renewing: 'renewal' },
@@ -205,7 +213,7 @@ export const IMPACT_IMPORT_SCHEMA: ImportSchema<ImpactImportCategory> = {
     'responses.respondent': { mum: 'parent', dad: 'parent', carer: 'parent', guardian: 'parent', family: 'parent', teacher: 'school', head: 'school', volunteer: 'tenor', helper: 'tenor' },
   },
   fieldLabels: {
-    status: 'Status', current_week: 'Week', cost: 'Cost', start_date: 'Start', end_date: 'End', date_of_birth: 'Date of birth',
+    status: 'Status', current_week: 'Week', first_visit: 'First visit', child_date_of_birth: 'Child date of birth', postcode: 'Postcode', cost: 'Cost', start_date: 'Start', end_date: 'End', date_of_birth: 'Date of birth',
     year_group: 'Year group', photo_consent: 'Photo consent', consent_photo: 'Photo consent', consent_data: 'Data consent',
     fee_status: 'Paid?', fee_amount: 'Fee', amount: 'Amount', donated_on: 'Date', event_date: 'Date', session_date: 'Date',
     email: 'Email', contact_email: 'Email', guardian_email: 'Email', phone: 'Phone', contact_phone: 'Phone', guardian_phone: 'Phone',
@@ -277,6 +285,7 @@ export const IMPACT_IMPORT_SCHEMA: ImportSchema<ImpactImportCategory> = {
   },
   afterClean: (category, out) => {
     for (const f of ['name', 'guardian_name', 'guardian2_name', 'donor_name', 'respondent_name', 'child_name', 'staff_name']) {
+      if (f === 'child_name' && category === 'community' && typeof out[f] === 'string') out[f] = tidyPersonName(out[f] as string)
       if (typeof out[f] === 'string') out[f] = titleCase((out[f] as string).replace(/\s+/g, ' ').trim())
     }
     if (category === 'children' && typeof out.fee_status !== 'string') out.fee_status = undefined
@@ -288,6 +297,9 @@ export const IMPACT_IMPORT_SCHEMA: ImportSchema<ImpactImportCategory> = {
       issues.push(`Only a first name (“${name}”) — add a surname so they can be told apart`)
     }
     if (category === 'children' && !out.date_of_birth && !out.year_group) issues.push('No date of birth or year group')
+    if (category === 'community' && !out.date_of_birth) issues.push('No date of birth — needed to tell children with the same name apart')
+    if (category === 'community' && !out.guardian_name) issues.push('No guardian name')
+    if (category === 'community' && out.consent_data === undefined) issues.push('Data consent not recorded')
     if (category === 'children' && typeof out.date_of_birth === 'string' && typeof out.year_group === 'string') {
       const expected = expectedYearGroup(out.date_of_birth)
       const gap = Math.abs(yearIndex(expected) - yearIndex(out.year_group))
@@ -306,12 +318,15 @@ export const IMPACT_IMPORT_SCHEMA: ImportSchema<ImpactImportCategory> = {
   // email are one family; donations only when every field matches.
   dedupeKey: (category, r, norm) => {
     if (category === 'programmes') return `${norm(r.school_name)}|${norm(r.term_label)}`
+    // Two schools can share a name; the postcode tells them apart.
+    if (category === 'schools') return `${norm(r.name)}|${String(r.postcode ?? '').toUpperCase().replace(/\s+/g, '')}`
     if (category === 'families' || category === 'contacts') {
       if (r.email) return `e:${norm(r.email)}`
       if (r.phone) return `p:${String(r.phone).replace(/\D/g, '')}`
       return `n:${norm(r[category === 'families' ? 'guardian_name' : 'name'])}`
     }
-    if (category === 'registers') return `${norm(r.child_name)}|${norm(r.session_date)}|${norm(r.kind)}`
+    if (category === 'registers') return `${norm(r.child_name)}|${norm(r.child_date_of_birth)}|${norm(r.session_date)}|${norm(r.kind)}`
+    if (category === 'community') return `${norm(r.child_name)}|${norm(r.date_of_birth)}`
     if (category === 'donations') return JSON.stringify(['donor_name', 'amount', 'donated_on', 'purpose'].map(f => norm(r[f])))
     if (category === 'responses') return JSON.stringify(['respondent_name', 'child_name', 'comment'].map(f => norm(r[f])))
     return undefined
@@ -363,7 +378,8 @@ export const IMPACT_MEANINGS = `What each category means:
 - volunteers: parent volunteers and session helpers (also called TENORs, Court Captains, helpers).
 - families: parents, guardians and carers — one per household, with contact details and consents.
 - children: the children taking part. ONE RECORD PER CHILD — a row naming two children ("Jack & Mia Okafor (twins)") is still mapped as children; it is split later. guardian_name/email/phone are that child's parent or carer.
-- registers: attendance — one row per child per session (child, date, present).
+- registers: attendance — one row per child per session (child, date, present). A tab of sessions or dates with no child on each row (a timetable, planned numbers) is NOT registers: it is skip — sessions are made from the registers.
+- community: families who come to the weekend community sessions and have no school with us — ONE ROW PER CHILD with the guardian's details, preferred venue and first visit date.
 Common headings: gender is also "Sex" or "M/F"; fsm is "Free school meals"; pupil_premium is "PP" or "Pupil Premium"; a volunteer's first_aid_expiry is "First aid"; pack_size is "T-shirt size"; paid_item_date is "Racket paid"; paid_item_amount is "Racket paid amount". Map these columns even when most cells are blank.
 - events: fundraising events (fairs, cake sales, sponsored ball hits, quiz nights).
 - donations: money given — donor, amount, date, what for.

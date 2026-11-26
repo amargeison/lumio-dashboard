@@ -4,6 +4,7 @@ import { importGate, recordImportSpend } from '@/lib/import-engine/guard'
 import type { SheetPlan } from '@/lib/import-engine/records'
 import { IMPACT_IMPORT_FIELDS, IMPACT_IMPORT_CATEGORIES, IMPACT_ENUMS, IMPACT_MEANINGS, type ImpactImportCategory } from '@/lib/impact/import-schema'
 import { impactHq } from '@/lib/impact/import-auth'
+import { trace } from '@/lib/impact/import-run'
 
 export const runtime = 'nodejs'
 export const maxDuration = 120
@@ -38,9 +39,9 @@ export async function POST(req: NextRequest) {
   const hq = await impactHq()
   if (hq instanceof NextResponse) return hq
   const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'AI not configured' }, { status: 500 })
+  if (!apiKey) return NextResponse.json({ error: 'Reading files with AI isn’t available right now. Use the import template instead — it needs no AI.' }, { status: 503 })
   const limited = importGate(hq.hqId)
-  if (limited) return limited
+  if (limited) { trace('ai map refused: daily cap', { hqId: hq.hqId }); return limited }
 
   const body = await req.json().catch(() => ({})) as { fileName?: string; sheets?: { name: string; sample: string }[] }
   const sheets = (Array.isArray(body.sheets) ? body.sheets : []).filter(s => s && typeof s.name === 'string' && typeof s.sample === 'string').slice(0, 20)
@@ -48,6 +49,7 @@ export async function POST(req: NextRequest) {
   const text = `File: ${String(body.fileName || 'workbook').slice(0, 200)}\n\n${sheets.map(s => s.sample.slice(0, 16000)).join('\n\n')}`
 
   try {
+    trace('ai map', { hqId: hq.hqId, tabs: sheets.length })
     const res = await new Anthropic({ apiKey }).messages.create({
       model: 'claude-sonnet-4-6', max_tokens: 6000,
       messages: [{ role: 'user', content: [{ type: 'text', text }, { type: 'text', text: PROMPT }] }],
@@ -56,7 +58,7 @@ export async function POST(req: NextRequest) {
     let txt = ''
     for (const b of res.content) if (b.type === 'text') txt += b.text
     const match = txt.replace(/```json\s*/gi, '').replace(/```/g, '').match(/\{[\s\S]*\}/)
-    if (!match) return NextResponse.json({ error: 'Could not work out what the tabs hold.' }, { status: 422 })
+    if (!match) return NextResponse.json({ error: 'The AI couldn’t work out what your tabs hold. Try the import template instead.' }, { status: 422 })
     const parsed = JSON.parse(match[0]) as { plans?: SheetPlan<ImpactImportCategory>[] }
     const names = new Set(sheets.map(s => s.name))
     const cats = new Set<string>([...IMPACT_IMPORT_CATEGORIES, 'skip'])
@@ -75,6 +77,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ plans })
   } catch (err) {
     const e = err as { message?: string; status?: number }
-    return NextResponse.json({ error: `Could not read the tabs: ${e?.message ?? 'unknown error'}` }, { status: typeof e?.status === 'number' ? e.status : 500 })
+    trace('ai map failed', { hqId: hq.hqId, status: e?.status, error: e?.message })
+    return NextResponse.json({ error: `The AI couldn’t work out what your tabs hold just now (${e?.message ?? 'no reason given'}). Try again in a minute, or use the import template.` }, { status: 502 })
   }
 }

@@ -412,9 +412,12 @@ async function adminCases(A, B) {
     ok(`admin saves ${name} settings`, (await both.db.from('impact_orgs').update({ settings: { org: org.slug, town: 'T' } }).eq('slug', org.slug).select('slug')).data?.length === 1)
     ok(`admin can’t take over ${name}`, !!(await both.db.from('impact_orgs').update({ hq_id: both.id }).eq('slug', org.slug)).error)
     ok(`admin has ${name}’s lead address`, (await as(both, org)('/api/impact/leads/hook')).status === 200)
-    // The same name exists in the other org, so this would come back 'already' if reads mixed.
-    const imp = await (await as(both, org)('/api/impact/import/save', { method: 'POST', body: JSON.stringify({ category: 'schools', rows: [{ name: `Only Here Primary` }] }) })).json()
-    ok(`admin imports into ${name} only`, imp.inserted === 1 && (await admin.from('tp_schools').select('id').eq('hq_id', org.id).eq('name', 'Only Here Primary')).data?.length === 1, JSON.stringify(imp))
+    // The same name exists in the other org, so this would come back as a match if reads mixed.
+    const send = body => as(both, org)('/api/impact/import/plan', { method: 'POST', body: JSON.stringify({ fileName: 'admin.xlsx', records: { schools: [{ name: 'Only Here Primary' }] }, ...body }) }).then(r => r.json())
+    const review = await send({ mode: 'review' })
+    const imp = await send({ mode: 'commit', key: review.key })
+    const saved = (await admin.from('tp_schools').select('import_batch_id').eq('hq_id', org.id).eq('name', 'Only Here Primary')).data ?? []
+    ok(`admin imports into ${name} only`, review.tables?.[0]?.counts.new === 1 && imp.ok && saved.length === 1 && saved[0].import_batch_id === imp.importId, JSON.stringify(imp))
   }
   ok('naming no org is refused, not guessed', (await both.api('/api/impact/leads/hook')).status === 403)
   const hook = await (await as(both, A)('/api/impact/leads/hook', { method: 'POST', body: '{}' })).json()
@@ -427,7 +430,7 @@ async function adminCases(A, B) {
   ok('… can’t delete from it', (await one.db.from('tp_schools').delete().eq('id', sA).select('id')).data?.length === 0)
   ok('… can’t add to it', !!(await one.db.from('tp_schools').insert({ hq_id: A.id, name: 'Planted' })).error)
   ok('… can’t change its settings', (await one.db.from('impact_orgs').update({ settings: {} }).eq('slug', A.slug).select('slug')).data?.length === 0)
-  for (const [path, body] of [['/api/impact/leads/hook', {}], ['/api/impact/leads/import', { rows: [{ name: 'x' }] }], ['/api/impact/import/save', { category: 'schools', rows: [{ name: 'x' }] }], ['/api/impact/members', { action: 'revoke', memberId: sA }], ['/api/impact/invite', { role: 'parent', targetId: sA }], ['/api/impact/message/send', { body: 'x' }]])
+  for (const [path, body] of [['/api/impact/leads/hook', {}], ['/api/impact/leads/import', { rows: [{ name: 'x' }] }], ['/api/impact/import/plan', { mode: 'review', records: { schools: [{ name: 'x' }] } }], ['/api/impact/import/history', { id: '00000000-0000-0000-0000-000000000000', action: 'check' }], ['/api/impact/members', { action: 'revoke', memberId: sA }], ['/api/impact/invite', { role: 'parent', targetId: sA }], ['/api/impact/message/send', { body: 'x' }]])
     ok(`… is refused by ${path}`, (await as(one, A)(path, { method: 'POST', body: JSON.stringify(body) })).status === 403)
 
   const row = { user_id: nobody.id, hq_id: A.id, role: 'admin', accepted_at: new Date().toISOString() }
