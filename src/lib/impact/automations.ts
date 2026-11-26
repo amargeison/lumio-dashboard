@@ -98,11 +98,14 @@ function due(a: AutomationRow, w: AutomationWorld): { familyId: string; step: st
   const active = (f: AudienceFamily | undefined) => !!f && !f.lapsed_at && !f.waitlisted_at
 
   if (a.kind === 'welcome') {
-    const since = a.config.since ? a.config.since.slice(0, 10) : null
-    if (!since) return out
+    // Compared to the moment it was switched on, not the day: switching it on at 5pm
+    // mustn't welcome everyone who joined that morning.
+    const since = a.config.since ? Date.parse(a.config.since) : NaN
+    if (Number.isNaN(since)) return out
     for (const f of w.families) {
-      const joined = (f.signed_up_at ?? f.created_at ?? '').slice(0, 10)
-      if (!joined || joined < since || f.waitlisted_at) continue
+      const joinedAt = f.signed_up_at ?? f.created_at ?? ''
+      const joined = joinedAt.slice(0, 10)
+      if (!joined || !(Date.parse(joinedAt) >= since) || f.waitlisted_at) continue
       const age = daysBetween(joined, w.today)
       const steps = [['instant', 0, 2], ['day1', 1, 3], ['day7', 7, 9]] as const
       const next = steps.find(([id, lo, hi]) => age >= lo && age <= hi && !w.done.has(`${a.id}|${f.id}|${id}`))

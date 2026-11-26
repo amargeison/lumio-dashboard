@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { impactHq } from '@/lib/impact/import-auth'
-import { AUDIENCE_LABELS, NEEDS_ID, audienceMembers, audienceName, parseAudience, reachability, reachLine, skipReason, type Audience, type AudienceKind } from '@/lib/impact/audiences'
+import { AUDIENCE_LABELS, HIDDEN_AUDIENCES, NEEDS_ID, audienceMembers, audienceName, parseAudience, reachability, reachLine, skipReason, type Audience, type AudienceKind } from '@/lib/impact/audiences'
 import { loadAudienceData, ukToday } from '@/lib/impact/comms-server'
 import type { CommsChannel } from '@/lib/impact/comms-rules'
 
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     return { audience: a, name: audienceName(a, data), line: reachLine(reach, channel), ...counts }
   }
   if (raw.all === true) {
-    const list: Audience[] = (Object.keys(AUDIENCE_LABELS) as AudienceKind[]).flatMap((kind): Audience[] =>
+    const list: Audience[] = (Object.keys(AUDIENCE_LABELS) as AudienceKind[]).filter(k => !HIDDEN_AUDIENCES.includes(k)).flatMap((kind): Audience[] =>
       kind === 'school' ? (data.schools ?? []).map(s => ({ kind, id: s.id })) : kind === 'venue' ? (data.venues ?? []).map(v => ({ kind, id: v.id })) : NEEDS_ID.includes(kind) ? [] : [{ kind, id: null }])
     return NextResponse.json({ audiences: list.map(summary), schools: data.schools, venues: data.venues })
   }

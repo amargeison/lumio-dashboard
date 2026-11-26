@@ -11,11 +11,13 @@
 //   reply. Assigning a thread to a coach. Automations' preview, and what the browser
 //   can't write. The AI allowance: refused over the cap, logged, readable only by its org.
 //   Cross-org on every new table. The cron: refused without the secret; a dry run writes
-//   nothing.
+//   nothing. Inbound via Cloudflare (/api/inbound/email): signature required; dispatch to
+//   Impact, Coach or dropped; unknown family; failed SPF/DKIM flagged; oversize refused;
+//   Coach's old route no longer answers 503.
 //
 // The app under test must run with (never set on the server):
-//   IMPACT_COMMS_DRY=on  RESEND_IMPACT_WEBHOOK_SECRET=<the same as here>  CRON_SECRET=<the same as here>
-// Run:  BASE=http://localhost:3077 RESEND_IMPACT_WEBHOOK_SECRET=… CRON_SECRET=… node scripts/impact-comms-test.mjs
+//   IMPACT_COMMS_DRY=on  RESEND_IMPACT_WEBHOOK_SECRET=<…>  CRON_SECRET=<…>  INBOUND_EMAIL_SECRET=<…>  (the same values as here)
+// Run:  BASE=http://localhost:3077 RESEND_IMPACT_WEBHOOK_SECRET=… CRON_SECRET=… INBOUND_EMAIL_SECRET=… node scripts/impact-comms-test.mjs
 
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
@@ -28,10 +30,13 @@ try {
 } catch { /* ignore */ }
 const SB = process.env.NEXT_PUBLIC_SUPABASE_URL, KEY = process.env.SUPABASE_SERVICE_ROLE_KEY, ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const BASE = (process.env.BASE || 'http://localhost:3000').replace(/\/+$/, '')
-const HOOK = process.env.RESEND_IMPACT_WEBHOOK_SECRET, CRON = process.env.CRON_SECRET
+const HOOK = process.env.RESEND_IMPACT_WEBHOOK_SECRET, CRON = process.env.CRON_SECRET, INBOUND = process.env.INBOUND_EMAIL_SECRET
 if (!SB || !KEY || !ANON) { console.error('Missing Supabase env'); process.exit(2) }
 if (!/localhost|127\.0\.0\.1/.test(BASE)) { console.error('Run against a local server started with IMPACT_COMMS_DRY=on.'); process.exit(2) }
-if (!HOOK || !CRON) { console.error('Set RESEND_IMPACT_WEBHOOK_SECRET and CRON_SECRET to the values the local server was started with.'); process.exit(2) }
+if (!HOOK || !CRON || !INBOUND) { console.error('Set RESEND_IMPACT_WEBHOOK_SECRET, CRON_SECRET and INBOUND_EMAIL_SECRET to the values the local server was started with.'); process.exit(2) }
+await import('../tests/impact/brackenmoor.mjs')   // the @/ import hooks, for the Coach token and the signature
+const { inboundReplyTo } = await import('../src/lib/coach/inbound.ts')
+const { signInbound } = await import('../src/lib/inbound/signature.ts')
 
 const admin = createClient(SB, KEY, { auth: { persistSession: false } })
 const tag = `commstest-${Date.now()}`
@@ -76,6 +81,14 @@ async function hook(payload, { sign = true, id = `msg_${tag}_${++svixN}` } = {})
   const key = Buffer.from(HOOK.replace(/^whsec_/, ''), 'base64')
   const sig = sign ? `v1,${createHmac('sha256', key).update(`${id}.${ts}.${raw}`).digest('base64')}` : 'v1,bad'
   const res = await fetch(`${BASE}/api/impact/webhooks/resend`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'svix-id': id, 'svix-timestamp': String(ts), 'svix-signature': sig }, body: raw })
+  return { status: res.status, body: await res.json().catch(() => ({})) }
+}
+async function mail(to, { from = 'someone@example.com', auth = 'mx.cloudflare.net; dkim=pass; spf=pass; dmarc=pass', text = 'Thanks!', attach = null, id = `<${tag}-${++svixN}@example.com>`, sign = true, body = null } = {}) {
+  const raw = body ?? new TextEncoder().encode([`From: "Sender" <${from}>`, `To: ${to}`, 'Subject: Re: news', `Message-ID: ${id}`, 'MIME-Version: 1.0',
+    ...(attach ? ['Content-Type: multipart/mixed; boundary="B"', '', '--B', 'Content-Type: text/plain', '', text, '--B', `Content-Type: application/pdf; name="${attach}"`, `Content-Disposition: attachment; filename="${attach}"`, 'Content-Transfer-Encoding: base64', '', 'JVBERi0xLjQK', '--B--'] : ['Content-Type: text/plain', '', text])].join('\r\n'))
+  const ts = String(Math.floor(Date.now() / 1000))
+  const headers = { 'content-type': 'message/rfc822', 'x-lumio-timestamp': ts, 'x-lumio-envelope-to': to, 'x-lumio-envelope-from': from, 'x-lumio-auth-results': auth, 'x-lumio-signature': sign ? signInbound(INBOUND, ts, to, from, auth, raw) : '0'.repeat(64) }
+  const res = await fetch(`${BASE}/api/inbound/email`, { method: 'POST', headers, body: raw })
   return { status: res.status, body: await res.json().catch(() => ({})) }
 }
 const unsubToken = familyId => `${familyId.toLowerCase()}.${createHmac('sha256', KEY).update(`impact-unsubscribe:${familyId.toLowerCase()}`).digest('base64url')}`
@@ -207,6 +220,35 @@ async function main() {
   ok('signed out: refused', (await fetch(`${BASE}/api/ai/impact`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"feature":"message","messages":[{"role":"user","content":"hi"}]}' })).status === 401)
   ok('B can’t read A’s usage, A can’t write its own', ((await B.db.from('impact_ai_usage').select('id').eq('hq_id', A.id)).data ?? []).length === 0 && !!(await A.db.from('impact_ai_usage').insert({ hq_id: A.id, feature: 'x', model: 'x' })).error)
   ok('the importer is held to the same allowance', (await A.call('/api/impact/import/map', { fileName: 'x.xlsx', sheets: [{ name: 'Sheet1', sample: 'a,b' }] })).status === 429)
+
+  console.log('\nInbound via Cloudflare (/api/inbound/email):')
+  const impactTo = `reply+${A.slug}@inbound.lumiosports.com`
+  ok('unsigned: refused', (await mail(impactTo, { sign: false })).status === 401)
+  const big = new Uint8Array(10 * 1024 * 1024 + 10)
+  ok('over 10 MB: refused', (await mail(impactTo, { body: big })).status === 413)
+  const before2 = (await rows(A.id, 'impact_messages', q => q.eq('direction', 'in'))).length
+  const r1c = await mail(impactTo, { from: f1.email, text: 'Lovely, see you then.', attach: 'photo.pdf' })
+  const got = (await rows(A.id, 'impact_messages', q => q.eq('direction', 'in').eq('body', 'Lovely, see you then.\n\n[Attachment not shown: photo.pdf]')))[0]
+  ok('reply+<org>@ → that org’s Inbox, the family’s thread, text only with the attachment listed', r1c.status === 200 && r1c.body.kind === 'impact' && got?.thread_key === `family:${f1.id}` && got.detail === null, JSON.stringify(r1c.body))
+  await mail(impactTo, { from: `nobody+${tag}@example.com`, text: 'Who is this?' })
+  ok('an unknown sender → “Not a family here” (its own thread, no family)', (await rows(A.id, 'impact_messages', q => q.eq('thread_key', `email:nobody+${tag}@example.com`)))[0]?.family_id === null)
+  await mail(impactTo, { from: f1.email, text: 'Spoofed?', auth: 'mx.cloudflare.net; dkim=fail; spf=fail; dmarc=fail' })
+  ok('SPF/DKIM failed → filed, marked “Sender not verified”', /^Sender not verified/.test((await rows(A.id, 'impact_messages', q => q.eq('body', 'Spoofed?')))[0]?.detail ?? ''))
+  ok('the same message twice is filed once', (await mail(impactTo, { from: f1.email, id: `<once-${tag}@example.com>` })).body.status === 'filed' && (await mail(impactTo, { from: f1.email, id: `<once-${tag}@example.com>` })).body.status === 'dedup')
+  ok('an address that isn’t a reply address → 200, dropped, nothing filed', (await mail('hello@inbound.lumiosports.com')).body.dropped === true && (await rows(A.id, 'impact_messages', q => q.eq('direction', 'in'))).length === before2 + 4)
+  ok('reply+<an org that doesn’t exist>@ → 200, nothing filed', (await mail(`reply+${tag}-nobody@inbound.lumiosports.com`)).body.status === 'ignored')
+
+  const coach = await user(`${tag}_coach@lumio.test`)
+  const coachTo = inboundReplyTo(coach.id, `contact:${tag.slice(-6)}`)
+  const rc = await mail(coachTo, { from: `parent+${tag}@example.com`, text: 'Thanks coach' })
+  const cm = (await admin.from('coach_messages').select('direction, body, thread_key, from_name').eq('coach_id', coach.id)).data ?? []
+  ok('Coach’s signed address → the coach’s inbox, not Impact', rc.body.kind === 'coach' && cm.length === 1 && cm[0].direction === 'in' && cm[0].body === 'Thanks coach' && (await rows(A.id, 'impact_messages', q => q.eq('body', 'Thanks coach'))).length === 0, JSON.stringify(rc.body))
+  const forged = coachTo.replace(/\.[^.@]+@/, '.AAAAAAAAAAAA@')
+  ok('a forged Coach token → dropped', (await mail(forged, { text: 'forged' })).body.status === 'ignored' && ((await admin.from('coach_messages').select('id').eq('coach_id', coach.id)).data ?? []).length === 1)
+  ok('an Impact address never reaches Coach', ((await admin.from('coach_messages').select('id').eq('body', 'Lovely, see you then.')).data ?? []).length === 0)
+  const old = await fetch(`${BASE}/api/coach/inbound-email`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+  ok('Coach’s old route: no longer 503 — unsigned is refused (401)', old.status === 401)
+  await admin.from('coach_messages').delete().eq('coach_id', coach.id)
 
   console.log('\nScheduler:')
   ok('refused without the secret', (await fetch(`${BASE}/api/cron/impact-comms?dry=1`, { method: 'POST' })).status === 401)

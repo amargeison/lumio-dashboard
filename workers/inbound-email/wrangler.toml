@@ -1,0 +1,19 @@
+# Cloudflare Email Worker for inbound.lumiosports.com (Lumio Coach + Lumio Impact replies).
+# Email Routing's catch-all rule for inbound.lumiosports.com sends every message here.
+#
+# Secrets (set with `npx wrangler secret put <NAME>`, never committed — this repo is public):
+#   INBOUND_EMAIL_SECRET  the HMAC key, the same value as INBOUND_EMAIL_SECRET in the app's .env.production
+#   FALLBACK_TO           a verified Email Routing destination address: where a message goes if the app can't take it
+#
+# Deploy:  cd workers/inbound-email && npx wrangler deploy
+
+name = "lumio-inbound-email"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = false
+
+[vars]
+APP_URL = "https://www.lumiosports.com/api/inbound/email"
+
+[observability]
+enabled = true
