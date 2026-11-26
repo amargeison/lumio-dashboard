@@ -13,7 +13,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { Inbox as InboxIcon, Newspaper, Zap, Target, Send, Mail, MessageSquare, Smartphone, UserCheck, CheckCircle, ArrowLeft, RefreshCw } from 'lucide-react'
-import { Card, SectionTitle, Pill, EmptyState, formField, formLabel, buttonPrimary, buttonSecondary } from './ui'
+import { Card, SectionTitle, Pill, EmptyState, formField, buttonPrimary, buttonSecondary } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { useImpact } from './ImpactDataContext'
 import { LiveSendWizard } from './LiveSendWizard'
@@ -158,6 +158,7 @@ function InboxTab({ loaded, messages, threads, onChange, staff }: { loaded: bool
                 <div style={{ fontSize: 12.5, fontWeight: 900, color: TP_DARK }}>
                   {nameOf(t.key, t.ms)}{t.unread > 0 && <span style={{ marginLeft: 7, background: TP_RED, color: '#fff', borderRadius: 999, fontSize: 9.5, fontWeight: 900, padding: '1px 6px' }}>{t.unread}</span>}
                   {t.key.startsWith('email:') && <span style={{ marginLeft: 7 }}><Pill tone="amber">Not a family here</Pill></span>}
+                  {t.ms.some(x => x.direction === 'in' && x.detail?.startsWith('Sender not verified')) && <span style={{ marginLeft: 7 }}><Pill tone="red">Sender not verified</Pill></span>}
                   {coach && <span style={{ marginLeft: 7 }}><Pill tone="dark">{coach.name}</Pill></span>}
                   {t.thread?.closed_at && <span style={{ marginLeft: 7 }}><Pill tone="green">Done</Pill></span>}
                 </div>
@@ -243,8 +244,9 @@ function ThreadView({ threadKey, name, messages, thread, staff, onBack, onChange
               <div style={{ fontSize: 10.5, opacity: 0.75, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
                 <Icon size={11} />{mine ? 'You' : name} · {when(m.created_at)}{mine && m.status !== 'sent' && m.status !== 'filed' ? ` · ${m.status}` : ''}
               </div>
+              {!mine && m.detail?.startsWith('Sender not verified') && <div style={{ marginBottom: 4 }} title="This email didn’t pass the sender checks (SPF/DKIM), so it may not really be from this address."><Pill tone="red">Sender not verified</Pill></div>}
               {m.subject && !mine && <div style={{ fontSize: 11.5, fontWeight: 800, marginBottom: 2 }}>{m.subject}</div>}
-              <div style={{ fontSize: 12.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body || m.detail}</div>
+              <div style={{ fontSize: 12.5, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{m.body || (mine ? m.detail : '')}</div>
             </div>
           )
         })}
@@ -297,7 +299,6 @@ function AudiencesTab({ onNewsletter }: { onNewsletter: (a: Audience) => void })
           </div>
         ))}
       </div>
-      <div style={{ ...formLabel, marginTop: 12, textTransform: 'none', fontWeight: 600 }}>“Opened the last newsletter” counts opens reported by email apps; Apple Mail reports every email as opened, so it over-counts.</div>
     </Card>
   )
 }

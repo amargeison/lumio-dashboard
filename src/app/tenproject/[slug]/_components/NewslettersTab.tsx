@@ -18,7 +18,7 @@ import { useImpact } from './ImpactDataContext'
 import { currentHq, impactFetch } from '@/lib/impact/org-scope'
 import { draftNewsletter } from '@/lib/impact/ai'
 import { ANGLES, type AngleId } from '@/lib/impact/ai-prompt'
-import { AUDIENCE_LABELS, NEEDS_ID, type Audience, type AudienceKind } from '@/lib/impact/audiences'
+import { AUDIENCE_LABELS, HIDDEN_AUDIENCES, NEEDS_ID, type Audience, type AudienceKind } from '@/lib/impact/audiences'
 import { cleanSections, draftProblem, footerAddress, renderNewsletter, LIMITS, type NewsletterSection } from '@/lib/impact/newsletter'
 import { inQuietHours, quietHours } from '@/lib/impact/comms-settings'
 import { countStatuses } from '@/lib/impact/campaign-send'
@@ -61,7 +61,7 @@ export function NewslettersTab({ campaigns, loaded, onChange, startFor, onStarte
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontSize: 12.5, fontWeight: 900, color: TP_DARK }}>{c.subject || c.name || 'Untitled newsletter'}</div>
                 <div style={{ fontSize: 11.5, color: '#6B6560', marginTop: 2 }}>
-                  {c.status === 'sent' && c.sent_at ? `Sent ${when(c.sent_at)} · ${n.sent ?? 0} sent, ${n.opened ?? 0} opened` : c.status === 'scheduled' && c.scheduled_at ? `Scheduled for ${when(c.scheduled_at)}` : c.status === 'failed' ? (c.error ?? 'Failed') : `Edited ${when(c.updated_at)}`}
+                  {c.status === 'sent' && c.sent_at ? `Sent ${when(c.sent_at)} · ${n.sent ?? 0} sent, ${n.delivered ?? 0} delivered` : c.status === 'scheduled' && c.scheduled_at ? `Scheduled for ${when(c.scheduled_at)}` : c.status === 'failed' ? (c.error ?? 'Failed') : `Edited ${when(c.updated_at)}`}
                 </div>
               </div>
               <Pill tone={TONE[c.status] ?? 'grey'}>{c.status.toUpperCase()}</Pill>
@@ -233,7 +233,7 @@ function Builder({ initial, presetAudience, onClose }: { initial: CampaignListRo
             <span style={formLabel}>Who it’s for</span>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <select value={audience.kind} onChange={e => { const kind = e.target.value as AudienceKind; setAudience({ kind, id: kind === 'school' ? lists.schools[0]?.id ?? null : kind === 'venue' ? lists.venues[0]?.id ?? null : null }) }} style={{ ...formField, width: 'auto' }}>
-                {(Object.keys(AUDIENCE_LABELS) as AudienceKind[]).map(k => <option key={k} value={k}>{AUDIENCE_LABELS[k]}</option>)}
+                {(Object.keys(AUDIENCE_LABELS) as AudienceKind[]).filter(k => !HIDDEN_AUDIENCES.includes(k)).map(k => <option key={k} value={k}>{AUDIENCE_LABELS[k]}</option>)}
               </select>
               {audience.kind === 'school' && <select value={audience.id ?? ''} onChange={e => setAudience({ kind: 'school', id: e.target.value })} style={{ ...formField, width: 'auto' }}>{lists.schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select>}
               {audience.kind === 'venue' && <select value={audience.id ?? ''} onChange={e => setAudience({ kind: 'venue', id: e.target.value })} style={{ ...formField, width: 'auto' }}>{lists.venues.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</select>}
@@ -305,8 +305,9 @@ function Results({ campaign, onBack }: { campaign: CampaignListRow; onBack: () =
   useEffect(() => { load() }, [load])
   const c = countStatuses(rows ?? [])
   const reasons = (rows ?? []).filter(r => r.status === 'skipped').reduce<Record<string, number>>((n, r) => ({ ...n, [r.skip_reason ?? 'other']: (n[r.skip_reason ?? 'other'] ?? 0) + 1 }), {})
-  const tiles: [string, number, string?][] = [['RECIPIENTS', c.recipients], ['SENT', c.sent], ['DELIVERED', c.delivered], ['OPENED', c.opened + c.unsubscribed, 'Apple Mail opens every email, so this over-counts'], ['UNSUBSCRIBED', c.unsubscribed], ['BOUNCED', c.bounced + c.complained], ['NOT SENT', c.skipped + c.failed]]
-  const shown = (rows ?? []).filter(r => filter === 'all' || r.status === filter)
+  // No "opened": open tracking is off on every sending domain.
+  const tiles: [string, number, string?][] = [['RECIPIENTS', c.recipients], ['SENT', c.sent], ['DELIVERED', c.delivered], ['UNSUBSCRIBED', c.unsubscribed], ['BOUNCED', c.bounced + c.complained], ['NOT SENT', c.skipped + c.failed]]
+  const shown = (rows ?? []).filter(r => filter === 'all' || r.status === filter || (filter === 'delivered' && r.status === 'opened'))
   return (
     <div style={{ display: 'grid', gap: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -329,13 +330,13 @@ function Results({ campaign, onBack }: { campaign: CampaignListRow; onBack: () =
       {Object.keys(reasons).length > 0 && <Card style={{ padding: 14 }}><div style={{ fontSize: 12, color: '#5B554F' }}><b style={{ color: TP_DARK }}>Not sent because:</b> {Object.entries(reasons).map(([k, v]) => `${v} ${k}`).join(' · ')}</div></Card>}
       <Card>
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
-          {['all', 'sent', 'delivered', 'opened', 'unsubscribed', 'bounced', 'skipped', 'failed'].map(f => <button key={f} onClick={() => setFilter(f)} style={{ background: filter === f ? TP_DARK : '#F7F5F2', color: filter === f ? '#fff' : '#5B554F', border: 'none', borderRadius: 999, padding: '5px 11px', fontSize: 10.5, fontWeight: 800, cursor: 'pointer' }}>{f.toUpperCase()}</button>)}
+          {['all', 'sent', 'delivered', 'unsubscribed', 'bounced', 'skipped', 'failed'].map(f => <button key={f} onClick={() => setFilter(f)} style={{ background: filter === f ? TP_DARK : '#F7F5F2', color: filter === f ? '#fff' : '#5B554F', border: 'none', borderRadius: 999, padding: '5px 11px', fontSize: 10.5, fontWeight: 800, cursor: 'pointer' }}>{f.toUpperCase()}</button>)}
         </div>
         <div style={{ display: 'grid', gap: 5 }}>
           {shown.slice(0, 500).map((r, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, background: '#F7F5F2', borderRadius: 8, padding: '7px 11px', fontSize: 12, color: TP_DARK }}>
               <span>{(r.family_id && names.get(r.family_id)) || 'A removed family'}</span>
-              <span style={{ color: '#6B6560' }}>{r.status}{r.skip_reason ? ` — ${r.skip_reason}` : ''}{r.error ? ` — ${r.error}` : ''}</span>
+              <span style={{ color: '#6B6560' }}>{r.status === 'opened' ? 'delivered' : r.status}{r.skip_reason ? ` — ${r.skip_reason}` : ''}{r.error ? ` — ${r.error}` : ''}</span>
             </div>
           ))}
           {rows && !shown.length && <div style={{ fontSize: 12, color: '#6B6560' }}>Nobody here.</div>}

@@ -3,8 +3,8 @@
 Brief 4 needs things to happen without anyone pressing a button: scheduled newsletters,
 the automations, and webhook results from Resend. This is what runs, and the server and
 provider steps. Approved 26 Nov 2026: the crontab line (with the scheduler off first, a
-dry run, then on for Lumio Test only), the Resend webhook and open tracking, inbound
-option B. Twilio inbound: not now.
+dry run, then on for Lumio Test only), the Resend webhook without open tracking, inbound
+through Cloudflare Email Routing. Twilio inbound: not now.
 
 ## 1. The five-minute runner
 
@@ -57,39 +57,33 @@ stop everything at once: remove the env var (and `pm2 restart lumio --update-env
 comment out the crontab line. Only dry runs are called while testing; a test never calls
 the live route.
 
-## 2. Resend webhook (delivered / opened / bounced / complained, and replies)
+## 2. Resend webhook (delivered / bounced / complained)
 
-**Route:** `POST /api/impact/webhooks/resend` (new), verified with Svix
-(`RESEND_IMPACT_WEBHOOK_SECRET`), five-minute replay window, each event id handled once
-(`impact_provider_events`). One endpoint takes both the delivery events and inbound replies.
+Webhook `73698bff-411a-408c-b024-e7694c1930b7` → `https://www.lumiosports.com/api/impact/webhooks/resend`
+for `email.delivered`, `email.bounced`, `email.complained`, `email.received`; signing secret in
+`.env.production` as `RESEND_IMPACT_WEBHOOK_SECRET`. Verified with Svix; an event is recorded
+for de-duplication only once it's known to be an Impact email or reply (Resend sends every
+event on the account here). A bounce marks the family's email as bad ("needs a new email"
+in Families) until the email is changed; a complaint unsubscribes the family.
 
-**Provider step:** in Resend → Webhooks, add `https://www.lumiosports.com/api/impact/webhooks/resend`
-for `email.delivered`, `email.opened`, `email.bounced`, `email.complained` and
-`email.received`, and put its signing secret in `.env.production` as
-`RESEND_IMPACT_WEBHOOK_SECRET`. A bounce marks the family's email as bad ("needs a new
-email" in Families) until the email is changed; a complaint unsubscribes the family.
-Resend sends every event on the account here (Coach's too); anything that isn't an Impact
-email or an Impact reply address is ignored.
+**No open tracking** (decided 26 Nov 2026): it isn't on for any domain, Coach shares
+lumiosports.com, and an Impact-only subdomain would need a paid Resend plan. "Opened" is
+not shown in the results, and the "opened the last newsletter" audience isn't offered.
 
-Open tracking must be turned on for each sending domain in Resend, or "opened" stays empty.
-Apple Mail's privacy protection opens everything, so opens over-count; the results tab
-says so next to the number.
-
-## 3. Inbound email (replies → threads) — option B
+## 3. Inbound email (replies → threads): Cloudflare Email Routing
 
 Impact emails carry **Reply-To `reply+<org slug>@inbound.lumiosports.com`**; From stays the
-org's verified sender. `inbound.lumiosports.com` already receives through Resend for
-Coach, so there's no DNS work. Coach's addresses are `reply+<token>.<signature>`; an org
-slug has no dot, so each side ignores the other's.
+org's verified sender. Coach's replies use `reply+<token>.<signature>@inbound.lumiosports.com`.
 
-(Option A, `replies@reply.<their domain>`, is left for later as a Settings choice: their main
-mailbox can't be pointed at Resend without taking it over.)
-
-Resend `email.received` → the webhook above: the org from the recipient address, the
-family from the sender's email only (a sender who isn't exactly one family in that org is
-filed as an unknown sender, never matched by name), de-duplicated on the message id, filed
-as `direction = 'in'` in that family's thread. The body is fetched from Resend's Received
-Emails API and the quoted earlier message cut off.
+Cloudflare Email Routing on the `inbound.lumiosports.com` subdomain → catch-all → the Email
+Worker `lumio-inbound-email` (`workers/inbound-email/`) → `POST /api/inbound/email`, raw MIME,
+HMAC-signed (`INBOUND_EMAIL_SECRET`, a Worker secret and in `.env.production`). The route
+parses it with postal-mime and dispatches by the envelope recipient: `reply+<org>@` → the
+Impact handler (family found by sender email only, otherwise "Not a family here"),
+Coach's signed address → the Coach handler, anything else → dropped. Text only;
+attachments listed as "not shown"; failed SPF/DKIM → filed, marked "Sender not verified".
+If the app doesn't answer 2xx, the Worker forwards the message to the fallback address.
+The main lumiosports.com mailbox is untouched (its MX records are separate).
 
 ## 4. SMS replies
 
@@ -114,6 +108,7 @@ tokens; Settings shows today's spend against the cap. The importer's separate $5
    `curl -sS -X POST -H "Authorization: Bearer $CRON_SECRET" "http://127.0.0.1:3000/api/cron/impact-comms?dry=1"`
 3. On Arron's OK: `IMPACT_COMMS_SCHEDULER=on` and `IMPACT_COMMS_SCHEDULER_ORGS=lumio-test`,
    restart, test on Lumio Test only.
-4. Resend: the webhook (section 2) with its secret in `.env.production`; open tracking on per
-   sending domain.
-5. Twilio inbound: not now.
+4. Resend: the webhook (section 2) with its secret in `.env.production` — done 26 Nov.
+5. Cloudflare: Email Routing for inbound.lumiosports.com, the fallback destination, the
+   catch-all → Worker (section 3); `INBOUND_EMAIL_SECRET` in `.env.production` and as a Worker secret.
+6. Twilio inbound: not now.

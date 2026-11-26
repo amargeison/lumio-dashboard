@@ -50,6 +50,8 @@ export const AUDIENCE_LABELS: Record<AudienceKind, string> = {
 }
 
 export const NEEDS_ID: AudienceKind[] = ['school', 'venue']
+/** Not offered while open tracking is off on every sending domain (Resend, 26 Nov 2026): there would never be anyone in it. */
+export const HIDDEN_AUDIENCES: AudienceKind[] = ['opened_last']
 
 export function parseAudience(raw: unknown): Audience | null {
   const a = (raw ?? {}) as { kind?: unknown; id?: unknown }

@@ -277,6 +277,7 @@ test('automations: welcome — instant, day 1, day 7; only families who joined a
   assert.ok(who(after).includes('welcome:2:day1'), 'instant done → day 1 next')
   assert.deepEqual(who(M.selectAutomations([auto('welcome')], world())), [], 'never switched on → nobody')
   assert.deepEqual(who(M.selectAutomations([auto('welcome', { since: '2026-11-26T00:00:00Z' })], world())), ['welcome:1:instant'])
+  assert.deepEqual(who(M.selectAutomations([auto('welcome', { since: '2026-11-26T09:00:00Z' })], world())), [], 'switched on after they joined that morning → not them')
 })
 
 test('automations: session reminder the day before, per venue / school; waiting list left out', () => {
