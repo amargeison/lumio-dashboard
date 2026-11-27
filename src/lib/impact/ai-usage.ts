@@ -3,6 +3,9 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { CAP_MESSAGE, costPence, dailyCapPence, ukDayStart, type AiFeature } from './ai-cost'
+import { aiFeatureOn, type ImpactOrgSettings } from './org'
+
+export const AI_OFF_MESSAGE = 'AI drafting for this is switched off in Settings → AI. You can still write and send everything yourself.'
 
 export async function spentTodayPence(service: SupabaseClient, hqId: string): Promise<number> {
   const { data, error } = await service.from('impact_ai_usage').select('cost_pence').eq('hq_id', hqId).gte('created_at', ukDayStart()).limit(5000)
@@ -14,6 +17,10 @@ export type AiGate = { ok: true; capPence: number; spentPence: number } | { ok: 
 
 /** Before a model call. Over the cap → the refusal is logged and a friendly message returned. Fails closed. */
 export async function aiGate(service: SupabaseClient, org: { hqId: string; slug: string }, userId: string | null, feature: AiFeature): Promise<AiGate> {
+  // Settings → AI can switch each feature off; read fresh, so the switch works at once.
+  const { data: o, error: oErr } = await service.from('impact_orgs').select('settings').eq('hq_id', org.hqId).maybeSingle()
+  if (oErr) return { ok: false, status: 503, error: 'AI drafting is unavailable just now. Please try again in a minute.' }
+  if (!aiFeatureOn(o?.settings as ImpactOrgSettings | null, feature)) return { ok: false, status: 403, error: AI_OFF_MESSAGE }
   const capPence = dailyCapPence(org.slug)
   let spentPence: number
   try { spentPence = await spentTodayPence(service, org.hqId) } catch (e) {

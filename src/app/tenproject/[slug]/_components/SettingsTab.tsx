@@ -1,8 +1,7 @@
 'use client'
 
-// HQ Settings — organisation, branding, integrations, comms, roles, data.
-// On /impact portals the Organisation details and Modules are the org's own
-// saved settings (OrgSettings.tsx → impact_orgs); other toggles are in-session.
+// HQ Settings. A live portal gets LiveSettings (sections on the left, every save logged).
+// The demo keeps this card: its toggles are in-session only and save nothing.
 
 import React, { useEffect, useState } from 'react'
 import { Building2, Palette, Plug, Bell, Users, ShieldCheck, Moon, MessageSquare } from 'lucide-react'
@@ -15,6 +14,7 @@ import ImportCard from './ImportCard'
 import ImportHistoryCard from './ImportHistoryCard'
 import WelcomePackSettings from './WelcomePackSettings'
 import MembersCard from './MembersCard'
+import LiveSettings from './LiveSettings'
 
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
@@ -37,6 +37,13 @@ function Row({ label, desc, on, onChange }: { label: string; desc: string; on: b
 }
 
 export default function SettingsTab() {
+  const { mode, org } = useImpact()
+  // Live portals: the sectioned panel (brief 5). The demo keeps its own card.
+  if (mode === 'live' && org) return <LiveSettings />
+  return <DemoSettings />
+}
+
+function DemoSettings() {
   const { brand, copy, org } = useImpact()
   // Live portals have no demo copy — fall back to the organisation's own brand.
   const commsRows: [string, string][] = copy.settings.commsRows.length ? copy.settings.commsRows : [

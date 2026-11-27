@@ -35,6 +35,8 @@ export interface AudienceData {
   openedLast: Set<string>
   schools?: { id: string; name: string }[]
   venues?: { id: string; name: string }[]
+  /** The org's own term dates (settings.termDates), for "joined this term". */
+  termDates?: unknown
 }
 
 export const AUDIENCE_LABELS: Record<AudienceKind, string> = {
@@ -76,7 +78,7 @@ export function audienceMembers(a: Audience, data: AudienceData, today: string):
     if (!schoolOf.has(c.family_id)) schoolOf.set(c.family_id, new Set())
     schoolOf.get(c.family_id)!.add(c.school_id)
   }
-  const term = termOf(today)
+  const term = termOf(today, data.termDates)
   const joined = (f: AudienceFamily) => (f.signed_up_at ?? f.created_at ?? '').slice(0, 10)
   const test: (f: AudienceFamily) => boolean = {
     all: () => true,

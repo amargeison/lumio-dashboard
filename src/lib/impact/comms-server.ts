@@ -35,13 +35,14 @@ async function all<T>(q: (from: number, to: number) => PromiseLike<{ data: unkno
 }
 
 export async function loadAudienceData(db: SupabaseClient, hqId: string): Promise<AudienceData> {
-  const [families, children, members, schools, venues, last] = await Promise.all([
+  const [families, children, members, schools, venues, last, orgRow] = await Promise.all([
     all<AudienceFamily>((a, b) => db.from('tp_families').select(FAMILY_COLS).eq('hq_id', hqId).order('id').range(a, b), 'tp_families'),
     all<{ family_id: string | null; school_id: string | null }>((a, b) => db.from('tp_children').select('family_id, school_id').eq('hq_id', hqId).order('id').range(a, b), 'tp_children'),
     all<{ family_id: string | null }>((a, b) => db.from('impact_members').select('family_id').eq('hq_id', hqId).eq('role', 'parent').not('accepted_at', 'is', null).is('revoked_at', null).order('id').range(a, b), 'impact_members'),
     db.from('tp_schools').select('id, name').eq('hq_id', hqId).order('name'),
     db.from('tp_venues').select('id, name').eq('hq_id', hqId).order('name'),
     db.from('impact_campaigns').select('id').eq('hq_id', hqId).eq('kind', 'newsletter').eq('status', 'sent').order('sent_at', { ascending: false }).limit(1),
+    db.from('impact_orgs').select('settings').eq('hq_id', hqId).maybeSingle(),
   ])
   let openedLast = new Set<string>()
   const lastId = last.data?.[0]?.id as string | undefined
@@ -55,6 +56,7 @@ export async function loadAudienceData(db: SupabaseClient, hqId: string): Promis
     openedLast,
     schools: (schools.data ?? []) as { id: string; name: string }[],
     venues: (venues.data ?? []) as { id: string; name: string }[],
+    termDates: (orgRow.data?.settings as { termDates?: unknown } | null)?.termDates,
   }
 }
 

@@ -114,7 +114,7 @@ const noLoginItem = (n: number) => n ? [{
   text: `${n} ${n === 1 ? 'family has' : 'families have'} app messages but no login`,
 }] : []
 
-export function mapLiveRows(rows: LiveRows, today = isoToday()): ImpactDataset {
+export function mapLiveRows(rows: LiveRows, today = isoToday(), termDates?: unknown): ImpactDataset {
   const data: { -readonly [K in keyof ImpactDataset]: ImpactDataset[K] } = { ...EMPTY_IMPACT_DATA }
   // School-level figures come from the readiness evidence, so the cards and the scores can't disagree.
   const evidence = evidenceFromRows(rows)
@@ -206,7 +206,7 @@ export function mapLiveRows(rows: LiveRows, today = isoToday()): ImpactDataset {
     schoolsComplete: rows.schools.filter(s => s.status === 'complete' || s.status === 'renewal').length,
     schoolsTotal: rows.schools.length,
   }
-  mapPeople(rows, data, today)
+  mapPeople(rows, data, today, termDates)
   return data
 }
 
@@ -229,7 +229,7 @@ function dbsNow(status: string, expiry: string | null, today: string): TpCoach['
 }
 const pct = (n: number, d: number) => (d > 0 ? Math.round((n / d) * 100) : 0)
 
-function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]: ImpactDataset[K] }, today: string) {
+function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]: ImpactDataset[K] }, today: string, termDates?: unknown) {
   const venues = rows.venues ?? [], staff = rows.staff ?? [], vols = rows.volunteers ?? []
   const fams = rows.families ?? [], kids = rows.children ?? [], sessions = rows.sessions ?? [], att = rows.attendance ?? []
   const links = new Map((rows.programmeLinks ?? []).map(p => [p.id, p]))
@@ -368,7 +368,7 @@ function mapPeople(rows: LiveRows, data: { -readonly [K in keyof ImpactDataset]:
   data.TP_COACH_ATTENTION = [...coachRows, ...data.TP_COACHES.filter(c => c.dbs === 'missing').map(c => `${c.name} · no DBS on file`)].join(', ')
 
   // Headline numbers
-  const term = termOf(today)
+  const term = termOf(today, termDates)
   const termSessions = new Set(sessions.filter(s => inTerm(s.session_date, term)).map(s => s.id))
   const recent = new Set(att.filter(a => a.present && sessions.some(s => s.id === a.session_id && now - new Date(s.session_date).getTime() < 7 * DAY_MS && new Date(s.session_date).getTime() <= now)).map(a => a.child_id))
   data.HQ_STATS = {

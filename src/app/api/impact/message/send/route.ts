@@ -5,6 +5,8 @@ import { appFiledDetail, contactBlock, familyAppLive, namedWithoutConsent, photo
 import { rateLimit } from '@/lib/rate-limit'
 import { impactReplyTo } from '@/lib/impact/inbound'
 
+import { smsOn, type ImpactOrgSettings } from '@/lib/impact/org'
+
 export const runtime = 'nodejs'
 
 // Sends an Impact message and logs every attempt to impact_messages. The same
@@ -227,7 +229,9 @@ export async function POST(req: NextRequest) {
     const sid = process.env.TWILIO_ACCOUNT_SID
     const token = process.env.TWILIO_AUTH_TOKEN
     const from = process.env.TWILIO_FROM_NUMBER || process.env.TWILIO_PHONE_NUMBER
-    if (process.env.IMPACT_SMS_LIVE !== 'on') {
+    if (!smsOn(org.settings as ImpactOrgSettings | null)) {
+      on('sms').forEach(({ t }) => push(t, 'sms', 'failed', 'Texting is switched off in Settings → Messaging, so no text was sent'))
+    } else if (process.env.IMPACT_SMS_LIVE !== 'on') {
       on('sms').forEach(({ t }) => push(t, 'sms', 'failed', 'Texting isn’t switched on, so no text was sent'))
     } else if (!sid || !token || !from) {
       on('sms').forEach(({ t }) => push(t, 'sms', 'failed', 'Text is not configured on this server'))

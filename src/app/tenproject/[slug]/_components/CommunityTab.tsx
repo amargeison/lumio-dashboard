@@ -71,7 +71,7 @@ export default function CommunityTab() {
     : demoModel(today), [live, ctx.people, today])
 
   const by = useMemo(() => visitsBy(model.visits), [model.visits])
-  const term = termOf(today)
+  const term = termOf(today, ctx.org?.settings.termDates)
   const tiles = useMemo(() => communityTiles(model.rows, model.visits, term, today), [model, term, today])
   // Also listed: school families who said they'll come at weekends but haven't yet (not counted in the tiles above them).
   const all = useMemo(() => model.rows.filter(f => inCommunity(f, by.get(f.id)) || saidWeekends(f)), [model.rows, by])

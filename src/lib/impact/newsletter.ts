@@ -85,5 +85,8 @@ export function renderNewsletter(d: NewsletterDraft, footer: NewsletterFooter, u
 }
 
 /** The org's postal address for the footer, from Settings → Organisation. */
-export const footerAddress = (s: { legal?: string; address?: string; town?: string }) =>
-  [s.address, s.town].map(x => (x ?? '').trim()).filter(Boolean).join(', ') || null
+export const footerAddress = (s: { legal?: string; address?: string; town?: string; charityNumber?: string }) => {
+  const where = [s.address, s.town].map(x => (x ?? '').trim()).filter(Boolean).join(', ')
+  const charity = (s.charityNumber ?? '').trim() ? `Registered charity no. ${(s.charityNumber ?? '').trim()}` : ''
+  return [where, charity].filter(Boolean).join(' · ') || null
+}

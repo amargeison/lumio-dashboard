@@ -281,7 +281,7 @@ function complianceLine(c: LiveInsights['compliance'], ctx: ImpactPortalContext)
 function packLine(ctx: ImpactPortalContext) {
   if (!ctx.packs || !moduleOn(ctx.org?.settings, 'packs')) return null
   const ids = [...(ctx.people?.families.flatMap(f => f.children) ?? []), ...(ctx.people?.unlinkedChildren ?? [])].map(c => c.id)
-  return packFunderLine(packStats(ctx.packs, ids, termOf(isoToday())))
+  return packFunderLine(packStats(ctx.packs, ids, termOf(isoToday(), ctx.org?.settings.termDates)))
 }
 
 function liveReport(ctx: ImpactPortalContext, label: string, heading: string, title: string) {

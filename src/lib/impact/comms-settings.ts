@@ -17,6 +17,8 @@ export interface BrandVoice {
 }
 
 export interface MessagingSettings {
+  /** false = the org sends no texts (Settings → Messaging). */
+  sms?: boolean
   quietStart?: string
   quietEnd?: string
   voice?: Partial<BrandVoice>

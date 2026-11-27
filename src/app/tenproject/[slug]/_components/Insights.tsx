@@ -94,8 +94,9 @@ function AttendanceChart({ sessions }: { sessions: LiveInsights['attendance']['s
 function PackInsights() {
   const { on, ready, packs } = usePackAccess()
   const children = usePackChildren()
+  const { org } = useImpact()
   if (!on) return null
-  const s = ready ? packStats(packs, children.map(c => c.id), termOf(isoToday())) : null
+  const s = ready ? packStats(packs, children.map(c => c.id), termOf(isoToday(), org?.settings.termDates)) : null
   return (
     <Card>
       <SectionTitle sub="Packs complete when a child has every included item">

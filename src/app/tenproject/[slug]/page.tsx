@@ -111,7 +111,12 @@ export default function TenProjectPortal({ params }: { params: Promise<{ slug: s
   const [pinned, setPinned] = useState(true)
   const [railHover, setRailHover] = useState(false)
   useEffect(() => {
-    if (typeof window !== 'undefined') setPinned(localStorage.getItem('tp_sidebar_pin') !== '0')
+    if (typeof window === 'undefined') return
+    const read = () => setPinned(localStorage.getItem('tp_sidebar_pin') !== '0')
+    read()
+    // Settings → Appearance changes it too.
+    window.addEventListener('tp-sidebar-pin', read)
+    return () => window.removeEventListener('tp-sidebar-pin', read)
   }, [])
   function togglePin() {
     setPinned(p => {

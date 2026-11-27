@@ -9,7 +9,7 @@ import ParentWeekend from './ParentWeekend'
 import ParentBooklet, { WeekFacts } from './ParentBooklet'
 import { isoToday, longDate } from '@/lib/impact/compliance'
 import { familyWeek } from '@/lib/impact/family-week'
-import { moduleOn } from '@/lib/impact/org'
+import { moduleOn, privacyUrlOf } from '@/lib/impact/org'
 import { parentPackLines } from '@/lib/impact/packs'
 import { bookletWritten, childLine, emailTicked, optsBackIn, stickerAreas, ukDay } from '@/lib/impact/parent-view'
 import type { ParentContext } from './ImpactDataContext'
@@ -44,6 +44,10 @@ function ParentDetailsForm({ parent }: { parent: ParentContext }) {
   // An unsubscribe stops every channel. Text and app keep their saved flags underneath,
   // so they come back as they were once the family opts back in.
   const unsubscribed = !!h.unsubscribed_at
+  // The data consent points at the organisation's privacy policy. Until it has one, a parent
+  // can't newly give that consent here, though they can always withdraw it.
+  const { org, brand } = useImpact()
+  const privacy = privacyUrlOf(org?.settings)
   async function save() {
     setBusy(true); setNote('')
     try { await parent.save({ ...d, resubscribe: optsBackIn(h, d.opt_in_email) }); setNote('Saved.') }
@@ -57,7 +61,10 @@ function ParentDetailsForm({ parent }: { parent: ParentContext }) {
       <label><span style={label}>Phone</span><input type="tel" value={d.phone ?? ''} onChange={e => set({ phone: e.target.value })} style={field} /></label>
       <label><span style={label}>Emergency contact</span><input value={d.emergency_contact ?? ''} onChange={e => set({ emergency_contact: e.target.value })} style={field} /></label>
       <div style={{ fontSize: 12, fontWeight: 800, color: TP_DARK, marginTop: 4 }}>Consents</div>
-      {tick('We agree to our data being held for the programme', d.consent_data, 'consent_data')}
+      {tick('We agree to our data being held for the programme', d.consent_data, 'consent_data', !privacy && h.consent_data !== true)}
+      <div style={{ fontSize: 11, color: '#8A847E', marginTop: -4, paddingLeft: 24 }}>
+        {privacy ? <>As set out in <a href={privacy} target="_blank" rel="noopener noreferrer" style={{ color: TP_DARK }}>{brand.org}’s privacy policy</a>.</> : `${brand.org} hasn’t published its privacy policy here yet, so this consent can’t be given in the app yet.`}
+      </div>
       {tick('Photos and filming are OK', d.consent_photo, 'consent_photo')}
       <div style={{ fontSize: 12, fontWeight: 800, color: TP_DARK, marginTop: 4 }}>How we hear from you</div>
       {h.unsubscribed_at && <div style={{ fontSize: 11.5, color: '#6B6560' }}>You unsubscribed from all messages on {ukDay(h.unsubscribed_at)} — tick Email and save to opt back in</div>}

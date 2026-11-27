@@ -4,6 +4,7 @@ import { claimCampaign, continueSend, type CampaignRow, type OrgRow } from '@/li
 import { runAutomations } from '@/lib/impact/automation-server'
 import { inQuietHours, quietHours } from '@/lib/impact/comms-settings'
 import { moduleOn } from '@/lib/impact/org'
+import { expireExports } from '@/lib/impact/export-server'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
@@ -24,6 +25,10 @@ export const maxDuration = 300
 // finish newsletters already sending, then (outside quiet hours) send scheduled ones that
 // are due and the switched-on automations → log the run → release the lease.
 // At most 1,000 newsletter emails a run in all; the rest go next run.
+//
+// Every run also tidies data exports, for every org and whatever the switches say: a ZIP
+// whose 7-day link has passed is deleted from impact-exports and its row marked expired
+// (a dry run only counts them). It's a privacy duty, not a send, so it isn't scoped.
 
 const JOB = 'impact-comms'
 const RUN_BUDGET = 1000
@@ -34,9 +39,10 @@ export async function POST(req: NextRequest) {
   const dry = req.nextUrl.searchParams.get('dry') === '1'
   const on = process.env.IMPACT_COMMS_SCHEDULER === 'on'
   const at = new Date()
-  if (!on && !dry) return NextResponse.json({ ok: true, off: true, at: at.toISOString() })
-
   const db = serviceDb()
+  const exportsTidy = await expireExports(db, at, { dry })
+  if (!on && !dry) return NextResponse.json({ ok: true, off: true, at: at.toISOString(), exports: exportsTidy })
+
   const only = (process.env.IMPACT_COMMS_SCHEDULER_ORGS ?? '').split(',').map(s => s.trim()).filter(Boolean)
   const { data: orgRows, error: orgErr } = await db.from('impact_orgs').select('hq_id, slug, settings')
   if (orgErr) return NextResponse.json({ error: orgErr.message }, { status: 500 })
@@ -93,7 +99,7 @@ export async function POST(req: NextRequest) {
       await db.rpc('impact_scheduler_release', { p_job: JOB, p_holder: holder })
     }
   }
-  const out = { ok: !fatal, dry, on, scope, at: at.toISOString(), orgs: report, ...(fatal ? { error: fatal } : {}) }
+  const out = { ok: !fatal, dry, on, scope, at: at.toISOString(), orgs: report, exports: exportsTidy, ...(fatal ? { error: fatal } : {}) }
   console.log('[cron/impact-comms]', JSON.stringify(out))
   return NextResponse.json(out, { status: fatal ? 500 : 200 })
 }
