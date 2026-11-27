@@ -495,6 +495,8 @@ export function CoachView({ section }: { section?: CoachSection }) {
 // ─── TENOR: weekend venue + QR scan-in feed + resources ─────────────────────
 export function TenorView({ section }: { section?: TenorSection }) {
   const ctx = useImpact()
+  // Settings → Modules → QR check-in. Off: no family check-in card and no gate QR.
+  const qrOn = moduleOn(ctx.org?.settings, 'qr_checkin')
   const { brand, copy } = ctx
   const { WEEKEND_FAMILIES, VENUES, WEEK4_SESSION_PLAN, TENOR_RESOURCES, VENUE_DETAILS } = ctx.data
   const [demoFamilies, setFamilies] = useState(WEEKEND_FAMILIES)
@@ -606,7 +608,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
         <Card><EmptyState icon={MapPin} title="No weekend session yet" sub="Once you're inducted onto a venue, today's family session, the gate QR, the live count and the register appear here." /></Card>
         <UpcomingCalendar role="tenor" />
       </>)}
-      {tab === 'session' && readOnly && ctx.people && <FamilyCheckIn venueId={checkinVenue} onVenue={setCheckinVenue} onDay={setToday} />}
+      {tab === 'session' && readOnly && ctx.people && qrOn && <FamilyCheckIn venueId={checkinVenue} onVenue={setCheckinVenue} onDay={setToday} />}
       {tab === 'session' && !noVenue && venue && vd && (<>
       {/* eslint-disable-next-line no-lone-blocks */}
       <Card style={{ background: TP_DARK, border: 'none' }}>
@@ -666,7 +668,7 @@ export function TenorView({ section }: { section?: TenorSection }) {
 
         <div style={{ display: 'grid', gap: 16, alignContent: 'start' }}>
           {/* The demo's gate QR. Live check-in is the Family check-in card above. */}
-          {!readOnly && <Card style={{ textAlign: 'center' }}>
+          {!readOnly && qrOn && <Card style={{ textAlign: 'center' }}>
             <SectionTitle sub="Printed on the gate sign — venue- and date-aware">The gate QR</SectionTitle>
             <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 130, height: 130, background: '#F7F5F2', borderRadius: 12, border: '1px solid #E7E2DC' }}>
               <QrCode size={92} style={{ color: TP_DARK }} />

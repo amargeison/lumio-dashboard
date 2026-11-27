@@ -120,6 +120,8 @@ export interface ImpactFamily {
 export interface ImpactFamilyCommunity {
   source: 'school' | 'community' | 'both' | null; venueId: string | null; signedUpAt: string | null; lapsedAt: string | null
   waitlistedAt: string | null; checkinCode: string | null; createdAt: string | null; hasSchoolChild: boolean
+  /** A school family who said they'll come to weekend sessions too (migration 239; "TENOR" on Ten Project's old forms). */
+  weekendToo?: boolean
 }
 export interface CommunityVenue { id: string; name: string; day: string | null; time: string | null; address: string | null; postcode: string | null; capacity: number | null }
 export interface ImpactCpd { id: string; school_id: string; staff_name: string; course: string; cpd_date: string | null; provider: string | null; notes: string | null }

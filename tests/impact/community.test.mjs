@@ -18,7 +18,27 @@ const form = extra => ({ guardian: 'Chris Doyle', email: 'Chris.Doyle@Example.co
 test('/join: a good sign-up is read and tidied', () => {
   const r = C.parseJoin(form(), [V], TODAY)
   assert.equal(r.ok, true)
-  assert.deepEqual(r.value, { guardian: 'Chris Doyle', email: 'chris.doyle@example.com', phone: '07700 900350', children: [{ name: 'Ben Doyle', dob: '2017-05-02' }], venueId: V, consentData: true, consentPhoto: false, optInEmail: true, optInSms: true })
+  assert.deepEqual(r.value, { guardian: 'Chris Doyle', email: 'chris.doyle@example.com', phone: '07700 900350', children: [{ name: 'Ben Doyle', dob: '2017-05-02', notes: null }], venueId: V, consentData: true, consentPhoto: false, optInEmail: true, optInSms: true, consentHealth: false })
+})
+test('/join: "anything the coach should know" is optional; when filled, its own tick is required', () => {
+  const kid = notes => [{ name: 'Ben Doyle', dob: '2017-05-02', notes }]
+  assert.equal(C.parseJoin(form({ children: kid('   ') }), [V], TODAY).value.children[0].notes, null, 'blank → nothing saved, no tick needed')
+  const refused = C.parseJoin(form({ children: kid('Asthma — inhaler in bag') }), [V], TODAY)
+  assert.deepEqual(refused, { ok: false, field: 'consentHealth', error: 'Please tick the box to let us hold what you’ve told us the coach should know — or clear it.' })
+  assert.equal(C.parseJoin(form({ children: kid('Asthma'), consentHealth: 'true' }), [V], TODAY).ok, false, 'only a real true counts')
+  const ok = C.parseJoin(form({ children: kid('Asthma — inhaler in bag\nSEN(D): autism'), consentHealth: true }), [V], TODAY)
+  assert.equal(ok.ok, true)
+  assert.equal(ok.value.children[0].notes, 'Asthma — inhaler in bag\nSEN(D): autism', 'line breaks kept')
+  assert.equal(ok.value.consentHealth, true)
+  assert.equal(C.parseJoin(form({ consentHealth: true }), [V], TODAY).value.consentHealth, false, 'a tick with nothing written records nothing')
+  assert.equal(C.parseJoin(form({ children: kid('x'.repeat(501)), consentHealth: true }), [V], TODAY).field, 'children', 'too long')
+})
+test('/join: the consent version is bumped, and +health records the second tick', () => {
+  assert.equal(C.JOIN_CONSENT_VERSION, 'join-2026-12')
+  assert.equal(C.consentVersionFor({ consentHealth: false }), 'join-2026-12')
+  assert.equal(C.consentVersionFor({ consentHealth: true }), 'join-2026-12+health')
+  assert.match(C.joinConsentText('Ten Project'), /^I agree to Ten Project keeping my family’s details \(names, contact details and children’s dates of birth\)/, 'main wording unchanged')
+  assert.equal(C.joinHealthConsentText('Ten Project'), 'I agree to Ten Project holding any health, medical or additional-needs information I give here, so the coach can keep my child safe.')
 })
 test('/join: data consent is required', () => {
   for (const consentData of [false, undefined, 'true', 1]) assert.deepEqual(C.parseJoin(form({ consentData }), [V], TODAY), { ok: false, field: 'consentData', error: 'We need your agreement to keep your details before you can join.' })
@@ -97,7 +117,13 @@ test('tiles', () => {
     { familyId: 'lapsed', date: '2026-04-04', venueId: 'v1' },
   ]
   const t = C.communityTiles(families, visits, { start: '2026-09-01', end: '2026-12-31' }, TODAY)
-  assert.deepEqual(t, { signedUp: 4, activeThisTerm: 2, newThisMonth: 2, visitsThisTerm: 3, lapsed: 1, conversionsThisTerm: 1 })
+  assert.deepEqual(t, { signedUp: 4, activeThisTerm: 2, newThisMonth: 2, visitsThisTerm: 3, lapsed: 1, conversionsThisTerm: 1, saidWeekends: 0, saidAndCame: 0 })
+  // School → weekend intent: school families who said they'll come; only school families count.
+  const said = families.map(f => (['school-converted', 'school-only', 'direct-new'].includes(f.id) ? { ...f, weekend_too: true } : f))
+  const t2 = C.communityTiles(said, visits, { start: '2026-09-01', end: '2026-12-31' }, TODAY)
+  assert.deepEqual([t2.saidWeekends, t2.saidAndCame, t2.signedUp], [2, 1, 4], 'a direct family’s flag doesn’t count; the tiles above don’t change')
+  assert.equal(C.saidWeekends(said.find(f => f.id === 'school-only')), true)
+  assert.equal(C.inCommunity(said.find(f => f.id === 'school-only'), undefined), false, 'saying so isn’t signing up')
 })
 test('mark lapsed: only families who came, then stopped, and aren’t marked yet', () => {
   const families = [fam('a'), fam('b'), fam('c', { lapsed_at: '2026-11-01' }), fam('d')]
@@ -112,6 +138,11 @@ test('welcome email: QR inline, venue and time, app link; escaped', () => {
   assert.match(m.html, /Ben and Amy at <b>Kingsmead Rec Ground<\/b>, <b>Saturday 10:00<\/b>/)
   assert.match(m.html, /Open the family app/)
   assert.ok(!m.html.includes('<Sport>'), 'org name is escaped')
+})
+test('welcome email: no QR when QR check-in is off', () => {
+  const m = E.welcomeEmail({ org: 'X', guardian: 'Chris', children: ['Ben'], venue: { name: 'Kingsmead' }, waitlisted: false, appLink: 'https://x.example/app', qrCid: null })
+  assert.ok(!m.html.includes('cid:') && !/QR/.test(m.html), 'no image, no QR words')
+  assert.match(m.html, /Tell us if you’re coming each week in the family app/)
 })
 test('welcome email: on the waiting list, it says so and promises no date', () => {
   const m = E.welcomeEmail({ org: 'X', guardian: 'Chris', children: ['Ben'], venue: { name: 'Kingsmead' }, waitlisted: true, appLink: null, qrCid: 'q' })

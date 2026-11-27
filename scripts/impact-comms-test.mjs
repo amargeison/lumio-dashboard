@@ -207,6 +207,10 @@ async function main() {
   ok('HQ switches one on', !(await A.db.from('impact_automations').upsert({ hq_id: A.id, kind: 'welcome', enabled: true, config: { since: new Date(Date.now() - 86_400_000).toISOString() } }, { onConflict: 'hq_id,kind' })).error)
   const pv = await A.call('/api/impact/comms/automations', { kind: 'welcome' })
   ok('“Who would get it today”: the new families who can be reached, the rest left out with why', pv.status === 200 && pv.body.send.some(s => s.name === 'Ada Reachable') && pv.body.skipped.some(s => s.name === 'Ben NoConsent' && s.reason === 'no consent') && !JSON.stringify(pv.body).includes('@example.com'), JSON.stringify(pv.body).slice(0, 300))
+  ok('HQ can add the school-programme-week automation (239), switched off', !(await A.db.from('impact_automations').upsert({ hq_id: A.id, kind: 'programme_week', enabled: false, config: {} }, { onConflict: 'hq_id,kind' })).error)
+  ok('… an unknown kind is refused by the database', !!(await A.db.from('impact_automations').insert({ hq_id: A.id, kind: 'nonsense', enabled: false, config: {} })).error)
+  ok('HQ marks a family “coming at weekends too” (239)', !(await A.db.from('tp_families').update({ weekend_too: true }).eq('hq_id', A.id).eq('id', f1.id)).error && (await admin.from('tp_families').select('weekend_too').eq('id', f1.id).single()).data?.weekend_too === true)
+  ok('… B can’t change A’s', ((await B.db.from('tp_families').update({ weekend_too: false }).eq('id', f1.id).select('id')).data ?? []).length === 0 && (await admin.from('tp_families').select('weekend_too').eq('id', f1.id).single()).data?.weekend_too === true)
   ok('the browser can’t record a send', !!(await A.db.from('impact_automation_sends').insert({ hq_id: A.id, automation_id: (await rows(A.id, 'impact_automations'))[0].id, family_id: f1.id, step: 'instant', send_date: '2026-11-26', status: 'sent' })).error)
   ok('B can’t read A’s automations or preview them', ((await B.db.from('impact_automations').select('id').eq('hq_id', A.id)).data ?? []).length === 0 && (await B.call('/api/impact/comms/automations', { kind: 'welcome' }, A.id)).status === 403)
 

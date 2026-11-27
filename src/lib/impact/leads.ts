@@ -2,19 +2,21 @@
 // Pure: no database, no browser. A copy of Coach's library, not a share of it,
 // so either product can be sold without the other. Never import from coach paths.
 //
-// Two pipelines:
-//   Schools  Enquired › Contacted › Meeting booked › Visit / taster › Proposal sent › Keen for future › Not keen › Partnered
-//   Funders  Enquired › Contacted › Meeting booked › Proposal sent › Keen for future › Declined › Funded
+// Three pipelines:
+//   Schools              Enquired › Contacted › Meeting booked › Visit / taster › Proposal sent › Keen for future › Not keen › Partnered
+//   Funders              Enquired › Contacted › Meeting booked › Proposal sent › Keen for future › Declined › Funded
+//   Coaches & providers  Enquired › Contacted › Call booked › Agreed › Not now   (coaches who want to bring the programme to their area)
 //
 // The weekly score is deliberately light: a point for moving a lead on, more for
 // a meeting or a visit, most for a win, and a point for doing a follow-up on the
 // day you said you would. A week with five points or more keeps the streak going.
 
-export type Pipeline = 'schools' | 'funders'
+export type Pipeline = 'schools' | 'funders' | 'providers'
 
 export const PIPELINES: Record<Pipeline, { label: string; stages: string[]; closed: string[] }> = {
   schools: { label: 'Schools', stages: ['Enquired', 'Contacted', 'Meeting booked', 'Visit / taster', 'Proposal sent', 'Keen for future', 'Not keen', 'Partnered'], closed: ['Not keen', 'Partnered'] },
   funders: { label: 'Funders', stages: ['Enquired', 'Contacted', 'Meeting booked', 'Proposal sent', 'Keen for future', 'Declined', 'Funded'], closed: ['Declined', 'Funded'] },
+  providers: { label: 'Coaches & providers', stages: ['Enquired', 'Contacted', 'Call booked', 'Agreed', 'Not now'], closed: ['Agreed', 'Not now'] },
 }
 
 export type Lead = {
@@ -38,7 +40,7 @@ export function leadEdits<T extends Partial<Lead>>(lead: Partial<Lead>, values: 
 export const SOURCES = ['Meta ad', 'Website', 'Referral', 'Google', 'Event', 'Council / LA', 'Import', 'Other'] as const
 export const CONTACT_METHODS = ['WhatsApp', 'Email', 'Phone', 'In person'] as const
 
-const pipelineOf = (p: string): Pipeline => p === 'funders' ? 'funders' : 'schools'
+const pipelineOf = (p: string): Pipeline => p === 'funders' || p === 'providers' ? p : 'schools'
 export const stagesOf = (p: string) => PIPELINES[pipelineOf(p)].stages
 export const isClosed = (p: string, stage: string) => PIPELINES[pipelineOf(p)].closed.includes(stage)
 
@@ -50,8 +52,8 @@ export function stagePoints(pipeline: string, from: string | null, to: string): 
   // Coming back from "Keen for future" is re-engagement, not moving backwards.
   if (from === 'Keen for future' && !isClosed(pipeline, to)) return 1
   if (b <= a) return 0
-  if (to === 'Partnered' || to === 'Funded') return 5
-  if (to === 'Meeting booked' || to === 'Visit / taster') return 2
+  if (to === 'Partnered' || to === 'Funded' || to === 'Agreed') return 5
+  if (to === 'Meeting booked' || to === 'Visit / taster' || to === 'Call booked') return 2
   return 1                               // closing a lead off is progress too
 }
 
@@ -120,6 +122,8 @@ const KNOWN = ['full_name', 'name', 'first_name', 'last_name', 'email', 'email_a
 
 // "Trust" is left out on purpose: an academy trust is a school lead.
 const FUNDER_CAMPAIGN = /\b(funders?|grants?|sponsors?|sponsorship|foundation)\b/i
+// "Work with us and bring the programme to your area": a coach or coaching provider.
+const PROVIDER_CAMPAIGN = /\b(coach(es|ing)?|providers?|work with us)\b/i
 
 /** Read one lead from whatever shape an automation sends. Null when there is no name, organisation, email or phone at all. */
 export function readIncoming(raw: unknown): IncomingLead | null {
@@ -140,7 +144,8 @@ export function readIncoming(raw: unknown): IncomingLead | null {
   if (!name && !orgName && !email && !phone) return null
   const campaign = pick(o, ['campaign_name', 'campaign', 'form_name', 'ad_name', 'adset_name']).slice(0, 200) || null
   const pipeRaw = pick(o, ['pipeline']).toLowerCase()
-  const pipeline: Pipeline = pipeRaw.startsWith('fund') || (!pipeRaw && FUNDER_CAMPAIGN.test(campaign || '')) ? 'funders' : 'schools'
+  const pipeline: Pipeline = pipeRaw.startsWith('fund') || (!pipeRaw && FUNDER_CAMPAIGN.test(campaign || '')) ? 'funders'
+    : /^(coach|provider)/.test(pipeRaw) || (!pipeRaw && PROVIDER_CAMPAIGN.test(campaign || '')) ? 'providers' : 'schools'
   // Everything else they answered goes in the message, question by question.
   const extra = Object.entries(o)
     .filter(([k, v]) => !KNOWN.includes(k.toLowerCase().replace(/[\s-]+/g, '_')) && k !== 'field_data' && v != null && typeof v !== 'object' && String(v).trim())
@@ -187,7 +192,9 @@ export function matchStage(pipeline: string, text: string): string {
   const NOT_KEEN = /\b(not keen|not interested|not proceeding|not partnered|not funded|no thanks|declined?|rejected|unsuccessful|turned down|lost|no)\b/
   const MEETING = /\b(meeting|meet|call booked)/
   const CONTACTED = /\b(contact|messag|emailed|called|spoke|spoken|whatsapp)/
-  const rules: [RegExp, string][] = pipeline === 'funders'
+  const rules: [RegExp, string][] = pipeline === 'providers'
+    ? [[NO_REPLY, 'Contacted'], [LATER, 'Not now'], [NOT_KEEN, 'Not now'], [MEETING, 'Call booked'], [/\b(agreed|signed|confirmed|on board|won)\b/, 'Agreed'], [CONTACTED, 'Contacted']]
+    : pipeline === 'funders'
     ? [[NO_REPLY, 'Contacted'], [NOT_KEEN, 'Declined'], [MEETING, 'Meeting booked'], [/\b(funded|awarded|granted|successful|secured|won)\b/, 'Funded'], [/\b(proposal|application|applied|bid|submitted)/, 'Proposal sent'], [LATER, 'Keen for future'], [CONTACTED, 'Contacted']]
     : [[NO_REPLY, 'Contacted'], [NOT_KEEN, 'Not keen'], [/\b(visit|taster|trial)/, 'Visit / taster'], [MEETING, 'Meeting booked'], [/\b(proposal|quote)/, 'Proposal sent'], [/\b(partnered|signed|confirmed|won)\b/, 'Partnered'], [LATER, 'Keen for future'], [CONTACTED, 'Contacted']]
   for (const [re, stage] of rules) if (re.test(t)) return stage

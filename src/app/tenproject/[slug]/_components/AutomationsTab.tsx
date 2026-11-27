@@ -110,6 +110,7 @@ function AutomationCard({ kind, row, onSaved }: { kind: AutomationKind; row?: Ro
             )
           })}
           <div style={{ fontSize: 11, color: '#8A847E' }}>You can use {meta.placeholders.map(p => `{${p}}`).join(', ')}. There’s no placeholder for a child’s name, on purpose.</div>
+          {kind === 'programme_week' && <div style={{ fontSize: 11.5, color: '#5B554F' }}>Sent when a programme is <b>running</b> and its current week (Schools → programme) is 1–10, using that week of the Activity Booklet. Each week goes once per family. It overlaps the Booklet-week nudge, so switch on one or the other.</div>}
           {kind === 'session_reminder' && venues.length > 0 && (
             <div><span style={formLabel}>Weekend venues (none ticked = all)</span>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>{venues.map(v => <label key={v.id} style={{ fontSize: 12, color: TP_DARK, display: 'inline-flex', gap: 5, alignItems: 'center' }}><input type="checkbox" checked={(config.venues ?? []).includes(v.id)} onChange={() => toggleVenue(v.id)} />{v.name}</label>)}</div>

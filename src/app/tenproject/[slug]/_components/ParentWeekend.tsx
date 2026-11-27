@@ -1,7 +1,7 @@
 'use client'
 
 // Parent app (live) → "Your weekend session": the family's weekend venue, its next
-// date, the family QR to show at check-in, and "We're coming" / "Not this week" for
+// date, the family QR to show at check-in (when QR check-in is on), and "We're coming" / "Not this week" for
 // that date (impact_parent_weekend / impact_parent_set_intent, migration 237). The
 // answer feeds the volunteer view's expected numbers. Shows nothing for a family with
 // no weekend venue.
@@ -12,6 +12,8 @@ import { MapPin } from 'lucide-react'
 import { TP_DARK, TP_RED } from '@/data/tenproject/demo-data'
 import QrCode from './QrCode'
 import { nextDateFor } from '@/lib/impact/community-actions'
+import { moduleOn } from '@/lib/impact/org'
+import { useImpact } from './ImpactDataContext'
 
 const sb = () => createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 const todayIso = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
@@ -20,6 +22,8 @@ const longDate = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('e
 type Weekend = { family_id: string; checkin_code: string; waitlisted: boolean; venue: { id: string; name: string; address: string | null; postcode: string | null; session_day: string | null; session_time: string | null } | null; intents: { session_date: string; coming: boolean }[] }
 
 export default function ParentWeekend() {
+  // Settings → Modules → QR check-in. Off: no family QR card.
+  const qrOn = moduleOn(useImpact().org?.settings, 'qr_checkin')
   const [w, setW] = useState<Weekend | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -61,11 +65,11 @@ export default function ParentWeekend() {
         </div>
       )}
       {error && <div role="alert" style={{ fontSize: 12, color: TP_RED, fontWeight: 700, marginTop: 6 }}>{error}</div>}
-      <div style={{ textAlign: 'center', marginTop: 14 }}>
+      {qrOn && <div style={{ textAlign: 'center', marginTop: 14 }}>
         <div style={{ fontSize: 11, fontWeight: 800, color: TP_DARK, letterSpacing: 0.6, marginBottom: 6 }}>YOUR FAMILY QR — SHOW IT WHEN YOU ARRIVE</div>
         <div style={{ display: 'inline-block' }}><QrCode value={w.checkin_code} size={150} label="Your family check-in code" /></div>
         <div style={{ fontSize: 11, color: '#8A847E', letterSpacing: 1, marginTop: 4 }}>{w.checkin_code.replace(/(.{4})(?=.)/g, '$1 ')}</div>
-      </div>
+      </div>}
     </div>
   )
 }

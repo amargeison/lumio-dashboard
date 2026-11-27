@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@supabase/supabase-js'
 import FundraiseView, { type CampaignData } from './FundraiseView'
+import { moduleOn, type ImpactOrgSettings } from '@/lib/impact/org'
 
 // ─── TEN PROJECT — PUBLIC SCHOOL FUNDRAISING PAGE ───────────────────────────
 // URL: /fundraise/[slug]  (Phase 1.5 fast-track, Scoping v2.0 §5.9 + §11)
@@ -41,11 +42,14 @@ async function loadCampaign(slug: string): Promise<CampaignData | null> {
     )
     const { data: camp, error } = await supabase
       .from('tp_fundraising_campaigns')
-      .select('id, public_slug, target_pence, status, match_note, tp_schools(name)')
+      .select('id, hq_id, public_slug, target_pence, status, match_note, tp_schools(name)')
       .eq('public_slug', slug)
       .in('status', ['live', 'complete', 'unlocked'])
       .maybeSingle()
     if (error || !camp) return null
+    // Settings → Modules → Public fundraising pages. Off for the campaign's org: not found.
+    const { data: org } = await supabase.from('impact_orgs').select('settings').eq('hq_id', camp.hq_id).maybeSingle()
+    if (org && !moduleOn(org.settings as ImpactOrgSettings | null, 'public_fundraising')) return null
 
     const [{ data: events }, { data: donations }] = await Promise.all([
       supabase.from('tp_fundraising_events')

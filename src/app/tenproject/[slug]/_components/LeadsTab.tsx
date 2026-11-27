@@ -1,6 +1,6 @@
 'use client'
 
-// Leads: schools and funders, from first contact to partnered or funded.
+// Leads: schools, funders, and coaches & providers, from first contact to partnered, funded or agreed.
 //
 // Two pipelines shown as boards. A card moves by dragging it or from its panel,
 // and the panel holds everything about the lead: how to reach them, what they
@@ -438,9 +438,9 @@ function LeadPanel({ lead, pipeline, lists, schools, canEdit, notice, onMove, on
       )}
       <fieldset disabled={off} style={{ border: 'none', padding: 0, margin: 0, minWidth: 0 }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
-          <label><span style={label}>{pipe === 'funders' ? 'Funder' : 'School'}</span><input value={d.org_name || ''} onChange={e => set('org_name', e.target.value)} style={field} /></label>
+          <label><span style={label}>{pipe === 'funders' ? 'Funder' : pipe === 'providers' ? 'Club or coaching business' : 'School'}</span><input value={d.org_name || ''} onChange={e => set('org_name', e.target.value)} style={field} /></label>
           <label><span style={label}>Contact name</span><input value={d.name || ''} onChange={e => set('name', e.target.value)} style={field} /></label>
-          <label><span style={label}>Contact role</span><input value={d.for_name || ''} onChange={e => set('for_name', e.target.value)} placeholder={pipe === 'funders' ? 'e.g. Grants officer' : 'e.g. Headteacher'} style={field} /></label>
+          <label><span style={label}>Contact role</span><input value={d.for_name || ''} onChange={e => set('for_name', e.target.value)} placeholder={pipe === 'funders' ? 'e.g. Grants officer' : pipe === 'providers' ? 'e.g. Head coach' : 'e.g. Headteacher'} style={field} /></label>
           <label><span style={label}>Email</span><input value={d.email || ''} onChange={e => set('email', e.target.value)} type="email" style={field} /></label>
           <label><span style={label}>Phone</span><input value={d.phone || ''} onChange={e => set('phone', e.target.value)} type="tel" style={field} /></label>
           <label><span style={label}>Source</span><select value={d.source || ''} onChange={e => set('source', e.target.value)} style={field}><option value="">—</option>{Array.from(new Set([...SOURCES, d.source].filter(Boolean))).map(s => <option key={s as string}>{s}</option>)}</select></label>
@@ -450,7 +450,7 @@ function LeadPanel({ lead, pipeline, lists, schools, canEdit, notice, onMove, on
           <label><span style={label}>Next follow-up</span><input type="date" value={d.next_action_at || ''} onChange={e => set('next_action_at', e.target.value || null)} style={field} /></label>
           <label><span style={label}>What to do</span><input value={d.next_action || ''} onChange={e => set('next_action', e.target.value)} placeholder="e.g. Send the proposal" style={field} /></label>
           {pipe === 'funders' && <label><span style={label}>Amount (£)</span><input value={amount} onChange={e => setAmount(e.target.value)} inputMode="decimal" placeholder="e.g. 5000" style={field} /></label>}
-          <label><span style={label}>{pipe === 'funders' ? 'For school (optional)' : 'Linked school'}</span><select value={d.school_id || ''} onChange={e => set('school_id', e.target.value || null)} style={field}><option value="">{schools.length ? 'None' : 'No schools yet'}</option>{schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
+          <label><span style={label}>{pipe === 'schools' ? 'Linked school' : 'For school (optional)'}</span><select value={d.school_id || ''} onChange={e => set('school_id', e.target.value || null)} style={field}><option value="">{schools.length ? 'None' : 'No schools yet'}</option>{schools.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></label>
         </div>
       </fieldset>
       {notice && <div role="status" style={{ fontSize: 12, color: GREEN, marginTop: 10 }}>{notice}</div>}
@@ -633,7 +633,7 @@ function AdsLeads({ onClose, onTest }: { onClose: () => void; onTest: () => Prom
         <ol style={{ ...step, paddingLeft: 18, marginTop: 12 }}>
           <li><strong>In Zapier:</strong> trigger “Facebook Lead Ads → New Lead”, then action “Webhooks by Zapier → POST”, URL = the address above, payload type JSON. Map the lead’s name, school, email, phone and answers (any field names work).</li>
           <li><strong>In Make:</strong> “Facebook Lead Ads → Watch leads”, then “HTTP → Make a request”, method POST, the address above, body type JSON with the lead’s fields.</li>
-          <li>For a funder enquiry, add a field <code>pipeline</code> = <code>funders</code> (or put “grant”, “sponsor” or “foundation” in the form name) and it lands in Funders.</li>
+          <li>For a funder enquiry, add a field <code>pipeline</code> = <code>funders</code> (or put “grant”, “sponsor” or “foundation” in the form name) and it lands in Funders. For a coach or provider, <code>pipeline</code> = <code>providers</code> (or “coach”, “provider” or “work with us” in the form name) lands in Coaches &amp; providers.</li>
         </ol>
         {status}
         <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>

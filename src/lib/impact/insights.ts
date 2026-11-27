@@ -29,6 +29,8 @@ export interface LiveInsights {
   schools: { need: string | null; rows: SchoolRow[] }
   demographics: { need: string | null; children: number; yearGroups: Share[]; flags: Flag[] }
   conversion: { need: string | null; rows: ConversionRow[] }
+  /** School → weekend intent: school families who said they'll come at weekends (tp_families.weekend_too), and of those, who have. */
+  intent: { schoolFamilies: number; said: number; came: number }
   compliance: {
     need: string | null; coaches: number; volunteers: number
     valid: number; expiring: number; expired: number; notRecorded: number
@@ -158,6 +160,17 @@ export function weekendConversion(rows: InsightRows): LiveInsights['conversion']
   return { need: null, rows: out }
 }
 
+/** School families (a child at a school) who said they'll come at weekends, and how many of those have been to a weekend session. */
+export function weekendIntent(rows: InsightRows): LiveInsights['intent'] {
+  const kids = rows.children ?? [], sessions = rows.sessions ?? []
+  const school = new Set(kids.filter(c => c.school_id && c.family_id).map(c => c.family_id!))
+  const said = (rows.families ?? []).filter(f => f.weekend_too && school.has(f.id)).map(f => f.id)
+  const weekend = new Set(sessions.filter(s => s.kind === 'weekend').map(s => s.id))
+  const familyOf = new Map(kids.map(c => [c.id, c.family_id]))
+  const came = new Set((rows.attendance ?? []).filter(a => a.present && weekend.has(a.session_id)).map(a => familyOf.get(a.child_id)).filter(Boolean))
+  return { schoolFamilies: school.size, said: said.length, came: said.filter(id => came.has(id)).length }
+}
+
 export function complianceSummary(rows: InsightRows, today: string): LiveInsights['compliance'] {
   const people = compliancePeople(rows, today)
   const certs = people.flatMap(p => p.certificates)
@@ -183,6 +196,7 @@ export function buildInsights(rows: InsightRows, today = isoToday()): LiveInsigh
     schools: schoolsTable(rows),
     demographics: demographics(rows),
     conversion: weekendConversion(rows),
+    intent: weekendIntent(rows),
     compliance: complianceSummary(rows, today),
   }
 }

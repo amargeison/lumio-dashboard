@@ -1,5 +1,6 @@
 // The two emails /join sends, in the org's name (from its verified sender):
-//   welcomeEmail   a new family: their QR for check-in (an inline image, cid:family-qr),
+//   welcomeEmail   a new family: their QR for check-in (an inline image, cid:family-qr;
+//                  left out when the org has QR check-in switched off),
 //                  the venue's day and time — or that they're on its waiting list —
 //                  and the link to open the family app
 //   alreadyEmail   that address is already a family here: the app link again (sign in,
@@ -15,7 +16,7 @@ export interface VenueLine { name: string; session_day?: string | null; session_
 export const venueWhen = (v: VenueLine) => [v.session_day, v.session_time].filter(Boolean).join(' ') || null
 export const venueWhere = (v: VenueLine) => [v.address, v.postcode].filter(Boolean).join(', ') || null
 
-export function welcomeEmail(o: { org: string; guardian: string; children: string[]; venue: VenueLine; waitlisted: boolean; appLink: string | null; qrCid: string }) {
+export function welcomeEmail(o: { org: string; guardian: string; children: string[]; venue: VenueLine; waitlisted: boolean; appLink: string | null; qrCid: string | null }) {
   const first = o.guardian.split(' ')[0]
   const when = venueWhen(o.venue), where = venueWhere(o.venue)
   const kids = o.children.length > 1 ? `${o.children.slice(0, -1).join(', ')} and ${o.children[o.children.length - 1]}` : o.children[0]
@@ -26,9 +27,9 @@ export function welcomeEmail(o: { org: string; guardian: string; children: strin
     `<p>Hi ${esc(first)},</p>`
     + `<p>Thanks for joining ${esc(o.org)}’s weekend sessions.</p>`
     + place
-    + `<p><b>Your family QR code</b> — show it when you arrive and we’ll check everyone in:</p>`
-    + `<p><img src="cid:${esc(o.qrCid)}" alt="Your family check-in code" width="180" height="180" style="display:block;border:0;"></p>`
-    + (o.appLink ? `<p>You can also see it, and tell us if you’re coming each week, in the family app:</p>${button(o.appLink, 'Open the family app')}`
+    + (o.qrCid ? `<p><b>Your family QR code</b> — show it when you arrive and we’ll check everyone in:</p>`
+      + `<p><img src="cid:${esc(o.qrCid)}" alt="Your family check-in code" width="180" height="180" style="display:block;border:0;"></p>` : '')
+    + (o.appLink ? `<p>${o.qrCid ? 'You can also see it, and tell us' : 'Tell us'} if you’re coming each week in the family app:</p>${button(o.appLink, 'Open the family app')}`
       + `<p style="color:#6b7280;font-size:12px;">The app link works once, for this email address, and lasts 7 days. We’ll email you a 6-digit code to sign in.</p>` : '')
     + `<p style="color:#6b7280;font-size:12px;">You’re getting this because this address was used to join ${esc(o.org)}’s weekend sessions. If that wasn’t you, reply and we’ll delete the details.</p>`,
   )

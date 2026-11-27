@@ -11,17 +11,18 @@ const field: React.CSSProperties = { width: '100%', boxSizing: 'border-box', bor
 const label: React.CSSProperties = { display: 'block', fontSize: 13, fontWeight: 700, color: DARK, margin: '14px 0 5px' }
 const check: React.CSSProperties = { display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 14, color: DARK, margin: '12px 0', lineHeight: 1.45 }
 
-type Child = { name: string; dob: string }
+type Child = { name: string; dob: string; notes: string }
 
 export default function JoinForm({ page, venue, viaQr }: { page: JoinPage; venue: string | null; viaQr: boolean }) {
   const [startedAt] = useState(() => Date.now())
   const [guardian, setGuardian] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [children, setChildren] = useState<Child[]>([{ name: '', dob: '' }])
+  const [children, setChildren] = useState<Child[]>([{ name: '', dob: '', notes: '' }])
   const [venueId, setVenueId] = useState(venue ?? (page.venues.length === 1 ? page.venues[0].id : ''))
   const [consentData, setConsentData] = useState(false)
   const [consentPhoto, setConsentPhoto] = useState(false)
+  const [consentHealth, setConsentHealth] = useState(false)
   const [optInEmail, setOptInEmail] = useState(true)
   const [optInSms, setOptInSms] = useState(false)
   const [website, setWebsite] = useState('')   // hidden: people leave it empty
@@ -30,15 +31,18 @@ export default function JoinForm({ page, venue, viaQr }: { page: JoinPage; venue
   const [done, setDone] = useState(false)
 
   const chosen = page.venues.find(v => v.id === venueId)
+  // The health tick only appears, and is only required, once something is written for the coach.
+  const hasNotes = children.some(c => c.notes.trim())
   async function submit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     if (!consentData) { setError('We need your agreement to keep your details before you can join.'); return }
+    if (hasNotes && !consentHealth) { setError('Please tick the box to let us hold what you’ve told us the coach should know — or clear it.'); return }
     setBusy(true)
     try {
       if (page.demo) { await new Promise(r => setTimeout(r, 400)); setDone(true); return }
       const res = await fetch(`/api/impact/join/${page.slug}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-        guardian, email, phone, children, venueId, consentData, consentPhoto, optInEmail, optInSms, website, startedAt, channel: viaQr ? 'qr' : 'form' }) })
+        guardian, email, phone, children, venueId, consentData, consentPhoto, consentHealth: hasNotes && consentHealth, optInEmail, optInSms, website, startedAt, channel: viaQr ? 'qr' : 'form' }) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setError(data.error || `Something went wrong (error ${res.status}). Please try again.`); return }
       setDone(true)
@@ -90,10 +94,12 @@ export default function JoinForm({ page, venue, viaQr }: { page: JoinPage; venue
           <input id={`cn${i}`} style={field} value={c.name} onChange={e => setChildren(cs => cs.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
           <label style={label} htmlFor={`cd${i}`}>Date of birth</label>
           <input id={`cd${i}`} style={field} type="date" value={c.dob} onChange={e => setChildren(cs => cs.map((x, j) => (j === i ? { ...x, dob: e.target.value } : x)))} />
+          <label style={label} htmlFor={`cm${i}`}>Anything the coach should know <span style={{ fontWeight: 400, color: '#8A847E' }}>(optional — medical, SEN(D))</span></label>
+          <textarea id={`cm${i}`} style={{ ...field, minHeight: 64, resize: 'vertical', fontFamily: 'inherit' }} maxLength={page.noteMax} value={c.notes} onChange={e => setChildren(cs => cs.map((x, j) => (j === i ? { ...x, notes: e.target.value } : x)))} />
           {children.length > 1 && <button type="button" onClick={() => setChildren(cs => cs.filter((_, j) => j !== i))} style={{ marginTop: 8, background: 'none', border: 'none', color: RED, fontSize: 13, fontWeight: 700, padding: 0, cursor: 'pointer' }}>Remove</button>}
         </div>
       ))}
-      {children.length < 6 && <button type="button" onClick={() => setChildren(cs => [...cs, { name: '', dob: '' }])} style={{ background: '#fff', border: '1px dashed #D9D3CC', borderRadius: 10, padding: '10px 12px', width: '100%', fontSize: 14, fontWeight: 700, color: DARK, cursor: 'pointer' }}>+ Add another child</button>}
+      {children.length < 6 && <button type="button" onClick={() => setChildren(cs => [...cs, { name: '', dob: '', notes: '' }])} style={{ background: '#fff', border: '1px dashed #D9D3CC', borderRadius: 10, padding: '10px 12px', width: '100%', fontSize: 14, fontWeight: 700, color: DARK, cursor: 'pointer' }}>+ Add another child</button>}
 
       <label style={{ ...label, marginTop: 18 }} htmlFor="venue">Where would you like to come?</label>
       <select id="venue" style={field} value={venueId} onChange={e => setVenueId(e.target.value)}>
@@ -110,6 +116,8 @@ export default function JoinForm({ page, venue, viaQr }: { page: JoinPage; venue
       <div style={{ borderTop: '1px solid #EEE9E3', marginTop: 18, paddingTop: 4 }}>
         <label style={check}><input type="checkbox" checked={consentData} onChange={e => setConsentData(e.target.checked)} style={{ marginTop: 3, width: 18, height: 18 }} />
           <span>{page.consentText} <a href={page.privacyUrl ?? '#'} target="_blank" rel="noopener noreferrer" style={{ color: RED }}>Privacy policy</a> <span style={{ color: RED }}>(required)</span></span></label>
+        {hasNotes && <label style={check}><input type="checkbox" checked={consentHealth} onChange={e => setConsentHealth(e.target.checked)} style={{ marginTop: 3, width: 18, height: 18 }} />
+          <span>{page.healthConsentText} <span style={{ color: RED }}>(required when you’ve written something for the coach)</span></span></label>}
         <label style={check}><input type="checkbox" checked={consentPhoto} onChange={e => setConsentPhoto(e.target.checked)} style={{ marginTop: 3, width: 18, height: 18 }} />
           <span>Photos: you may take and share photos of my children at sessions.</span></label>
         <label style={check}><input type="checkbox" checked={optInEmail} onChange={e => setOptInEmail(e.target.checked)} style={{ marginTop: 3, width: 18, height: 18 }} />

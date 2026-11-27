@@ -312,6 +312,27 @@ test('automations: “we missed you” after two absences in a row; pack issued;
   assert.match(mon.send[0].body, /Ten bounces on the racket/)
 })
 
+test('automations: school programme week N — running programmes only, that week’s booklet, each week once', () => {
+  const running = { programmes: [{ id: PROG, school_id: SCHOOL, current_week: 4, status: 'running' }], schools: [{ id: SCHOOL, name: 'Brackenmoor Primary' }],
+    bookletWeeks: [{ week: 4, title: 'Rally and return', focus: 'Keep the ball going.', home_task: 'Ten bounces on the racket', top_tip: 'Soft hands', did_you_know: 'Tennis began as a hand game' }] }
+  const sel = M.selectAutomations([auto('programme_week')], world(running))
+  assert.deepEqual(who(sel), ['programme_week:1:pweek', 'programme_week:3:pweek'], 'the programme’s families, any weekday')
+  assert.equal(sel.send[0].step, `pweek:${PROG}:4`)
+  assert.equal(sel.send[0].subject, 'Week 4 at Brackenmoor Primary: Rally and return')
+  assert.match(sel.send[0].body, /Try at home: Ten bounces on the racket\n\nTop tip: Soft hands\n\nDid you know\? Tennis began as a hand game/)
+  assert.deepEqual(who(M.selectAutomations([auto('programme_week')], world({ ...running, programmes: [{ ...running.programmes[0], status: 'confirmed' }] }))), [], 'not running → nothing')
+  assert.deepEqual(who(M.selectAutomations([auto('programme_week')], world({ ...running, programmes: [{ ...running.programmes[0], current_week: 0 }] }))), [], 'week 0 → nothing')
+  assert.deepEqual(who(M.selectAutomations([auto('programme_week')], world({ ...running, bookletWeeks: [] }))), [], 'no booklet week → nothing')
+  const done = new Set([`a-programme_week|${id(1)}|pweek:${PROG}:4`, `a-programme_week|${id(3)}|pweek:${PROG}:4`])
+  assert.deepEqual(who(M.selectAutomations([auto('programme_week')], world({ ...running, done }))), [], 'week 4 already sent')
+  const w5 = { ...running, done, programmes: [{ ...running.programmes[0], current_week: 5 }], bookletWeeks: [{ week: 5, title: 'Serve' }] }
+  const next = M.selectAutomations([auto('programme_week')], world(w5))
+  assert.deepEqual(who(next), ['programme_week:1:pweek', 'programme_week:3:pweek'], 'week 5 is new')
+  assert.match(next.send[0].body, /Top tip: —/, 'missing booklet text reads as a dash, never {top_tip}')
+  assert.deepEqual(who(M.selectAutomations([{ ...auto('programme_week'), enabled: false }], world(running))), [], 'off means off')
+  assert.ok(M.AUTOMATION_KINDS.includes('programme_week'))
+})
+
 test('automations: one automated message per family per day, by priority; a step goes once; off means off', () => {
   const all = [auto('welcome', { since: '2026-11-01T00:00:00Z' }), auto('session_reminder'), auto('pack_issued'), auto('missed_you')]
   const sel = M.selectAutomations(all, world())

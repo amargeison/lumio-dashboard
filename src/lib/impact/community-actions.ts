@@ -20,6 +20,12 @@ export async function moveVenue(db: SupabaseClient, hqId: string, familyId: stri
   return fail(error, 'Couldn’t move the family')
 }
 
+/** A school family who'll come to weekend sessions too (tp_families.weekend_too, migration 239). */
+export async function setWeekendToo(db: SupabaseClient, hqId: string, familyId: string, on: boolean): Promise<Done> {
+  const { error } = await db.from('tp_families').update({ weekend_too: on }).eq('hq_id', hqId).eq('id', familyId)
+  return fail(error, 'Couldn’t save that')
+}
+
 export async function setCapacity(db: SupabaseClient, hqId: string, venueId: string, capacity: number | null): Promise<Done> {
   if (capacity !== null && (!Number.isInteger(capacity) || capacity < 1)) return { ok: false, error: 'Capacity is a whole number of families, 1 or more — or blank for no limit.' }
   const { error } = await db.from('tp_venues').update({ capacity }).eq('hq_id', hqId).eq('id', venueId)

@@ -99,7 +99,22 @@ async function main() {
   const kids = await rows(A.id, 'tp_children', q => q.eq('family_id', fam.id))
   ok('children: two, with dates of birth, no school', kids.length === 2 && kids.every(k => k.school_id === null && k.programme_id === null && k.date_of_birth) && kids.every(k => k.photo_consent === false))
   const [audit] = await rows(A.id, 'tp_community_signups', q => q.eq('family_id', fam.id))
-  ok('audit row: from the venue poster (qr), consent version, hashed address', audit?.channel === 'qr' && audit.venue_id === small && audit.consent_text_version === 'join-2026-11' && /^[0-9a-f]{64}$/.test(audit.ip_hash) && !JSON.stringify(audit).includes('203.0.113'), JSON.stringify(audit))
+  ok('audit row: from the venue poster (qr), consent version, hashed address', audit?.channel === 'qr' && audit.venue_id === small && audit.consent_text_version === 'join-2026-12' && /^[0-9a-f]{64}$/.test(audit.ip_hash) && !JSON.stringify(audit).includes('203.0.113'), JSON.stringify(audit))
+
+  ok('no coach notes given → none saved', kids.every(k => k.medical_notes === null))
+
+  console.log('\n/join — anything the coach should know (239):')
+  const withNotes = (extra = {}) => form(big, { email: `noted+${tag}@example.com`, children: [{ name: 'Nia Noted', dob: '2018-03-03', notes: 'Asthma: inhaler in her bag' }, { name: 'Ola Noted', dob: '2019-04-04' }], ...extra })
+  const noTick = await join(A.slug, withNotes())
+  ok('notes without the health tick → refused, saying which box', noTick.status === 400 && noTick.body.field === 'consentHealth', JSON.stringify(noTick.body))
+  ok('… and nothing was written', (await rows(A.id, 'tp_families', q => q.eq('email', `noted+${tag}@example.com`))).length === 0)
+  ok('with the tick → accepted', (await join(A.slug, withNotes({ consentHealth: true }))).status === 200)
+  const [noted] = await rows(A.id, 'tp_families', q => q.eq('email', `noted+${tag}@example.com`))
+  const notedKids = await rows(A.id, 'tp_children', q => q.eq('family_id', noted?.id ?? '00000000-0000-0000-0000-000000000000').order('name'))
+  ok('the notes are in that child’s medical notes; the other child has none', notedKids.find(k => k.name === 'Nia Noted')?.medical_notes === 'Asthma: inhaler in her bag' && notedKids.find(k => k.name === 'Ola Noted')?.medical_notes === null, JSON.stringify(notedKids.map(k => [k.name, k.medical_notes])))
+  const [notedAudit] = await rows(A.id, 'tp_community_signups', q => q.eq('family_id', noted?.id ?? '00000000-0000-0000-0000-000000000000'))
+  ok('the sign-up records both texts agreed to: join-2026-12+health', notedAudit?.consent_text_version === 'join-2026-12+health', notedAudit?.consent_text_version)
+  await admin.from('tp_community_signups').delete().eq('family_id', noted.id); await admin.from('tp_children').delete().eq('family_id', noted.id); await admin.from('tp_families').delete().eq('id', noted.id)
 
   const again = await join(A.slug, form(big, { guardian: 'Someone Else', email: `CHRIS.DOYLE+${tag}@example.com` }))
   ok('the same email again: the identical reply — nothing says it was known', again.status === 200 && JSON.stringify(again.body) === SAME, JSON.stringify(again.body))
@@ -173,6 +188,18 @@ async function main() {
   const impAudit = impFam ? await rows(A.id, 'tp_community_signups', q => q.eq('family_id', impFam.id)) : []
   ok('an imported family with a weekend venue joins Community, with an import sign-up row, stamped', commit.status === 200 && impFam?.source === 'community' && !!impFam.community_venue_id && impAudit[0]?.channel === 'import' && impAudit[0].import_batch_id === commit.body.importId, JSON.stringify(commit.body).slice(0, 200))
   const undo = await A.call('/api/impact/import/history', { id: commit.body.importId, action: 'undo' })
+  console.log('\nPublic fundraising pages (module, 239):')
+  const school = (await admin.from('tp_schools').insert({ hq_id: A.id, name: 'Fundraise Primary', status: 'confirmed' }).select('id').single()).data.id
+  const pslug = `${tag}-fund`
+  await admin.from('tp_fundraising_campaigns').insert({ hq_id: A.id, school_id: school, public_slug: pslug, target_pence: 100000, status: 'live' })
+  const fundPage = async () => (await (await fetch(`${BASE}/fundraise/${pslug}`)).text())
+  ok('module on (not set): the live campaign’s page shows', (await fundPage()).includes('Fundraise Primary'))
+  await admin.from('impact_orgs').update({ settings: { org: 'Org A', privacyUrl: 'https://org-a.example/privacy', modules: { public_fundraising: false } } }).eq('hq_id', A.id)
+  const off = await fundPage()
+  ok('module off: “Campaign not found”, and nothing about the school', off.includes('Campaign not found') && !off.includes('Fundraise Primary'))
+  ok('the demo campaign still shows', (await (await fetch(`${BASE}/fundraise/demo`)).text()).includes('St Clement'))
+  await admin.from('impact_orgs').update({ settings: { org: 'Org A', privacyUrl: 'https://org-a.example/privacy' } }).eq('hq_id', A.id)
+
   ok('… and undo removes the family, venue and sign-up row', undo.status === 200 && (await rows(A.id, 'tp_families', q => q.eq('email', `imp+${tag}@example.com`))).length === 0 && (await rows(A.id, 'tp_community_signups', q => q.eq('channel', 'import'))).length === 0, JSON.stringify(undo.body))
 }
 

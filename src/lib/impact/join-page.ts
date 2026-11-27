@@ -7,7 +7,7 @@ import { brandFor, moduleOn, privacyUrlOf, type ImpactOrgSettings } from './org'
 export { privacyUrlOf }
 import { VENUES as DEMO_VENUES } from '@/data/impact/demo-data'
 import { IMPACT_DEMO_BRAND } from '@/data/impact/demo-copy'
-import { joinConsentText, JOIN_CONSENT_VERSION } from './community'
+import { joinConsentText, joinHealthConsentText, JOIN_CONSENT_VERSION, COACH_NOTE_MAX } from './community'
 
 export interface JoinVenue { id: string; name: string; when: string | null; where: string | null; full: boolean }
 export interface JoinPage {
@@ -15,6 +15,8 @@ export interface JoinPage {
   /** Why the form is closed (no privacy policy yet, module off), or null when open. */
   closed: string | null
   venues: JoinVenue[]; consentText: string; consentVersion: string
+  /** The separate tick shown once "anything the coach should know" has text in it. */
+  healthConsentText: string; noteMax: number
 }
 
 const when = (day?: string | null, time?: string | null) => [day, time].filter(Boolean).join(' ') || null
@@ -24,7 +26,7 @@ export async function loadJoinPage(slug: string): Promise<JoinPage | null> {
     return {
       slug, demo: true, org: IMPACT_DEMO_BRAND.org, logo: IMPACT_DEMO_BRAND.logo, privacyUrl: 'https://www.lumiosports.com/privacy', closed: null,
       venues: DEMO_VENUES.map(v => ({ id: v.id, name: v.name, when: when(v.day, v.time), where: null, full: false })),
-      consentText: joinConsentText(IMPACT_DEMO_BRAND.org), consentVersion: JOIN_CONSENT_VERSION,
+      consentText: joinConsentText(IMPACT_DEMO_BRAND.org), consentVersion: JOIN_CONSENT_VERSION, healthConsentText: joinHealthConsentText(IMPACT_DEMO_BRAND.org), noteMax: COACH_NOTE_MAX,
     }
   }
   if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(slug)) return null
@@ -44,5 +46,6 @@ export async function loadJoinPage(slug: string): Promise<JoinPage | null> {
     venues: (venues ?? []).map(v => ({ id: v.id, name: v.name, when: when(v.session_day, v.session_time), where: [v.address, v.postcode].filter(Boolean).join(', ') || null,
       full: !!v.capacity && count(v.id) >= v.capacity })),
     consentText: joinConsentText(brand.org), consentVersion: JOIN_CONSENT_VERSION,
+    healthConsentText: joinHealthConsentText(brand.org), noteMax: COACH_NOTE_MAX,
   }
 }

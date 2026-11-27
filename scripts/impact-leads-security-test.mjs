@@ -108,6 +108,11 @@ async function main() {
   const row = (await admin.from('impact_leads').select('hq_id, pipeline, stage, amount_pence, next_action_at').eq('org_name', 'Fund One').eq('hq_id', A.id).maybeSingle()).data
   ok('the row is A’s, with stage, amount and follow-up', row?.pipeline === 'funders' && row?.stage === 'Proposal sent' && row?.amount_pence === 100000 && row?.next_action_at === '2026-01-01', JSON.stringify(row))
   ok('B can’t see it', (await B.db.from('impact_leads').select('id').eq('org_name', 'Fund One')).data?.length === 0)
+  const prov = await A.api('/api/impact/leads/import', { method: 'POST', body: JSON.stringify({ pipeline: 'providers', rows: [{ name: 'Sam Coach', org_name: 'Sam’s Tennis', stage: 'Call booked' }] }) })
+  const provRow = (await admin.from('impact_leads').select('pipeline, stage').eq('org_name', 'Sam’s Tennis').eq('hq_id', A.id).maybeSingle()).data
+  ok('Coaches & providers (239): imported into its own pipeline, at its stage', prov.status === 200 && provRow?.pipeline === 'providers' && provRow?.stage === 'Call booked', JSON.stringify(provRow))
+  ok('… HQ adds one by hand', !(await A.db.from('impact_leads').insert({ hq_id: A.id, pipeline: 'providers', stage: 'Enquired', name: 'Pat Provider' })).error)
+  ok('… an unknown pipeline is still refused by the database', !!(await A.db.from('impact_leads').insert({ hq_id: A.id, pipeline: 'nonsense', name: 'X' })).error)
 
   console.log('\nHook route and table:')
   ok('signed out is refused', (await fetch(`${BASE}/api/impact/leads/hook`)).status === 401)
