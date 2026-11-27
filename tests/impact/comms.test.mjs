@@ -214,7 +214,7 @@ test('send: results counts, and webhooks only move a recipient forward', () => {
   assert.equal(S.chunk([1, 2, 3], 2).length, 2)
 })
 
-test('inbound: the org from the reply address, the family by exact email only', () => {
+test('inbound: the org from the reply address, the family by email (exact, else ignoring +tag when only one family matches)', () => {
   assert.equal(I.impactReplyTo('ten-project'), 'reply+ten-project@inbound.lumiosports.com')
   assert.equal(I.impactReplyTo('Bad Slug'), null)
   assert.equal(I.slugFromRecipients(['Someone <other@x.com>', { address: 'Reply+Ten-Project@Inbound.LumioSports.com' }]), 'ten-project')
@@ -225,6 +225,20 @@ test('inbound: the org from the reply address, the family by exact email only', 
   assert.equal(I.familyForSender('p1@example.com', fs)?.id, id(1))
   assert.equal(I.familyForSender('shared@example.com', fs), null, 'two families share it: filed as unknown, never guessed')
   assert.equal(I.familyForSender('nobody@example.com', fs), null)
+  // "+tag" ignored on both sides, but only when it leaves exactly one family.
+  assert.equal(I.baseAddress(' Pat+Club@Example.com '), 'pat@example.com')
+  assert.equal(I.baseAddress('+x@example.com'), '+x@example.com', 'no mailbox before the +: left alone')
+  const plus = [fam(4, { email: 'pat+club@example.com' }), fam(5, { email: 'sam@example.com' })]
+  assert.equal(I.familyForSender('pat@example.com', plus)?.id, id(4), 'joined with +club, replies from plain')
+  assert.equal(I.familyForSender('sam+news@example.com', plus)?.id, id(5), 'joined plain, replies from +news')
+  assert.equal(I.familyForSender('pat+other@example.com', plus)?.id, id(4))
+  const twins = [fam(6, { email: 'a+one@example.com' }), fam(7, { email: 'a+two@example.com' }), fam(8, { email: 'a@example.com' })]
+  assert.equal(I.familyForSender('a+zzz@example.com', twins), null, 'three families share the base: unknown, never guessed')
+  assert.equal(I.familyForSender('a+one@example.com', twins)?.id, id(6), 'an exact match still wins')
+  assert.equal(I.familyForSender('a@example.com', twins)?.id, id(8))
+  assert.equal(I.familyForSender('a@example.com', twins.slice(0, 2)), null, 'plain sender, two +tag families: unknown')
+  assert.equal(I.familyForSender('a@other.com', plus.concat(twins)), null, 'a different domain never matches')
+  assert.deepEqual(I.senderPatterns('Pat_1+x@Ex%ample.com'), ['pat\\_1@ex\\%ample.com', 'pat\\_1+%@ex\\%ample.com'])
   assert.equal(I.threadKeyFor(id(1), 'p1@example.com'), `family:${id(1)}`)
   assert.equal(I.threadKeyFor(null, 'nobody@example.com'), 'email:nobody@example.com')
   assert.equal(I.replyText('Yes we’ll be there!\n\nOn Thu, 26 Nov 2026 at 10:00, Ten Project <hello@x> wrote:\n> Are you coming?'), 'Yes we’ll be there!')

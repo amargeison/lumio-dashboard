@@ -237,6 +237,13 @@ async function main() {
   ok('the same message twice is filed once', (await mail(impactTo, { from: f1.email, id: `<once-${tag}@example.com>` })).body.status === 'filed' && (await mail(impactTo, { from: f1.email, id: `<once-${tag}@example.com>` })).body.status === 'dedup')
   ok('an address that isn’t a reply address → 200, dropped, nothing filed', (await mail('hello@inbound.lumiosports.com')).body.dropped === true && (await rows(A.id, 'impact_messages', q => q.eq('direction', 'in'))).length === before2 + 4)
   ok('reply+<an org that doesn’t exist>@ → 200, nothing filed', (await mail(`reply+${tag}-nobody@inbound.lumiosports.com`)).body.status === 'ignored')
+  // "+tag" ignored on both sides, only when exactly one family matches.
+  // f1's email is ada.new+<tag>@ by now.
+  const plainAda = await mail(impactTo, { from: 'Ada.New@example.com', text: `Plain address ${tag}` })
+  ok('a family that joined as ada.new+tag@ replying from plain ada.new@ → its own thread', plainAda.body.status === 'filed' && (await rows(A.id, 'impact_messages', q => q.eq('body', `Plain address ${tag}`)))[0]?.thread_key === `family:${f1.id}`, JSON.stringify(plainAda.body))
+  await fam({ guardian_name: 'Gus One', email: `gus+${tag}-1@example.com`, opt_in_email: false }); await fam({ guardian_name: 'Gus Two', email: `gus+${tag}-2@example.com`, opt_in_email: false })  // not emailable: leaves the welcome counts below alone
+  await mail(impactTo, { from: 'gus@example.com', text: `Shared base ${tag}` })
+  ok('two families share the address without their +tags → “Not a family here”', (await rows(A.id, 'impact_messages', q => q.eq('body', `Shared base ${tag}`)))[0]?.family_id === null)
 
   const coach = await user(`${tag}_coach@lumio.test`)
   const coachTo = inboundReplyTo(coach.id, `contact:${tag.slice(-6)}`)
