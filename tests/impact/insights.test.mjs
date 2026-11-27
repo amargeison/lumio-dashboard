@@ -318,7 +318,12 @@ test('regression: readiness is identical apart from the Priority Reach line', ()
     assert.deepEqual({ score, verdict, summary, biggestGap, items: withoutPriorityText(items) }, { ...was, items: withoutPriorityText(was.items) }, id)
   }
 })
-test('regression: every Insights section is identical', () => assert.deepEqual(I, snapshot.insights))
+test('regression: every Insights section is identical', () => {
+  const { intent, ...rest } = I
+  assert.deepEqual(rest, snapshot.insights)
+  // New in 239: Lumio Test's 12 school families, none marked "coming at weekends too" yet.
+  assert.deepEqual(intent, { schoolFamilies: 12, said: 0, came: 0 })
+})
 test('regression: tiles and Needs attention are identical', () => {
   const d = mapLiveRows(lumioTest, today)
   for (const [k, v] of Object.entries(snapshot.tiles)) assert.deepEqual(d.HQ_STATS[k], v, k)

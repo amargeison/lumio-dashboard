@@ -29,15 +29,16 @@ export async function loadWorld(db: SupabaseClient, hqId: string, orgName: strin
     if (error) throw new Error(`${label}: ${error.message}`)
     return (data ?? []) as T[]
   }
-  const [families, children, programmes, sessions, packIssues, venues, booklet, sends] = await Promise.all([
+  const [families, children, programmes, sessions, packIssues, venues, booklet, sends, schools] = await Promise.all([
     q<AudienceFamily>('tp_families', db.from('tp_families').select(FAMILY_COLS).eq('hq_id', hqId).limit(20000)),
     q<AutomationWorld['children'][number]>('tp_children', db.from('tp_children').select('id, family_id, programme_id, school_id').eq('hq_id', hqId).limit(50000)),
-    q<AutomationWorld['programmes'][number]>('tp_programmes', db.from('tp_programmes').select('id, school_id, current_week').eq('hq_id', hqId)),
+    q<AutomationWorld['programmes'][number]>('tp_programmes', db.from('tp_programmes').select('id, school_id, current_week, status').eq('hq_id', hqId)),
     q<AutomationWorld['sessions'][number]>('tp_sessions', db.from('tp_sessions').select('id, kind, programme_id, venue_id, session_date').eq('hq_id', hqId).gte('session_date', addDays(today, -60)).lte('session_date', addDays(today, 7)).limit(5000)),
     q<AutomationWorld['packIssues'][number]>('tp_pack_issues', db.from('tp_pack_issues').select('id, child_id, issued_at').eq('hq_id', hqId).gte('issued_at', `${addDays(today, -3)}T00:00:00Z`).limit(5000)),
     q<AutomationWorld['venues'][number]>('tp_venues', db.from('tp_venues').select('id, name, session_time').eq('hq_id', hqId)),
     db.from('tp_booklet').select('weeks').eq('hq_id', hqId).maybeSingle(),
     q<{ automation_id: string; family_id: string; step: string; status: string; send_date: string }>('impact_automation_sends', db.from('impact_automation_sends').select('automation_id, family_id, step, status, send_date').eq('hq_id', hqId).gte('created_at', new Date(at.getTime() - 120 * 86_400_000).toISOString()).limit(50000)),
+    q<{ id: string; name: string }>('tp_schools', db.from('tp_schools').select('id, name').eq('hq_id', hqId)),
   ])
   const sessionIds = sessions.map(s => s.id)
   const attendance: AutomationWorld['attendance'] = []
@@ -46,7 +47,7 @@ export async function loadWorld(db: SupabaseClient, hqId: string, orgName: strin
   }
   return {
     today, weekday: clock.weekday, org: orgName,
-    families, children, programmes, sessions, attendance, packIssues, venues,
+    families, children, programmes, schools, sessions, attendance, packIssues, venues,
     bookletWeeks: ((booklet.data?.weeks ?? []) as AutomationWorld['bookletWeeks']),
     done: new Set(sends.map(s => `${s.automation_id}|${s.family_id}|${s.step}`)),
     usedToday: new Set(sends.filter(s => s.send_date === today && s.status !== 'skipped').map(s => s.family_id)),

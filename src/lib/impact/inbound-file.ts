@@ -2,12 +2,12 @@
 // Worker or a Resend inbound webhook). Service role; every write pinned to the org found
 // from the reply+<slug>@ address.
 //
-// The family is found by the sender's email only; anyone else is an unknown sender ("Not
-// a family here"). Text only: attachments are listed as "not shown". A sender whose
+// The family is found by the sender's email only (an exact match, else ignoring a "+tag"
+// when that leaves exactly one family); anyone else is an unknown sender ("Not a family here"). Text only: attachments are listed as "not shown". A sender whose
 // SPF/DKIM didn't pass is filed but marked "Sender not verified" (impact_messages.detail).
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { familyForSender, replyText, slugFromRecipients, threadKeyFor } from './inbound'
+import { familyForSender, replyText, senderPatterns, slugFromRecipients, threadKeyFor } from './inbound'
 import { NOT_VERIFIED, withAttachmentNotes, type InboundMessage } from '@/lib/inbound/message'
 
 export type ImpactFiled = { status: 'filed'; known: boolean } | { status: 'dedup' } | { status: 'ignored'; why: string } | { status: 'error'; error: string }
@@ -20,10 +20,13 @@ export async function fileImpactReply(db: SupabaseClient, m: InboundMessage): Pr
   const hqId = org.hq_id as string
 
   const body = withAttachmentNotes(replyText(m.text), m.attachments) || '(no text)'
-  const { data: families } = m.from
-    ? await db.from('tp_families').select('id, email').eq('hq_id', hqId).ilike('email', m.from.replace(/[%_\\]/g, c => `\\${c}`)).limit(5)
-    : { data: [] }
-  const family = familyForSender(m.from, (families ?? []) as { id: string; email: string | null }[])
+  // Every family whose email is the sender's, with or without a "+tag"; familyForSender picks.
+  const families: { id: string; email: string | null }[] = []
+  for (const pattern of m.from ? senderPatterns(m.from) : []) {
+    const { data } = await db.from('tp_families').select('id, email').eq('hq_id', hqId).ilike('email', pattern).limit(20)
+    for (const f of (data ?? []) as { id: string; email: string | null }[]) if (!families.some(x => x.id === f.id)) families.push(f)
+  }
+  const family = familyForSender(m.from, families)
   const threadKey = threadKeyFor(family?.id ?? null, m.from)
   const { error } = await db.from('impact_messages').insert({
     hq_id: hqId, thread_key: threadKey, family_id: family?.id ?? null, channel: 'email', direction: 'in',

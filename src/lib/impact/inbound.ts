@@ -34,11 +34,37 @@ export function slugFromRecipients(...fields: unknown[]): string | null {
 
 export const senderAddress = (from: unknown) => addr(from) || null
 
-/** The one family in this org with that email, or null (none, or more than one). */
+/** The address without a "+tag" on the mailbox part, lower-cased: Pat+club@x.com → pat@x.com. */
+export function baseAddress(email: string | null | undefined): string {
+  const e = String(email ?? '').trim().toLowerCase()
+  const at = e.lastIndexOf('@')
+  if (at < 1) return e
+  const local = e.slice(0, at), plus = local.indexOf('+')
+  return (plus > 0 ? local.slice(0, plus) : local) + e.slice(at)
+}
+
+/**
+ * The one family in this org the sender is, or null. An exact address that only one family
+ * has wins. Otherwise "+tag" is ignored on both sides (a parent who joined as pat+club@ and
+ * replies from pat@, or the other way round), and the family is used only when exactly one
+ * family matches that way. Two or more: filed as an unknown sender, never guessed.
+ */
 export function familyForSender<F extends { id: string; email: string | null }>(sender: string | null, families: F[]): F | null {
   if (!sender) return null
-  const hits = families.filter(f => (f.email ?? '').trim().toLowerCase() === sender)
-  return hits.length === 1 ? hits[0] : null
+  const s = sender.trim().toLowerCase()
+  const exact = families.filter(f => (f.email ?? '').trim().toLowerCase() === s)
+  if (exact.length === 1) return exact[0]
+  if (exact.length > 1) return null
+  const base = baseAddress(s)
+  const loose = families.filter(f => baseAddress(f.email) === base)
+  return loose.length === 1 ? loose[0] : null
+}
+
+/** ilike patterns that find every family whose email could match the sender (see familyForSender). */
+export function senderPatterns(sender: string): string[] {
+  const b = baseAddress(sender), at = b.lastIndexOf('@')
+  const esc = (x: string) => x.replace(/[%_\\]/g, c => `\\${c}`)
+  return at < 1 ? [esc(b)] : [esc(b), `${esc(b.slice(0, at))}+%${esc(b.slice(at))}`]
 }
 
 export const threadKeyFor = (familyId: string | null, sender: string | null) => (familyId ? `family:${familyId}` : `email:${sender ?? 'unknown'}`)

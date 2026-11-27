@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const who = await impactHq('import leads')
   if (who instanceof NextResponse) return who
   const b = (await req.json().catch(() => ({}))) as { pipeline?: string; rows?: Record<string, unknown>[] }
-  const pipeline = b.pipeline === 'funders' ? 'funders' : 'schools'
+  const pipeline = b.pipeline === 'funders' || b.pipeline === 'providers' ? b.pipeline : 'schools'
   const rows = Array.isArray(b.rows) ? b.rows.slice(0, IMPORT_MAX) : []
   if (!rows.length) return NextResponse.json({ error: 'There are no rows to bring in.' }, { status: 400 })
   const { added, skipped, error } = await insertLeads(who.db, who.hqId, pipeline, rows)

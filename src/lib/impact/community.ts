@@ -17,11 +17,22 @@ export const LAPSE_DAYS = 42
 export const NEW_DAYS = 30
 export const MAX_CHILDREN = 6
 
-/** Shown on /join and stored with each sign-up (tp_community_signups.consent_text_version). */
-export const JOIN_CONSENT_VERSION = 'join-2026-11'
+/**
+ * Shown on /join and stored with each sign-up (tp_community_signups.consent_text_version).
+ * join-2026-12 added the optional "anything the coach should know" box and its own tick;
+ * the main wording is unchanged from join-2026-11. A family that ticked the health box is
+ * stored as `join-2026-12+health` (consentVersionFor), so each family's record says
+ * exactly which texts they agreed to.
+ */
+export const JOIN_CONSENT_VERSION = 'join-2026-12'
 export const joinConsentText = (org: string) =>
   `I agree to ${org} keeping my family’s details (names, contact details and children’s dates of birth) to run the weekend sessions, ` +
   `keep a register and contact me about them. I can ask for them to be deleted at any time.`
+/** The separate tick, required only when something is written in "anything the coach should know". */
+export const joinHealthConsentText = (org: string) =>
+  `I agree to ${org} holding any health, medical or additional-needs information I give here, so the coach can keep my child safe.`
+export const consentVersionFor = (j: Pick<JoinInput, 'consentHealth'>) => j.consentHealth ? `${JOIN_CONSENT_VERSION}+health` : JOIN_CONSENT_VERSION
+export const COACH_NOTE_MAX = 500
 
 export type CommunitySource = 'school' | 'community' | 'both'
 export type CommunityStatus = 'new' | 'active' | 'lapsed'
@@ -29,8 +40,11 @@ export type CommunityStatus = 'new' | 'active' | 'lapsed'
 // ── The /join form ──────────────────────────────────────────────────────────
 export interface JoinInput {
   guardian: string; email: string; phone: string | null
-  children: { name: string; dob: string }[]
+  /** notes: "anything the coach should know (medical, SEN(D))", saved to the child's medical notes. */
+  children: { name: string; dob: string; notes: string | null }[]
   venueId: string; consentData: true; consentPhoto: boolean; optInEmail: boolean; optInSms: boolean
+  /** The health tick: true only when there are notes and it was ticked. */
+  consentHealth: boolean
 }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const clean = (v: unknown, max: number) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max)
@@ -52,7 +66,8 @@ export function parseJoin(body: Record<string, unknown>, venueIds: string[], tod
   const phone = rawPhone ? readPhone(rawPhone) : null
   if (rawPhone && !phone) return { ok: false, field: 'phone', error: 'Please check your phone number, or leave it blank.' }
   const list = Array.isArray(body.children) ? body.children as Record<string, unknown>[] : []
-  const children = list.map(c => ({ name: clean(c?.name, 120), dob: clean(c?.dob, 10) })).filter(c => c.name || c.dob)
+  const children = list.map(c => ({ name: clean(c?.name, 120), dob: clean(c?.dob, 10), notes: String(c?.notes ?? '').trim() }))
+    .filter(c => c.name || c.dob || c.notes)
   if (!children.length) return { ok: false, field: 'children', error: 'Please add at least one child.' }
   if (children.length > MAX_CHILDREN) return { ok: false, field: 'children', error: `Please add up to ${MAX_CHILDREN} children — get in touch for more.` }
   for (const c of children) {
@@ -60,11 +75,18 @@ export function parseJoin(body: Record<string, unknown>, venueIds: string[], tod
     if (!/^\d{4}-\d{2}-\d{2}$/.test(c.dob) || isNaN(Date.parse(c.dob))) return { ok: false, field: 'children', error: `Please give ${c.name}’s date of birth.` }
     const age = ageOn(c.dob, today)
     if (age < 2 || age > 18) return { ok: false, field: 'children', error: `${c.name}’s date of birth doesn’t look right — please check it.` }
+    if (c.notes.length > COACH_NOTE_MAX) return { ok: false, field: 'children', error: `Please keep what the coach should know about ${c.name} to ${COACH_NOTE_MAX} characters — you can tell them the rest in person.` }
   }
+  const hasNotes = children.some(c => c.notes)
+  if (hasNotes && body.consentHealth !== true) return { ok: false, field: 'consentHealth', error: 'Please tick the box to let us hold what you’ve told us the coach should know — or clear it.' }
   const venueId = clean(body.venueId, 40)
   if (!UUID.test(venueId) || !venueIds.includes(venueId)) return { ok: false, field: 'venueId', error: 'Please choose a venue.' }
   if (body.consentData !== true) return { ok: false, field: 'consentData', error: 'We need your agreement to keep your details before you can join.' }
-  return { ok: true, value: { guardian, email, phone, children, venueId, consentData: true, consentPhoto: body.consentPhoto === true, optInEmail: body.optInEmail === true, optInSms: body.optInSms === true && !!phone } }
+  return { ok: true, value: {
+    guardian, email, phone, children: children.map(c => ({ name: c.name, dob: c.dob, notes: c.notes || null })), venueId,
+    consentData: true, consentPhoto: body.consentPhoto === true, optInEmail: body.optInEmail === true, optInSms: body.optInSms === true && !!phone,
+    consentHealth: hasNotes && body.consentHealth === true,
+  } }
 }
 
 /** A bot fills the hidden field, or submits faster than a person could. */
@@ -80,6 +102,8 @@ export interface CommunityFamily {
   signed_up_at: string | null; lapsed_at: string | null; waitlisted_at: string | null; created_at?: string | null
   /** Has a child at a school (decides school / both). */
   hasSchoolChild: boolean
+  /** A school family who said they'll come to weekend sessions too (migration 239). */
+  weekend_too?: boolean
 }
 /** One family at one weekend session (any child present). */
 export interface Visit { familyId: string; date: string; venueId: string | null }
@@ -91,6 +115,9 @@ export function visitsBy(visits: Visit[]): Map<string, string[]> {
   for (const v of visits) (out.get(v.familyId) ?? out.set(v.familyId, new Set()).get(v.familyId)!).add(v.date)
   return new Map([...out].map(([k, s]) => [k, [...s].sort()]))
 }
+
+/** A school family who said they'll come to weekend sessions too. */
+export const saidWeekends = (f: CommunityFamily) => !!f.weekend_too && (f.hasSchoolChild || f.source === 'school' || f.source === 'both')
 
 /** In Community: signed up for it, given a weekend venue, or been to a weekend session. */
 export const inCommunity = (f: CommunityFamily, dates: string[] | undefined) =>
@@ -121,7 +148,7 @@ export function lapsePreview<F extends CommunityFamily>(families: F[], byFamily:
   })
 }
 
-export interface CommunityTiles { signedUp: number; activeThisTerm: number; newThisMonth: number; visitsThisTerm: number; lapsed: number; conversionsThisTerm: number }
+export interface CommunityTiles { signedUp: number; activeThisTerm: number; newThisMonth: number; visitsThisTerm: number; lapsed: number; conversionsThisTerm: number; saidWeekends: number; saidAndCame: number }
 
 export function communityTiles(families: CommunityFamily[], visits: Visit[], term: { start: string; end: string }, today: string): CommunityTiles {
   const by = visitsBy(visits)
@@ -137,5 +164,8 @@ export function communityTiles(families: CommunityFamily[], visits: Visit[], ter
     lapsed: fam.filter(f => statusOf(f, by.get(f.id), today) === 'lapsed').length,
     // A school family whose FIRST weekend visit was this term.
     conversionsThisTerm: families.filter(f => (f.hasSchoolChild || f.source === 'school' || f.source === 'both') && inTerm(by.get(f.id)?.[0] ?? '')).length,
+    // School → weekend intent: school families who said they'll come at weekends, and how many have.
+    saidWeekends: families.filter(saidWeekends).length,
+    saidAndCame: families.filter(f => saidWeekends(f) && !!by.get(f.id)?.length).length,
   }
 }

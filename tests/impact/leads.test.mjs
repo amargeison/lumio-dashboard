@@ -351,7 +351,7 @@ test('readiness: a fundraising programme is on track once marking funded has con
 // ── Registration and demo ───────────────────────────────────────────────────
 test('Leads is a module, on by default and able to be switched off', () => {
   const m = impactModules({ volunteers: 'Volunteers', volunteer: 'Volunteer' }).find(x => x.id === 'leads')
-  assert.equal(m.desc, 'Schools and funders pipeline — from first contact to partnered')
+  assert.equal(m.desc, 'Schools, funders, and coaches & providers pipelines — from first contact to agreed')
   assert.ok(!m.locked)
   assert.equal(moduleOn({}, 'leads'), true)
   assert.equal(moduleOn({ modules: { leads: false } }, 'leads'), false)
@@ -379,4 +379,17 @@ test('no Impact file imports from a Coach path', () => {
   const dirs = ['app/tenproject', 'app/impact', 'lib/impact', 'app/api/impact'].map(d => src + d)
   const hits = dirs.flatMap(filesIn).filter(f => /from\s+['"][^'"]*\/coach(\/|['"])/.test(readFileSync(f, 'utf8')))
   assert.deepEqual(hits, [])
+})
+
+test('Coaches & providers: its stages, closed stages, points, status words and incoming leads', () => {
+  assert.equal(PIPELINES.providers.label, 'Coaches & providers')
+  assert.deepEqual(stagesOf('providers'), ['Enquired', 'Contacted', 'Call booked', 'Agreed', 'Not now'])
+  assert.ok(isClosed('providers', 'Agreed') && isClosed('providers', 'Not now') && !isClosed('providers', 'Call booked'))
+  assert.equal(stagePoints('providers', 'Contacted', 'Call booked'), 2)
+  assert.equal(stagePoints('providers', 'Call booked', 'Agreed'), 5)
+  assert.equal(stagePoints('providers', 'Call booked', 'Not now'), 1)
+  for (const [text, stage] of [['call booked for Tuesday', 'Call booked'], ['agreed', 'Agreed'], ['not now — next year', 'Not now'], ['not interested', 'Not now'], ['left a voicemail', 'Contacted'], ['', 'Enquired']]) assert.equal(matchStage('providers', text), stage, text)
+  assert.equal(readIncoming({ name: 'Sam Coach', email: 'sam@example.com', pipeline: 'providers' }).pipeline, 'providers')
+  assert.equal(readIncoming({ name: 'Sam Coach', email: 'sam@example.com', form_name: 'Work with us — coaches' }).pipeline, 'providers')
+  assert.equal(readIncoming({ name: 'Head', email: 'h@example.com', form_name: 'Bring Ten Project to your school' }).pipeline, 'schools')
 })

@@ -3,7 +3,7 @@ import { createHmac } from 'node:crypto'
 import QRCode from 'qrcode'
 import { clientIp, rateLimit } from '@/lib/rate-limit'
 import { serviceDb, senderFor, createInvite, invitesOn, isDryRun } from '@/lib/impact/invite-send'
-import { parseJoin, looksLikeABot, venueFull, JOIN_CONSENT_VERSION } from '@/lib/impact/community'
+import { parseJoin, looksLikeABot, venueFull, consentVersionFor } from '@/lib/impact/community'
 import { welcomeEmail, alreadyEmail } from '@/lib/impact/community-email'
 import { brandFor, moduleOn, privacyUrlOf, type ImpactOrgSettings } from '@/lib/impact/org'
 
@@ -22,9 +22,11 @@ export const runtime = 'nodejs'
 // writes nothing.
 //
 // Writes: the family (source community, venue, consents, signed up now, waiting list
-// if the venue is full), its children (no school), the sign-up audit row (channel
-// form, or qr when the venue's poster was scanned; consent text version; hashed IP),
-// and a parent invite whose link goes in the welcome email with the family QR.
+// if the venue is full), its children (no school; "anything the coach should know" in
+// medical_notes, only with the health tick), the sign-up audit row (channel form, or qr
+// when the venue's poster was scanned; consent text version, +health when ticked; hashed
+// IP), and a parent invite whose link goes in the welcome email — with the family QR
+// unless the org has QR check-in switched off.
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{0,62}$/
 const MAX_BODY = 20_000
@@ -123,9 +125,9 @@ async function join(req: NextRequest, { params }: { params: Promise<{ slug: stri
   }).select('id, checkin_code').single()
   if (famErr || !fam) { log('family not saved', { slug, error: famErr?.message }); return NextResponse.json({ error: 'Something went wrong saving your details. Please try again.' }, { status: 500 }) }
   const undo = async (why: string) => { log('rolled back', { slug, why }); await db.from('tp_families').delete().eq('id', fam.id).eq('hq_id', hqId) }
-  const kids = await db.from('tp_children').insert(j.children.map(c => ({ hq_id: hqId, family_id: fam.id, name: c.name, date_of_birth: c.dob, photo_consent: j.consentPhoto, fee_status: 'unknown' })))
+  const kids = await db.from('tp_children').insert(j.children.map(c => ({ hq_id: hqId, family_id: fam.id, name: c.name, date_of_birth: c.dob, medical_notes: j.consentHealth ? c.notes : null, photo_consent: j.consentPhoto, fee_status: 'unknown' })))
   if (kids.error) { await undo(kids.error.message); return NextResponse.json({ error: 'Something went wrong saving your details. Please try again.' }, { status: 500 }) }
-  const audit = await db.from('tp_community_signups').insert({ hq_id: hqId, family_id: fam.id, venue_id: venue.id, channel: body.channel === 'qr' ? 'qr' : 'form', consent_text_version: JOIN_CONSENT_VERSION, ip_hash: hash })
+  const audit = await db.from('tp_community_signups').insert({ hq_id: hqId, family_id: fam.id, venue_id: venue.id, channel: body.channel === 'qr' ? 'qr' : 'form', consent_text_version: consentVersionFor(j), ip_hash: hash })
   if (audit.error) { await undo(audit.error.message); return NextResponse.json({ error: 'Something went wrong saving your details. Please try again.' }, { status: 500 }) }
 
   let appLink: string | null = null
@@ -133,9 +135,11 @@ async function join(req: NextRequest, { params }: { params: Promise<{ slug: stri
     const inv = await createInvite(db, { hqId, userId: hqId, slug, name: brand.org }, { role: 'parent', familyId: fam.id as string, email: j.email })
     if (inv.ok) appLink = inv.link; else log('invite not made', { slug, error: inv.error })
   }
-  const qr = await QRCode.toBuffer(fam.checkin_code as string, { type: 'png', width: 360, margin: 2, errorCorrectionLevel: 'M' })
-  const mail = welcomeEmail({ org: brand.org, guardian: j.guardian, children: j.children.map(c => c.name), venue, waitlisted, appLink, qrCid: 'family-qr' })
-  const sent = await sendMail(j.email, mail, [{ filename: 'family-qr.png', content: qr, contentId: 'family-qr' }])
-  log('joined', { slug, children: j.children.length, waitlisted, emailed: sent, invite: !!appLink })
+  // Settings → Modules → QR check-in. Off: the welcome email carries no family QR.
+  const qrOn = moduleOn(settings, 'qr_checkin')
+  const qr = qrOn ? await QRCode.toBuffer(fam.checkin_code as string, { type: 'png', width: 360, margin: 2, errorCorrectionLevel: 'M' }) : null
+  const mail = welcomeEmail({ org: brand.org, guardian: j.guardian, children: j.children.map(c => c.name), venue, waitlisted, appLink, qrCid: qr ? 'family-qr' : null })
+  const sent = await sendMail(j.email, mail, qr ? [{ filename: 'family-qr.png', content: qr, contentId: 'family-qr' }] : undefined)
+  log('joined', { slug, children: j.children.length, waitlisted, emailed: sent, invite: !!appLink, qr: !!qr, health: j.consentHealth })
   return NextResponse.json({ ok: true })
 }

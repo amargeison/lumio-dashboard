@@ -205,6 +205,12 @@ function LiveInsightsBody({ insights: L, volunteerLabel }: { insights: LiveInsig
         {L.conversion.need ? <Note text={needNote(L.conversion.need)} />
           : L.conversion.rows.length === 0 ? <Note text={needNote('school registers')} />
           : <div style={{ display: 'grid', gap: 7 }}>{L.conversion.rows.map(r => <BarRow key={r.school} label={`${r.school} (${r.converted}/${r.reached})`} pct={r.pct} width={170} />)}</div>}
+        {L.intent.schoolFamilies > 0 && (
+          <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #F0EBE5', fontSize: 12.5, color: TP_DARK }}>
+            <b>School → weekend intent:</b> {L.intent.said} of {L.intent.schoolFamilies} school famil{L.intent.schoolFamilies === 1 ? 'y' : 'ies'} said they’ll come at weekends
+            {L.intent.said > 0 ? `; ${L.intent.came} of them ha${L.intent.came === 1 ? 's' : 've'} been so far.` : '.'}
+          </div>
+        )}
       </Card>
       <Card>
         <SectionTitle sub="% of converted families still attending, by weeks after first visit">

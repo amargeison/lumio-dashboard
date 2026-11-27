@@ -18,10 +18,10 @@ import { useImpact, type CommunityVenue } from './ImpactDataContext'
 import { SendMessageWizard } from './CommsTab'
 import QrCode from './QrCode'
 import { currentHq, impactFetch } from '@/lib/impact/org-scope'
-import { communityTiles, inCommunity, lapsePreview, sourceOf, statusOf, visitsBy, type CommunityFamily, type CommunityStatus, type CommunitySource, type Visit } from '@/lib/impact/community'
+import { communityTiles, inCommunity, lapsePreview, saidWeekends, sourceOf, statusOf, visitsBy, type CommunityFamily, type CommunityStatus, type CommunitySource, type Visit } from '@/lib/impact/community'
 import { joinUrl, markLapsed, moveVenue, nextDateFor, offerPlace, setCapacity } from '@/lib/impact/community-actions'
 import { termOf } from '@/lib/impact/term'
-import { privacyUrlOf } from '@/lib/impact/org'
+import { privacyUrlOf, moduleOn } from '@/lib/impact/org'
 import { VENUES as DEMO_VENUES } from '@/data/impact/demo-data'
 import { DEMO_COMMUNITY, DEMO_COMMUNITY_CAPACITY } from '@/data/impact/demo-community'
 
@@ -65,7 +65,7 @@ export default function CommunityTab() {
           consentData: f.consentData, consentPhoto: f.consentPhoto, unsubscribed: f.unsubscribed, checkinCode: f.community?.checkinCode ?? null,
           source: f.community?.source ?? null, community_venue_id: f.community?.venueId ?? null, signed_up_at: f.community?.signedUpAt ?? null,
           lapsed_at: f.community?.lapsedAt ?? null, waitlisted_at: f.community?.waitlistedAt ?? null, created_at: f.community?.createdAt ?? null,
-          hasSchoolChild: !!f.community?.hasSchoolChild,
+          hasSchoolChild: !!f.community?.hasSchoolChild, weekend_too: !!f.community?.weekendToo,
         })),
       }
     : demoModel(today), [live, ctx.people, today])
@@ -73,7 +73,8 @@ export default function CommunityTab() {
   const by = useMemo(() => visitsBy(model.visits), [model.visits])
   const term = termOf(today)
   const tiles = useMemo(() => communityTiles(model.rows, model.visits, term, today), [model, term, today])
-  const all = useMemo(() => model.rows.filter(f => inCommunity(f, by.get(f.id))), [model.rows, by])
+  // Also listed: school families who said they'll come at weekends but haven't yet (not counted in the tiles above them).
+  const all = useMemo(() => model.rows.filter(f => inCommunity(f, by.get(f.id)) || saidWeekends(f)), [model.rows, by])
   const placed = all.filter(f => !f.waitlisted_at)
   const waiting = all.filter(f => f.waitlisted_at).sort((a, b) => String(a.waitlisted_at).localeCompare(String(b.waitlisted_at)))
   const venueName = (id: string | null) => model.venues.find(v => v.id === id)?.name ?? '—'
@@ -129,6 +130,8 @@ export default function CommunityTab() {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.lumiosports.com'
   const joinLink = `${origin}/impact/${slug}/join`
   const privacy = privacyUrlOf(ctx.org?.settings)
+  // Settings → Modules → QR check-in. Off: no venue posters, no family QR codes here.
+  const qrOn = moduleOn(ctx.org?.settings, 'qr_checkin')
 
   return (
     <div style={{ display: 'grid', gap: 14 }}>
@@ -139,6 +142,7 @@ export default function CommunityTab() {
         <Stat label="Visits this term" value={n(tiles.visitsThisTerm)} sub="a family at a session" />
         <Stat label="Lapsed" value={n(tiles.lapsed)} sub="no visit in 6 weeks" />
         <Stat label="School → community" value={n(tiles.conversionsThisTerm)} sub="first weekend visit this term" accent />
+        {tiles.saidWeekends > 0 && <Stat label="Said they’ll come" value={n(tiles.saidWeekends)} sub={`school families · ${n(tiles.saidAndCame)} have`} />}
       </div>
 
       <Card>
@@ -173,7 +177,7 @@ export default function CommunityTab() {
                 <span>Next: {next ? nice(next) : '—'}</span>
               </div>
               <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-                <button style={{ ...buttonSecondary, padding: '6px 10px', fontSize: 11.5 }} onClick={() => setPoster(v)}><Printer size={12} /> Print QR poster</button>
+                {qrOn && <button style={{ ...buttonSecondary, padding: '6px 10px', fontSize: 11.5 }} onClick={() => setPoster(v)}><Printer size={12} /> Print QR poster</button>}
                 {live && <CapacityEdit venue={v} onSave={cap => act(hq => setCapacity(sb(), hq, v.id, cap), 'Capacity saved.')} />}
               </div>
             </Card>
@@ -214,7 +218,7 @@ export default function CommunityTab() {
                     <td style={{ padding: '7px 8px', fontWeight: 800, color: TP_DARK }}>{f.guardian}</td>
                     <td style={{ padding: '7px 8px' }}>{f.children.map(c => `${c.name.split(' ')[0]}${c.age !== null ? ` (${c.age})` : ''}`).join(', ') || '—'}</td>
                     <td style={{ padding: '7px 8px' }}>{venueName(f.community_venue_id)}</td>
-                    <td style={{ padding: '7px 8px' }}>{SOURCE_WORD[sourceOf(f, d)]}</td>
+                    <td style={{ padding: '7px 8px' }}>{SOURCE_WORD[sourceOf(f, d)]}{saidWeekends(f) && sourceOf(f, d) === 'school' ? <> · <Pill tone="amber">Said they’ll come</Pill></> : null}</td>
                     <td style={{ padding: '7px 8px' }}>{nice(d[0])}</td>
                     <td style={{ padding: '7px 8px' }}>{nice(d[d.length - 1])}</td>
                     <td style={{ padding: '7px 8px' }}>{n(d.length)}</td>
@@ -245,7 +249,7 @@ export default function CommunityTab() {
 
       {open && (
         <Modal title={open.guardian} onClose={() => setOpen(null)}>
-          <FamilyPanel row={open} dates={by.get(open.id) ?? []} venues={model.venues} today={today} live={live}
+          <FamilyPanel row={open} dates={by.get(open.id) ?? []} venues={model.venues} today={today} live={live} qrOn={qrOn}
             onMove={async id => { if (await act(hq => moveVenue(sb(), hq, open.id, id || null), 'Venue changed.')) setOpen(null) }} />
         </Modal>
       )}
@@ -280,7 +284,7 @@ function CapacityEdit({ venue, onSave }: { venue: CommunityVenue; onSave: (cap: 
   )
 }
 
-function FamilyPanel({ row, dates, venues, today, live, onMove }: { row: Row; dates: string[]; venues: CommunityVenue[]; today: string; live: boolean; onMove: (venueId: string) => void }) {
+function FamilyPanel({ row, dates, venues, today, live, qrOn, onMove }: { row: Row; dates: string[]; venues: CommunityVenue[]; today: string; live: boolean; qrOn: boolean; onMove: (venueId: string) => void }) {
   const [to, setTo] = useState(row.community_venue_id ?? '')
   return (
     <div style={{ display: 'grid', gap: 12, fontSize: 12.5, color: TP_DARK }}>
@@ -288,10 +292,10 @@ function FamilyPanel({ row, dates, venues, today, live, onMove }: { row: Row; da
         <div style={{ flex: 1, minWidth: 200, display: 'grid', gap: 3 }}>
           <div>{row.email ?? 'No email'}</div>
           <div>{row.children.map(c => `${c.name}${c.age !== null ? ` (${c.age})` : ''}`).join(', ') || 'No children recorded'}</div>
-          <div>Status: <Pill tone={STATUS_TONE[statusOf(row, dates, today)]}>{statusOf(row, dates, today)}</Pill> · {SOURCE_WORD[sourceOf(row, dates)]}</div>
+          <div>Status: <Pill tone={STATUS_TONE[statusOf(row, dates, today)]}>{statusOf(row, dates, today)}</Pill> · {SOURCE_WORD[sourceOf(row, dates)]}{saidWeekends(row) ? ' · said they’ll come at weekends' : ''}</div>
           <div style={{ color: '#6B6560' }}>Signed up {nice(row.signed_up_at)} · Login: {row.hasLogin ? 'yes' : 'no'}</div>
         </div>
-        {row.checkinCode && <div style={{ textAlign: 'center' }}><QrCode value={row.checkinCode} size={120} label={`${row.guardian}’s check-in code`} /><div style={{ fontSize: 10.5, color: '#8A847E', marginTop: 3, letterSpacing: 1 }}>{row.checkinCode}</div></div>}
+        {qrOn && row.checkinCode && <div style={{ textAlign: 'center' }}><QrCode value={row.checkinCode} size={120} label={`${row.guardian}’s check-in code`} /><div style={{ fontSize: 10.5, color: '#8A847E', marginTop: 3, letterSpacing: 1 }}>{row.checkinCode}</div></div>}
       </div>
       <div>
         <div style={formLabel}>Visit history ({dates.length})</div>

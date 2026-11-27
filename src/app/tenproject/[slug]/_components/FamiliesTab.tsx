@@ -5,9 +5,11 @@
 // they've opted out of comms. Live portals read tp_families + tp_children
 // (via ctx.people); the demo derives its households from the demo dataset.
 // Read-only here — households are created and updated by the importer and
-// registration.
+// registration — except "coming at weekends too" (school families; migration 239),
+// which HQ ticks here.
 
 import React, { useMemo, useState } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 import { Users, Search, HeartPulse, Camera, CameraOff, MailX, Phone, Mail } from 'lucide-react'
 import { Card, SectionTitle, Pill, EmptyState } from './ui'
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
@@ -15,11 +17,14 @@ import { useImpact, type ImpactFamily } from './ImpactDataContext'
 import { ukDay } from '@/lib/impact/parent-view'
 import { ChildPackSummary } from './PackIssue'
 import { BulkInvite, InviteButton, useMembers } from './MembersCard'
+import { setWeekendToo } from '@/lib/impact/community-actions'
+import { currentHq } from '@/lib/impact/org-scope'
 
 const FEE_TONE: Record<string, 'green' | 'amber' | 'red' | 'grey'> = { paid: 'green', deposit: 'amber', due: 'red', waived: 'grey', unknown: 'grey' }
 
 export default function FamiliesTab() {
-  const { people, data } = useImpact()
+  const { people, data, mode, org, reload } = useImpact()
+  const canEdit = mode === 'live' && !!org?.canEdit
   const [q, setQ] = useState('')
   const logins = useMembers()
 
@@ -38,6 +43,7 @@ export default function FamiliesTab() {
     ['MEDICAL FLAGS', kids.filter(c => c.medical && !/^(none|no|n\/?a|na|-|ok)$/i.test(c.medical.trim())).length],
     ['NO PHOTO CONSENT', kids.filter(c => c.photoConsent !== true).length],
     ['OPTED OUT OF COMMS', families.filter(f => f.unsubscribed).length],
+    ...(families.some(f => f.community?.weekendToo) ? [['WEEKENDS TOO', families.filter(f => f.community?.weekendToo).length] as [string, number]] : []),
     ...(families.some(f => f.emailBounced) ? [['NEED A NEW EMAIL', families.filter(f => f.emailBounced).length] as [string, number]] : []),
   ]
 
@@ -77,6 +83,7 @@ export default function FamiliesTab() {
               {f.phone && <span><Phone size={11} style={{ verticalAlign: '-1px', marginRight: 4 }} />{f.phone}</span>}
               {!f.email && !f.phone && <span>No contact details yet</span>}
             </div>
+            {(f.community?.hasSchoolChild || f.community?.weekendToo) && <WeekendToo family={f} canEdit={canEdit} onSaved={() => reload?.()} />}
             {logins.on && logins.loaded && !f.unsubscribed && <div style={{ marginTop: 8 }}><InviteButton role="parent" targetId={f.id} label="Invite parent" hasEmail={!!f.email?.trim()} lines={logins.lines} onDone={logins.reload} /></div>}
             <div style={{ display: 'grid', gap: 6, marginTop: 10, borderTop: '1px solid #F0EBE5', paddingTop: 10 }}>
               {f.children.length === 0 && <div style={{ fontSize: 11.5, color: '#8A847E' }}>No children linked</div>}
@@ -110,6 +117,31 @@ export default function FamiliesTab() {
         </Card>
       )}
       <div style={{ fontSize: 11, color: '#8A847E' }}>No photo consent recorded is treated as <strong style={{ color: TP_RED }}>no photos</strong> until a guardian confirms.</div>
+    </div>
+  )
+}
+
+/** "Coming at weekends too": a school family who'll also come to the weekend sessions. Counted in Insights as school → weekend intent. */
+function WeekendToo({ family, canEdit, onSaved }: { family: ImpactFamily; canEdit: boolean; onSaved: () => void }) {
+  const [on, setOn] = useState(!!family.community?.weekendToo)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  async function flip(next: boolean) {
+    setBusy(true); setError(null); setOn(next)
+    try {
+      const db = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+      const r = await setWeekendToo(db, await currentHq(db), family.id, next)
+      if (!r.ok) { setOn(!next); setError(r.error) } else onSaved()
+    } catch (e) { setOn(!next); setError(e instanceof Error ? e.message : 'Please sign in again.') }
+    finally { setBusy(false) }
+  }
+  return (
+    <div style={{ marginTop: 8, fontSize: 11.5, color: TP_DARK }}>
+      <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: canEdit && !busy ? 'pointer' : 'default' }}>
+        <input type="checkbox" checked={on} disabled={!canEdit || busy} onChange={e => flip(e.target.checked)} />
+        Coming at weekends too
+      </label>
+      {error && <div role="alert" style={{ color: TP_RED, fontWeight: 700, marginTop: 3 }}>{error}</div>}
     </div>
   )
 }

@@ -214,7 +214,7 @@ test('send: results counts, and webhooks only move a recipient forward', () => {
   assert.equal(S.chunk([1, 2, 3], 2).length, 2)
 })
 
-test('inbound: the org from the reply address, the family by exact email only', () => {
+test('inbound: the org from the reply address, the family by email (exact, else ignoring +tag when only one family matches)', () => {
   assert.equal(I.impactReplyTo('ten-project'), 'reply+ten-project@inbound.lumiosports.com')
   assert.equal(I.impactReplyTo('Bad Slug'), null)
   assert.equal(I.slugFromRecipients(['Someone <other@x.com>', { address: 'Reply+Ten-Project@Inbound.LumioSports.com' }]), 'ten-project')
@@ -225,6 +225,20 @@ test('inbound: the org from the reply address, the family by exact email only', 
   assert.equal(I.familyForSender('p1@example.com', fs)?.id, id(1))
   assert.equal(I.familyForSender('shared@example.com', fs), null, 'two families share it: filed as unknown, never guessed')
   assert.equal(I.familyForSender('nobody@example.com', fs), null)
+  // "+tag" ignored on both sides, but only when it leaves exactly one family.
+  assert.equal(I.baseAddress(' Pat+Club@Example.com '), 'pat@example.com')
+  assert.equal(I.baseAddress('+x@example.com'), '+x@example.com', 'no mailbox before the +: left alone')
+  const plus = [fam(4, { email: 'pat+club@example.com' }), fam(5, { email: 'sam@example.com' })]
+  assert.equal(I.familyForSender('pat@example.com', plus)?.id, id(4), 'joined with +club, replies from plain')
+  assert.equal(I.familyForSender('sam+news@example.com', plus)?.id, id(5), 'joined plain, replies from +news')
+  assert.equal(I.familyForSender('pat+other@example.com', plus)?.id, id(4))
+  const twins = [fam(6, { email: 'a+one@example.com' }), fam(7, { email: 'a+two@example.com' }), fam(8, { email: 'a@example.com' })]
+  assert.equal(I.familyForSender('a+zzz@example.com', twins), null, 'three families share the base: unknown, never guessed')
+  assert.equal(I.familyForSender('a+one@example.com', twins)?.id, id(6), 'an exact match still wins')
+  assert.equal(I.familyForSender('a@example.com', twins)?.id, id(8))
+  assert.equal(I.familyForSender('a@example.com', twins.slice(0, 2)), null, 'plain sender, two +tag families: unknown')
+  assert.equal(I.familyForSender('a@other.com', plus.concat(twins)), null, 'a different domain never matches')
+  assert.deepEqual(I.senderPatterns('Pat_1+x@Ex%ample.com'), ['pat\\_1@ex\\%ample.com', 'pat\\_1+%@ex\\%ample.com'])
   assert.equal(I.threadKeyFor(id(1), 'p1@example.com'), `family:${id(1)}`)
   assert.equal(I.threadKeyFor(null, 'nobody@example.com'), 'email:nobody@example.com')
   assert.equal(I.replyText('Yes we’ll be there!\n\nOn Thu, 26 Nov 2026 at 10:00, Ten Project <hello@x> wrote:\n> Are you coming?'), 'Yes we’ll be there!')
@@ -296,6 +310,27 @@ test('automations: “we missed you” after two absences in a row; pack issued;
   assert.deepEqual(who(mon), ['booklet_nudge:1:week', 'booklet_nudge:3:week'])
   assert.equal(mon.send[0].subject, 'This week’s booklet: Rally and return')
   assert.match(mon.send[0].body, /Ten bounces on the racket/)
+})
+
+test('automations: school programme week N — running programmes only, that week’s booklet, each week once', () => {
+  const running = { programmes: [{ id: PROG, school_id: SCHOOL, current_week: 4, status: 'running' }], schools: [{ id: SCHOOL, name: 'Brackenmoor Primary' }],
+    bookletWeeks: [{ week: 4, title: 'Rally and return', focus: 'Keep the ball going.', home_task: 'Ten bounces on the racket', top_tip: 'Soft hands', did_you_know: 'Tennis began as a hand game' }] }
+  const sel = M.selectAutomations([auto('programme_week')], world(running))
+  assert.deepEqual(who(sel), ['programme_week:1:pweek', 'programme_week:3:pweek'], 'the programme’s families, any weekday')
+  assert.equal(sel.send[0].step, `pweek:${PROG}:4`)
+  assert.equal(sel.send[0].subject, 'Week 4 at Brackenmoor Primary: Rally and return')
+  assert.match(sel.send[0].body, /Try at home: Ten bounces on the racket\n\nTop tip: Soft hands\n\nDid you know\? Tennis began as a hand game/)
+  assert.deepEqual(who(M.selectAutomations([auto('programme_week')], world({ ...running, programmes: [{ ...running.programmes[0], status: 'confirmed' }] }))), [], 'not running → nothing')
+  assert.deepEqual(who(M.selectAutomations([auto('programme_week')], world({ ...running, programmes: [{ ...running.programmes[0], current_week: 0 }] }))), [], 'week 0 → nothing')
+  assert.deepEqual(who(M.selectAutomations([auto('programme_week')], world({ ...running, bookletWeeks: [] }))), [], 'no booklet week → nothing')
+  const done = new Set([`a-programme_week|${id(1)}|pweek:${PROG}:4`, `a-programme_week|${id(3)}|pweek:${PROG}:4`])
+  assert.deepEqual(who(M.selectAutomations([auto('programme_week')], world({ ...running, done }))), [], 'week 4 already sent')
+  const w5 = { ...running, done, programmes: [{ ...running.programmes[0], current_week: 5 }], bookletWeeks: [{ week: 5, title: 'Serve' }] }
+  const next = M.selectAutomations([auto('programme_week')], world(w5))
+  assert.deepEqual(who(next), ['programme_week:1:pweek', 'programme_week:3:pweek'], 'week 5 is new')
+  assert.match(next.send[0].body, /Top tip: —/, 'missing booklet text reads as a dash, never {top_tip}')
+  assert.deepEqual(who(M.selectAutomations([{ ...auto('programme_week'), enabled: false }], world(running))), [], 'off means off')
+  assert.ok(M.AUTOMATION_KINDS.includes('programme_week'))
 })
 
 test('automations: one automated message per family per day, by priority; a step goes once; off means off', () => {

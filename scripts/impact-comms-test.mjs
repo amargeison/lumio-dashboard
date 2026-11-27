@@ -207,6 +207,10 @@ async function main() {
   ok('HQ switches one on', !(await A.db.from('impact_automations').upsert({ hq_id: A.id, kind: 'welcome', enabled: true, config: { since: new Date(Date.now() - 86_400_000).toISOString() } }, { onConflict: 'hq_id,kind' })).error)
   const pv = await A.call('/api/impact/comms/automations', { kind: 'welcome' })
   ok('“Who would get it today”: the new families who can be reached, the rest left out with why', pv.status === 200 && pv.body.send.some(s => s.name === 'Ada Reachable') && pv.body.skipped.some(s => s.name === 'Ben NoConsent' && s.reason === 'no consent') && !JSON.stringify(pv.body).includes('@example.com'), JSON.stringify(pv.body).slice(0, 300))
+  ok('HQ can add the school-programme-week automation (239), switched off', !(await A.db.from('impact_automations').upsert({ hq_id: A.id, kind: 'programme_week', enabled: false, config: {} }, { onConflict: 'hq_id,kind' })).error)
+  ok('… an unknown kind is refused by the database', !!(await A.db.from('impact_automations').insert({ hq_id: A.id, kind: 'nonsense', enabled: false, config: {} })).error)
+  ok('HQ marks a family “coming at weekends too” (239)', !(await A.db.from('tp_families').update({ weekend_too: true }).eq('hq_id', A.id).eq('id', f1.id)).error && (await admin.from('tp_families').select('weekend_too').eq('id', f1.id).single()).data?.weekend_too === true)
+  ok('… B can’t change A’s', ((await B.db.from('tp_families').update({ weekend_too: false }).eq('id', f1.id).select('id')).data ?? []).length === 0 && (await admin.from('tp_families').select('weekend_too').eq('id', f1.id).single()).data?.weekend_too === true)
   ok('the browser can’t record a send', !!(await A.db.from('impact_automation_sends').insert({ hq_id: A.id, automation_id: (await rows(A.id, 'impact_automations'))[0].id, family_id: f1.id, step: 'instant', send_date: '2026-11-26', status: 'sent' })).error)
   ok('B can’t read A’s automations or preview them', ((await B.db.from('impact_automations').select('id').eq('hq_id', A.id)).data ?? []).length === 0 && (await B.call('/api/impact/comms/automations', { kind: 'welcome' }, A.id)).status === 403)
 
@@ -237,6 +241,13 @@ async function main() {
   ok('the same message twice is filed once', (await mail(impactTo, { from: f1.email, id: `<once-${tag}@example.com>` })).body.status === 'filed' && (await mail(impactTo, { from: f1.email, id: `<once-${tag}@example.com>` })).body.status === 'dedup')
   ok('an address that isn’t a reply address → 200, dropped, nothing filed', (await mail('hello@inbound.lumiosports.com')).body.dropped === true && (await rows(A.id, 'impact_messages', q => q.eq('direction', 'in'))).length === before2 + 4)
   ok('reply+<an org that doesn’t exist>@ → 200, nothing filed', (await mail(`reply+${tag}-nobody@inbound.lumiosports.com`)).body.status === 'ignored')
+  // "+tag" ignored on both sides, only when exactly one family matches.
+  // f1's email is ada.new+<tag>@ by now.
+  const plainAda = await mail(impactTo, { from: 'Ada.New@example.com', text: `Plain address ${tag}` })
+  ok('a family that joined as ada.new+tag@ replying from plain ada.new@ → its own thread', plainAda.body.status === 'filed' && (await rows(A.id, 'impact_messages', q => q.eq('body', `Plain address ${tag}`)))[0]?.thread_key === `family:${f1.id}`, JSON.stringify(plainAda.body))
+  await fam({ guardian_name: 'Gus One', email: `gus+${tag}-1@example.com`, opt_in_email: false }); await fam({ guardian_name: 'Gus Two', email: `gus+${tag}-2@example.com`, opt_in_email: false })  // not emailable: leaves the welcome counts below alone
+  await mail(impactTo, { from: 'gus@example.com', text: `Shared base ${tag}` })
+  ok('two families share the address without their +tags → “Not a family here”', (await rows(A.id, 'impact_messages', q => q.eq('body', `Shared base ${tag}`)))[0]?.family_id === null)
 
   const coach = await user(`${tag}_coach@lumio.test`)
   const coachTo = inboundReplyTo(coach.id, `contact:${tag.slice(-6)}`)

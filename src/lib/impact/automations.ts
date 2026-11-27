@@ -10,6 +10,8 @@
 //   missed_you        a child's last two recorded sessions were both absences
 //   pack_issued       a welcome pack item was issued in the last two days
 //   booklet_nudge     Mondays while school sessions are running: this week's booklet task
+//   programme_week    a running school programme's week 1–10: one email per week to its
+//                     families, with that week's Activity Booklet content (migration 239)
 //
 // Each step goes once per family (impact_automation_sends is unique on automation +
 // family + step), and a family gets at most ONE automated message a UK day (a unique
@@ -20,7 +22,7 @@
 import { skipReason, type AudienceFamily } from './audiences'
 import { addDays, daysBetween } from './comms-settings'
 
-export const AUTOMATION_KINDS = ['welcome', 'pack_issued', 'session_reminder', 'missed_you', 'booklet_nudge'] as const
+export const AUTOMATION_KINDS = ['welcome', 'pack_issued', 'session_reminder', 'missed_you', 'programme_week', 'booklet_nudge'] as const
 export type AutomationKind = typeof AUTOMATION_KINDS[number]
 /** Order of preference when a family is due more than one on the same day. */
 export const PRIORITY: AutomationKind[] = [...AUTOMATION_KINDS]
@@ -41,6 +43,7 @@ export const AUTOMATION_META: Record<AutomationKind, { title: string; when: stri
   session_reminder: { title: 'Session reminder', when: 'The day before a session, per venue or school', steps: [{ id: 'main', label: 'Email' }], placeholders: ['first_name', 'org', 'venue', 'date', 'time'] },
   missed_you: { title: '“We missed you”', when: 'After two absences in a row', steps: [{ id: 'main', label: 'Email' }], placeholders: ['first_name', 'org'] },
   booklet_nudge: { title: 'Booklet-week nudge', when: 'Each Monday in term', steps: [{ id: 'main', label: 'Email' }], placeholders: ['first_name', 'org', 'week', 'booklet_title', 'home_task'] },
+  programme_week: { title: 'School programme — week 1 to 10', when: 'Once for each week of a running school programme (its current week), to that programme’s families', steps: [{ id: 'main', label: 'Email' }], placeholders: ['first_name', 'org', 'week', 'school', 'booklet_title', 'focus', 'home_task', 'top_tip', 'did_you_know'] },
 }
 
 export const DEFAULT_TEMPLATES: Record<AutomationKind, Record<string, Template>> = {
@@ -53,6 +56,7 @@ export const DEFAULT_TEMPLATES: Record<AutomationKind, Record<string, Template>>
   session_reminder: { main: { subject: 'See you tomorrow at {venue}', body: 'Hi {first_name},\n\nA reminder that there’s a session tomorrow, {date}{time} at {venue}. See you there!' } },
   missed_you: { main: { subject: 'We missed you', body: 'Hi {first_name},\n\nWe’ve missed you at the last couple of sessions. Everything OK? You’re always welcome back — just reply if there’s anything we can help with.' } },
   booklet_nudge: { main: { subject: 'This week’s booklet: {booklet_title}', body: 'Hi {first_name},\n\nIt’s week {week} — {booklet_title}. Your task to try at home this week: {home_task}\n\nHave fun!' } },
+  programme_week: { main: { subject: 'Week {week} at {school}: {booklet_title}', body: 'Hi {first_name},\n\nIt’s week {week} of {org} at {school} — this week is {booklet_title}. {focus}\n\nTry at home: {home_task}\n\nTop tip: {top_tip}\n\nDid you know? {did_you_know}\n\nSee you at the next session!' } },
 }
 
 export const templateFor = (kind: AutomationKind, step: string, config: AutomationConfig | undefined): Template => {
@@ -73,12 +77,14 @@ export interface AutomationWorld {
   org: string
   families: (AudienceFamily & { created_at?: string | null })[]
   children: { id: string; family_id: string | null; programme_id: string | null; school_id: string | null }[]
-  programmes: { id: string; school_id: string | null; current_week: number | null }[]
+  programmes: { id: string; school_id: string | null; current_week: number | null; status?: string | null }[]
+  /** School names, for {school} in programme_week. */
+  schools?: { id: string; name: string }[]
   sessions: { id: string; kind: 'school' | 'weekend'; programme_id: string | null; venue_id: string | null; session_date: string }[]
   attendance: { session_id: string; child_id: string; present: boolean }[]
   packIssues: { id: string; child_id: string; issued_at: string }[]
   venues: { id: string; name: string; session_time: string | null }[]
-  bookletWeeks: { week: number; title?: string; focus?: string; home_task?: string }[]
+  bookletWeeks: { week: number; title?: string; focus?: string; home_task?: string; top_tip?: string; did_you_know?: string }[]
   /** `${automationId}|${familyId}|${step}` already claimed or sent. */
   done: Set<string>
   /** Families who already have a (non-skipped) automated message today. */
@@ -174,6 +180,25 @@ function due(a: AutomationRow, w: AutomationWorld): { familyId: string; step: st
       if (!b || !(b.home_task ?? '').trim()) continue
       seen.add(c.family_id)
       out.push({ familyId: c.family_id, step: `week:${w.today}`, vars: { week: String(week), booklet_title: (b.title ?? '').trim() || `Week ${week}`, home_task: (b.home_task ?? '').trim() } })
+    }
+  }
+  if (a.kind === 'programme_week') {
+    // Each week of a running programme goes once per family: the step names the programme
+    // and the week, so moving current_week on sends the next one, and back sends nothing new.
+    const schools = a.config.schools ?? []
+    for (const p of w.programmes) {
+      const week = p.current_week ?? 0
+      if (p.status !== 'running' || week < 1 || week > 10 || (schools.length && !schools.includes(p.school_id ?? ''))) continue
+      const b = w.bookletWeeks.find(x => x.week === week)
+      if (!b) continue
+      const t = (v?: string) => (v ?? '').trim()
+      const vars = {
+        week: String(week), school: w.schools?.find(s => s.id === p.school_id)?.name ?? 'school',
+        booklet_title: t(b.title) || `Week ${week}`, focus: t(b.focus), home_task: t(b.home_task) || 'have a go at what you learned this week',
+        top_tip: t(b.top_tip) || '—', did_you_know: t(b.did_you_know) || '—',
+      }
+      const fams = [...new Set(w.children.filter(c => c.programme_id === p.id && c.family_id).map(c => c.family_id!))].filter(id => active(famById.get(id)))
+      for (const id of fams) out.push({ familyId: id, step: `pweek:${p.id}:${week}`, vars })
     }
   }
   return out
