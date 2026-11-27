@@ -41,7 +41,7 @@ export function loadErrorLine(errors: LoadError[]): string | null {
   return `${first.message} (${first.step})${errors.length > 1 ? ` and ${errors.length - 1} more` : ''}`
 }
 
-export async function loadHqData(db: SupabaseClient, hqId: string, today = isoToday(), onStage?: (stage: string) => void): Promise<HqLoad> {
+export async function loadHqData(db: SupabaseClient, hqId: string, today = isoToday(), onStage?: (stage: string) => void, termDates?: unknown): Promise<HqLoad> {
   const errors: LoadError[] = []
   const fail = (step: string, e: unknown) => {
     const message = messageOf(e)
@@ -90,7 +90,7 @@ export async function loadHqData(db: SupabaseClient, hqId: string, today = isoTo
   } as unknown as LiveRows
 
   const [data, people, insights, cohorts, familySessions, packs] = [
-    await run('tiles', () => mapLiveRows(rows, today), EMPTY_IMPACT_DATA),
+    await run('tiles', () => mapLiveRows(rows, today, termDates), EMPTY_IMPACT_DATA),
     await run('people', () => buildPeople(rows), undefined),
     await run('insights', () => buildInsights(rows, today), undefined),
     await run('cohorts', () => buildCohorts(rows, today), undefined),

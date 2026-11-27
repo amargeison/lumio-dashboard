@@ -119,7 +119,11 @@ export function BulkInvite({ families, lines, onDone }: {
 }
 
 // Settings → People.
+const ROLE_ORDER = ['admin', 'coach', 'parent', 'school'] as const
+const GROUP_LABEL = { admin: 'Lumio admins', coach: 'Coaches', parent: 'Parents', school: 'Schools' }
+
 export default function MembersCard() {
+  const { actingAsAdmin } = useImpact()
   const { on, loaded, lines, names, reload } = useMembers()
   const [busy, setBusy] = useState('')
   const [err, setErr] = useState('')
@@ -137,6 +141,7 @@ export default function MembersCard() {
       <SectionTitle sub="Coaches and parents who can sign in. Invite people from the Families and Coaches tabs.">
         <UserCheck size={15} style={{ verticalAlign: '-2px', marginRight: 6 }} />People
       </SectionTitle>
+      {actingAsAdmin && <div style={{ fontSize: 12, color: TP_DARK, background: '#F7F5F2', borderRadius: 9, padding: '8px 11px', marginBottom: 10 }}>You’re signed in as a Lumio admin, acting with this organisation’s HQ rights.</div>}
       {err && <div role="alert" style={{ fontSize: 12, color: TP_RED, marginBottom: 8 }}>{err}</div>}
       {loaded && !lines.length && <EmptyState compact icon={UserCheck} title="No logins yet" sub="Invite a parent from Families, or a coach from Coaches." />}
       {lines.length > 0 && (
@@ -146,9 +151,13 @@ export default function MembersCard() {
               <th style={{ padding: '6px 4px' }}>Role</th><th style={{ padding: '6px 4px' }}>Name</th><th style={{ padding: '6px 4px' }}>Email</th><th style={{ padding: '6px 4px' }}>Status</th><th />
             </tr></thead>
             <tbody>
-              {lines.map(l => (
+              {ROLE_ORDER.flatMap(role => {
+                const group = lines.filter(l => l.role === role)
+                return group.length ? [
+                <tr key={`h-${role}`}><td colSpan={5} style={{ padding: '12px 4px 4px', fontSize: 10.5, fontWeight: 900, letterSpacing: 0.4, color: '#8A847E' }}>{GROUP_LABEL[role].toUpperCase()} · {group.length}</td></tr>,
+                ...group.map(l => (
                 <tr key={l.key} style={{ borderTop: '1px solid #F0EBE5' }}>
-                  <td style={{ padding: '8px 4px' }}>{ROLE_LABEL[l.role]}</td>
+                  <td style={{ padding: '8px 4px' }}>{ROLE_LABEL[l.role]}{l.role === 'admin' && <div style={{ fontSize: 10.5, color: '#8A847E' }}>Acting as admin</div>}</td>
                   <td style={{ padding: '8px 4px', fontWeight: 700, color: TP_DARK }}>{names[l.staffId ?? l.familyId ?? l.schoolId ?? ''] ?? '—'}</td>
                   <td style={{ padding: '8px 4px', color: '#6B6560' }}>{l.email || '—'}</td>
                   <td style={{ padding: '8px 4px' }}><Pill tone={TONE[l.status]}>{l.status.toUpperCase()}</Pill></td>
@@ -157,7 +166,8 @@ export default function MembersCard() {
                     {l.role !== 'admin' && (l.status === 'active' || l.status === 'invited') && <button disabled={busy === l.key} onClick={() => act(l, 'revoke')} style={small}>Revoke</button>}
                   </td>
                 </tr>
-              ))}
+              ))] : []
+              })}
             </tbody>
           </table>
         </div>

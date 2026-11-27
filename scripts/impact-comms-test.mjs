@@ -64,7 +64,7 @@ async function hq(letter) {
   const u = await user(email)
   const slug = `${tag}-${letter}`
   await admin.from('sports_profiles').upsert({ id: u.id, sport: 'impact', display_name: slug, portal_slug: slug })
-  const org = await admin.from('impact_orgs').insert({ slug, hq_id: u.id, settings: { org: `Org ${letter.toUpperCase()}`, address: '1 Test Street', town: 'Brackenmoor' } })
+  const org = await admin.from('impact_orgs').insert({ slug, hq_id: u.id, settings: { org: `Org ${letter.toUpperCase()}`, address: '1 Test Street', town: 'Brackenmoor', messaging: { quietStart: '00:00', quietEnd: '00:00' } } })  // no quiet hours, so the dry run works at any time of day
   if (org.error) throw org.error
   const s = await login(email)
   const call = async (path, body, as = u.id) => {

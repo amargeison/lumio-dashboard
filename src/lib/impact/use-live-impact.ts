@@ -150,7 +150,7 @@ export function useLiveImpact(slug: string, enabled: boolean): LiveImpactState {
 
         at = 'your data'
         const { data: profile } = await supabase.from('sports_profiles').select('display_name').eq('id', access.user.id).maybeSingle()
-        const load = await loadHqData(supabase, access.org.hqId, undefined, stage => trace(stage))
+        const load = await loadHqData(supabase, access.org.hqId, undefined, stage => trace(stage), access.org.settings?.termDates)
         if (cancelled) console.warn('[impact-load] CANCELLED AFTER FETCHES — the effect was cleaned up mid-load; applying the results anyway', { slug, userId, stale: stale() })
         if (stale()) { trace('cancelled return', { reason: 'address changed' }); return }
         setData(load.data)

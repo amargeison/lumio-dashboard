@@ -22,6 +22,8 @@ export interface ImpactOrgSettings {
   town?: string
   domain?: string
   logo?: string
+  /** Where an uploaded logo sits in the impact-org-assets bucket (set by the upload route). */
+  logoPath?: string
   logoDark?: string
   favicon?: string
   /** Small (32px) favicon for generated documents; defaults to `favicon`. */
@@ -37,7 +39,22 @@ export interface ImpactOrgSettings {
   modules?: Record<string, boolean>
   /** Settings → Messaging: quiet hours and brand voice (see comms-settings.ts). */
   messaging?: MessagingSettings
+  /** Phone number for families and schools to call. */
+  phone?: string
+  /** Registered charity number; shown in the newsletter footer. Blank = "awaiting registration". */
+  charityNumber?: string
+  /** The org's safeguarding lead. */
+  safeguarding?: { name?: string; contact?: string }
+  /** The org's own term dates (see term.ts). */
+  termDates?: { name: string; start: string; end: string }[]
+  /** Settings → AI: features switched off (feature → true). Missing = on. */
+  ai?: { off?: Partial<Record<string, boolean>> }
 }
+
+/** Is this AI feature switched on for the org? (Settings → AI) */
+export const aiFeatureOn = (s: ImpactOrgSettings | null | undefined, feature: string) => s?.ai?.off?.[feature] !== true
+/** May this org send texts? (Settings → Messaging; on unless switched off) */
+export const smsOn = (s: ImpactOrgSettings | null | undefined) => s?.messaging?.sms !== false
 
 export const FOUNDER_FALLBACK: Record<string, ImpactBrand> = {
   'ten-project': TEN_PROJECT_BRAND,

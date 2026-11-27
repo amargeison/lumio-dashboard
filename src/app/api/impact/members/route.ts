@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { impactHq } from '@/lib/impact/import-auth'
 import { sendInvite, serviceDb } from '@/lib/impact/invite-send'
+import { logSettingsEvent } from '@/lib/impact/settings-log'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
       const { data, error } = await admin.from('impact_invites').update({ revoked_at: now }).eq('id', inviteId).eq('hq_id', hqId).is('accepted_at', null).select('id')
       if (error || (!data?.length && !isUuid(memberId))) return NextResponse.json({ error: 'That invite could not be found.' }, { status: 404 })
     }
+    await logSettingsEvent(admin, hqId, user.id, 'people', { action: 'revoke', ...(isUuid(memberId) ? { member: memberId } : {}), ...(isUuid(inviteId) ? { invite: inviteId } : {}) })
     return NextResponse.json({ ok: true })
   }
 
@@ -38,6 +40,7 @@ export async function POST(req: NextRequest) {
     if (!i || i.accepted_at || (i.role !== 'parent' && i.role !== 'coach')) return NextResponse.json({ error: 'That invite could not be found.' }, { status: 404 })
     const name = String((org.settings as { org?: string } | null)?.org ?? '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, 80) || 'Lumio Impact'
     const r = await sendInvite(admin, { hqId, userId: user.id, slug: org.slug as string, name }, { role: i.role, staffId: i.staff_id ?? undefined, familyId: i.family_id ?? undefined, email: i.email as string })
+    if (r.ok) await logSettingsEvent(admin, hqId, user.id, 'people', { action: 'resend invite', role: i.role })
     return r.ok ? NextResponse.json({ ok: true, ...(r.link ? { link: r.link } : {}) }) : NextResponse.json({ error: r.error }, { status: r.status })
   }
 

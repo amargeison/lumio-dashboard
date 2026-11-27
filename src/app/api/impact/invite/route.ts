@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { impactHq } from '@/lib/impact/import-auth'
 import { invitesLeft } from '@/lib/impact/invites'
 import { invitesOn, sendInvite, sentThisHour, serviceDb, type InviteTarget, type OrgForInvite } from '@/lib/impact/invite-send'
+import { logSettingsEvent } from '@/lib/impact/settings-log'
 
 export const dynamic = 'force-dynamic'
 
@@ -58,6 +59,7 @@ export async function POST(req: NextRequest) {
       const r = await sendInvite(admin, org, { role: 'parent', familyId: f.id, email: f.email ?? '' })
       if (r.ok) { sent++; if (r.link) links.push(r.link) } else failed++
     }
+    if (sent || failed) await logSettingsEvent(admin, org.hqId, org.userId, 'people', { action: 'invite families', sent, failed })
     return NextResponse.json({ sent, failed, left: eligible.length - batch.length, ...(links.length ? { links } : {}) })
   }
 
@@ -81,5 +83,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Choose who to invite first.' }, { status: 400 })
   }
   const r = await sendInvite(admin, org, target)
+  if (r.ok) await logSettingsEvent(admin, org.hqId, org.userId, 'people', { action: 'invite', role: target.role })
   return r.ok ? NextResponse.json({ ok: true, ...(r.link ? { link: r.link } : {}) }) : NextResponse.json({ error: r.error }, { status: r.status })
 }

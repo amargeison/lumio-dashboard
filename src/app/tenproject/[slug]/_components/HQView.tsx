@@ -61,7 +61,7 @@ export default function HQView({ section, onSectionChange }: {
   const [showRegisters, setShowRegisters] = useState(false)
   const { ready: packsReady, packs } = usePackAccess()
   const packChildIds = usePackChildren().map(c => c.id)
-  const packTile = packsReady ? packStats(packs, packChildIds, termOf(isoToday())) : null
+  const packTile = packsReady ? packStats(packs, packChildIds, termOf(isoToday(), ctx.org?.settings.termDates)) : null
   const attention = packsReady ? [...NEEDS_ATTENTION, ...lowStockLines(packs)] : NEEDS_ATTENTION
   const registers = HQ_STATS.outstandingRegisters ?? []
   const schoolsTotal = HQ_STATS.schoolsTotal ?? 0

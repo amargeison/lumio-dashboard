@@ -10,6 +10,7 @@ import { Card, Modal, Pill, SectionTitle, buttonPrimary, buttonSecondary, formFi
 import { TP_RED, TP_DARK } from '@/data/tenproject/demo-data'
 import { currentHq } from '@/lib/impact/org-scope'
 import { amountOrNull, reorderItems, saveBooklet, saveItem, useExamplePack, type ItemDraft } from '@/lib/impact/pack-actions'
+import { logAppChange } from '@/lib/impact/settings-log'
 import { pounds, type Booklet, type BookletWarmUp, type PackItem } from '@/lib/impact/packs'
 import { sb, usePackAccess } from './PackIssue'
 import BookletPdfCard from './BookletPdfCard'
@@ -36,7 +37,7 @@ function ItemDialog({ item, nextSort, onClose }: { item: PackItem | null; nextSo
       name, kind, price_pence: amountOrNull(price), has_sizes: hasSizes, sizes: hasSizes ? sizes.split(',').map(s => s.trim()).filter(Boolean) : [],
       low_stock: Math.max(0, Math.round(Number(low)) || 0), unit_cost_pence: amountOrNull(cost), sort: item?.sort ?? nextSort, active,
     }
-    try { const db = sb(); await saveItem(db, await currentHq(db), item?.id ?? null, draft); reload(); onClose() }
+    try { const db = sb(); const hq = await currentHq(db); await saveItem(db, hq, item?.id ?? null, draft); await logAppChange(db, hq, 'booklet', { packItem: item?.id ?? 'new', name: draft.name }); reload(); onClose() }
     catch (e) { setErr(e instanceof Error ? e.message : 'The item could not be saved.'); setBusy(false) }
   }
   return (
@@ -128,7 +129,7 @@ function BookletEditor({ canEdit }: { canEdit: boolean }) {
     const bad = Object.entries(links).find(([, v]) => !httpsUrl(v))
     if (bad) { setMsg({ text: `The ${bad[0]} video needs a link starting https://`, bad: true }); return }
     setBusy(true)
-    try { const db = sb(); await saveBooklet(db, await currentHq(db), { ...b, weeks, videos: links, warm_up: { ...warm, did_you_know: (warm.did_you_know ?? []).map(f => f.trim()).filter(Boolean) } }); setMsg({ text: '✓ Booklet saved.' }); reload() }
+    try { const db = sb(); const hq = await currentHq(db); await saveBooklet(db, hq, { ...b, weeks, videos: links, warm_up: { ...warm, did_you_know: (warm.did_you_know ?? []).map(f => f.trim()).filter(Boolean) } }); await logAppChange(db, hq, 'booklet', { booklet: 'saved' }); setMsg({ text: '✓ Booklet saved.' }); reload() }
     catch (e) { setMsg({ text: e instanceof Error ? e.message : 'The booklet could not be saved.', bad: true }) }
     setBusy(false)
   }
